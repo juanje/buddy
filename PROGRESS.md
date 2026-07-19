@@ -33,7 +33,7 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 | FR-SETUP-03 | Location picker | done | e3ce95e |
 | FR-SETUP-04 | Provider and API key | done | 78e3ab4 |
 | FR-SETUP-05 | Model selection | done | ada10c4 |
-| FR-SETUP-06 | Deterministic AB setup | pending | |
+| FR-SETUP-06 | Deterministic AB setup | done | 7871e1e |
 | FR-SETUP-07 | Agent-driven personalization | pending | |
 | FR-SETUP-08 | Import existing instance | pending | |
 | FR-PROMPT-01 | System prompt assembly | pending | |
