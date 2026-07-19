@@ -50,7 +50,7 @@ describe("rebuildLogsIndex", () => {
     if (dir) rmSync(dir, { recursive: true, force: true });
   });
 
-  it("lists session logs in index.md", () => {
+  it("lists session logs in index.md with summary", () => {
     dir = mkdtempSync(join(tmpdir(), "ab-index-"));
     const logs = join(dir, "logs");
     require("node:fs").mkdirSync(logs, { recursive: true });
@@ -61,7 +61,8 @@ describe("rebuildLogsIndex", () => {
     rebuildLogsIndex(dir);
     const index = readFileSync(join(logs, "index.md"), "utf8");
     expect(index).toContain("2026-07-19");
-    expect(index).toContain("reflect-pending");
+    expect(index).toContain("(reflect pending)");
+    expect(index).toContain("2026-07-19_abc.md");
   });
 });
 

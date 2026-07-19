@@ -126,7 +126,7 @@ Then("a session log exists with status {string}", function (this: MemoryWorld, s
 
 Then("the session logs index lists the session", function (this: MemoryWorld) {
   const index = readFileSync(join(this.abDir!, "logs", "index.md"), "utf8");
-  assert.match(index, /reflect-pending|complete/);
+  assert.match(index, /2026-|reflect pending|no summary/);
 });
 
 Then("the session log status is {string}", function (this: MemoryWorld, status: string) {

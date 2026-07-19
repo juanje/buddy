@@ -159,19 +159,18 @@ export function markReflectComplete(logPath: string, sections: string): void {
 export function rebuildLogsIndex(abDirectory: string): void {
   const logsDir = join(abDirectory, "logs");
   mkdirSync(logsDir, { recursive: true });
-  const entries: Array<{ date: string; start: string; sessionId: string; status: string; file: string }> = [];
+  const entries: Array<{ date: string; sessionId: string; summary: string; file: string }> = [];
 
   for (const name of readdirSync(logsDir)) {
     if (!name.endsWith(".md") || name === "index.md") continue;
     const path = join(logsDir, name);
-    const fm = parseFrontmatter(readFileSync(path, "utf8"));
-    const startRaw = fm.start ?? "";
-    const startTime = startRaw.includes("T") ? startRaw.slice(11, 16) : "";
+    const content = readFileSync(path, "utf8");
+    const fm = parseFrontmatter(content);
+    const summary = extractOneLinerSummary(content);
     entries.push({
       date: fm.date ?? name.slice(0, 10),
-      start: startTime,
       sessionId: fm.session_id ?? name.replace(/\.md$/, ""),
-      status: fm.status ?? "unknown",
+      summary,
       file: name,
     });
   }
@@ -180,14 +179,25 @@ export function rebuildLogsIndex(abDirectory: string): void {
   const lines = [
     "# Session logs",
     "",
-    "| Date | Start | Session | Status | File |",
-    "|------|-------|---------|--------|------|",
     ...entries.map(
-      (e) => `| ${e.date} | ${e.start} | ${e.sessionId} | ${e.status} | ${e.file} |`,
+      (e) => `- ${e.date}: ${e.summary} → [${e.file}](${e.file})`,
     ),
     "",
   ];
   writeFileSync(join(logsDir, "index.md"), lines.join("\n"), "utf8");
+}
+
+function extractOneLinerSummary(content: string): string {
+  const contextMatch = content.match(/### Context\r?\n([\s\S]*?)(?=\r?\n###|\r?\n$)/);
+  if (contextMatch) {
+    const firstLine = contextMatch[1].trim().split("\n")[0].trim();
+    if (firstLine.length > 0) {
+      return firstLine.length > 120 ? firstLine.slice(0, 117) + "..." : firstLine;
+    }
+  }
+  const fm = parseFrontmatter(content);
+  if (fm.status === "reflect-pending") return "(reflect pending)";
+  return "(no summary)";
 }
 
 export function shouldRunIncrementalReflect(
