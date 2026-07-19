@@ -31,17 +31,16 @@ export function formatToolCalls(toolCalls: SessionTrackerSnapshot["toolCalls"]):
 
 export function formatSkeletonBody(snapshot: SessionTrackerSnapshot): string {
   const date = isoDay(new Date(snapshot.endTime));
+  const startTime = snapshot.startTime.slice(11, 16);
+  const endTime = snapshot.endTime.slice(11, 16);
   const lines = [
-    `# Session — ${date}`,
+    `# Session — ${date} (${startTime}–${endTime}, ${snapshot.turnCount} turns)`,
     "",
     "## Files written",
     snapshot.filesWritten.length ? snapshot.filesWritten.map((f) => `- ${f}`).join("\n") : "(none)",
     "",
     "## Files read",
     snapshot.filesRead.length ? snapshot.filesRead.map((f) => `- ${f}`).join("\n") : "(none)",
-    "",
-    "## Tool calls",
-    formatToolCalls(snapshot.toolCalls).trimEnd(),
     "",
     "## Commits",
     snapshot.commits.length ? snapshot.commits.map((c) => `- ${c}`).join("\n") : "(none)",
