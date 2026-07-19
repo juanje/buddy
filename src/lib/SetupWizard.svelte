@@ -1,6 +1,7 @@
 <script lang="ts">
   // Setup wizard (FR-SETUP-01 routing target).
   import { onMount } from "svelte";
+  import { get } from "svelte/store";
   import { createSetupController } from "./setup-controller";
   import { modelChoicesFor } from "./model-catalog";
   import { gitInstallInstructions, t, tierDescription } from "./i18n";
@@ -78,6 +79,15 @@
   async function validateAndMaybeContinue() {
     await wizard.pickLocation(locationInput);
     wizard.next();
+    // If auth was detected, next() jumped to "creating" — trigger setup
+    if (get(wizard.step) === "creating") {
+      onComplete?.();
+      try {
+        await wizard.finishSetup();
+      } catch {
+        onSetupFailed?.();
+      }
+    }
   }
 
   function locationError(status: string): string | undefined {

@@ -19,6 +19,7 @@ import { nodeStdioTransport } from "kkrpc/stdio";
 
 import type { AgentEvent, FrontendAPI, WorkerAPI } from "../shared/api";
 import { adoptAbInstance, createAbInstance } from "./create-ab";
+import { detectExistingAuth } from "./detect-auth";
 import { defaultAbLocation, validateLocation } from "./location";
 import { createPermissionGate } from "./permissions";
 import { checkPrerequisites } from "./prereqs";
@@ -175,6 +176,9 @@ async function main(): Promise<void> {
       },
       async configureProviderKey(provider, apiKey, baseUrl) {
         return configureProviderKey(provider, apiKey, { baseUrl });
+      },
+      async detectExistingAuth() {
+        return detectExistingAuth();
       },
       async runSetup(config, mode = "create") {
         if (mode === "import") {

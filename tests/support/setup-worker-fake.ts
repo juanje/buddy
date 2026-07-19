@@ -16,6 +16,7 @@ export function makeSetupWorkerFake(overrides: Partial<SetupWorkerAPI>): SetupWo
     getDefaultLocation: overrides.getDefaultLocation ?? notExercised("getDefaultLocation"),
     validateLocation: overrides.validateLocation ?? notExercised("validateLocation"),
     configureProviderKey: overrides.configureProviderKey ?? notExercised("configureProviderKey"),
+    detectExistingAuth: overrides.detectExistingAuth ?? (async () => null),
     runSetup: overrides.runSetup ?? notExercised("runSetup"),
   };
 }

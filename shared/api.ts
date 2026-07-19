@@ -62,6 +62,12 @@ export interface LocationCheck {
 /** API key validation verdict (FR-SETUP-04). */
 export type KeyCheck = { valid: true } | { valid: false; error: string };
 
+/** Pre-existing Pi auth detected on the system (bypass provider/model steps). */
+export interface DetectedAuth {
+  provider: SetupConfig["provider"];
+  model: string;
+}
+
 /** A permission question the agent is waiting on (FR-PERM-02/03/07). */
 export interface PermissionRequest {
   id: number;
@@ -92,6 +98,8 @@ export interface WorkerAPI {
     apiKey: string,
     baseUrl?: string,
   ): Promise<KeyCheck>;
+  /** Detect an existing Pi auth with valid credentials (skip provider step). */
+  detectExistingAuth(): Promise<DetectedAuth | null>;
   /**
    * Finish setup and boot the session. "create" builds a fresh AB from
    * templates (FR-SETUP-06); "import" adopts an existing one without
@@ -120,6 +128,7 @@ export type SetupWorkerAPI = Pick<
   | "getDefaultLocation"
   | "validateLocation"
   | "configureProviderKey"
+  | "detectExistingAuth"
   | "runSetup"
 >;
 

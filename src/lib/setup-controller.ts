@@ -5,6 +5,7 @@
 import { derived, get, writable, type Readable } from "svelte/store";
 import { recommendedModelFor } from "./model-catalog";
 import type {
+  DetectedAuth,
   KeyCheck,
   LocationCheck,
   PrereqStatus,
@@ -85,6 +86,7 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
   const keyCheck = writable<KeyCheck | undefined>(undefined);
   const validatingKey = writable(false);
   const model = writable<string | undefined>(undefined);
+  const detectedAuth = writable<DetectedAuth | null>(null);
 
   const needsBaseUrl = derived(provider, ($provider) => $provider === "custom");
 
@@ -140,6 +142,12 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
   async function pickLocation(path: string): Promise<void> {
     location.set(path);
     locationCheck.set(await worker.validateLocation(path));
+    const auth = await worker.detectExistingAuth();
+    detectedAuth.set(auth);
+    if (auth) {
+      provider.set(auth.provider);
+      model.set(auth.model);
+    }
   }
 
   function selectProvider(id: ProviderId): void {
@@ -234,7 +242,12 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
     if (!get(canProceed)) return;
     step.update(($step) => {
       const index = STEP_ORDER.indexOf($step);
-      return STEP_ORDER[Math.min(index + 1, STEP_ORDER.length - 1)];
+      let nextStep = STEP_ORDER[Math.min(index + 1, STEP_ORDER.length - 1)];
+      // Skip provider+model when Pi credentials were detected
+      if (nextStep === "provider" && get(detectedAuth)) {
+        nextStep = "creating";
+      }
+      return nextStep;
     });
     if (get(step) === "model" && get(model) === undefined) {
       const id = get(provider);
