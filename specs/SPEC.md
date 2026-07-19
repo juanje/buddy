@@ -248,37 +248,57 @@ platform-specific install instructions is shown and setup cannot continue.
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-REFLECT-01 | Factual skeleton capture on session end | 1 |
-| FR-REFLECT-02 | Catch-up reflect on app start | 1 |
-| FR-REFLECT-03 | Incremental mid-session reflect (N turns + pre-compaction) | 1 |
+| FR-REFLECT-01 | Factual skeleton capture (crash fallback) | 1 |
+| FR-REFLECT-02 | Forked reflect on session end (primary) | 1 |
+| FR-REFLECT-03 | Incremental mid-session reflect (forked, background) | 1 |
 
-**FR-REFLECT-01 — Factual skeleton capture**
+**FR-REFLECT-01 — Factual skeleton capture (crash fallback)**
 
 - **Given** a session ends (app close or new session)
 - **When** the worker runs shutdown
-- **Then** a skeleton is saved containing: timestamps, files read/written, tool calls, git commits
-- **And** the skeleton is written without any LLM call (pure event extraction)
-- **And** the session is marked "reflect pending" for later LLM processing
+- **Then** a minimal skeleton is saved containing: timestamps, files read/written, commits
+- **And** the skeleton is written without any LLM call (pure event extraction, <100ms)
+- **And** the session is marked "reflect pending" for LLM processing
+- **Note:** This is the **crash-recovery fallback** — if the app dies before the forked reflect completes, the skeleton ensures something is captured. Under normal operation, the forked reflect (FR-REFLECT-02) replaces this with richer output.
 
-**FR-REFLECT-02 — Catch-up reflect on start**
+**FR-REFLECT-02 — Forked reflect on session end (primary path)**
 
-- **Given** the app starts and pending reflects exist from previous sessions
-- **When** no user streaming is active
-- **Then** a maintenance Pi session processes pending reflects (oldest first, max 3)
-- **And** the LLM reads the skeleton + raw session and writes: Decisions, Lessons, Context, Open threads
-- **And** the reflect is marked complete and the maintenance session is disposed
-- **And** the maintenance lock prevents concurrent reflect/consolidation
+- **Given** a session ends normally (user closes app or ends session)
+- **When** the shutdown sequence runs
+- **Then** the worker forks the live session via `SessionManager.open(file)` + `createBranchedSession(leafId)` — creating a new JSONL with full conversation context
+- **And** a background `child_process.fork()` is spawned to run the LLM reflect independently of the app window
+- **And** the app window closes immediately (<100ms total shutdown time)
+- **And** the background process: opens the forked session → prompts for reflect (Decisions, Lessons, Context, Open threads) → writes the session log → commits → exits
+- **And** if the background process fails, the factual skeleton (FR-REFLECT-01) remains as a pending fallback
+- **And** the next app start detects any remaining "reflect pending" logs and runs catch-up (same background process pattern)
+- **Note:** The LLM sees the FULL conversation in context (not a cold file list), producing meaningful reflect output comparable to what a human would capture.
 
-**FR-REFLECT-03 — Incremental mid-session reflect**
+**FR-REFLECT-03 — Incremental mid-session reflect (forked, background)**
 
 - **Given** a session has been running for N messages (configurable, default 15)
 - **Or given** Pi emits a `compaction_start` event (context window about to be compressed)
 - **When** the worker detects the threshold or the compaction event
-- **Then** a lightweight reflect runs (encoding, not deep analysis) capturing decisions, tasks, and context from the segment
-- **And** the snapshot is written to disk immediately (survives crashes)
+- **Then** the worker forks the current session state and spawns a background child process
+- **And** the child process runs a lightweight LLM reflect (encoding, not deep analysis) on the forked session context
+- **And** the snapshot is written to disk and committed without interrupting the user's conversation
 - **And** a cheaper model or lower thinking level is used
-- **And** the full session-end reflect incorporates the incremental snapshots
-- **Note:** The compaction trigger is critical — Pi discards context during compaction. Anything not reflected before that point is lost to the agent's long-term memory.
+- **And** the session-end reflect incorporates the incremental snapshots
+- **Note:** The compaction trigger is critical — Pi discards context during compaction. The fork happens BEFORE compaction so the reflect has access to what's about to be lost.
+
+**Reflect architecture summary:**
+
+```
+Normal shutdown:
+  app (sync, <100ms): write skeleton → fork session file → spawn child → close
+  child (async):      open fork → LLM reflect → write log → commit → exit
+
+Mid-session (every N turns / pre-compaction):
+  worker (sync):      fork session file → spawn child → continue serving user
+  child (async):      open fork → LLM reflect → write snapshot → commit → exit
+
+Crash recovery (next app start):
+  boot: detect reflect-pending without complete log → spawn child → same as above
+```
 
 ### 3.5 Permission Layer (FR-PERM)
 

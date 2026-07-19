@@ -734,28 +734,35 @@ JSON command needed. The SDK handles the callback directly.
 ## Data Flow — App Close (two-layer reflect)
 
 ```
+Session end (normal close):
 1. User closes window / quits app
 2. Frontend: api.shutdown()
-3. Worker: build factual skeleton from session events (deterministic, instant)
-   - Files read/written, tool calls, timestamps, git commits
-   - No LLM call — pure event stream extraction
-4. Worker: save skeleton to session archive, mark "reflect pending"
-5. Worker: rebuild `logs/index.md` from per-session file frontmatter (in code, no LLM, near-zero cost)
-6. Worker: session.dispose() — clean Pi shutdown
-7. Worker: process exits
-8. Tauri: app exits cleanly
+3. Worker: write factual skeleton (timestamps, files read/written, commits — no LLM, <50ms)
+4. Worker: fork session via SessionManager.open(file) + createBranchedSession(leafId)
+5. Worker: spawn background child process (Node child_process.fork) with forked session path
+6. Worker: rebuild logs/index.md, session.dispose()
+7. Frontend: win.destroy() — window closes immediately
+8. Background child (async, independent of app):
+   - createAgentSession({ sessionManager: forkedSM }) — full conversation context
+   - LLM prompt → writes Decisions, Lessons, Context, Open threads
+   - Updates session log (reflect-pending → complete), commits, exits
 
-On NEXT app start:
-9. Worker: detect pending reflects
-10. Worker: spawn catch-up reflect session (LLM reads skeleton + raw session)
-11. LLM: writes interpretive log (Decisions, Lessons, Context, Open threads)
-12. Worker: mark reflect complete, dispose catch-up session
+Crash recovery (next app start):
+9. Worker: detect "reflect-pending" logs without a completed reflect
+10. Worker: spawn background child process → same LLM reflect flow
+    (uses forked session file if available, or skeleton as fallback)
+11. User can start chatting immediately — reflect runs in parallel
 ```
 
-**Incremental reflect:** During long sessions, the worker triggers a
-lightweight reflect every N messages (configurable, default 15). Uses a
-cheaper model or lower thinking level — encoding, not deep analysis. The
-full-depth reflect at session end incorporates the incremental snapshots.
+**Incremental reflect (mid-session):** Every N messages (configurable, default 15)
+or on `compaction_start`, the worker forks the current session and spawns a
+background child process. The LLM encodes the segment (cheaper model / lower
+thinking) and writes a snapshot file. The user's conversation is never
+interrupted. Session-end reflect incorporates the incremental snapshots.
+
+**Key design principle:** The app window closes in <100ms. All LLM work is
+in detached background processes. The skeleton is the crash-proof minimum;
+the forked reflect is the rich primary path. Both write to the same log file.
 
 ## Permission Model
 
