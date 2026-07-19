@@ -80,6 +80,26 @@ export class FakeSession implements PiSessionLike {
     });
   }
 
+  emitThinkingDelta(delta: string): void {
+    this.emit({
+      type: "message_update",
+      message: { role: "assistant" },
+      assistantMessageEvent: {
+        type: "thinking_delta",
+        contentIndex: 0,
+        delta,
+        partial: { role: "assistant" },
+      },
+    });
+  }
+
+  emitToolExecutionStart(toolName: string, path?: string): void {
+    this.emit({
+      type: "tool_execution_start",
+      toolCall: { name: toolName, args: path ? { path } : {} },
+    });
+  }
+
   emitAssistantMessageEnd(): void {
     this.emit({
       type: "message_end",

@@ -1,18 +1,29 @@
 <script lang="ts">
   import type { ChatController } from "./chat-controller";
   import type { ScrollController } from "./scroll-controller";
+  import type { DeferredItemView } from "../../shared/api";
   import MessageBubble from "./MessageBubble.svelte";
   import PermissionCard from "./PermissionCard.svelte";
+  import ToolActivity from "./ToolActivity.svelte";
+  import WelcomeBanner from "./WelcomeBanner.svelte";
   import { t } from "./i18n";
 
-  let { controller, scroll }: { controller: ChatController; scroll: ScrollController } =
-    $props();
+  let {
+    controller,
+    scroll,
+    deferredItems = [],
+  }: {
+    controller: ChatController;
+    scroll: ScrollController;
+    deferredItems?: DeferredItemView[];
+  } = $props();
 
   // $derived (not plain destructuring) so the stores track prop reassignment;
   // `$controller.messages` is invalid — the controller itself is not a store.
   const messages = $derived(controller.messages);
   const typingIndicator = $derived(controller.typingIndicator);
   const permissions = $derived(controller.permissions);
+  const welcomeVisible = $derived(controller.welcomeVisible);
   const showScrollButton = $derived(scroll.showScrollButton);
 
   let container: HTMLDivElement | undefined = $state();
@@ -39,8 +50,17 @@
 
 <div class="chat-wrap">
   <div class="chat" bind:this={container} onscroll={handleScroll}>
+    <WelcomeBanner
+      {deferredItems}
+      visible={$welcomeVisible}
+      onDismiss={() => controller.dismissWelcome()}
+    />
     {#each $messages as message (message.id)}
-      <MessageBubble {message} />
+      {#if message.role === "tool-activity"}
+        <ToolActivity {message} />
+      {:else}
+        <MessageBubble {message} />
+      {/if}
     {/each}
     {#each $permissions as card (card.request.id)}
       <PermissionCard

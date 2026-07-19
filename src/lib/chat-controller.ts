@@ -5,6 +5,8 @@
 //   FR-CHAT-01 streaming display (token-by-token + typing indicator)
 //   FR-CHAT-03 abort generation (button + Escape, partial text kept)
 //   FR-INGEST-01..04 file attachments
+//   FR-CHAT-05 thinking blocks (collapsible)
+//   FR-CHAT-06 tool call indicators (collapsed)
 
 import { derived, get, writable, type Readable, type Writable } from "svelte/store";
 import type {
@@ -21,10 +23,18 @@ function basename(path: string): string {
   return parts[parts.length - 1] || path;
 }
 
+export interface ToolCallEntry {
+  name: string;
+  path?: string;
+  status: "running" | "done";
+}
+
 export interface ChatMessage {
   id: number;
-  role: "user" | "assistant";
+  role: "user" | "assistant" | "tool-activity";
   text: string;
+  toolCalls?: ToolCallEntry[];
+  thinking?: string;
 }
 
 /** Pending file attachment chip (FR-INGEST-01/02). */
@@ -60,6 +70,8 @@ export interface ChatController {
   typingIndicator: Readable<boolean>;
   /** Permission questions shown inline in the chat (FR-PERM-07). */
   permissions: Readable<PermissionCard[]>;
+  /** Welcome banner visible until the first user message (FR-DEFERRED-01 visual). */
+  welcomeVisible: Readable<boolean>;
 
   /** Send current input as a user message (no-op if canSend is false). */
   send(): Promise<void>;
@@ -81,6 +93,20 @@ export interface ChatController {
   respondPermission(id: number, allow: boolean): Promise<void>;
   /** Remove a resolved permission card from the list (dismiss). */
   dismissPermission(id: number): void;
+  /** Hide the welcome banner without sending a message. */
+  dismissWelcome(): void;
+}
+
+function extractToolInfo(event: AgentEvent): { name: string; path?: string } | null {
+  const name =
+    (event.toolName as string | undefined) ??
+    (event.toolCall as { name?: string } | undefined)?.name;
+  if (!name) return null;
+  const args =
+    (event.args as { path?: string } | undefined) ??
+    (event.toolCall as { args?: { path?: string } } | undefined)?.args;
+  const path = typeof args?.path === "string" ? args.path : undefined;
+  return { name, path };
 }
 
 export function createChatController(worker: ChatWorkerAPI): ChatController {
@@ -91,6 +117,7 @@ export function createChatController(worker: ChatWorkerAPI): ChatController {
   const attachments = writable<Attachment[]>([]);
   const attachmentErrors = writable<string[]>([]);
   const streaming = writable(false);
+  const welcomeVisible = writable(true);
 
   const inputDisabled = derived(streaming, ($s) => $s);
   const canSend = derived(
@@ -105,6 +132,68 @@ export function createChatController(worker: ChatWorkerAPI): ChatController {
   // created lazily on the FIRST text_delta so empty responses never produce
   // an empty bubble (FR-CHAT-01).
   let streamingBubbleId: number | null = null;
+
+  // Id of the in-flight tool-activity block for the current turn (FR-CHAT-06).
+  let streamingToolActivityId: number | null = null;
+
+  // Thinking content buffered until the first text_delta (FR-CHAT-05).
+  let pendingThinking = "";
+
+  function ensureToolActivityBlock(info: { name: string; path?: string }): number {
+    if (streamingToolActivityId !== null) {
+      messages.update((list) =>
+        list.map((m) =>
+          m.id === streamingToolActivityId
+            ? {
+                ...m,
+                toolCalls: [
+                  ...(m.toolCalls ?? []),
+                  { name: info.name, path: info.path, status: "running" as const },
+                ],
+              }
+            : m,
+        ),
+      );
+      return streamingToolActivityId;
+    }
+
+    const id = nextId++;
+    streamingToolActivityId = id;
+    messages.update((list) => [
+      ...list,
+      {
+        id,
+        role: "tool-activity" as const,
+        text: "",
+        toolCalls: [{ name: info.name, path: info.path, status: "running" as const }],
+      },
+    ]);
+    return id;
+  }
+
+  function finalizeToolActivityBlock(): void {
+    streamingToolActivityId = null;
+  }
+
+  function markToolCallDone(event: AgentEvent): void {
+    const info = extractToolInfo(event);
+    if (!info || streamingToolActivityId === null) return;
+
+    messages.update((list) =>
+      list.map((m) => {
+        if (m.id !== streamingToolActivityId || !m.toolCalls) return m;
+        let matched = false;
+        const toolCalls = m.toolCalls.map((entry) => {
+          if (!matched && entry.name === info.name && entry.status === "running") {
+            matched = true;
+            return { ...entry, path: info.path ?? entry.path, status: "done" as const };
+          }
+          return entry;
+        });
+        return { ...m, toolCalls };
+      }),
+    );
+  }
 
   function addAttachments(paths: string[]): void {
     const rejected: string[] = [];
@@ -136,6 +225,10 @@ export function createChatController(worker: ChatWorkerAPI): ChatController {
     attachmentErrors.set([]);
   }
 
+  function dismissWelcome(): void {
+    welcomeVisible.set(false);
+  }
+
   async function send(): Promise<void> {
     if (!get(canSend)) return;
     const text = get(input).trim();
@@ -151,6 +244,7 @@ export function createChatController(worker: ChatWorkerAPI): ChatController {
     messages.update((list) => [...list, { id: nextId++, role: "user", text: displayText }]);
     input.set("");
     attachments.set([]);
+    welcomeVisible.set(false);
 
     const options: PromptOptions | undefined = attachmentPaths.length
       ? { attachments: attachmentPaths }
@@ -170,10 +264,17 @@ export function createChatController(worker: ChatWorkerAPI): ChatController {
   }
 
   function appendAssistantText(delta: string): void {
+    finalizeToolActivityBlock();
+
     if (streamingBubbleId === null) {
       const id = nextId++;
       streamingBubbleId = id;
-      messages.update((list) => [...list, { id, role: "assistant", text: delta }]);
+      const thinking = pendingThinking || undefined;
+      pendingThinking = "";
+      messages.update((list) => [
+        ...list,
+        { id, role: "assistant", text: delta, thinking },
+      ]);
       return;
     }
     messages.update((list) =>
@@ -181,23 +282,58 @@ export function createChatController(worker: ChatWorkerAPI): ChatController {
     );
   }
 
+  function attachPendingThinkingToAssistant(): void {
+    if (!pendingThinking) return;
+    if (streamingBubbleId === null) {
+      const id = nextId++;
+      streamingBubbleId = id;
+      messages.update((list) => [
+        ...list,
+        { id, role: "assistant", text: "", thinking: pendingThinking },
+      ]);
+    } else {
+      messages.update((list) =>
+        list.map((m) =>
+          m.id === streamingBubbleId ? { ...m, thinking: pendingThinking } : m,
+        ),
+      );
+    }
+    pendingThinking = "";
+  }
+
   function handleEvent(event: AgentEvent): void {
     switch (event.type) {
       case "agent_start":
         streaming.set(true);
+        pendingThinking = "";
+        break;
+      case "tool_execution_start": {
+        const info = extractToolInfo(event);
+        if (info) ensureToolActivityBlock(info);
+        break;
+      }
+      case "tool_execution_end":
+        markToolCallDone(event);
         break;
       case "message_update": {
         const sub = event.assistantMessageEvent as AssistantMessageEventLike | undefined;
-        if (sub?.type === "text_delta" && typeof sub.delta === "string") {
+        if (sub?.type === "thinking_delta" && typeof sub.delta === "string") {
+          pendingThinking += sub.delta;
+        } else if (sub?.type === "text_delta" && typeof sub.delta === "string") {
           appendAssistantText(sub.delta);
         }
         break;
       }
       case "message_end":
+        attachPendingThinkingToAssistant();
         streamingBubbleId = null;
+        finalizeToolActivityBlock();
         break;
       case "agent_end":
+        attachPendingThinkingToAssistant();
         streamingBubbleId = null;
+        finalizeToolActivityBlock();
+        pendingThinking = "";
         streaming.set(false);
         break;
     }
@@ -233,6 +369,7 @@ export function createChatController(worker: ChatWorkerAPI): ChatController {
     showAbort,
     typingIndicator,
     permissions,
+    welcomeVisible,
     send,
     abort,
     onEscape,
@@ -243,5 +380,6 @@ export function createChatController(worker: ChatWorkerAPI): ChatController {
     handlePermissionRequest,
     respondPermission,
     dismissPermission,
+    dismissWelcome,
   };
 }

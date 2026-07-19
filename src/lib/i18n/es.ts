@@ -56,6 +56,25 @@ export type LocaleStrings = {
   attachTitle: string;
   dropOverlay: string;
   unsupportedFormat: string;
+  thinkingShow: string;
+  thinkingHide: string;
+  toolReading: string;
+  toolReadingFile: string;
+  toolWriting: string;
+  toolWritingFile: string;
+  toolSearching: string;
+  toolListing: string;
+  toolRunning: string;
+  toolWorking: string;
+  toolReadCount: string;
+  toolWriteCount: string;
+  toolUsedCount: string;
+  welcomeGreeting: string;
+  welcomeDeferredHeading: string;
+  welcomeDueToday: string;
+  welcomeOverdue: string;
+  welcomeDismiss: string;
+  welcomeRegion: string;
 };
 
 export const es: LocaleStrings = {
@@ -121,6 +140,25 @@ export const es: LocaleStrings = {
   attachTitle: "Adjuntar archivo",
   dropOverlay: "Suelta el archivo aquí",
   unsupportedFormat: "Formato no compatible — exporta a texto (.md o .txt)",
+  thinkingShow: "Pensando…",
+  thinkingHide: "Ocultar pensamiento",
+  toolReading: "Leyendo…",
+  toolReadingFile: "Leyendo {file}",
+  toolWriting: "Escribiendo…",
+  toolWritingFile: "Escribiendo {file}",
+  toolSearching: "Buscando…",
+  toolListing: "Listando archivos…",
+  toolRunning: "Ejecutando {tool}…",
+  toolWorking: "Trabajando…",
+  toolReadCount: "Leyó {count} archivos",
+  toolWriteCount: "Escribió {count} archivos",
+  toolUsedCount: "Usó {count} herramientas",
+  welcomeGreeting: "¿En qué puedo ayudarte?",
+  welcomeDeferredHeading: "Tienes {count} elementos pendientes para hoy",
+  welcomeDueToday: "hoy",
+  welcomeOverdue: "vencido",
+  welcomeDismiss: "Cerrar",
+  welcomeRegion: "Bienvenida",
 };
 
 /** Short cost/capability description per model tier (FR-SETUP-05). */

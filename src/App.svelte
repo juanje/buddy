@@ -15,7 +15,7 @@
   import InputBar from "./lib/InputBar.svelte";
   import SetupWizard from "./lib/SetupWizard.svelte";
   import { t } from "./lib/i18n";
-  import type { AgentEvent, PromptOptions, WorkerAPI } from "../shared/api";
+  import type { AgentEvent, DeferredItemView, PromptOptions, WorkerAPI } from "../shared/api";
 
   let connection: WorkerConnection | undefined = $state();
   let connectionError: string | undefined = $state();
@@ -23,6 +23,7 @@
   // undefined until the worker reports setup state (brief blank on launch).
   let view: AppView | undefined = $state();
   let dragOver = $state(false);
+  let deferredItems: DeferredItemView[] = $state([]);
 
   // The controller is created before the worker connects so the UI renders
   // immediately; prompts are proxied to whatever connection exists.
@@ -36,6 +37,10 @@
     async getState() {
       if (!connection) throw new Error("worker not connected");
       return connection.api.getState();
+    },
+    async getDeferredItems() {
+      if (!connection) return [];
+      return connection.api.getDeferredItems();
     },
     async getSetupState() {
       if (!connection) throw new Error("worker not connected");
@@ -105,6 +110,9 @@
       devLog("connect(): worker connected");
       const setupState = await connection.api.getSetupState();
       view = resolveInitialView(setupState);
+      if (view === "chat") {
+        deferredItems = await connection.api.getDeferredItems();
+      }
       devLog(`view: ${view}`);
     } catch (err) {
       connectionError = err instanceof Error ? err.message : String(err);
@@ -199,7 +207,10 @@
   {#if view === "setup"}
     <SetupWizard
       worker={workerProxy}
-      onComplete={() => (view = "chat")}
+      onComplete={async () => {
+        view = "chat";
+        deferredItems = await workerProxy.getDeferredItems();
+      }}
       onSetupFailed={() => (view = "setup")}
     />
   {:else if view === "chat" && controller}
@@ -207,7 +218,7 @@
       {#if dragOver}
         <div class="drop-overlay">{$t.dropOverlay}</div>
       {/if}
-      <ChatView bind:this={chatView} {controller} {scroll} />
+      <ChatView bind:this={chatView} {controller} {scroll} {deferredItems} />
       <InputBar
         {controller}
         onAbort={() => controller?.abort()}

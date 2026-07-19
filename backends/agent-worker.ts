@@ -28,6 +28,7 @@ import { checkPrerequisites } from "./prereqs";
 import { runCrashRecoveryCatchUp } from "./reflect-recovery";
 import { assembleSystemPrompt } from "./prompt";
 import { configureProviderKey } from "./provider-auth";
+import { toIsoDay } from "./deferred";
 import { SessionLifecycle } from "./session-lifecycle";
 import { defaultConfigPath, detectFirstRun } from "./setup";
 import { runWarmHandoff } from "./warm-handoff";
@@ -186,6 +187,18 @@ async function main(): Promise<void> {
       async getState() {
         if (!core) throw new Error("worker not ready");
         return core.api.getState();
+      },
+      async getDeferredItems() {
+        if (setupState.firstRun) return [];
+        const today = toIsoDay(new Date());
+        const { dueItems } = assembleSystemPrompt(setupState.config.abDirectory);
+        return dueItems.map((item) => ({
+          type: item.type,
+          dueDate: item.dueDate,
+          source: item.source,
+          text: item.text,
+          overdue: item.dueDate < today,
+        }));
       },
       async getSetupState() {
         return setupState;

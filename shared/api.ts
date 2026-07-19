@@ -83,11 +83,22 @@ export interface PrereqStatus {
   platform: string;
 }
 
+/** Due/overdue deferred item for the welcome banner (FR-DEFERRED-01 visual). */
+export interface DeferredItemView {
+  type: string;
+  dueDate: string;
+  source: string;
+  text: string;
+  overdue: boolean;
+}
+
 /** Frontend calls these on the worker. */
 export interface WorkerAPI {
   prompt(text: string, options?: PromptOptions): Promise<void>;
   abort(): Promise<void>;
   getState(): Promise<AgentState>;
+  /** Due/overdue deferred items for the chat welcome state (FR-DEFERRED-01). */
+  getDeferredItems(): Promise<DeferredItemView[]>;
   getSetupState(): Promise<SetupState>;
   checkPrerequisites(): Promise<PrereqStatus>;
   getDefaultLocation(): Promise<string>;
