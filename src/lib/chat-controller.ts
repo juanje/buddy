@@ -55,6 +55,8 @@ export interface ChatController {
   handlePermissionRequest(request: PermissionRequest): void;
   /** Answer a pending permission card. */
   respondPermission(id: number, allow: boolean): Promise<void>;
+  /** Remove a resolved permission card from the list (dismiss). */
+  dismissPermission(id: number): void;
 }
 
 export function createChatController(worker: ChatWorkerAPI): ChatController {
@@ -145,6 +147,10 @@ export function createChatController(worker: ChatWorkerAPI): ChatController {
     );
   }
 
+  function dismissPermission(id: number): void {
+    permissions.update((cards) => cards.filter((card) => card.request.id !== id));
+  }
+
   return {
     messages,
     input,
@@ -160,5 +166,6 @@ export function createChatController(worker: ChatWorkerAPI): ChatController {
     handleEvent,
     handlePermissionRequest,
     respondPermission,
+    dismissPermission,
   };
 }

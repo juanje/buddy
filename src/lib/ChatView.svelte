@@ -43,7 +43,11 @@
       <MessageBubble {message} />
     {/each}
     {#each $permissions as card (card.request.id)}
-      <PermissionCard {card} onRespond={(id, allow) => controller.respondPermission(id, allow)} />
+      <PermissionCard
+        {card}
+        onRespond={(id, allow) => controller.respondPermission(id, allow)}
+        onDismiss={(id) => controller.dismissPermission(id)}
+      />
     {/each}
     {#if $typingIndicator}
       <div class="typing" aria-label="assistant is typing">
