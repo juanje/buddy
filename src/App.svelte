@@ -126,14 +126,14 @@
     align-items: center;
     gap: 12px;
     padding: 10px 14px;
-    background: #7f1d1d;
-    color: #fecaca;
+    background: var(--error-bg);
+    color: var(--error-fg);
     font-size: 14px;
   }
   .error-banner button {
-    border: 1px solid #fecaca;
+    border: 1px solid var(--error-fg);
     background: transparent;
-    color: #fecaca;
+    color: var(--error-fg);
     border-radius: 8px;
     padding: 4px 12px;
     cursor: pointer;

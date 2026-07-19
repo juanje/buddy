@@ -12,6 +12,9 @@
   --bubble-assistant: #f4f4f5;
   --bubble-assistant-fg: #1a1a1a;
   --muted: #71717a;
+  --error-bg: #7f1d1d;
+  --error-fg: #fecaca;
+  --abort: #dc2626;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -27,6 +30,9 @@
     --bubble-assistant: #27272a;
     --bubble-assistant-fg: #e4e4e7;
     --muted: #a1a1aa;
+    --error-bg: #450a0a;
+    --error-fg: #fecaca;
+    --abort: #dc2626;
   }
 }
 

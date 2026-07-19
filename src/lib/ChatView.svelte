@@ -22,8 +22,9 @@
 
   function handleScroll() {
     if (!container) return;
+    const NEAR_BOTTOM_PX = 4;
     const atBottom =
-      container.scrollTop + container.clientHeight >= container.scrollHeight - 4;
+      container.scrollTop + container.clientHeight >= container.scrollHeight - NEAR_BOTTOM_PX;
     scroll.onUserScrolled(atBottom);
   }
 </script>

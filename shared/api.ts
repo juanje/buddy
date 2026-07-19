@@ -17,6 +17,7 @@ export interface AssistantMessageEventLike {
   [key: string]: unknown;
 }
 
+// Phase 1: used by FR-DEFERRED-01 (surface deferred items on session start).
 export interface DeferredItem {
   text: string;
   dueDate: string;
@@ -29,9 +30,10 @@ export interface AgentState {
   messageCount: number;
 }
 
+// Phase 1: used by FR-SETUP-01/02 (first-run wizard configuration).
 export interface SetupConfig {
   abDirectory: string;
-  provider: string; // "anthropic" | "openai" | "google" | "custom"
+  provider: "anthropic" | "openai" | "google" | "custom";
   model: string;
   apiKey?: string;
   baseUrl?: string;

@@ -93,7 +93,7 @@
     cursor: default;
   }
   button.abort {
-    background: #dc2626;
+    background: var(--abort);
     color: #fff;
   }
 </style>
