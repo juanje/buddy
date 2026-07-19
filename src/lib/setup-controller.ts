@@ -257,12 +257,15 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
     step.update(($step) => {
       const index = STEP_ORDER.indexOf($step);
       let nextStep = STEP_ORDER[Math.min(index + 1, STEP_ORDER.length - 1)];
+      // Skip prerequisites when git is already confirmed installed
+      if (nextStep === "prerequisites" && get(prereq)?.gitInstalled) {
+        nextStep = "location";
+      }
       const auth = get(detectedAuth);
       if (nextStep === "provider" && auth) {
         if (!auth.options || auth.options.length <= 1) {
           nextStep = "creating";
         }
-        // Multiple options: land on "provider" so user can choose
       }
       return nextStep;
     });
