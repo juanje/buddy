@@ -563,7 +563,52 @@ AB File System (git repo)
 - **When** cost history is available
 - **Then** a monthly total is displayed
 
-### 3.14 Git Sync (FR-SYNC)
+### 3.14 AB Brain Template (FR-BRAIN)
+
+The template is the **core content** that makes AB behave as AB. Without correct
+templates, the app is a generic chatbot with a git repo. This area has its own
+detailed specification: [specs/BRAIN-SPEC.md](BRAIN-SPEC.md).
+
+| ID | Description | Phase |
+|----|-------------|-------|
+| FR-BRAIN-01 | AGENTS.md provides behavioral rules that produce AB behavior | 1 |
+| FR-BRAIN-02 | SOUL.md defines character and first-session personalization flow | 1 |
+| FR-BRAIN-03 | USER.md placeholder is correctly populated by agent in first conversation | 1 |
+| FR-BRAIN-04 | Consolidation skills produce meaningful summaries when invoked | 2 |
+| FR-BRAIN-05 | Observation pipeline captures and promotes patterns | 2 |
+
+**FR-BRAIN-01 — AGENTS.md behavioral rules**
+
+- **Given** a fresh AB instance with only the template content
+- **When** the user talks to the agent about tasks, ideas, decisions
+- **Then** the agent routes captures correctly (user/ vs agent_brain/)
+- **And** the agent writes to files and commits without being reminded
+- **And** the agent uses progressive disclosure (reads indexes before files)
+- **And** the agent does not execute code or attempt bash operations
+
+**FR-BRAIN-02 — SOUL.md character + first-session flow**
+
+- **Given** a new user opens the app for the first time after setup
+- **When** the agent starts the first conversation
+- **Then** it introduces itself warmly but concisely
+- **And** it naturally asks about the user (name, language, interests)
+- **And** it writes the answers to USER.md without explicit instruction
+- **And** it does NOT feel like an interrogation form
+
+**FR-BRAIN-03 — USER.md personalization**
+
+- **Given** the first conversation has completed
+- **When** a second session starts
+- **Then** the agent addresses the user by name
+- **And** uses their preferred language
+- **And** references context from the first conversation
+
+**Note:** FR-BRAIN-01 through 03 are Phase 1 prerequisites — the app cannot
+ship without templates that produce correct behavior. These are developed in
+parallel with the technical scaffolding and tested via conversation eval.
+Full specification in [specs/BRAIN-SPEC.md](BRAIN-SPEC.md).
+
+### 3.15 Git Sync (FR-SYNC)
 
 | ID | Description | Phase |
 |----|-------------|-------|
