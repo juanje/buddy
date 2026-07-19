@@ -38,8 +38,11 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 | FR-SETUP-08 | Import existing instance | done | 7733b0e |
 | FR-PROMPT-01 | System prompt assembly | done | d7a3c12 |
 | FR-PROMPT-02 | Session-start enrichment | done | d7a3c12 |
-| FR-PERM-01 | Zone classification | pending | |
-| FR-PERM-02 | Identity file protection | pending | |
+| FR-PERM-01 | Zone 1: AB home silent allow | done | d3e57f3 |
+| FR-PERM-02 | Identity write confirmation | done | d3e57f3 |
+| FR-PERM-03 | Zone 3: outside access prompt | done | d3e57f3 |
+| FR-PERM-04 | Hardcoded denylist | done | d3e57f3 |
+| FR-PERM-07 | Permission prompt in chat | done | 1031c99 |
 | FR-SESSION-01 | Session resume | pending | |
 | FR-SESSION-02 | New session | pending | |
 | FR-REFLECT-01 | Factual skeleton on session end | pending | |
