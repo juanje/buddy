@@ -7,6 +7,7 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 
 import type { DetectedAuth, SetupConfig } from "../shared/api";
+import { defaultModelForProvider } from "../src/lib/model-catalog";
 
 interface AuthEntry {
   type?: string;
@@ -27,13 +28,6 @@ const PI_PROVIDER_MAP: Record<string, SetupConfig["provider"]> = {
   openai: "openai",
   "openai-codex": "openai",
   google: "google",
-};
-
-const DEFAULT_MODELS: Record<string, string> = {
-  anthropic: "claude-sonnet-4-5",
-  openai: "gpt-5.4-mini",
-  "openai-codex": "gpt-5.4-mini",
-  google: "gemini-2.5-flash",
 };
 
 function hasValidCredentials(entry: AuthEntry | undefined): boolean {
@@ -92,7 +86,7 @@ export function detectExistingAuth(
     options.push({
       piProvider: piKey,
       provider: mapped,
-      model: DEFAULT_MODELS[piKey] ?? "gpt-5.4-mini",
+      model: defaultModelForProvider(mapped) ?? "gpt-5-mini",
       isDefault: piKey === piSettings.defaultProvider,
     });
   }

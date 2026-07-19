@@ -11,12 +11,14 @@ import {
   createAgentSession,
   DefaultResourceLoader,
   getAgentDir,
+  ModelRuntime,
   SessionManager,
 } from "@earendil-works/pi-coding-agent";
 
 import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { AgentEvent } from "../shared/api";
+import { fastModelForProvider } from "../src/lib/model-catalog";
 import { commitAll } from "./git";
 import { acquireLock, releaseLock } from "./maintenance";
 import { alignHttpDispatcherWithPi } from "./pi-http-dispatcher";
@@ -52,6 +54,37 @@ Anything worth remembering from this segment.
 
 Be very concise — this is an incremental snapshot, not a full reflect.`;
 
+function readAbProvider(abDirectory: string): string {
+  const settingsPath = join(abDirectory, ".pi", "settings.json");
+  if (!existsSync(settingsPath)) return "anthropic";
+  try {
+    const settings = JSON.parse(readFileSync(settingsPath, "utf8")) as { defaultProvider?: string };
+    return settings.defaultProvider ?? "anthropic";
+  } catch {
+    return "anthropic";
+  }
+}
+
+async function resolveIncrementalSessionOptions(abDirectory: string): Promise<{
+  model?: Awaited<ReturnType<ModelRuntime["getModel"]>>;
+  thinkingLevel: "minimal";
+}> {
+  const provider = readAbProvider(abDirectory);
+  const fastModelId = fastModelForProvider(provider);
+  if (!fastModelId) return { thinkingLevel: "minimal" };
+
+  const runtime = await ModelRuntime.create({
+    authPath: join(getAgentDir(), "auth.json"),
+  });
+  let model = runtime.getModel(provider, fastModelId);
+  if (!model) {
+    const available = await runtime.getAvailable(provider);
+    model = available.find((entry) => entry.id === fastModelId);
+  }
+  if (!model) return { thinkingLevel: "minimal" };
+  return { model, thinkingLevel: "minimal" };
+}
+
 async function runReflect(
   abDirectory: string,
   forkedSessionFile: string,
@@ -78,11 +111,15 @@ async function runReflect(
   });
   await resourceLoader.reload();
 
+  const incrementalOptions =
+    mode === "incremental" ? await resolveIncrementalSessionOptions(abDirectory) : {};
+
   const { session } = await createAgentSession({
     cwd: abDirectory,
     resourceLoader,
     sessionManager: sm,
     excludeTools: ["bash"],
+    ...incrementalOptions,
   });
 
   const events: AgentEvent[] = [];

@@ -133,7 +133,7 @@ const modelRuntime = await ModelRuntime.create();
 const resourceLoader = new DefaultResourceLoader({
     cwd: AB_DIR,
     agentDir: `${homedir()}/.pi/agent`,
-    systemPrompt: assembledSystemPrompt,  // built from AGENTS.md + SOUL + USER + context
+    systemPromptOverride: () => assembledSystemPrompt,  // built from AGENTS.md + SOUL + USER + context
 });
 await resourceLoader.reload();
 
@@ -289,7 +289,7 @@ const systemPrompt = await assembleSystemPrompt(AB_DIR);
 const resourceLoader = new DefaultResourceLoader({
     cwd: AB_DIR,
     agentDir: `${homedir()}/.pi/agent`,
-    systemPrompt,
+    systemPromptOverride: () => systemPrompt,
 });
 await resourceLoader.reload();
 
@@ -592,7 +592,7 @@ async function runSingleDepth(depth: number) {
     const maintenanceLoader = new DefaultResourceLoader({
         cwd: AB_DIR,
         agentDir: `${homedir()}/.pi/agent`,
-        systemPrompt: await assembleMaintenancePrompt(AB_DIR, depth),
+        systemPromptOverride: () => assembleMaintenancePrompt(AB_DIR, depth),
     });
     await maintenanceLoader.reload();
 
@@ -736,20 +736,20 @@ Session end (normal close):
 1. User closes window / quits app
 2. Frontend: api.shutdown()
 3. Worker: write factual skeleton (timestamps, files read/written, commits — no LLM, <50ms)
-4. Worker: fork session via SessionManager.open(file) + createBranchedSession(leafId)
-5. Worker: spawn background child process (Node child_process.fork) with forked session path
-6. Worker: rebuild logs/index.md, session.dispose()
-7. Frontend: win.destroy() — window closes immediately
-8. Background child (async, independent of app):
-   - createAgentSession({ sessionManager: forkedSM }) — full conversation context
+4. Worker: spawn background child with live session path
+5. Worker: rebuild logs/index.md, session.dispose()
+6. Frontend: win.destroy() — window closes immediately
+7. Background child (async, independent of app):
+   - SessionManager.forkFrom(sessionFile, abDirectory, forkDir) — full conversation context
+   - createAgentSession({ sessionManager: forkedSM }) on the forked JSONL
    - LLM prompt → writes Decisions, Lessons, Context, Open threads
    - Updates session log (reflect-pending → complete), commits, exits
 
 Crash recovery (next app start):
-9. Worker: detect "reflect-pending" logs without a completed reflect
-10. Worker: spawn background child process → same LLM reflect flow
-    (uses forked session file if available, or skeleton as fallback)
-11. User can start chatting immediately — reflect runs in parallel
+8. Worker: detect "reflect-pending" logs without a completed reflect
+9. Worker: spawn background child process → same LLM reflect flow
+   (uses forked session file if available, or skeleton as fallback)
+10. User can start chatting immediately — reflect runs in parallel
 ```
 
 **Incremental reflect (mid-session):** Every N messages (configurable, default 15)
@@ -1696,8 +1696,8 @@ All critical APIs verified against Pi source code. Summary:
 | `createAgentSession()` | Confirmed | Options: `sessionManager`, `modelRuntime`, `resourceLoader`, `excludeTools`, `cwd` |
 | `SessionManager.create(cwd, sessionDir?)` | Confirmed | First param is cwd, not session path |
 | `SessionManager.continueRecent(cwd)` | Confirmed | Resumes most recent session — reserved for Phase 5 multi-session |
-| `SessionManager.open(path)` | Confirmed | Opens specific session file — used by forked reflect |
-| `sm.createBranchedSession(leafId)` | Confirmed | Forks branch to new file — used for reflect without touching live session |
+| `SessionManager.open(path)` | Confirmed | Opens specific session file |
+| `SessionManager.forkFrom(sourcePath, targetCwd, sessionDir?)` | Confirmed | Copies full history to a new JSONL — used by reflect child without touching live session |
 | `session.subscribe(listener)` | Confirmed | Events: `agent_start/end`, `message_start/update/end`, `tool_execution_start/end`, `compaction_start/end` |
 | `session.agent.beforeToolCall` | Confirmed | Public property; chain with existing extension hooks |
 | `session.agent.afterToolCall` | Confirmed | Includes `isError` — used for Hebbian success tracking |
@@ -1705,15 +1705,15 @@ All critical APIs verified against Pi source code. Summary:
 | `session.prompt/steer/abort/compact` | All confirmed | `prompt` has `PromptOptions`; `steer` is text+images |
 | `session.setModel/setThinkingLevel` | Both confirmed | `setModel` async; `setThinkingLevel` sync |
 | `excludeTools: ["bash"]` | Confirmed | Clean way to disable bash at session creation |
-| System prompt | Via `DefaultResourceLoader({ systemPrompt })` | Not a direct `createAgentSession` param |
+| System prompt | Via `DefaultResourceLoader({ systemPromptOverride: () => prompt })` | Not a direct `createAgentSession` param |
 | Cost/usage data | On `AssistantMessage.usage` in `message_end` events | Full token + cost breakdown |
 | Extensions in SDK mode | Fully operational | Extensions load and run normally |
 
 **Key patterns for the app:**
-- System prompt: `DefaultResourceLoader({ systemPrompt: assembled })` → `createAgentSession({ resourceLoader })`
+- System prompt: `DefaultResourceLoader({ systemPromptOverride: () => assembled })` → `createAgentSession({ resourceLoader })`
 - Bash disabled: `createAgentSession({ excludeTools: ["bash"] })`
 - Fresh session: `SessionManager.create(cwd)` every launch (E5 decision)
-- Forked reflect: `SessionManager.open(file)` + `createBranchedSession(leafId)` → separate child process
+- Forked reflect: `SessionManager.forkFrom(sessionFile, abDirectory, forkDir)` in background child → separate JSONL, no live session pollution
 - Hook chaining: save `session.agent.beforeToolCall`, install ours, delegate to original
 - Hebbian tracking: `afterToolCall` with `ctx.isError` check before counting
 - Event names: `compaction_start/end` (not `session_compact`); no `model_select` in subscribe events

@@ -3,6 +3,7 @@
 import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { LOCK_STALE_MS } from "../shared/defaults";
 import { commitAll } from "./git";
 import { findPendingReflects, markReflectComplete } from "./reflect";
 
@@ -17,8 +18,6 @@ export interface CatchUpOptions {
   /** Inject LLM encoding for tests; real worker passes Pi maintenance session. */
   encodeReflect?: (logPath: string, skeleton: string) => Promise<string>;
 }
-
-const STALE_MS = 60 * 60 * 1000;
 
 export function lockPath(abDirectory: string): string {
   return join(abDirectory, ".ab-app", "maintenance.lock");
@@ -38,7 +37,7 @@ export function isLockStale(abDirectory: string, now = Date.now()): boolean {
   const lock = readLock(abDirectory);
   if (!lock) return true;
   const age = now - Date.parse(lock.timestamp);
-  if (Number.isNaN(age) || age > STALE_MS) return true;
+  if (Number.isNaN(age) || age > LOCK_STALE_MS) return true;
   try {
     process.kill(lock.pid, 0);
     return false;

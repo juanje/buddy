@@ -1,5 +1,6 @@
 // backends/reflect-recovery.ts — Crash recovery: spawn reflect children for pending logs.
 
+import { CRASH_RECOVERY_MAX } from "../shared/defaults";
 import { findPendingReflects } from "./reflect";
 import { spawnReflectChild, type SpawnReflectOptions } from "./reflect-spawn";
 
@@ -15,7 +16,7 @@ export function runCrashRecoveryCatchUp(
 ): SpawnReflectOptions[] {
   const pending = findPendingReflects(abDirectory);
   const spawned: SpawnReflectOptions[] = [];
-  for (const item of pending.slice(0, 3)) {
+  for (const item of pending.slice(0, CRASH_RECOVERY_MAX)) {
     const options: SpawnReflectOptions = {
       abDirectory,
       forkedSessionFile: "",

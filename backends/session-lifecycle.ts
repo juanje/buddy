@@ -1,6 +1,7 @@
 // backends/session-lifecycle.ts — Session persistence loop (FR-GIT-01, FR-REFLECT-01/03).
 
 import type { AgentEvent } from "../shared/api";
+import { INCREMENTAL_REFLECT_EVERY } from "../shared/defaults";
 import { commitAll } from "./git";
 import {
   cleanupSnapshots,
@@ -33,7 +34,7 @@ export class SessionLifecycle {
     this.abDirectory = options.abDirectory;
     this.sessionFile = options.sessionFile;
     this.tracker = new SessionTracker(options.sessionId);
-    this.incrementalEvery = options.incrementalEvery ?? 15;
+    this.incrementalEvery = options.incrementalEvery ?? INCREMENTAL_REFLECT_EVERY;
   }
 
   setSessionFile(path: string): void {

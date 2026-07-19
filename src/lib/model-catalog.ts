@@ -41,3 +41,13 @@ export function recommendedModelFor(provider: string): ModelChoice | null {
   if (!choices || choices.length === 0) return null;
   return choices.find((c) => c.recommended) ?? choices[0];
 }
+
+/** Default model id for a provider (recommended tier). */
+export function defaultModelForProvider(provider: string): string | undefined {
+  return recommendedModelFor(provider)?.id;
+}
+
+/** Fast-tier model id for incremental reflect and other lightweight tasks. */
+export function fastModelForProvider(provider: string): string | undefined {
+  return modelChoicesFor(provider)?.find((c) => c.tier === "fast")?.id;
+}

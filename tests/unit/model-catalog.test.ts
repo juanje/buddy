@@ -2,7 +2,7 @@
 
 import { describe, expect, it } from "vitest";
 
-import { modelChoicesFor, recommendedModelFor } from "../../src/lib/model-catalog";
+import { modelChoicesFor, recommendedModelFor, defaultModelForProvider, fastModelForProvider } from "../../src/lib/model-catalog";
 
 const LISTED_PROVIDERS = ["anthropic", "openai", "google"] as const;
 
@@ -24,5 +24,14 @@ describe("model catalog", () => {
   it("has no catalog for custom (free-form input)", () => {
     expect(modelChoicesFor("custom")).toBeNull();
     expect(recommendedModelFor("custom")).toBeNull();
+    expect(defaultModelForProvider("custom")).toBeUndefined();
+    expect(fastModelForProvider("custom")).toBeUndefined();
+  });
+
+  it("exposes default and fast tier ids per provider", () => {
+    expect(defaultModelForProvider("anthropic")).toBe("claude-sonnet-5");
+    expect(fastModelForProvider("anthropic")).toBe("claude-haiku-4-5");
+    expect(fastModelForProvider("openai")).toBe("gpt-5-mini");
+    expect(fastModelForProvider("google")).toBe("gemini-3.5-flash");
   });
 });

@@ -13,7 +13,7 @@
 
 import { basename, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { homedir } from "node:os";
-import { READ_TOOLS, WRITE_TOOLS } from "../shared/tool-names";
+import { DENYLIST_BASENAMES, DENYLIST_HOME_DIRS, READ_TOOLS, WRITE_TOOLS } from "../shared/defaults";
 
 export type PermissionOp = "read" | "write";
 
@@ -28,9 +28,6 @@ export type PermissionDecision =
   | { action: "allow" }
   | { action: "deny"; reason: string }
   | { action: "ask"; kind: PermissionRequest["kind"]; op: PermissionOp; path: string };
-
-const DENYLIST_HOME_DIRS = [".ssh", ".gnupg", ".aws"];
-const DENYLIST_BASENAMES = [".env", "auth.json"];
 
 const IDENTITY_FILES = ["SOUL.md"];
 

@@ -38,9 +38,9 @@ Frontend (Svelte, system webview)
 Node.js Worker (TypeScript)
     ├── Pi SDK: createAgentSession()
     ├── Permission layer (beforeToolCall hook)
-    ├── Hebbian tracker (afterToolCall hook)
-    ├── Heartbeat scheduler (setInterval)
-    └── Consolidation runner (separate Pi session)
+    ├── Hebbian tracker (Phase 2 — afterToolCall hook)
+    ├── Heartbeat scheduler (Phase 2 — setInterval)
+    └── Consolidation runner (Phase 2 — separate Pi session)
     │
     ▼
 AB File System (git repo)
@@ -53,7 +53,7 @@ AB File System (git repo)
 **Key patterns:**
 - `kkrpc` for frontend↔worker communication (type-safe, bidirectional)
 - `excludeTools: ["bash"]` — file operations only, no shell
-- Hook chaining on `beforeToolCall` / `afterToolCall` for permissions and Hebbian
+- Hook chaining on `beforeToolCall` for permissions (Hebbian hook chaining: Phase 2)
 - `DefaultResourceLoader` with assembled system prompt at session start
 - Separate Pi session for maintenance (consolidation never touches live session)
 
@@ -265,7 +265,7 @@ platform-specific install instructions is shown and setup cannot continue.
 
 - **Given** a session ends normally (user closes app or ends session)
 - **When** the shutdown sequence runs
-- **Then** the worker forks the live session via `SessionManager.open(file)` + `createBranchedSession(leafId)` — creating a new JSONL with full conversation context
+- **Then** the reflect child forks the live session via `SessionManager.forkFrom(sessionFile, abDirectory, forkDir)` — creating a new JSONL with full conversation context in `.ab-app/reflect-sessions/`
 - **And** a background `child_process.fork()` is spawned to run the LLM reflect independently of the app window
 - **And** the app window closes immediately (<100ms total shutdown time)
 - **And** the background process: opens the forked session → prompts for reflect (Decisions, Lessons, Context, Open threads) → writes the session log → commits → exits
@@ -536,7 +536,7 @@ Crash recovery (next app start):
 - **Given** a session is starting
 - **When** the system prompt is built
 - **Then** it includes: AGENTS.md, SOUL.md, USER.md, due deferred items, current date/time
-- **And** it is passed to Pi via `DefaultResourceLoader({ systemPrompt })`
+- **And** it is passed to Pi via `DefaultResourceLoader({ systemPromptOverride: () => prompt })`
 
 **FR-PROMPT-02 — Session-start enrichment**
 
@@ -972,7 +972,7 @@ AB remembers the conversation, knows their name, surfaces any pending reminders.
 | Session creation | `createAgentSession()` with `excludeTools: ["bash"]` produces a session with file tools only |
 | Event streaming | `session.subscribe()` emits expected event types in correct order |
 | Hook chaining | Custom `beforeToolCall` / `afterToolCall` are called alongside Pi extension hooks |
-| Session fork for reflect | `SessionManager.open()` + `createBranchedSession()` produces a valid fork for background reflect |
+| Session fork for reflect | `SessionManager.forkFrom()` produces a valid fork for background reflect without touching the live session |
 | Maintenance session | Separate session for consolidation doesn't interfere with the live session |
 
 ### 7.3 E2E tests (full user flows)

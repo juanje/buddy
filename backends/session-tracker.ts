@@ -1,7 +1,7 @@
 // backends/session-tracker.ts — In-memory session event accumulator (FR-REFLECT-01/03).
 
 import type { AgentEvent } from "../shared/api";
-import { READ_TOOLS, WRITE_TOOLS } from "../shared/tool-names";
+import { READ_TOOLS, WRITE_TOOLS } from "../shared/defaults";
 
 export interface TrackedToolCall {
   name: string;
