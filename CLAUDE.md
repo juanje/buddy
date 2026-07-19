@@ -38,13 +38,21 @@ using BDD + TDD.
 ### Rules
 
 - Never implement without a test first. Feature file → step definitions → code.
+  Why: prevents drift between spec and implementation; the test IS the contract.
 - One feature at a time. Do not start the next FR until current is green.
+  Why: dependencies between features mean a broken FR-01 undermines FR-02.
 - The spec is the source of truth. Code must match spec. If you think the spec
   is wrong, stop and ask — do not silently diverge.
+  Why: the user made deliberate design decisions recorded in the spec; unilateral
+  changes lose that reasoning.
 - Commit after each feature (or logical sub-step within a feature).
+  Why: git history is the project's memory; small commits are reviewable and revertable.
 - Reference FR-ID in every commit message.
+  Why: traceability from commit → requirement → design decision.
 - Unit tests for deterministic logic (permissions, parsers, scheduler counters).
   Feature tests for user-facing behavior (chat, wizard, ingest).
+  Why: unit tests are fast and precise for pure functions; feature tests validate
+  the user experience end-to-end.
 
 ### Commit convention
 
