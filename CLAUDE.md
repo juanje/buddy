@@ -10,12 +10,14 @@ using BDD + TDD.
 
 ### Process (strict, every feature)
 
-1. Pick the next FR from `specs/SPEC.md` following the phase order below
-2. Write/verify the `.feature` file in `specs/features/` (Gherkin)
-3. Write step definitions in `tests/steps/` that make the feature executable
-4. Implement the code — TDD: red → green → refactor
-5. All tests pass before moving to the next feature
-6. Commit with FR-ID: `feat(scope): FR-ID description`
+1. Read `PROGRESS.md` — find the current focus (next feature to implement)
+2. Read the FR's acceptance criteria in `specs/SPEC.md`
+3. Write/verify the `.feature` file in `specs/features/` (Gherkin)
+4. Write step definitions in `tests/steps/` that make the feature executable
+5. Implement the code — TDD: red → green → refactor
+6. All tests pass before moving to the next feature
+7. Update `PROGRESS.md`: mark feature as `done`, add commit hash, set next focus
+8. Commit with FR-ID: `feat(scope): FR-ID description`
 
 ### Phase order (implement in this sequence)
 
@@ -72,6 +74,7 @@ chore: tooling, deps, config
 | `specs/features/*.feature` | Before implementing — the test you must make pass |
 | `docs/app-spec-tauri.md` | Need technical details (architecture, API patterns, data flows) |
 | `docs/app-design-principles.md` | Need to understand WHY a decision was made |
+| `PROGRESS.md` | Check current state: what's done, what's next |
 
 ## Architecture (brief)
 
