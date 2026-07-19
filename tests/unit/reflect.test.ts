@@ -60,10 +60,9 @@ describe("rebuildLogsIndex", () => {
     );
     rebuildLogsIndex(dir);
     const index = readFileSync(join(logs, "index.md"), "utf8");
-    expect(index).toContain("Log files: `logs/YYYY-MM-DD_SESSIONID.md`");
-    expect(index).toContain("2026-07-19");
+    expect(index).toContain("YYYY-MM-DD_SESSIONID.md");
+    expect(index).toContain("2026-07-19_abc:");
     expect(index).toContain("(reflect pending)");
-    expect(index).toContain("2026-07-19_abc.md");
   });
 });
 

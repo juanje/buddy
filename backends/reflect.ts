@@ -178,11 +178,13 @@ export function rebuildLogsIndex(abDirectory: string): void {
   const lines = [
     "# Session logs",
     "",
-    "Log files: `logs/YYYY-MM-DD_SESSIONID.md`",
+    "Per-session: `logs/YYYY-MM-DD_SESSIONID.md` — after daily consolidation: `logs/YYYY-MM-DD.md`.",
+    "Derive path: `logs/{stem}.md` where stem is the first field of each entry.",
     "",
-    ...entries.map(
-      (e) => `- ${e.date}: ${e.summary} (${e.file})`,
-    ),
+    ...entries.map((e) => {
+      const stem = e.file.replace(/\.md$/, "");
+      return `- ${stem}: ${e.summary}`;
+    }),
     "",
   ];
   writeFileSync(join(logsDir, "index.md"), lines.join("\n"), "utf8");
