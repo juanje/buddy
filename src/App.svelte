@@ -55,7 +55,15 @@
   }
 
   onMount(connect);
+
+  function handleWindowKeydown(event: KeyboardEvent) {
+    if (event.key === "Escape") {
+      controller?.onEscape();
+    }
+  }
 </script>
+
+<svelte:window onkeydown={handleWindowKeydown} />
 
 <main>
   {#if connectionError}
@@ -66,7 +74,7 @@
   {/if}
   {#if controller}
     <ChatView {controller} />
-    <InputBar {controller} onAbort={() => workerProxy.abort()} />
+    <InputBar {controller} onAbort={() => controller?.abort()} />
   {/if}
 </main>
 

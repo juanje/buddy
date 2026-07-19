@@ -38,6 +38,9 @@ export class AbWorld extends World {
     });
     this.controller = createChatController(this.core.api);
     controllerRef = this.controller;
+
+    // The app focuses the input bar as soon as the chat view mounts.
+    this.inputFocused = true;
   }
 
   /** Read a store value synchronously. */

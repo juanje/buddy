@@ -3,6 +3,7 @@
 // drive this controller directly. Built out feature by feature:
 //   FR-CHAT-02 input/send
 //   FR-CHAT-01 streaming display (token-by-token + typing indicator)
+//   FR-CHAT-03 abort generation (button + Escape, partial text kept)
 
 import { derived, get, writable, type Readable, type Writable } from "svelte/store";
 import type { AgentEvent, AssistantMessageEventLike, WorkerAPI } from "../../shared/api";
@@ -31,6 +32,10 @@ export interface ChatController {
 
   /** Send current input as a user message (no-op if canSend is false). */
   send(): Promise<void>;
+  /** Abort the in-flight generation. Partial text stays in the transcript. */
+  abort(): Promise<void>;
+  /** Escape key: abort while streaming, no-op when idle (FR-CHAT-03). */
+  onEscape(): Promise<void>;
   /** Route a Pi session event into the stores. */
   handleEvent(event: AgentEvent): void;
 }
@@ -61,6 +66,17 @@ export function createChatController(worker: WorkerAPI): ChatController {
     messages.update((list) => [...list, { id: nextId++, role: "user", text }]);
     input.set("");
     await worker.prompt(text);
+  }
+
+  async function abort(): Promise<void> {
+    await worker.abort();
+    // The session emits agent_end after aborting; streaming/bubble state is
+    // cleared by handleEvent. Partial text already appended stays untouched.
+  }
+
+  async function onEscape(): Promise<void> {
+    if (!get(streaming)) return; // idle → Escape does nothing
+    await abort();
   }
 
   function appendAssistantText(delta: string): void {
@@ -106,6 +122,8 @@ export function createChatController(worker: WorkerAPI): ChatController {
     showAbort,
     typingIndicator,
     send,
+    abort,
+    onEscape,
     handleEvent,
   };
 }
