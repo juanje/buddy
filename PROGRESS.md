@@ -61,7 +61,7 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 
 | FR-ID | Feature | Status | Commit |
 |-------|---------|--------|--------|
-| FR-CHAT-04 | Markdown rendering in assistant messages | done | 37b55dc |
+| FR-CHAT-04 | Markdown rendering in assistant messages | done | 19eef12 |
 
 **Phase 1 complete:** NO
 
