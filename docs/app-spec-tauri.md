@@ -137,10 +137,8 @@ const resourceLoader = new DefaultResourceLoader({
 });
 await resourceLoader.reload();
 
-// Resume last session or create new
-// Note: continueRecent() return shape must be verified in Phase 0 spike (may be async/nullable)
-const sessionManager = SessionManager.continueRecent(AB_DIR)
-    ?? SessionManager.create(AB_DIR);
+// Fresh session every launch (E5 decision: continuity via file memory, not session resume)
+const sessionManager = SessionManager.create(AB_DIR);
 
 const { session } = await createAgentSession({
     sessionManager,
@@ -617,18 +615,18 @@ async function runSingleDepth(depth: number) {
 ```
 
 **Lock management:** A unified lock file (`maintenance.lock`) prevents
-concurrent maintenance operations. Both consolidation runs and catch-up
-reflects share the same lock. The lock includes a PID and timestamp; stale
-locks (process dead or lock older than 1 hour) are automatically broken.
+concurrent maintenance operations. Consolidation runs use the lock. The lock
+includes a PID and timestamp; stale locks (process dead or lock older than
+1 hour) are automatically broken.
 
-**Catch-up reflects under the lock:** On app start, if multiple pending
-reflects have accumulated, they are processed serially under the
-maintenance lock, oldest first, max 3 per app start. Catch-up reflects
-wait for idle (no active user streaming) or defer to the first heartbeat
-tick.
+**Crash-recovery reflects:** On app start, if "reflect-pending" logs exist
+(rare — only if the background child died), background child processes are
+spawned for up to 3 pending logs. These run independently and do NOT block
+the user's session start.
 
 **Idle-awareness:** If `session.isStreaming` is true (user is actively
-interacting), maintenance operations defer until the next heartbeat tick.
+interacting), consolidation operations defer until the next heartbeat tick.
+Reflects no longer need idle-awareness since they run in separate processes.
 
 **Run journal:** Each consolidation run is logged to
 `AB_DIR/.ab-app/consolidation-log.json`:
@@ -659,9 +657,9 @@ few things that must be in Rust (OS-level integration).
 - Tray icon shows notification badge when deferred items are due
 - Double-click tray icon opens/focuses chat window
 - **Launch at login:** the app registers for launch-at-login (Tauri supports
-  this per-platform via `tauri-plugin-autostart`). On start, immediately run
-  catch-up checks (pending reflects, overdue consolidations, due deferred
-  items) rather than waiting for the first heartbeat tick
+  this per-platform via `tauri-plugin-autostart`). On start, spawn background
+  children for any pending crash-recovery reflects and check overdue
+  consolidations and deferred items
 
 ### 7. Extension UI Handling
 
@@ -1362,8 +1360,8 @@ everything in Phase 0 plus the features needed for day-one value:
 1. **First-run wizard** (location, provider, API key, model — no Ollama)
 2. **Deterministic AB setup** (dirs, templates, git init, Pi config)
 3. **Agent-driven personalization** (first conversation writes USER.md)
-4. **Reflect catch-up on start** (pending reflects from previous sessions)
-5. **Session resume** (Pi SessionManager resumes last session)
+4. **Forked reflect on close** (background child with full session context)
+5. **Fresh session every launch** (continuity via file memory, not session resume)
 6. **Deferred surfacing** (check deferred.md on start, surface due items)
 7. **System prompt assembly** (AGENTS.md + SOUL.md + USER.md + context)
 8. **Permission layer** (Zone 1 always allow with identity confirmation,
@@ -1386,7 +1384,7 @@ everything in Phase 0 plus the features needed for day-one value:
 | Value (from design principles) | Phase | How |
 |---|---|---|
 | **Day-one: conversational capture** | 1 | Chat + Pi SDK with system prompt |
-| **Day-one: continuity** | 1 | Session resume + reflect catch-up |
+| **Day-one: continuity** | 1 | Fresh session + forked reflect (background) + file memory |
 | **Day-one: simple retrieval** | 1 | Agent reads files via AGENTS.md rules |
 | **Day-one: task awareness** | 1 | Deferred surfacing on start |
 | **Day-one: personalization** | 1 | First-run wizard + agent writes USER.md |
@@ -1403,7 +1401,7 @@ everything in Phase 0 plus the features needed for day-one value:
 | Phase             | Adds                                                               | Validates                                              |
 | ----------------- | ------------------------------------------------------------------ | ------------------------------------------------------ |
 | 0 — Architecture  | Streaming chat + Pi SDK in worker                                  | "Does the Tauri + Pi SDK stack work?"                  |
-| 1 — MVP           | Reflect catch-up, session resume, deferred, wizard, permissions    | "Does it remember? Is day-one useful?"                 |
+| 1 — MVP           | Forked reflect, fresh sessions, deferred, wizard, permissions     | "Does it remember? Is day-one useful?"                 |
 | 2 — Memory        | Hebbian tracking, heartbeat, consolidation runner, notifications   | "Does automated learning change the experience?"       |
 | 3 — Polish        | Tool cards, thinking blocks, markdown, model selector, settings UI | "Does richer rendering improve the experience?"        |
 | 4 — Daemon        | System tray, launch at login, quick capture hotkey                 | "Does always-on + proactive reminders change usage?"   |
@@ -1478,7 +1476,7 @@ Decision deferred to Phase 6 scoping.
 1. **Worker runtime for MVP:** Use system Node.js (simplest) or Bun (faster startup, native compile)? Bun has better DX for this use case but is less universal.
 2. **Markdown library:** `marked` is lightweight but basic. Alternative: `markdown-it` (more extensions). For code blocks: `highlight.js` vs `shiki` (better but heavier).
 3. **Quick capture UX (Phase 6):** Global hotkey → floating window, or system tray → input field? Global hotkey is faster but has cross-platform quirks on Linux.
-4. **Session persistence across restarts:** Resume last Pi session automatically or start fresh? Pi's SessionManager supports both.
+4. **Session persistence across restarts:** **Decided (E5):** Fresh session every launch. Continuity comes from file memory (logs, identity files), not Pi session resume. `SessionManager.continueRecent()` reserved for future multi-session UI (Phase 5).
 5. **Multiple AB directories:** Support switching between instances (my-ab, wab) or one instance per app? Could use a workspace switcher in settings.
 6. **Extension UI in chat vs native dialogs:** Render confirm/select/input as chat bubbles with buttons (more cohesive) or as native OS dialogs (more noticeable)?
 
@@ -1697,7 +1695,9 @@ All critical APIs verified against Pi source code. Summary:
 |-----|--------|-------|
 | `createAgentSession()` | Confirmed | Options: `sessionManager`, `modelRuntime`, `resourceLoader`, `excludeTools`, `cwd` |
 | `SessionManager.create(cwd, sessionDir?)` | Confirmed | First param is cwd, not session path |
-| `SessionManager.continueRecent(cwd)` | Confirmed | Resumes most recent session — for session persistence |
+| `SessionManager.continueRecent(cwd)` | Confirmed | Resumes most recent session — reserved for Phase 5 multi-session |
+| `SessionManager.open(path)` | Confirmed | Opens specific session file — used by forked reflect |
+| `sm.createBranchedSession(leafId)` | Confirmed | Forks branch to new file — used for reflect without touching live session |
 | `session.subscribe(listener)` | Confirmed | Events: `agent_start/end`, `message_start/update/end`, `tool_execution_start/end`, `compaction_start/end` |
 | `session.agent.beforeToolCall` | Confirmed | Public property; chain with existing extension hooks |
 | `session.agent.afterToolCall` | Confirmed | Includes `isError` — used for Hebbian success tracking |
@@ -1712,7 +1712,8 @@ All critical APIs verified against Pi source code. Summary:
 **Key patterns for the app:**
 - System prompt: `DefaultResourceLoader({ systemPrompt: assembled })` → `createAgentSession({ resourceLoader })`
 - Bash disabled: `createAgentSession({ excludeTools: ["bash"] })`
-- Session resume: `SessionManager.continueRecent(cwd)` → falls back to `.create(cwd)` if no previous
+- Fresh session: `SessionManager.create(cwd)` every launch (E5 decision)
+- Forked reflect: `SessionManager.open(file)` + `createBranchedSession(leafId)` → separate child process
 - Hook chaining: save `session.agent.beforeToolCall`, install ours, delegate to original
 - Hebbian tracking: `afterToolCall` with `ctx.isError` check before counting
 - Event names: `compaction_start/end` (not `session_compact`); no `model_select` in subscribe events

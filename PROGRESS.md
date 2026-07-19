@@ -70,9 +70,9 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 ## Current focus
 
 > **Memory Loop Sprint complete (2026-07-19).** Auto-commit, session-end skeleton,
-> catch-up reflect, and incremental reflect (N turns + pre-compaction) shipped.
-> Test: talk → close → reopen → AB knows what happened.
-> Next: FR-INGEST-01/02 (file ingest), then consolidation/heartbeat (Phase 2).
+> forked reflect (background child process), and incremental reflect shipped.
+> Reflect uses full Pi session context via fork — no cold skeleton analysis.
+> Next: FR-INGEST-01/02 (file ingest), FR-SHELL (UI shell), then Phase 2.
 
 ### Sprint: Memory Loop — DONE
 
@@ -80,6 +80,6 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 |-------|-------|---------|--------|
 | 1 | FR-GIT-01 | Auto-commit after agent writes | done |
 | 2 | FR-SESSION-03 | Session end on app close | done |
-| 3 | FR-REFLECT-01 | Factual skeleton on session end | done |
-| 4 | FR-REFLECT-02 | Catch-up reflect on start | done |
-| 5 | FR-REFLECT-03 | Incremental mid-session reflect | done |
+| 3 | FR-REFLECT-01 | Factual skeleton (crash fallback) | done |
+| 4 | FR-REFLECT-02 | Forked reflect on session end (background child) | done |
+| 5 | FR-REFLECT-03 | Incremental mid-session reflect (background child) | done |

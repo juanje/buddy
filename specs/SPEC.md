@@ -462,7 +462,7 @@ Crash recovery (next app start):
 
 **FR-CONSOL-04 — Lock management**
 
-- **Given** a consolidation or catch-up reflect is about to run
+- **Given** a consolidation is about to run
 - **When** the runner attempts to acquire `maintenance.lock`
 - **Then** if the lock is held by another process, the run defers
 - **And** stale locks (process dead or >1 hour old) are automatically broken
@@ -885,7 +885,6 @@ git operations, tool call rendering, thinking blocks, markdown rendering.
 - App respects OS color scheme
 
 **Spike items to verify during Phase 0:**
-- `SessionManager.continueRecent()` return shape (async? nullable?)
 - Pi event names: confirm `agent_start`, `agent_end`, `message_update`, `tool_execution_start/end`, `compaction_start/end`
 - `session.abort()` behavior mid-stream
 - kkrpc bidirectional RPC through `tauri-plugin-js`
@@ -902,8 +901,8 @@ git operations, tool call rendering, thinking blocks, markdown rendering.
 - Deterministic AB setup (directories, templates, git init, Pi config)
 - Agent-driven personalization (first conversation)
 - Import existing instance (point to repo with `agent_brain/`)
-- Reflect: factual skeleton on session end + catch-up on start
-- Session resume via `SessionManager.continueRecent()`
+- Reflect: forked session + background child process (full context LLM reflect)
+- Fresh session every launch (`SessionManager.create`; continuity via file memory)
 - Deferred item surfacing on app start (in system prompt)
 - System prompt assembly (AGENTS.md + SOUL.md + USER.md + deferred + date)
 - Permission layer: Zone 1 always allow (with identity confirmation), everything else confirms in chat
@@ -955,7 +954,7 @@ AB remembers the conversation, knows their name, surfaces any pending reminders.
 | Session creation | `createAgentSession()` with `excludeTools: ["bash"]` produces a session with file tools only |
 | Event streaming | `session.subscribe()` emits expected event types in correct order |
 | Hook chaining | Custom `beforeToolCall` / `afterToolCall` are called alongside Pi extension hooks |
-| Session resume | `SessionManager.continueRecent()` restores conversation context |
+| Session fork for reflect | `SessionManager.open()` + `createBranchedSession()` produces a valid fork for background reflect |
 | Maintenance session | Separate session for consolidation doesn't interfere with the live session |
 
 ### 7.3 E2E tests (full user flows)
@@ -964,7 +963,7 @@ AB remembers the conversation, knows their name, surfaces any pending reminders.
 |------|-------|
 | Fresh install | Launch → wizard → setup → personalization → chat → close → reopen → continuity confirmed |
 | Import instance | Launch → wizard → point to existing repo → chat → agent has prior knowledge |
-| Reflect cycle | Chat → close → reopen → catch-up reflect runs → log entry exists |
+| Reflect cycle | Chat → close → background reflect runs → reopen → log entry complete |
 | Permission check | Chat → agent tries to read external file → permission prompt appears → user approves → agent reads |
 | File ingest | Drag file onto chat → send message → agent reads and discusses file content |
 
@@ -1003,5 +1002,5 @@ AB remembers the conversation, knows their name, surfaces any pending reminders.
 | **SOUL.md** | Agent character definition — stable, rarely modified, changes require user confirmation |
 | **USER.md** | User profile — updated as the agent learns about the user, changes require user confirmation |
 | **Deferred queue** | Items in `agent_brain/deferred.md` with dates — parsed by code, surfaced by heartbeat or on app start |
-| **Maintenance lock** | A lock file (`.ab-app/maintenance.lock`) preventing concurrent consolidation or catch-up reflect operations |
+| **Maintenance lock** | A lock file (`.ab-app/maintenance.lock`) preventing concurrent consolidation operations |
 | **Session-allowed paths** | Paths implicitly granted read access for the current session (from user messages or file drops) |
