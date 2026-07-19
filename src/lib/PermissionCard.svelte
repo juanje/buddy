@@ -1,7 +1,6 @@
 <script lang="ts">
-  // Inline permission prompt (FR-PERM-07): shows the operation and path,
-  // offers allow-once / deny, and shows the verdict once decided. The rest
-  // of the UI stays interactive — this is a card, not a modal.
+  // Inline permission prompt (FR-PERM-07): user-friendly description of what
+  // the agent wants to do, without exposing file paths for identity writes.
   import { t } from "./i18n";
   import type { PermissionCard } from "./chat-controller";
 
@@ -16,11 +15,14 @@
   const opLabel = $derived(
     card.request.op === "write" ? t.permissionOpWrite : t.permissionOpRead,
   );
+  const showPath = $derived(card.request.kind !== "identity-write");
 </script>
 
 <div class="permission-card" class:resolved={card.verdict !== undefined}>
   <p class="title">{title}</p>
-  <p class="detail"><strong>{opLabel}</strong> · <code>{card.request.path}</code></p>
+  {#if showPath}
+    <p class="detail"><strong>{opLabel}</strong> · <code>{card.request.path}</code></p>
+  {/if}
   {#if card.verdict === undefined}
     <div class="actions">
       <button class="allow" onclick={() => onRespond(card.request.id, true)}>

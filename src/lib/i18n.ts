@@ -41,7 +41,7 @@ export const t = {
   modelCustomLabel: "Identificador del modelo",
   modelCustomHint: "Escribe el nombre del modelo tal y como lo expone tu servicio.",
   permissionTitleOutside: "El asistente quiere acceder a un archivo fuera de su carpeta",
-  permissionTitleIdentity: "El asistente quiere modificar un archivo de su identidad",
+  permissionTitleIdentity: "El asistente quiere actualizar tu información personal",
   permissionOpRead: "Leer",
   permissionOpWrite: "Escribir",
   permissionAllowOnce: "Permitir una vez",
