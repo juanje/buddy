@@ -36,14 +36,15 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 | FR-SETUP-06 | Deterministic AB setup | done | 7871e1e |
 | FR-SETUP-07 | Agent-driven personalization | pending | |
 | FR-SETUP-08 | Import existing instance | done | 7733b0e |
-| FR-PROMPT-01 | System prompt assembly | pending | |
+| FR-PROMPT-01 | System prompt assembly | done | d7a3c12 |
+| FR-PROMPT-02 | Session-start enrichment | done | d7a3c12 |
 | FR-PERM-01 | Zone classification | pending | |
 | FR-PERM-02 | Identity file protection | pending | |
 | FR-SESSION-01 | Session resume | pending | |
 | FR-SESSION-02 | New session | pending | |
 | FR-REFLECT-01 | Factual skeleton on session end | pending | |
 | FR-REFLECT-02 | Catch-up reflect on start | pending | |
-| FR-DEFERRED-01 | Surface deferred on start | pending | |
+| FR-DEFERRED-01 | Surface deferred on start | done | d7a3c12 |
 | FR-INGEST-01 | Drag & drop file ingest | pending | |
 | FR-INGEST-02 | Attach button | pending | |
 | FR-GIT-01 | Auto-commit after writes | pending | |
