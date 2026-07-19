@@ -11,6 +11,21 @@ export interface AssembledPrompt {
   prompt: string;
   /** Due/overdue items included in the prompt (FR-DEFERRED-01 surfaces them). */
   dueItems: ParsedDeferredItem[];
+  /** True when the first-run interview instructions were included (FR-SETUP-07). */
+  personalizationPending: boolean;
+}
+
+/**
+ * A profile is still a placeholder while the Name field has no value
+ * (FR-SETUP-07). The wizard copies the template verbatim; the agent fills
+ * the name during the first conversation, which ends the interview mode.
+ */
+export function isUserProfilePlaceholder(userMd: string | undefined): boolean {
+  if (userMd === undefined) return true; // no profile at all: fresh AB
+  const nameLine = userMd.split("\n").find((line) => line.includes("**Name:**"));
+  if (!nameLine) return true;
+  const value = nameLine.slice(nameLine.indexOf("**Name:**") + "**Name:**".length).trim();
+  return value === "";
 }
 
 function readIfExists(path: string): string | undefined {
@@ -50,5 +65,21 @@ export function assembleSystemPrompt(abDirectory: string, now: Date = new Date()
     );
   }
 
-  return { prompt: sections.join("\n\n---\n\n"), dueItems };
+  const personalizationPending = isUserProfilePlaceholder(user);
+  if (personalizationPending) {
+    sections.push(
+      `# First conversation: get to know your user\n\n` +
+        `Your user profile (agent_brain/identity/USER.md) is still a placeholder. ` +
+        `This is your first conversation together. Introduce yourself briefly and ` +
+        `warmly, then get to know your user conversationally — not as a form or ` +
+        `questionnaire. Over the conversation, learn at least: their name, their ` +
+        `preferred language, their interests, and how they like you to behave ` +
+        `(tone, brevity, check-in frequency). Write each answer into ` +
+        `agent_brain/identity/USER.md as you learn it, keeping the file's ` +
+        `existing structure. Switch to their preferred language as soon as you ` +
+        `know it.`,
+    );
+  }
+
+  return { prompt: sections.join("\n\n---\n\n"), dueItems, personalizationPending };
 }

@@ -34,7 +34,7 @@ Given("an AB directory with identity files", function (this: PromptWorld) {
   );
   writeFileSync(
     join(this.abDir, "agent_brain", "identity", "USER.md"),
-    "# User\n\nName: Juanje.\n",
+    "# User profile\n\n## About\n\n- **Name:** Juanje\n",
   );
 });
 
@@ -77,7 +77,7 @@ Then("it contains the SOUL.md character definition", function (this: PromptWorld
 });
 
 Then("it contains the USER.md profile", function (this: PromptWorld) {
-  assert.match(this.assembled!.prompt, /Name: Juanje\./);
+  assert.match(this.assembled!.prompt, /\*\*Name:\*\* Juanje/);
 });
 
 Then("it contains the current date and time", function (this: PromptWorld) {
