@@ -12,6 +12,7 @@ import { RPCChannel } from "kkrpc";
 import { nodeStdioTransport } from "kkrpc/stdio";
 
 import type { AgentEvent, FrontendAPI, WorkerAPI } from "../shared/api";
+import { checkPrerequisites } from "./prereqs";
 import { defaultConfigPath, detectFirstRun } from "./setup";
 import { createWorkerCore, type PiSessionLike } from "./worker-core";
 
@@ -84,6 +85,9 @@ async function main(): Promise<void> {
       },
       async getSetupState() {
         return setupState;
+      },
+      async checkPrerequisites() {
+        return checkPrerequisites();
       },
       async shutdown() {
         await core?.api.shutdown();

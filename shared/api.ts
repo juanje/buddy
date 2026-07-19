@@ -42,21 +42,33 @@ export interface SetupConfig {
 /** Result of first-run detection against ~/.ab-app/config.json (FR-SETUP-01). */
 export type SetupState = { firstRun: true } | { firstRun: false; config: SetupConfig };
 
+/** System prerequisites report for the setup wizard (FR-SETUP-02). */
+export interface PrereqStatus {
+  gitInstalled: boolean;
+  gitVersion?: string;
+  /** Node's process.platform on the worker ("darwin" | "linux" | "win32" | …). */
+  platform: string;
+}
+
 /** Frontend calls these on the worker. */
 export interface WorkerAPI {
   prompt(text: string): Promise<void>;
   abort(): Promise<void>;
   getState(): Promise<AgentState>;
   getSetupState(): Promise<SetupState>;
+  checkPrerequisites(): Promise<PrereqStatus>;
   shutdown(): Promise<void>;
 }
 
 /**
  * Session-scoped subset of WorkerAPI: what the chat needs once an AB is
- * configured. Setup detection lives in the worker entry point because it
- * must answer before any session exists (FR-SETUP-01).
+ * configured. Setup concerns (detection, prerequisites) live in the worker
+ * entry point because they must answer before any session exists.
  */
-export type ChatWorkerAPI = Omit<WorkerAPI, "getSetupState">;
+export type ChatWorkerAPI = Pick<WorkerAPI, "prompt" | "abort" | "getState" | "shutdown">;
+
+/** Setup-scoped subset of WorkerAPI: what the wizard needs (FR-SETUP-02+). */
+export type SetupWorkerAPI = Pick<WorkerAPI, "checkPrerequisites">;
 
 /** Worker calls these on the frontend. */
 export interface FrontendAPI {

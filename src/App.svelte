@@ -38,6 +38,10 @@
       if (!connection) throw new Error("worker not connected");
       return connection.api.getSetupState();
     },
+    async checkPrerequisites() {
+      if (!connection) throw new Error("worker not connected");
+      return connection.api.checkPrerequisites();
+    },
     async shutdown() {
       await connection?.api.shutdown();
     },
@@ -117,7 +121,7 @@
     </div>
   {/if}
   {#if view === "setup"}
-    <SetupWizard />
+    <SetupWizard worker={workerProxy} />
   {:else if view === "chat" && controller}
     <ChatView bind:this={chatView} {controller} {scroll} />
     <InputBar
