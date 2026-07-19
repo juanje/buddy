@@ -14,6 +14,7 @@ import {
   SessionManager,
 } from "@earendil-works/pi-coding-agent";
 import { existsSync } from "node:fs";
+import { randomUUID } from "node:crypto";
 import { RPCChannel } from "kkrpc";
 import { nodeStdioTransport } from "kkrpc/stdio";
 
@@ -23,8 +24,15 @@ import { detectExistingAuth } from "./detect-auth";
 import { defaultAbLocation, validateLocation } from "./location";
 import { createPermissionGate } from "./permissions";
 import { checkPrerequisites } from "./prereqs";
+import { runCatchUpReflects } from "./maintenance";
+import {
+  buildCatchUpReflectPrompt,
+  buildIncrementalReflectPrompt,
+  runMaintenancePrompt,
+} from "./pi-maintenance";
 import { assembleSystemPrompt } from "./prompt";
 import { configureProviderKey } from "./provider-auth";
+import { SessionLifecycle } from "./session-lifecycle";
 import { defaultConfigPath, detectFirstRun } from "./setup";
 import { runWarmHandoff } from "./warm-handoff";
 import { createWorkerCore, type PiSessionLike } from "./worker-core";
@@ -82,6 +90,7 @@ async function main(): Promise<void> {
   let setupState = detectFirstRun(defaultConfigPath());
 
   let core: ReturnType<typeof createWorkerCore> | undefined;
+  let lifecycle: SessionLifecycle | undefined;
   // Definite assignment: set right after the channel is created below, and
   // bootSession only runs after that.
   let frontend!: FrontendAPI;
@@ -101,6 +110,19 @@ async function main(): Promise<void> {
       frontend.onWorkerError(`AB directory not found: ${abDirectory}`);
       return;
     }
+
+    await runCatchUpReflects(abDirectory, {
+      encodeReflect: async (_logPath, skeleton) =>
+        runMaintenancePrompt(abDirectory, buildCatchUpReflectPrompt(skeleton)),
+    });
+
+    const sessionId = randomUUID().slice(0, 8);
+    lifecycle = new SessionLifecycle({
+      abDirectory,
+      sessionId,
+      encodeSegment: async (segment) =>
+        runMaintenancePrompt(abDirectory, buildIncrementalReflectPrompt(segment)),
+    });
 
     const { prompt } = assembleSystemPrompt(abDirectory);
     const resourceLoader = new DefaultResourceLoader({
@@ -146,7 +168,7 @@ async function main(): Promise<void> {
       });
     }
 
-    core = createWorkerCore(sessionLike, frontend);
+    core = createWorkerCore(sessionLike, frontend, { lifecycle });
   }
 
   const transport = nodeStdioTransport();
@@ -201,6 +223,8 @@ async function main(): Promise<void> {
       async shutdown() {
         await core?.api.shutdown();
         core?.dispose();
+        core = undefined;
+        lifecycle = undefined;
       },
     },
   });

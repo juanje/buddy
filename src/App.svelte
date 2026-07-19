@@ -3,6 +3,7 @@
   // FR-CHAT-02 input/send · FR-CHAT-01 streaming · FR-CHAT-03 abort ·
   // FR-CHAT-07 auto-scroll · FR-SETUP-01 first-run wizard routing.
   import { onMount } from "svelte";
+  import { getCurrentWindow } from "@tauri-apps/api/window";
   import { createChatController, type ChatController } from "./lib/chat-controller";
   import { createScrollController } from "./lib/scroll-controller";
   import { get } from "svelte/store";
@@ -109,7 +110,32 @@
     }
   }
 
-  onMount(connect);
+  onMount(() => {
+    void connect();
+
+    let unlistenClose: (() => void) | undefined;
+    void (async () => {
+      const win = getCurrentWindow();
+      unlistenClose = await win.onCloseRequested(async (event) => {
+        event.preventDefault();
+        try {
+          await Promise.race([
+            connection?.api.shutdown(),
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error("shutdown timeout")), 2000),
+            ),
+          ]);
+        } catch {
+          // Best-effort shutdown; allow close anyway.
+        }
+        await win.close();
+      });
+    })();
+
+    return () => {
+      unlistenClose?.();
+    };
+  });
 
   // Dev-only smoke-test bridge: drive the app via POSTs to the Vite server.
   onDevCommand(async (cmd) => {

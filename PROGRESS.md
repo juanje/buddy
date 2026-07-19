@@ -47,14 +47,16 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 | FR-PERM-07 | Permission prompt in chat | done | 1031c99 |
 | FR-SESSION-01 | Fresh session on every launch | done | rework-sprint |
 | FR-SESSION-02 | New session | N/A (every launch is fresh) | |
-| FR-SESSION-03 | Session end on app close | pending | |
-| FR-REFLECT-01 | Factual skeleton on session end | pending | |
-| FR-REFLECT-02 | Catch-up reflect on start | pending | |
+| FR-SESSION-03 | Session end on app close | done | memory-loop |
+| FR-REFLECT-01 | Factual skeleton on session end | done | memory-loop |
+| FR-REFLECT-02 | Catch-up reflect on start | done | memory-loop |
+| FR-REFLECT-03 | Incremental mid-session reflect | done | memory-loop |
 | FR-DEFERRED-01 | Surface deferred on start | done | d7a3c12 |
 | FR-INGEST-01 | Drag & drop file ingest | pending | |
 | FR-INGEST-02 | Attach button | pending | |
-| FR-GIT-01 | Auto-commit after writes | pending | |
-| FR-GIT-02 | Index rebuild on session end | pending | |
+| FR-GIT-01 | Auto-commit after writes | done | memory-loop |
+| FR-GIT-02 | Git invisible to user | done | memory-loop |
+| FR-GIT-03 | Index rebuild on session end | done | memory-loop |
 | NFR-I18N | Locale module (es + en) | done | rework-sprint |
 
 ## Phase 3 — Chat polish (early)
@@ -67,21 +69,17 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 
 ## Current focus
 
-> **Memory Loop Sprint (2026-07-19).** Goal: make the app genuinely remember
-> between sessions — the core promise. After this sprint, closing and reopening
-> produces continuity.
+> **Memory Loop Sprint complete (2026-07-19).** Auto-commit, session-end skeleton,
+> catch-up reflect, and incremental reflect (N turns + pre-compaction) shipped.
+> Test: talk → close → reopen → AB knows what happened.
+> Next: FR-INGEST-01/02 (file ingest), then consolidation/heartbeat (Phase 2).
 
-### Sprint: Memory Loop
+### Sprint: Memory Loop — DONE
 
-| Order | FR-ID | Feature | Rationale |
-|-------|-------|---------|-----------|
-| 1 | FR-GIT-01 | Auto-commit after agent writes | Without this, files the agent writes don't survive restarts. Foundation for everything else. |
-| 2 | FR-SESSION-03 | Session end on app close | Clean shutdown trigger — needed before reflect can fire. |
-| 3 | FR-REFLECT-01 | Factual skeleton on session end | Deterministic capture of what happened (no LLM). Skeleton is the input for reflect. |
-| 4 | FR-REFLECT-02 | Catch-up reflect on start | LLM processes pending skeletons into log entries with decisions, lessons, context. Completes the loop. |
-| 5 | FR-REFLECT-03 | Incremental mid-session reflect | Lightweight reflect every N turns + before Pi compaction. Prevents data loss in long sessions. |
-
-**Why this grouping:** These 5 features form a closed loop. After implementing
-them, the test is: talk to AB → close → reopen → AB knows what happened.
-FR-REFLECT-03 ensures nothing is lost even in sessions that run for hours
-without closing (compaction would discard unreflected context).
+| Order | FR-ID | Feature | Status |
+|-------|-------|---------|--------|
+| 1 | FR-GIT-01 | Auto-commit after agent writes | done |
+| 2 | FR-SESSION-03 | Session end on app close | done |
+| 3 | FR-REFLECT-01 | Factual skeleton on session end | done |
+| 4 | FR-REFLECT-02 | Catch-up reflect on start | done |
+| 5 | FR-REFLECT-03 | Incremental mid-session reflect | done |

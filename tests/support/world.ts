@@ -7,6 +7,7 @@ import { get } from "svelte/store";
 
 import { FakeSession } from "./fake-session";
 import { createWorkerCore, type WorkerCore } from "../../backends/worker-core";
+import { SessionLifecycle } from "../../backends/session-lifecycle";
 import {
   createChatController,
   type ChatController,
@@ -44,19 +45,39 @@ export class AbWorld extends World {
     super(options);
   }
 
+  /** Optional AB directory for memory-loop scenarios (FR-GIT-01+). */
+  abDirectory?: string;
+  lifecycle?: SessionLifecycle;
+
   /** Background: "the app is running" + "the Pi SDK session is connected". */
-  connect(): void {
-    if (this.controller) return;
+  connect(
+    abDirectory?: string,
+    options?: { incrementalEvery?: number; force?: boolean },
+  ): void {
+    if (this.controller && !options?.force) return;
+    this.abDirectory = abDirectory;
     this.session = new FakeSession();
+
+    this.lifecycle = abDirectory
+      ? new SessionLifecycle({
+          abDirectory,
+          sessionId: "test-session",
+          incrementalEvery: options?.incrementalEvery,
+        })
+      : undefined;
 
     // Frontend side: events route straight into the controller, exactly like
     // FrontendAPI.onAgentEvent does in src/utils/agent.ts.
     let controllerRef: ChatController | undefined;
-    this.core = createWorkerCore(this.session, {
-      onAgentEvent: (event) => controllerRef?.handleEvent(event),
-      onWorkerError: () => {},
-      onPermissionRequest: (request) => controllerRef?.handlePermissionRequest(request),
-    });
+    this.core = createWorkerCore(
+      this.session,
+      {
+        onAgentEvent: (event) => controllerRef?.handleEvent(event),
+        onWorkerError: () => {},
+        onPermissionRequest: (request) => controllerRef?.handlePermissionRequest(request),
+      },
+      { lifecycle: this.lifecycle },
+    );
     // The session core lacks resolvePermission (it lives in the worker entry
     // point); the world records verdicts like the real RPC would deliver them.
     this.controller = createChatController({

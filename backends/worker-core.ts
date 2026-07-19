@@ -5,6 +5,7 @@
 // event shapes.
 
 import type { AgentEvent, AgentState, ChatWorkerAPI, FrontendAPI } from "../shared/api";
+import type { SessionLifecycle } from "./session-lifecycle";
 
 /**
  * What the session core itself implements. Permission resolution lives in
@@ -27,13 +28,23 @@ export interface PiSessionLike {
   dispose(): void;
 }
 
+export interface WorkerCoreOptions {
+  lifecycle?: SessionLifecycle;
+}
+
 export interface WorkerCore {
   api: SessionWorkerAPI;
   dispose(): void;
 }
 
-export function createWorkerCore(session: PiSessionLike, frontend: FrontendAPI): WorkerCore {
+export function createWorkerCore(
+  session: PiSessionLike,
+  frontend: FrontendAPI,
+  options?: WorkerCoreOptions,
+): WorkerCore {
+  const lifecycle = options?.lifecycle;
   const unsubscribe = session.subscribe((event) => {
+    void lifecycle?.handleEvent(event);
     frontend.onAgentEvent(event);
   });
 
@@ -51,11 +62,15 @@ export function createWorkerCore(session: PiSessionLike, frontend: FrontendAPI):
         model: undefined,
         thinkingLevel: "medium",
         isStreaming: session.isStreaming,
-        messageCount: 0,
+        messageCount: lifecycle?.tracker.turnCount ?? 0,
       };
     },
 
     async shutdown(): Promise<void> {
+      if (session.isStreaming) {
+        await session.abort();
+      }
+      await lifecycle?.shutdown();
       session.dispose();
     },
   };

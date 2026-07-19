@@ -93,6 +93,17 @@ export class FakeSession implements PiSessionLike {
     this.emit({ type: "agent_end", messages: [], willRetry: false });
   }
 
+  emitToolExecutionEnd(toolName: string, path?: string): void {
+    this.emit({
+      type: "tool_execution_end",
+      toolCall: { name: toolName, args: path ? { path } : {} },
+    });
+  }
+
+  emitCompactionStart(): void {
+    this.emit({ type: "compaction_start" });
+  }
+
   /** Convenience: stream a full assistant response in one go. */
   streamResponse(chunks: string[]): void {
     if (!this.streaming) this.beginStreaming();
