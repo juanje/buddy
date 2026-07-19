@@ -1,0 +1,527 @@
+---
+last_accessed: 2026-07-18
+access_count: 1
+created: 2026-07-18
+---
+
+# AB App — Design Principles
+
+What survives from the current AB system, what changes with the app as harness,
+and how we rethink the design with new constraints and months of validated use.
+
+This document precedes and governs the technical spec. Decisions here determine
+what the spec implements.
+
+## Core identity
+
+AB is a **personal assistant with persistent memory** that learns through use.
+It is conversational — the files are infrastructure, not interface. The user
+talks; the agent captures, organizes, remembers, and grows.
+
+### Target user (v1)
+
+Non-technical people who want a personal assistant that remembers and learns.
+The first user is someone who uses ChatGPT but has never used a code assistant,
+an IDE, or a terminal. They want a second brain they can talk to, not a
+developer tool.
+
+**This means:**
+- Git is invisible (the app manages it; the user never sees a command)
+- The interface is a chat window — nothing else is required
+- File structure is accessible but optional to understand
+- Error messages in plain language
+- No technical prerequisites beyond installing the app
+- Capture includes handing files over: drag & drop onto the chat window or
+  an attach button is the natural gesture (not typing file paths)
+
+Power users (developers) may continue with AB in Cursor/Claude Code for their
+code-centric workflows. The app serves the personal-assistant use case
+independently of coding.
+
+### AB IS
+
+- A second brain you talk to
+- A system that learns and adapts with use (not with configuration)
+- A personal knowledge and task management companion
+- Transparent: the user can read every file, understand the structure, move it
+
+### AB IS NOT
+
+- An IDE or code editor (Cursor/VS Code handle that)
+- A project management tool (doesn't replace Jira/Linear)
+- A multi-user system (one instance per person)
+- A generic stateless chatbot
+- A locked-in service (no proprietary formats, no cloud dependency)
+- A code execution environment (no terminal, no shell, no scripts)
+
+### AB CAN
+
+- Capture, organize, and prioritize tasks and ideas
+- Maintain context across sessions (projects, people, decisions, history)
+- Help write and review documents
+- Remember and notify when something is due
+- Learn patterns from use and adapt behavior over time
+- Ingest external documents into its knowledge base
+- Read files the user drops or attaches in the chat (drag & drop as the
+  primary ingest gesture for non-technical users)
+
+### AB CANNOT / MUST NOT
+
+- Execute arbitrary code or shell commands (file operations only)
+- Access data outside its scope without permission
+- Reorganize proactively without being asked
+- Make unilateral decisions about priorities (it advises; the user decides)
+- Modify its own identity without user confirmation
+- Lose data (git-backed, every capture committed)
+
+### Tool model
+
+The agent operates exclusively through **file tools**: `read`, `write`, `edit`,
+`ls`, `find`, `grep`. No `bash`. This is a deliberate security and simplicity
+decision:
+
+- **Security:** no arbitrary code execution = no prompt injection can run code
+- **Simplicity:** the permission model reduces to "which files can it access?"
+- **User trust:** the user understands "it reads and writes my notes" intuitively
+- **Sufficiency:** all AB operations (capture, organize, remember, consolidate)
+  are file operations
+
+**Future integrations** (Gmail, Calendar, web search, etc.) are implemented as
+**custom tools** registered via the Pi SDK. Each is a named, typed, scoped
+capability — not arbitrary execution. The user sees "AB can read your calendar"
+as a clear, authorized capability they can enable/disable.
+
+### Security: persistent injection threat model
+
+The distinctive risk for a memory-writing agent is **persistence**: a document
+the agent ingests could manipulate it into writing instructions into memory
+files that get loaded into every future session.
+
+**Mitigations (design-level, not just spec):**
+- Identity files (SOUL.md, USER.md) require **user confirmation** for writes,
+  even though they're inside the agent's home directory
+- The promotion pipeline's final step (observation → identity trait) is
+  **never automatic** — always proposed to the user in chat
+- Consolidation runs are logged; tainted sources are traceable
+- No bash = no code execution from injected content
+
+---
+
+## Principles that survive (harness-independent)
+
+These are validated through months of daily use. They work regardless of
+whether the harness is Cursor, Claude Code, Pi, or a custom app.
+
+### 1. File-based memory
+
+Plain files (markdown + frontmatter) in a git repo. This is non-negotiable:
+- **Portable:** move to any system that reads files
+- **Transparent:** human-readable, auditable, editable
+- **Versionable:** git gives history, branching, sync
+- **Independent:** no database, no cloud, no proprietary format
+
+### 2. Biological learning cycles
+
+Memory consolidation modeled on how brains work:
+- **Encoding** — capture during experience (reflect)
+- **Consolidation** — organize during rest (daily)
+- **Calibration** — adjust strength over time (weekly)
+- **Pruning** — forget what's no longer relevant (monthly)
+
+The number of cycles or their names may change; the principle of
+**progressive consolidation with increasing time horizons** stays.
+
+### 3. Hebbian reinforcement
+
+"Neurons that fire together wire together." Applied to files:
+- What gets consulted becomes more prominent (promotion)
+- What stops being consulted fades (demotion)
+- Strength = f(access frequency, recency, connectivity)
+
+The measurement mechanism changes (code vs LLM-tracked); the principle stays.
+
+### 4. Progressive disclosure
+
+Never load everything into context. Navigate by layers:
+- Start with what's immediately relevant (active context)
+- Drill down on demand through indexes
+- Keep the context window lean and focused
+
+### 5. Separation of concerns
+
+Two spaces with different ownership:
+- `user/` — the user's world (tasks, drafts, journal, wiki)
+- `agent_brain/` — what the agent learns (concepts, skills, projects, identity)
+
+The user never needs to touch `agent_brain/` directly. The agent never
+reorganizes `user/` without being asked.
+
+### 6. Observation → pattern → concept → rule → character
+
+The promotion pipeline that makes AB learn:
+1. Something happens once → noted in session log
+2. It happens again → observation (tracked with count)
+3. Pattern confirmed (2+ occurrences) → concept or skill created
+4. Concept proves useful over time → elevated in visibility
+5. Fundamental truths → integrated into identity (SOUL)
+
+### 7. Write it or lose it
+
+If the agent says "I'll remember that" — it must write it to a file
+AND commit it. Memory that isn't persisted doesn't survive sessions.
+In the app: the worker enforces this (post-write commit).
+
+### 8. Usage-based triggers
+
+Maintenance runs based on **actual use**, not wall-clock:
+- "Daily" fires after enough new content, not at 23:00
+- "Weekly" fires after enough dailies, not on Friday
+- Vacation doesn't advance counters
+
+This prevents empty maintenance cycles and ensures consolidation
+has material to work with.
+
+### 9. Capture over perfection
+
+Rough capture now > lost information. Triage and refinement come later.
+The system is designed to be messy at the capture layer and progressively
+organized through the consolidation cycles.
+
+### 10. The agent is conversational
+
+The real interface is chat. Files are infrastructure the agent manages.
+The user doesn't need to know the file structure to use AB — they talk,
+and the agent handles the rest. (But they CAN read the files if they want.)
+
+---
+
+## Design primitive: human-readable, machine-managed
+
+A key tension in the new app: we want to move more logic to code (deterministic,
+token-efficient, reliable) without losing the transparency and portability that
+make AB trustworthy.
+
+**The rule:** every piece of state must be **human-readable** (inspectable in a
+text editor or file browser) even if it's **machine-managed** (written and
+maintained by code, not by the LLM).
+
+| State | Format | Why |
+|-------|--------|-----|
+| Session logs | Markdown | Humans read these; they're the narrative record |
+| Session index | Markdown (with structured frontmatter) | Navigable by human; parsed by code via frontmatter |
+| Observations | Markdown (structured sections) | The user should see what patterns AB is tracking |
+| Deferred items | Markdown (with parseable date markers) | User can edit/add items in any editor |
+| Hebbian metadata | YAML frontmatter in each file | Visible in every file; code updates it silently |
+| App config | JSON (`~/.ab-app/config.json`) | Standard, readable, editable |
+| Scheduler state | JSON | Operational; user rarely needs to inspect |
+
+**What this means in practice:**
+- No SQLite for anything the user might want to audit
+- No binary formats for memory state
+- Frontmatter-with-markdown is the universal format: machine-parseable header + human-readable body
+- Code reads/writes the frontmatter; the LLM reads/writes the body
+- The system remains fully functional if you move it to another tool that reads markdown files
+
+**Portability test:** "Can I take this directory, open it in Cursor with the
+CLAUDE.md rules, and keep working?" — must always be YES. The app adds
+convenience (scheduler, notifications, UI) but is never required.
+
+---
+
+## What changes with the app as harness
+
+### Constraints that disappear
+
+| Old constraint | Why it existed | Gone because |
+|---|---|---|
+| CLAUDE.md as system prompt filename | Cursor/Claude convention | We control the system prompt in code |
+| .cursor/hooks/ with Python scripts | Editor hook system | Worker TS manages lifecycle directly |
+| Spawning separate CLI processes for maintenance | No in-process access to agent | SDK gives direct session control |
+| "Remember to run /daily" (manual triggers) | No scheduler | Heartbeat handles it |
+| 18 behavioral rules in natural language | LLM needs instructions | Many become code enforcement |
+| Trust file for project directory | Pi/Cursor security model | App always trusts its own AB dir |
+| Platform-specific hook configs (.cursor vs .claude vs .codex) | Multi-editor support | One platform: the app |
+
+### What moves from "instructions" to "code"
+
+These are things currently expressed as natural language rules that the LLM
+sometimes forgets or misapplies. In the app, they become **enforced behavior**:
+
+| Behavior | Today (rule/instruction) | Tomorrow (code) |
+|---|---|---|
+| Track file access (Hebbian) | Rule: "increment access_count when you consult" | Worker intercepts read tool calls, updates frontmatter |
+| Commit after captures | Rule: "commit regularly" | Worker auto-commits after agent write operations |
+| Resolve night-owl dates | Rule: paragraph explaining the logic | `resolveSubjectiveDate(timestamp, userPrefs)` |
+| Don't read files preemptively | Rule: "access on demand when trigger matches" | Context budget managed by code; agent gets summary, drills on request |
+| Route captures correctly | Rule: "user acts → user/, agent learns → agent_brain/" | Routing validated by permission layer; agent proposes, code verifies path |
+| Session indexing | Rule: "update logs/index.md" | Worker writes index entry automatically on session start/end |
+| Maintenance scheduling | Hook checks thresholds on session start | Heartbeat with usage-based counters (not calendar) |
+| Deferred item surfacing | Hook injects at session start | Worker checks on start + heartbeat interval |
+
+### What stays as LLM guidance (requires judgment)
+
+These cannot become code — they need the LLM's reasoning:
+
+- How to summarize a conversation (reflect quality)
+- What observations to extract from a session
+- When to promote an observation to a concept
+- How to write journal entries with appropriate tone
+- What connections to make between concepts
+- How to triage inbox items (urgency, context, routing)
+- How to interact with the user (tone, depth, pushback)
+- Whether something is a task vs context vs idea
+- When to ask vs when to act
+
+---
+
+## Rethinking maintenance cycles
+
+### Current: 4 distinct cycles
+
+```
+reflect → daily → weekly → monthly
+(encode)  (consolidate) (calibrate) (prune)
+```
+
+Each is a separate skill with its own procedure, triggered independently.
+
+### Proposed: consolidation as a single parameterized process
+
+The app controls timing. The LLM does the thinking. Instead of 4 skills
+with overlapping logic, one consolidation process with configurable **depth**:
+
+```
+depth 0 — Reflect (on session end):
+  - Log the conversation (decisions, tasks, lessons, context)
+  - Extract observations
+  - Commit
+
+depth 1 — Daily (after enough sessions):
+  - Run depth 0 if needed (cascade)
+  - Synthesize day summary
+  - Journal entry
+  - Surface observations with 2+ occurrences → create concepts
+  - Hebbian adjustments (hot files)
+  - Check deferred queue
+
+depth 2 — Weekly (after enough depth-1 runs):
+  - Run depth 1 if needed (cascade)
+  - Weekly synthesis
+  - Broader Hebbian calibration
+  - Review ideas lifecycle
+  - Link hygiene
+  - Generalization pass
+
+depth 3 — Monthly (after enough depth-2 runs):
+  - Run depth 2 if needed (cascade)
+  - Archive old logs
+  - Monthly journal synthesis
+  - Depth reorganization
+  - Prune unused skills
+  - Identity evolution (observation → rule → character)
+```
+
+**Key change:** the worker decides WHEN to consolidate (usage-based counters).
+The LLM decides HOW (content of the consolidation). This separates timing
+(deterministic, code) from thinking (LLM).
+
+**Cascade is automatic:** if weekly is due, the worker checks if daily was
+done; if not, it runs depth 1 first, then depth 2. No more "the weekly skill
+checks if daily ran and does it first" — that's worker logic now.
+
+### What the worker handles (code, no tokens)
+
+- Count sessions since last consolidation at each depth
+- Check if new content exists (git diff since last run)
+- Cascade ordering
+- Lock management (don't run two consolidations simultaneously)
+- Session state (in-progress, completed, failed)
+- Auto-commit after consolidation
+- Log the run in the session index
+
+### What the LLM handles (judgment, uses tokens)
+
+- Read recent logs and extract meaning
+- Write synthesis (summaries, journal entries)
+- Decide what observations to promote
+- Create new concepts/skills from patterns
+- Evaluate what to demote/prune
+- Make connections between ideas
+
+---
+
+## Rethinking Hebbian tracking
+
+### Current: LLM responsibility + honor system
+
+Rules say "increment access_count when you consult a file." The LLM sometimes
+forgets, sometimes double-counts, and the data is unreliable.
+
+### Proposed: code-enforced, transparent via frontmatter
+
+The worker intercepts every `read` tool call. If the file has frontmatter with
+`access_count`, the worker:
+1. Increments `access_count`
+2. Updates `last_accessed` to today
+3. Writes the updated frontmatter back
+4. Passes the file content to the LLM as normal
+
+**Exclusions** (managed by code, not by LLM judgment):
+- Files opened only for editing (write tool, not read)
+- Structural files (indexes, SOUL.md, USER.md — always loaded, not "consulted")
+- The same file read multiple times in one turn (count once per session)
+
+**Promotion/demotion logic** (runs during consolidation):
+- Worker provides the LLM with a sorted list: "These files were consulted N
+  times in the last M sessions. These files haven't been touched in P sessions."
+- LLM decides what to promote/demote based on that data + semantic relevance
+- Worker validates the changes (e.g., can't promote to Active context if
+  access_count < threshold)
+
+**The frontmatter stays human-visible.** Anyone can open a file and see
+`access_count: 12, last_accessed: 2026-07-18` right at the top.
+
+---
+
+## Rethinking the file structure
+
+### Naming: `agent_brain/` stays (decided)
+
+The name `agent_brain/` is a deliberate design choice — it makes the
+separation between agent space and user space immediately clear when
+browsing the filesystem. Users (even non-technical ones) can understand
+"this folder is the agent's brain, that folder is mine."
+
+### App-native conventions
+
+```
+AGENTS.md          ← minimal fallback for Cursor/Claude compatibility
+agent_brain/       ← agent's space (unchanged name)
+  identity/
+    SOUL.md        ← character, never auto-modified
+    USER.md        ← user profile, updated by agent with confirmation
+  concepts/
+  projects/
+  skills/
+  ideas/
+  observations.md  ← still markdown, structured sections
+  deferred.md      ← still markdown, parseable date markers
+user/              ← user's space (unchanged)
+logs/              ← session records (unchanged format)
+  index.md         ← markdown with structured frontmatter per entry
+```
+
+**Backward compatibility:** a minimal `AGENTS.md` stays in the repo root. It
+contains the core behavioral rules that allow any AI editor (Cursor, Claude
+Code) to operate on the repo with basic functionality. The app assembles a
+richer system prompt from code + files, but the repo is never broken if
+opened elsewhere.
+
+**Platform artifacts:** `.cursor/`, `.codex/`, `.claude/` are irrelevant to
+the app and ignored. They may exist in imported instances — the app doesn't
+touch them.
+
+---
+
+## Rethinking reflect (encoding)
+
+### Current: LLM writes entire log
+
+The LLM reads the conversation transcript, decides what's important, and
+writes the log entry (Decisions, Tasks, Lessons, Context, Open threads).
+
+### Proposed: code captures structure, LLM adds analysis
+
+```
+Worker (code, no LLM):
+  - Save raw conversation to session archive (append-only JSONL)
+  - Extract structured facts: timestamps, files written, files read,
+    tool calls made, git commits
+  - Write skeleton log entry with factual metadata
+
+LLM (judgment, depth):
+  - Read the skeleton + recent conversation
+  - Add: Decisions (with reasoning), Lessons, Context, Open threads
+  - Extract observations for the pipeline
+  - Propose Active context patches (if interactive session)
+```
+
+**Benefit:** the factual record is never lost (code captures it deterministically).
+The LLM adds the interpretive layer. If the LLM fails or is interrupted, you
+still have the raw session data + the factual skeleton.
+
+**Incremental reflect** during long sessions (the "every 10 messages" pattern):
+- Worker counts messages; at threshold, invokes a lightweight reflect
+- Uses a **separate, cheaper model** (or lower thinking level) for mid-session
+  reflects — they're just encoding, not deep analysis
+- Full reflect at session end uses the configured model at full depth
+
+---
+
+## Product scope for v1
+
+Based on months of real use by multiple people, what does an MVP need to
+actually feel useful? Not "what does the current system do" — what does a
+user need on day one to get value?
+
+### Day-one value (MVP must have)
+
+1. **Conversational capture** — talk, and it remembers (tasks, decisions, ideas)
+2. **Continuity** — next session starts where the last one left off
+3. **Simple retrieval** — "what was that decision about X?" and it finds it
+4. **Task awareness** — knows what's pending, can remind you
+5. **Personalization** — learns your name, preferences, context over time
+
+### Week-one value (validates retention)
+
+6. **Consolidation** — the agent summarizes and organizes without being asked
+7. **Pattern recognition** — starts noticing repeated themes, suggests concepts
+8. **Proactive surfacing** — "you mentioned X three days ago, is that still open?"
+
+### Month-one value (validates the learning premise)
+
+9. **Adapted behavior** — the agent is measurably different from week 1
+10. **Knowledge base** — accumulated wisdom that saves time
+11. **Trusted memory** — the user stops keeping mental notes because AB has them
+
+### Explicitly NOT in v1
+
+- Wiki ingest (power feature, not onboarding)
+- Draft review (requires style guide setup)
+- Multi-instance management (one brain per user for now)
+- Voice input (Phase 4+)
+- Mobile access (Phase 4+)
+
+---
+
+## Resolved design decisions
+
+1. **System prompt:** Hybrid — base behavioral rules in `AGENTS.md` (portable,
+   versioned, works in other editors as fallback). The worker loads it and
+   enriches with dynamic context (active context, deferred items, user prefs)
+   at session start. NOT per-turn (too expensive). User can edit AGENTS.md
+   directly for customization; the app never overwrites it.
+
+2. **Consolidation isolation:** Separate Pi session for depth >= 1. The user's
+   live session is never contaminated by consolidation output. The worker
+   spawns a maintenance session via `SessionManager`, runs consolidation, then
+   disposes it. If the user is streaming, consolidation defers until idle.
+
+3. **Backward compatibility:** AGENTS.md stays in the repo. Minimal but
+   functional — a user who opens the repo in Cursor/Claude Code gets basic AB
+   behavior. The app adds the full experience (scheduler, notifications,
+   Hebbian tracking, etc.) but the repo is self-contained.
+
+4. **Observations format:** Keep as one flat file with structured markdown
+   sections. Splitting into per-observation files adds complexity without clear
+   benefit — the file is small, human-readable, and easy to parse by code.
+
+5. **Identity files:** Keep SOUL.md + USER.md separate. SOUL defines character
+   (stable, rarely changes). USER defines the person (updates as the agent
+   learns). Both require user confirmation for modifications (C2 security).
+
+6. **LLM providers (v1):** Anthropic, Google Gemini, OpenAI only. No local
+   models until we verify which ones reliably follow AB's memory procedures.
+
+7. **Tool set:** File tools only (read, write, edit, ls, find, grep). No bash.
+   Future capabilities added as custom Pi SDK tools — typed, scoped, auditable.
