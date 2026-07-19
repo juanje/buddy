@@ -1,15 +1,15 @@
-# FR-REFLECT-02 — Catch-up reflect on start
+# FR-REFLECT-02 — Crash recovery spawns reflect for pending logs
 
-Feature: Catch-up reflect on start
+Feature: Crash recovery spawns reflect for pending logs
   As a user
-  I want pending session logs processed when the app starts
-  So that long-term memory is enriched without manual work
+  I want pending session logs detected when the app starts
+  So that background reflect children can enrich long-term memory
 
   Background:
     Given an initialized AB git repository
 
-  Scenario: Pending reflect is marked complete on catch-up
+  Scenario: Pending reflect is detected and spawn contract is satisfied at boot
     Given a pending session log exists
-    When catch-up reflect runs
-    Then the session log status is "complete"
-    And the session log contains "Reflect summary"
+    When crash recovery runs at boot
+    Then pending reflects are detected
+    And a reflect child spawn is requested for each pending log

@@ -8,8 +8,9 @@ import { dirname, join } from "node:path";
 import { simpleGit } from "simple-git";
 
 import { createAbInstance, defaultTemplatesDir } from "../../backends/create-ab";
-import { runCatchUpReflects } from "../../backends/maintenance";
-import { parseFrontmatter, saveSessionSkeleton } from "../../backends/reflect";
+import { findPendingReflects, parseFrontmatter, saveSessionSkeleton } from "../../backends/reflect";
+import { runCrashRecoveryCatchUp } from "../../backends/reflect-recovery";
+import type { SpawnReflectOptions } from "../../backends/reflect-spawn";
 import { SessionTracker } from "../../backends/session-tracker";
 import type { SetupConfig } from "../../shared/api";
 import type { AbWorld } from "../support/world";
@@ -17,6 +18,7 @@ import type { AbWorld } from "../support/world";
 interface MemoryWorld extends AbWorld {
   memoryTmpDir?: string;
   abDir?: string;
+  spawnCalls?: SpawnReflectOptions[];
 }
 
 After(function (this: MemoryWorld) {
@@ -77,10 +79,27 @@ When("the app shuts down", async function (this: MemoryWorld) {
   await this.core.api.shutdown();
 });
 
-When("catch-up reflect runs", async function (this: MemoryWorld) {
-  await runCatchUpReflects(this.abDir!, {
-    encodeReflect: async () => "### Context\nTest reflect.\n\n### Open threads\n- none",
+When("crash recovery runs at boot", function (this: MemoryWorld) {
+  this.spawnCalls = [];
+  runCrashRecoveryCatchUp(this.abDir!, (options) => {
+    this.spawnCalls!.push(options);
+    return 12345;
   });
+});
+
+Then("pending reflects are detected", function (this: MemoryWorld) {
+  const pending = findPendingReflects(this.abDir!);
+  assert.ok(pending.length > 0, "expected at least one reflect-pending log");
+});
+
+Then("a reflect child spawn is requested for each pending log", function (this: MemoryWorld) {
+  const pending = findPendingReflects(this.abDir!);
+  assert.equal(this.spawnCalls?.length ?? 0, pending.length);
+  for (const call of this.spawnCalls ?? []) {
+    assert.equal(call.mode, "crash-catchup");
+    assert.equal(call.abDirectory, this.abDir);
+    assert.ok(call.logPath.endsWith(".md"));
+  }
 });
 
 When("compaction starts", async function (this: MemoryWorld) {

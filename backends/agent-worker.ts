@@ -23,8 +23,7 @@ import { defaultAbLocation, validateLocation } from "./location";
 import { createPermissionGate } from "./permissions";
 import { alignHttpDispatcherWithPi } from "./pi-http-dispatcher";
 import { checkPrerequisites } from "./prereqs";
-import { findPendingReflects } from "./reflect";
-import { spawnReflectChild } from "./reflect-spawn";
+import { runCrashRecoveryCatchUp } from "./reflect-recovery";
 import { assembleSystemPrompt } from "./prompt";
 import { configureProviderKey } from "./provider-auth";
 import { SessionLifecycle } from "./session-lifecycle";
@@ -49,24 +48,6 @@ function asPiSessionLike(session: {
     },
     dispose: () => session.dispose(),
   };
-}
-
-/**
- * Crash recovery: spawn background children for any reflect-pending logs
- * that weren't processed (rare — only if the child process died or the app crashed).
- * Non-blocking: spawns and returns immediately.
- */
-function runCrashRecoveryCatchUp(abDirectory: string): void {
-  const pending = findPendingReflects(abDirectory);
-  for (const item of pending.slice(0, 3)) {
-    console.error("[agent-worker] crash recovery: spawning reflect for", item.path);
-    spawnReflectChild({
-      abDirectory,
-      forkedSessionFile: "",
-      logPath: item.path,
-      mode: "crash-catchup",
-    });
-  }
 }
 
 async function main(): Promise<void> {
@@ -99,7 +80,10 @@ async function main(): Promise<void> {
       return;
     }
 
-    runCrashRecoveryCatchUp(abDirectory);
+    const spawned = runCrashRecoveryCatchUp(abDirectory);
+    for (const item of spawned) {
+      console.error("[agent-worker] crash recovery: spawning reflect for", item.logPath);
+    }
 
     const sessionId = randomUUID().slice(0, 8);
     lifecycle = new SessionLifecycle({
