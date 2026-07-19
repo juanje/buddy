@@ -7,7 +7,11 @@
 // Not here yet: system prompt assembly, permission layer, scheduler —
 // those arrive later in Phase 1/2.
 
-import { createAgentSession } from "@earendil-works/pi-coding-agent";
+import {
+  createAgentSession,
+  DefaultResourceLoader,
+  getAgentDir,
+} from "@earendil-works/pi-coding-agent";
 import { RPCChannel } from "kkrpc";
 import { nodeStdioTransport } from "kkrpc/stdio";
 
@@ -15,6 +19,7 @@ import type { AgentEvent, FrontendAPI, WorkerAPI } from "../shared/api";
 import { adoptAbInstance, createAbInstance } from "./create-ab";
 import { defaultAbLocation, validateLocation } from "./location";
 import { checkPrerequisites } from "./prereqs";
+import { assembleSystemPrompt } from "./prompt";
 import { configureProviderKey } from "./provider-auth";
 import { defaultConfigPath, detectFirstRun } from "./setup";
 import { createWorkerCore, type PiSessionLike } from "./worker-core";
@@ -78,8 +83,20 @@ async function main(): Promise<void> {
 
   async function bootSession(abDirectory: string): Promise<void> {
     if (core) return; // already running (setup completing twice is a no-op)
+
+    // FR-PROMPT-01/02: the system prompt is assembled from the AB's own
+    // files (AGENTS.md, SOUL.md, USER.md, due deferred items, current date).
+    const { prompt } = assembleSystemPrompt(abDirectory);
+    const resourceLoader = new DefaultResourceLoader({
+      cwd: abDirectory,
+      agentDir: getAgentDir(),
+      systemPromptOverride: () => prompt,
+    });
+    await resourceLoader.reload();
+
     const { session } = await createAgentSession({
       cwd: abDirectory,
+      resourceLoader,
       excludeTools: ["bash"], // file-only tool set (NFR-SEC-01)
     });
     core = createWorkerCore(asPiSessionLike(session), frontend);

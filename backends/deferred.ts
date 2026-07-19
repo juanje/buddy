@@ -1,0 +1,42 @@
+// backends/deferred.ts — deferred queue parsing (FR-DEFERRED-01).
+// Entry format (templates/agent_brain/deferred.md):
+//   - **type** (YYYY-MM-DD, source): description.
+// Types: reminder | decision | info | review. Sources: daily | weekly |
+// monthly | user. Unparseable lines are ignored — the queue is written by
+// the LLM during autonomous cycles, so tolerance beats strictness.
+
+export interface ParsedDeferredItem {
+  type: string;
+  dueDate: string; // YYYY-MM-DD
+  source: string;
+  text: string;
+}
+
+const ENTRY_RE = /^-\s+\*\*(\w+)\*\*\s+\((\d{4}-\d{2}-\d{2}),\s*(\w+)\):\s*(.+)$/;
+
+export function parseDeferredItems(markdown: string): ParsedDeferredItem[] {
+  const items: ParsedDeferredItem[] = [];
+  for (const line of markdown.split("\n")) {
+    const match = ENTRY_RE.exec(line.trim());
+    if (match) {
+      items.push({ type: match[1], dueDate: match[2], source: match[3], text: match[4].trim() });
+    }
+  }
+  return items;
+}
+
+/** Items due on or before `today` (YYYY-MM-DD lexicographic compare works). */
+export function dueDeferredItems(
+  items: ParsedDeferredItem[],
+  today: string,
+): ParsedDeferredItem[] {
+  return items.filter((item) => item.dueDate <= today);
+}
+
+/** Format a Date as local YYYY-MM-DD. */
+export function toIsoDay(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
