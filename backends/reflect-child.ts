@@ -15,8 +15,10 @@ import {
 } from "@earendil-works/pi-coding-agent";
 
 import { existsSync, readFileSync } from "node:fs";
-import type { AgentEvent, AssistantMessageEventLike } from "../shared/api";
+import type { AgentEvent } from "../shared/api";
 import { commitAll } from "./git";
+import { alignHttpDispatcherWithPi } from "./pi-http-dispatcher";
+import { collectAssistantText } from "./pi-utils";
 import { markReflectComplete, rebuildLogsIndex } from "./reflect";
 
 const SESSION_END_PROMPT = `You are a memory consolidation agent. Analyze this session and produce a structured reflect with these sections:
@@ -48,36 +50,13 @@ Anything worth remembering from this segment.
 
 Be very concise — this is an incremental snapshot, not a full reflect.`;
 
-function collectAssistantText(events: AgentEvent[]): string {
-  let text = "";
-  for (const event of events) {
-    if (event.type !== "message_update") continue;
-    const sub = event.assistantMessageEvent as AssistantMessageEventLike | undefined;
-    if (sub?.type === "text_delta" && typeof sub.delta === "string") {
-      text += sub.delta;
-    }
-  }
-  return text.trim();
-}
-
-async function alignHttpDispatcher(): Promise<void> {
-  try {
-    const entryUrl = import.meta.resolve("@earendil-works/pi-coding-agent");
-    const dispatcherUrl = entryUrl.replace(/dist\/index\.js$/, "dist/core/http-dispatcher.js");
-    const { configureHttpDispatcher } = await import(dispatcherUrl);
-    configureHttpDispatcher();
-  } catch {
-    // Non-fatal in reflect child
-  }
-}
-
 async function runReflect(
   abDirectory: string,
   forkedSessionFile: string,
   logPath: string,
   mode: string,
 ): Promise<void> {
-  await alignHttpDispatcher();
+  await alignHttpDispatcherWithPi();
 
   const systemPrompt = mode === "incremental" ? INCREMENTAL_PROMPT : SESSION_END_PROMPT;
 

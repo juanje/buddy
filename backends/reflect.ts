@@ -4,6 +4,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync
 import { join } from "node:path";
 
 import type { SessionSegment, SessionTrackerSnapshot } from "./session-tracker";
+import { toIsoDay } from "../shared/dates";
 
 export interface PendingReflect {
   path: string;
@@ -11,11 +12,8 @@ export interface PendingReflect {
   sessionId: string;
 }
 
-export function isoDay(date: Date): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
+function isoDay(date: Date): string {
+  return toIsoDay(date);
 }
 
 export function formatToolCalls(toolCalls: SessionTrackerSnapshot["toolCalls"]): string {

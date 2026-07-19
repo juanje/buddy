@@ -2,10 +2,8 @@
 // Spawned by tauri-plugin-js inside the Tauri app. Detects first run
 // (FR-SETUP-01), creates a real Pi SDK session in the configured AB directory
 // (excludeTools: ["bash"]) and exposes WorkerAPI to the frontend over kkrpc
-// stdio transport.
-//
-// Not here yet: system prompt assembly, permission layer, scheduler —
-// those arrive later in Phase 1/2.
+// stdio transport. Includes permission layer, system prompt assembly,
+// auto-commit lifecycle, and forked reflect on shutdown.
 
 import {
   createAgentSession,
@@ -23,6 +21,7 @@ import { adoptAbInstance, createAbInstance } from "./create-ab";
 import { detectExistingAuth } from "./detect-auth";
 import { defaultAbLocation, validateLocation } from "./location";
 import { createPermissionGate } from "./permissions";
+import { alignHttpDispatcherWithPi } from "./pi-http-dispatcher";
 import { checkPrerequisites } from "./prereqs";
 import { findPendingReflects } from "./reflect";
 import { spawnReflectChild } from "./reflect-spawn";
@@ -50,31 +49,6 @@ function asPiSessionLike(session: {
     },
     dispose: () => session.dispose(),
   };
-}
-
-/**
- * Align global fetch and undici dispatcher on Pi's own undici copy, exactly
- * like the pi CLI does at startup (cli.ts → configureHttpDispatcher()).
- *
- * Without this, on Node >= 26 the builtin fetch consumes compressed API
- * responses through npm undici's dispatcher WITHOUT decompressing them, so the
- * SSE parser sees gzip bytes and every assistant reply arrives empty (0 tokens,
- * no message_update events). Pi only applies the fix in its CLI/RPC entry
- * points; the SDK neither calls nor exports it, so embedders must do it.
- *
- * The exports map of pi-coding-agent doesn't expose the module, hence the
- * file-path import into dist/. If a future Pi version moves the file, we log
- * and continue (a fixed SDK would make this unnecessary).
- */
-async function alignHttpDispatcherWithPi(): Promise<void> {
-  try {
-    const entryUrl = import.meta.resolve("@earendil-works/pi-coding-agent");
-    const dispatcherUrl = entryUrl.replace(/dist\/index\.js$/, "dist/core/http-dispatcher.js");
-    const { configureHttpDispatcher } = await import(dispatcherUrl);
-    configureHttpDispatcher();
-  } catch (err) {
-    console.error("[agent-worker] could not configure Pi http dispatcher:", err);
-  }
 }
 
 /**
