@@ -32,7 +32,7 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 | FR-SETUP-02 | Language selection | done | rework-sprint |
 | FR-SETUP-03 | Welcome screen | done | rework-sprint |
 | FR-SETUP-04 | Location picker | done | e3ce95e |
-| FR-SETUP-05 | Provider authentication (OAuth primary) | done | 6f95907 |
+| FR-SETUP-05 | Provider authentication (OAuth primary) | done | da071a6 |
 | FR-SETUP-06 | Model selection | done | ada10c4 |
 | FR-SETUP-07 | Personalization form (name + about) | done | rework-sprint |
 | FR-SETUP-08 | Deterministic AB setup (populate USER.md from form) | done | rework-sprint |
@@ -83,7 +83,7 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 
 | FR-ID | Feature | Status | Commit |
 |-------|---------|--------|--------|
-| FR-SETUP-05 | OAuth primary + API key fallback + live model list | done | 6f95907 |
+| FR-SETUP-05 | OAuth primary + API key fallback + live model list | done | da071a6 |
 
 Also: `ProviderStep` / `ModelStep` wizard components; `OAuthService` worker wrapper;
 `provider-mapping.ts` (ab-app ↔ Pi SDK ids); BDD `setup-oauth.feature` (3 scenarios).
