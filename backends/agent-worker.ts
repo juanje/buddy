@@ -112,8 +112,15 @@ async function main(): Promise<void> {
     }
 
     await runCatchUpReflects(abDirectory, {
-      encodeReflect: async (_logPath, skeleton) =>
-        runMaintenancePrompt(abDirectory, buildCatchUpReflectPrompt(skeleton)),
+      encodeReflect: async (_logPath, skeleton) => {
+        console.log("[agent-worker] running catch-up reflect for:", _logPath);
+        try {
+          return await runMaintenancePrompt(abDirectory, buildCatchUpReflectPrompt(skeleton));
+        } catch (err) {
+          console.error("[agent-worker] catch-up reflect failed:", err);
+          return "### Context\n(Catch-up reflect failed — will retry next session.)";
+        }
+      },
     });
 
     const sessionId = randomUUID().slice(0, 8);
