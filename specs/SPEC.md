@@ -151,13 +151,16 @@ AB File System (git repo)
 - **When** they accept the default (`~/my-ab`) or choose a custom path
 - **Then** the path is validated (doesn't exist or is empty) and stored
 
-**FR-SETUP-04 — Provider and API key**
+**FR-SETUP-04 — Provider authentication**
 
 - **Given** the user is on the provider step
 - **When** they select a provider (Anthropic, OpenAI, Google, or OpenAI-compatible)
-- **Then** an API key input appears
-- **And** the key is validated with a test API call before proceeding
-- **And** the key is stored in `~/.pi/agent/auth.json` with restrictive file permissions
+- **Then** an OAuth "Sign in" button appears as the primary option
+- **And** an "I have an API key" link shows the key input as a secondary option
+- **And (OAuth path)** clicking "Sign in" opens the browser for OAuth authentication
+- **And (OAuth path)** tokens are stored in `~/.pi/agent/auth.json` upon successful login
+- **And (API key path)** the key is validated with a test API call before proceeding
+- **And (API key path)** the key is stored in `~/.pi/agent/auth.json` with restrictive file permissions
 
 **FR-SETUP-05 — Model selection**
 
@@ -193,23 +196,20 @@ AB File System (git repo)
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-SESSION-01 | Resume last session on start | 1 |
-| FR-SESSION-02 | Start new session | 5 |
+| FR-SESSION-01 | Fresh session on every launch | 1 |
+| FR-SESSION-02 | (removed — every launch is inherently fresh) | — |
 | FR-SESSION-03 | Session end on app close | 1 |
 
-**FR-SESSION-01 — Resume last session**
+**FR-SESSION-01 — Fresh session on every launch**
 
-- **Given** the app starts and a previous session exists
+- **Given** the app starts and a configured AB directory exists
 - **When** the worker initializes
-- **Then** the most recent Pi session is resumed via `SessionManager.continueRecent()`
-- **And** the user sees prior context preserved (agent remembers the conversation)
+- **Then** a new Pi session is created via `SessionManager.create()`
+- **And** the system prompt provides all continuity (assembled from identity files, logs, deferred)
+- **And** no prior conversation history is carried over (memory is in files, not chat context)
 
-**FR-SESSION-02 — Start new session**
-
-- **Given** the user is in an active session
-- **When** they trigger Cmd/Ctrl+N or a "New session" action
-- **Then** the current session ends (skeleton saved, reflect marked pending)
-- **And** a new session starts with a fresh system prompt assembly
+**FR-SESSION-02** — *(removed: with fresh sessions on every launch, there is no
+"current session" to end and no separate "new session" action needed)*
 
 **FR-SESSION-03 — Session end on app close**
 

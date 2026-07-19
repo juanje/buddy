@@ -43,8 +43,8 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 | FR-PERM-03 | Zone 3: outside access prompt | done | d3e57f3 |
 | FR-PERM-04 | Hardcoded denylist | done | d3e57f3 |
 | FR-PERM-07 | Permission prompt in chat | done | 1031c99 |
-| FR-SESSION-01 | Session resume | done | 835c997 |
-| FR-SESSION-02 | New session | deferred (SPEC says Phase 5) | |
+| FR-SESSION-01 | Session resume | reverted | 835c997 (reverted by design) |
+| FR-SESSION-02 | New session | N/A (every launch is fresh) | |
 | FR-SESSION-03 | Session end on app close | pending | |
 | FR-REFLECT-01 | Factual skeleton on session end | pending | |
 | FR-REFLECT-02 | Catch-up reflect on start | pending | |
@@ -58,22 +58,22 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 
 ## Current focus
 
-> Brain templates (FR-BRAIN-01–03) implemented. Consolidation skill (FR-BRAIN-04) deferred
-> until worker scheduler is ready.
+> **Bugs to fix before continuing Phase 1:**
 >
-> Phase 0 in progress. Project scaffolded (c758401): Tauri shell + Svelte + worker +
-> BDD harness. Pi SDK spike verified: event names match spec; continueRecent() is
-> sync + non-nullable.
+> 1. Remove session resume (`session-resume.ts`): use `SessionManager.create()`
+>    always — each launch is a fresh session. AB continuity is memory-based,
+>    not conversation-resume. Delete stale sessions that cause retry loops.
+> 2. Validate AB directory exists in `bootSession()`: if config.json points to a
+>    missing path, show error + reconfigure option instead of broken session.
 >
-> Phase 0 COMPLETE (FR-CHAT-02/01/03/07). Architecture validated: Svelte stores +
-> framework-agnostic controllers + worker core, BDD suite green end-to-end.
-> Native stack (spawn + real streaming + abort) validated on macOS (b036774).
+> **Design changes from user testing (2026-07-19):**
 >
-> Phase 1 started. FR-SETUP-01 done (344a0d7): worker detects first run from
-> ~/.ab-app/config.json (AB_CONFIG_PATH override), session only created when
-> configured (cwd = AB dir), frontend routes to SetupWizard shell vs chat.
-> Verified in the real app: fresh machine shows the wizard, no session spawned.
+> - FR-SESSION-01 reverted: fresh session per launch, no resume.
+> - FR-SETUP-04 redesign pending: OAuth login as primary auth (like Pi `/login`),
+>   API key as fallback. Investigate Pi SDK login flow.
+> - FR-SETUP-07 prompt rewritten: structured initial setup (ask name, language,
+>   use case, style), explicit "rewrite USER.md completely" instruction (0523717).
+> - Permission cards: user-friendly copy, no paths for identity writes (eb67120).
 >
-> Next: FR-SETUP-02 (wizard steps: prerequisites/location → deterministic AB
-> setup), then FR-PROMPT-01. Testing policy: mocks/fakes by default; real-LLM
-> smoke tests sparingly (Pi default model set to Haiku to keep them cheap).
+> **Next features after fixes:** FR-GIT-01 (auto-commit), FR-REFLECT-01/02,
+> FR-INGEST-01/02.
