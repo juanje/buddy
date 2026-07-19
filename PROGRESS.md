@@ -6,7 +6,7 @@ Track of implemented features. Updated ONLY when all acceptance criteria pass.
 
 | FR-ID | Feature | Status | Commit |
 |-------|---------|--------|--------|
-| FR-CHAT-02 | User input with send | pending | |
+| FR-CHAT-02 | User input with send | done | |
 | FR-CHAT-01 | Streaming message display | pending | |
 | FR-CHAT-03 | Abort generation | pending | |
 | FR-CHAT-07 | Auto-scroll with manual override | pending | |
