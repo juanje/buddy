@@ -6,7 +6,7 @@ Track of implemented features. Updated ONLY when all acceptance criteria pass.
 
 | FR-ID | Feature | Status | Commit |
 |-------|---------|--------|--------|
-| FR-CHAT-02 | User input with send | done | |
+| FR-CHAT-02 | User input with send | done | 1a13fdd |
 | FR-CHAT-01 | Streaming message display | pending | |
 | FR-CHAT-03 | Abort generation | pending | |
 | FR-CHAT-07 | Auto-scroll with manual override | pending | |
@@ -43,4 +43,8 @@ Track of implemented features. Updated ONLY when all acceptance criteria pass.
 > Brain templates (FR-BRAIN-01–03) implemented. Consolidation skill (FR-BRAIN-04) deferred
 > until worker scheduler is ready.
 >
-> Next: FR-CHAT-02 (user input with send) — first feature, needs Tauri scaffolding
+> Phase 0 in progress. Project scaffolded (c758401): Tauri shell + Svelte + worker +
+> BDD harness. Pi SDK spike verified: event names match spec; continueRecent() is
+> sync + non-nullable.
+>
+> Next: FR-CHAT-01 (streaming display) — token-by-token rendering + typing indicator
