@@ -3,7 +3,7 @@
 // channel to it. Falls back to a connection error state if anything fails
 // (Phase 0 basic error handling).
 
-import { spawn, createChannel, onExit } from "tauri-plugin-js-api";
+import { spawn, kill, createChannel, onExit } from "tauri-plugin-js-api";
 import type { FrontendAPI, WorkerAPI } from "../../shared/api";
 
 const WORKER_NAME = "agent-worker";
@@ -18,6 +18,12 @@ export async function connectWorker(
   onCrash: (code: number | null) => void,
 ): Promise<WorkerConnection> {
   async function boot(): Promise<WorkerAPI> {
+    // Kill stale worker from HMR remount or prior restart before respawning.
+    try {
+      await kill(WORKER_NAME);
+    } catch {
+      // Not running — expected on first boot.
+    }
     // Note: tauri-plugin-js appends `args` AFTER the script, so Node flags
     // must go through NODE_OPTIONS. cwd must be absolute: the Tauri process
     // runs from src-tauri/, not the project root.

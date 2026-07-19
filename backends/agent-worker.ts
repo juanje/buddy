@@ -10,8 +10,27 @@ import { createAgentSession } from "@earendil-works/pi-coding-agent";
 import { RPCChannel } from "kkrpc";
 import { nodeStdioTransport } from "kkrpc/stdio";
 
-import type { FrontendAPI, WorkerAPI } from "../shared/api";
+import type { AgentEvent, FrontendAPI, WorkerAPI } from "../shared/api";
 import { createWorkerCore, type PiSessionLike } from "./worker-core";
+
+/** Map Pi AgentSession to the structural subset the worker core needs. */
+function asPiSessionLike(session: {
+  prompt(text: string): Promise<void>;
+  abort(): Promise<void>;
+  subscribe(listener: (event: AgentEvent) => void): () => void;
+  readonly isStreaming: boolean;
+  dispose(): void;
+}): PiSessionLike {
+  return {
+    prompt: (text) => session.prompt(text),
+    abort: () => session.abort(),
+    subscribe: (listener) => session.subscribe(listener),
+    get isStreaming() {
+      return session.isStreaming;
+    },
+    dispose: () => session.dispose(),
+  };
+}
 
 /**
  * Align global fetch and undici dispatcher on Pi's own undici copy, exactly
@@ -71,7 +90,7 @@ async function main(): Promise<void> {
   });
 
   const frontend = channel.getAPI();
-  core = createWorkerCore(session as unknown as PiSessionLike, frontend);
+  core = createWorkerCore(asPiSessionLike(session), frontend);
 }
 
 main().catch((err) => {

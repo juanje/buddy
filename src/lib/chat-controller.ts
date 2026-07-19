@@ -40,9 +40,9 @@ export interface ChatController {
   handleEvent(event: AgentEvent): void;
 }
 
-let nextId = 1;
-
 export function createChatController(worker: WorkerAPI): ChatController {
+  let nextId = 1;
+
   const messages = writable<ChatMessage[]>([]);
   const input = writable("");
   const streaming = writable(false);

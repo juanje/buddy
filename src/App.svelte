@@ -10,6 +10,7 @@
   import { devLog, onDevCommand } from "./utils/dev-log";
   import ChatView from "./lib/ChatView.svelte";
   import InputBar from "./lib/InputBar.svelte";
+  import { t } from "./lib/i18n";
   import type { AgentEvent, WorkerAPI } from "../shared/api";
 
   let connection: WorkerConnection | undefined = $state();
@@ -99,8 +100,8 @@
 <main>
   {#if connectionError}
     <div class="error-banner">
-      <span>Se perdió la conexión con el asistente: {connectionError}</span>
-      <button onclick={connect}>Reiniciar</button>
+      <span>{t.connectionLost}: {connectionError}</span>
+      <button onclick={connect}>{t.restart}</button>
     </div>
   {/if}
   {#if controller}

@@ -2,12 +2,10 @@
   import type { ChatController } from "./chat-controller";
   import type { ScrollController } from "./scroll-controller";
   import MessageBubble from "./MessageBubble.svelte";
+  import { t } from "./i18n";
 
   let { controller, scroll }: { controller: ChatController; scroll: ScrollController } =
     $props();
-
-  const { messages, typingIndicator } = controller;
-  const { showScrollButton } = scroll;
 
   let container: HTMLDivElement | undefined = $state();
 
@@ -17,8 +15,8 @@
 
   // Content growth → let the scroll controller decide whether to follow.
   $effect(() => {
-    $messages;
-    $typingIndicator;
+    $controller.messages;
+    $controller.typingIndicator;
     scroll.notifyContentGrown();
   });
 
@@ -32,17 +30,17 @@
 
 <div class="chat-wrap">
   <div class="chat" bind:this={container} onscroll={handleScroll}>
-    {#each $messages as message (message.id)}
+    {#each $controller.messages as message (message.id)}
       <MessageBubble {message} />
     {/each}
-    {#if $typingIndicator}
+    {#if $controller.typingIndicator}
       <div class="typing" aria-label="assistant is typing">
         <span></span><span></span><span></span>
       </div>
     {/if}
   </div>
-  {#if $showScrollButton}
-    <button class="scroll-down" onclick={() => scroll.scrollToBottomClicked()} title="Scroll to bottom">
+  {#if $scroll.showScrollButton}
+    <button class="scroll-down" onclick={() => scroll.scrollToBottomClicked()} title={t.scrollToBottom}>
       ↓
     </button>
   {/if}

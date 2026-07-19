@@ -1,14 +1,13 @@
 <script lang="ts">
   import type { ChatController } from "./chat-controller";
   import { resolveInputKey } from "./keyboard";
+  import { t } from "./i18n";
 
   let {
     controller,
     onAbort,
     onSent,
   }: { controller: ChatController; onAbort: () => void; onSent?: () => void } = $props();
-
-  const { input, inputDisabled, canSend, showAbort } = controller;
 
   let textarea: HTMLTextAreaElement | undefined = $state();
 
@@ -36,17 +35,17 @@
 <div class="input-bar">
   <textarea
     bind:this={textarea}
-    bind:value={$input}
+    bind:value={$controller.input}
     onkeydown={handleKeydown}
     oninput={autoResize}
-    disabled={$inputDisabled}
-    placeholder="Escribe un mensaje…"
+    disabled={$controller.inputDisabled}
+    placeholder={t.inputPlaceholder}
     rows="1"
   ></textarea>
-  {#if $showAbort}
-    <button class="abort" onclick={onAbort} title="Abort (Esc)">◼</button>
+  {#if $controller.showAbort}
+    <button class="abort" onclick={onAbort} title={t.abortTitle}>◼</button>
   {:else}
-    <button class="send" onclick={sendNow} disabled={!$canSend} title="Send (Enter)">
+    <button class="send" onclick={sendNow} disabled={!$controller.canSend} title={t.sendTitle}>
       ➤
     </button>
   {/if}
