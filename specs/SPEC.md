@@ -550,6 +550,7 @@ platform-specific install instructions is shown and setup cannot continue.
 | FR-SETTINGS-01 | Provider and model stored in Pi settings | 1 |
 | FR-SETTINGS-02 | Settings UI | 3 |
 | FR-SETTINGS-03 | Model switching from UI | 3 |
+| FR-SETTINGS-04 | Language switching from settings | 3 |
 
 **FR-SETTINGS-01 — Pi settings**
 
@@ -559,15 +560,22 @@ platform-specific install instructions is shown and setup cannot continue.
 
 **FR-SETTINGS-02 — Settings UI**
 
-- **Given** the user opens settings (Cmd/Ctrl+, or menu)
+- **Given** the user opens settings (Cmd/Ctrl+, or menu/header button)
 - **When** the settings modal appears
-- **Then** they can view/edit: AB directory path, model, thinking level, heartbeat interval
+- **Then** they can view/edit: language, provider, model, AB directory path
+- **And** changes persist to `.pi/settings.json` and app config
 
 **FR-SETTINGS-03 — Model switching**
 
 - **Given** the user changes the model in settings
 - **When** they confirm the change
 - **Then** `session.setModel()` is called and subsequent messages use the new model
+
+**FR-SETTINGS-04 — Language switching**
+
+- **Given** the user changes language in settings
+- **When** they confirm
+- **Then** the UI switches immediately and the preference is stored
 
 ### 3.13 Cost Visibility (FR-COST)
 
@@ -640,7 +648,43 @@ ship without templates that produce correct behavior. These are developed in
 parallel with the technical scaffolding and tested via conversation eval.
 Full specification in [specs/BRAIN-SPEC.md](BRAIN-SPEC.md).
 
-### 3.15 Git Sync (FR-SYNC)
+### 3.15 UI Shell (FR-SHELL)
+
+| ID | Description | Phase |
+|----|-------------|-------|
+| FR-SHELL-01 | App header bar with session controls | 3 |
+| FR-SHELL-02 | Explicit end-session button | 3 |
+| FR-SHELL-03 | About / app info panel | 3 |
+| FR-SHELL-04 | Attach button in input bar | 1 |
+
+**FR-SHELL-01 — App header bar**
+
+- **Given** the chat view is active
+- **When** the user looks at the top of the window
+- **Then** a minimal header shows the app name and action icons (settings, about, end session)
+- **And** the header does not waste vertical space (single line, compact)
+
+**FR-SHELL-02 — End-session button**
+
+- **Given** the user wants to close the session explicitly
+- **When** they click the end-session icon in the header
+- **Then** the shutdown sequence runs (skeleton, commit, reflect) and the window closes
+- **Note:** More discoverable than relying on the tiny OS window close button
+
+**FR-SHELL-03 — About panel**
+
+- **Given** the user clicks the about/info icon
+- **When** the panel appears
+- **Then** it shows: app version, AB directory path, current model, session stats (turns, cost if available)
+
+**FR-SHELL-04 — Attach button**
+
+- **Given** the input bar is active
+- **When** the user clicks the attach (paperclip) button
+- **Then** a native file picker opens and selected files appear as chips (same as FR-INGEST-02)
+- **Note:** This is the same as FR-INGEST-02 but scoped to the input bar UX component
+
+### 3.16 Git Sync (FR-SYNC)
 
 | ID | Description | Phase |
 |----|-------------|-------|
@@ -669,7 +713,7 @@ Full specification in [specs/BRAIN-SPEC.md](BRAIN-SPEC.md).
 - **Then** an OS notification fires and conflicted files are shown in the chat
 - **And** the agent can help resolve conflicts (it understands the file formats)
 
-### 3.16 AB Self-Documentation (FR-DOCS)
+### 3.17 AB Self-Documentation (FR-DOCS)
 
 | ID | Description | Phase |
 |----|-------------|-------|
@@ -691,7 +735,7 @@ Full specification in [specs/BRAIN-SPEC.md](BRAIN-SPEC.md).
 - **Then** it reads relevant docs from `agent_brain/docs/` and synthesizes a natural, context-appropriate answer
 - **And** it does not dump the entire KB — it answers what was asked
 
-### 3.17 User Personal Knowledge Base (FR-WIKI)
+### 3.18 User Personal Knowledge Base (FR-WIKI)
 
 | ID | Description | Phase |
 |----|-------------|-------|
