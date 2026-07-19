@@ -85,7 +85,7 @@ async function alignHttpDispatcherWithPi(): Promise<void> {
 function runCrashRecoveryCatchUp(abDirectory: string): void {
   const pending = findPendingReflects(abDirectory);
   for (const item of pending.slice(0, 3)) {
-    console.log("[agent-worker] crash recovery: spawning reflect for", item.path);
+    console.error("[agent-worker] crash recovery: spawning reflect for", item.path);
     spawnReflectChild({
       abDirectory,
       forkedSessionFile: "",

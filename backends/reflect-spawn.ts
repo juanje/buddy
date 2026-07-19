@@ -36,7 +36,7 @@ export function spawnReflectChild(options: SpawnReflectOptions): number | undefi
   child.unref();
   const pid = child.pid;
   if (pid) {
-    console.log(`[reflect-spawn] child pid=${pid} mode=${options.mode}`);
+    console.error(`[reflect-spawn] child pid=${pid} mode=${options.mode}`);
   }
   return pid;
 }
