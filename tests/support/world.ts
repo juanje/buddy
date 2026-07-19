@@ -8,6 +8,7 @@ import { get } from "svelte/store";
 import { FakeSession } from "./fake-session";
 import { createWorkerCore, type WorkerCore } from "../../backends/worker-core";
 import { SessionLifecycle } from "../../backends/session-lifecycle";
+import type { PromptOptions } from "../../shared/api";
 import {
   createChatController,
   type ChatController,
@@ -40,6 +41,9 @@ export class AbWorld extends World {
 
   /** Id of the most recent simulated permission request. */
   lastPermissionId?: number;
+
+  /** Last prompt options sent through the controller (FR-INGEST). */
+  lastPromptOptions?: PromptOptions;
 
   constructor(options: IWorldOptions) {
     super(options);
@@ -80,10 +84,20 @@ export class AbWorld extends World {
     );
     // The session core lacks resolvePermission (it lives in the worker entry
     // point); the world records verdicts like the real RPC would deliver them.
+    const self = this;
     this.controller = createChatController({
       ...this.core.api,
+      async prompt(text: string, options?: PromptOptions) {
+        self.lastPromptOptions = options;
+        let finalText = text;
+        if (options?.attachments?.length) {
+          const header = options.attachments.map((p) => `User attached: ${p}`).join("\n");
+          finalText = text.trim() ? `${header}\n\n${text}` : header;
+        }
+        await self.core.api.prompt(finalText, options);
+      },
       resolvePermission: async (id, allow) => {
-        this.permissionResolutions.push({ id, allow });
+        self.permissionResolutions.push({ id, allow });
       },
     });
     controllerRef = this.controller;

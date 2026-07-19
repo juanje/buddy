@@ -60,6 +60,9 @@ export const en: LocaleStrings = {
   creatingHint: "Creating its memory and getting everything ready. This will only take a moment.",
   creatingError: "Setup could not be completed",
   creatingRetry: "Retry",
+  attachTitle: "Attach file",
+  dropOverlay: "Drop file here",
+  unsupportedFormat: "Unsupported format — export to text (.md or .txt)",
 };
 
 export function tierDescriptionEn(tier: "fast" | "balanced" | "powerful"): string {

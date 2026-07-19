@@ -12,11 +12,12 @@ import {
   SessionManager,
 } from "@earendil-works/pi-coding-agent";
 import { existsSync } from "node:fs";
+import { resolve } from "node:path";
 import { randomUUID } from "node:crypto";
 import { RPCChannel } from "kkrpc";
 import { nodeStdioTransport } from "kkrpc/stdio";
 
-import type { AgentEvent, FrontendAPI, WorkerAPI } from "../shared/api";
+import type { AgentEvent, FrontendAPI, PromptOptions, WorkerAPI } from "../shared/api";
 import { adoptAbInstance, createAbInstance } from "./create-ab";
 import { detectExistingAuth } from "./detect-auth";
 import { defaultAbLocation, validateLocation } from "./location";
@@ -68,6 +69,16 @@ async function main(): Promise<void> {
   // awaits inside the beforeToolCall hook until the user answers in the chat.
   const pendingPermissions = new Map<number, (allow: boolean) => void>();
   let nextPermissionId = 1;
+  let sessionAllowedPaths = new Set<string>();
+
+  function augmentPromptWithAttachments(text: string, options?: PromptOptions): string {
+    if (!options?.attachments?.length) return text;
+    for (const path of options.attachments) {
+      sessionAllowedPaths.add(resolve(path));
+    }
+    const header = options.attachments.map((p) => `User attached: ${p}`).join("\n");
+    return text.trim() ? `${header}\n\n${text}` : header;
+  }
 
   async function bootSession(
     abDirectory: string,
@@ -90,6 +101,8 @@ async function main(): Promise<void> {
       abDirectory,
       sessionId,
     });
+
+    sessionAllowedPaths = new Set<string>();
 
     const { prompt } = assembleSystemPrompt(abDirectory);
     const resourceLoader = new DefaultResourceLoader({
@@ -118,7 +131,7 @@ async function main(): Promise<void> {
         });
       },
       undefined,
-      { skipIdentityPrompt: options?.firstSession === true },
+      { skipIdentityPrompt: options?.firstSession === true, sessionAllowedPaths },
     );
     const originalBeforeToolCall = session.agent.beforeToolCall;
     session.agent.beforeToolCall = async (ctx, signal) => {
@@ -143,8 +156,8 @@ async function main(): Promise<void> {
   const transport = nodeStdioTransport();
   const channel = new RPCChannel<WorkerAPI, FrontendAPI>(transport, {
     expose: {
-      async prompt(text: string) {
-        await core?.api.prompt(text);
+      async prompt(text: string, options?: PromptOptions) {
+        await core?.api.prompt(augmentPromptWithAttachments(text, options));
       },
       async abort() {
         await core?.api.abort();

@@ -4,7 +4,7 @@
 // Pi AgentSession here; BDD tests wire a fake session that emits the same
 // event shapes.
 
-import type { AgentEvent, AgentState, ChatWorkerAPI, FrontendAPI } from "../shared/api";
+import type { AgentEvent, AgentState, ChatWorkerAPI, FrontendAPI, PromptOptions } from "../shared/api";
 import type { SessionLifecycle } from "./session-lifecycle";
 
 /**
@@ -49,7 +49,7 @@ export function createWorkerCore(
   });
 
   const api: SessionWorkerAPI = {
-    async prompt(text: string): Promise<void> {
+    async prompt(text: string, _options?: PromptOptions): Promise<void> {
       await session.prompt(text);
     },
 

@@ -4,19 +4,29 @@
 //   FR-CHAT-02 input/send
 //   FR-CHAT-01 streaming display (token-by-token + typing indicator)
 //   FR-CHAT-03 abort generation (button + Escape, partial text kept)
+//   FR-INGEST-01..04 file attachments
 
 import { derived, get, writable, type Readable, type Writable } from "svelte/store";
+import { basename } from "node:path";
 import type {
   AgentEvent,
   AssistantMessageEventLike,
   ChatWorkerAPI,
   PermissionRequest,
+  PromptOptions,
 } from "../../shared/api";
+import { isSupportedIngestFormat } from "../../shared/ingest-formats";
 
 export interface ChatMessage {
   id: number;
   role: "user" | "assistant";
   text: string;
+}
+
+/** Pending file attachment chip (FR-INGEST-01/02). */
+export interface Attachment {
+  path: string;
+  name: string;
 }
 
 /** A permission question rendered inline in the chat (FR-PERM-07). */
@@ -30,11 +40,15 @@ export interface ChatController {
   messages: Readable<ChatMessage[]>;
   /** Current input bar value. */
   input: Writable<string>;
+  /** Pending file attachments (FR-INGEST). */
+  attachments: Writable<Attachment[]>;
+  /** Rejected attachment filenames (FR-INGEST-04). */
+  attachmentErrors: Readable<string[]>;
   /** True while the agent is generating (agent_start → agent_end). */
   streaming: Readable<boolean>;
   /** Input bar disabled while a response streams (FR-CHAT-02). */
   inputDisabled: Readable<boolean>;
-  /** Send allowed only with non-empty input and no active stream. */
+  /** Send allowed with text and/or attachments when not streaming. */
   canSend: Readable<boolean>;
   /** Abort button shown instead of send while streaming. */
   showAbort: Readable<boolean>;
@@ -49,6 +63,12 @@ export interface ChatController {
   abort(): Promise<void>;
   /** Escape key: abort while streaming, no-op when idle (FR-CHAT-03). */
   onEscape(): Promise<void>;
+  /** Add files by path (drag/drop or file picker). */
+  addAttachments(paths: string[]): void;
+  /** Remove a pending attachment before send. */
+  removeAttachment(path: string): void;
+  /** Clear attachment error toasts. */
+  clearAttachmentErrors(): void;
   /** Route a Pi session event into the stores. */
   handleEvent(event: AgentEvent): void;
   /** A tool call is waiting for the user's decision (FR-PERM-07). */
@@ -64,12 +84,15 @@ export function createChatController(worker: ChatWorkerAPI): ChatController {
 
   const messages = writable<ChatMessage[]>([]);
   const input = writable("");
+  const attachments = writable<Attachment[]>([]);
+  const attachmentErrors = writable<string[]>([]);
   const streaming = writable(false);
 
   const inputDisabled = derived(streaming, ($s) => $s);
   const canSend = derived(
-    [input, streaming],
-    ([$input, $s]) => $input.trim().length > 0 && !$s,
+    [input, streaming, attachments],
+    ([$input, $s, $attachments]) =>
+      ($input.trim().length > 0 || $attachments.length > 0) && !$s,
   );
   const showAbort = derived(streaming, ($s) => $s);
   const typingIndicator = derived(streaming, ($s) => $s);
@@ -79,12 +102,56 @@ export function createChatController(worker: ChatWorkerAPI): ChatController {
   // an empty bubble (FR-CHAT-01).
   let streamingBubbleId: number | null = null;
 
+  function addAttachments(paths: string[]): void {
+    const rejected: string[] = [];
+    const accepted: Attachment[] = [];
+
+    for (const path of paths) {
+      const name = basename(path);
+      if (!isSupportedIngestFormat(path)) {
+        rejected.push(name);
+        continue;
+      }
+      if (get(attachments).some((a) => a.path === path)) continue;
+      accepted.push({ path, name });
+    }
+
+    if (accepted.length > 0) {
+      attachments.update((list) => [...list, ...accepted]);
+    }
+    if (rejected.length > 0) {
+      attachmentErrors.update((list) => [...list, ...rejected]);
+    }
+  }
+
+  function removeAttachment(path: string): void {
+    attachments.update((list) => list.filter((a) => a.path !== path));
+  }
+
+  function clearAttachmentErrors(): void {
+    attachmentErrors.set([]);
+  }
+
   async function send(): Promise<void> {
     if (!get(canSend)) return;
-    const text = get(input);
-    messages.update((list) => [...list, { id: nextId++, role: "user", text }]);
+    const text = get(input).trim();
+    const pending = get(attachments);
+    const attachmentPaths = pending.map((a) => a.path);
+
+    const displayText =
+      text ||
+      (attachmentPaths.length === 1
+        ? `[Attached: ${pending[0].name}]`
+        : `[Attached: ${attachmentPaths.length} files]`);
+
+    messages.update((list) => [...list, { id: nextId++, role: "user", text: displayText }]);
     input.set("");
-    await worker.prompt(text);
+    attachments.set([]);
+
+    const options: PromptOptions | undefined = attachmentPaths.length
+      ? { attachments: attachmentPaths }
+      : undefined;
+    await worker.prompt(text, options);
   }
 
   async function abort(): Promise<void> {
@@ -154,6 +221,8 @@ export function createChatController(worker: ChatWorkerAPI): ChatController {
   return {
     messages,
     input,
+    attachments,
+    attachmentErrors,
     streaming,
     inputDisabled,
     canSend,
@@ -163,6 +232,9 @@ export function createChatController(worker: ChatWorkerAPI): ChatController {
     send,
     abort,
     onEscape,
+    addAttachments,
+    removeAttachment,
+    clearAttachmentErrors,
     handleEvent,
     handlePermissionRequest,
     respondPermission,

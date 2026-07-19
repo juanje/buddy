@@ -4,6 +4,7 @@
   // FR-CHAT-07 auto-scroll · FR-SETUP-01 first-run wizard routing.
   import { onMount } from "svelte";
   import { getCurrentWindow } from "@tauri-apps/api/window";
+  import { getCurrentWebview } from "@tauri-apps/api/webview";
   import { createChatController, type ChatController } from "./lib/chat-controller";
   import { createScrollController } from "./lib/scroll-controller";
   import { get } from "svelte/store";
@@ -14,19 +15,20 @@
   import InputBar from "./lib/InputBar.svelte";
   import SetupWizard from "./lib/SetupWizard.svelte";
   import { t } from "./lib/i18n";
-  import type { AgentEvent, WorkerAPI } from "../shared/api";
+  import type { AgentEvent, PromptOptions, WorkerAPI } from "../shared/api";
 
   let connection: WorkerConnection | undefined = $state();
   let connectionError: string | undefined = $state();
   let controller: ChatController | undefined = $state();
   // undefined until the worker reports setup state (brief blank on launch).
   let view: AppView | undefined = $state();
+  let dragOver = $state(false);
 
   // The controller is created before the worker connects so the UI renders
   // immediately; prompts are proxied to whatever connection exists.
   const workerProxy: WorkerAPI = {
-    async prompt(text) {
-      await connection?.api.prompt(text);
+    async prompt(text, options?: PromptOptions) {
+      await connection?.api.prompt(text, options);
     },
     async abort() {
       await connection?.api.abort();
@@ -114,6 +116,7 @@
     void connect();
 
     let unlistenClose: (() => void) | undefined;
+    let unlistenDrag: (() => void) | undefined;
     void (async () => {
       const win = getCurrentWindow();
       unlistenClose = await win.onCloseRequested(async (event) => {
@@ -132,10 +135,28 @@
         }
         await win.destroy();
       });
+
+      try {
+        const webview = getCurrentWebview();
+        unlistenDrag = await webview.onDragDropEvent((event) => {
+          if (view !== "chat" || !controller) return;
+          if (event.payload.type === "enter" || event.payload.type === "over") {
+            dragOver = true;
+          } else if (event.payload.type === "drop") {
+            dragOver = false;
+            controller.addAttachments(event.payload.paths);
+          } else {
+            dragOver = false;
+          }
+        });
+      } catch {
+        // Drag-drop requires Tauri webview — skip in browser dev.
+      }
     })();
 
     return () => {
       unlistenClose?.();
+      unlistenDrag?.();
     };
   });
 
@@ -182,12 +203,17 @@
       onSetupFailed={() => (view = "setup")}
     />
   {:else if view === "chat" && controller}
-    <ChatView bind:this={chatView} {controller} {scroll} />
-    <InputBar
-      {controller}
-      onAbort={() => controller?.abort()}
-      onSent={() => scroll.onUserMessageSent()}
-    />
+    <div class="chat-shell" class:drag-over={dragOver}>
+      {#if dragOver}
+        <div class="drop-overlay">{$t.dropOverlay}</div>
+      {/if}
+      <ChatView bind:this={chatView} {controller} {scroll} />
+      <InputBar
+        {controller}
+        onAbort={() => controller?.abort()}
+        onSent={() => scroll.onUserMessageSent()}
+      />
+    </div>
   {/if}
 </main>
 
@@ -214,5 +240,29 @@
     border-radius: 8px;
     padding: 4px 12px;
     cursor: pointer;
+  }
+  .chat-shell {
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .chat-shell.drag-over {
+    outline: 2px dashed var(--accent);
+    outline-offset: -4px;
+  }
+  .drop-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.35);
+    color: #fff;
+    font-size: 18px;
+    font-weight: 500;
+    pointer-events: none;
   }
 </style>

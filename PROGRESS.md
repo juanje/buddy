@@ -52,8 +52,10 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 | FR-REFLECT-02 | Forked reflect on session end (background child) | done | 6d58175 |
 | FR-REFLECT-03 | Incremental mid-session reflect (background child) | done | 6d58175 |
 | FR-DEFERRED-01 | Surface deferred on start | done | d7a3c12 |
-| FR-INGEST-01 | Drag & drop file ingest | pending | |
-| FR-INGEST-02 | Attach button | pending | |
+| FR-INGEST-01 | Drag & drop file ingest | done | c12edac |
+| FR-INGEST-02 | Attach button | done | c12edac |
+| FR-INGEST-03 | Dropped file implicit permission | done | c12edac |
+| FR-INGEST-04 | Supported formats | done | c12edac |
 | FR-GIT-01 | Auto-commit after writes | done | 842635e |
 | FR-GIT-02 | Git invisible to user | done | 842635e |
 | FR-GIT-03 | Index rebuild on session end | done | 842635e |
@@ -72,7 +74,16 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 > **Memory Loop Sprint complete (2026-07-19).** Auto-commit, session-end skeleton,
 > forked reflect (background child process), and incremental reflect shipped.
 > Reflect uses full Pi session context via fork — no cold skeleton analysis.
-> Next: FR-INGEST-01/02 (file ingest), FR-SHELL (UI shell), then Phase 2.
+> Next: FR-SETUP-05 OAuth rework, then Phase 2.
+
+### Sprint: File Ingest — DONE (2026-07-19)
+
+| FR-ID | Feature | Status |
+|-------|---------|--------|
+| FR-INGEST-01 | Drag & drop onto chat window | done |
+| FR-INGEST-02 | Attach button (native file picker) | done |
+| FR-INGEST-03 | Implicit read permission for attached paths | done |
+| FR-INGEST-04 | Format validation (.md, .txt, extensionless) | done |
 
 ### Sprint: Reflect Hardening — DONE (2026-07-19)
 

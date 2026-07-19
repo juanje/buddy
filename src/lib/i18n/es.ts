@@ -53,6 +53,9 @@ export type LocaleStrings = {
   creatingHint: string;
   creatingError: string;
   creatingRetry: string;
+  attachTitle: string;
+  dropOverlay: string;
+  unsupportedFormat: string;
 };
 
 export const es: LocaleStrings = {
@@ -115,6 +118,9 @@ export const es: LocaleStrings = {
   creatingHint: "Estamos creando su memoria y dejándolo todo listo. Solo tardará un momento.",
   creatingError: "No se pudo completar la configuración",
   creatingRetry: "Reintentar",
+  attachTitle: "Adjuntar archivo",
+  dropOverlay: "Suelta el archivo aquí",
+  unsupportedFormat: "Formato no compatible — exporta a texto (.md o .txt)",
 };
 
 /** Short cost/capability description per model tier (FR-SETUP-05). */

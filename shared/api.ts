@@ -21,6 +21,11 @@ export interface AgentState {
   messageCount: number;
 }
 
+/** Options for prompt() — FR-INGEST-03 file attachments. */
+export interface PromptOptions {
+  attachments?: string[];
+}
+
 // FR-SETUP-01/02: first-run wizard configuration.
 export interface SetupConfig {
   abDirectory: string;
@@ -79,7 +84,7 @@ export interface PrereqStatus {
 
 /** Frontend calls these on the worker. */
 export interface WorkerAPI {
-  prompt(text: string): Promise<void>;
+  prompt(text: string, options?: PromptOptions): Promise<void>;
   abort(): Promise<void>;
   getState(): Promise<AgentState>;
   getSetupState(): Promise<SetupState>;

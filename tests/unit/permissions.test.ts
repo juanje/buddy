@@ -2,7 +2,7 @@
 
 import { describe, expect, it } from "vitest";
 
-import { evaluateToolCall } from "../../backends/permissions";
+import { evaluateToolCall, createPermissionGate } from "../../backends/permissions";
 
 const HOME = "/home/u";
 const AB = "/home/u/my-ab";
@@ -60,5 +60,21 @@ describe("evaluateToolCall", () => {
       const decision = evaluate("read", { path });
       expect(decision.action, path).toBe("deny");
     }
+  });
+});
+
+describe("createPermissionGate sessionAllowedPaths", () => {
+  it("allows reads for attached outside paths without asking", async () => {
+    const allowed = new Set(["/home/u/Documents/draft.md"]);
+    const gate = createPermissionGate(
+      AB,
+      async () => {
+        throw new Error("should not ask");
+      },
+      HOME,
+      { sessionAllowedPaths: allowed },
+    );
+    const outcome = await gate.check("read", { path: "/home/u/Documents/draft.md" });
+    expect(outcome).toBeUndefined();
   });
 });

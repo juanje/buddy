@@ -101,10 +101,25 @@ export function createPermissionGate(
   abDirectory: string,
   askUser: (request: Omit<PermissionRequest, "id">) => Promise<boolean>,
   home: string = homedir(),
-  options?: { skipIdentityPrompt?: boolean },
+  options?: { skipIdentityPrompt?: boolean; sessionAllowedPaths?: Set<string> },
 ): PermissionGate {
+  const sessionAllowedPaths = options?.sessionAllowedPaths;
+
   return {
     async check(toolName, args) {
+      const rawPath = (args as { path?: unknown } | undefined)?.path;
+      if (
+        sessionAllowedPaths &&
+        typeof rawPath === "string" &&
+        rawPath.trim() !== "" &&
+        READ_TOOLS.has(toolName)
+      ) {
+        const absPath = resolve(abDirectory, expandHome(rawPath, home));
+        for (const allowed of sessionAllowedPaths) {
+          if (resolve(allowed) === absPath) return undefined;
+        }
+      }
+
       const decision = evaluateToolCall(toolName, args, abDirectory, home);
       if (
         options?.skipIdentityPrompt &&
