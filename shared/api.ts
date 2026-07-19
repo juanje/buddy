@@ -66,6 +66,8 @@ export type KeyCheck = { valid: true } | { valid: false; error: string };
 export interface DetectedAuth {
   provider: SetupConfig["provider"];
   model: string;
+  /** All valid providers found, for letting the user choose. */
+  options?: Array<{ piProvider: string; provider: SetupConfig["provider"]; model: string }>;
 }
 
 /** A permission question the agent is waiting on (FR-PERM-02/03/07). */

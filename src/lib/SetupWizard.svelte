@@ -32,6 +32,7 @@
   const validatingKey = wizard.validatingKey;
   const model = wizard.model;
   const setupError = wizard.setupError;
+  const detectedAuth = wizard.detectedAuth;
 
   let nameInput = $state("");
   let aboutInput = $state("");
@@ -78,16 +79,26 @@
 
   async function validateAndMaybeContinue() {
     await wizard.pickLocation(locationInput);
-    wizard.next();
-    // If auth was detected, next() jumped to "creating" — trigger setup
-    if (get(wizard.step) === "creating") {
-      onComplete?.();
-      try {
-        await wizard.finishSetup();
-      } catch {
-        onSetupFailed?.();
+    const auth = get(wizard.detectedAuth);
+    if (auth && (!auth.options || auth.options.length <= 1)) {
+      // Single provider detected — skip straight to creating
+      wizard.next();
+      if (get(wizard.step) === "creating") {
+        onComplete?.();
+        try {
+          await wizard.finishSetup();
+        } catch {
+          onSetupFailed?.();
+        }
       }
+    } else {
+      wizard.next();
     }
+  }
+
+  function pickDetectedAndFinish(piProvider: string) {
+    wizard.selectDetectedProvider(piProvider);
+    createAb();
   }
 
   function locationError(status: string): string | undefined {
@@ -154,6 +165,18 @@
       </button>
     {/if}
   {:else if $step === "provider"}
+    {#if $detectedAuth?.options && $detectedAuth.options.length > 1}
+      <h2>{$t.providerTitle}</h2>
+      <p class="muted">{$t.providerHint}</p>
+      <div class="providers">
+        {#each $detectedAuth.options as option (option.piProvider)}
+          <button class="provider-detected" onclick={() => pickDetectedAndFinish(option.piProvider)}>
+            <strong>{option.piProvider}</strong>
+            <span class="tier">{option.model}</span>
+          </button>
+        {/each}
+      </div>
+    {:else}
     <h2>{$t.providerTitle}</h2>
     <p class="muted">{$t.providerHint}</p>
     <div class="providers">
@@ -190,6 +213,7 @@
       >
         {$validatingKey ? $t.apiKeyValidating : $t.apiKeyValidate}
       </button>
+    {/if}
     {/if}
   {:else if $step === "model"}
     <h2>{$t.modelTitle}</h2>
@@ -323,6 +347,19 @@
   .providers button.selected {
     border-color: var(--accent, #4f46e5);
     outline: 2px solid var(--accent, #4f46e5);
+  }
+  .provider-detected {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: flex-start;
+    text-align: left;
+    padding: 12px 16px;
+    min-width: 180px;
+  }
+  .provider-detected .tier {
+    font-size: 12px;
+    color: var(--muted);
   }
   .field {
     display: flex;

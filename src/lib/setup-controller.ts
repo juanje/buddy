@@ -41,9 +41,13 @@ export interface SetupController {
   validatingKey: Readable<boolean>;
   model: Readable<string | undefined>;
   canProceed: Readable<boolean>;
+  /** Non-null when valid Pi credentials were found (skip key entry). */
+  detectedAuth: Readable<DetectedAuth | null>;
 
   selectLanguage(lang: AppLocale): void;
   setPersonalization(name: string, about?: string): void;
+  /** Pick one of the detected providers (from detectedAuth.options). */
+  selectDetectedProvider(piProvider: string): void;
   checkPrerequisites(): Promise<void>;
   loadDefaultLocation(): Promise<string>;
   pickLocation(path: string): Promise<void>;
@@ -150,6 +154,16 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
     }
   }
 
+  function selectDetectedProvider(piProvider: string): void {
+    const auth = get(detectedAuth);
+    if (!auth?.options) return;
+    const option = auth.options.find((o) => o.piProvider === piProvider);
+    if (option) {
+      provider.set(option.provider);
+      model.set(option.model);
+    }
+  }
+
   function selectProvider(id: ProviderId): void {
     provider.set(id);
     keyCheck.set(undefined);
@@ -243,9 +257,12 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
     step.update(($step) => {
       const index = STEP_ORDER.indexOf($step);
       let nextStep = STEP_ORDER[Math.min(index + 1, STEP_ORDER.length - 1)];
-      // Skip provider+model when Pi credentials were detected
-      if (nextStep === "provider" && get(detectedAuth)) {
-        nextStep = "creating";
+      const auth = get(detectedAuth);
+      if (nextStep === "provider" && auth) {
+        if (!auth.options || auth.options.length <= 1) {
+          nextStep = "creating";
+        }
+        // Multiple options: land on "provider" so user can choose
       }
       return nextStep;
     });
@@ -270,8 +287,10 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
     validatingKey,
     model,
     canProceed,
+    detectedAuth,
     selectLanguage,
     setPersonalization,
+    selectDetectedProvider,
     checkPrerequisites,
     loadDefaultLocation,
     pickLocation,
