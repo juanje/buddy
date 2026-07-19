@@ -119,16 +119,18 @@
       unlistenClose = await win.onCloseRequested(async (event) => {
         event.preventDefault();
         try {
-          await Promise.race([
-            connection?.api.shutdown(),
-            new Promise((_, reject) =>
-              setTimeout(() => reject(new Error("shutdown timeout")), 2000),
-            ),
-          ]);
+          if (connection) {
+            await Promise.race([
+              connection.api.shutdown(),
+              new Promise((_, reject) =>
+                setTimeout(() => reject(new Error("shutdown timeout")), 2000),
+              ),
+            ]);
+          }
         } catch {
           // Best-effort shutdown; allow close anyway.
         }
-        await win.close();
+        await win.destroy();
       });
     })();
 
