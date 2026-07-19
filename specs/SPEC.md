@@ -124,13 +124,15 @@ AB File System (git repo)
 | ID | Description | Phase |
 |----|-------------|-------|
 | FR-SETUP-01 | First-run detection | 1 |
-| FR-SETUP-02 | Prerequisites check | 1 |
-| FR-SETUP-03 | Location picker | 1 |
-| FR-SETUP-04 | Provider and API key configuration | 1 |
-| FR-SETUP-05 | Model selection | 1 |
-| FR-SETUP-06 | Deterministic AB directory setup | 1 |
-| FR-SETUP-07 | Agent-driven personalization | 1 |
-| FR-SETUP-08 | Import existing instance | 1 |
+| FR-SETUP-02 | Language selection | 1 |
+| FR-SETUP-03 | Welcome screen | 1 |
+| FR-SETUP-04 | Location picker | 1 |
+| FR-SETUP-05 | Provider authentication | 1 |
+| FR-SETUP-06 | Model selection | 1 |
+| FR-SETUP-07 | Personalization form (name + about) | 1 |
+| FR-SETUP-08 | Deterministic AB directory setup | 1 |
+| FR-SETUP-09 | First conversation with warm handoff | 1 |
+| FR-SETUP-10 | Import existing instance | 1 |
 
 **FR-SETUP-01 — First-run detection**
 
@@ -138,20 +140,27 @@ AB File System (git repo)
 - **When** no AB directory is configured in `~/.ab-app/config.json`
 - **Then** the setup wizard is shown instead of the chat view
 
-**FR-SETUP-02 — Prerequisites check**
+**FR-SETUP-02 — Language selection**
 
 - **Given** the setup wizard starts
-- **When** git is not installed on the system
-- **Then** a clear message is shown with platform-specific install instructions
-- **And** setup cannot proceed until the prerequisite is met
+- **When** the user selects their preferred language
+- **Then** the entire wizard UI switches to that language
+- **And** the language is stored and used for all subsequent UI and agent replies
 
-**FR-SETUP-03 — Location picker**
+**FR-SETUP-03 — Welcome screen**
+
+- **Given** the user has selected a language
+- **When** the welcome step loads (in the user's language)
+- **Then** a brief explanation of what AB is and what it does is shown
+- **And** a "Continue" button proceeds to the next step
+
+**FR-SETUP-04 — Location picker**
 
 - **Given** the user is on the location step of the wizard
 - **When** they accept the default (`~/my-ab`) or choose a custom path
 - **Then** the path is validated (doesn't exist or is empty) and stored
 
-**FR-SETUP-04 — Provider authentication**
+**FR-SETUP-05 — Provider authentication**
 
 - **Given** the user is on the provider step
 - **When** they select a provider (Anthropic, OpenAI, Google, or OpenAI-compatible)
@@ -162,35 +171,51 @@ AB File System (git repo)
 - **And (API key path)** the key is validated with a test API call before proceeding
 - **And (API key path)** the key is stored in `~/.pi/agent/auth.json` with restrictive file permissions
 
-**FR-SETUP-05 — Model selection**
+**FR-SETUP-06 — Model selection**
 
-- **Given** the user has selected a provider and entered a valid key
+- **Given** the user has authenticated with a provider
 - **When** the model selection step loads
 - **Then** available models for that provider are listed with a recommended default
 - **And** brief cost/capability descriptions are shown per tier
 
-**FR-SETUP-06 — Deterministic AB directory setup**
+**FR-SETUP-07 — Personalization form**
 
-- **Given** the user completes the wizard
+- **Given** the user is on the personalization step
+- **When** the form loads
+- **Then** a brief explanation states why this matters ("your assistant will be more useful from the start")
+- **And** two fields are shown: Name (required, "How should I address you?") and About (optional, "Tell me about yourself — the more, the better")
+- **And** the user can continue with only a name, or add as much context as they want
+
+**FR-SETUP-08 — Deterministic AB directory setup**
+
+- **Given** the user completes the wizard form
 - **When** setup runs
 - **Then** the full directory structure is created (`agent_brain/`, `user/`, `logs/`)
-- **And** base templates are copied (AGENTS.md, SOUL.md, placeholder USER.md, core skills)
-- **And** Pi settings are written (`.pi/settings.json`)
+- **And** templates are copied and USER.md is populated with the name (and About if provided) — no placeholders remain
+- **And** Pi settings are written (`.pi/settings.json`) with the selected provider/model
 - **And** git is initialized with an initial commit
 - **And** no LLM call is made during this phase
 
-**FR-SETUP-07 — Agent-driven personalization**
+**FR-SETUP-09 — First conversation with warm handoff**
 
-- **Given** setup completes and the first session starts
-- **When** USER.md contains only placeholder content
-- **Then** the agent introduces itself and conversationally asks the user's name, preferred language, interests, and behavior preferences
-- **And** answers are written to USER.md as the conversation progresses
+- **Given** the AB directory is created and configured
+- **When** the first session starts
+- **Then** the user's personalization data (name, about) is injected as an initial user message to the agent (not shown in the UI) so the agent already knows who they are
+- **And** the agent's first visible response is a warm welcome by name, with brief tips on how to use it
+- **And** during this first conversation, identity file writes (USER.md) do NOT trigger permission prompts — the agent is expected to enrich the profile
+- **And** from the second session onward, normal permission rules apply
 
-**FR-SETUP-08 — Import existing instance**
+**FR-SETUP-10 — Import existing instance**
 
-- **Given** the user is on the location step
-- **When** they point to an existing AB directory (one with `agent_brain/`)
-- **Then** the app adopts it without overwriting, ignoring platform artifacts (`.cursor/`, `.codex/`)
+- **Given** the location picker step shows an existing AB directory (one with `agent_brain/`)
+- **When** the user confirms import
+- **Then** the app adopts the existing directory without modifying its content
+- **And** platform artifacts (`.cursor/`, `.codex/`) are ignored
+- **And** the wizard skips personalization (existing instance already has data)
+
+**Note:** Prerequisites (git installed) are checked as a gate before the wizard
+proceeds past the language step. If git is missing, a clear message with
+platform-specific install instructions is shown and setup cannot continue.
 
 ### 3.3 Session Management (FR-SESSION)
 
@@ -272,9 +297,13 @@ AB File System (git repo)
 
 **FR-PERM-02 — Identity file write confirmation**
 
-- **Given** the agent attempts to write to `SOUL.md` or `USER.md`
+- **Given** the agent attempts to write to `SOUL.md`
 - **When** the permission layer intercepts the write
 - **Then** the user is asked for confirmation in the chat before the write proceeds
+- **Note:** `USER.md` writes are allowed silently (same as Zone 1). The agent
+  manages user profile data as part of normal operation. Only `SOUL.md` (the
+  agent's own identity/character) requires confirmation. During the first
+  session (FR-SETUP-09), even SOUL.md writes are allowed without prompting.
 
 **FR-PERM-03 — Zone 3: outside access**
 
@@ -656,7 +685,7 @@ Full specification in [specs/BRAIN-SPEC.md](BRAIN-SPEC.md).
 |----|-------------|
 | NFR-SEC-01 | No bash or shell tool available to the agent — enforced at session creation via `excludeTools` |
 | NFR-SEC-02 | Zone model enforced in `beforeToolCall` hook — no file access bypasses the permission layer |
-| NFR-SEC-03 | Identity files (SOUL.md, USER.md) require user confirmation for writes, even inside Zone 1 |
+| NFR-SEC-03 | SOUL.md writes require user confirmation; USER.md writes are silent (agent manages profile freely) |
 | NFR-SEC-04 | Hardcoded denylist paths are never accessible, regardless of user confirmation |
 | NFR-SEC-05 | API keys stored with restrictive file permissions (mode 600); no credentials inside the AB repo |
 | NFR-SEC-06 | The agent cannot modify its own model configuration (`.pi/settings.json` writes blocked) |
@@ -695,6 +724,15 @@ Full specification in [specs/BRAIN-SPEC.md](BRAIN-SPEC.md).
 | NFR-ACC-01 | Dark and light mode following system preference (`prefers-color-scheme`) |
 | NFR-ACC-02 | Keyboard shortcuts for all primary actions (send, abort, new session, settings) |
 | NFR-ACC-03 | Semantic HTML in chat messages for screen reader compatibility |
+
+### 4.7 Internationalization (i18n)
+
+| ID | Requirement |
+|----|-------------|
+| NFR-I18N-01 | All UI strings externalized in a locale module (no hardcoded text in components) |
+| NFR-I18N-02 | Language selected by the user during setup applies to UI and is passed to the agent |
+| NFR-I18N-03 | MVP ships with Spanish and English; adding a language requires only a new locale file |
+| NFR-I18N-04 | The agent replies in the user's language (set in USER.md preferences, injected in system prompt) |
 
 ---
 

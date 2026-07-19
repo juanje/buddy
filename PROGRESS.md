@@ -29,21 +29,23 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 | FR-BRAIN-02 | SOUL.md character definition | done | 2e79ede, 152ebc4 |
 | FR-BRAIN-03 | USER.md placeholder template | done | 2e79ede |
 | FR-SETUP-01 | First-run detection → wizard | done | 344a0d7 |
-| FR-SETUP-02 | Prerequisites check (git) | done | fc27fa8 |
-| FR-SETUP-03 | Location picker | done | e3ce95e |
-| FR-SETUP-04 | Provider and API key | done | 78e3ab4 |
-| FR-SETUP-05 | Model selection | done | ada10c4 |
-| FR-SETUP-06 | Deterministic AB setup | done | 7871e1e |
-| FR-SETUP-07 | Agent-driven personalization | done | 7bb1a9f |
-| FR-SETUP-08 | Import existing instance | done | 7733b0e |
+| FR-SETUP-02 | Language selection | pending (new) | |
+| FR-SETUP-03 | Welcome screen | pending (new) | |
+| FR-SETUP-04 | Location picker | done | e3ce95e |
+| FR-SETUP-05 | Provider authentication (OAuth primary) | rework pending | 78e3ab4 (API key only) |
+| FR-SETUP-06 | Model selection | done | ada10c4 |
+| FR-SETUP-07 | Personalization form (name + about) | rework pending | 7bb1a9f (agent-driven) |
+| FR-SETUP-08 | Deterministic AB setup (populate USER.md from form) | rework pending | 7871e1e (placeholder only) |
+| FR-SETUP-09 | First conversation warm handoff | pending (new) | |
+| FR-SETUP-10 | Import existing instance | done | 7733b0e |
 | FR-PROMPT-01 | System prompt assembly | done | d7a3c12 |
 | FR-PROMPT-02 | Session-start enrichment | done | d7a3c12 |
 | FR-PERM-01 | Zone 1: AB home silent allow | done | d3e57f3 |
-| FR-PERM-02 | Identity write confirmation | done | d3e57f3 |
+| FR-PERM-02 | SOUL.md write confirmation (USER.md now silent) | rework pending | d3e57f3 |
 | FR-PERM-03 | Zone 3: outside access prompt | done | d3e57f3 |
 | FR-PERM-04 | Hardcoded denylist | done | d3e57f3 |
 | FR-PERM-07 | Permission prompt in chat | done | 1031c99 |
-| FR-SESSION-01 | Session resume | reverted | 835c997 (reverted by design) |
+| FR-SESSION-01 | Fresh session on every launch | rework pending | 835c997 (was resume) |
 | FR-SESSION-02 | New session | N/A (every launch is fresh) | |
 | FR-SESSION-03 | Session end on app close | pending | |
 | FR-REFLECT-01 | Factual skeleton on session end | pending | |
@@ -58,22 +60,18 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 
 ## Current focus
 
-> **Bugs to fix before continuing Phase 1:**
+> **Priority: rework existing features before adding new ones.**
 >
-> 1. Remove session resume (`session-resume.ts`): use `SessionManager.create()`
->    always — each launch is a fresh session. AB continuity is memory-based,
->    not conversation-resume. Delete stale sessions that cause retry loops.
-> 2. Validate AB directory exists in `bootSession()`: if config.json points to a
->    missing path, show error + reconfigure option instead of broken session.
+> Rework needed (from user testing 2026-07-19):
 >
-> **Design changes from user testing (2026-07-19):**
+> 1. FR-SESSION-01: Remove session-resume, use `SessionManager.create()` always.
+> 2. FR-PERM-02: Only prompt for SOUL.md writes; USER.md writes are silent.
+> 3. FR-SETUP-02/03: Add language selection + welcome screen as first wizard steps.
+> 4. FR-SETUP-05: OAuth login as primary auth path (investigate Pi SDK login flow).
+> 5. FR-SETUP-07: Replace agent-driven personalization with a form (name + about).
+> 6. FR-SETUP-08: Populate USER.md from form data (no placeholders left).
+> 7. FR-SETUP-09: Warm handoff — inject user data as initial message, agent welcomes.
+> 8. NFR-I18N: Externalize all strings with locale module (Spanish + English for MVP).
+> 9. Bug: validate AB directory exists in `bootSession()`.
 >
-> - FR-SESSION-01 reverted: fresh session per launch, no resume.
-> - FR-SETUP-04 redesign pending: OAuth login as primary auth (like Pi `/login`),
->   API key as fallback. Investigate Pi SDK login flow.
-> - FR-SETUP-07 prompt rewritten: structured initial setup (ask name, language,
->   use case, style), explicit "rewrite USER.md completely" instruction (0523717).
-> - Permission cards: user-friendly copy, no paths for identity writes (eb67120).
->
-> **Next features after fixes:** FR-GIT-01 (auto-commit), FR-REFLECT-01/02,
-> FR-INGEST-01/02.
+> After rework: FR-GIT-01 (auto-commit), FR-REFLECT-01/02, FR-INGEST-01/02.
