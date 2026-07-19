@@ -28,7 +28,7 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 | FR-BRAIN-01 | AGENTS.md behavioral rules template | done | 2e79ede, 72edf52 |
 | FR-BRAIN-02 | SOUL.md character definition | done | 2e79ede, 152ebc4 |
 | FR-BRAIN-03 | USER.md placeholder template | done | 2e79ede |
-| FR-SETUP-01 | First-run wizard UI | pending | |
+| FR-SETUP-01 | First-run detection → wizard | done | 344a0d7 |
 | FR-SETUP-02 | Deterministic AB setup | pending | |
 | FR-SETUP-03 | Agent-driven personalization | pending | |
 | FR-PROMPT-01 | System prompt assembly | pending | |
@@ -59,4 +59,11 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 > framework-agnostic controllers + worker core, BDD suite green end-to-end.
 > Native stack (spawn + real streaming + abort) validated on macOS (b036774).
 >
-> Next: Phase 1 — FR-SETUP-01 (first-run detection) + wizard, then FR-PROMPT-01
+> Phase 1 started. FR-SETUP-01 done (344a0d7): worker detects first run from
+> ~/.ab-app/config.json (AB_CONFIG_PATH override), session only created when
+> configured (cwd = AB dir), frontend routes to SetupWizard shell vs chat.
+> Verified in the real app: fresh machine shows the wizard, no session spawned.
+>
+> Next: FR-SETUP-02 (wizard steps: prerequisites/location → deterministic AB
+> setup), then FR-PROMPT-01. Testing policy: mocks/fakes by default; real-LLM
+> smoke tests sparingly (Pi default model set to Haiku to keep them cheap).
