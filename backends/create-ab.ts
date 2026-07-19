@@ -31,7 +31,6 @@ export function buildUserProfile(config: SetupConfig): string {
 ## About
 
 - **Name:** ${name}
-- **What you do:** (to be discovered)
 
 ## Context
 
