@@ -8,7 +8,7 @@ Track of implemented features. Updated ONLY when all acceptance criteria pass.
 |-------|---------|--------|--------|
 | FR-CHAT-02 | User input with send | done | 1a13fdd |
 | FR-CHAT-01 | Streaming message display | done | eca5ce2 |
-| FR-CHAT-03 | Abort generation | pending | |
+| FR-CHAT-03 | Abort generation | done | f858146 |
 | FR-CHAT-07 | Auto-scroll with manual override | pending | |
 
 **Phase 0 complete:** NO
@@ -47,4 +47,4 @@ Track of implemented features. Updated ONLY when all acceptance criteria pass.
 > BDD harness. Pi SDK spike verified: event names match spec; continueRecent() is
 > sync + non-nullable.
 >
-> Next: FR-CHAT-03 (abort generation) — session.abort(), Escape key, partial kept
+> Next: FR-CHAT-07 (auto-scroll with manual override) — last Phase 0 feature
