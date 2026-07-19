@@ -35,7 +35,7 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 | FR-SETUP-05 | Model selection | done | ada10c4 |
 | FR-SETUP-06 | Deterministic AB setup | done | 7871e1e |
 | FR-SETUP-07 | Agent-driven personalization | pending | |
-| FR-SETUP-08 | Import existing instance | pending | |
+| FR-SETUP-08 | Import existing instance | done | 7733b0e |
 | FR-PROMPT-01 | System prompt assembly | pending | |
 | FR-PERM-01 | Zone classification | pending | |
 | FR-PERM-02 | Identity file protection | pending | |
