@@ -98,8 +98,8 @@ the agent ingests could manipulate it into writing instructions into memory
 files that get loaded into every future session.
 
 **Mitigations (design-level, not just spec):**
-- Identity files (SOUL.md, USER.md) require **user confirmation** for writes,
-  even though they're inside the agent's home directory
+- SOUL.md requires **user confirmation** for writes (agent's own identity);
+  USER.md is Zone 1 (silent allow — the agent manages user profile freely)
 - The promotion pipeline's final step (observation → identity trait) is
   **never automatic** — always proposed to the user in chat
 - Consolidation runs are logged; tainted sources are traceable
@@ -254,7 +254,7 @@ sometimes forgets or misapplies. In the app, they become **enforced behavior**:
 | Resolve night-owl dates | Rule: paragraph explaining the logic | `resolveSubjectiveDate(timestamp, userPrefs)` |
 | Don't read files preemptively | Rule: "access on demand when trigger matches" | Context budget managed by code; agent gets summary, drills on request |
 | Route captures correctly | Rule: "user acts → user/, agent learns → agent_brain/" | Routing validated by permission layer; agent proposes, code verifies path |
-| Session indexing | Rule: "update logs/index.md" | Worker writes index entry automatically on session start/end |
+| Session indexing | Rule: "update logs/index.md" | Worker writes index entry automatically on session end and reflect complete |
 | Maintenance scheduling | Hook checks thresholds on session start | Heartbeat with usage-based counters (not calendar) |
 | Deferred item surfacing | Hook injects at session start | Worker checks on start + heartbeat interval |
 
@@ -399,7 +399,7 @@ AGENTS.md          ← minimal fallback for Cursor/Claude compatibility
 agent_brain/       ← agent's space (unchanged name)
   identity/
     SOUL.md        ← character, never auto-modified
-    USER.md        ← user profile, updated by agent with confirmation
+    USER.md        ← user profile, updated by agent silently (Zone 1)
   concepts/
   projects/
   skills/
@@ -450,7 +450,7 @@ LLM (judgment, depth):
 The LLM adds the interpretive layer. If the LLM fails or is interrupted, you
 still have the raw session data + the factual skeleton.
 
-**Incremental reflect** during long sessions (the "every 10 messages" pattern):
+**Incremental reflect** during long sessions (the "every 15 messages (configurable via INCREMENTAL_REFLECT_EVERY in shared/defaults.ts)" pattern):
 - Worker counts messages; at threshold, invokes a lightweight reflect
 - Uses a **separate, cheaper model** (or lower thinking level) for mid-session
   reflects — they're just encoding, not deep analysis
@@ -517,8 +517,8 @@ user need on day one to get value?
    benefit — the file is small, human-readable, and easy to parse by code.
 
 5. **Identity files:** Keep SOUL.md + USER.md separate. SOUL defines character
-   (stable, rarely changes). USER defines the person (updates as the agent
-   learns). Both require user confirmation for modifications (C2 security).
+   (stable, rarely changes, requires user confirmation). USER defines the person
+   (updates as the agent learns, Zone 1 silent allow).
 
 6. **LLM providers (v1):** Anthropic, Google Gemini, OpenAI only. No local
    models until we verify which ones reliably follow AB's memory procedures.

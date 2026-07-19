@@ -395,7 +395,7 @@ Crash recovery (next app start):
 **FR-INGEST-04 — Supported formats**
 
 - **Given** the user attaches a file
-- **When** it is markdown or plain text
+- **When** it is markdown, plain text, or extensionless
 - **Then** the agent reads and discusses it normally
 - **But when** it is PDF, DOCX, or another unsupported format
 - **Then** a friendly message suggests exporting to text
@@ -933,7 +933,7 @@ git operations, tool call rendering, thinking blocks, markdown rendering.
 - Deferred item surfacing on app start (in system prompt)
 - System prompt assembly (AGENTS.md + SOUL.md + USER.md + deferred + date)
 - Permission layer: Zone 1 always allow (with identity confirmation), everything else confirms in chat
-- Drag & drop / attach for file ingest (markdown/plain text)
+- Drag & drop / attach for file ingest (markdown/plain text/images)
 - Auto-commit after agent writes
 - Git invisible to user
 - `logs/index.md` rebuild on session end
@@ -948,7 +948,6 @@ AB remembers the conversation, knows their name, surfaces any pending reminders.
 - Hebbian tracking (Phase 2 — needs heartbeat for promotion cycles)
 - Tool call rendering as cards (shown as plain text; visual polish is Phase 3)
 - Thinking blocks as collapsible (shown inline; Phase 3)
-- Markdown rendering (Phase 3)
 - Settings UI (configure via `.pi/settings.json` directly; Phase 3)
 - Model switching from UI (Phase 3)
 - Cost visibility (Phase 2+)
@@ -1027,7 +1026,7 @@ AB remembers the conversation, knows their name, surfaces any pending reminders.
 | **Denylist** | Hardcoded paths never accessible by the agent (`~/.ssh/`, `~/.gnupg/`, etc.) |
 | **AGENTS.md** | Portable behavioral rules in the repo root — works as a fallback when the repo is opened in Cursor or Claude Code |
 | **SOUL.md** | Agent character definition — stable, rarely modified, changes require user confirmation |
-| **USER.md** | User profile — updated as the agent learns about the user, changes require user confirmation |
+| **USER.md** | User profile — updated as the agent learns about the user. Zone 1 (silent allow); only SOUL.md requires confirmation |
 | **Deferred queue** | Items in `agent_brain/deferred.md` with dates — parsed by code, surfaced by heartbeat or on app start |
 | **Maintenance lock** | A lock file (`.ab-app/maintenance.lock`) preventing concurrent consolidation operations |
 | **Session-allowed paths** | Paths implicitly granted read access for the current session (from user messages or file drops) |

@@ -56,6 +56,7 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 | FR-INGEST-02 | Attach button | done | 656634b |
 | FR-INGEST-03 | Dropped file implicit permission | done | 656634b |
 | FR-INGEST-04 | Supported formats | done | 656634b |
+| FR-INGEST-05 | Image attachments (vision) | done | 656634b |
 | FR-GIT-01 | Auto-commit after writes | done | 842635e |
 | FR-GIT-02 | Git invisible to user | done | 842635e |
 | FR-GIT-03 | Index rebuild on session end | done | 842635e |
@@ -84,6 +85,7 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 | FR-INGEST-02 | Attach button (native file picker) | done |
 | FR-INGEST-03 | Implicit read permission for attached paths | done |
 | FR-INGEST-04 | Format validation (.md, .txt, extensionless) | done |
+| FR-INGEST-05 | Image attachments via Pi vision API | done |
 
 ### Sprint: Reflect Hardening — DONE (2026-07-19)
 
@@ -92,7 +94,7 @@ Post-review fixes from `REVIEW-HANDOFF.md` findings A + B + G + C:
 | Fix | Description | Commit |
 |-----|-------------|--------|
 | A | True fork via `SessionManager.forkFrom` (child no longer writes to live JSONL) | fe8c242 |
-| B | Maintenance lock in reflect child (prevents git index.lock races) | fe8c242 |
+| B | Write-phase-only lock with retry in reflect child (prevents git index.lock races without blocking LLM) | c647df3 |
 | G | `lifecycle.flush()` before shutdown (no lost events) | fe8c242 |
 | C | BDD catch-up test realigned to production spawn path (`reflect-recovery.ts`) | 50ad118 |
 
@@ -104,6 +106,14 @@ Post-review fixes from `REVIEW-HANDOFF.md` findings A + B + G + C:
 | Finding E | Unified model catalog (detect-auth uses model-catalog helpers) | 2b9bc53 |
 | Finding D | Incremental reflect uses fast-tier model + minimal thinking | 2b9bc53 |
 | Doc sync | specs/SPEC.md + docs/app-spec-tauri.md aligned with forkFrom, systemPromptOverride | 2b9bc53 |
+
+### Sprint: Misc fixes — DONE (2026-07-19)
+
+| Task | Description | Commit |
+|------|-------------|--------|
+| Index format | logs/index.md uses one-liner summaries + path format description | 5f91d12, c647df3 |
+| i18n locale | Detect system locale on startup + bilingual language picker | 7067065 |
+| FR-INGEST-05 | Image attachments via Pi vision API (PromptOptions.images) | b894fe0 |
 
 ### Sprint: Memory Loop — DONE
 
