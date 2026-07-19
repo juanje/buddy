@@ -14,6 +14,7 @@ import { nodeStdioTransport } from "kkrpc/stdio";
 import type { AgentEvent, FrontendAPI, WorkerAPI } from "../shared/api";
 import { defaultAbLocation, validateLocation } from "./location";
 import { checkPrerequisites } from "./prereqs";
+import { configureProviderKey } from "./provider-auth";
 import { defaultConfigPath, detectFirstRun } from "./setup";
 import { createWorkerCore, type PiSessionLike } from "./worker-core";
 
@@ -95,6 +96,9 @@ async function main(): Promise<void> {
       },
       async validateLocation(path: string) {
         return validateLocation(path);
+      },
+      async configureProviderKey(provider, apiKey, baseUrl) {
+        return configureProviderKey(provider, apiKey, { baseUrl });
       },
       async shutdown() {
         await core?.api.shutdown();

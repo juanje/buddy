@@ -15,9 +15,27 @@
   const checking = wizard.checking;
   const canProceed = wizard.canProceed;
   const locationCheck = wizard.locationCheck;
+  const provider = wizard.provider;
+  const needsBaseUrl = wizard.needsBaseUrl;
+  const keyCheck = wizard.keyCheck;
+  const validatingKey = wizard.validatingKey;
 
-  // Local input value for the location step (validated on change/continue).
+  // Local input values (validated on continue).
   let locationInput = $state("");
+  let apiKeyInput = $state("");
+  let baseUrlInput = $state("");
+
+  const PROVIDERS: Array<{ id: "anthropic" | "openai" | "google" | "custom"; label: string }> = [
+    { id: "anthropic", label: t.providerAnthropic },
+    { id: "openai", label: t.providerOpenai },
+    { id: "google", label: t.providerGoogle },
+    { id: "custom", label: t.providerCustom },
+  ];
+
+  async function submitKeyAndMaybeContinue() {
+    await wizard.submitApiKey(apiKeyInput, $needsBaseUrl ? baseUrlInput : undefined);
+    wizard.next(); // no-op if the key was rejected
+  }
 
   onMount(async () => {
     void wizard.checkPrerequisites();
@@ -76,6 +94,41 @@
     <button class="primary" onclick={validateAndMaybeContinue}>
       {t.wizardContinue}
     </button>
+  {:else if $step === "provider"}
+    <h2>{t.providerTitle}</h2>
+    <p class="muted">{t.providerHint}</p>
+    <div class="providers">
+      {#each PROVIDERS as p (p.id)}
+        <button
+          class:selected={$provider === p.id}
+          onclick={() => wizard.selectProvider(p.id)}
+        >
+          {p.label}
+        </button>
+      {/each}
+    </div>
+    {#if $provider}
+      {#if $needsBaseUrl}
+        <label class="field">
+          <span>{t.baseUrlLabel}</span>
+          <input type="text" bind:value={baseUrlInput} spellcheck="false" />
+        </label>
+      {/if}
+      <label class="field">
+        <span>{t.apiKeyLabel}</span>
+        <input type="password" bind:value={apiKeyInput} spellcheck="false" />
+      </label>
+      {#if $keyCheck && !$keyCheck.valid}
+        <p class="error">{$keyCheck.error}</p>
+      {/if}
+      <button
+        class="primary"
+        onclick={submitKeyAndMaybeContinue}
+        disabled={$validatingKey || apiKeyInput.length === 0}
+      >
+        {$validatingKey ? t.apiKeyValidating : t.apiKeyValidate}
+      </button>
+    {/if}
   {:else}
     <p class="muted">{t.wizardComingSoon}</p>
   {/if}
@@ -154,5 +207,34 @@
     border-radius: 8px;
     padding: 8px 14px;
     font-size: 13px;
+  }
+  .providers {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+  }
+  .providers button.selected {
+    border-color: var(--accent, #4f46e5);
+    outline: 2px solid var(--accent, #4f46e5);
+  }
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: flex-start;
+  }
+  .field span {
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .field input {
+    width: min(420px, 80vw);
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-secondary);
+    color: var(--fg);
+    font-size: 14px;
   }
 </style>

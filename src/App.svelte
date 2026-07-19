@@ -50,6 +50,10 @@
       if (!connection) throw new Error("worker not connected");
       return connection.api.validateLocation(path);
     },
+    async configureProviderKey(provider, apiKey, baseUrl) {
+      if (!connection) throw new Error("worker not connected");
+      return connection.api.configureProviderKey(provider, apiKey, baseUrl);
+    },
     async shutdown() {
       await connection?.api.shutdown();
     },

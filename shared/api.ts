@@ -50,6 +50,9 @@ export interface LocationCheck {
   status: "ok-new" | "ok-empty" | "existing-ab" | "not-empty" | "not-a-directory";
 }
 
+/** API key validation verdict (FR-SETUP-04). */
+export type KeyCheck = { valid: true } | { valid: false; error: string };
+
 /** System prerequisites report for the setup wizard (FR-SETUP-02). */
 export interface PrereqStatus {
   gitInstalled: boolean;
@@ -67,6 +70,11 @@ export interface WorkerAPI {
   checkPrerequisites(): Promise<PrereqStatus>;
   getDefaultLocation(): Promise<string>;
   validateLocation(path: string): Promise<LocationCheck>;
+  configureProviderKey(
+    provider: SetupConfig["provider"],
+    apiKey: string,
+    baseUrl?: string,
+  ): Promise<KeyCheck>;
   shutdown(): Promise<void>;
 }
 
@@ -80,7 +88,7 @@ export type ChatWorkerAPI = Pick<WorkerAPI, "prompt" | "abort" | "getState" | "s
 /** Setup-scoped subset of WorkerAPI: what the wizard needs (FR-SETUP-02+). */
 export type SetupWorkerAPI = Pick<
   WorkerAPI,
-  "checkPrerequisites" | "getDefaultLocation" | "validateLocation"
+  "checkPrerequisites" | "getDefaultLocation" | "validateLocation" | "configureProviderKey"
 >;
 
 /** Worker calls these on the frontend. */

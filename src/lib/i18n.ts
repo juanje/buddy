@@ -24,6 +24,17 @@ export const t = {
   locationNotADirectory: "Esa ruta no es una carpeta.",
   locationExistingAb:
     "Esa carpeta ya contiene un asistente AB. La importación llegará en una próxima versión.",
+  providerTitle: "Conecta tu proveedor de IA",
+  providerHint:
+    "Tu asistente necesita un servicio de IA para pensar. Elige el tuyo e introduce tu clave de API.",
+  providerAnthropic: "Anthropic (Claude)",
+  providerOpenai: "OpenAI (GPT)",
+  providerGoogle: "Google (Gemini)",
+  providerCustom: "Compatible con OpenAI (local u otro)",
+  apiKeyLabel: "Clave de API",
+  baseUrlLabel: "URL del servicio",
+  apiKeyValidate: "Validar y continuar",
+  apiKeyValidating: "Validando…",
 } as const;
 
 /**

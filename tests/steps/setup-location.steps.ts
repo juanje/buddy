@@ -11,6 +11,7 @@ import { get } from "svelte/store";
 
 import { validateLocation } from "../../backends/location";
 import { createSetupController, type SetupController } from "../../src/lib/setup-controller";
+import { makeSetupWorkerFake } from "../support/setup-worker-fake";
 import type { AbWorld } from "../support/world";
 
 interface LocationWorld extends AbWorld {
@@ -21,17 +22,16 @@ interface LocationWorld extends AbWorld {
 
 function wizardOf(world: LocationWorld): SetupController {
   if (!world.wizard) {
-    world.wizard = createSetupController({
-      async checkPrerequisites() {
-        return { gitInstalled: true, gitVersion: "git version 2.44.0", platform: "darwin" };
-      },
-      async getDefaultLocation() {
-        return join(world.locTmpDir!, "my-ab");
-      },
-      async validateLocation(path: string) {
-        return validateLocation(path);
-      },
-    });
+    world.wizard = createSetupController(
+      makeSetupWorkerFake({
+        async getDefaultLocation() {
+          return join(world.locTmpDir!, "my-ab");
+        },
+        async validateLocation(path: string) {
+          return validateLocation(path);
+        },
+      }),
+    );
   }
   return world.wizard;
 }

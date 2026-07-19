@@ -9,6 +9,7 @@ import { get } from "svelte/store";
 import { createSetupController, type SetupController } from "../../src/lib/setup-controller";
 import { gitInstallInstructions } from "../../src/lib/i18n";
 import type { PrereqStatus } from "../../shared/api";
+import { makeSetupWorkerFake } from "../support/setup-worker-fake";
 import type { AbWorld } from "../support/world";
 
 interface PrereqWorld extends AbWorld {
@@ -19,15 +20,17 @@ interface PrereqWorld extends AbWorld {
 
 function wizardOf(world: PrereqWorld): SetupController {
   if (!world.wizard) {
-    world.wizard = createSetupController({
-      async checkPrerequisites(): Promise<PrereqStatus> {
-        return {
-          gitInstalled: world.gitInstalled ?? true,
-          gitVersion: world.gitInstalled ? "git version 2.44.0" : undefined,
-          platform: "darwin",
-        };
-      },
-    });
+    world.wizard = createSetupController(
+      makeSetupWorkerFake({
+        async checkPrerequisites(): Promise<PrereqStatus> {
+          return {
+            gitInstalled: world.gitInstalled ?? true,
+            gitVersion: world.gitInstalled ? "git version 2.44.0" : undefined,
+            platform: "darwin",
+          };
+        },
+      }),
+    );
   }
   return world.wizard;
 }

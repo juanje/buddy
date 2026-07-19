@@ -3,10 +3,19 @@
 // chat-controller pattern. Built out feature by feature:
 //   FR-SETUP-02 prerequisites gate
 //   FR-SETUP-03 location picker (+ FR-SETUP-08 import detection)
-//   (FR-SETUP-04 provider, 05 model arrive next)
+//   FR-SETUP-04 provider + API key
+//   (FR-SETUP-05 model selection arrives next)
 
 import { derived, get, writable, type Readable } from "svelte/store";
-import type { LocationCheck, PrereqStatus, SetupWorkerAPI } from "../../shared/api";
+import type {
+  KeyCheck,
+  LocationCheck,
+  PrereqStatus,
+  SetupConfig,
+  SetupWorkerAPI,
+} from "../../shared/api";
+
+export type ProviderId = SetupConfig["provider"];
 
 export type SetupStep = "prerequisites" | "location" | "provider" | "model" | "creating";
 
@@ -21,6 +30,14 @@ export interface SetupController {
   location: Readable<string | undefined>;
   /** Validation verdict for the chosen location. */
   locationCheck: Readable<LocationCheck | undefined>;
+  /** Selected AI provider (FR-SETUP-04). */
+  provider: Readable<ProviderId | undefined>;
+  /** Whether the selected provider needs a base URL (OpenAI-compatible). */
+  needsBaseUrl: Readable<boolean>;
+  /** Verdict of the last API key submission. */
+  keyCheck: Readable<KeyCheck | undefined>;
+  /** True while a key validation is in flight. */
+  validatingKey: Readable<boolean>;
   /** Whether the current step's requirements are met. */
   canProceed: Readable<boolean>;
 
@@ -30,6 +47,10 @@ export interface SetupController {
   loadDefaultLocation(): Promise<string>;
   /** Validate and store a candidate AB location (FR-SETUP-03). */
   pickLocation(path: string): Promise<void>;
+  /** Choose the AI provider; resets any previous key verdict (FR-SETUP-04). */
+  selectProvider(provider: ProviderId): void;
+  /** Validate the key against the provider and store it on success. */
+  submitApiKey(apiKey: string, baseUrl?: string): Promise<void>;
   /** Advance to the next step (no-op if canProceed is false). */
   next(): void;
 }
@@ -44,15 +65,22 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
   const checking = writable(false);
   const location = writable<string | undefined>(undefined);
   const locationCheck = writable<LocationCheck | undefined>(undefined);
+  const provider = writable<ProviderId | undefined>(undefined);
+  const keyCheck = writable<KeyCheck | undefined>(undefined);
+  const validatingKey = writable(false);
+
+  const needsBaseUrl = derived(provider, ($provider) => $provider === "custom");
 
   const canProceed = derived(
-    [step, prereq, locationCheck],
-    ([$step, $prereq, $locationCheck]) => {
+    [step, prereq, locationCheck, keyCheck],
+    ([$step, $prereq, $locationCheck, $keyCheck]) => {
       switch ($step) {
         case "prerequisites":
           return $prereq?.gitInstalled === true;
         case "location":
           return $locationCheck !== undefined && USABLE_LOCATION.includes($locationCheck.status);
+        case "provider":
+          return $keyCheck?.valid === true;
         default:
           // Later steps define their own gates as they are implemented.
           return false;
@@ -80,6 +108,22 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
     locationCheck.set(await worker.validateLocation(path));
   }
 
+  function selectProvider(id: ProviderId): void {
+    provider.set(id);
+    keyCheck.set(undefined); // a new provider invalidates any previous verdict
+  }
+
+  async function submitApiKey(apiKey: string, baseUrl?: string): Promise<void> {
+    const id = get(provider);
+    if (!id) return;
+    validatingKey.set(true);
+    try {
+      keyCheck.set(await worker.configureProviderKey(id, apiKey, baseUrl));
+    } finally {
+      validatingKey.set(false);
+    }
+  }
+
   function next(): void {
     if (!get(canProceed)) return;
     step.update(($step) => {
@@ -94,10 +138,16 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
     checking,
     location,
     locationCheck,
+    provider,
+    needsBaseUrl,
+    keyCheck,
+    validatingKey,
     canProceed,
     checkPrerequisites,
     loadDefaultLocation,
     pickLocation,
+    selectProvider,
+    submitApiKey,
     next,
   };
 }
