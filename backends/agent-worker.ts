@@ -21,6 +21,7 @@ import { defaultAbLocation, validateLocation } from "./location";
 import { createPermissionGate } from "./permissions";
 import { checkPrerequisites } from "./prereqs";
 import { assembleSystemPrompt } from "./prompt";
+import { resumeOrCreateSession } from "./session-resume";
 import { configureProviderKey } from "./provider-auth";
 import { defaultConfigPath, detectFirstRun } from "./setup";
 import { createWorkerCore, type PiSessionLike } from "./worker-core";
@@ -103,6 +104,8 @@ async function main(): Promise<void> {
     const { session } = await createAgentSession({
       cwd: abDirectory,
       resourceLoader,
+      // FR-SESSION-01: resume the most recent session (falls back to fresh).
+      sessionManager: resumeOrCreateSession(abDirectory),
       excludeTools: ["bash"], // file-only tool set (NFR-SEC-01)
     });
 
