@@ -47,10 +47,10 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 | FR-PERM-07 | Permission prompt in chat | done | 1031c99 |
 | FR-SESSION-01 | Fresh session on every launch | done | rework-sprint |
 | FR-SESSION-02 | New session | N/A (every launch is fresh) | |
-| FR-SESSION-03 | Session end on app close | done | 842635e |
-| FR-REFLECT-01 | Factual skeleton on session end | done | 842635e |
-| FR-REFLECT-02 | Catch-up reflect on start | done | 842635e |
-| FR-REFLECT-03 | Incremental mid-session reflect | done | 842635e |
+| FR-SESSION-03 | Session end on app close | done | 842635e, 6d58175 |
+| FR-REFLECT-01 | Factual skeleton (crash fallback) | done | 842635e |
+| FR-REFLECT-02 | Forked reflect on session end (background child) | done | 6d58175 |
+| FR-REFLECT-03 | Incremental mid-session reflect (background child) | done | 6d58175 |
 | FR-DEFERRED-01 | Surface deferred on start | done | d7a3c12 |
 | FR-INGEST-01 | Drag & drop file ingest | pending | |
 | FR-INGEST-02 | Attach button | pending | |
