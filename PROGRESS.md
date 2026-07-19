@@ -47,16 +47,16 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 | FR-PERM-07 | Permission prompt in chat | done | 1031c99 |
 | FR-SESSION-01 | Fresh session on every launch | done | rework-sprint |
 | FR-SESSION-02 | New session | N/A (every launch is fresh) | |
-| FR-SESSION-03 | Session end on app close | done | memory-loop |
-| FR-REFLECT-01 | Factual skeleton on session end | done | memory-loop |
-| FR-REFLECT-02 | Catch-up reflect on start | done | memory-loop |
-| FR-REFLECT-03 | Incremental mid-session reflect | done | memory-loop |
+| FR-SESSION-03 | Session end on app close | done | 842635e |
+| FR-REFLECT-01 | Factual skeleton on session end | done | 842635e |
+| FR-REFLECT-02 | Catch-up reflect on start | done | 842635e |
+| FR-REFLECT-03 | Incremental mid-session reflect | done | 842635e |
 | FR-DEFERRED-01 | Surface deferred on start | done | d7a3c12 |
 | FR-INGEST-01 | Drag & drop file ingest | pending | |
 | FR-INGEST-02 | Attach button | pending | |
-| FR-GIT-01 | Auto-commit after writes | done | memory-loop |
-| FR-GIT-02 | Git invisible to user | done | memory-loop |
-| FR-GIT-03 | Index rebuild on session end | done | memory-loop |
+| FR-GIT-01 | Auto-commit after writes | done | 842635e |
+| FR-GIT-02 | Git invisible to user | done | 842635e |
+| FR-GIT-03 | Index rebuild on session end | done | 842635e |
 | NFR-I18N | Locale module (es + en) | done | rework-sprint |
 
 ## Phase 3 — Chat polish (early)
