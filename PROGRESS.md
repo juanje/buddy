@@ -74,6 +74,26 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 > Reflect uses full Pi session context via fork — no cold skeleton analysis.
 > Next: FR-INGEST-01/02 (file ingest), FR-SHELL (UI shell), then Phase 2.
 
+### Sprint: Reflect Hardening — DONE (2026-07-19)
+
+Post-review fixes from `REVIEW-HANDOFF.md` findings A + B + G + C:
+
+| Fix | Description | Commit |
+|-----|-------------|--------|
+| A | True fork via `SessionManager.forkFrom` (child no longer writes to live JSONL) | fe8c242 |
+| B | Maintenance lock in reflect child (prevents git index.lock races) | fe8c242 |
+| G | `lifecycle.flush()` before shutdown (no lost events) | fe8c242 |
+| C | BDD catch-up test realigned to production spawn path (`reflect-recovery.ts`) | 50ad118 |
+
+### Sprint: Config Defaults + Doc Sync — DONE (2026-07-19)
+
+| Task | Description | Commit |
+|------|-------------|--------|
+| NFR-CONFIG-01/03 | `shared/defaults.ts` — centralized operational + security constants | 2b9bc53 |
+| Finding E | Unified model catalog (detect-auth uses model-catalog helpers) | 2b9bc53 |
+| Finding D | Incremental reflect uses fast-tier model + minimal thinking | 2b9bc53 |
+| Doc sync | specs/SPEC.md + docs/app-spec-tauri.md aligned with forkFrom, systemPromptOverride | 2b9bc53 |
+
 ### Sprint: Memory Loop — DONE
 
 | Order | FR-ID | Feature | Status |
