@@ -879,7 +879,7 @@ Full specification in [specs/BRAIN-SPEC.md](BRAIN-SPEC.md).
 |----|-------------|
 | NFR-CONFIG-01 | All operational defaults (thresholds, timeouts, intervals) centralized in a single `shared/defaults.ts` — no magic numbers scattered across the codebase |
 | NFR-CONFIG-02 | User-tunable settings (reflect interval, model, language) persisted in `.ab-app/settings.json` and editable from the settings UI |
-| NFR-CONFIG-03 | Security-critical values (denylist paths, excluded tools) remain hardcoded — not configurable by user or agent |
+| NFR-CONFIG-03 | Security-critical constants (denylist paths, excluded tools) centralized in `shared/defaults.ts` alongside operational defaults — not configurable by user or agent, but readable in one place for maintenance |
 
 ---
 
