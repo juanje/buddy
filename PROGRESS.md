@@ -29,8 +29,13 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 | FR-BRAIN-02 | SOUL.md character definition | done | 2e79ede, 152ebc4 |
 | FR-BRAIN-03 | USER.md placeholder template | done | 2e79ede |
 | FR-SETUP-01 | First-run detection → wizard | done | 344a0d7 |
-| FR-SETUP-02 | Deterministic AB setup | pending | |
-| FR-SETUP-03 | Agent-driven personalization | pending | |
+| FR-SETUP-02 | Prerequisites check (git) | done | fc27fa8 |
+| FR-SETUP-03 | Location picker | pending | |
+| FR-SETUP-04 | Provider and API key | pending | |
+| FR-SETUP-05 | Model selection | pending | |
+| FR-SETUP-06 | Deterministic AB setup | pending | |
+| FR-SETUP-07 | Agent-driven personalization | pending | |
+| FR-SETUP-08 | Import existing instance | pending | |
 | FR-PROMPT-01 | System prompt assembly | pending | |
 | FR-PERM-01 | Zone classification | pending | |
 | FR-PERM-02 | Identity file protection | pending | |
