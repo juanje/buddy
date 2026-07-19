@@ -1,11 +1,20 @@
 <script lang="ts">
   import type { ChatMessage } from "./chat-controller";
+  import { renderMarkdown } from "./markdown";
 
   let { message }: { message: ChatMessage } = $props();
+
+  const html = $derived(message.role === "assistant" ? renderMarkdown(message.text) : "");
 </script>
 
 <div class="row {message.role}">
-  <div class="bubble {message.role}">{message.text}</div>
+  {#if message.role === "assistant"}
+    <div class="bubble assistant prose">
+      {@html html}
+    </div>
+  {:else}
+    <div class="bubble user">{message.text}</div>
+  {/if}
 </div>
 
 <style>
@@ -23,13 +32,13 @@
     max-width: 75%;
     padding: 10px 14px;
     border-radius: 14px;
-    white-space: pre-wrap;
     word-break: break-word;
   }
   .bubble.user {
     background: var(--bubble-user);
     color: var(--bubble-user-fg);
     border-bottom-right-radius: 4px;
+    white-space: pre-wrap;
   }
   .bubble.assistant {
     background: var(--bubble-assistant);

@@ -57,9 +57,16 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 | FR-GIT-02 | Index rebuild on session end | pending | |
 | NFR-I18N | Locale module (es + en) | done | rework-sprint |
 
+## Phase 3 — Chat polish (early)
+
+| FR-ID | Feature | Status | Commit |
+|-------|---------|--------|--------|
+| FR-CHAT-04 | Markdown rendering in assistant messages | done | 37b55dc |
+
 **Phase 1 complete:** NO
 
 ## Current focus
 
-> **Rework sprint complete (2026-07-19).** Next: FR-SETUP-05 OAuth (deferred),
-> then FR-GIT-01 (auto-commit), FR-REFLECT-01/02, FR-INGEST-01/02.
+> **Rework sprint complete (2026-07-19).** FR-CHAT-04 markdown rendering shipped early
+> for better chat UX during testing. Next: FR-GIT-01 (auto-commit), FR-REFLECT-01/02,
+> FR-INGEST-01/02. FR-SETUP-05 OAuth deferred.

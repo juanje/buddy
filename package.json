@@ -17,7 +17,9 @@
   "dependencies": {
     "@earendil-works/pi-coding-agent": "^0.80.10",
     "@tauri-apps/api": "^2.0.0",
+    "highlight.js": "^11.11.1",
     "kkrpc": "^2.1.0",
+    "marked": "^18.0.6",
     "simple-git": "^3.36.0",
     "svelte": "^5.0.0",
     "tauri-plugin-js-api": "^0.2.0"
