@@ -46,13 +46,13 @@
     onkeydown={handleKeydown}
     oninput={autoResize}
     disabled={$inputDisabled}
-    placeholder={t.inputPlaceholder}
+    placeholder={$t.inputPlaceholder}
     rows="1"
   ></textarea>
   {#if $showAbort}
-    <button class="abort" onclick={onAbort} title={t.abortTitle}>◼</button>
+    <button class="abort" onclick={onAbort} title={$t.abortTitle}>◼</button>
   {:else}
-    <button class="send" onclick={sendNow} disabled={!$canSend} title={t.sendTitle}>
+    <button class="send" onclick={sendNow} disabled={!$canSend} title={$t.sendTitle}>
       ➤
     </button>
   {/if}

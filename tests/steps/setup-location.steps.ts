@@ -11,6 +11,7 @@ import { get } from "svelte/store";
 
 import { validateLocation } from "../../backends/location";
 import { createSetupController, type SetupController } from "../../src/lib/setup-controller";
+import { advanceToLocationStep } from "../support/setup-wizard-helpers";
 import { makeSetupWorkerFake } from "../support/setup-worker-fake";
 import type { AbWorld } from "../support/world";
 
@@ -42,10 +43,7 @@ After(function (this: LocationWorld) {
 
 Given("the setup wizard is on the location step", async function (this: LocationWorld) {
   this.locTmpDir = mkdtempSync(join(tmpdir(), "ab-location-"));
-  const wizard = wizardOf(this);
-  await wizard.checkPrerequisites();
-  wizard.next(); // prerequisites → location
-  assert.equal(get(wizard.step), "location");
+  await advanceToLocationStep(wizardOf(this));
 });
 
 Given("the default location does not exist yet", async function (this: LocationWorld) {

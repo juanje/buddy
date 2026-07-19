@@ -7,6 +7,7 @@ import assert from "node:assert/strict";
 import { get } from "svelte/store";
 
 import { createSetupController, type SetupController } from "../../src/lib/setup-controller";
+import { advancePastIntroSteps } from "../support/setup-wizard-helpers";
 import { gitInstallInstructions } from "../../src/lib/i18n";
 import type { PrereqStatus } from "../../shared/api";
 import { makeSetupWorkerFake } from "../support/setup-worker-fake";
@@ -36,7 +37,7 @@ function wizardOf(world: PrereqWorld): SetupController {
 }
 
 Given("the setup wizard has started", function (this: PrereqWorld) {
-  wizardOf(this);
+  advancePastIntroSteps(wizardOf(this));
 });
 
 Given("git is installed on the system", function (this: PrereqWorld) {

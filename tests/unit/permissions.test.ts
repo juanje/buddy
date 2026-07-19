@@ -30,9 +30,12 @@ describe("evaluateToolCall", () => {
     expect(escape.action).toBe("ask");
   });
 
-  it("asks for identity writes but not identity reads", () => {
-    const write = evaluate("edit", { path: `${AB}/agent_brain/identity/SOUL.md` });
-    expect(write).toMatchObject({ action: "ask", kind: "identity-write", op: "write" });
+  it("asks for SOUL.md writes but not USER.md writes", () => {
+    const soulWrite = evaluate("edit", { path: `${AB}/agent_brain/identity/SOUL.md` });
+    expect(soulWrite).toMatchObject({ action: "ask", kind: "identity-write", op: "write" });
+    expect(evaluate("write", { path: `${AB}/agent_brain/identity/USER.md` })).toEqual({
+      action: "allow",
+    });
     expect(evaluate("read", { path: `${AB}/agent_brain/identity/SOUL.md` })).toEqual({
       action: "allow",
     });

@@ -11,7 +11,9 @@ import {
   createAgentSession,
   DefaultResourceLoader,
   getAgentDir,
+  SessionManager,
 } from "@earendil-works/pi-coding-agent";
+import { existsSync } from "node:fs";
 import { RPCChannel } from "kkrpc";
 import { nodeStdioTransport } from "kkrpc/stdio";
 
@@ -21,9 +23,9 @@ import { defaultAbLocation, validateLocation } from "./location";
 import { createPermissionGate } from "./permissions";
 import { checkPrerequisites } from "./prereqs";
 import { assembleSystemPrompt } from "./prompt";
-import { resumeOrCreateSession } from "./session-resume";
 import { configureProviderKey } from "./provider-auth";
 import { defaultConfigPath, detectFirstRun } from "./setup";
+import { runWarmHandoff } from "./warm-handoff";
 import { createWorkerCore, type PiSessionLike } from "./worker-core";
 
 /** Map Pi AgentSession to the structural subset the worker core needs. */
@@ -88,11 +90,17 @@ async function main(): Promise<void> {
   const pendingPermissions = new Map<number, (allow: boolean) => void>();
   let nextPermissionId = 1;
 
-  async function bootSession(abDirectory: string): Promise<void> {
-    if (core) return; // already running (setup completing twice is a no-op)
+  async function bootSession(
+    abDirectory: string,
+    options?: { firstSession?: boolean; name?: string; about?: string },
+  ): Promise<void> {
+    if (core) return;
 
-    // FR-PROMPT-01/02: the system prompt is assembled from the AB's own
-    // files (AGENTS.md, SOUL.md, USER.md, due deferred items, current date).
+    if (!existsSync(abDirectory)) {
+      frontend.onWorkerError(`AB directory not found: ${abDirectory}`);
+      return;
+    }
+
     const { prompt } = assembleSystemPrompt(abDirectory);
     const resourceLoader = new DefaultResourceLoader({
       cwd: abDirectory,
@@ -104,21 +112,22 @@ async function main(): Promise<void> {
     const { session } = await createAgentSession({
       cwd: abDirectory,
       resourceLoader,
-      // FR-SESSION-01: resume the most recent session (falls back to fresh).
-      sessionManager: resumeOrCreateSession(abDirectory),
-      excludeTools: ["bash"], // file-only tool set (NFR-SEC-01)
+      sessionManager: SessionManager.create(abDirectory),
+      excludeTools: ["bash"],
     });
 
-    // FR-PERM-01..04: permission zones as a chained beforeToolCall hook.
-    // An earlier hook's block wins; otherwise our gate decides (and "ask"
-    // waits for the user's answer relayed by the frontend).
-    const gate = createPermissionGate(abDirectory, (request) => {
-      const id = nextPermissionId++;
-      return new Promise<boolean>((resolveAnswer) => {
-        pendingPermissions.set(id, resolveAnswer);
-        frontend.onPermissionRequest({ ...request, id });
-      });
-    });
+    const gate = createPermissionGate(
+      abDirectory,
+      (request) => {
+        const id = nextPermissionId++;
+        return new Promise<boolean>((resolveAnswer) => {
+          pendingPermissions.set(id, resolveAnswer);
+          frontend.onPermissionRequest({ ...request, id });
+        });
+      },
+      undefined,
+      { skipIdentityPrompt: options?.firstSession === true },
+    );
     const originalBeforeToolCall = session.agent.beforeToolCall;
     session.agent.beforeToolCall = async (ctx, signal) => {
       const prior = await originalBeforeToolCall?.(ctx, signal);
@@ -127,7 +136,16 @@ async function main(): Promise<void> {
       return blocked ?? prior;
     };
 
-    core = createWorkerCore(asPiSessionLike(session), frontend);
+    const sessionLike = asPiSessionLike(session);
+
+    if (options?.firstSession && options.name) {
+      await runWarmHandoff(sessionLike, frontend, {
+        name: options.name,
+        about: options.about,
+      });
+    }
+
+    core = createWorkerCore(sessionLike, frontend);
   }
 
   const transport = nodeStdioTransport();
@@ -165,7 +183,11 @@ async function main(): Promise<void> {
           await createAbInstance({ config, configPath: defaultConfigPath() });
         }
         setupState = { firstRun: false, config };
-        await bootSession(config.abDirectory);
+        await bootSession(config.abDirectory, {
+          firstSession: mode === "create",
+          name: config.name,
+          about: config.about,
+        });
       },
       async resolvePermission(id, allow) {
         const resolveAnswer = pendingPermissions.get(id);

@@ -139,12 +139,16 @@
 <main>
   {#if connectionError}
     <div class="error-banner">
-      <span>{t.connectionLost}: {connectionError}</span>
-      <button onclick={connect}>{t.restart}</button>
+      <span>{$t.connectionLost}: {connectionError}</span>
+      <button onclick={connect}>{$t.restart}</button>
     </div>
   {/if}
   {#if view === "setup"}
-    <SetupWizard worker={workerProxy} onComplete={() => (view = "chat")} />
+    <SetupWizard
+      worker={workerProxy}
+      onComplete={() => (view = "chat")}
+      onSetupFailed={() => (view = "setup")}
+    />
   {:else if view === "chat" && controller}
     <ChatView bind:this={chatView} {controller} {scroll} />
     <InputBar

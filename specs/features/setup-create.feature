@@ -15,7 +15,10 @@ Feature: Deterministic AB directory setup (FR-SETUP-06)
   Scenario: Base templates are copied
     When setup runs
     Then the AB directory contains the base templates
-    And USER.md still has placeholder content
+
+  Scenario: USER.md is populated from wizard form data
+    When setup runs
+    Then USER.md contains the user's name and language
 
   Scenario: Pi settings are written
     When setup runs

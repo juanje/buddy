@@ -1,6 +1,6 @@
-// backends/create-ab.ts — Deterministic AB instance creation (FR-SETUP-06).
-// Pure file operations + git: NO LLM call happens here by design (the spec
-// mandates it; personalization is a later, conversational step FR-SETUP-07).
+// backends/create-ab.ts — Deterministic AB instance creation (FR-SETUP-06/08).
+// Pure file operations + git: NO LLM call happens here by design. The wizard
+// collects personalization in a form; USER.md is populated from that data.
 
 import { cpSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -21,6 +21,28 @@ export interface CreateAbOptions {
   templatesDir?: string;
 }
 
+/** Build USER.md from wizard form data — no template prose remains (FR-SETUP-08). */
+export function buildUserProfile(config: SetupConfig): string {
+  const name = config.name?.trim() ?? "";
+  const about = config.about?.trim() || "(to be discovered)";
+  const language = config.language ?? "es";
+  return `# User profile
+
+## About
+
+- **Name:** ${name}
+- **What you do:** (to be discovered)
+
+## Context
+
+${about}
+
+## Preferences
+
+- Language: ${language}
+`;
+}
+
 /**
  * Create the AB home: copy templates (agent_brain/, user/, logs/, AGENTS.md),
  * write project Pi settings, init git with a single initial commit, and mark
@@ -32,6 +54,10 @@ export async function createAbInstance(options: CreateAbOptions): Promise<void> 
   const ab = config.abDirectory;
 
   cpSync(templatesDir, ab, { recursive: true });
+
+  if (config.name?.trim()) {
+    writeFileSync(join(ab, "agent_brain", "identity", "USER.md"), buildUserProfile(config));
+  }
 
   // Project-scoped Pi settings: the session created in this cwd uses the
   // provider/model chosen in the wizard (FR-SETTINGS-01).
@@ -56,7 +82,7 @@ export async function createAbInstance(options: CreateAbOptions): Promise<void> 
 }
 
 /**
- * Adopt an existing AB directory without overwriting anything (FR-SETUP-08).
+ * Adopt an existing AB directory without overwriting anything (FR-SETUP-10).
  * Platform artifacts (.cursor/, .codex/) are simply left alone. The only
  * write inside the AB is .pi/settings.json, and only when it doesn't exist
  * (the wizard collected provider/model precisely because it was missing).

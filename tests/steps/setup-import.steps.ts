@@ -22,6 +22,7 @@ import { adoptAbInstance } from "../../backends/create-ab";
 import { validateLocation } from "../../backends/location";
 import { detectFirstRun } from "../../backends/setup";
 import { createSetupController, type SetupController } from "../../src/lib/setup-controller";
+import { advanceToLocationStep } from "../support/setup-wizard-helpers";
 import { makeSetupWorkerFake } from "../support/setup-worker-fake";
 import type { AbWorld } from "../support/world";
 
@@ -109,8 +110,7 @@ Given("an existing AB directory without Pi settings", function (this: ImportWorl
 
 When("the user imports it from the location step", async function (this: ImportWorld) {
   const wizard = makeWizard(this);
-  await wizard.checkPrerequisites();
-  wizard.next(); // → location
+  await advanceToLocationStep(wizard);
   await wizard.pickLocation(this.abDir!);
   assert.equal(get(wizard.locationCheck)?.status, "existing-ab");
   this.importOutcome = await wizard.importExisting();

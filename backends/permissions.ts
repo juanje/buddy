@@ -3,7 +3,8 @@
 // Zones:
 //   denylist — ~/.ssh/*, ~/.gnupg/*, ~/.aws/*, **/.env, **/auth.json:
 //              blocked silently, no prompt, no override (FR-PERM-04).
-//   identity — writes to SOUL.md / USER.md ask for confirmation (FR-PERM-02).
+//   identity — writes to SOUL.md ask for confirmation (FR-PERM-02).
+//              USER.md writes are Zone 1 (silent allow).
 //   ab-home  — anything else inside the AB directory: silent allow (FR-PERM-01).
 //   outside  — anything else: ask the user, allow-once or deny (FR-PERM-03).
 //
@@ -33,7 +34,7 @@ const READ_TOOLS = new Set(["read", "ls", "find", "grep"]);
 const DENYLIST_HOME_DIRS = [".ssh", ".gnupg", ".aws"];
 const DENYLIST_BASENAMES = [".env", "auth.json"];
 
-const IDENTITY_FILES = ["SOUL.md", "USER.md"];
+const IDENTITY_FILES = ["SOUL.md"];
 
 function isWithin(child: string, parent: string): boolean {
   const rel = relative(parent, child);
@@ -105,10 +106,18 @@ export function createPermissionGate(
   abDirectory: string,
   askUser: (request: Omit<PermissionRequest, "id">) => Promise<boolean>,
   home: string = homedir(),
+  options?: { skipIdentityPrompt?: boolean },
 ): PermissionGate {
   return {
     async check(toolName, args) {
       const decision = evaluateToolCall(toolName, args, abDirectory, home);
+      if (
+        options?.skipIdentityPrompt &&
+        decision.action === "ask" &&
+        decision.kind === "identity-write"
+      ) {
+        return undefined;
+      }
       switch (decision.action) {
         case "allow":
           return undefined;

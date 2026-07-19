@@ -1,7 +1,61 @@
-// src/lib/i18n.ts — UI strings (v1: Spanish default for target user).
-// Replace with locale-aware lookup when multi-language ships.
+export type LocaleStrings = {
+  inputPlaceholder: string;
+  connectionLost: string;
+  restart: string;
+  sendTitle: string;
+  abortTitle: string;
+  scrollToBottom: string;
+  wizardTitle: string;
+  wizardIntro: string;
+  wizardComingSoon: string;
+  languageTitle: string;
+  languageOptionEs: string;
+  languageOptionEn: string;
+  personalizationTitle: string;
+  personalizationNameLabel: string;
+  personalizationNameHint: string;
+  personalizationAboutLabel: string;
+  personalizationAboutHint: string;
+  gitRequired: string;
+  gitCheckRetry: string;
+  gitChecking: string;
+  wizardContinue: string;
+  locationTitle: string;
+  locationHint: string;
+  locationNotEmpty: string;
+  locationNotADirectory: string;
+  locationExistingAb: string;
+  locationImport: string;
+  providerTitle: string;
+  providerHint: string;
+  providerAnthropic: string;
+  providerOpenai: string;
+  providerGoogle: string;
+  providerCustom: string;
+  apiKeyLabel: string;
+  baseUrlLabel: string;
+  apiKeyValidate: string;
+  apiKeyValidating: string;
+  modelTitle: string;
+  modelHint: string;
+  modelRecommended: string;
+  modelCustomLabel: string;
+  modelCustomHint: string;
+  permissionTitleOutside: string;
+  permissionTitleIdentity: string;
+  permissionOpRead: string;
+  permissionOpWrite: string;
+  permissionAllowOnce: string;
+  permissionDeny: string;
+  permissionAllowed: string;
+  permissionDenied: string;
+  creatingTitle: string;
+  creatingHint: string;
+  creatingError: string;
+  creatingRetry: string;
+};
 
-export const t = {
+export const es: LocaleStrings = {
   inputPlaceholder: "Escribe un mensaje…",
   connectionLost: "Se perdió la conexión con el asistente",
   restart: "Reiniciar",
@@ -12,6 +66,15 @@ export const t = {
   wizardIntro:
     "Vamos a preparar tu asistente personal. Este asistente vivirá en una carpeta de tu equipo, con su memoria y sus notas.",
   wizardComingSoon: "Los pasos del asistente de configuración llegarán en las próximas versiones.",
+  languageTitle: "Elige tu idioma",
+  languageOptionEs: "Español",
+  languageOptionEn: "English",
+  personalizationTitle: "Cuéntale un poco sobre ti",
+  personalizationNameLabel: "¿Cómo quieres que te llame tu asistente?",
+  personalizationNameHint: "Tu nombre o cómo prefieres que te llamen",
+  personalizationAboutLabel: "Cuéntale sobre ti",
+  personalizationAboutHint:
+    "Cuanto más compartas, más útil será desde el primer día — trabajo, intereses, para qué lo usarás…",
   gitRequired:
     "AB necesita git para guardar la memoria de tu asistente de forma segura. No lo hemos encontrado en tu equipo.",
   gitCheckRetry: "Volver a comprobar",
@@ -41,7 +104,7 @@ export const t = {
   modelCustomLabel: "Identificador del modelo",
   modelCustomHint: "Escribe el nombre del modelo tal y como lo expone tu servicio.",
   permissionTitleOutside: "El asistente quiere acceder a un archivo fuera de su carpeta",
-  permissionTitleIdentity: "El asistente quiere actualizar tu información personal",
+  permissionTitleIdentity: "El asistente quiere actualizar su personalidad",
   permissionOpRead: "Leer",
   permissionOpWrite: "Escribir",
   permissionAllowOnce: "Permitir una vez",
@@ -52,10 +115,10 @@ export const t = {
   creatingHint: "Estamos creando su memoria y dejándolo todo listo. Solo tardará un momento.",
   creatingError: "No se pudo completar la configuración",
   creatingRetry: "Reintentar",
-} as const;
+};
 
 /** Short cost/capability description per model tier (FR-SETUP-05). */
-export function tierDescription(tier: "fast" | "balanced" | "powerful"): string {
+export function tierDescriptionEs(tier: "fast" | "balanced" | "powerful"): string {
   switch (tier) {
     case "fast":
       return "Rápido y muy económico. Ideal para el día a día.";
@@ -66,12 +129,7 @@ export function tierDescription(tier: "fast" | "balanced" | "powerful"): string 
   }
 }
 
-/**
- * Platform-specific git install instructions (FR-SETUP-02). Keyed by Node's
- * process.platform reported by the worker; unknown platforms get the generic
- * download link.
- */
-export function gitInstallInstructions(platform: string): string {
+export function gitInstallInstructionsEs(platform: string): string {
   switch (platform) {
     case "darwin":
       return "Instala las herramientas de línea de comandos de Apple ejecutando «xcode-select --install» en Terminal, o instala git con Homebrew: «brew install git».";

@@ -12,6 +12,7 @@ import { get } from "svelte/store";
 
 import { configureProviderKey, type ProviderId } from "../../backends/provider-auth";
 import { createSetupController, type SetupController } from "../../src/lib/setup-controller";
+import { advanceToProviderStep } from "../support/setup-wizard-helpers";
 import { makeSetupWorkerFake } from "../support/setup-worker-fake";
 import type { AbWorld } from "../support/world";
 
@@ -52,12 +53,7 @@ Given("the setup wizard is on the provider step", async function (this: Provider
   this.authTmpDir = mkdtempSync(join(tmpdir(), "ab-provider-"));
   this.authPath = join(this.authTmpDir, "auth.json");
 
-  const wizard = wizardOf(this);
-  await wizard.checkPrerequisites();
-  wizard.next(); // prerequisites → location
-  await wizard.pickLocation(join(this.authTmpDir, "my-ab"));
-  wizard.next(); // location → provider
-  assert.equal(get(wizard.step), "provider");
+  await advanceToProviderStep(wizardOf(this), join(this.authTmpDir, "my-ab"));
 });
 
 // One definition serves Given/When/And phrasings alike.

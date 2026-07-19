@@ -12,6 +12,7 @@ import {
 } from "../../src/lib/setup-controller";
 import { modelChoicesFor, recommendedModelFor } from "../../src/lib/model-catalog";
 import { tierDescription } from "../../src/lib/i18n";
+import { advanceToModelStep } from "../support/setup-wizard-helpers";
 import { makeSetupWorkerFake } from "../support/setup-worker-fake";
 import type { AbWorld } from "../support/world";
 
@@ -33,15 +34,7 @@ async function wizardOnModelStep(world: ModelWorld, provider: ProviderId): Promi
       },
     }),
   );
-  const wizard = world.wizard;
-  await wizard.checkPrerequisites();
-  wizard.next(); // → location
-  await wizard.pickLocation("/tmp/ab-model-step");
-  wizard.next(); // → provider
-  wizard.selectProvider(provider);
-  await wizard.submitApiKey("valid-key", provider === "custom" ? "http://localhost/v1" : undefined);
-  wizard.next(); // → model
-  assert.equal(get(wizard.step), "model");
+  await advanceToModelStep(world.wizard, "/tmp/ab-model-step", provider);
 }
 
 Given(

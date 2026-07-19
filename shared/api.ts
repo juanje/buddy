@@ -35,6 +35,9 @@ export interface SetupConfig {
   abDirectory: string;
   provider: "anthropic" | "openai" | "google" | "custom";
   model: string;
+  language?: "es" | "en";
+  name?: string;
+  about?: string;
   apiKey?: string;
   baseUrl?: string;
 }

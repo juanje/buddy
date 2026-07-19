@@ -1,10 +1,6 @@
 // src/lib/setup-controller.ts — framework-agnostic setup wizard logic.
 // The SetupWizard component is a thin view over these stores, mirroring the
-// chat-controller pattern. Built out feature by feature:
-//   FR-SETUP-02 prerequisites gate
-//   FR-SETUP-03 location picker (+ FR-SETUP-08 import detection)
-//   FR-SETUP-04 provider + API key
-//   FR-SETUP-05 model selection (curated catalog, recommended default)
+// chat-controller pattern.
 
 import { derived, get, writable, type Readable } from "svelte/store";
 import { recommendedModelFor } from "./model-catalog";
@@ -17,72 +13,70 @@ import type {
 } from "../../shared/api";
 
 export type ProviderId = SetupConfig["provider"];
+export type AppLocale = NonNullable<SetupConfig["language"]>;
 
-export type SetupStep = "prerequisites" | "location" | "provider" | "model" | "creating";
+export type SetupStep =
+  | "language"
+  | "welcome"
+  | "personalization"
+  | "prerequisites"
+  | "location"
+  | "provider"
+  | "model"
+  | "creating";
 
 export interface SetupController {
-  /** Current wizard step. */
   step: Readable<SetupStep>;
-  /** Last prerequisites report (undefined until the first check completes). */
   prereq: Readable<PrereqStatus | undefined>;
-  /** True while a prerequisites check is in flight. */
   checking: Readable<boolean>;
-  /** Chosen AB location (prefilled with the worker's default). */
+  language: Readable<AppLocale | undefined>;
+  userName: Readable<string>;
+  userAbout: Readable<string>;
   location: Readable<string | undefined>;
-  /** Validation verdict for the chosen location. */
   locationCheck: Readable<LocationCheck | undefined>;
-  /** Selected AI provider (FR-SETUP-04). */
   provider: Readable<ProviderId | undefined>;
-  /** Whether the selected provider needs a base URL (OpenAI-compatible). */
   needsBaseUrl: Readable<boolean>;
-  /** Verdict of the last API key submission. */
   keyCheck: Readable<KeyCheck | undefined>;
-  /** True while a key validation is in flight. */
   validatingKey: Readable<boolean>;
-  /** Chosen model id (preselected with the provider's recommended model). */
   model: Readable<string | undefined>;
-  /** Whether the current step's requirements are met. */
   canProceed: Readable<boolean>;
 
-  /** Run (or re-run) the prerequisites check. */
+  selectLanguage(lang: AppLocale): void;
+  setPersonalization(name: string, about?: string): void;
   checkPrerequisites(): Promise<void>;
-  /** Prefill the location input with the worker's proposed default. */
   loadDefaultLocation(): Promise<string>;
-  /** Validate and store a candidate AB location (FR-SETUP-03). */
   pickLocation(path: string): Promise<void>;
-  /** Choose the AI provider; resets any previous key verdict (FR-SETUP-04). */
   selectProvider(provider: ProviderId): void;
-  /** Validate the key against the provider and store it on success. */
   submitApiKey(apiKey: string, baseUrl?: string): Promise<void>;
-  /** Choose the model to use (FR-SETUP-05). */
   selectModel(modelId: string): void;
-  /** Advance to the next step (no-op if canProceed is false). */
   next(): void;
-  /**
-   * Run deterministic AB creation with the collected answers (FR-SETUP-06).
-   * Resolves when the AB exists and the session is live; rejects on failure.
-   */
+  /** Move to the creating step without running setup yet (shows chat during warm handoff). */
+  beginCreating(): void;
   finishSetup(): Promise<void>;
-  /** True when adopting an existing AB instead of creating one (FR-SETUP-08). */
   importMode: Readable<boolean>;
-  /**
-   * Adopt the existing AB at the chosen location (FR-SETUP-08). Returns
-   * "adopted" when its own settings sufficed, or "needs-provider" when the
-   * wizard must continue through the provider/model steps in import mode.
-   */
   importExisting(): Promise<"adopted" | "needs-provider">;
-  /** True once setup completed successfully (the app can enter the chat). */
   completed: Readable<boolean>;
-  /** Error message if AB creation failed. */
   setupError: Readable<string | undefined>;
 }
 
-const STEP_ORDER: SetupStep[] = ["prerequisites", "location", "provider", "model", "creating"];
+const STEP_ORDER: SetupStep[] = [
+  "language",
+  "welcome",
+  "personalization",
+  "prerequisites",
+  "location",
+  "provider",
+  "model",
+  "creating",
+];
 
 const USABLE_LOCATION: ReadonlyArray<LocationCheck["status"]> = ["ok-new", "ok-empty"];
 
 export function createSetupController(worker: SetupWorkerAPI): SetupController {
-  const step = writable<SetupStep>("prerequisites");
+  const step = writable<SetupStep>("language");
+  const language = writable<AppLocale | undefined>(undefined);
+  const userName = writable("");
+  const userAbout = writable("");
   const prereq = writable<PrereqStatus | undefined>(undefined);
   const checking = writable(false);
   const location = writable<string | undefined>(undefined);
@@ -95,9 +89,15 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
   const needsBaseUrl = derived(provider, ($provider) => $provider === "custom");
 
   const canProceed = derived(
-    [step, prereq, locationCheck, keyCheck, model],
-    ([$step, $prereq, $locationCheck, $keyCheck, $model]) => {
+    [step, language, userName, prereq, locationCheck, keyCheck, model],
+    ([$step, $language, $userName, $prereq, $locationCheck, $keyCheck, $model]) => {
       switch ($step) {
+        case "language":
+          return $language !== undefined;
+        case "welcome":
+          return true;
+        case "personalization":
+          return $userName.trim().length > 0;
         case "prerequisites":
           return $prereq?.gitInstalled === true;
         case "location":
@@ -107,11 +107,20 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
         case "model":
           return typeof $model === "string" && $model.trim() !== "";
         default:
-          // Later steps define their own gates as they are implemented.
           return false;
       }
     },
   );
+
+  function selectLanguage(lang: AppLocale): void {
+    language.set(lang);
+    next();
+  }
+
+  function setPersonalization(name: string, about?: string): void {
+    userName.set(name);
+    userAbout.set(about ?? "");
+  }
 
   async function checkPrerequisites(): Promise<void> {
     checking.set(true);
@@ -135,7 +144,7 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
 
   function selectProvider(id: ProviderId): void {
     provider.set(id);
-    keyCheck.set(undefined); // a new provider invalidates any previous verdict
+    keyCheck.set(undefined);
   }
 
   async function submitApiKey(apiKey: string, baseUrl?: string): Promise<void> {
@@ -157,12 +166,24 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
   const setupError = writable<string | undefined>(undefined);
   const importMode = writable(false);
 
-  async function runSetupWith(config: {
-    abDirectory: string;
-    provider: ProviderId;
-    model: string;
-  }): Promise<void> {
-    step.set("creating");
+  function buildConfig(): SetupConfig {
+    const abDirectory = get(location);
+    const providerId = get(provider);
+    const modelId = get(model);
+    if (!abDirectory || !providerId || !modelId) {
+      throw new Error("buildConfig called before the wizard collected all answers");
+    }
+    return {
+      abDirectory,
+      provider: providerId,
+      model: modelId,
+      language: get(language) ?? "es",
+      name: get(userName).trim(),
+      about: get(userAbout).trim() || undefined,
+    };
+  }
+
+  async function runSetupWith(config: SetupConfig): Promise<void> {
     setupError.set(undefined);
     try {
       await worker.runSetup(config, get(importMode) ? "import" : "create");
@@ -173,14 +194,12 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
     }
   }
 
+  function beginCreating(): void {
+    step.set("creating");
+  }
+
   async function finishSetup(): Promise<void> {
-    const abDirectory = get(location);
-    const providerId = get(provider);
-    const modelId = get(model);
-    if (!abDirectory || !providerId || !modelId) {
-      throw new Error("finishSetup called before the wizard collected all answers");
-    }
-    await runSetupWith({ abDirectory, provider: providerId, model: modelId });
+    await runSetupWith(buildConfig());
   }
 
   const KNOWN_PROVIDERS: ReadonlyArray<ProviderId> = ["anthropic", "openai", "google", "custom"];
@@ -198,12 +217,15 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
     if (knownProvider && settings?.model) {
       provider.set(knownProvider);
       model.set(settings.model);
-      await runSetupWith({ abDirectory, provider: knownProvider, model: settings.model });
+      await runSetupWith({
+        abDirectory,
+        provider: knownProvider,
+        model: settings.model,
+        language: get(language) ?? "es",
+      });
       return "adopted";
     }
 
-    // Missing or unrecognized settings: collect provider/model in the wizard;
-    // finishSetup will then adopt (import mode) instead of creating.
     step.set("provider");
     return "needs-provider";
   }
@@ -214,8 +236,6 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
       const index = STEP_ORDER.indexOf($step);
       return STEP_ORDER[Math.min(index + 1, STEP_ORDER.length - 1)];
     });
-    // Entering the model step preselects the provider's recommended model
-    // (FR-SETUP-05); "custom" has no catalog, so the user must type an id.
     if (get(step) === "model" && get(model) === undefined) {
       const id = get(provider);
       if (id) model.set(recommendedModelFor(id)?.id);
@@ -226,6 +246,9 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
     step,
     prereq,
     checking,
+    language,
+    userName,
+    userAbout,
     location,
     locationCheck,
     provider,
@@ -234,6 +257,8 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
     validatingKey,
     model,
     canProceed,
+    selectLanguage,
+    setPersonalization,
     checkPrerequisites,
     loadDefaultLocation,
     pickLocation,
@@ -241,6 +266,7 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
     submitApiKey,
     selectModel,
     next,
+    beginCreating,
     finishSetup,
     importMode,
     importExisting,

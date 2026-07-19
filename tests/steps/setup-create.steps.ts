@@ -33,6 +33,9 @@ Given("a completed wizard configuration", function (this: CreateWorld) {
     abDirectory: this.abDir,
     provider: "anthropic",
     model: "claude-haiku-4-5",
+    language: "es",
+    name: "María",
+    about: "Software engineer in Madrid",
   };
 });
 
@@ -64,10 +67,12 @@ Then("the AB directory contains the base templates", function (this: CreateWorld
   }
 });
 
-Then("USER.md still has placeholder content", function (this: CreateWorld) {
-  const source = readFileSync(join(defaultTemplatesDir(), "agent_brain/identity/USER.md"), "utf8");
+Then("USER.md contains the user's name and language", function (this: CreateWorld) {
   const copied = readFileSync(join(this.abDir!, "agent_brain/identity/USER.md"), "utf8");
-  assert.equal(copied, source); // untouched: personalization is FR-SETUP-07
+  assert.match(copied, /\*\*Name:\*\* María/);
+  assert.match(copied, /Software engineer in Madrid/);
+  assert.match(copied, /Language: es/);
+  assert.doesNotMatch(copied, /This section grows organically/);
 });
 
 Then(

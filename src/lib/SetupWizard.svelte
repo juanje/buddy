@@ -1,17 +1,23 @@
 <script lang="ts">
   // Setup wizard (FR-SETUP-01 routing target).
-  // Steps built out feature by feature: FR-SETUP-02 prerequisites gate ·
-  // FR-SETUP-03 location picker · (FR-SETUP-04 provider, 05 model next).
   import { onMount } from "svelte";
   import { createSetupController } from "./setup-controller";
   import { modelChoicesFor } from "./model-catalog";
   import { gitInstallInstructions, t, tierDescription } from "./i18n";
+  import LanguageStep from "./wizard/LanguageStep.svelte";
+  import WelcomeStep from "./wizard/WelcomeStep.svelte";
+  import PersonalizationStep from "./wizard/PersonalizationStep.svelte";
   import type { SetupWorkerAPI } from "../../shared/api";
 
   let {
     worker,
     onComplete,
-  }: { worker: SetupWorkerAPI; onComplete?: () => void } = $props();
+    onSetupFailed,
+  }: {
+    worker: SetupWorkerAPI;
+    onComplete?: () => void;
+    onSetupFailed?: () => void;
+  } = $props();
 
   const wizard = createSetupController(worker);
   const step = wizard.step;
@@ -26,39 +32,42 @@
   const model = wizard.model;
   const setupError = wizard.setupError;
 
+  let nameInput = $state("");
+  let aboutInput = $state("");
+
   async function createAb() {
     try {
-      await wizard.finishSetup();
+      wizard.beginCreating();
       onComplete?.();
+      await wizard.finishSetup();
     } catch {
-      // setupError store carries the message; the creating step shows it.
+      onSetupFailed?.();
     }
   }
 
   async function importExistingAb() {
     try {
-      if ((await wizard.importExisting()) === "adopted") onComplete?.();
-      // "needs-provider": the wizard moved to the provider step in import mode.
+      const result = await wizard.importExisting();
+      if (result === "adopted") onComplete?.();
     } catch {
-      // setupError store carries the message; the creating step shows it.
+      onSetupFailed?.();
     }
   }
 
-  // Local input values (validated on continue).
   let locationInput = $state("");
   let apiKeyInput = $state("");
   let baseUrlInput = $state("");
 
   const PROVIDERS: Array<{ id: "anthropic" | "openai" | "google" | "custom"; label: string }> = [
-    { id: "anthropic", label: t.providerAnthropic },
-    { id: "openai", label: t.providerOpenai },
-    { id: "google", label: t.providerGoogle },
-    { id: "custom", label: t.providerCustom },
+    { id: "anthropic", label: "Anthropic (Claude)" },
+    { id: "openai", label: "OpenAI (GPT)" },
+    { id: "google", label: "Google (Gemini)" },
+    { id: "custom", label: "OpenAI-compatible" },
   ];
 
   async function submitKeyAndMaybeContinue() {
     await wizard.submitApiKey(apiKeyInput, $needsBaseUrl ? baseUrlInput : undefined);
-    wizard.next(); // no-op if the key was rejected
+    wizard.next();
   }
 
   onMount(async () => {
@@ -68,35 +77,47 @@
 
   async function validateAndMaybeContinue() {
     await wizard.pickLocation(locationInput);
-    wizard.next(); // no-op if the location was rejected
+    wizard.next();
   }
 
   function locationError(status: string): string | undefined {
     switch (status) {
       case "not-empty":
-        return t.locationNotEmpty;
+        return $t.locationNotEmpty;
       case "not-a-directory":
-        return t.locationNotADirectory;
+        return $t.locationNotADirectory;
       case "existing-ab":
-        // FR-SETUP-08 will turn this into an import flow.
-        return t.locationExistingAb;
+        return $t.locationExistingAb;
       default:
         return undefined;
     }
   }
+
+  function savePersonalizationAndContinue() {
+    wizard.setPersonalization(nameInput, aboutInput);
+    wizard.next();
+  }
 </script>
 
 <div class="wizard">
-  <h1>{t.wizardTitle}</h1>
-  <p>{t.wizardIntro}</p>
-
-  {#if $step === "prerequisites"}
+  {#if $step === "language"}
+    <LanguageStep onSelect={(lang) => wizard.selectLanguage(lang)} />
+  {:else if $step === "welcome"}
+    <WelcomeStep onContinue={() => wizard.next()} />
+  {:else if $step === "personalization"}
+    <PersonalizationStep
+      bind:name={nameInput}
+      bind:about={aboutInput}
+      onContinue={savePersonalizationAndContinue}
+    />
+  {:else if $step === "prerequisites"}
+    <h1>{$t.wizardTitle}</h1>
     {#if $prereq && !$prereq.gitInstalled}
       <div class="blocker">
-        <p>{t.gitRequired}</p>
+        <p>{$t.gitRequired}</p>
         <p class="instructions">{gitInstallInstructions($prereq.platform)}</p>
         <button onclick={() => wizard.checkPrerequisites()} disabled={$checking}>
-          {$checking ? t.gitChecking : t.gitCheckRetry}
+          {$checking ? $t.gitChecking : $t.gitCheckRetry}
         </button>
       </div>
     {:else}
@@ -105,45 +126,48 @@
         onclick={() => wizard.next()}
         disabled={!$canProceed || $checking}
       >
-        {$checking ? t.gitChecking : t.wizardContinue}
+        {$checking ? $t.gitChecking : $t.wizardContinue}
       </button>
     {/if}
   {:else if $step === "location"}
-    <h2>{t.locationTitle}</h2>
-    <p class="muted">{t.locationHint}</p>
+    <h2>{$t.locationTitle}</h2>
+    <p class="muted">{$t.locationHint}</p>
     <input class="location" type="text" bind:value={locationInput} spellcheck="false" />
     {#if $locationCheck && locationError($locationCheck.status)}
       <p class="error">{locationError($locationCheck.status)}</p>
     {/if}
     {#if $locationCheck?.status === "existing-ab"}
-      <button class="primary" onclick={importExistingAb}>{t.locationImport}</button>
+      <button class="primary" onclick={importExistingAb}>{$t.locationImport}</button>
     {:else}
       <button class="primary" onclick={validateAndMaybeContinue}>
-        {t.wizardContinue}
+        {$t.wizardContinue}
       </button>
     {/if}
   {:else if $step === "provider"}
-    <h2>{t.providerTitle}</h2>
-    <p class="muted">{t.providerHint}</p>
+    <h2>{$t.providerTitle}</h2>
+    <p class="muted">{$t.providerHint}</p>
     <div class="providers">
       {#each PROVIDERS as p (p.id)}
-        <button
-          class:selected={$provider === p.id}
-          onclick={() => wizard.selectProvider(p.id)}
-        >
-          {p.label}
+        <button class:selected={$provider === p.id} onclick={() => wizard.selectProvider(p.id)}>
+          {p.id === "anthropic"
+            ? $t.providerAnthropic
+            : p.id === "openai"
+              ? $t.providerOpenai
+              : p.id === "google"
+                ? $t.providerGoogle
+                : $t.providerCustom}
         </button>
       {/each}
     </div>
     {#if $provider}
       {#if $needsBaseUrl}
         <label class="field">
-          <span>{t.baseUrlLabel}</span>
+          <span>{$t.baseUrlLabel}</span>
           <input type="text" bind:value={baseUrlInput} spellcheck="false" />
         </label>
       {/if}
       <label class="field">
-        <span>{t.apiKeyLabel}</span>
+        <span>{$t.apiKeyLabel}</span>
         <input type="password" bind:value={apiKeyInput} spellcheck="false" />
       </label>
       {#if $keyCheck && !$keyCheck.valid}
@@ -154,12 +178,12 @@
         onclick={submitKeyAndMaybeContinue}
         disabled={$validatingKey || apiKeyInput.length === 0}
       >
-        {$validatingKey ? t.apiKeyValidating : t.apiKeyValidate}
+        {$validatingKey ? $t.apiKeyValidating : $t.apiKeyValidate}
       </button>
     {/if}
   {:else if $step === "model"}
-    <h2>{t.modelTitle}</h2>
-    <p class="muted">{t.modelHint}</p>
+    <h2>{$t.modelTitle}</h2>
+    <p class="muted">{$t.modelHint}</p>
     {#if $provider && modelChoicesFor($provider)}
       <div class="models">
         {#each modelChoicesFor($provider)! as choice (choice.id)}
@@ -171,7 +195,7 @@
             <strong>
               {choice.label}
               {#if choice.recommended}
-                <span class="badge">{t.modelRecommended}</span>
+                <span class="badge">{$t.modelRecommended}</span>
               {/if}
             </strong>
             <span class="tier">{tierDescription(choice.tier)}</span>
@@ -180,7 +204,7 @@
       </div>
     {:else}
       <label class="field">
-        <span>{t.modelCustomLabel}</span>
+        <span>{$t.modelCustomLabel}</span>
         <input
           type="text"
           spellcheck="false"
@@ -188,21 +212,21 @@
           oninput={(e) => wizard.selectModel(e.currentTarget.value)}
         />
       </label>
-      <p class="muted">{t.modelCustomHint}</p>
+      <p class="muted">{$t.modelCustomHint}</p>
     {/if}
     <button class="primary" onclick={createAb} disabled={!$canProceed}>
-      {t.wizardContinue}
+      {$t.wizardContinue}
     </button>
   {:else if $step === "creating"}
     {#if $setupError}
-      <p class="error">{t.creatingError}: {$setupError}</p>
-      <button class="primary" onclick={createAb}>{t.creatingRetry}</button>
+      <p class="error">{$t.creatingError}: {$setupError}</p>
+      <button class="primary" onclick={createAb}>{$t.creatingRetry}</button>
     {:else}
-      <h2>{t.creatingTitle}</h2>
-      <p class="muted">{t.creatingHint}</p>
+      <h2>{$t.creatingTitle}</h2>
+      <p class="muted">{$t.creatingHint}</p>
     {/if}
   {:else}
-    <p class="muted">{t.wizardComingSoon}</p>
+    <p class="muted">{$t.wizardComingSoon}</p>
   {/if}
 </div>
 

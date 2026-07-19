@@ -1,6 +1,7 @@
 <script lang="ts">
   // Inline permission prompt (FR-PERM-07): user-friendly description of what
   // the agent wants to do, without exposing file paths for identity writes.
+  import { get } from "svelte/store";
   import { t } from "./i18n";
   import type { PermissionCard } from "./chat-controller";
 
@@ -9,11 +10,14 @@
     onRespond,
   }: { card: PermissionCard; onRespond: (id: number, allow: boolean) => void } = $props();
 
+  const strings = $derived(get(t));
   const title = $derived(
-    card.request.kind === "identity-write" ? t.permissionTitleIdentity : t.permissionTitleOutside,
+    card.request.kind === "identity-write"
+      ? strings.permissionTitleIdentity
+      : strings.permissionTitleOutside,
   );
   const opLabel = $derived(
-    card.request.op === "write" ? t.permissionOpWrite : t.permissionOpRead,
+    card.request.op === "write" ? strings.permissionOpWrite : strings.permissionOpRead,
   );
   const showPath = $derived(card.request.kind !== "identity-write");
 </script>
@@ -26,14 +30,14 @@
   {#if card.verdict === undefined}
     <div class="actions">
       <button class="allow" onclick={() => onRespond(card.request.id, true)}>
-        {t.permissionAllowOnce}
+        {strings.permissionAllowOnce}
       </button>
       <button class="deny" onclick={() => onRespond(card.request.id, false)}>
-        {t.permissionDeny}
+        {strings.permissionDeny}
       </button>
     </div>
   {:else}
-    <p class="verdict">{card.verdict === "allowed" ? t.permissionAllowed : t.permissionDenied}</p>
+    <p class="verdict">{card.verdict === "allowed" ? strings.permissionAllowed : strings.permissionDenied}</p>
   {/if}
 </div>
 

@@ -52,7 +52,7 @@
     {/if}
   </div>
   {#if $showScrollButton}
-    <button class="scroll-down" onclick={() => scroll.scrollToBottomClicked()} title={t.scrollToBottom}>
+    <button class="scroll-down" onclick={() => scroll.scrollToBottomClicked()} title={$t.scrollToBottom}>
       ↓
     </button>
   {/if}

@@ -19,11 +19,15 @@ Feature: Permission zones (FR-PERM-01, FR-PERM-02, FR-PERM-03, FR-PERM-04)
     When the user confirms
     Then the operation proceeds
 
-  Scenario: Identity file writes require confirmation (denied)
-    When the agent writes "agent_brain/identity/USER.md"
+  Scenario: SOUL.md writes require confirmation (denied)
+    When the agent writes "agent_brain/identity/SOUL.md"
     Then the user is asked to confirm an identity write
     When the user declines
     Then the operation is blocked
+
+  Scenario: USER.md writes are allowed silently
+    When the agent writes "agent_brain/identity/USER.md"
+    Then the operation proceeds without asking the user
 
   Scenario: Identity file reads are silent
     When the agent reads "agent_brain/identity/SOUL.md"
