@@ -33,22 +33,7 @@ export function formatSkeletonBody(snapshot: SessionTrackerSnapshot): string {
   const date = isoDay(new Date(snapshot.endTime));
   const startTime = snapshot.startTime.slice(11, 16);
   const endTime = snapshot.endTime.slice(11, 16);
-  const lines = [
-    `# Session — ${date} (${startTime}–${endTime}, ${snapshot.turnCount} turns)`,
-    "",
-    "## Files written",
-    snapshot.filesWritten.length ? snapshot.filesWritten.map((f) => `- ${f}`).join("\n") : "(none)",
-    "",
-    "## Files read",
-    snapshot.filesRead.length ? snapshot.filesRead.map((f) => `- ${f}`).join("\n") : "(none)",
-    "",
-    "## Commits",
-    snapshot.commits.length ? snapshot.commits.map((c) => `- ${c}`).join("\n") : "(none)",
-  ];
-  if (snapshot.snapshots.length) {
-    lines.push("", "## Incremental snapshots", ...snapshot.snapshots.map((s) => `- ${s}`));
-  }
-  return lines.join("\n") + "\n";
+  return `# Session — ${date} (${startTime}–${endTime}, ${snapshot.turnCount} turns)\n`;
 }
 
 export function formatSkeletonFrontmatter(snapshot: SessionTrackerSnapshot): string {

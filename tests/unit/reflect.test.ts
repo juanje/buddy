@@ -30,7 +30,7 @@ describe("saveSessionSkeleton", () => {
     if (dir) rmSync(dir, { recursive: true, force: true });
   });
 
-  it("writes reflect-pending frontmatter and body", () => {
+  it("writes reflect-pending frontmatter and header", () => {
     dir = mkdtempSync(join(tmpdir(), "ab-reflect-"));
     const tracker = new SessionTracker("abc12345");
     tracker.filesWritten.push("user/inbox.md");
@@ -38,8 +38,8 @@ describe("saveSessionSkeleton", () => {
     const path = saveSessionSkeleton(dir, tracker.toSnapshot());
     const content = readFileSync(path, "utf8");
     expect(parseFrontmatter(content).status).toBe("reflect-pending");
-    expect(content).toContain("user/inbox.md");
     expect(content).toContain("turns: 3");
+    expect(content).toContain("# Session —");
   });
 });
 
