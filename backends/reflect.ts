@@ -159,7 +159,7 @@ export function markReflectComplete(logPath: string, sections: string): void {
 export function rebuildLogsIndex(abDirectory: string): void {
   const logsDir = join(abDirectory, "logs");
   mkdirSync(logsDir, { recursive: true });
-  const entries: Array<{ date: string; sessionId: string; summary: string; file: string }> = [];
+  const entries: Array<{ date: string; summary: string; file: string }> = [];
 
   for (const name of readdirSync(logsDir)) {
     if (!name.endsWith(".md") || name === "index.md") continue;
@@ -169,7 +169,6 @@ export function rebuildLogsIndex(abDirectory: string): void {
     const summary = extractOneLinerSummary(content);
     entries.push({
       date: fm.date ?? name.slice(0, 10),
-      sessionId: fm.session_id ?? name.replace(/\.md$/, ""),
       summary,
       file: name,
     });
@@ -179,8 +178,10 @@ export function rebuildLogsIndex(abDirectory: string): void {
   const lines = [
     "# Session logs",
     "",
+    "Log files: `logs/YYYY-MM-DD_SESSIONID.md`",
+    "",
     ...entries.map(
-      (e) => `- ${e.date}: ${e.summary} → [${e.file}](${e.file})`,
+      (e) => `- ${e.date}: ${e.summary} (${e.file})`,
     ),
     "",
   ];

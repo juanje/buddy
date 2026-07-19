@@ -85,6 +85,17 @@ async function resolveIncrementalSessionOptions(abDirectory: string): Promise<{
   return { model, thinkingLevel: "minimal" };
 }
 
+const LOCK_RETRY_MS = 500;
+const LOCK_MAX_RETRIES = 20;
+
+async function acquireLockWithRetry(abDirectory: string): Promise<boolean> {
+  for (let i = 0; i < LOCK_MAX_RETRIES; i++) {
+    if (acquireLock(abDirectory)) return true;
+    await new Promise((r) => setTimeout(r, LOCK_RETRY_MS));
+  }
+  return false;
+}
+
 async function runReflect(
   abDirectory: string,
   forkedSessionFile: string,
@@ -133,9 +144,17 @@ async function runReflect(
     const result = collectAssistantText(events);
 
     if (result) {
-      markReflectComplete(logPath, result);
-      rebuildLogsIndex(abDirectory);
-      await commitAll(abDirectory, "ab: session reflect");
+      if (!await acquireLockWithRetry(abDirectory)) {
+        console.error("[reflect-child] could not acquire lock for write phase");
+        return;
+      }
+      try {
+        markReflectComplete(logPath, result);
+        rebuildLogsIndex(abDirectory);
+        await commitAll(abDirectory, "ab: session reflect");
+      } finally {
+        releaseLock(abDirectory);
+      }
     }
   } finally {
     unsub();
@@ -150,17 +169,11 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  if (!acquireLock(abDirectory)) {
-    process.exit(0);
-  }
-
   try {
     await runReflect(abDirectory, forkedSessionFile, logPath, mode);
   } catch (err) {
     console.error("[reflect-child] error:", err);
     process.exit(1);
-  } finally {
-    releaseLock(abDirectory);
   }
 }
 
