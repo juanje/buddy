@@ -177,14 +177,17 @@ export function markReflectComplete(logPath: string, sections: string): void {
 export function rebuildLogsIndex(abDirectory: string): void {
   const logsDir = join(abDirectory, "logs");
   mkdirSync(logsDir, { recursive: true });
-  const entries: Array<{ date: string; sessionId: string; status: string; file: string }> = [];
+  const entries: Array<{ date: string; start: string; sessionId: string; status: string; file: string }> = [];
 
   for (const name of readdirSync(logsDir)) {
     if (!name.endsWith(".md") || name === "index.md") continue;
     const path = join(logsDir, name);
     const fm = parseFrontmatter(readFileSync(path, "utf8"));
+    const startRaw = fm.start ?? "";
+    const startTime = startRaw.includes("T") ? startRaw.slice(11, 16) : "";
     entries.push({
       date: fm.date ?? name.slice(0, 10),
+      start: startTime,
       sessionId: fm.session_id ?? name.replace(/\.md$/, ""),
       status: fm.status ?? "unknown",
       file: name,
@@ -195,10 +198,10 @@ export function rebuildLogsIndex(abDirectory: string): void {
   const lines = [
     "# Session logs",
     "",
-    "| Date | Session | Status | File |",
-    "|------|---------|--------|------|",
+    "| Date | Start | Session | Status | File |",
+    "|------|-------|---------|--------|------|",
     ...entries.map(
-      (e) => `| ${e.date} | ${e.sessionId} | ${e.status} | ${e.file} |`,
+      (e) => `| ${e.date} | ${e.start} | ${e.sessionId} | ${e.status} | ${e.file} |`,
     ),
     "",
   ];

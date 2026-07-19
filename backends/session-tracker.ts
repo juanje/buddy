@@ -32,11 +32,13 @@ export interface SessionTrackerSnapshot {
 }
 
 function extractToolInfo(event: AgentEvent): { name: string; path?: string } | null {
-  const toolCall = event.toolCall as { name?: string; args?: { path?: string } } | undefined;
-  const name = toolCall?.name ?? (event.toolName as string | undefined);
+  const name = (event.toolName as string | undefined) ??
+    (event.toolCall as { name?: string } | undefined)?.name;
   if (!name) return null;
-  const path = toolCall?.args?.path;
-  return { name, path: typeof path === "string" ? path : undefined };
+  const args = (event.args as { path?: string } | undefined) ??
+    (event.toolCall as { args?: { path?: string } } | undefined)?.args;
+  const path = typeof args?.path === "string" ? args.path : undefined;
+  return { name, path };
 }
 
 function relPath(abDirectory: string, absOrRel: string): string {
@@ -59,6 +61,7 @@ export class SessionTracker {
   private segmentRead: string[] = [];
   private segmentWritten: string[] = [];
   private segmentToolCalls: TrackedToolCall[] = [];
+  private pendingArgs = new Map<string, { name: string; path?: string }>();
 
   constructor(sessionId: string, startTime: Date = new Date()) {
     this.sessionId = sessionId;
@@ -73,6 +76,13 @@ export class SessionTracker {
     turnEnded: boolean;
     compactionStart: boolean;
   } {
+    if (event.type === "tool_execution_start") {
+      const toolCallId = event.toolCallId as string | undefined;
+      const info = extractToolInfo(event);
+      if (toolCallId && info) {
+        this.pendingArgs.set(toolCallId, info);
+      }
+    }
     if (event.type === "tool_execution_end") {
       this.trackToolEnd(event, abDirectory);
     }
@@ -118,22 +128,28 @@ export class SessionTracker {
   }
 
   private trackToolEnd(event: AgentEvent, abDirectory: string): void {
-    const info = extractToolInfo(event);
-    if (!info) return;
+    const toolCallId = event.toolCallId as string | undefined;
+    const endInfo = extractToolInfo(event);
+    const startInfo = toolCallId ? this.pendingArgs.get(toolCallId) : undefined;
+    if (toolCallId) this.pendingArgs.delete(toolCallId);
 
+    const name = endInfo?.name ?? startInfo?.name;
+    if (!name) return;
+
+    const path = startInfo?.path ?? endInfo?.path;
     const timestamp = new Date().toISOString();
-    const path = info.path ? relPath(abDirectory, info.path) : undefined;
-    const entry: TrackedToolCall = { name: info.name, path, timestamp };
+    const relP = path ? relPath(abDirectory, path) : undefined;
+    const entry: TrackedToolCall = { name, path: relP, timestamp };
     this.toolCalls.push(entry);
     this.segmentToolCalls.push(entry);
 
-    if (path && READ_TOOLS.has(info.name)) {
-      this.pushUnique(this.filesRead, path);
-      this.pushUnique(this.segmentRead, path);
+    if (relP && READ_TOOLS.has(name)) {
+      this.pushUnique(this.filesRead, relP);
+      this.pushUnique(this.segmentRead, relP);
     }
-    if (path && WRITE_TOOLS.has(info.name)) {
-      this.pushUnique(this.filesWritten, path);
-      this.pushUnique(this.segmentWritten, path);
+    if (relP && WRITE_TOOLS.has(name)) {
+      this.pushUnique(this.filesWritten, relP);
+      this.pushUnique(this.segmentWritten, relP);
     }
   }
 
