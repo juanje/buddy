@@ -10,30 +10,34 @@ import {
   saveSessionSkeleton,
   shouldRunIncrementalReflect,
 } from "./reflect";
+import { spawnReflectChild } from "./reflect-spawn";
 import { SessionTracker } from "./session-tracker";
 
 export interface SessionLifecycleOptions {
   abDirectory: string;
   sessionId: string;
+  sessionFile?: string;
   incrementalEvery?: number;
-  /** Optional LLM encoding for incremental snapshots (FR-REFLECT-03). */
-  encodeSegment?: (segmentMarkdown: string) => Promise<string>;
 }
 
 export class SessionLifecycle {
   readonly tracker: SessionTracker;
   private readonly abDirectory: string;
+  private sessionFile: string | undefined;
   private readonly incrementalEvery: number;
-  private readonly encodeSegment?: (segmentMarkdown: string) => Promise<string>;
   private turnDirty = false;
   private reflectInFlight = false;
   private eventChain: Promise<void> = Promise.resolve();
 
   constructor(options: SessionLifecycleOptions) {
     this.abDirectory = options.abDirectory;
+    this.sessionFile = options.sessionFile;
     this.tracker = new SessionTracker(options.sessionId);
     this.incrementalEvery = options.incrementalEvery ?? 15;
-    this.encodeSegment = options.encodeSegment;
+  }
+
+  setSessionFile(path: string): void {
+    this.sessionFile = path;
   }
 
   handleEvent(event: AgentEvent): Promise<void> {
@@ -72,6 +76,8 @@ export class SessionLifecycle {
     rebuildLogsIndex(this.abDirectory);
     await commitAll(this.abDirectory, "ab: session end skeleton");
     cleanupSnapshots(this.abDirectory, this.tracker.sessionId);
+
+    this.spawnReflect(logPath, "session-end");
     return logPath;
   }
 
@@ -104,32 +110,29 @@ export class SessionLifecycle {
 
     this.reflectInFlight = true;
     try {
-      let encoded: string | undefined;
-      if (this.encodeSegment) {
-        const body = [
-          `Turns ${segment.startTurn}-${segment.endTurn}`,
-          "",
-          "Files written:",
-          segment.filesWritten.join(", ") || "(none)",
-          "",
-          "Files read:",
-          segment.filesRead.join(", ") || "(none)",
-        ].join("\n");
-        encoded = await this.encodeSegment(body);
-      }
-
       const path = saveIncrementalSnapshot(
         this.abDirectory,
         this.tracker.sessionId,
         this.tracker.turnCount,
         segment,
-        encoded,
       );
       this.tracker.snapshots.push(path.replace(`${this.abDirectory}/`, ""));
       this.tracker.resetSegment();
       await commitAll(this.abDirectory, "ab: incremental reflect snapshot");
+
+      this.spawnReflect(path, "incremental");
     } finally {
       this.reflectInFlight = false;
     }
+  }
+
+  private spawnReflect(logPath: string, mode: "session-end" | "incremental"): void {
+    const forkedSessionFile = this.sessionFile ?? "";
+    spawnReflectChild({
+      abDirectory: this.abDirectory,
+      forkedSessionFile,
+      logPath,
+      mode,
+    });
   }
 }

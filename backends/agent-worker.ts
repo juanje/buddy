@@ -24,12 +24,8 @@ import { detectExistingAuth } from "./detect-auth";
 import { defaultAbLocation, validateLocation } from "./location";
 import { createPermissionGate } from "./permissions";
 import { checkPrerequisites } from "./prereqs";
-import { runCatchUpReflects } from "./maintenance";
-import {
-  buildCatchUpReflectPrompt,
-  buildIncrementalReflectPrompt,
-  runMaintenancePrompt,
-} from "./pi-maintenance";
+import { findPendingReflects } from "./reflect";
+import { spawnReflectChild } from "./reflect-spawn";
 import { assembleSystemPrompt } from "./prompt";
 import { configureProviderKey } from "./provider-auth";
 import { SessionLifecycle } from "./session-lifecycle";
@@ -81,6 +77,24 @@ async function alignHttpDispatcherWithPi(): Promise<void> {
   }
 }
 
+/**
+ * Crash recovery: spawn background children for any reflect-pending logs
+ * that weren't processed (rare — only if the child process died or the app crashed).
+ * Non-blocking: spawns and returns immediately.
+ */
+function runCrashRecoveryCatchUp(abDirectory: string): void {
+  const pending = findPendingReflects(abDirectory);
+  for (const item of pending.slice(0, 3)) {
+    console.log("[agent-worker] crash recovery: spawning reflect for", item.path);
+    spawnReflectChild({
+      abDirectory,
+      forkedSessionFile: "",
+      logPath: item.path,
+      mode: "crash-catchup",
+    });
+  }
+}
+
 async function main(): Promise<void> {
   await alignHttpDispatcherWithPi();
 
@@ -111,24 +125,12 @@ async function main(): Promise<void> {
       return;
     }
 
-    await runCatchUpReflects(abDirectory, {
-      encodeReflect: async (_logPath, skeleton) => {
-        console.log("[agent-worker] running catch-up reflect for:", _logPath);
-        try {
-          return await runMaintenancePrompt(abDirectory, buildCatchUpReflectPrompt(skeleton));
-        } catch (err) {
-          console.error("[agent-worker] catch-up reflect failed:", err);
-          return "### Context\n(Catch-up reflect failed — will retry next session.)";
-        }
-      },
-    });
+    runCrashRecoveryCatchUp(abDirectory);
 
     const sessionId = randomUUID().slice(0, 8);
     lifecycle = new SessionLifecycle({
       abDirectory,
       sessionId,
-      encodeSegment: async (segment) =>
-        runMaintenancePrompt(abDirectory, buildIncrementalReflectPrompt(segment)),
     });
 
     const { prompt } = assembleSystemPrompt(abDirectory);
@@ -145,6 +147,8 @@ async function main(): Promise<void> {
       sessionManager: SessionManager.create(abDirectory),
       excludeTools: ["bash"],
     });
+
+    lifecycle.setSessionFile((session as unknown as { sessionFile?: string }).sessionFile ?? "");
 
     const gate = createPermissionGate(
       abDirectory,
