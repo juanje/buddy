@@ -58,6 +58,9 @@
       if (!connection) throw new Error("worker not connected");
       return connection.api.runSetup(config, mode);
     },
+    async resolvePermission(id, allow) {
+      await connection?.api.resolvePermission(id, allow);
+    },
     async shutdown() {
       await connection?.api.shutdown();
     },
@@ -81,6 +84,10 @@
           onWorkerError(error: string) {
             connectionError = error;
             devLog(`onWorkerError: ${error}`);
+          },
+          onPermissionRequest(request) {
+            devLog(`permission request: ${request.op} ${request.path}`);
+            controller?.handlePermissionRequest(request);
           },
         },
         (code) => {

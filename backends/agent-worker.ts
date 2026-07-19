@@ -18,6 +18,7 @@ import { nodeStdioTransport } from "kkrpc/stdio";
 import type { AgentEvent, FrontendAPI, WorkerAPI } from "../shared/api";
 import { adoptAbInstance, createAbInstance } from "./create-ab";
 import { defaultAbLocation, validateLocation } from "./location";
+import { createPermissionGate } from "./permissions";
 import { checkPrerequisites } from "./prereqs";
 import { assembleSystemPrompt } from "./prompt";
 import { configureProviderKey } from "./provider-auth";
@@ -81,6 +82,11 @@ async function main(): Promise<void> {
   // bootSession only runs after that.
   let frontend!: FrontendAPI;
 
+  // Pending permission questions: id → resolver (FR-PERM-07). The tool call
+  // awaits inside the beforeToolCall hook until the user answers in the chat.
+  const pendingPermissions = new Map<number, (allow: boolean) => void>();
+  let nextPermissionId = 1;
+
   async function bootSession(abDirectory: string): Promise<void> {
     if (core) return; // already running (setup completing twice is a no-op)
 
@@ -99,6 +105,25 @@ async function main(): Promise<void> {
       resourceLoader,
       excludeTools: ["bash"], // file-only tool set (NFR-SEC-01)
     });
+
+    // FR-PERM-01..04: permission zones as a chained beforeToolCall hook.
+    // An earlier hook's block wins; otherwise our gate decides (and "ask"
+    // waits for the user's answer relayed by the frontend).
+    const gate = createPermissionGate(abDirectory, (request) => {
+      const id = nextPermissionId++;
+      return new Promise<boolean>((resolveAnswer) => {
+        pendingPermissions.set(id, resolveAnswer);
+        frontend.onPermissionRequest({ ...request, id });
+      });
+    });
+    const originalBeforeToolCall = session.agent.beforeToolCall;
+    session.agent.beforeToolCall = async (ctx, signal) => {
+      const prior = await originalBeforeToolCall?.(ctx, signal);
+      if (prior?.block) return prior;
+      const blocked = await gate.check(ctx.toolCall.name, ctx.args);
+      return blocked ?? prior;
+    };
+
     core = createWorkerCore(asPiSessionLike(session), frontend);
   }
 
@@ -138,6 +163,11 @@ async function main(): Promise<void> {
         }
         setupState = { firstRun: false, config };
         await bootSession(config.abDirectory);
+      },
+      async resolvePermission(id, allow) {
+        const resolveAnswer = pendingPermissions.get(id);
+        pendingPermissions.delete(id);
+        resolveAnswer?.(allow);
       },
       async shutdown() {
         await core?.api.shutdown();

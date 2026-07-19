@@ -7,6 +7,13 @@
 import type { AgentEvent, AgentState, ChatWorkerAPI, FrontendAPI } from "../shared/api";
 
 /**
+ * What the session core itself implements. Permission resolution lives in
+ * the worker entry point (it owns the pending-request map), so it is
+ * excluded here and composed into the RPC surface there.
+ */
+export type SessionWorkerAPI = Omit<ChatWorkerAPI, "resolvePermission">;
+
+/**
  * Structural subset of Pi's AgentSession that the worker core needs.
  * Verified against @earendil-works/pi-coding-agent 0.80.x AgentSession:
  *   prompt(text) → Promise<void>, abort() → Promise<void>,
@@ -21,7 +28,7 @@ export interface PiSessionLike {
 }
 
 export interface WorkerCore {
-  api: ChatWorkerAPI;
+  api: SessionWorkerAPI;
   dispose(): void;
 }
 
@@ -30,7 +37,7 @@ export function createWorkerCore(session: PiSessionLike, frontend: FrontendAPI):
     frontend.onAgentEvent(event);
   });
 
-  const api: ChatWorkerAPI = {
+  const api: SessionWorkerAPI = {
     async prompt(text: string): Promise<void> {
       await session.prompt(text);
     },

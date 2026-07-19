@@ -34,6 +34,12 @@ export class AbWorld extends World {
   /** DOM focus simulation (focus is a view concern; steps track it here). */
   inputFocused = false;
 
+  /** Permission verdicts the controller sent to the worker (FR-PERM-07). */
+  permissionResolutions: Array<{ id: number; allow: boolean }> = [];
+
+  /** Id of the most recent simulated permission request. */
+  lastPermissionId?: number;
+
   constructor(options: IWorldOptions) {
     super(options);
   }
@@ -49,8 +55,16 @@ export class AbWorld extends World {
     this.core = createWorkerCore(this.session, {
       onAgentEvent: (event) => controllerRef?.handleEvent(event),
       onWorkerError: () => {},
+      onPermissionRequest: (request) => controllerRef?.handlePermissionRequest(request),
     });
-    this.controller = createChatController(this.core.api);
+    // The session core lacks resolvePermission (it lives in the worker entry
+    // point); the world records verdicts like the real RPC would deliver them.
+    this.controller = createChatController({
+      ...this.core.api,
+      resolvePermission: async (id, allow) => {
+        this.permissionResolutions.push({ id, allow });
+      },
+    });
     controllerRef = this.controller;
 
     // Scroll controller wired to the simulated viewport, mirroring ChatView:

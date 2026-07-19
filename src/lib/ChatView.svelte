@@ -2,6 +2,7 @@
   import type { ChatController } from "./chat-controller";
   import type { ScrollController } from "./scroll-controller";
   import MessageBubble from "./MessageBubble.svelte";
+  import PermissionCard from "./PermissionCard.svelte";
   import { t } from "./i18n";
 
   let { controller, scroll }: { controller: ChatController; scroll: ScrollController } =
@@ -11,6 +12,7 @@
   // `$controller.messages` is invalid — the controller itself is not a store.
   const messages = $derived(controller.messages);
   const typingIndicator = $derived(controller.typingIndicator);
+  const permissions = $derived(controller.permissions);
   const showScrollButton = $derived(scroll.showScrollButton);
 
   let container: HTMLDivElement | undefined = $state();
@@ -39,6 +41,9 @@
   <div class="chat" bind:this={container} onscroll={handleScroll}>
     {#each $messages as message (message.id)}
       <MessageBubble {message} />
+    {/each}
+    {#each $permissions as card (card.request.id)}
+      <PermissionCard {card} onRespond={(id, allow) => controller.respondPermission(id, allow)} />
     {/each}
     {#if $typingIndicator}
       <div class="typing" aria-label="assistant is typing">

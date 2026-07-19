@@ -6,12 +6,23 @@
 //   FR-CHAT-03 abort generation (button + Escape, partial text kept)
 
 import { derived, get, writable, type Readable, type Writable } from "svelte/store";
-import type { AgentEvent, AssistantMessageEventLike, ChatWorkerAPI } from "../../shared/api";
+import type {
+  AgentEvent,
+  AssistantMessageEventLike,
+  ChatWorkerAPI,
+  PermissionRequest,
+} from "../../shared/api";
 
 export interface ChatMessage {
   id: number;
   role: "user" | "assistant";
   text: string;
+}
+
+/** A permission question rendered inline in the chat (FR-PERM-07). */
+export interface PermissionCard {
+  request: PermissionRequest;
+  verdict?: "allowed" | "denied";
 }
 
 export interface ChatController {
@@ -29,6 +40,8 @@ export interface ChatController {
   showAbort: Readable<boolean>;
   /** Typing indicator: visible from agent_start until agent_end (FR-CHAT-01). */
   typingIndicator: Readable<boolean>;
+  /** Permission questions shown inline in the chat (FR-PERM-07). */
+  permissions: Readable<PermissionCard[]>;
 
   /** Send current input as a user message (no-op if canSend is false). */
   send(): Promise<void>;
@@ -38,6 +51,10 @@ export interface ChatController {
   onEscape(): Promise<void>;
   /** Route a Pi session event into the stores. */
   handleEvent(event: AgentEvent): void;
+  /** A tool call is waiting for the user's decision (FR-PERM-07). */
+  handlePermissionRequest(request: PermissionRequest): void;
+  /** Answer a pending permission card. */
+  respondPermission(id: number, allow: boolean): Promise<void>;
 }
 
 export function createChatController(worker: ChatWorkerAPI): ChatController {
@@ -113,6 +130,21 @@ export function createChatController(worker: ChatWorkerAPI): ChatController {
     }
   }
 
+  const permissions = writable<PermissionCard[]>([]);
+
+  function handlePermissionRequest(request: PermissionRequest): void {
+    permissions.update((cards) => [...cards, { request }]);
+  }
+
+  async function respondPermission(id: number, allow: boolean): Promise<void> {
+    await worker.resolvePermission(id, allow);
+    permissions.update((cards) =>
+      cards.map((card) =>
+        card.request.id === id ? { ...card, verdict: allow ? "allowed" : "denied" } : card,
+      ),
+    );
+  }
+
   return {
     messages,
     input,
@@ -121,9 +153,12 @@ export function createChatController(worker: ChatWorkerAPI): ChatController {
     canSend,
     showAbort,
     typingIndicator,
+    permissions,
     send,
     abort,
     onEscape,
     handleEvent,
+    handlePermissionRequest,
+    respondPermission,
   };
 }

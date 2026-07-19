@@ -59,6 +59,14 @@ export interface LocationCheck {
 /** API key validation verdict (FR-SETUP-04). */
 export type KeyCheck = { valid: true } | { valid: false; error: string };
 
+/** A permission question the agent is waiting on (FR-PERM-02/03/07). */
+export interface PermissionRequest {
+  id: number;
+  kind: "identity-write" | "outside";
+  op: "read" | "write";
+  path: string;
+}
+
 /** System prerequisites report for the setup wizard (FR-SETUP-02). */
 export interface PrereqStatus {
   gitInstalled: boolean;
@@ -87,6 +95,8 @@ export interface WorkerAPI {
    * overwriting anything (FR-SETUP-08). Default: "create".
    */
   runSetup(config: SetupConfig, mode?: "create" | "import"): Promise<void>;
+  /** Answer a pending permission request (FR-PERM-07). */
+  resolvePermission(id: number, allow: boolean): Promise<void>;
   shutdown(): Promise<void>;
 }
 
@@ -95,7 +105,10 @@ export interface WorkerAPI {
  * configured. Setup concerns (detection, prerequisites) live in the worker
  * entry point because they must answer before any session exists.
  */
-export type ChatWorkerAPI = Pick<WorkerAPI, "prompt" | "abort" | "getState" | "shutdown">;
+export type ChatWorkerAPI = Pick<
+  WorkerAPI,
+  "prompt" | "abort" | "getState" | "resolvePermission" | "shutdown"
+>;
 
 /** Setup-scoped subset of WorkerAPI: what the wizard needs (FR-SETUP-02+). */
 export type SetupWorkerAPI = Pick<
@@ -111,4 +124,6 @@ export type SetupWorkerAPI = Pick<
 export interface FrontendAPI {
   onAgentEvent(event: AgentEvent): void;
   onWorkerError(error: string): void;
+  /** A tool call is waiting on the user's permission (FR-PERM-07). */
+  onPermissionRequest(request: PermissionRequest): void;
 }
