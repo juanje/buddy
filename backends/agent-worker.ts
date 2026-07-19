@@ -12,6 +12,7 @@ import { RPCChannel } from "kkrpc";
 import { nodeStdioTransport } from "kkrpc/stdio";
 
 import type { AgentEvent, FrontendAPI, WorkerAPI } from "../shared/api";
+import { defaultAbLocation, validateLocation } from "./location";
 import { checkPrerequisites } from "./prereqs";
 import { defaultConfigPath, detectFirstRun } from "./setup";
 import { createWorkerCore, type PiSessionLike } from "./worker-core";
@@ -88,6 +89,12 @@ async function main(): Promise<void> {
       },
       async checkPrerequisites() {
         return checkPrerequisites();
+      },
+      async getDefaultLocation() {
+        return defaultAbLocation();
+      },
+      async validateLocation(path: string) {
+        return validateLocation(path);
       },
       async shutdown() {
         await core?.api.shutdown();

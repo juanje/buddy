@@ -42,6 +42,14 @@ export interface SetupConfig {
 /** Result of first-run detection against ~/.ab-app/config.json (FR-SETUP-01). */
 export type SetupState = { firstRun: true } | { firstRun: false; config: SetupConfig };
 
+/**
+ * AB location validation result (FR-SETUP-03). "existing-ab" marks a
+ * directory holding an AB instance, offered for import (FR-SETUP-08).
+ */
+export interface LocationCheck {
+  status: "ok-new" | "ok-empty" | "existing-ab" | "not-empty" | "not-a-directory";
+}
+
 /** System prerequisites report for the setup wizard (FR-SETUP-02). */
 export interface PrereqStatus {
   gitInstalled: boolean;
@@ -57,6 +65,8 @@ export interface WorkerAPI {
   getState(): Promise<AgentState>;
   getSetupState(): Promise<SetupState>;
   checkPrerequisites(): Promise<PrereqStatus>;
+  getDefaultLocation(): Promise<string>;
+  validateLocation(path: string): Promise<LocationCheck>;
   shutdown(): Promise<void>;
 }
 
@@ -68,7 +78,10 @@ export interface WorkerAPI {
 export type ChatWorkerAPI = Pick<WorkerAPI, "prompt" | "abort" | "getState" | "shutdown">;
 
 /** Setup-scoped subset of WorkerAPI: what the wizard needs (FR-SETUP-02+). */
-export type SetupWorkerAPI = Pick<WorkerAPI, "checkPrerequisites">;
+export type SetupWorkerAPI = Pick<
+  WorkerAPI,
+  "checkPrerequisites" | "getDefaultLocation" | "validateLocation"
+>;
 
 /** Worker calls these on the frontend. */
 export interface FrontendAPI {

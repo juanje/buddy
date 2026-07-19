@@ -17,6 +17,13 @@ export const t = {
   gitCheckRetry: "Volver a comprobar",
   gitChecking: "Comprobando…",
   wizardContinue: "Continuar",
+  locationTitle: "¿Dónde vivirá tu asistente?",
+  locationHint:
+    "Es una carpeta normal de tu equipo. Ahí guardará su memoria, tus notas y todo lo que aprenda.",
+  locationNotEmpty: "Esa carpeta ya contiene archivos. Elige una carpeta vacía o una que no exista.",
+  locationNotADirectory: "Esa ruta no es una carpeta.",
+  locationExistingAb:
+    "Esa carpeta ya contiene un asistente AB. La importación llegará en una próxima versión.",
 } as const;
 
 /**

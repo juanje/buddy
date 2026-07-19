@@ -42,6 +42,14 @@
       if (!connection) throw new Error("worker not connected");
       return connection.api.checkPrerequisites();
     },
+    async getDefaultLocation() {
+      if (!connection) throw new Error("worker not connected");
+      return connection.api.getDefaultLocation();
+    },
+    async validateLocation(path) {
+      if (!connection) throw new Error("worker not connected");
+      return connection.api.validateLocation(path);
+    },
     async shutdown() {
       await connection?.api.shutdown();
     },

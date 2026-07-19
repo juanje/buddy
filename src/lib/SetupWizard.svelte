@@ -1,7 +1,7 @@
 <script lang="ts">
   // Setup wizard (FR-SETUP-01 routing target).
   // Steps built out feature by feature: FR-SETUP-02 prerequisites gate ·
-  // (FR-SETUP-03 location, 04 provider, 05 model arrive next).
+  // FR-SETUP-03 location picker · (FR-SETUP-04 provider, 05 model next).
   import { onMount } from "svelte";
   import { createSetupController } from "./setup-controller";
   import { gitInstallInstructions, t } from "./i18n";
@@ -14,10 +14,34 @@
   const prereq = wizard.prereq;
   const checking = wizard.checking;
   const canProceed = wizard.canProceed;
+  const locationCheck = wizard.locationCheck;
 
-  onMount(() => {
+  // Local input value for the location step (validated on change/continue).
+  let locationInput = $state("");
+
+  onMount(async () => {
     void wizard.checkPrerequisites();
+    locationInput = await wizard.loadDefaultLocation();
   });
+
+  async function validateAndMaybeContinue() {
+    await wizard.pickLocation(locationInput);
+    wizard.next(); // no-op if the location was rejected
+  }
+
+  function locationError(status: string): string | undefined {
+    switch (status) {
+      case "not-empty":
+        return t.locationNotEmpty;
+      case "not-a-directory":
+        return t.locationNotADirectory;
+      case "existing-ab":
+        // FR-SETUP-08 will turn this into an import flow.
+        return t.locationExistingAb;
+      default:
+        return undefined;
+    }
+  }
 </script>
 
 <div class="wizard">
@@ -42,6 +66,16 @@
         {$checking ? t.gitChecking : t.wizardContinue}
       </button>
     {/if}
+  {:else if $step === "location"}
+    <h2>{t.locationTitle}</h2>
+    <p class="muted">{t.locationHint}</p>
+    <input class="location" type="text" bind:value={locationInput} spellcheck="false" />
+    {#if $locationCheck && locationError($locationCheck.status)}
+      <p class="error">{locationError($locationCheck.status)}</p>
+    {/if}
+    <button class="primary" onclick={validateAndMaybeContinue}>
+      {t.wizardContinue}
+    </button>
   {:else}
     <p class="muted">{t.wizardComingSoon}</p>
   {/if}
@@ -100,5 +134,25 @@
   button:disabled {
     opacity: 0.5;
     cursor: default;
+  }
+  .wizard h2 {
+    font-size: 18px;
+  }
+  input.location {
+    width: min(480px, 80vw);
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-secondary);
+    color: var(--fg);
+    font-size: 14px;
+    font-family: ui-monospace, monospace;
+  }
+  .error {
+    color: var(--error-fg);
+    background: var(--error-bg);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 13px;
   }
 </style>
