@@ -43,8 +43,9 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 | FR-PERM-03 | Zone 3: outside access prompt | done | d3e57f3 |
 | FR-PERM-04 | Hardcoded denylist | done | d3e57f3 |
 | FR-PERM-07 | Permission prompt in chat | done | 1031c99 |
-| FR-SESSION-01 | Session resume | pending | |
-| FR-SESSION-02 | New session | pending | |
+| FR-SESSION-01 | Session resume | done | 835c997 |
+| FR-SESSION-02 | New session | deferred (SPEC says Phase 5) | |
+| FR-SESSION-03 | Session end on app close | pending | |
 | FR-REFLECT-01 | Factual skeleton on session end | pending | |
 | FR-REFLECT-02 | Catch-up reflect on start | pending | |
 | FR-DEFERRED-01 | Surface deferred on start | done | d7a3c12 |
