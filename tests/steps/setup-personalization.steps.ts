@@ -33,18 +33,18 @@ Given("USER.md already has the user's name filled in", function (this: Personali
 
 Then("the prompt instructs the agent to introduce itself", function (this: PersonalizationWorld) {
   assert.equal(this.assembled!.personalizationPending, true);
-  assert.match(this.assembled!.prompt, /# First conversation: get to know your user/);
-  assert.match(this.assembled!.prompt, /Introduce yourself/);
+  assert.match(this.assembled!.prompt, /# First conversation: initial setup/);
+  assert.match(this.assembled!.prompt, /Greet them warmly/);
 });
 
 Then(
   "the prompt instructs the agent to ask for name, language, interests and preferences",
   function (this: PersonalizationWorld) {
     const prompt = this.assembled!.prompt;
-    assert.match(prompt, /their name/);
-    assert.match(prompt, /preferred language/);
-    assert.match(prompt, /their interests/);
-    assert.match(prompt, /how they like you to behave/);
+    assert.match(prompt, /Their name/);
+    assert.match(prompt, /language they prefer/);
+    assert.match(prompt, /What they want to use you for/);
+    assert.match(prompt, /How they like you to communicate/);
   },
 );
 
@@ -52,7 +52,7 @@ Then(
   "the prompt instructs the agent to write the answers to USER.md as it learns them",
   function (this: PersonalizationWorld) {
     assert.match(this.assembled!.prompt, /agent_brain\/identity\/USER\.md/);
-    assert.match(this.assembled!.prompt, /as you learn it/);
+    assert.match(this.assembled!.prompt, /rewrite.*USER\.md completely/);
   },
 );
 
