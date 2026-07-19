@@ -10,7 +10,7 @@ assistant with persistent, learning memory. Built with Tauri v2 + Pi SDK.
 | [specs/SPEC.md](specs/SPEC.md) | Functional & non-functional requirements (the WHAT) |
 | [docs/app-design-principles.md](docs/app-design-principles.md) | Design principles and decisions (the WHY) |
 | [docs/app-spec-tauri.md](docs/app-spec-tauri.md) | Technical architecture (the HOW) |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | Development process (BDD + TDD workflow) |
+| [CLAUDE.md](CLAUDE.md) | Agent instructions: workflow, rules, phase order |
 
 ## Quick Start
 
