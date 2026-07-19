@@ -1,6 +1,6 @@
 # AB App
 
-A native cross-platform desktop app that gives non-technical users a personal
+A native desktop app (macOS + Linux) that gives non-technical users a personal
 assistant with persistent, learning memory. Built with Tauri v2 + Pi SDK.
 
 ## Documentation

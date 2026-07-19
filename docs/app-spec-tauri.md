@@ -1331,9 +1331,8 @@ key entry. Not v1.
 **API key security:** Keys are written to `~/.pi/agent/auth.json` (Pi
 standard). The file is created with mode 600 (owner read/write only).
 Future improvement: evaluate OS keychain integration (macOS Keychain,
-Windows Credential Manager, libsecret on Linux) to avoid plaintext storage.
-Windows: use default user-profile protection; evaluate ACLs with keychain
-investigation.
+libsecret on Linux) to avoid plaintext storage. Set file mode 600 on
+`auth.json` as minimum protection.
 
 ## Phase 0 — Architecture PoC
 
@@ -1407,12 +1406,13 @@ everything in Phase 0 plus the features needed for day-one value:
 
 ## Platform Notes
 
-### macOS
+### macOS (primary)
 
 - WKWebView (Safari engine) — ships with the OS
 - Code signing required for distribution (Apple Developer account)
 - `.dmg` or `.app` bundle
 - Notarization needed for Gatekeeper
+- Git available via Xcode Command Line Tools (most macs have it)
 
 ### Linux
 
@@ -1420,12 +1420,11 @@ everything in Phase 0 plus the features needed for day-one value:
 - `.AppImage` (universal, no install) or `.deb`/`.rpm`
 - No signing requirement for direct distribution
 
-### Windows
+### Windows (not targeted for v1)
 
-- WebView2 (Edge/Chromium engine) — pre-installed on Windows 10/11
-- Tauri includes WebView2 bootstrapper as fallback
-- `.msi` or `.exe` installer
-- Optional code signing (reduces SmartScreen warnings)
+Windows support is architecturally possible (Tauri supports it) but not
+tested or distributed in v1. The first users are on macOS and Linux.
+Revisit when distribution (Phase 6) is reached.
 
 ## Worker Packaging for Distribution
 

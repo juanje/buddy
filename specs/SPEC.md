@@ -12,7 +12,7 @@ References [design principles](app-design-principles.md) for WHY,
 
 ## 1. Product Context
 
-**What:** A native cross-platform desktop app that gives non-technical users
+**What:** A native desktop app (macOS + Linux) that gives non-technical users
 a personal assistant with persistent, learning memory.
 
 **Who:** People who use ChatGPT but have never used an IDE, terminal, or code
@@ -24,7 +24,8 @@ organizes, and retrieves without the user managing files. Knowledge accumulates
 and the assistant improves with use.
 
 **Platform:** Tauri v2 (native shell) + Node.js worker (Pi SDK) + git-backed
-markdown file system. No cloud dependency, no proprietary formats, no telemetry.
+markdown file system. macOS primary, Linux supported. No cloud dependency, no
+proprietary formats, no telemetry.
 
 ---
 
