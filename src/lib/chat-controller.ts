@@ -7,7 +7,6 @@
 //   FR-INGEST-01..04 file attachments
 
 import { derived, get, writable, type Readable, type Writable } from "svelte/store";
-import { basename } from "node:path";
 import type {
   AgentEvent,
   AssistantMessageEventLike,
@@ -16,6 +15,11 @@ import type {
   PromptOptions,
 } from "../../shared/api";
 import { isSupportedIngestFormat } from "../../shared/ingest-formats";
+
+function basename(path: string): string {
+  const parts = path.replace(/\\/g, "/").split("/");
+  return parts[parts.length - 1] || path;
+}
 
 export interface ChatMessage {
   id: number;
