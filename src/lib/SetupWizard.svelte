@@ -35,6 +35,15 @@
     }
   }
 
+  async function importExistingAb() {
+    try {
+      if ((await wizard.importExisting()) === "adopted") onComplete?.();
+      // "needs-provider": the wizard moved to the provider step in import mode.
+    } catch {
+      // setupError store carries the message; the creating step shows it.
+    }
+  }
+
   // Local input values (validated on continue).
   let locationInput = $state("");
   let apiKeyInput = $state("");
@@ -106,9 +115,13 @@
     {#if $locationCheck && locationError($locationCheck.status)}
       <p class="error">{locationError($locationCheck.status)}</p>
     {/if}
-    <button class="primary" onclick={validateAndMaybeContinue}>
-      {t.wizardContinue}
-    </button>
+    {#if $locationCheck?.status === "existing-ab"}
+      <button class="primary" onclick={importExistingAb}>{t.locationImport}</button>
+    {:else}
+      <button class="primary" onclick={validateAndMaybeContinue}>
+        {t.wizardContinue}
+      </button>
+    {/if}
   {:else if $step === "provider"}
     <h2>{t.providerTitle}</h2>
     <p class="muted">{t.providerHint}</p>

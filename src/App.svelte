@@ -54,9 +54,9 @@
       if (!connection) throw new Error("worker not connected");
       return connection.api.configureProviderKey(provider, apiKey, baseUrl);
     },
-    async runSetup(config) {
+    async runSetup(config, mode) {
       if (!connection) throw new Error("worker not connected");
-      return connection.api.runSetup(config);
+      return connection.api.runSetup(config, mode);
     },
     async shutdown() {
       await connection?.api.shutdown();

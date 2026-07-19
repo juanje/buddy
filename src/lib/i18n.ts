@@ -22,8 +22,8 @@ export const t = {
     "Es una carpeta normal de tu equipo. Ahí guardará su memoria, tus notas y todo lo que aprenda.",
   locationNotEmpty: "Esa carpeta ya contiene archivos. Elige una carpeta vacía o una que no exista.",
   locationNotADirectory: "Esa ruta no es una carpeta.",
-  locationExistingAb:
-    "Esa carpeta ya contiene un asistente AB. La importación llegará en una próxima versión.",
+  locationExistingAb: "Esa carpeta ya contiene un asistente AB.",
+  locationImport: "Importar este asistente",
   providerTitle: "Conecta tu proveedor de IA",
   providerHint:
     "Tu asistente necesita un servicio de IA para pensar. Elige el tuyo e introduce tu clave de API.",

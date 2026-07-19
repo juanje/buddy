@@ -63,6 +63,14 @@ export interface SetupController {
    * Resolves when the AB exists and the session is live; rejects on failure.
    */
   finishSetup(): Promise<void>;
+  /** True when adopting an existing AB instead of creating one (FR-SETUP-08). */
+  importMode: Readable<boolean>;
+  /**
+   * Adopt the existing AB at the chosen location (FR-SETUP-08). Returns
+   * "adopted" when its own settings sufficed, or "needs-provider" when the
+   * wizard must continue through the provider/model steps in import mode.
+   */
+  importExisting(): Promise<"adopted" | "needs-provider">;
   /** True once setup completed successfully (the app can enter the chat). */
   completed: Readable<boolean>;
   /** Error message if AB creation failed. */
@@ -147,6 +155,23 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
 
   const completed = writable(false);
   const setupError = writable<string | undefined>(undefined);
+  const importMode = writable(false);
+
+  async function runSetupWith(config: {
+    abDirectory: string;
+    provider: ProviderId;
+    model: string;
+  }): Promise<void> {
+    step.set("creating");
+    setupError.set(undefined);
+    try {
+      await worker.runSetup(config, get(importMode) ? "import" : "create");
+      completed.set(true);
+    } catch (err) {
+      setupError.set(err instanceof Error ? err.message : String(err));
+      throw err;
+    }
+  }
 
   async function finishSetup(): Promise<void> {
     const abDirectory = get(location);
@@ -155,15 +180,32 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
     if (!abDirectory || !providerId || !modelId) {
       throw new Error("finishSetup called before the wizard collected all answers");
     }
-    step.set("creating");
-    setupError.set(undefined);
-    try {
-      await worker.runSetup({ abDirectory, provider: providerId, model: modelId });
-      completed.set(true);
-    } catch (err) {
-      setupError.set(err instanceof Error ? err.message : String(err));
-      throw err;
+    await runSetupWith({ abDirectory, provider: providerId, model: modelId });
+  }
+
+  const KNOWN_PROVIDERS: ReadonlyArray<ProviderId> = ["anthropic", "openai", "google", "custom"];
+
+  async function importExisting(): Promise<"adopted" | "needs-provider"> {
+    const abDirectory = get(location);
+    const check = get(locationCheck);
+    if (!abDirectory || check?.status !== "existing-ab") {
+      throw new Error("importExisting called without an existing AB at the chosen location");
     }
+    importMode.set(true);
+
+    const settings = check.abSettings;
+    const knownProvider = KNOWN_PROVIDERS.find((p) => p === settings?.provider);
+    if (knownProvider && settings?.model) {
+      provider.set(knownProvider);
+      model.set(settings.model);
+      await runSetupWith({ abDirectory, provider: knownProvider, model: settings.model });
+      return "adopted";
+    }
+
+    // Missing or unrecognized settings: collect provider/model in the wizard;
+    // finishSetup will then adopt (import mode) instead of creating.
+    step.set("provider");
+    return "needs-provider";
   }
 
   function next(): void {
@@ -200,6 +242,8 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
     selectModel,
     next,
     finishSetup,
+    importMode,
+    importExisting,
     completed,
     setupError,
   };

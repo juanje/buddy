@@ -48,6 +48,12 @@ export type SetupState = { firstRun: true } | { firstRun: false; config: SetupCo
  */
 export interface LocationCheck {
   status: "ok-new" | "ok-empty" | "existing-ab" | "not-empty" | "not-a-directory";
+  /**
+   * For "existing-ab": provider/model read from the instance's own
+   * .pi/settings.json, when present. A complete pair allows direct adoption
+   * without re-running the provider and model steps (FR-SETUP-08).
+   */
+  abSettings?: { provider?: string; model?: string };
 }
 
 /** API key validation verdict (FR-SETUP-04). */
@@ -75,8 +81,12 @@ export interface WorkerAPI {
     apiKey: string,
     baseUrl?: string,
   ): Promise<KeyCheck>;
-  /** Create the AB home and boot the session (FR-SETUP-06). */
-  runSetup(config: SetupConfig): Promise<void>;
+  /**
+   * Finish setup and boot the session. "create" builds a fresh AB from
+   * templates (FR-SETUP-06); "import" adopts an existing one without
+   * overwriting anything (FR-SETUP-08). Default: "create".
+   */
+  runSetup(config: SetupConfig, mode?: "create" | "import"): Promise<void>;
   shutdown(): Promise<void>;
 }
 

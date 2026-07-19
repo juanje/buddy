@@ -12,7 +12,7 @@ import { RPCChannel } from "kkrpc";
 import { nodeStdioTransport } from "kkrpc/stdio";
 
 import type { AgentEvent, FrontendAPI, WorkerAPI } from "../shared/api";
-import { createAbInstance } from "./create-ab";
+import { adoptAbInstance, createAbInstance } from "./create-ab";
 import { defaultAbLocation, validateLocation } from "./location";
 import { checkPrerequisites } from "./prereqs";
 import { configureProviderKey } from "./provider-auth";
@@ -113,8 +113,12 @@ async function main(): Promise<void> {
       async configureProviderKey(provider, apiKey, baseUrl) {
         return configureProviderKey(provider, apiKey, { baseUrl });
       },
-      async runSetup(config) {
-        await createAbInstance({ config, configPath: defaultConfigPath() });
+      async runSetup(config, mode = "create") {
+        if (mode === "import") {
+          adoptAbInstance({ config, configPath: defaultConfigPath() });
+        } else {
+          await createAbInstance({ config, configPath: defaultConfigPath() });
+        }
         setupState = { firstRun: false, config };
         await bootSession(config.abDirectory);
       },
