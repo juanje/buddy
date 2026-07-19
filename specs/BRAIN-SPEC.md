@@ -34,56 +34,132 @@ iterated through testing with the actual LLM.
 
 ## File Inventory
 
-| Template file | Purpose | Source (from current AB) | Adaptation needed |
-|---|---|---|---|
-| `AGENTS.md` | Base behavioral rules (system prompt) | `CLAUDE.md` from my-ab | Major rewrite — remove editor/hook/platform refs; remove code-enforced rules; focus on judgment-requiring behavior |
-| `agent_brain/identity/SOUL.md` | Agent character + first-session flow | `agent_brain/identity/SOUL.md` from my-ab | Generalize (remove Juanje-specific); add first-session personalization section |
-| `agent_brain/identity/USER.md` | User profile (placeholder) | New | Minimal placeholder that signals "new user, personalize me" |
-| `agent_brain/skills/consolidation.md` | How to consolidate at each depth | Multiple skills from my-ab (process-conversation, daily-consolidation, weekly-review, monthly-maintenance) | Major rewrite — merge into one depth-parameterized skill; remove worker-handled steps (timing, git, indexing) |
-| `agent_brain/observations.md` | Pattern tracking | New (empty with structure) | Define section format |
-| `agent_brain/deferred.md` | Reminders/async items | New (empty) | Define parseable date format |
-| `user/inbox.md` | GTD inbox | New (empty with structure) | Define sections (Capture, Next Actions) |
-| `logs/index.md` | Session registry | New (empty) | Managed by code; define frontmatter schema |
+Based on exploration of the upstream template (`~/git/agentic-buddy/`).
+
+### Files that ship as-is (minimal or no changes)
+
+| Template file | Source | Notes |
+|---|---|---|
+| `agent_brain/identity/SOUL.md` | upstream `agent_brain/identity/SOUL.md` (81 lines) | Generalize (remove any instance-specific refs). Add first-session section |
+| `agent_brain/identity/USER.md` | upstream `agent_brain/identity/USER.md` | As-is (placeholder with sections: About, Context, Preferences) |
+| `agent_brain/observations.md` | upstream `agent_brain/observations.md` | As-is (empty with section structure: Skill/Rule/Concept/Structure candidates, Resolved) |
+| `agent_brain/deferred.md` | upstream `agent_brain/deferred.md` | As-is (queue semantics documented, entry format defined, parseable by code) |
+| `logs/index.md` | upstream `logs/index.md` | As-is (empty, managed by worker code) |
+| `user/inbox.md` | upstream `.packs/personal/inbox.md` | As-is when personal pack applied (GTD sections: Capture, Next Actions, @context, Waiting For, Someday/Maybe) |
+
+### Files that need rewriting
+
+| Template file | Source | What changes |
+|---|---|---|
+| `AGENTS.md` | upstream `templates/CLAUDE.md` (104 lines, 16 rules) | Major rewrite — see section below |
+| `agent_brain/skills/process-conversation.md` | upstream (207 lines, 6 steps) | Remove git commit step (worker handles). Remove Step 4 interactive/autonomous branching (worker decides mode). Keep Steps 1-3, 5-6 logic intact |
+| `agent_brain/skills/consolidation.md` | Merge of daily (355 lines), weekly (294 lines), monthly (330 lines) | Merge into single depth-parameterized skill. Remove all git/scheduling/threshold logic (worker handles). Keep the judgment procedures at each depth |
+| `agent_brain/skills/triage-inbox.md` | upstream `.packs/personal/triage-inbox.md` (141 lines) | As-is (pure GTD procedure, no platform deps) |
+
+### Files that DON'T ship (replaced by app code)
+
+| Current file | Replaced by |
+|---|---|
+| `.cursor/hooks/session-start.py` | Worker initialization (loads identity + context + deferred programmatically) |
+| `.cursor/hooks/auto-reflect.py` | Worker post-session handler (runs reflect internally) |
+| `.cursor/hooks/auto-consolidate.py` | Worker scheduler (usage-based counters, cascade logic) |
+| `.cursor/hooks.json` + `config.json` | App settings/preferences |
+| `.cursor/commands/*.md` | Worker commands triggered by UI or scheduler |
+| `agent_brain/skills/update-upstream.md` | App built-in update mechanism |
+| `.packs/index.md` + pack structure | App setup wizard (pack selection as UI step) |
 
 ---
 
 ## AGENTS.md Design
 
-### What stays from current CLAUDE.md
+Source: upstream `templates/CLAUDE.md` (104 lines). Sections: Core behavior (7 rules),
+Idea file format, File metadata, Active context, Where to find things, Skills, Rules (16).
 
-- Routing rules: "user acts → user/, agent learns → agent_brain/"
-- Capture-over-perfection principle
-- Progressive disclosure: read index before drilling into files
-- Confirmation before reorganizing user/ space
-- "If you say you'll remember, write it to a file"
-- Observation pipeline: note patterns, track occurrences
-- Don't make unilateral decisions about priorities
+### What stays from current templates/CLAUDE.md
 
-### What is REMOVED (handled by code)
+**Core behavior section (all 7 rules):**
+1. Listen and capture (routing: user acts → user/, agent learns → agent_brain/)
+2. Confirm what you captured
+3. Present options with reasoning for decisions (user owns decisions)
+4. Don't reorganize proactively
+5. When in doubt, capture
+6. Ask about prioritization if unclear
+7. Group, don't duplicate
 
-- "Update last_accessed / access_count" — worker does this
-- "Commit regularly" — worker auto-commits
-- "Update logs/index.md" — worker rebuilds at session end
-- "Check deferred.md at session start" — worker surfaces in system prompt
-- "Resolve night-owl dates" — worker resolves before passing to LLM
-- All hook/cron/platform instructions
-- Multi-editor compatibility notes
-- Maintenance scheduling rules
+**Rules that stay (require LLM judgment):**
+- Rule 1: All content in English (or user's language — TBD for app)
+- Rule 2: Don't read files preemptively; progressive disclosure via indexes
+- Rule 5: Memory first — check what you know before external tools
+- Rule 6: Retention by memory type (semantic never archived, etc.)
+- Rule 7: USER.md updated with observed facts; inferences marked
+- Rule 9: Write it or don't say it
+- Rule 10: No unsourced content; relative dates resolved
+- Rule 11: Context is not a task; user tasks are not agent tasks
+- Rule 13: Logs are context, not changelogs
+- Rule 15: Don't edit system structures during normal sessions
+- Rule 16: Execute skills silently (present result, not play-by-play)
 
-### What is NEW (app-specific)
+**Other sections that stay:**
+- Idea file format (seed → developing → ready → converted/archived)
+- File metadata definition (last_accessed, access_count, created)
+- Active context structure (Right now + Files)
+- Where to find things (directory navigation map — starts empty)
+- Skills section (trigger-based references — starts with core skills only)
 
-- "Your tools are: read, write, edit, ls, find, grep. You have no bash."
-- "When you want to remember something, write it. The system commits for you."
-- "The user may attach files (drag & drop). Read and discuss them when they do."
-- "Identity files (SOUL.md, USER.md) — the system will ask the user to confirm
-  any changes you propose to these."
-- Reference to consolidation skill for depth-specific procedures
+### What is REMOVED (handled by code in the worker)
+
+| Removed rule/instruction | Worker replacement |
+|---|---|
+| Rule 4: "Create directories with mkdir -p" | Worker creates dirs via fs API |
+| Rule 8: "Commit regularly" | Worker auto-commits after writes |
+| Rule 3: "Update metadata (last_accessed, access_count)" | Worker Hebbian tracker updates frontmatter |
+| "Update logs/index.md" in consolidation steps | Worker rebuilds index at session end |
+| Night-owl date resolution paragraph (Rule 10 partial) | Worker resolves before injecting date in context |
+| Rule 14: "Current date from system" | Worker always injects current date in system prompt |
+| Maintenance scheduling logic | Worker scheduler with usage-based counters |
+| "Check deferred.md at session start" | Worker loads and presents deferred in system prompt |
+| Platform references (.cursor/, /setup, /refresh, hooks) | App handles all lifecycle |
+| File metadata exempt list (which files don't track access) | Worker exclusion rules in Hebbian config |
+
+### What is NEW (app-specific instructions)
+
+```markdown
+## App context
+
+You operate inside the AB app. The app handles:
+- File persistence (auto-commit after your writes — you never need to commit)
+- Access tracking (reads are counted automatically — don't mention it)
+- Session indexing (logged automatically)
+- Scheduling (consolidation runs when due — you just follow the procedure)
+- Date/time (always provided in your context — use it directly)
+
+Your tools: read, write, edit, ls, find, grep. No bash, no shell commands.
+If you need something beyond file operations, tell the user you can't do it.
+
+When the user drops or attaches a file, read it and discuss it. Structured
+indexing (wiki ingest) is a separate feature they'll ask for explicitly.
+
+Identity files (SOUL.md, USER.md): the app will ask the user to confirm
+any changes you propose. Write them normally — the confirmation happens
+in the UI, not in the conversation.
+```
+
+### Structural changes
+
+- Rename from `CLAUDE.md` to `AGENTS.md` (Pi/portable convention)
+- Remove the "Not yet configured / run /setup" pre-setup state (app wizard handles this)
+- The "Where to find things" section starts empty and grows with use
+- Skills section starts with: process-conversation, consolidation, triage-inbox
 
 ### Tone and language
 
 Written for a capable LLM (Claude Sonnet/GPT-4o class). Concise, no
 redundancy. If something is enforced by code, don't mention it — the LLM
 doesn't need to know about mechanisms it can't influence.
+
+The upstream version is already well-calibrated in tone. Main adjustment:
+remove the meta-level "how to work with the editor" framing and make it
+purely "how to behave as a persistent assistant."
 
 ---
 
