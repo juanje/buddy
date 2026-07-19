@@ -1,30 +1,80 @@
 <script lang="ts">
   import type { ChatController } from "./chat-controller";
+  import type { ScrollController } from "./scroll-controller";
   import MessageBubble from "./MessageBubble.svelte";
 
-  let { controller }: { controller: ChatController } = $props();
+  let { controller, scroll }: { controller: ChatController; scroll: ScrollController } =
+    $props();
 
   const { messages, typingIndicator } = controller;
+  const { showScrollButton } = scroll;
+
+  let container: HTMLDivElement | undefined = $state();
+
+  export function scrollToLatest() {
+    if (container) container.scrollTop = container.scrollHeight - container.clientHeight;
+  }
+
+  // Content growth → let the scroll controller decide whether to follow.
+  $effect(() => {
+    $messages;
+    $typingIndicator;
+    scroll.notifyContentGrown();
+  });
+
+  function handleScroll() {
+    if (!container) return;
+    const atBottom =
+      container.scrollTop + container.clientHeight >= container.scrollHeight - 4;
+    scroll.onUserScrolled(atBottom);
+  }
 </script>
 
-<div class="chat">
-  {#each $messages as message (message.id)}
-    <MessageBubble {message} />
-  {/each}
-  {#if $typingIndicator}
-    <div class="typing" aria-label="assistant is typing">
-      <span></span><span></span><span></span>
-    </div>
+<div class="chat-wrap">
+  <div class="chat" bind:this={container} onscroll={handleScroll}>
+    {#each $messages as message (message.id)}
+      <MessageBubble {message} />
+    {/each}
+    {#if $typingIndicator}
+      <div class="typing" aria-label="assistant is typing">
+        <span></span><span></span><span></span>
+      </div>
+    {/if}
+  </div>
+  {#if $showScrollButton}
+    <button class="scroll-down" onclick={() => scroll.scrollToBottomClicked()} title="Scroll to bottom">
+      ↓
+    </button>
   {/if}
 </div>
 
 <style>
+  .chat-wrap {
+    position: relative;
+    flex: 1;
+    display: flex;
+    min-height: 0;
+  }
   .chat {
     flex: 1;
     overflow-y: auto;
     padding: 12px 0;
     display: flex;
     flex-direction: column;
+  }
+  .scroll-down {
+    position: absolute;
+    bottom: 16px;
+    right: 20px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--bg-secondary);
+    color: var(--fg);
+    font-size: 16px;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   }
   .typing {
     display: flex;

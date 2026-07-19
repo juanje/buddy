@@ -2,17 +2,26 @@
   import type { ChatController } from "./chat-controller";
   import { resolveInputKey } from "./keyboard";
 
-  let { controller, onAbort }: { controller: ChatController; onAbort: () => void } = $props();
+  let {
+    controller,
+    onAbort,
+    onSent,
+  }: { controller: ChatController; onAbort: () => void; onSent?: () => void } = $props();
 
   const { input, inputDisabled, canSend, showAbort } = controller;
 
   let textarea: HTMLTextAreaElement | undefined = $state();
 
+  async function sendNow() {
+    await controller.send();
+    onSent?.();
+  }
+
   async function handleKeydown(event: KeyboardEvent) {
     const action = resolveInputKey(event);
     if (action === "send") {
       event.preventDefault();
-      await controller.send();
+      await sendNow();
     }
     // "newline": default textarea behavior inserts it
   }
@@ -37,7 +46,7 @@
   {#if $showAbort}
     <button class="abort" onclick={onAbort} title="Abort (Esc)">◼</button>
   {:else}
-    <button class="send" onclick={() => controller.send()} disabled={!$canSend} title="Send (Enter)">
+    <button class="send" onclick={sendNow} disabled={!$canSend} title="Send (Enter)">
       ➤
     </button>
   {/if}

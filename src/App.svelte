@@ -4,6 +4,7 @@
   // FR-CHAT-07 auto-scroll.
   import { onMount } from "svelte";
   import { createChatController, type ChatController } from "./lib/chat-controller";
+  import { createScrollController } from "./lib/scroll-controller";
   import { connectWorker, type WorkerConnection } from "./utils/agent";
   import ChatView from "./lib/ChatView.svelte";
   import InputBar from "./lib/InputBar.svelte";
@@ -32,6 +33,9 @@
   };
 
   controller = createChatController(workerProxy);
+
+  let chatView: ChatView | undefined = $state();
+  const scroll = createScrollController(() => chatView?.scrollToLatest());
 
   async function connect() {
     connectionError = undefined;
@@ -73,8 +77,12 @@
     </div>
   {/if}
   {#if controller}
-    <ChatView {controller} />
-    <InputBar {controller} onAbort={() => controller?.abort()} />
+    <ChatView bind:this={chatView} {controller} {scroll} />
+    <InputBar
+      {controller}
+      onAbort={() => controller?.abort()}
+      onSent={() => scroll.onUserMessageSent()}
+    />
   {/if}
 </main>
 
