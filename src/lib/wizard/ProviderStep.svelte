@@ -7,10 +7,12 @@
     controller,
     apiKeyInput = $bindable(""),
     baseUrlInput = $bindable(""),
+    onDetectedSelect,
   }: {
     controller: SetupController;
     apiKeyInput?: string;
     baseUrlInput?: string;
+    onDetectedSelect?: (piProvider: string) => void;
   } = $props();
 
   const provider = $derived(controller.provider);
@@ -63,7 +65,10 @@
   <p class="muted">{$t.providerHint}</p>
   <div class="providers">
     {#each $detectedAuth.options as option (option.piProvider)}
-      <button class="provider-detected" onclick={() => controller.selectDetectedProvider(option.piProvider)}>
+      <button class="provider-detected" onclick={() => {
+        controller.selectDetectedProvider(option.piProvider);
+        onDetectedSelect?.(option.piProvider);
+      }}>
         <strong>{option.piProvider}</strong>
         <span class="tier">{option.model}</span>
       </button>

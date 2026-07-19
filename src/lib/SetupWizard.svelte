@@ -156,7 +156,12 @@
       </button>
     {/if}
   {:else if $step === "provider"}
-    <ProviderStep controller={wizard} bind:apiKeyInput bind:baseUrlInput />
+    <ProviderStep
+      controller={wizard}
+      bind:apiKeyInput
+      bind:baseUrlInput
+      onDetectedSelect={(piProvider) => pickDetectedAndFinish(piProvider)}
+    />
   {:else if $step === "model"}
     <ModelStep controller={wizard} onContinue={createAb} />
   {:else if $step === "creating"}
