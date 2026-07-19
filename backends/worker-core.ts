@@ -70,6 +70,7 @@ export function createWorkerCore(
       if (session.isStreaming) {
         await session.abort();
       }
+      await lifecycle?.flush();
       await lifecycle?.shutdown();
       session.dispose();
     },

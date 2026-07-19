@@ -14,9 +14,11 @@ import {
   SessionManager,
 } from "@earendil-works/pi-coding-agent";
 
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import type { AgentEvent } from "../shared/api";
 import { commitAll } from "./git";
+import { acquireLock, releaseLock } from "./maintenance";
 import { alignHttpDispatcherWithPi } from "./pi-http-dispatcher";
 import { collectAssistantText } from "./pi-utils";
 import { markReflectComplete, rebuildLogsIndex } from "./reflect";
@@ -60,9 +62,11 @@ async function runReflect(
 
   const systemPrompt = mode === "incremental" ? INCREMENTAL_PROMPT : SESSION_END_PROMPT;
 
-  let sm: ReturnType<typeof SessionManager.open>;
-  if (existsSync(forkedSessionFile)) {
-    sm = SessionManager.open(forkedSessionFile, undefined, abDirectory);
+  let sm: SessionManager;
+  if (forkedSessionFile && existsSync(forkedSessionFile)) {
+    const forkDir = join(abDirectory, ".ab-app", "reflect-sessions");
+    mkdirSync(forkDir, { recursive: true });
+    sm = SessionManager.forkFrom(forkedSessionFile, abDirectory, forkDir);
   } else {
     sm = SessionManager.create(abDirectory);
   }
@@ -108,11 +112,18 @@ async function main(): Promise<void> {
     console.error("[reflect-child] missing arguments");
     process.exit(1);
   }
+
+  if (!acquireLock(abDirectory)) {
+    process.exit(0);
+  }
+
   try {
     await runReflect(abDirectory, forkedSessionFile, logPath, mode);
   } catch (err) {
     console.error("[reflect-child] error:", err);
     process.exit(1);
+  } finally {
+    releaseLock(abDirectory);
   }
 }
 
