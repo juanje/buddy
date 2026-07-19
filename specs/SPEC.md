@@ -666,6 +666,68 @@ Full specification in [specs/BRAIN-SPEC.md](BRAIN-SPEC.md).
 - **Then** an OS notification fires and conflicted files are shown in the chat
 - **And** the agent can help resolve conflicts (it understands the file formats)
 
+### 3.16 AB Self-Documentation (FR-DOCS)
+
+| ID | Description | Phase |
+|----|-------------|-------|
+| FR-DOCS-01 | Self-documentation KB available for agent consultation | 3 |
+| FR-DOCS-02 | "Help me" / "How do you work?" triggers agent self-explanation | 3 |
+
+**FR-DOCS-01 — Self-documentation KB**
+
+- **Given** the AB directory is set up
+- **When** the agent needs to explain what it is, how it works, or what it can do
+- **Then** it consults `agent_brain/docs/` — a small set of markdown files covering capabilities, usage tips, and how the memory system works
+- **And** these files are NOT loaded at session start (they are referenced in AGENTS.md as "consult on demand when asked")
+- **And** the KB is part of the template, shipped with new instances
+
+**FR-DOCS-02 — Self-explanation trigger**
+
+- **Given** the user asks "what can you do?", "how do you work?", "help", or similar
+- **When** the agent processes the request
+- **Then** it reads relevant docs from `agent_brain/docs/` and synthesizes a natural, context-appropriate answer
+- **And** it does not dump the entire KB — it answers what was asked
+
+### 3.17 User Personal Knowledge Base (FR-WIKI)
+
+| ID | Description | Phase |
+|----|-------------|-------|
+| FR-WIKI-01 | Wiki-style KB for user's personal knowledge | 2 |
+| FR-WIKI-02 | Ingest documents into wiki | 2 |
+| FR-WIKI-03 | Cross-reference and backlinks | 2 |
+| FR-WIKI-04 | Search and retrieve from wiki | 2 |
+
+**FR-WIKI-01 — User personal KB**
+
+- **Given** the AB instance is configured
+- **When** the user shares knowledge worth preserving long-term (notes, ideas, concepts, document summaries)
+- **Then** the agent files it into `user/wiki/` as interconnected markdown pages
+- **And** pages have frontmatter (tags, created, related) and backlinks
+- **And** this is the user's knowledge base — distinct from `agent_brain/` (the agent's learned context about the user)
+
+**FR-WIKI-02 — Document ingest to wiki**
+
+- **Given** the user provides a document (via drag & drop, attach, or path)
+- **When** they ask the agent to "add to wiki", "save this knowledge", or similar
+- **Then** the agent extracts key concepts from the document
+- **And** creates or updates wiki pages, reconciling against existing content (no duplicates)
+- **And** confirms what was filed and where
+
+**FR-WIKI-03 — Cross-references and backlinks**
+
+- **Given** wiki pages reference related concepts
+- **When** the agent creates or updates a page
+- **Then** markdown links connect related pages (`[[concept]]` or `[concept](path)`)
+- **And** backlinks are maintained (if A links to B, B lists A as related)
+
+**FR-WIKI-04 — Search and retrieve**
+
+- **Given** the user asks about something that may be in their wiki
+- **When** the agent looks for relevant knowledge
+- **Then** it searches the wiki by tags, titles, or content
+- **And** synthesizes an answer from stored pages, citing sources
+- **And** the user's knowledge base grows more useful over time
+
 ---
 
 ## 4. Non-Functional Requirements

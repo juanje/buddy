@@ -67,6 +67,19 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 
 ## Current focus
 
-> **Rework sprint complete (2026-07-19).** FR-CHAT-04 markdown rendering shipped early
-> for better chat UX during testing. Next: FR-GIT-01 (auto-commit), FR-REFLECT-01/02,
-> FR-INGEST-01/02. FR-SETUP-05 OAuth deferred.
+> **Memory Loop Sprint (2026-07-19).** Goal: make the app genuinely remember
+> between sessions — the core promise. After this sprint, closing and reopening
+> produces continuity.
+
+### Sprint: Memory Loop
+
+| Order | FR-ID | Feature | Rationale |
+|-------|-------|---------|-----------|
+| 1 | FR-GIT-01 | Auto-commit after agent writes | Without this, files the agent writes don't survive restarts. Foundation for everything else. |
+| 2 | FR-SESSION-03 | Session end on app close | Clean shutdown trigger — needed before reflect can fire. |
+| 3 | FR-REFLECT-01 | Factual skeleton on session end | Deterministic capture of what happened (no LLM). Skeleton is the input for reflect. |
+| 4 | FR-REFLECT-02 | Catch-up reflect on start | LLM processes pending skeletons into log entries with decisions, lessons, context. Completes the loop. |
+
+**Why this grouping:** These 4 features form a closed loop. After implementing
+them, the test is: talk to AB → close → reopen → AB knows what happened.
+Each feature depends on the previous one, and together they deliver "it remembers."
