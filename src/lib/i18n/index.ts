@@ -9,7 +9,16 @@ export type AppLocale = "es" | "en";
 
 const locales: Record<AppLocale, LocaleStrings> = { es, en };
 
-const locale = writable<AppLocale>("es");
+function detectSystemLocale(): AppLocale {
+  try {
+    const lang = (typeof navigator !== "undefined" && navigator.language) || "en";
+    return lang.startsWith("es") ? "es" : "en";
+  } catch {
+    return "en";
+  }
+}
+
+const locale = writable<AppLocale>(detectSystemLocale());
 
 export const t = derived(locale, ($locale) => locales[$locale]);
 

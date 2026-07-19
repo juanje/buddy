@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { setLocale, t, type AppLocale } from "../i18n";
+  import { setLocale, type AppLocale } from "../i18n";
 
   let { onSelect }: { onSelect: (lang: AppLocale) => void } = $props();
 
@@ -9,13 +9,22 @@
   }
 </script>
 
-<h2>{$t.languageTitle}</h2>
+<h2 class="bilingual">Choose your language<br /><span class="secondary">Elige tu idioma</span></h2>
 <div class="languages">
-  <button class="lang-card" onclick={() => pick("es")}>{$t.languageOptionEs}</button>
-  <button class="lang-card" onclick={() => pick("en")}>{$t.languageOptionEn}</button>
+  <button class="lang-card" onclick={() => pick("es")}>Español</button>
+  <button class="lang-card" onclick={() => pick("en")}>English</button>
 </div>
 
 <style>
+  .bilingual {
+    text-align: center;
+    line-height: 1.6;
+  }
+  .secondary {
+    font-size: 0.85em;
+    opacity: 0.7;
+    font-weight: normal;
+  }
   .languages {
     display: flex;
     gap: 12px;
