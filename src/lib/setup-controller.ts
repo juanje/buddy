@@ -4,9 +4,10 @@
 //   FR-SETUP-02 prerequisites gate
 //   FR-SETUP-03 location picker (+ FR-SETUP-08 import detection)
 //   FR-SETUP-04 provider + API key
-//   (FR-SETUP-05 model selection arrives next)
+//   FR-SETUP-05 model selection (curated catalog, recommended default)
 
 import { derived, get, writable, type Readable } from "svelte/store";
+import { recommendedModelFor } from "./model-catalog";
 import type {
   KeyCheck,
   LocationCheck,
@@ -38,6 +39,8 @@ export interface SetupController {
   keyCheck: Readable<KeyCheck | undefined>;
   /** True while a key validation is in flight. */
   validatingKey: Readable<boolean>;
+  /** Chosen model id (preselected with the provider's recommended model). */
+  model: Readable<string | undefined>;
   /** Whether the current step's requirements are met. */
   canProceed: Readable<boolean>;
 
@@ -51,6 +54,8 @@ export interface SetupController {
   selectProvider(provider: ProviderId): void;
   /** Validate the key against the provider and store it on success. */
   submitApiKey(apiKey: string, baseUrl?: string): Promise<void>;
+  /** Choose the model to use (FR-SETUP-05). */
+  selectModel(modelId: string): void;
   /** Advance to the next step (no-op if canProceed is false). */
   next(): void;
 }
@@ -68,12 +73,13 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
   const provider = writable<ProviderId | undefined>(undefined);
   const keyCheck = writable<KeyCheck | undefined>(undefined);
   const validatingKey = writable(false);
+  const model = writable<string | undefined>(undefined);
 
   const needsBaseUrl = derived(provider, ($provider) => $provider === "custom");
 
   const canProceed = derived(
-    [step, prereq, locationCheck, keyCheck],
-    ([$step, $prereq, $locationCheck, $keyCheck]) => {
+    [step, prereq, locationCheck, keyCheck, model],
+    ([$step, $prereq, $locationCheck, $keyCheck, $model]) => {
       switch ($step) {
         case "prerequisites":
           return $prereq?.gitInstalled === true;
@@ -81,6 +87,8 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
           return $locationCheck !== undefined && USABLE_LOCATION.includes($locationCheck.status);
         case "provider":
           return $keyCheck?.valid === true;
+        case "model":
+          return typeof $model === "string" && $model.trim() !== "";
         default:
           // Later steps define their own gates as they are implemented.
           return false;
@@ -124,12 +132,22 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
     }
   }
 
+  function selectModel(modelId: string): void {
+    model.set(modelId);
+  }
+
   function next(): void {
     if (!get(canProceed)) return;
     step.update(($step) => {
       const index = STEP_ORDER.indexOf($step);
       return STEP_ORDER[Math.min(index + 1, STEP_ORDER.length - 1)];
     });
+    // Entering the model step preselects the provider's recommended model
+    // (FR-SETUP-05); "custom" has no catalog, so the user must type an id.
+    if (get(step) === "model" && get(model) === undefined) {
+      const id = get(provider);
+      if (id) model.set(recommendedModelFor(id)?.id);
+    }
   }
 
   return {
@@ -142,12 +160,14 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
     needsBaseUrl,
     keyCheck,
     validatingKey,
+    model,
     canProceed,
     checkPrerequisites,
     loadDefaultLocation,
     pickLocation,
     selectProvider,
     submitApiKey,
+    selectModel,
     next,
   };
 }

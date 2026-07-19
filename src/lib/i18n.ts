@@ -35,7 +35,24 @@ export const t = {
   baseUrlLabel: "URL del servicio",
   apiKeyValidate: "Validar y continuar",
   apiKeyValidating: "Validando…",
+  modelTitle: "Elige el cerebro de tu asistente",
+  modelHint: "Puedes cambiarlo más adelante. Si dudas, quédate con el recomendado.",
+  modelRecommended: "Recomendado",
+  modelCustomLabel: "Identificador del modelo",
+  modelCustomHint: "Escribe el nombre del modelo tal y como lo expone tu servicio.",
 } as const;
+
+/** Short cost/capability description per model tier (FR-SETUP-05). */
+export function tierDescription(tier: "fast" | "balanced" | "powerful"): string {
+  switch (tier) {
+    case "fast":
+      return "Rápido y muy económico. Ideal para el día a día.";
+    case "balanced":
+      return "Buen equilibrio entre capacidad y coste.";
+    case "powerful":
+      return "El más capaz. Más lento y más caro.";
+  }
+}
 
 /**
  * Platform-specific git install instructions (FR-SETUP-02). Keyed by Node's

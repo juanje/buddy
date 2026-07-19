@@ -4,7 +4,8 @@
   // FR-SETUP-03 location picker · (FR-SETUP-04 provider, 05 model next).
   import { onMount } from "svelte";
   import { createSetupController } from "./setup-controller";
-  import { gitInstallInstructions, t } from "./i18n";
+  import { modelChoicesFor } from "./model-catalog";
+  import { gitInstallInstructions, t, tierDescription } from "./i18n";
   import type { SetupWorkerAPI } from "../../shared/api";
 
   let { worker }: { worker: SetupWorkerAPI } = $props();
@@ -19,6 +20,7 @@
   const needsBaseUrl = wizard.needsBaseUrl;
   const keyCheck = wizard.keyCheck;
   const validatingKey = wizard.validatingKey;
+  const model = wizard.model;
 
   // Local input values (validated on continue).
   let locationInput = $state("");
@@ -129,6 +131,42 @@
         {$validatingKey ? t.apiKeyValidating : t.apiKeyValidate}
       </button>
     {/if}
+  {:else if $step === "model"}
+    <h2>{t.modelTitle}</h2>
+    <p class="muted">{t.modelHint}</p>
+    {#if $provider && modelChoicesFor($provider)}
+      <div class="models">
+        {#each modelChoicesFor($provider)! as choice (choice.id)}
+          <button
+            class="model-card"
+            class:selected={$model === choice.id}
+            onclick={() => wizard.selectModel(choice.id)}
+          >
+            <strong>
+              {choice.label}
+              {#if choice.recommended}
+                <span class="badge">{t.modelRecommended}</span>
+              {/if}
+            </strong>
+            <span class="tier">{tierDescription(choice.tier)}</span>
+          </button>
+        {/each}
+      </div>
+    {:else}
+      <label class="field">
+        <span>{t.modelCustomLabel}</span>
+        <input
+          type="text"
+          spellcheck="false"
+          value={$model ?? ""}
+          oninput={(e) => wizard.selectModel(e.currentTarget.value)}
+        />
+      </label>
+      <p class="muted">{t.modelCustomHint}</p>
+    {/if}
+    <button class="primary" onclick={() => wizard.next()} disabled={!$canProceed}>
+      {t.wizardContinue}
+    </button>
   {:else}
     <p class="muted">{t.wizardComingSoon}</p>
   {/if}
@@ -236,5 +274,35 @@
     background: var(--bg-secondary);
     color: var(--fg);
     font-size: 14px;
+  }
+  .models {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: min(420px, 80vw);
+  }
+  .model-card {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: flex-start;
+    text-align: left;
+    padding: 10px 14px;
+  }
+  .model-card.selected {
+    border-color: var(--accent, #4f46e5);
+    outline: 2px solid var(--accent, #4f46e5);
+  }
+  .model-card .tier {
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .badge {
+    font-size: 11px;
+    color: var(--accent, #4f46e5);
+    border: 1px solid var(--accent, #4f46e5);
+    border-radius: 999px;
+    padding: 1px 8px;
+    margin-left: 6px;
   }
 </style>
