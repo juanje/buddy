@@ -7,6 +7,12 @@
   let { controller, scroll }: { controller: ChatController; scroll: ScrollController } =
     $props();
 
+  // $derived (not plain destructuring) so the stores track prop reassignment;
+  // `$controller.messages` is invalid — the controller itself is not a store.
+  const messages = $derived(controller.messages);
+  const typingIndicator = $derived(controller.typingIndicator);
+  const showScrollButton = $derived(scroll.showScrollButton);
+
   let container: HTMLDivElement | undefined = $state();
 
   export function scrollToLatest() {
@@ -15,8 +21,8 @@
 
   // Content growth → let the scroll controller decide whether to follow.
   $effect(() => {
-    $controller.messages;
-    $controller.typingIndicator;
+    $messages;
+    $typingIndicator;
     scroll.notifyContentGrown();
   });
 
@@ -31,16 +37,16 @@
 
 <div class="chat-wrap">
   <div class="chat" bind:this={container} onscroll={handleScroll}>
-    {#each $controller.messages as message (message.id)}
+    {#each $messages as message (message.id)}
       <MessageBubble {message} />
     {/each}
-    {#if $controller.typingIndicator}
+    {#if $typingIndicator}
       <div class="typing" aria-label="assistant is typing">
         <span></span><span></span><span></span>
       </div>
     {/if}
   </div>
-  {#if $scroll.showScrollButton}
+  {#if $showScrollButton}
     <button class="scroll-down" onclick={() => scroll.scrollToBottomClicked()} title={t.scrollToBottom}>
       ↓
     </button>

@@ -9,6 +9,13 @@
     onSent,
   }: { controller: ChatController; onAbort: () => void; onSent?: () => void } = $props();
 
+  // $derived (not plain destructuring) so the stores track prop reassignment;
+  // `$controller.input` is invalid — the controller itself is not a store.
+  const input = $derived(controller.input);
+  const inputDisabled = $derived(controller.inputDisabled);
+  const canSend = $derived(controller.canSend);
+  const showAbort = $derived(controller.showAbort);
+
   let textarea: HTMLTextAreaElement | undefined = $state();
 
   async function sendNow() {
@@ -35,17 +42,17 @@
 <div class="input-bar">
   <textarea
     bind:this={textarea}
-    bind:value={$controller.input}
+    bind:value={$input}
     onkeydown={handleKeydown}
     oninput={autoResize}
-    disabled={$controller.inputDisabled}
+    disabled={$inputDisabled}
     placeholder={t.inputPlaceholder}
     rows="1"
   ></textarea>
-  {#if $controller.showAbort}
+  {#if $showAbort}
     <button class="abort" onclick={onAbort} title={t.abortTitle}>◼</button>
   {:else}
-    <button class="send" onclick={sendNow} disabled={!$controller.canSend} title={t.sendTitle}>
+    <button class="send" onclick={sendNow} disabled={!$canSend} title={t.sendTitle}>
       ➤
     </button>
   {/if}
