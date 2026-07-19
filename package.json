@@ -14,10 +14,11 @@
     "test:bdd": "NODE_OPTIONS=\"--import tsx\" cucumber-js",
     "typecheck": "tsc --noEmit"
   },
-  "dependencies": {
+    "dependencies": {
     "@earendil-works/pi-coding-agent": "^0.80.10",
     "@tauri-apps/api": "^2.0.0",
     "@tauri-apps/plugin-dialog": "^2.7.2",
+    "@tauri-apps/plugin-shell": "^2.2.0",
     "highlight.js": "^11.11.1",
     "kkrpc": "^2.1.0",
     "marked": "^18.0.6",

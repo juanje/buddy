@@ -9,25 +9,39 @@ import {
   createAgentSession,
   DefaultResourceLoader,
   getAgentDir,
+  ModelRuntime,
   SessionManager,
 } from "@earendil-works/pi-coding-agent";
 import { existsSync, readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { join, resolve } from "node:path";
 import { randomUUID } from "node:crypto";
 import { RPCChannel } from "kkrpc";
 import { nodeStdioTransport } from "kkrpc/stdio";
 
-import type { AgentEvent, FrontendAPI, PromptOptions, WorkerAPI } from "../shared/api";
+import type {
+  AgentEvent,
+  FrontendAPI,
+  PromptOptions,
+  SetupConfig,
+  WorkerAPI,
+} from "../shared/api";
 import { imageMimeType, isImageFormat } from "../shared/ingest-formats";
 import { adoptAbInstance, createAbInstance } from "./create-ab";
 import { detectExistingAuth } from "./detect-auth";
 import { defaultAbLocation, validateLocation } from "./location";
+import { listModelsForProvider } from "./model-listing";
+import { OAuthService } from "./oauth-service";
 import { createPermissionGate } from "./permissions";
 import { alignHttpDispatcherWithPi } from "./pi-http-dispatcher";
 import { checkPrerequisites } from "./prereqs";
 import { runCrashRecoveryCatchUp } from "./reflect-recovery";
 import { assembleSystemPrompt } from "./prompt";
 import { configureProviderKey } from "./provider-auth";
+import {
+  fromPiProviderId,
+  toPiProviderId,
+  WIZARD_PI_PROVIDERS,
+} from "./provider-mapping";
 import { toIsoDay } from "./deferred";
 import { SessionLifecycle } from "./session-lifecycle";
 import { defaultConfigPath, detectFirstRun } from "./setup";
@@ -56,6 +70,9 @@ function asPiSessionLike(session: {
 async function main(): Promise<void> {
   await alignHttpDispatcherWithPi();
 
+  const authPath = join(getAgentDir(), "auth.json");
+  const modelRuntime = await ModelRuntime.create({ authPath });
+
   // FR-SETUP-01: on first run there is no AB directory to open a session in.
   // The channel is created either way (the wizard talks to the worker later);
   // the Pi session only exists when an AB is configured, rooted at its dir.
@@ -72,6 +89,17 @@ async function main(): Promise<void> {
   const pendingPermissions = new Map<number, (allow: boolean) => void>();
   let nextPermissionId = 1;
   let sessionAllowedPaths = new Set<string>();
+
+  let oauthService: OAuthService | undefined;
+
+  function ensureOAuthService(): OAuthService {
+    if (!oauthService) {
+      oauthService = new OAuthService(modelRuntime, {
+        onEvent: (event) => frontend.onOAuthEvent(event),
+      });
+    }
+    return oauthService;
+  }
 
   function augmentPromptWithAttachments(text: string, options?: PromptOptions): { text: string; images?: Array<{ type: "image"; data: string; mimeType: string }> } {
     if (!options?.attachments?.length) return { text };
@@ -138,6 +166,7 @@ async function main(): Promise<void> {
       resourceLoader,
       sessionManager: SessionManager.create(abDirectory),
       excludeTools: ["bash"],
+      modelRuntime,
     });
 
     lifecycle.setSessionFile((session as unknown as { sessionFile?: string }).sessionFile ?? "");
@@ -214,6 +243,35 @@ async function main(): Promise<void> {
       },
       async configureProviderKey(provider, apiKey, baseUrl) {
         return configureProviderKey(provider, apiKey, { baseUrl });
+      },
+      async loginOAuth(provider) {
+        return ensureOAuthService().login(provider);
+      },
+      async answerOAuthPrompt(requestId, value) {
+        ensureOAuthService().answerPrompt(requestId, value);
+      },
+      async cancelOAuthLogin() {
+        ensureOAuthService().cancel();
+      },
+      async listModels(provider) {
+        return listModelsForProvider(modelRuntime, provider);
+      },
+      async getAuthStatus() {
+        const providers = WIZARD_PI_PROVIDERS.map((piProviderId) => {
+          const abProvider = fromPiProviderId(piProviderId);
+          const status = modelRuntime.getProviderAuthStatus(piProviderId);
+          return {
+            piProviderId,
+            abProvider: abProvider ?? ("openai" as SetupConfig["provider"]),
+            hasAuth: status.configured,
+            authType: status.configured
+              ? modelRuntime.isUsingOAuth(piProviderId)
+                ? ("oauth" as const)
+                : ("api_key" as const)
+              : undefined,
+          };
+        }).filter((p) => p.abProvider);
+        return { providers };
       },
       async detectExistingAuth() {
         return detectExistingAuth();

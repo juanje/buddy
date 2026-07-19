@@ -2,12 +2,15 @@
 // The SetupWizard component is a thin view over these stores, mirroring the
 // chat-controller pattern.
 
-import { derived, get, writable, type Readable } from "svelte/store";
+import { derived, get, writable, type Readable, type Writable } from "svelte/store";
 import { recommendedModelFor } from "./model-catalog";
+import { DEFAULT_SETUP_PROVIDER, isApiKeyOnlyProvider } from "./provider-setup";
 import type {
   DetectedAuth,
   KeyCheck,
   LocationCheck,
+  ModelInfo,
+  OAuthUIEvent,
   PrereqStatus,
   SetupConfig,
   SetupWorkerAPI,
@@ -41,21 +44,32 @@ export interface SetupController {
   validatingKey: Readable<boolean>;
   model: Readable<string | undefined>;
   canProceed: Readable<boolean>;
-  /** Non-null when valid Pi credentials were found (skip key entry). */
   detectedAuth: Readable<DetectedAuth | null>;
+  oauthLoggingIn: Readable<boolean>;
+  oauthError: Readable<string | undefined>;
+  showApiKey: Readable<boolean>;
+  authReady: Readable<boolean>;
+  availableModels: Readable<ModelInfo[]>;
+  loadingModels: Readable<boolean>;
+  oauthPrompt: Readable<OAuthUIEvent | undefined>;
 
+  read<T>(store: Readable<T>): T;
   selectLanguage(lang: AppLocale): void;
   setPersonalization(name: string, about?: string): void;
-  /** Pick one of the detected providers (from detectedAuth.options). */
   selectDetectedProvider(piProvider: string): void;
   checkPrerequisites(): Promise<void>;
   loadDefaultLocation(): Promise<string>;
   pickLocation(path: string): Promise<void>;
   selectProvider(provider: ProviderId): void;
+  setShowApiKey(show: boolean): void;
   submitApiKey(apiKey: string, baseUrl?: string): Promise<void>;
+  loginOAuth(): Promise<void>;
+  handleOAuthEvent(event: OAuthUIEvent): void;
+  answerOAuthPrompt(value: string): Promise<void>;
+  cancelOAuthLogin(): Promise<void>;
+  loadModels(): Promise<void>;
   selectModel(modelId: string): void;
   next(): void;
-  /** Move to the creating step without running setup yet (shows chat during warm handoff). */
   beginCreating(): void;
   finishSetup(): Promise<void>;
   importMode: Readable<boolean>;
@@ -91,12 +105,19 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
   const validatingKey = writable(false);
   const model = writable<string | undefined>(undefined);
   const detectedAuth = writable<DetectedAuth | null>(null);
+  const oauthLoggingIn = writable(false);
+  const oauthError = writable<string | undefined>(undefined);
+  const showApiKey = writable(false);
+  const authReady = writable(false);
+  const availableModels = writable<ModelInfo[]>([]);
+  const loadingModels = writable(false);
+  const oauthPrompt = writable<OAuthUIEvent | undefined>(undefined);
 
   const needsBaseUrl = derived(provider, ($provider) => $provider === "custom");
 
   const canProceed = derived(
-    [step, language, userName, prereq, locationCheck, keyCheck, model],
-    ([$step, $language, $userName, $prereq, $locationCheck, $keyCheck, $model]) => {
+    [step, language, userName, prereq, locationCheck, authReady, model],
+    ([$step, $language, $userName, $prereq, $locationCheck, $authReady, $model]) => {
       switch ($step) {
         case "language":
           return $language !== undefined;
@@ -109,7 +130,7 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
         case "location":
           return $locationCheck !== undefined && USABLE_LOCATION.includes($locationCheck.status);
         case "provider":
-          return $keyCheck?.valid === true;
+          return $authReady;
         case "model":
           return typeof $model === "string" && $model.trim() !== "";
         default:
@@ -117,6 +138,10 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
       }
     },
   );
+
+  function read<T>(store: Readable<T>): T {
+    return get(store);
+  }
 
   function selectLanguage(lang: AppLocale): void {
     language.set(lang);
@@ -151,6 +176,7 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
     if (auth) {
       provider.set(auth.provider);
       model.set(auth.model);
+      authReady.set(true);
     }
   }
 
@@ -161,12 +187,21 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
     if (option) {
       provider.set(option.provider);
       model.set(option.model);
+      authReady.set(true);
     }
   }
 
   function selectProvider(id: ProviderId): void {
     provider.set(id);
     keyCheck.set(undefined);
+    oauthError.set(undefined);
+    authReady.set(false);
+    showApiKey.set(isApiKeyOnlyProvider(id));
+  }
+
+  function setShowApiKey(show: boolean): void {
+    showApiKey.set(show);
+    oauthError.set(undefined);
   }
 
   async function submitApiKey(apiKey: string, baseUrl?: string): Promise<void> {
@@ -174,9 +209,68 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
     if (!id) return;
     validatingKey.set(true);
     try {
-      keyCheck.set(await worker.configureProviderKey(id, apiKey, baseUrl));
+      const result = await worker.configureProviderKey(id, apiKey, baseUrl);
+      keyCheck.set(result);
+      authReady.set(result.valid);
     } finally {
       validatingKey.set(false);
+    }
+  }
+
+  async function loginOAuth(): Promise<void> {
+    const id = get(provider);
+    if (!id) return;
+    oauthLoggingIn.set(true);
+    oauthError.set(undefined);
+    try {
+      const result = await worker.loginOAuth(id);
+      if (result.success) {
+        authReady.set(true);
+      } else if (result.error !== "Login cancelled") {
+        oauthError.set(result.error);
+      }
+    } finally {
+      oauthLoggingIn.set(false);
+    }
+  }
+
+  function handleOAuthEvent(event: OAuthUIEvent): void {
+    if (event.type === "prompt") {
+      oauthPrompt.set(event);
+    } else if (event.type === "error") {
+      oauthError.set(event.message);
+    } else if (event.type === "complete") {
+      oauthPrompt.set(undefined);
+    }
+  }
+
+  async function answerOAuthPrompt(value: string): Promise<void> {
+    const prompt = get(oauthPrompt);
+    if (prompt?.type === "prompt") {
+      await worker.answerOAuthPrompt(prompt.requestId, value);
+      oauthPrompt.set(undefined);
+    }
+  }
+
+  async function cancelOAuthLogin(): Promise<void> {
+    await worker.cancelOAuthLogin();
+    oauthLoggingIn.set(false);
+    oauthPrompt.set(undefined);
+  }
+
+  async function loadModels(): Promise<void> {
+    const id = get(provider);
+    if (!id || get(loadingModels)) return;
+    loadingModels.set(true);
+    try {
+      const models = await worker.listModels(id);
+      availableModels.set(models);
+      if (get(model) === undefined && models.length > 0) {
+        const recommended = models.find((m) => m.recommended) ?? models[0];
+        model.set(recommended.id);
+      }
+    } finally {
+      loadingModels.set(false);
     }
   }
 
@@ -257,7 +351,6 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
     step.update(($step) => {
       const index = STEP_ORDER.indexOf($step);
       let nextStep = STEP_ORDER[Math.min(index + 1, STEP_ORDER.length - 1)];
-      // Skip prerequisites when git is already confirmed installed
       if (nextStep === "prerequisites" && get(prereq)?.gitInstalled) {
         nextStep = "location";
       }
@@ -269,6 +362,9 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
       }
       return nextStep;
     });
+    if (get(step) === "provider" && get(provider) === undefined) {
+      provider.set(DEFAULT_SETUP_PROVIDER);
+    }
     if (get(step) === "model" && get(model) === undefined) {
       const id = get(provider);
       if (id) model.set(recommendedModelFor(id)?.id);
@@ -291,6 +387,14 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
     model,
     canProceed,
     detectedAuth,
+    oauthLoggingIn,
+    oauthError,
+    showApiKey,
+    authReady,
+    availableModels,
+    loadingModels,
+    oauthPrompt,
+    read,
     selectLanguage,
     setPersonalization,
     selectDetectedProvider,
@@ -298,7 +402,13 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
     loadDefaultLocation,
     pickLocation,
     selectProvider,
+    setShowApiKey,
     submitApiKey,
+    loginOAuth,
+    handleOAuthEvent,
+    answerOAuthPrompt,
+    cancelOAuthLogin,
+    loadModels,
     selectModel,
     next,
     beginCreating,

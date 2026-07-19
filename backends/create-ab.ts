@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 import { simpleGit } from "simple-git";
 
 import type { SetupConfig } from "../shared/api";
+import { toPiProviderId } from "./provider-mapping";
 
 /** Bundled templates location (dev: repo root; packaging revisits this). */
 export function defaultTemplatesDir(): string {
@@ -63,8 +64,11 @@ export async function createAbInstance(options: CreateAbOptions): Promise<void> 
   mkdirSync(join(ab, ".pi"), { recursive: true });
   writeFileSync(
     join(ab, ".pi", "settings.json"),
-    JSON.stringify({ defaultProvider: config.provider, defaultModel: config.model }, null, 2) +
-      "\n",
+    JSON.stringify(
+      { defaultProvider: toPiProviderId(config.provider), defaultModel: config.model },
+      null,
+      2,
+    ) + "\n",
   );
 
   // Git identity is repo-local: the target user may have no global git

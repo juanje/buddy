@@ -32,7 +32,7 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 | FR-SETUP-02 | Language selection | done | rework-sprint |
 | FR-SETUP-03 | Welcome screen | done | rework-sprint |
 | FR-SETUP-04 | Location picker | done | e3ce95e |
-| FR-SETUP-05 | Provider authentication (OAuth primary) | rework pending | 78e3ab4 (API key only) |
+| FR-SETUP-05 | Provider authentication (OAuth primary) | done | 6f95907 |
 | FR-SETUP-06 | Model selection | done | ada10c4 |
 | FR-SETUP-07 | Personalization form (name + about) | done | rework-sprint |
 | FR-SETUP-08 | Deterministic AB setup (populate USER.md from form) | done | rework-sprint |
@@ -74,10 +74,19 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 
 ## Current focus
 
-> **Chat Display Polish Sprint complete (2026-07-20).** Thinking blocks (collapsible),
-> tool call indicators (collapsed by default), and welcome banner (deferred cards or
-> greeting) shipped. All three FR-CHAT-05/06 + FR-DEFERRED-01 visual done.
-> Next: FR-SETUP-05 OAuth rework, then Phase 2.
+> **OAuth Setup Sprint complete (2026-07-20).** Pi SDK `ModelRuntime.login()` as
+> primary auth path (OpenAI/Anthropic OAuth); API key fallback; live model listing
+> via `getAvailable()` with curated catalog fallback; browser open via Tauri shell.
+> Next: Phase 2.
+
+### Sprint: OAuth Setup — DONE (2026-07-20)
+
+| FR-ID | Feature | Status | Commit |
+|-------|---------|--------|--------|
+| FR-SETUP-05 | OAuth primary + API key fallback + live model list | done | 6f95907 |
+
+Also: `ProviderStep` / `ModelStep` wizard components; `OAuthService` worker wrapper;
+`provider-mapping.ts` (ab-app ↔ Pi SDK ids); BDD `setup-oauth.feature` (3 scenarios).
 
 ### Sprint: Chat Display Polish — DONE (2026-07-20)
 

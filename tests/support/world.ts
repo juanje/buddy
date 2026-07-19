@@ -79,6 +79,7 @@ export class AbWorld extends World {
         onAgentEvent: (event) => controllerRef?.handleEvent(event),
         onWorkerError: () => {},
         onPermissionRequest: (request) => controllerRef?.handlePermissionRequest(request),
+        onOAuthEvent: () => {},
       },
       { lifecycle: this.lifecycle },
     );

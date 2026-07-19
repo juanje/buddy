@@ -75,6 +75,12 @@ export type LocaleStrings = {
   welcomeOverdue: string;
   welcomeDismiss: string;
   welcomeRegion: string;
+  oauthSignIn: string;
+  oauthWaiting: string;
+  oauthUseApiKey: string;
+  oauthBackToSignIn: string;
+  oauthCancel: string;
+  modelLoading: string;
 };
 
 export const es: LocaleStrings = {
@@ -111,7 +117,7 @@ export const es: LocaleStrings = {
   locationImport: "Importar este asistente",
   providerTitle: "Conecta tu proveedor de IA",
   providerHint:
-    "Tu asistente necesita un servicio de IA para pensar. Elige el tuyo e introduce tu clave de API.",
+    "Tu asistente necesita un servicio de IA para pensar. Inicia sesión con tu cuenta o usa una clave de API.",
   providerAnthropic: "Anthropic (Claude)",
   providerOpenai: "OpenAI (GPT)",
   providerGoogle: "Google (Gemini)",
@@ -159,6 +165,12 @@ export const es: LocaleStrings = {
   welcomeOverdue: "vencido",
   welcomeDismiss: "Cerrar",
   welcomeRegion: "Bienvenida",
+  oauthSignIn: "Iniciar sesión",
+  oauthWaiting: "Esperando al navegador…",
+  oauthUseApiKey: "Tengo una clave de API",
+  oauthBackToSignIn: "Volver a iniciar sesión",
+  oauthCancel: "Cancelar",
+  modelLoading: "Cargando modelos…",
 };
 
 /** Short cost/capability description per model tier (FR-SETUP-05). */

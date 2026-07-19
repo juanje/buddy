@@ -11,6 +11,7 @@ import { join } from "node:path";
 import { get } from "svelte/store";
 
 import { configureProviderKey, type ProviderId } from "../../backends/provider-auth";
+import { toPiProviderId } from "../../backends/provider-mapping";
 import { createSetupController, type SetupController } from "../../src/lib/setup-controller";
 import { advanceToProviderStep } from "../support/setup-wizard-helpers";
 import { makeSetupWorkerFake } from "../support/setup-worker-fake";
@@ -94,7 +95,7 @@ Then(
   function (this: ProviderWorld) {
     const store = JSON.parse(readFileSync(this.authPath!, "utf8"));
     const provider = get(wizardOf(this).provider)!;
-    assert.deepEqual(store[provider], { type: "api_key", key: "valid-test-key" });
+    assert.deepEqual(store[toPiProviderId(provider)], { type: "api_key", key: "valid-test-key" });
     const mode = statSync(this.authPath!).mode & 0o777;
     assert.equal(mode, 0o600);
   },

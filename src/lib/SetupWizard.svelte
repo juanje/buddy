@@ -3,21 +3,25 @@
   import { onMount } from "svelte";
   import { get } from "svelte/store";
   import { createSetupController } from "./setup-controller";
-  import { modelChoicesFor } from "./model-catalog";
-  import { gitInstallInstructions, t, tierDescription } from "./i18n";
+  import { gitInstallInstructions, t } from "./i18n";
   import LanguageStep from "./wizard/LanguageStep.svelte";
   import WelcomeStep from "./wizard/WelcomeStep.svelte";
   import PersonalizationStep from "./wizard/PersonalizationStep.svelte";
-  import type { SetupWorkerAPI } from "../../shared/api";
+  import ProviderStep from "./wizard/ProviderStep.svelte";
+  import ModelStep from "./wizard/ModelStep.svelte";
+  import type { OAuthUIEvent, SetupWorkerAPI } from "../../shared/api";
 
   let {
     worker,
     onComplete,
     onSetupFailed,
+    onRegisterOAuth,
   }: {
     worker: SetupWorkerAPI;
     onComplete?: () => void;
     onSetupFailed?: () => void;
+    /** App registers wizard as OAuth event consumer (browser open lives in App). */
+    onRegisterOAuth?: (handler: (event: OAuthUIEvent) => void) => () => void;
   } = $props();
 
   const wizard = createSetupController(worker);
@@ -26,16 +30,24 @@
   const checking = wizard.checking;
   const canProceed = wizard.canProceed;
   const locationCheck = wizard.locationCheck;
-  const provider = wizard.provider;
-  const needsBaseUrl = wizard.needsBaseUrl;
-  const keyCheck = wizard.keyCheck;
-  const validatingKey = wizard.validatingKey;
-  const model = wizard.model;
   const setupError = wizard.setupError;
-  const detectedAuth = wizard.detectedAuth;
+  const oauthPrompt = wizard.oauthPrompt;
 
   let nameInput = $state("");
   let aboutInput = $state("");
+  let locationInput = $state("");
+  let apiKeyInput = $state("");
+  let baseUrlInput = $state("");
+  let oauthPromptInput = $state("");
+
+  onMount(() => {
+    const unregister = onRegisterOAuth?.((event) => wizard.handleOAuthEvent(event));
+    void wizard.checkPrerequisites();
+    void wizard.loadDefaultLocation().then((path) => {
+      locationInput = path;
+    });
+    return unregister;
+  });
 
   async function createAb() {
     try {
@@ -56,32 +68,10 @@
     }
   }
 
-  let locationInput = $state("");
-  let apiKeyInput = $state("");
-  let baseUrlInput = $state("");
-
-  const PROVIDERS: Array<{ id: "anthropic" | "openai" | "google" | "custom"; label: string }> = [
-    { id: "anthropic", label: "Anthropic (Claude)" },
-    { id: "openai", label: "OpenAI (GPT)" },
-    { id: "google", label: "Google (Gemini)" },
-    { id: "custom", label: "OpenAI-compatible" },
-  ];
-
-  async function submitKeyAndMaybeContinue() {
-    await wizard.submitApiKey(apiKeyInput, $needsBaseUrl ? baseUrlInput : undefined);
-    wizard.next();
-  }
-
-  onMount(async () => {
-    void wizard.checkPrerequisites();
-    locationInput = await wizard.loadDefaultLocation();
-  });
-
   async function validateAndMaybeContinue() {
     await wizard.pickLocation(locationInput);
     const auth = get(wizard.detectedAuth);
     if (auth && (!auth.options || auth.options.length <= 1)) {
-      // Single provider detected — skip straight to creating
       wizard.next();
       if (get(wizard.step) === "creating") {
         onComplete?.();
@@ -118,6 +108,11 @@
     wizard.setPersonalization(nameInput, aboutInput);
     wizard.next();
   }
+
+  async function submitOAuthPrompt() {
+    await wizard.answerOAuthPrompt(oauthPromptInput);
+    oauthPromptInput = "";
+  }
 </script>
 
 <div class="wizard">
@@ -142,11 +137,7 @@
         </button>
       </div>
     {:else}
-      <button
-        class="primary"
-        onclick={() => wizard.next()}
-        disabled={!$canProceed || $checking}
-      >
+      <button class="primary" onclick={() => wizard.next()} disabled={!$canProceed || $checking}>
         {$checking ? $t.gitChecking : $t.wizardContinue}
       </button>
     {/if}
@@ -165,92 +156,9 @@
       </button>
     {/if}
   {:else if $step === "provider"}
-    {#if $detectedAuth?.options && $detectedAuth.options.length > 1}
-      <h2>{$t.providerTitle}</h2>
-      <p class="muted">{$t.providerHint}</p>
-      <div class="providers">
-        {#each $detectedAuth.options as option (option.piProvider)}
-          <button class="provider-detected" onclick={() => pickDetectedAndFinish(option.piProvider)}>
-            <strong>{option.piProvider}</strong>
-            <span class="tier">{option.model}</span>
-          </button>
-        {/each}
-      </div>
-    {:else}
-    <h2>{$t.providerTitle}</h2>
-    <p class="muted">{$t.providerHint}</p>
-    <div class="providers">
-      {#each PROVIDERS as p (p.id)}
-        <button class:selected={$provider === p.id} onclick={() => wizard.selectProvider(p.id)}>
-          {p.id === "anthropic"
-            ? $t.providerAnthropic
-            : p.id === "openai"
-              ? $t.providerOpenai
-              : p.id === "google"
-                ? $t.providerGoogle
-                : $t.providerCustom}
-        </button>
-      {/each}
-    </div>
-    {#if $provider}
-      {#if $needsBaseUrl}
-        <label class="field">
-          <span>{$t.baseUrlLabel}</span>
-          <input type="text" bind:value={baseUrlInput} spellcheck="false" />
-        </label>
-      {/if}
-      <label class="field">
-        <span>{$t.apiKeyLabel}</span>
-        <input type="password" bind:value={apiKeyInput} spellcheck="false" />
-      </label>
-      {#if $keyCheck && !$keyCheck.valid}
-        <p class="error">{$keyCheck.error}</p>
-      {/if}
-      <button
-        class="primary"
-        onclick={submitKeyAndMaybeContinue}
-        disabled={$validatingKey || apiKeyInput.length === 0}
-      >
-        {$validatingKey ? $t.apiKeyValidating : $t.apiKeyValidate}
-      </button>
-    {/if}
-    {/if}
+    <ProviderStep controller={wizard} bind:apiKeyInput bind:baseUrlInput />
   {:else if $step === "model"}
-    <h2>{$t.modelTitle}</h2>
-    <p class="muted">{$t.modelHint}</p>
-    {#if $provider && modelChoicesFor($provider)}
-      <div class="models">
-        {#each modelChoicesFor($provider)! as choice (choice.id)}
-          <button
-            class="model-card"
-            class:selected={$model === choice.id}
-            onclick={() => wizard.selectModel(choice.id)}
-          >
-            <strong>
-              {choice.label}
-              {#if choice.recommended}
-                <span class="badge">{$t.modelRecommended}</span>
-              {/if}
-            </strong>
-            <span class="tier">{tierDescription(choice.tier)}</span>
-          </button>
-        {/each}
-      </div>
-    {:else}
-      <label class="field">
-        <span>{$t.modelCustomLabel}</span>
-        <input
-          type="text"
-          spellcheck="false"
-          value={$model ?? ""}
-          oninput={(e) => wizard.selectModel(e.currentTarget.value)}
-        />
-      </label>
-      <p class="muted">{$t.modelCustomHint}</p>
-    {/if}
-    <button class="primary" onclick={createAb} disabled={!$canProceed}>
-      {$t.wizardContinue}
-    </button>
+    <ModelStep controller={wizard} onContinue={createAb} />
   {:else if $step === "creating"}
     {#if $setupError}
       <p class="error">{$t.creatingError}: {$setupError}</p>
@@ -261,6 +169,23 @@
     {/if}
   {:else}
     <p class="muted">{$t.wizardComingSoon}</p>
+  {/if}
+
+  {#if $oauthPrompt?.type === "prompt"}
+    <div class="oauth-prompt">
+      <p>{$oauthPrompt.message}</p>
+      {#if $oauthPrompt.promptType === "select" && $oauthPrompt.options}
+        <select bind:value={oauthPromptInput}>
+          {#each $oauthPrompt.options as opt (opt)}
+            <option value={opt}>{opt}</option>
+          {/each}
+        </select>
+      {:else}
+        <input type="text" bind:value={oauthPromptInput} placeholder={$oauthPrompt.placeholder} />
+      {/if}
+      <button class="primary" onclick={submitOAuthPrompt}>{$t.wizardContinue}</button>
+      <button onclick={() => wizard.cancelOAuthLogin()}>{$t.oauthCancel}</button>
+    </div>
   {/if}
 </div>
 
@@ -277,6 +202,9 @@
   }
   .wizard h1 {
     font-size: 24px;
+  }
+  .wizard h2 {
+    font-size: 18px;
   }
   .wizard p {
     max-width: 480px;
@@ -318,9 +246,6 @@
     opacity: 0.5;
     cursor: default;
   }
-  .wizard h2 {
-    font-size: 18px;
-  }
   input.location {
     width: min(480px, 80vw);
     padding: 8px 12px;
@@ -338,76 +263,19 @@
     padding: 8px 14px;
     font-size: 13px;
   }
-  .providers {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    justify-content: center;
-  }
-  .providers button.selected {
-    border-color: var(--accent, #4f46e5);
-    outline: 2px solid var(--accent, #4f46e5);
-  }
-  .provider-detected {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    align-items: flex-start;
-    text-align: left;
-    padding: 12px 16px;
-    min-width: 180px;
-  }
-  .provider-detected .tier {
-    font-size: 12px;
-    color: var(--muted);
-  }
-  .field {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    align-items: flex-start;
-  }
-  .field span {
-    font-size: 13px;
-    color: var(--muted);
-  }
-  .field input {
-    width: min(420px, 80vw);
-    padding: 8px 12px;
-    border: 1px solid var(--border);
-    border-radius: 8px;
+  .oauth-prompt {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
     background: var(--bg-secondary);
-    color: var(--fg);
-    font-size: 14px;
-  }
-  .models {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
     display: flex;
     flex-direction: column;
     gap: 8px;
-    width: min(420px, 80vw);
-  }
-  .model-card {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    align-items: flex-start;
-    text-align: left;
-    padding: 10px 14px;
-  }
-  .model-card.selected {
-    border-color: var(--accent, #4f46e5);
-    outline: 2px solid var(--accent, #4f46e5);
-  }
-  .model-card .tier {
-    font-size: 12px;
-    color: var(--muted);
-  }
-  .badge {
-    font-size: 11px;
-    color: var(--accent, #4f46e5);
-    border: 1px solid var(--accent, #4f46e5);
-    border-radius: 999px;
-    padding: 1px 8px;
-    margin-left: 6px;
+    min-width: 280px;
+    z-index: 20;
   }
 </style>

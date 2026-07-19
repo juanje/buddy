@@ -19,7 +19,12 @@ describe("warm handoff", () => {
   it("forwards assistant events but not the hidden user prompt", async () => {
     const session = new FakeSession();
     const onAgentEvent = vi.fn();
-    const frontend = { onAgentEvent, onWorkerError: vi.fn(), onPermissionRequest: vi.fn() };
+    const frontend = {
+      onAgentEvent,
+      onWorkerError: vi.fn(),
+      onPermissionRequest: vi.fn(),
+      onOAuthEvent: vi.fn(),
+    };
 
     const run = runWarmHandoff(session, frontend, { name: "Alex" });
     session.streamResponse(["Hello Alex!"]);

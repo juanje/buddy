@@ -34,7 +34,7 @@ export const en: LocaleStrings = {
   locationImport: "Import this assistant",
   providerTitle: "Connect your AI provider",
   providerHint:
-    "Your assistant needs an AI service to think. Choose yours and enter your API key.",
+    "Your assistant needs an AI service to think. Sign in with your account or use an API key.",
   providerAnthropic: "Anthropic (Claude)",
   providerOpenai: "OpenAI (GPT)",
   providerGoogle: "Google (Gemini)",
@@ -82,6 +82,12 @@ export const en: LocaleStrings = {
   welcomeOverdue: "overdue",
   welcomeDismiss: "Dismiss",
   welcomeRegion: "Welcome",
+  oauthSignIn: "Sign in",
+  oauthWaiting: "Waiting for browser…",
+  oauthUseApiKey: "I have an API key",
+  oauthBackToSignIn: "Back to sign in",
+  oauthCancel: "Cancel",
+  modelLoading: "Loading models…",
 };
 
 export function tierDescriptionEn(tier: "fast" | "balanced" | "powerful"): string {

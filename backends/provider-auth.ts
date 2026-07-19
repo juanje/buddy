@@ -13,6 +13,7 @@ import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 
 import type { KeyCheck, SetupConfig } from "../shared/api";
+import { toPiProviderId } from "./provider-mapping";
 
 export type ProviderId = SetupConfig["provider"];
 
@@ -82,7 +83,7 @@ export async function configureProviderKey(
     return { valid: false, error: result.error ?? "key rejected" };
   }
 
-  storeApiKey(options.authPath ?? defaultAuthPath(), provider, apiKey);
+  storeApiKey(options.authPath ?? defaultAuthPath(), toPiProviderId(provider), apiKey);
   return { valid: true };
 }
 
@@ -90,7 +91,7 @@ export async function configureProviderKey(
  * Merge the key into Pi's auth.json. Entry shape matches pi-ai's
  * ApiKeyCredential ({ type: "api_key", key }) so the SDK reads it natively.
  */
-function storeApiKey(authPath: string, provider: ProviderId, apiKey: string): void {
+function storeApiKey(authPath: string, piProvider: string, apiKey: string): void {
   let store: Record<string, unknown> = {};
   try {
     store = JSON.parse(readFileSync(authPath, "utf8")) as Record<string, unknown>;
@@ -98,7 +99,7 @@ function storeApiKey(authPath: string, provider: ProviderId, apiKey: string): vo
     // Missing or unreadable store: start fresh (never destroy a parseable one).
   }
 
-  store[provider] = { type: "api_key", key: apiKey };
+  store[piProvider] = { type: "api_key", key: apiKey };
 
   mkdirSync(dirname(authPath), { recursive: true });
   writeFileSync(authPath, JSON.stringify(store, null, 2) + "\n");

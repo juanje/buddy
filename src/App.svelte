@@ -5,6 +5,7 @@
   import { onMount } from "svelte";
   import { getCurrentWindow } from "@tauri-apps/api/window";
   import { getCurrentWebview } from "@tauri-apps/api/webview";
+  import { open } from "@tauri-apps/plugin-shell";
   import { createChatController, type ChatController } from "./lib/chat-controller";
   import { createScrollController } from "./lib/scroll-controller";
   import { get } from "svelte/store";
@@ -15,7 +16,7 @@
   import InputBar from "./lib/InputBar.svelte";
   import SetupWizard from "./lib/SetupWizard.svelte";
   import { t } from "./lib/i18n";
-  import type { AgentEvent, DeferredItemView, PromptOptions, WorkerAPI } from "../shared/api";
+  import type { AgentEvent, DeferredItemView, OAuthUIEvent, PromptOptions, WorkerAPI } from "../shared/api";
 
   let connection: WorkerConnection | undefined = $state();
   let connectionError: string | undefined = $state();
@@ -24,6 +25,7 @@
   let view: AppView | undefined = $state();
   let dragOver = $state(false);
   let deferredItems: DeferredItemView[] = $state([]);
+  let setupOAuthHandler: ((event: OAuthUIEvent) => void) | undefined = $state();
 
   // The controller is created before the worker connects so the UI renders
   // immediately; prompts are proxied to whatever connection exists.
@@ -66,6 +68,26 @@
       if (!connection) throw new Error("worker not connected");
       return connection.api.detectExistingAuth();
     },
+    async loginOAuth(provider) {
+      if (!connection) throw new Error("worker not connected");
+      return connection.api.loginOAuth(provider);
+    },
+    async answerOAuthPrompt(requestId, value) {
+      if (!connection) throw new Error("worker not connected");
+      return connection.api.answerOAuthPrompt(requestId, value);
+    },
+    async cancelOAuthLogin() {
+      if (!connection) throw new Error("worker not connected");
+      return connection.api.cancelOAuthLogin();
+    },
+    async listModels(provider) {
+      if (!connection) throw new Error("worker not connected");
+      return connection.api.listModels(provider);
+    },
+    async getAuthStatus() {
+      if (!connection) throw new Error("worker not connected");
+      return connection.api.getAuthStatus();
+    },
     async runSetup(config, mode) {
       if (!connection) throw new Error("worker not connected");
       return connection.api.runSetup(config, mode);
@@ -82,6 +104,24 @@
 
   let chatView: ChatView | undefined = $state();
   const scroll = createScrollController(() => chatView?.scrollToLatest());
+
+  async function handleOAuthEvent(event: OAuthUIEvent): Promise<void> {
+    if (event.type === "auth_url" && event.url) {
+      try {
+        await open(event.url);
+      } catch {
+        // Browser dev without Tauri shell — URL still visible in wizard state.
+      }
+    }
+    setupOAuthHandler?.(event);
+  }
+
+  function registerSetupOAuth(handler: (event: OAuthUIEvent) => void): () => void {
+    setupOAuthHandler = handler;
+    return () => {
+      if (setupOAuthHandler === handler) setupOAuthHandler = undefined;
+    };
+  }
 
   async function connect() {
     connectionError = undefined;
@@ -100,6 +140,9 @@
           onPermissionRequest(request) {
             devLog(`permission request: ${request.op} ${request.path}`);
             controller?.handlePermissionRequest(request);
+          },
+          onOAuthEvent(event) {
+            void handleOAuthEvent(event);
           },
         },
         (code) => {
@@ -207,6 +250,7 @@
   {#if view === "setup"}
     <SetupWizard
       worker={workerProxy}
+      onRegisterOAuth={registerSetupOAuth}
       onComplete={async () => {
         view = "chat";
         deferredItems = await workerProxy.getDeferredItems();

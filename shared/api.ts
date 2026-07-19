@@ -67,6 +67,49 @@ export interface DetectedAuth {
   options?: Array<{ piProvider: string; provider: SetupConfig["provider"]; model: string }>;
 }
 
+export type SetupProviderId = SetupConfig["provider"];
+
+/** OAuth login result (FR-SETUP-05). */
+export type OAuthLoginResult = { success: true } | { success: false; error: string };
+
+/** Model entry for wizard model selection (live or curated). */
+export interface ModelInfo {
+  id: string;
+  label: string;
+  provider: SetupProviderId;
+  tier?: "fast" | "balanced" | "powerful";
+  recommended?: boolean;
+}
+
+/** Auth status for a Pi provider. */
+export interface AuthProviderStatus {
+  piProviderId: string;
+  abProvider: SetupProviderId;
+  hasAuth: boolean;
+  authType?: "api_key" | "oauth";
+}
+
+export interface AuthStatusResult {
+  providers: AuthProviderStatus[];
+}
+
+/** Events forwarded from worker during OAuth login (FR-SETUP-05). */
+export type OAuthUIEvent =
+  | { type: "auth_url"; url: string; instructions?: string }
+  | { type: "device_code"; userCode: string; verificationUri: string; message?: string }
+  | { type: "info"; message: string }
+  | { type: "progress"; message: string }
+  | {
+      type: "prompt";
+      requestId: number;
+      promptType: string;
+      message: string;
+      options?: string[];
+      placeholder?: string;
+    }
+  | { type: "complete" }
+  | { type: "error"; message: string };
+
 /** A permission question the agent is waiting on (FR-PERM-02/03/07). */
 export interface PermissionRequest {
   id: number;
@@ -108,6 +151,16 @@ export interface WorkerAPI {
     apiKey: string,
     baseUrl?: string,
   ): Promise<KeyCheck>;
+  /** Browser OAuth login via Pi SDK (FR-SETUP-05). */
+  loginOAuth(provider: SetupConfig["provider"]): Promise<OAuthLoginResult>;
+  /** Answer a pending OAuth prompt from the SDK (select, manual_code, text). */
+  answerOAuthPrompt(requestId: number, value: string): Promise<void>;
+  /** Cancel an in-flight OAuth login. */
+  cancelOAuthLogin(): Promise<void>;
+  /** List models available for a provider (live SDK, curated fallback). */
+  listModels(provider: SetupConfig["provider"]): Promise<ModelInfo[]>;
+  /** Which providers have configured credentials. */
+  getAuthStatus(): Promise<AuthStatusResult>;
   /** Detect an existing Pi auth with valid credentials (skip provider step). */
   detectExistingAuth(): Promise<DetectedAuth | null>;
   /**
@@ -139,6 +192,11 @@ export type SetupWorkerAPI = Pick<
   | "validateLocation"
   | "configureProviderKey"
   | "detectExistingAuth"
+  | "loginOAuth"
+  | "answerOAuthPrompt"
+  | "cancelOAuthLogin"
+  | "listModels"
+  | "getAuthStatus"
   | "runSetup"
 >;
 
@@ -148,4 +206,6 @@ export interface FrontendAPI {
   onWorkerError(error: string): void;
   /** A tool call is waiting on the user's permission (FR-PERM-07). */
   onPermissionRequest(request: PermissionRequest): void;
+  /** OAuth login progress (FR-SETUP-05). */
+  onOAuthEvent(event: OAuthUIEvent): void;
 }
