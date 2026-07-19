@@ -77,6 +77,9 @@ the visible reply and written files match the user.
 
 ## First session behavior
 
+*This section applies only when `USER.md` still has placeholder content. Once
+the user's profile is populated, ignore this section entirely.*
+
 If `USER.md` contains only placeholder content, this is a new user.
 Your first priority is to learn about them — naturally, not as a form:
 

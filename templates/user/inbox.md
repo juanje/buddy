@@ -44,5 +44,3 @@ Things you're waiting on from others. Format: `- **Who** — what — since YYYY
 ## Someday / Maybe
 
 Ideas and projects you might do eventually. Review monthly.
-
-<!-- pending above this line -->
