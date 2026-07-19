@@ -52,10 +52,10 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 | FR-REFLECT-02 | Forked reflect on session end (background child) | done | 6d58175 |
 | FR-REFLECT-03 | Incremental mid-session reflect (background child) | done | 6d58175 |
 | FR-DEFERRED-01 | Surface deferred on start | done | d7a3c12 |
-| FR-INGEST-01 | Drag & drop file ingest | done | c12edac |
-| FR-INGEST-02 | Attach button | done | c12edac |
-| FR-INGEST-03 | Dropped file implicit permission | done | c12edac |
-| FR-INGEST-04 | Supported formats | done | c12edac |
+| FR-INGEST-01 | Drag & drop file ingest | done | 656634b |
+| FR-INGEST-02 | Attach button | done | 656634b |
+| FR-INGEST-03 | Dropped file implicit permission | done | 656634b |
+| FR-INGEST-04 | Supported formats | done | 656634b |
 | FR-GIT-01 | Auto-commit after writes | done | 842635e |
 | FR-GIT-02 | Git invisible to user | done | 842635e |
 | FR-GIT-03 | Index rebuild on session end | done | 842635e |
