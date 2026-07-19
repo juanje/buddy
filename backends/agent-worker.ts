@@ -11,13 +11,14 @@ import {
   getAgentDir,
   SessionManager,
 } from "@earendil-works/pi-coding-agent";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { randomUUID } from "node:crypto";
 import { RPCChannel } from "kkrpc";
 import { nodeStdioTransport } from "kkrpc/stdio";
 
 import type { AgentEvent, FrontendAPI, PromptOptions, WorkerAPI } from "../shared/api";
+import { imageMimeType, isImageFormat } from "../shared/ingest-formats";
 import { adoptAbInstance, createAbInstance } from "./create-ab";
 import { detectExistingAuth } from "./detect-auth";
 import { defaultAbLocation, validateLocation } from "./location";
@@ -34,14 +35,14 @@ import { createWorkerCore, type PiSessionLike } from "./worker-core";
 
 /** Map Pi AgentSession to the structural subset the worker core needs. */
 function asPiSessionLike(session: {
-  prompt(text: string): Promise<void>;
+  prompt(text: string, options?: unknown): Promise<void>;
   abort(): Promise<void>;
   subscribe(listener: (event: AgentEvent) => void): () => void;
   readonly isStreaming: boolean;
   dispose(): void;
 }): PiSessionLike {
   return {
-    prompt: (text) => session.prompt(text),
+    prompt: (text, options) => session.prompt(text, options),
     abort: () => session.abort(),
     subscribe: (listener) => session.subscribe(listener),
     get isStreaming() {
@@ -71,13 +72,32 @@ async function main(): Promise<void> {
   let nextPermissionId = 1;
   let sessionAllowedPaths = new Set<string>();
 
-  function augmentPromptWithAttachments(text: string, options?: PromptOptions): string {
-    if (!options?.attachments?.length) return text;
+  function augmentPromptWithAttachments(text: string, options?: PromptOptions): { text: string; images?: Array<{ type: "image"; data: string; mimeType: string }> } {
+    if (!options?.attachments?.length) return { text };
+
+    const textPaths: string[] = [];
+    const images: Array<{ type: "image"; data: string; mimeType: string }> = [];
+
     for (const path of options.attachments) {
       sessionAllowedPaths.add(resolve(path));
+      if (isImageFormat(path)) {
+        try {
+          const data = readFileSync(path).toString("base64");
+          images.push({ type: "image", data, mimeType: imageMimeType(path) });
+        } catch {
+          textPaths.push(path);
+        }
+      } else {
+        textPaths.push(path);
+      }
     }
-    const header = options.attachments.map((p) => `User attached: ${p}`).join("\n");
-    return text.trim() ? `${header}\n\n${text}` : header;
+
+    if (textPaths.length > 0) {
+      const header = textPaths.map((p) => `User attached: ${p}`).join("\n");
+      text = text.trim() ? `${header}\n\n${text}` : header;
+    }
+
+    return { text, images: images.length > 0 ? images : undefined };
   }
 
   async function bootSession(
@@ -157,7 +177,8 @@ async function main(): Promise<void> {
   const channel = new RPCChannel<WorkerAPI, FrontendAPI>(transport, {
     expose: {
       async prompt(text: string, options?: PromptOptions) {
-        await core?.api.prompt(augmentPromptWithAttachments(text, options));
+        const augmented = augmentPromptWithAttachments(text, options);
+        await core?.api.prompt(augmented.text, augmented.images ? { images: augmented.images } : undefined);
       },
       async abort() {
         await core?.api.abort();

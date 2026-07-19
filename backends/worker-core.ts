@@ -21,7 +21,7 @@ export type SessionWorkerAPI = Omit<ChatWorkerAPI, "resolvePermission">;
  *   subscribe(listener) → unsubscribe, isStreaming getter, dispose().
  */
 export interface PiSessionLike {
-  prompt(text: string): Promise<void>;
+  prompt(text: string, options?: unknown): Promise<void>;
   abort(): Promise<void>;
   subscribe(listener: (event: AgentEvent) => void): () => void;
   readonly isStreaming: boolean;
@@ -50,7 +50,8 @@ export function createWorkerCore(
 
   const api: SessionWorkerAPI = {
     async prompt(text: string, _options?: PromptOptions): Promise<void> {
-      await session.prompt(text);
+      const piOptions = _options?.images ? { images: _options.images } : undefined;
+      await session.prompt(text, piOptions);
     },
 
     async abort(): Promise<void> {

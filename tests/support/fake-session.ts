@@ -33,9 +33,8 @@ export class FakeSession implements PiSessionLike {
     return () => this.listeners.delete(listener);
   }
 
-  async prompt(text: string): Promise<void> {
+  async prompt(text: string, _options?: unknown): Promise<void> {
     this.promptCalls.push(text);
-    // Real session starts streaming upon prompt; the test drives the events.
     this.beginStreaming();
   }
 

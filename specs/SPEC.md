@@ -369,6 +369,7 @@ Crash recovery (next app start):
 | FR-INGEST-02 | Attach button | 1 |
 | FR-INGEST-03 | Dropped file implicit permission | 1 |
 | FR-INGEST-04 | Supported formats | 1 |
+| FR-INGEST-05 | Image attachments (vision) | 1 |
 
 **FR-INGEST-01 — Drag and drop**
 
@@ -398,6 +399,14 @@ Crash recovery (next app start):
 - **Then** the agent reads and discusses it normally
 - **But when** it is PDF, DOCX, or another unsupported format
 - **Then** a friendly message suggests exporting to text
+
+**FR-INGEST-05 — Image attachments (vision)**
+
+- **Given** the user attaches a .png, .jpg, .jpeg, .gif, or .webp file
+- **When** the message is sent
+- **Then** the image is read as base64 and passed to Pi via `PromptOptions.images` as `ImageContent`
+- **And** the agent can see and discuss the image contents (multimodal vision)
+- **Note:** No file-read tool call is needed — the image is delivered inline in the prompt context. All standard models (Claude, GPT, Gemini) support vision.
 
 ### 3.7 Deferred Queue (FR-DEFERRED)
 

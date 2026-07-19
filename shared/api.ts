@@ -21,9 +21,10 @@ export interface AgentState {
   messageCount: number;
 }
 
-/** Options for prompt() — FR-INGEST-03 file attachments. */
+/** Options for prompt() — FR-INGEST-03/05 file and image attachments. */
 export interface PromptOptions {
   attachments?: string[];
+  images?: Array<{ type: "image"; data: string; mimeType: string }>;
 }
 
 // FR-SETUP-01/02: first-run wizard configuration.
