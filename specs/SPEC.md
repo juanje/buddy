@@ -422,6 +422,9 @@ Crash recovery (next app start):
 - **When** the app starts
 - **Then** due and overdue items are parsed and injected into the system prompt
 - **And** the agent is aware of them from the first message
+- **And** a welcome banner card shows the items visually (type, due/overdue badge, text)
+- **And** the card is dismissed on the first user message or manually via close button
+- **And** when no deferred items are due, a simple greeting is shown instead
 
 **FR-DEFERRED-02 — Heartbeat check**
 

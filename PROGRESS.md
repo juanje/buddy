@@ -67,15 +67,27 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 | FR-ID | Feature | Status | Commit |
 |-------|---------|--------|--------|
 | FR-CHAT-04 | Markdown rendering in assistant messages | done | 19eef12 |
+| FR-CHAT-05 | Thinking block display (collapsible) | done | 5e89120 |
+| FR-CHAT-06 | Tool call display (expandable activity block) | done | 5e89120 |
 
 **Phase 1 complete:** NO
 
 ## Current focus
 
-> **Memory Loop Sprint complete (2026-07-19).** Auto-commit, session-end skeleton,
-> forked reflect (background child process), and incremental reflect shipped.
-> Reflect uses full Pi session context via fork — no cold skeleton analysis.
+> **Chat Display Polish Sprint complete (2026-07-20).** Thinking blocks (collapsible),
+> tool call indicators (collapsed by default), and welcome banner (deferred cards or
+> greeting) shipped. All three FR-CHAT-05/06 + FR-DEFERRED-01 visual done.
 > Next: FR-SETUP-05 OAuth rework, then Phase 2.
+
+### Sprint: Chat Display Polish — DONE (2026-07-20)
+
+| FR-ID | Feature | Status | Commit |
+|-------|---------|--------|--------|
+| FR-CHAT-05 | Thinking block display (collapsible) | done | 5e89120 |
+| FR-CHAT-06 | Tool call display (expandable activity block) | done | 5e89120 |
+| FR-DEFERRED-01 visual | Welcome banner with deferred cards or greeting | done | 5e89120 |
+
+Also: `logs/index.md` format fix (stem as key, no truncation) — `30b4296`, `6f88dd1`.
 
 ### Sprint: File Ingest — DONE (2026-07-19)
 
