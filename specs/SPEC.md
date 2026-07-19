@@ -873,6 +873,14 @@ Full specification in [specs/BRAIN-SPEC.md](BRAIN-SPEC.md).
 | NFR-I18N-03 | MVP ships with Spanish and English; adding a language requires only a new locale file |
 | NFR-I18N-04 | The agent replies in the user's language (set in USER.md preferences, injected in system prompt) |
 
+### 4.8 Configuration
+
+| ID | Requirement |
+|----|-------------|
+| NFR-CONFIG-01 | All operational defaults (thresholds, timeouts, intervals) centralized in a single `shared/defaults.ts` — no magic numbers scattered across the codebase |
+| NFR-CONFIG-02 | User-tunable settings (reflect interval, model, language) persisted in `.ab-app/settings.json` and editable from the settings UI |
+| NFR-CONFIG-03 | Security-critical values (denylist paths, excluded tools) remain hardcoded — not configurable by user or agent |
+
 ---
 
 ## 5. Phase 0 — Architecture PoC
