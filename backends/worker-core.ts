@@ -4,7 +4,7 @@
 // Pi AgentSession here; BDD tests wire a fake session that emits the same
 // event shapes.
 
-import type { AgentEvent, AgentState, FrontendAPI, WorkerAPI } from "../shared/api";
+import type { AgentEvent, AgentState, ChatWorkerAPI, FrontendAPI } from "../shared/api";
 
 /**
  * Structural subset of Pi's AgentSession that the worker core needs.
@@ -21,7 +21,7 @@ export interface PiSessionLike {
 }
 
 export interface WorkerCore {
-  api: WorkerAPI;
+  api: ChatWorkerAPI;
   dispose(): void;
 }
 
@@ -30,7 +30,7 @@ export function createWorkerCore(session: PiSessionLike, frontend: FrontendAPI):
     frontend.onAgentEvent(event);
   });
 
-  const api: WorkerAPI = {
+  const api: ChatWorkerAPI = {
     async prompt(text: string): Promise<void> {
       await session.prompt(text);
     },

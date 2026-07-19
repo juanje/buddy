@@ -6,7 +6,7 @@
 //   FR-CHAT-03 abort generation (button + Escape, partial text kept)
 
 import { derived, get, writable, type Readable, type Writable } from "svelte/store";
-import type { AgentEvent, AssistantMessageEventLike, WorkerAPI } from "../../shared/api";
+import type { AgentEvent, AssistantMessageEventLike, ChatWorkerAPI } from "../../shared/api";
 
 export interface ChatMessage {
   id: number;
@@ -40,7 +40,7 @@ export interface ChatController {
   handleEvent(event: AgentEvent): void;
 }
 
-export function createChatController(worker: WorkerAPI): ChatController {
+export function createChatController(worker: ChatWorkerAPI): ChatController {
   let nextId = 1;
 
   const messages = writable<ChatMessage[]>([]);

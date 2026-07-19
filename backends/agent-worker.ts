@@ -1,16 +1,18 @@
-// backends/agent-worker.ts — Worker entry point (Phase 0).
-// Spawned by tauri-plugin-js inside the Tauri app. Creates a real Pi SDK
-// session (excludeTools: ["bash"]) and exposes WorkerAPI to the frontend
-// over kkrpc stdio transport.
+// backends/agent-worker.ts — Worker entry point.
+// Spawned by tauri-plugin-js inside the Tauri app. Detects first run
+// (FR-SETUP-01), creates a real Pi SDK session in the configured AB directory
+// (excludeTools: ["bash"]) and exposes WorkerAPI to the frontend over kkrpc
+// stdio transport.
 //
-// Phase 0 scope: streaming chat only. No system prompt assembly, no
-// permission layer, no scheduler — those arrive in Phase 1/2.
+// Not here yet: system prompt assembly, permission layer, scheduler —
+// those arrive later in Phase 1/2.
 
 import { createAgentSession } from "@earendil-works/pi-coding-agent";
 import { RPCChannel } from "kkrpc";
 import { nodeStdioTransport } from "kkrpc/stdio";
 
 import type { AgentEvent, FrontendAPI, WorkerAPI } from "../shared/api";
+import { defaultConfigPath, detectFirstRun } from "./setup";
 import { createWorkerCore, type PiSessionLike } from "./worker-core";
 
 /** Map Pi AgentSession to the structural subset the worker core needs. */
@@ -59,14 +61,12 @@ async function alignHttpDispatcherWithPi(): Promise<void> {
 
 async function main(): Promise<void> {
   await alignHttpDispatcherWithPi();
-  const cwd = process.env.AB_DIR ?? process.cwd();
 
-  const { session } = await createAgentSession({
-    cwd,
-    excludeTools: ["bash"], // file-only tool set (NFR-SEC-01)
-  });
+  // FR-SETUP-01: on first run there is no AB directory to open a session in.
+  // The channel is created either way (the wizard talks to the worker later);
+  // the Pi session only exists when an AB is configured, rooted at its dir.
+  const setupState = detectFirstRun(defaultConfigPath());
 
-  // Channel first so the frontend proxy exists before events flow.
   let core: ReturnType<typeof createWorkerCore> | undefined;
 
   const transport = nodeStdioTransport();
@@ -82,6 +82,9 @@ async function main(): Promise<void> {
         if (!core) throw new Error("worker not ready");
         return core.api.getState();
       },
+      async getSetupState() {
+        return setupState;
+      },
       async shutdown() {
         await core?.api.shutdown();
         core?.dispose();
@@ -90,7 +93,14 @@ async function main(): Promise<void> {
   });
 
   const frontend = channel.getAPI();
-  core = createWorkerCore(asPiSessionLike(session), frontend);
+
+  if (!setupState.firstRun) {
+    const { session } = await createAgentSession({
+      cwd: setupState.config.abDirectory,
+      excludeTools: ["bash"], // file-only tool set (NFR-SEC-01)
+    });
+    core = createWorkerCore(asPiSessionLike(session), frontend);
+  }
 }
 
 main().catch((err) => {

@@ -1,21 +1,25 @@
 <script lang="ts">
-  // App shell (Phase 0). Chat UI built out feature by feature:
+  // App shell. Chat UI built out feature by feature:
   // FR-CHAT-02 input/send · FR-CHAT-01 streaming · FR-CHAT-03 abort ·
-  // FR-CHAT-07 auto-scroll.
+  // FR-CHAT-07 auto-scroll · FR-SETUP-01 first-run wizard routing.
   import { onMount } from "svelte";
   import { createChatController, type ChatController } from "./lib/chat-controller";
   import { createScrollController } from "./lib/scroll-controller";
   import { get } from "svelte/store";
   import { connectWorker, type WorkerConnection } from "./utils/agent";
   import { devLog, onDevCommand } from "./utils/dev-log";
+  import { resolveInitialView, type AppView } from "./lib/app-view";
   import ChatView from "./lib/ChatView.svelte";
   import InputBar from "./lib/InputBar.svelte";
+  import SetupWizard from "./lib/SetupWizard.svelte";
   import { t } from "./lib/i18n";
   import type { AgentEvent, WorkerAPI } from "../shared/api";
 
   let connection: WorkerConnection | undefined = $state();
   let connectionError: string | undefined = $state();
   let controller: ChatController | undefined = $state();
+  // undefined until the worker reports setup state (brief blank on launch).
+  let view: AppView | undefined = $state();
 
   // The controller is created before the worker connects so the UI renders
   // immediately; prompts are proxied to whatever connection exists.
@@ -29,6 +33,10 @@
     async getState() {
       if (!connection) throw new Error("worker not connected");
       return connection.api.getState();
+    },
+    async getSetupState() {
+      if (!connection) throw new Error("worker not connected");
+      return connection.api.getSetupState();
     },
     async shutdown() {
       await connection?.api.shutdown();
@@ -61,6 +69,9 @@
         },
       );
       devLog("connect(): worker connected");
+      const setupState = await connection.api.getSetupState();
+      view = resolveInitialView(setupState);
+      devLog(`view: ${view}`);
     } catch (err) {
       connectionError = err instanceof Error ? err.message : String(err);
       devLog(`connect() failed: ${connectionError}`);
@@ -80,6 +91,7 @@
     } else if (cmd === "state") {
       devLog(
         `state: ${JSON.stringify({
+          view,
           streaming: get(controller.streaming),
           connectionError,
           messages: get(controller.messages),
@@ -104,7 +116,9 @@
       <button onclick={connect}>{t.restart}</button>
     </div>
   {/if}
-  {#if controller}
+  {#if view === "setup"}
+    <SetupWizard />
+  {:else if view === "chat" && controller}
     <ChatView bind:this={chatView} {controller} {scroll} />
     <InputBar
       {controller}
