@@ -18,10 +18,14 @@ export async function connectWorker(
   onCrash: (code: number | null) => void,
 ): Promise<WorkerConnection> {
   async function boot(): Promise<WorkerAPI> {
+    // Note: tauri-plugin-js appends `args` AFTER the script, so Node flags
+    // must go through NODE_OPTIONS. cwd must be absolute: the Tauri process
+    // runs from src-tauri/, not the project root.
     await spawn(WORKER_NAME, {
       runtime: "node",
       script: "backends/agent-worker.ts",
-      args: ["--import", "tsx"],
+      cwd: __AB_PROJECT_ROOT__,
+      env: { NODE_OPTIONS: "--import tsx" },
     });
     await onExit(WORKER_NAME, onCrash);
     const { api } = await createChannel<FrontendAPI, WorkerAPI>(WORKER_NAME, frontendApi);

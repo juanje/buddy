@@ -13,7 +13,33 @@ import { nodeStdioTransport } from "kkrpc/stdio";
 import type { FrontendAPI, WorkerAPI } from "../shared/api";
 import { createWorkerCore, type PiSessionLike } from "./worker-core";
 
+/**
+ * Align global fetch and undici dispatcher on Pi's own undici copy, exactly
+ * like the pi CLI does at startup (cli.ts → configureHttpDispatcher()).
+ *
+ * Without this, on Node >= 26 the builtin fetch consumes compressed API
+ * responses through npm undici's dispatcher WITHOUT decompressing them, so the
+ * SSE parser sees gzip bytes and every assistant reply arrives empty (0 tokens,
+ * no message_update events). Pi only applies the fix in its CLI/RPC entry
+ * points; the SDK neither calls nor exports it, so embedders must do it.
+ *
+ * The exports map of pi-coding-agent doesn't expose the module, hence the
+ * file-path import into dist/. If a future Pi version moves the file, we log
+ * and continue (a fixed SDK would make this unnecessary).
+ */
+async function alignHttpDispatcherWithPi(): Promise<void> {
+  try {
+    const entryUrl = import.meta.resolve("@earendil-works/pi-coding-agent");
+    const dispatcherUrl = entryUrl.replace(/dist\/index\.js$/, "dist/core/http-dispatcher.js");
+    const { configureHttpDispatcher } = await import(dispatcherUrl);
+    configureHttpDispatcher();
+  } catch (err) {
+    console.error("[agent-worker] could not configure Pi http dispatcher:", err);
+  }
+}
+
 async function main(): Promise<void> {
+  await alignHttpDispatcherWithPi();
   const cwd = process.env.AB_DIR ?? process.cwd();
 
   const { session } = await createAgentSession({
