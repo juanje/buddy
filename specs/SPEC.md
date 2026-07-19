@@ -439,6 +439,16 @@ Crash recovery (next app start):
 | FR-CONSOL-05 | Idle-aware scheduling | 2 |
 | FR-CONSOL-06 | Run journal | 2 |
 
+**Consolidation depths:**
+
+| Depth | Name | Trigger | Input | Output |
+|-------|------|---------|-------|--------|
+| 1 | Daily synthesis | N sessions since last depth-1 (default 3) | Per-session logs from the day | Single `logs/YYYY-MM-DD.md` with aggregated Decisions, Lessons, Context, Open threads. Per-session files move to `logs/archive/YYYY-MM/`. |
+| 2 | Weekly calibration | N depth-1 runs since last depth-2 (default 5) | Daily logs from the week | Pattern extraction, observation updates, active-context reconciliation |
+| 3 | Monthly pruning | N depth-2 runs since last depth-3 (default 3) | Weekly summaries + knowledge files | Stale observation cleanup, idea/concept promotion/demotion, archive candidates |
+
+**Why per-session files consolidate into daily:** Per-session files avoid merge conflicts on multi-device sync (each session writes a unique filename). Once sessions are no longer "hot" (same day, no sync risk), they should be one file per day for efficient agent context loading. The agent reads `logs/YYYY-MM-DD.md` to know what happened that day — not N separate session fragments.
+
 **FR-CONSOL-01 — Usage-based triggers**
 
 - **Given** sessions have completed since the last consolidation
