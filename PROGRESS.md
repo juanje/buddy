@@ -12,8 +12,14 @@ Track of implemented features. Updated ONLY when all acceptance criteria pass.
 | FR-CHAT-07 | Auto-scroll with manual override | done | 2c799d8 |
 
 **Phase 0 complete:** YES — all 4 features green (14/14 BDD scenarios, 8 unit tests).
-Note: logic validated headless against a fake session emitting real Pi event shapes;
-run `npm run tauri dev` on a machine with Rust to exercise the full native stack.
+
+**Native stack validated on macOS (b036774):** worker spawn from the frontend,
+real Pi streaming end-to-end (message_update deltas render in the transcript),
+and mid-stream abort with partial text kept. Two fixes were needed: spawn config
+(NODE_OPTIONS tsx + absolute cwd) and Pi's configureHttpDispatcher() in the
+worker (Node >= 26 fetch/undici mismatch left SSE gzip undecompressed → empty
+responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
+`/__ab_cmd` via the Vite server).
 
 ## Phase 1 — MVP
 
@@ -51,5 +57,6 @@ run `npm run tauri dev` on a machine with Rust to exercise the full native stack
 >
 > Phase 0 COMPLETE (FR-CHAT-02/01/03/07). Architecture validated: Svelte stores +
 > framework-agnostic controllers + worker core, BDD suite green end-to-end.
+> Native stack (spawn + real streaming + abort) validated on macOS (b036774).
 >
 > Next: Phase 1 — FR-SETUP-01 (first-run detection) + wizard, then FR-PROMPT-01
