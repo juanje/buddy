@@ -58,6 +58,15 @@ export interface SetupController {
   selectModel(modelId: string): void;
   /** Advance to the next step (no-op if canProceed is false). */
   next(): void;
+  /**
+   * Run deterministic AB creation with the collected answers (FR-SETUP-06).
+   * Resolves when the AB exists and the session is live; rejects on failure.
+   */
+  finishSetup(): Promise<void>;
+  /** True once setup completed successfully (the app can enter the chat). */
+  completed: Readable<boolean>;
+  /** Error message if AB creation failed. */
+  setupError: Readable<string | undefined>;
 }
 
 const STEP_ORDER: SetupStep[] = ["prerequisites", "location", "provider", "model", "creating"];
@@ -136,6 +145,27 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
     model.set(modelId);
   }
 
+  const completed = writable(false);
+  const setupError = writable<string | undefined>(undefined);
+
+  async function finishSetup(): Promise<void> {
+    const abDirectory = get(location);
+    const providerId = get(provider);
+    const modelId = get(model);
+    if (!abDirectory || !providerId || !modelId) {
+      throw new Error("finishSetup called before the wizard collected all answers");
+    }
+    step.set("creating");
+    setupError.set(undefined);
+    try {
+      await worker.runSetup({ abDirectory, provider: providerId, model: modelId });
+      completed.set(true);
+    } catch (err) {
+      setupError.set(err instanceof Error ? err.message : String(err));
+      throw err;
+    }
+  }
+
   function next(): void {
     if (!get(canProceed)) return;
     step.update(($step) => {
@@ -169,5 +199,8 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
     submitApiKey,
     selectModel,
     next,
+    finishSetup,
+    completed,
+    setupError,
   };
 }

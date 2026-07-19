@@ -75,6 +75,8 @@ export interface WorkerAPI {
     apiKey: string,
     baseUrl?: string,
   ): Promise<KeyCheck>;
+  /** Create the AB home and boot the session (FR-SETUP-06). */
+  runSetup(config: SetupConfig): Promise<void>;
   shutdown(): Promise<void>;
 }
 
@@ -88,7 +90,11 @@ export type ChatWorkerAPI = Pick<WorkerAPI, "prompt" | "abort" | "getState" | "s
 /** Setup-scoped subset of WorkerAPI: what the wizard needs (FR-SETUP-02+). */
 export type SetupWorkerAPI = Pick<
   WorkerAPI,
-  "checkPrerequisites" | "getDefaultLocation" | "validateLocation" | "configureProviderKey"
+  | "checkPrerequisites"
+  | "getDefaultLocation"
+  | "validateLocation"
+  | "configureProviderKey"
+  | "runSetup"
 >;
 
 /** Worker calls these on the frontend. */

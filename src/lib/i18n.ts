@@ -40,6 +40,10 @@ export const t = {
   modelRecommended: "Recomendado",
   modelCustomLabel: "Identificador del modelo",
   modelCustomHint: "Escribe el nombre del modelo tal y como lo expone tu servicio.",
+  creatingTitle: "Preparando tu asistente…",
+  creatingHint: "Estamos creando su memoria y dejándolo todo listo. Solo tardará un momento.",
+  creatingError: "No se pudo completar la configuración",
+  creatingRetry: "Reintentar",
 } as const;
 
 /** Short cost/capability description per model tier (FR-SETUP-05). */

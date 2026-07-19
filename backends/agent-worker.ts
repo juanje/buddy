@@ -12,6 +12,7 @@ import { RPCChannel } from "kkrpc";
 import { nodeStdioTransport } from "kkrpc/stdio";
 
 import type { AgentEvent, FrontendAPI, WorkerAPI } from "../shared/api";
+import { createAbInstance } from "./create-ab";
 import { defaultAbLocation, validateLocation } from "./location";
 import { checkPrerequisites } from "./prereqs";
 import { configureProviderKey } from "./provider-auth";
@@ -68,9 +69,21 @@ async function main(): Promise<void> {
   // FR-SETUP-01: on first run there is no AB directory to open a session in.
   // The channel is created either way (the wizard talks to the worker later);
   // the Pi session only exists when an AB is configured, rooted at its dir.
-  const setupState = detectFirstRun(defaultConfigPath());
+  let setupState = detectFirstRun(defaultConfigPath());
 
   let core: ReturnType<typeof createWorkerCore> | undefined;
+  // Definite assignment: set right after the channel is created below, and
+  // bootSession only runs after that.
+  let frontend!: FrontendAPI;
+
+  async function bootSession(abDirectory: string): Promise<void> {
+    if (core) return; // already running (setup completing twice is a no-op)
+    const { session } = await createAgentSession({
+      cwd: abDirectory,
+      excludeTools: ["bash"], // file-only tool set (NFR-SEC-01)
+    });
+    core = createWorkerCore(asPiSessionLike(session), frontend);
+  }
 
   const transport = nodeStdioTransport();
   const channel = new RPCChannel<WorkerAPI, FrontendAPI>(transport, {
@@ -100,6 +113,11 @@ async function main(): Promise<void> {
       async configureProviderKey(provider, apiKey, baseUrl) {
         return configureProviderKey(provider, apiKey, { baseUrl });
       },
+      async runSetup(config) {
+        await createAbInstance({ config, configPath: defaultConfigPath() });
+        setupState = { firstRun: false, config };
+        await bootSession(config.abDirectory);
+      },
       async shutdown() {
         await core?.api.shutdown();
         core?.dispose();
@@ -107,14 +125,10 @@ async function main(): Promise<void> {
     },
   });
 
-  const frontend = channel.getAPI();
+  frontend = channel.getAPI();
 
   if (!setupState.firstRun) {
-    const { session } = await createAgentSession({
-      cwd: setupState.config.abDirectory,
-      excludeTools: ["bash"], // file-only tool set (NFR-SEC-01)
-    });
-    core = createWorkerCore(asPiSessionLike(session), frontend);
+    await bootSession(setupState.config.abDirectory);
   }
 }
 

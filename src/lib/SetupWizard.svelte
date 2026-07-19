@@ -8,7 +8,10 @@
   import { gitInstallInstructions, t, tierDescription } from "./i18n";
   import type { SetupWorkerAPI } from "../../shared/api";
 
-  let { worker }: { worker: SetupWorkerAPI } = $props();
+  let {
+    worker,
+    onComplete,
+  }: { worker: SetupWorkerAPI; onComplete?: () => void } = $props();
 
   const wizard = createSetupController(worker);
   const step = wizard.step;
@@ -21,6 +24,16 @@
   const keyCheck = wizard.keyCheck;
   const validatingKey = wizard.validatingKey;
   const model = wizard.model;
+  const setupError = wizard.setupError;
+
+  async function createAb() {
+    try {
+      await wizard.finishSetup();
+      onComplete?.();
+    } catch {
+      // setupError store carries the message; the creating step shows it.
+    }
+  }
 
   // Local input values (validated on continue).
   let locationInput = $state("");
@@ -164,9 +177,17 @@
       </label>
       <p class="muted">{t.modelCustomHint}</p>
     {/if}
-    <button class="primary" onclick={() => wizard.next()} disabled={!$canProceed}>
+    <button class="primary" onclick={createAb} disabled={!$canProceed}>
       {t.wizardContinue}
     </button>
+  {:else if $step === "creating"}
+    {#if $setupError}
+      <p class="error">{t.creatingError}: {$setupError}</p>
+      <button class="primary" onclick={createAb}>{t.creatingRetry}</button>
+    {:else}
+      <h2>{t.creatingTitle}</h2>
+      <p class="muted">{t.creatingHint}</p>
+    {/if}
   {:else}
     <p class="muted">{t.wizardComingSoon}</p>
   {/if}

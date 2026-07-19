@@ -1,0 +1,30 @@
+# specs/features/setup-create.feature
+
+Feature: Deterministic AB directory setup (FR-SETUP-06)
+  As a new user who completed the wizard
+  I want my assistant's home created automatically
+  So that everything is ready without me touching files
+
+  Background:
+    Given a completed wizard configuration
+
+  Scenario: The full directory structure is created
+    When setup runs
+    Then the AB directory contains "agent_brain", "user" and "logs"
+
+  Scenario: Base templates are copied
+    When setup runs
+    Then the AB directory contains the base templates
+    And USER.md still has placeholder content
+
+  Scenario: Pi settings are written
+    When setup runs
+    Then ".pi/settings.json" holds the configured provider and model
+
+  Scenario: Git is initialized with an initial commit
+    When setup runs
+    Then the AB directory is a git repository with exactly one commit
+
+  Scenario: The app is marked as configured
+    When setup runs
+    Then first-run detection reports the AB as configured
