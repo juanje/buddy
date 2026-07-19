@@ -250,7 +250,7 @@ platform-specific install instructions is shown and setup cannot continue.
 |----|-------------|-------|
 | FR-REFLECT-01 | Factual skeleton capture on session end | 1 |
 | FR-REFLECT-02 | Catch-up reflect on app start | 1 |
-| FR-REFLECT-03 | Incremental mid-session reflect | 2 |
+| FR-REFLECT-03 | Incremental mid-session reflect (N turns + pre-compaction) | 1 |
 
 **FR-REFLECT-01 — Factual skeleton capture**
 
@@ -272,10 +272,13 @@ platform-specific install instructions is shown and setup cannot continue.
 **FR-REFLECT-03 — Incremental mid-session reflect**
 
 - **Given** a session has been running for N messages (configurable, default 15)
-- **When** the worker detects the threshold
-- **Then** a lightweight reflect runs (encoding, not deep analysis)
+- **Or given** Pi emits a `compaction_start` event (context window about to be compressed)
+- **When** the worker detects the threshold or the compaction event
+- **Then** a lightweight reflect runs (encoding, not deep analysis) capturing decisions, tasks, and context from the segment
+- **And** the snapshot is written to disk immediately (survives crashes)
 - **And** a cheaper model or lower thinking level is used
 - **And** the full session-end reflect incorporates the incremental snapshots
+- **Note:** The compaction trigger is critical — Pi discards context during compaction. Anything not reflected before that point is lost to the agent's long-term memory.
 
 ### 3.5 Permission Layer (FR-PERM)
 

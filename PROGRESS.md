@@ -79,7 +79,9 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 | 2 | FR-SESSION-03 | Session end on app close | Clean shutdown trigger — needed before reflect can fire. |
 | 3 | FR-REFLECT-01 | Factual skeleton on session end | Deterministic capture of what happened (no LLM). Skeleton is the input for reflect. |
 | 4 | FR-REFLECT-02 | Catch-up reflect on start | LLM processes pending skeletons into log entries with decisions, lessons, context. Completes the loop. |
+| 5 | FR-REFLECT-03 | Incremental mid-session reflect | Lightweight reflect every N turns + before Pi compaction. Prevents data loss in long sessions. |
 
-**Why this grouping:** These 4 features form a closed loop. After implementing
+**Why this grouping:** These 5 features form a closed loop. After implementing
 them, the test is: talk to AB → close → reopen → AB knows what happened.
-Each feature depends on the previous one, and together they deliver "it remembers."
+FR-REFLECT-03 ensures nothing is lost even in sessions that run for hours
+without closing (compaction would discard unreflected context).
