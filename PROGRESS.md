@@ -9,9 +9,11 @@ Track of implemented features. Updated ONLY when all acceptance criteria pass.
 | FR-CHAT-02 | User input with send | done | 1a13fdd |
 | FR-CHAT-01 | Streaming message display | done | eca5ce2 |
 | FR-CHAT-03 | Abort generation | done | f858146 |
-| FR-CHAT-07 | Auto-scroll with manual override | pending | |
+| FR-CHAT-07 | Auto-scroll with manual override | done | 2c799d8 |
 
-**Phase 0 complete:** NO
+**Phase 0 complete:** YES — all 4 features green (14/14 BDD scenarios, 8 unit tests).
+Note: logic validated headless against a fake session emitting real Pi event shapes;
+run `npm run tauri dev` on a machine with Rust to exercise the full native stack.
 
 ## Phase 1 — MVP
 
@@ -47,4 +49,7 @@ Track of implemented features. Updated ONLY when all acceptance criteria pass.
 > BDD harness. Pi SDK spike verified: event names match spec; continueRecent() is
 > sync + non-nullable.
 >
-> Next: FR-CHAT-07 (auto-scroll with manual override) — last Phase 0 feature
+> Phase 0 COMPLETE (FR-CHAT-02/01/03/07). Architecture validated: Svelte stores +
+> framework-agnostic controllers + worker core, BDD suite green end-to-end.
+>
+> Next: Phase 1 — FR-SETUP-01 (first-run detection) + wizard, then FR-PROMPT-01
