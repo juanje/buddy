@@ -191,15 +191,10 @@ export function rebuildLogsIndex(abDirectory: string): void {
 }
 
 function extractOneLinerSummary(content: string): string {
-  const MAX_LEN = 100;
   const contextMatch = content.match(/### Context\r?\n([\s\S]*?)(?=\r?\n###|\r?\n$)/);
   if (contextMatch) {
     const firstLine = contextMatch[1].trim().split("\n")[0].trim();
-    if (firstLine.length > 0) {
-      if (firstLine.length <= MAX_LEN) return firstLine;
-      const cut = firstLine.lastIndexOf(" ", MAX_LEN);
-      return (cut > 40 ? firstLine.slice(0, cut) : firstLine.slice(0, MAX_LEN)) + "…";
-    }
+    if (firstLine.length > 0) return firstLine;
   }
   const fm = parseFrontmatter(content);
   if (fm.status === "reflect-pending") return "(reflect pending)";
