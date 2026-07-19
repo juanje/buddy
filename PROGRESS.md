@@ -17,6 +17,9 @@ Track of implemented features. Updated ONLY when all acceptance criteria pass.
 
 | FR-ID | Feature | Status | Commit |
 |-------|---------|--------|--------|
+| FR-BRAIN-01 | AGENTS.md behavioral rules template | done | 2e79ede, 72edf52 |
+| FR-BRAIN-02 | SOUL.md character definition | done | 2e79ede, 152ebc4 |
+| FR-BRAIN-03 | USER.md placeholder template | done | 2e79ede |
 | FR-SETUP-01 | First-run wizard UI | pending | |
 | FR-SETUP-02 | Deterministic AB setup | pending | |
 | FR-SETUP-03 | Agent-driven personalization | pending | |
@@ -37,4 +40,7 @@ Track of implemented features. Updated ONLY when all acceptance criteria pass.
 
 ## Current focus
 
+> Brain templates (FR-BRAIN-01–03) implemented. Consolidation skill (FR-BRAIN-04) deferred
+> until worker scheduler is ready.
+>
 > Next: FR-CHAT-02 (user input with send) — first feature, needs Tauri scaffolding
