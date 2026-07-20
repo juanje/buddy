@@ -124,6 +124,10 @@ export class OAuthService {
   }
 
   private forwardPrompt(prompt: AuthPromptLike): Promise<string> {
+    if (this.canAutoAnswer(prompt)) {
+      return Promise.resolve(this.autoAnswer(prompt));
+    }
+
     const requestId = ++this.nextPromptId;
     return new Promise((resolve, reject) => {
       this.pendingPrompts.set(requestId, { resolve, reject });
@@ -146,5 +150,24 @@ export class OAuthService {
         { once: true },
       );
     });
+  }
+
+  /**
+   * Desktop app always uses browser auth — auto-answer the SDK's "select
+   * login method" prompt without showing it to the user.
+   */
+  private canAutoAnswer(prompt: AuthPromptLike): boolean {
+    if (prompt.type !== "select" || !prompt.options) return false;
+    const opts = prompt.options.map((o) =>
+      typeof o === "string" ? o : String((o as { id?: string }).id ?? o),
+    );
+    return opts.includes("browser");
+  }
+
+  private autoAnswer(prompt: AuthPromptLike): string {
+    const opts = (prompt.options ?? []).map((o) =>
+      typeof o === "string" ? o : String((o as { id?: string }).id ?? o),
+    );
+    return opts.find((o) => o === "browser") ?? opts[0] ?? "";
   }
 }
