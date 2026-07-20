@@ -10,9 +10,6 @@ export const en: LocaleStrings = {
   wizardTitle: "Welcome to AB",
   wizardIntro:
     "Let's set up your personal assistant. It will live in a folder on your computer, with its own memory and notes.",
-  languageTitle: "Choose your language",
-  languageOptionEs: "Español",
-  languageOptionEn: "English",
   personalizationTitle: "Tell your assistant a bit about you",
   personalizationNameLabel: "How should your assistant address you?",
   personalizationNameHint: "Your name or what you prefer to be called",

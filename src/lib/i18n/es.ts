@@ -7,9 +7,6 @@ export type LocaleStrings = {
   scrollToBottom: string;
   wizardTitle: string;
   wizardIntro: string;
-  languageTitle: string;
-  languageOptionEs: string;
-  languageOptionEn: string;
   personalizationTitle: string;
   personalizationNameLabel: string;
   personalizationNameHint: string;
@@ -92,9 +89,6 @@ export const es: LocaleStrings = {
   wizardTitle: "Bienvenido a AB",
   wizardIntro:
     "Vamos a preparar tu asistente personal. Este asistente vivirá en una carpeta de tu equipo, con su memoria y sus notas.",
-  languageTitle: "Elige tu idioma",
-  languageOptionEs: "Español",
-  languageOptionEn: "English",
   personalizationTitle: "Cuéntale un poco sobre ti",
   personalizationNameLabel: "¿Cómo quieres que te llame tu asistente?",
   personalizationNameHint: "Tu nombre o cómo prefieres que te llamen",

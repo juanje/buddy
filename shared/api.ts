@@ -35,8 +35,6 @@ export interface SetupConfig {
   language?: "es" | "en";
   name?: string;
   about?: string;
-  apiKey?: string;
-  baseUrl?: string;
 }
 
 /** Result of first-run detection against ~/.ab-app/config.json (FR-SETUP-01). */
