@@ -35,14 +35,14 @@ export function formatToolCalls(toolCalls: SessionTrackerSnapshot["toolCalls"]):
 }
 
 export function formatSkeletonBody(snapshot: SessionTrackerSnapshot): string {
-  const date = isoDay(new Date(snapshot.endTime));
+  const date = isoDay(new Date(snapshot.startTime));
   const startTime = snapshot.startTime.slice(11, 16);
   const endTime = snapshot.endTime.slice(11, 16);
   return `# Session — ${date} (${startTime}–${endTime}, ${snapshot.turnCount} turns)\n`;
 }
 
 export function formatSkeletonFrontmatter(snapshot: SessionTrackerSnapshot): string {
-  const date = isoDay(new Date(snapshot.endTime));
+  const date = isoDay(new Date(snapshot.startTime));
   return [
     "---",
     `date: ${date}`,

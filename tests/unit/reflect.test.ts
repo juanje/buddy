@@ -44,6 +44,16 @@ describe("savePendingSkeleton", () => {
     expect(content).toContain("# Session —");
     expect(existsSync(join(dir, "logs"))).toBe(false);
   });
+
+  it("uses session start date when session crosses midnight", () => {
+    dir = mkdtempSync(join(tmpdir(), "ab-reflect-"));
+    const start = new Date(2026, 6, 20, 23, 45, 0);
+    const end = new Date(2026, 6, 21, 0, 15, 0);
+    const tracker = new SessionTracker("crossmid", start);
+    const path = savePendingSkeleton(dir, tracker.toSnapshot(end));
+    const fm = parseFrontmatter(readFileSync(path, "utf8"));
+    expect(fm.date).toBe("2026-07-20");
+  });
 });
 
 describe("appendDailyLog", () => {
