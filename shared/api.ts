@@ -57,14 +57,6 @@ export interface LocationCheck {
 /** API key validation verdict (FR-SETUP-04). */
 export type KeyCheck = { valid: true } | { valid: false; error: string };
 
-/** Pre-existing Pi auth detected on the system (bypass provider/model steps). */
-export interface DetectedAuth {
-  provider: SetupConfig["provider"];
-  model: string;
-  /** All valid providers found, for letting the user choose. */
-  options?: Array<{ piProvider: string; provider: SetupConfig["provider"]; model: string }>;
-}
-
 export type SetupProviderId = SetupConfig["provider"];
 
 /** OAuth login result (FR-SETUP-05). */
@@ -159,8 +151,6 @@ export interface WorkerAPI {
   listModels(provider: SetupConfig["provider"]): Promise<ModelInfo[]>;
   /** Which providers have configured credentials. */
   getAuthStatus(): Promise<AuthStatusResult>;
-  /** Detect an existing Pi auth with valid credentials (skip provider step). */
-  detectExistingAuth(): Promise<DetectedAuth | null>;
   /**
    * Finish setup and boot the session. "create" builds a fresh AB from
    * templates (FR-SETUP-06); "import" adopts an existing one without
@@ -189,7 +179,6 @@ export type SetupWorkerAPI = Pick<
   | "getDefaultLocation"
   | "validateLocation"
   | "configureProviderKey"
-  | "detectExistingAuth"
   | "loginOAuth"
   | "answerOAuthPrompt"
   | "cancelOAuthLogin"

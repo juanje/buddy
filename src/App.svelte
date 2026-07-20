@@ -64,10 +64,6 @@
       if (!connection) throw new Error("worker not connected");
       return connection.api.configureProviderKey(provider, apiKey, baseUrl);
     },
-    async detectExistingAuth() {
-      if (!connection) throw new Error("worker not connected");
-      return connection.api.detectExistingAuth();
-    },
     async loginOAuth(provider) {
       if (!connection) throw new Error("worker not connected");
       return connection.api.loginOAuth(provider);

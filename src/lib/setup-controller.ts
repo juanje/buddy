@@ -6,7 +6,6 @@ import { derived, get, writable, type Readable, type Writable } from "svelte/sto
 import { recommendedModelFor } from "./model-catalog";
 import { DEFAULT_SETUP_PROVIDER, isApiKeyOnlyProvider } from "./provider-setup";
 import type {
-  DetectedAuth,
   KeyCheck,
   LocationCheck,
   ModelInfo,
@@ -44,7 +43,6 @@ export interface SetupController {
   validatingKey: Readable<boolean>;
   model: Readable<string | undefined>;
   canProceed: Readable<boolean>;
-  detectedAuth: Readable<DetectedAuth | null>;
   oauthLoggingIn: Readable<boolean>;
   oauthError: Readable<string | undefined>;
   showApiKey: Readable<boolean>;
@@ -56,7 +54,6 @@ export interface SetupController {
   read<T>(store: Readable<T>): T;
   selectLanguage(lang: AppLocale): void;
   setPersonalization(name: string, about?: string): void;
-  selectDetectedProvider(piProvider: string): void;
   checkPrerequisites(): Promise<void>;
   loadDefaultLocation(): Promise<string>;
   pickLocation(path: string): Promise<void>;
@@ -104,7 +101,6 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
   const keyCheck = writable<KeyCheck | undefined>(undefined);
   const validatingKey = writable(false);
   const model = writable<string | undefined>(undefined);
-  const detectedAuth = writable<DetectedAuth | null>(null);
   const oauthLoggingIn = writable(false);
   const oauthError = writable<string | undefined>(undefined);
   const showApiKey = writable(false);
@@ -171,17 +167,6 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
   async function pickLocation(path: string): Promise<void> {
     location.set(path);
     locationCheck.set(await worker.validateLocation(path));
-  }
-
-  function selectDetectedProvider(piProvider: string): void {
-    const auth = get(detectedAuth);
-    if (!auth?.options) return;
-    const option = auth.options.find((o) => o.piProvider === piProvider);
-    if (option) {
-      provider.set(option.provider);
-      model.set(option.model);
-      authReady.set(true);
-    }
   }
 
   function selectProvider(id: ProviderId): void {
@@ -373,7 +358,6 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
     validatingKey,
     model,
     canProceed,
-    detectedAuth,
     oauthLoggingIn,
     oauthError,
     showApiKey,
@@ -384,7 +368,6 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
     read,
     selectLanguage,
     setPersonalization,
-    selectDetectedProvider,
     checkPrerequisites,
     loadDefaultLocation,
     pickLocation,

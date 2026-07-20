@@ -274,9 +274,6 @@ async function main(): Promise<void> {
         }).filter((p) => p.abProvider);
         return { providers };
       },
-      async detectExistingAuth() {
-        return null;
-      },
       async runSetup(config, mode = "create") {
         if (mode === "import") {
           adoptAbInstance({ config, configPath: defaultConfigPath() });
