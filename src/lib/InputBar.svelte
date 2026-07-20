@@ -174,12 +174,14 @@
     resize: none;
     border: 1px solid var(--border);
     border-radius: 10px;
-    padding: 10px 12px;
+    padding: 9px 12px;
     font: inherit;
     background: var(--bg);
     color: var(--fg);
     outline: none;
+    min-height: 40px;
     max-height: 160px;
+    box-sizing: border-box;
   }
   textarea:focus {
     border-color: var(--accent);
