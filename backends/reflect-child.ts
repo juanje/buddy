@@ -18,6 +18,7 @@ import {
 import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { AgentEvent } from "../shared/api";
+import { DEFAULT_PI_PROVIDER, REFLECT_SESSIONS_DIR } from "../shared/defaults";
 import { fastModelForProvider } from "../src/lib/model-catalog";
 import { logEvent } from "./app-logger";
 import { commitAll } from "./git";
@@ -26,12 +27,10 @@ import { alignHttpDispatcherWithPi } from "./pi-http-dispatcher";
 import { collectAssistantText } from "./pi-utils";
 import { defaultAuthPath } from "./provider-auth";
 import {
-  appendDailyLog,
-  deletePendingSkeleton,
+  finalizeReflectToDailyLog,
   markSnapshotEncoded,
   parseFrontmatter,
   rebuildLogsIndex,
-  sessionHeaderFromSkeleton,
 } from "./reflect";
 
 const SESSION_END_PROMPT = `You are a memory consolidation agent. Analyze this session and produce a structured reflect with these sections:
@@ -74,12 +73,12 @@ Be very concise — this is an incremental snapshot, not a full reflect.`;
 
 function readAbProvider(abDirectory: string): string {
   const settingsPath = join(abDirectory, ".pi", "settings.json");
-  if (!existsSync(settingsPath)) return "anthropic";
+  if (!existsSync(settingsPath)) return DEFAULT_PI_PROVIDER;
   try {
     const settings = JSON.parse(readFileSync(settingsPath, "utf8")) as { defaultProvider?: string };
-    return settings.defaultProvider ?? "anthropic";
+    return settings.defaultProvider ?? DEFAULT_PI_PROVIDER;
   } catch {
-    return "anthropic";
+    return DEFAULT_PI_PROVIDER;
   }
 }
 
@@ -134,7 +133,7 @@ async function runReflect(
 
   let sm: SessionManager;
   if (forkedSessionFile && existsSync(forkedSessionFile)) {
-    const forkDir = join(abDirectory, ".ab-app", "reflect-sessions");
+    const forkDir = join(abDirectory, REFLECT_SESSIONS_DIR);
     mkdirSync(forkDir, { recursive: true });
     sm = SessionManager.forkFrom(forkedSessionFile, abDirectory, forkDir);
   } else {
@@ -172,21 +171,24 @@ async function runReflect(
 
     if (result) {
       if (!await acquireLockWithRetry(abDirectory)) {
-        console.error("[reflect-child] could not acquire lock for write phase");
+        logEvent(abDirectory, {
+          event: "reflect_skipped",
+          session: sessionId,
+          mode,
+          reason: "lock_unavailable",
+        });
         return;
       }
       try {
         if (mode === "incremental") {
           markSnapshotEncoded(targetPath, result);
         } else {
-          const fm = parseFrontmatter(skeleton);
-          const date = fm.date ?? new Date().toISOString().slice(0, 10);
-          const dailyPath = appendDailyLog(abDirectory, {
-            date,
-            sessionHeader: sessionHeaderFromSkeleton(skeleton),
+          const dailyPath = finalizeReflectToDailyLog({
+            abDirectory,
+            skeletonPath: targetPath,
+            skeletonContent: skeleton,
             sections: result,
           });
-          deletePendingSkeleton(targetPath);
           rebuildLogsIndex(abDirectory);
           logEvent(abDirectory, {
             event: "reflect_complete",
@@ -199,6 +201,13 @@ async function runReflect(
       } finally {
         releaseLock(abDirectory);
       }
+    } else {
+      logEvent(abDirectory, {
+        event: "reflect_skipped",
+        session: sessionId,
+        mode,
+        reason: "empty_llm_result",
+      });
     }
   } catch (err) {
     logEvent(abDirectory, {

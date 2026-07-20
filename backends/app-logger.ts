@@ -12,6 +12,7 @@ export type AppLogEvent =
   | { event: "turn_end"; session: string; turn: number }
   | { event: "reflect_spawned"; session: string; mode: string; pendingPath?: string }
   | { event: "reflect_complete"; session: string; mode: string; logPath?: string }
+  | { event: "reflect_skipped"; session: string; mode: string; reason: string }
   | { event: "reflect_error"; session: string; mode: string; message: string }
   | { event: "error"; message: string; context?: string };
 
