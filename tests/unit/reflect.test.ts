@@ -12,15 +12,16 @@ import {
   parseFrontmatter,
   rebuildLogsIndex,
   savePendingSkeleton,
-  shouldRunIncrementalReflect,
+  shouldRunCheckpointReflect,
+  finalizeCheckpointToDailyLog,
 } from "../../backends/reflect";
 import { SessionTracker } from "../../backends/session-tracker";
 
-describe("shouldRunIncrementalReflect", () => {
-  it("fires on multiples of N after last snapshot", () => {
-    expect(shouldRunIncrementalReflect(15, 15, 0)).toBe(true);
-    expect(shouldRunIncrementalReflect(14, 15, 0)).toBe(false);
-    expect(shouldRunIncrementalReflect(30, 15, 15)).toBe(true);
+describe("shouldRunCheckpointReflect", () => {
+  it("fires on multiples of N after last checkpoint", () => {
+    expect(shouldRunCheckpointReflect(15, 15, 0)).toBe(true);
+    expect(shouldRunCheckpointReflect(14, 15, 0)).toBe(false);
+    expect(shouldRunCheckpointReflect(30, 15, 15)).toBe(true);
   });
 });
 
@@ -95,6 +96,40 @@ describe("appendDailyLog", () => {
     const content = readFileSync(join(dir, "logs", "2026-07-19.md"), "utf8");
     expect(content).toContain("## Session 10:00–10:15");
     expect(content).toContain("## Session 14:00–14:30");
+  });
+
+  it("appends a checkpoint block to the daily log", () => {
+    dir = mkdtempSync(join(tmpdir(), "ab-daily-"));
+    const path = appendDailyLog(dir, {
+      date: "2026-07-21",
+      sessionHeader: "10:30",
+      sections: "### Context\nWiki work.\n\n### Notes\nFiled concepts.",
+      blockKind: "checkpoint",
+    });
+    const content = readFileSync(path, "utf8");
+    expect(content).toContain("## Checkpoint 10:30");
+    expect(content).toContain("Wiki work.");
+  });
+});
+
+describe("finalizeCheckpointToDailyLog", () => {
+  let dir: string;
+
+  afterEach(() => {
+    if (dir) rmSync(dir, { recursive: true, force: true });
+  });
+
+  it("writes checkpoint section and rebuilds index", () => {
+    dir = mkdtempSync(join(tmpdir(), "ab-checkpoint-log-"));
+    const path = finalizeCheckpointToDailyLog({
+      abDirectory: dir,
+      date: "2026-07-21",
+      checkpointTime: "11:45",
+      sections: "### Context\nMid-session encode.",
+    });
+    const content = readFileSync(path, "utf8");
+    expect(content).toContain("## Checkpoint 11:45");
+    expect(readFileSync(join(dir, "logs", "index.md"), "utf8")).toContain("2026-07-21:");
   });
 });
 

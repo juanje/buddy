@@ -8,6 +8,7 @@ import { get } from "svelte/store";
 import { FakeSession } from "./fake-session";
 import { createWorkerCore, type WorkerCore } from "../../backends/worker-core";
 import { SessionLifecycle } from "../../backends/session-lifecycle";
+import type { SpawnReflectOptions } from "../../backends/reflect-spawn";
 import type { PromptOptions } from "../../shared/api";
 import {
   createChatController,
@@ -49,21 +50,32 @@ export class AbWorld extends World {
   /** Optional AB directory for memory-loop scenarios (FR-GIT-01+). */
   abDirectory?: string;
   lifecycle?: SessionLifecycle;
+  spawnCalls?: SpawnReflectOptions[];
 
   /** Background: "the app is running" + "the Pi SDK session is connected". */
   connect(
     abDirectory?: string,
-    options?: { incrementalEvery?: number; force?: boolean },
+    options?: { incrementalEvery?: number; force?: boolean; trackSpawn?: boolean },
   ): void {
     if (this.controller && !options?.force) return;
     this.abDirectory = abDirectory;
     this.session = new FakeSession();
+
+    if (options?.trackSpawn) {
+      this.spawnCalls = [];
+    }
 
     this.lifecycle = abDirectory
       ? new SessionLifecycle({
           abDirectory,
           sessionId: "test-session",
           incrementalEvery: options?.incrementalEvery,
+          spawnReflect: options?.trackSpawn
+            ? (spawnOptions) => {
+                this.spawnCalls!.push(spawnOptions);
+                return 1;
+              }
+            : undefined,
         })
       : undefined;
 

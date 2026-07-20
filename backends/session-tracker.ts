@@ -10,14 +10,6 @@ export interface TrackedToolCall {
   timestamp: string;
 }
 
-export interface SessionSegment {
-  filesRead: string[];
-  filesWritten: string[];
-  toolCalls: TrackedToolCall[];
-  startTurn: number;
-  endTurn: number;
-}
-
 export interface SessionTrackerSnapshot {
   sessionId: string;
   startTime: string;
@@ -27,7 +19,6 @@ export interface SessionTrackerSnapshot {
   filesWritten: string[];
   toolCalls: TrackedToolCall[];
   commits: string[];
-  snapshots: string[];
 }
 
 function relPath(abDirectory: string, absOrRel: string): string {
@@ -44,12 +35,9 @@ export class SessionTracker {
   filesWritten: string[] = [];
   toolCalls: TrackedToolCall[] = [];
   commits: string[] = [];
-  snapshots: string[] = [];
-  lastSnapshotTurn = 0;
+  lastCheckpointTurn = 0;
 
-  private segmentRead: string[] = [];
-  private segmentWritten: string[] = [];
-  private segmentToolCalls: TrackedToolCall[] = [];
+  private activitySinceCheckpoint = false;
   private pendingArgs = new Map<string, { name: string; path?: string }>();
 
   constructor(sessionId: string, startTime: Date = new Date()) {
@@ -85,21 +73,13 @@ export class SessionTracker {
     return { turnEnded: false, compactionStart: false };
   }
 
-  getSegment(): SessionSegment {
-    return {
-      filesRead: [...this.segmentRead],
-      filesWritten: [...this.segmentWritten],
-      toolCalls: [...this.segmentToolCalls],
-      startTurn: this.lastSnapshotTurn + 1,
-      endTurn: this.turnCount,
-    };
+  hasActivitySinceCheckpoint(): boolean {
+    return this.activitySinceCheckpoint;
   }
 
-  resetSegment(): void {
-    this.lastSnapshotTurn = this.turnCount;
-    this.segmentRead = [];
-    this.segmentWritten = [];
-    this.segmentToolCalls = [];
+  recordCheckpoint(): void {
+    this.lastCheckpointTurn = this.turnCount;
+    this.activitySinceCheckpoint = false;
   }
 
   toSnapshot(endTime: Date = new Date()): SessionTrackerSnapshot {
@@ -112,7 +92,6 @@ export class SessionTracker {
       filesWritten: [...this.filesWritten],
       toolCalls: [...this.toolCalls],
       commits: [...this.commits],
-      snapshots: [...this.snapshots],
     };
   }
 
@@ -130,15 +109,13 @@ export class SessionTracker {
     const relP = path ? relPath(abDirectory, path) : undefined;
     const entry: TrackedToolCall = { name, path: relP, timestamp };
     this.toolCalls.push(entry);
-    this.segmentToolCalls.push(entry);
+    this.activitySinceCheckpoint = true;
 
     if (relP && READ_TOOLS.has(name)) {
       this.pushUnique(this.filesRead, relP);
-      this.pushUnique(this.segmentRead, relP);
     }
     if (relP && WRITE_TOOLS.has(name)) {
       this.pushUnique(this.filesWritten, relP);
-      this.pushUnique(this.segmentWritten, relP);
     }
   }
 

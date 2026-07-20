@@ -1,11 +1,11 @@
-// backends/reflect.ts — Pending skeletons, daily agent logs, incremental snapshots (FR-REFLECT-01/03).
+// backends/reflect.ts — Pending skeletons and daily agent logs (FR-REFLECT-01/02/03).
 
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { PENDING_DIR, SNAPSHOTS_DIR } from "../shared/defaults";
+import { PENDING_DIR } from "../shared/defaults";
 import { toIsoDay } from "../shared/dates";
-import type { SessionSegment, SessionTrackerSnapshot } from "./session-tracker";
+import type { SessionTrackerSnapshot } from "./session-tracker";
 
 export interface PendingReflect {
   path: string;
@@ -17,12 +17,20 @@ export interface DailyLogAppend {
   date: string;
   sessionHeader: string;
   sections: string;
+  blockKind?: "session" | "checkpoint";
 }
 
 export interface FinalizeReflectOptions {
   abDirectory: string;
   skeletonPath: string;
   skeletonContent: string;
+  sections: string;
+}
+
+export interface FinalizeCheckpointOptions {
+  abDirectory: string;
+  date: string;
+  checkpointTime: string;
   sections: string;
 }
 
@@ -75,25 +83,6 @@ export function formatSkeletonFrontmatter(snapshot: SessionTrackerSnapshot): str
   ].join("\n");
 }
 
-export function formatSegmentBody(segment: SessionSegment, encoded?: string): string {
-  const lines = [
-    `# Incremental snapshot — turns ${segment.startTurn}-${segment.endTurn}`,
-    "",
-    "## Files written",
-    segment.filesWritten.length ? segment.filesWritten.map((f) => `- ${f}`).join("\n") : "(none)",
-    "",
-    "## Files read",
-    segment.filesRead.length ? segment.filesRead.map((f) => `- ${f}`).join("\n") : "(none)",
-    "",
-    "## Tool calls",
-    formatToolCalls(segment.toolCalls).trimEnd(),
-  ];
-  if (encoded?.trim()) {
-    lines.push("", "## Encoding", encoded.trim());
-  }
-  return lines.join("\n") + "\n";
-}
-
 export function pendingSkeletonPath(abDirectory: string, sessionId: string): string {
   return join(abDirectory, PENDING_DIR, `${sessionId}.md`);
 }
@@ -109,42 +98,6 @@ export function savePendingSkeleton(abDirectory: string, snapshot: SessionTracke
 
 export function deletePendingSkeleton(pendingPath: string): void {
   if (existsSync(pendingPath)) rmSync(pendingPath);
-}
-
-export function snapshotPath(
-  abDirectory: string,
-  sessionId: string,
-  turn: number,
-): string {
-  const dir = join(abDirectory, SNAPSHOTS_DIR);
-  mkdirSync(dir, { recursive: true });
-  return join(dir, `${sessionId}_${turn}.md`);
-}
-
-export function saveIncrementalSnapshot(
-  abDirectory: string,
-  sessionId: string,
-  turn: number,
-  segment: SessionSegment,
-  encoded?: string,
-): string {
-  const path = snapshotPath(abDirectory, sessionId, turn);
-  writeFileSync(path, formatSegmentBody(segment, encoded), "utf8");
-  return path;
-}
-
-export function listSnapshots(abDirectory: string, sessionId: string): string[] {
-  const dir = join(abDirectory, SNAPSHOTS_DIR);
-  if (!existsSync(dir)) return [];
-  return readdirSync(dir)
-    .filter((name) => name.startsWith(`${sessionId}_`) && name.endsWith(".md"))
-    .sort();
-}
-
-export function cleanupSnapshots(abDirectory: string, sessionId: string): void {
-  for (const name of listSnapshots(abDirectory, sessionId)) {
-    rmSync(join(abDirectory, SNAPSHOTS_DIR, name));
-  }
 }
 
 export function parseFrontmatter(content: string): Record<string, string> {
@@ -207,7 +160,12 @@ export function appendDailyLog(abDirectory: string, append: DailyLogAppend, now 
   const logsDir = join(abDirectory, "logs");
   mkdirSync(logsDir, { recursive: true });
   const logPath = join(logsDir, `${append.date}.md`);
-  const sessionBlock = `## Session ${append.sessionHeader}\n\n${append.sections.trim()}\n`;
+  const blockKind = append.blockKind ?? "session";
+  const heading =
+    blockKind === "checkpoint"
+      ? `## Checkpoint ${append.sessionHeader}`
+      : `## Session ${append.sessionHeader}`;
+  const sessionBlock = `${heading}\n\n${append.sections.trim()}\n`;
 
   if (existsSync(logPath)) {
     const existing = readFileSync(logPath, "utf8");
@@ -246,14 +204,17 @@ export function finalizeReflectToDailyLog(options: FinalizeReflectOptions): stri
   return dailyPath;
 }
 
-/** Mark an incremental snapshot file with LLM encoding (internal, not agent daily log). */
-export function markSnapshotEncoded(snapshotPath: string, sections: string): void {
-  const content = readFileSync(snapshotPath, "utf8");
-  const encodingBlock = `## Encoding\n\n${sections.trim()}\n`;
-  const body = content.includes("## Encoding")
-    ? content.replace(/## Encoding[\s\S]*$/, encodingBlock)
-    : `${content.trimEnd()}\n\n${encodingBlock}`;
-  writeFileSync(snapshotPath, body, "utf8");
+/** Append checkpoint reflect output to the daily log and rebuild the index. */
+export function finalizeCheckpointToDailyLog(options: FinalizeCheckpointOptions): string {
+  const { abDirectory, date, checkpointTime, sections } = options;
+  const dailyPath = appendDailyLog(abDirectory, {
+    date,
+    sessionHeader: checkpointTime,
+    sections,
+    blockKind: "checkpoint",
+  });
+  rebuildLogsIndex(abDirectory);
+  return dailyPath;
 }
 
 export function rebuildLogsIndex(abDirectory: string): void {
@@ -304,10 +265,10 @@ function extractOneLinerSummary(content: string): string {
   return "(no summary)";
 }
 
-export function shouldRunIncrementalReflect(
+export function shouldRunCheckpointReflect(
   turnCount: number,
   every: number,
-  lastSnapshotTurn: number,
+  lastCheckpointTurn: number,
 ): boolean {
-  return every > 0 && turnCount > 0 && turnCount !== lastSnapshotTurn && turnCount % every === 0;
+  return every > 0 && turnCount > 0 && turnCount !== lastCheckpointTurn && turnCount % every === 0;
 }

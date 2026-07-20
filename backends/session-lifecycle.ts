@@ -2,23 +2,21 @@
 
 import type { AgentEvent } from "../shared/api";
 import { INCREMENTAL_REFLECT_EVERY } from "../shared/defaults";
+import { toIsoDay } from "../shared/dates";
 import { logEvent } from "./app-logger";
 import { commitAll } from "./git";
-import {
-  cleanupSnapshots,
-  listSnapshots,
-  saveIncrementalSnapshot,
-  savePendingSkeleton,
-  shouldRunIncrementalReflect,
-} from "./reflect";
-import { spawnReflectChild } from "./reflect-spawn";
+import { savePendingSkeleton, shouldRunCheckpointReflect } from "./reflect";
+import { spawnReflectChild, type SpawnReflectFn, type SpawnReflectOptions } from "./reflect-spawn";
 import { SessionTracker } from "./session-tracker";
+
+export type { SpawnReflectFn } from "./reflect-spawn";
 
 export interface SessionLifecycleOptions {
   abDirectory: string;
   sessionId: string;
   sessionFile?: string;
   incrementalEvery?: number;
+  spawnReflect?: SpawnReflectFn;
 }
 
 export class SessionLifecycle {
@@ -26,6 +24,7 @@ export class SessionLifecycle {
   private readonly abDirectory: string;
   private sessionFile: string | undefined;
   private readonly incrementalEvery: number;
+  private readonly spawnReflect: SpawnReflectFn;
   private turnDirty = false;
   private reflectInFlight = false;
   private eventChain: Promise<void> = Promise.resolve();
@@ -35,6 +34,7 @@ export class SessionLifecycle {
     this.sessionFile = options.sessionFile;
     this.tracker = new SessionTracker(options.sessionId);
     this.incrementalEvery = options.incrementalEvery ?? INCREMENTAL_REFLECT_EVERY;
+    this.spawnReflect = options.spawnReflect ?? spawnReflectChild;
   }
 
   setSessionFile(path: string): void {
@@ -61,7 +61,7 @@ export class SessionLifecycle {
     const flags = this.tracker.recordEvent(event, this.abDirectory);
 
     if (flags.compactionStart) {
-      await this.runIncrementalReflect("compaction");
+      await this.runCheckpointReflect("compaction");
     }
     if (flags.turnEnded) {
       logEvent(this.abDirectory, {
@@ -75,9 +75,6 @@ export class SessionLifecycle {
 
   async shutdown(): Promise<string | undefined> {
     const snapshot = this.tracker.toSnapshot();
-    snapshot.snapshots = listSnapshots(this.abDirectory, this.tracker.sessionId).map(
-      (name) => `.ab-app/snapshots/${name}`,
-    );
     const pendingPath = savePendingSkeleton(this.abDirectory, snapshot);
     logEvent(this.abDirectory, {
       event: "session_end",
@@ -85,9 +82,11 @@ export class SessionLifecycle {
       turns: snapshot.turnCount,
     });
     await commitAll(this.abDirectory, "ab: session end skeleton");
-    cleanupSnapshots(this.abDirectory, this.tracker.sessionId);
 
-    this.spawnReflect(pendingPath, "session-end");
+    this.requestReflect({
+      mode: "session-end",
+      logPath: pendingPath,
+    });
     return pendingPath;
   }
 
@@ -99,58 +98,48 @@ export class SessionLifecycle {
     }
 
     if (
-      shouldRunIncrementalReflect(
+      shouldRunCheckpointReflect(
         this.tracker.turnCount,
         this.incrementalEvery,
-        this.tracker.lastSnapshotTurn,
+        this.tracker.lastCheckpointTurn,
       )
     ) {
-      await this.runIncrementalReflect("turn-threshold");
+      await this.runCheckpointReflect("turn-threshold");
     }
   }
 
-  private async runIncrementalReflect(_reason: "compaction" | "turn-threshold"): Promise<void> {
+  private async runCheckpointReflect(_reason: "compaction" | "turn-threshold"): Promise<void> {
     if (this.reflectInFlight) return;
-    const segment = this.tracker.getSegment();
-    const hasActivity =
-      segment.filesRead.length > 0 ||
-      segment.filesWritten.length > 0 ||
-      segment.toolCalls.length > 0;
-    if (!hasActivity) return;
+    if (!this.tracker.hasActivitySinceCheckpoint()) return;
 
     this.reflectInFlight = true;
     try {
-      const path = saveIncrementalSnapshot(
-        this.abDirectory,
-        this.tracker.sessionId,
-        this.tracker.turnCount,
-        segment,
-      );
-      this.tracker.snapshots.push(path.replace(`${this.abDirectory}/`, ""));
-      this.tracker.resetSegment();
-      await commitAll(this.abDirectory, "ab: incremental reflect snapshot");
-
-      this.spawnReflect(path, "incremental");
+      this.tracker.recordCheckpoint();
+      const now = new Date();
+      this.requestReflect({
+        mode: "checkpoint",
+        logPath: "",
+        checkpointDate: toIsoDay(this.tracker.startTime),
+        checkpointTime: now.toISOString().slice(11, 16),
+      });
     } finally {
       this.reflectInFlight = false;
     }
   }
 
-  private spawnReflect(pendingPath: string, mode: "session-end" | "incremental"): void {
-    const forkedSessionFile = this.sessionFile ?? "";
-    if (mode === "session-end") {
+  private requestReflect(options: Omit<SpawnReflectOptions, "abDirectory" | "forkedSessionFile">): void {
+    if (options.mode === "session-end") {
       logEvent(this.abDirectory, {
         event: "reflect_spawned",
         session: this.tracker.sessionId,
-        mode,
-        pendingPath,
+        mode: options.mode,
+        pendingPath: options.logPath,
       });
     }
-    spawnReflectChild({
+    this.spawnReflect({
       abDirectory: this.abDirectory,
-      forkedSessionFile,
-      logPath: pendingPath,
-      mode,
+      forkedSessionFile: this.sessionFile ?? "",
+      ...options,
     });
   }
 }

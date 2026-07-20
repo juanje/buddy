@@ -47,7 +47,7 @@ export function defaultModelForProvider(provider: string): string | undefined {
   return recommendedModelFor(provider)?.id;
 }
 
-/** Fast-tier model id for incremental reflect and other lightweight tasks. */
+/** Fast-tier model id for checkpoint reflect and other lightweight tasks. */
 export function fastModelForProvider(provider: string): string | undefined {
   return modelChoicesFor(provider)?.find((c) => c.tier === "fast")?.id;
 }

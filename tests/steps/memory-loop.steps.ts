@@ -2,7 +2,7 @@
 
 import { After, Given, Then, When } from "@cucumber/cucumber";
 import assert from "node:assert/strict";
-import { existsSync, mkdtempSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { simpleGit } from "simple-git";
@@ -12,7 +12,7 @@ import { findPendingReflects, parseFrontmatter, savePendingSkeleton } from "../.
 import { runCrashRecoveryCatchUp } from "../../backends/reflect-recovery";
 import type { SpawnReflectOptions } from "../../backends/reflect-spawn";
 import { SessionTracker } from "../../backends/session-tracker";
-import { PENDING_DIR, SNAPSHOTS_DIR } from "../../shared/defaults";
+import { PENDING_DIR } from "../../shared/defaults";
 import type { SetupConfig } from "../../shared/api";
 import type { AbWorld } from "../support/world";
 
@@ -47,8 +47,8 @@ Given("the app is running with memory lifecycle enabled", function (this: Memory
   this.connect(this.abDir, { force: true });
 });
 
-Given("incremental reflect runs every {int} turns", function (this: MemoryWorld, n: number) {
-  this.connect(this.abDir, { incrementalEvery: n, force: true });
+Given("checkpoint reflect runs every {int} turns", function (this: MemoryWorld, n: number) {
+  this.connect(this.abDir, { incrementalEvery: n, force: true, trackSpawn: true });
 });
 
 Given("a pending reflect skeleton exists", function (this: MemoryWorld) {
@@ -120,16 +120,19 @@ Then("a pending reflect skeleton exists with status {string}", function (this: M
   assert.equal(parseFrontmatter(content).status, status);
 });
 
-Then("an incremental snapshot exists for turn {int}", function (this: MemoryWorld, turn: number) {
-  const dir = join(this.abDir!, SNAPSHOTS_DIR);
-  assert.ok(existsSync(dir), "snapshots dir should exist");
-  const file = readdirSync(dir).find((f) => f.endsWith(`_${turn}.md`));
-  assert.ok(file, `expected snapshot for turn ${turn}`);
+Then("a checkpoint reflect spawn was requested at turn {int}", function (this: MemoryWorld, turn: number) {
+  const calls = (this.spawnCalls ?? []).filter((call) => call.mode === "checkpoint");
+  assert.ok(calls.length > 0, "expected a checkpoint reflect spawn");
+  assert.equal(this.lifecycle?.tracker.turnCount, turn);
+  assert.equal(calls[0].logPath, "");
+  assert.ok(calls[0].checkpointDate);
+  assert.ok(calls[0].checkpointTime);
+  assert.equal(existsSync(join(this.abDir!, ".ab-app", "snapshots")), false);
 });
 
-Then("an incremental snapshot exists", function (this: MemoryWorld) {
-  const dir = join(this.abDir!, SNAPSHOTS_DIR);
-  assert.ok(existsSync(dir), "snapshots dir should exist");
-  const files = readdirSync(dir).filter((f) => f.endsWith(".md"));
-  assert.ok(files.length > 0, "expected at least one snapshot");
+Then("a checkpoint reflect spawn was requested", function (this: MemoryWorld) {
+  const calls = (this.spawnCalls ?? []).filter((call) => call.mode === "checkpoint");
+  assert.ok(calls.length > 0, "expected a checkpoint reflect spawn");
+  assert.equal(calls[0].logPath, "");
+  assert.equal(existsSync(join(this.abDir!, ".ab-app", "snapshots")), false);
 });

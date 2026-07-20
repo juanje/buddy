@@ -1,11 +1,12 @@
 // backends/reflect-child.ts — Background child process for session reflect (FR-REFLECT-02/03).
 // Spawned by the worker via child_process.fork(). Receives args via process.argv:
 //   [0] node, [1] script, [2] abDirectory, [3] forkedSessionFile, [4] logPath, [5] mode
+//   checkpoint mode also: [6] checkpointDate, [7] checkpointTime
 //
 // Modes:
 //   "session-end"   — full reflect → append to logs/YYYY-MM-DD.md
-//   "incremental"   — lightweight encoding on snapshot file
-//   "crash-catchup" — recover pending skeletons without forked session
+//   "checkpoint"    — lightweight reflect → append ## Checkpoint to daily log
+//   "crash-catchup" — recover pending skeleton without forked session
 
 import {
   createAgentSession,
@@ -27,8 +28,8 @@ import { alignHttpDispatcherWithPi } from "./pi-http-dispatcher";
 import { collectAssistantText } from "./pi-utils";
 import { defaultAuthPath } from "./provider-auth";
 import {
+  finalizeCheckpointToDailyLog,
   finalizeReflectToDailyLog,
-  markSnapshotEncoded,
   parseFrontmatter,
   rebuildLogsIndex,
 } from "./reflect";
@@ -56,20 +57,19 @@ Things left unresolved, pending, or to follow up on (or "None").
 ### System observations
 Skill, rule, concept, or structure candidates detected (or "None").
 
+If today's daily log already contains ## Checkpoint entries from this session, emphasize activity since the last checkpoint while still producing a complete session summary.
+
 Be concise. Capture substance, not mechanics. Write in English.`;
 
-const INCREMENTAL_PROMPT = `You are a memory encoding agent. Briefly encode this session segment:
-
-### Tasks
-Actions taken or discussed.
+const CHECKPOINT_PROMPT = `You are a memory encoding agent. Briefly encode the recent segment of this session before context compaction:
 
 ### Context
-What was happening at this point in the session.
+What was happening in this segment of the session.
 
 ### Notes
 Anything worth remembering from this segment.
 
-Be very concise — this is an incremental snapshot, not a full reflect.`;
+Be very concise — this is a checkpoint, not a full reflect. Write in English.`;
 
 function readAbProvider(abDirectory: string): string {
   const settingsPath = join(abDirectory, ".pi", "settings.json");
@@ -82,7 +82,7 @@ function readAbProvider(abDirectory: string): string {
   }
 }
 
-async function resolveIncrementalSessionOptions(abDirectory: string): Promise<{
+async function resolveFastModelOptions(abDirectory: string): Promise<{
   model?: Awaited<ReturnType<ModelRuntime["getModel"]>>;
   thinkingLevel: "minimal";
 }> {
@@ -114,6 +114,7 @@ async function acquireLockWithRetry(abDirectory: string): Promise<boolean> {
 }
 
 function sessionIdFromPath(abDirectory: string, targetPath: string): string {
+  if (!targetPath) return "checkpoint";
   const fm = parseFrontmatter(readFileSync(targetPath, "utf8"));
   if (fm.session_id) return fm.session_id;
   const base = targetPath.split("/").pop() ?? "";
@@ -125,11 +126,14 @@ async function runReflect(
   forkedSessionFile: string,
   targetPath: string,
   mode: string,
+  checkpointDate?: string,
+  checkpointTime?: string,
 ): Promise<void> {
   await alignHttpDispatcherWithPi();
 
-  const systemPrompt = mode === "incremental" ? INCREMENTAL_PROMPT : SESSION_END_PROMPT;
-  const sessionId = sessionIdFromPath(abDirectory, targetPath);
+  const isCheckpoint = mode === "checkpoint";
+  const systemPrompt = isCheckpoint ? CHECKPOINT_PROMPT : SESSION_END_PROMPT;
+  const sessionId = isCheckpoint ? "checkpoint" : sessionIdFromPath(abDirectory, targetPath);
 
   let sm: SessionManager;
   if (forkedSessionFile && existsSync(forkedSessionFile)) {
@@ -147,25 +151,26 @@ async function runReflect(
   });
   await resourceLoader.reload();
 
-  const incrementalOptions =
-    mode === "incremental" ? await resolveIncrementalSessionOptions(abDirectory) : {};
+  const fastModelOptions = isCheckpoint ? await resolveFastModelOptions(abDirectory) : {};
 
   const { session } = await createAgentSession({
     cwd: abDirectory,
     resourceLoader,
     sessionManager: sm,
     excludeTools: ["bash", "read", "write", "edit", "ls", "find", "grep"],
-    ...incrementalOptions,
+    ...fastModelOptions,
   });
 
   const events: AgentEvent[] = [];
   const unsub = session.subscribe((event) => events.push(event));
 
   try {
-    const skeleton = readFileSync(targetPath, "utf8");
+    const skeleton = targetPath ? readFileSync(targetPath, "utf8") : "";
     const userPrompt = mode === "crash-catchup"
       ? `Process this session skeleton into a reflect:\n\n${skeleton}`
-      : "Reflect on this session. What was discussed, decided, learned? What's open?";
+      : isCheckpoint
+        ? "Encode this session segment before compaction. What happened and what's worth keeping?"
+        : "Reflect on this session. What was discussed, decided, learned? What's open?";
     await session.prompt(userPrompt);
     const result = collectAssistantText(events);
 
@@ -180,8 +185,28 @@ async function runReflect(
         return;
       }
       try {
-        if (mode === "incremental") {
-          markSnapshotEncoded(targetPath, result);
+        if (isCheckpoint) {
+          if (!checkpointDate || !checkpointTime) {
+            logEvent(abDirectory, {
+              event: "reflect_skipped",
+              session: sessionId,
+              mode,
+              reason: "missing_checkpoint_metadata",
+            });
+            return;
+          }
+          const dailyPath = finalizeCheckpointToDailyLog({
+            abDirectory,
+            date: checkpointDate,
+            checkpointTime,
+            sections: result,
+          });
+          logEvent(abDirectory, {
+            event: "reflect_complete",
+            session: sessionId,
+            mode,
+            logPath: dailyPath,
+          });
         } else {
           const dailyPath = finalizeReflectToDailyLog({
             abDirectory,
@@ -224,14 +249,26 @@ async function runReflect(
 }
 
 async function main(): Promise<void> {
-  const [, , abDirectory, forkedSessionFile, logPath, mode] = process.argv;
-  if (!abDirectory || !logPath || !mode) {
+  const [, , abDirectory, forkedSessionFile, logPath, mode, checkpointDate, checkpointTime] =
+    process.argv;
+  if (!abDirectory || !mode) {
     console.error("[reflect-child] missing arguments");
+    process.exit(1);
+  }
+  if (mode !== "checkpoint" && !logPath) {
+    console.error("[reflect-child] missing logPath for mode", mode);
     process.exit(1);
   }
 
   try {
-    await runReflect(abDirectory, forkedSessionFile, logPath, mode);
+    await runReflect(
+      abDirectory,
+      forkedSessionFile,
+      logPath,
+      mode,
+      checkpointDate,
+      checkpointTime,
+    );
   } catch (err) {
     console.error("[reflect-child] error:", err);
     process.exit(1);

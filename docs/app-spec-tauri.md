@@ -752,11 +752,13 @@ Crash recovery (next app start):
 10. User can start chatting immediately — reflect runs in parallel
 ```
 
-**Incremental reflect (mid-session):** Every N messages (configurable, default 15)
+**Checkpoint reflect (mid-session):** Every N messages (configurable, default 15)
 or on `compaction_start`, the worker forks the current session and spawns a
-background child process. The LLM encodes the segment (cheaper model / lower
-thinking) and writes a snapshot file. The user's conversation is never
-interrupted. Session-end reflect incorporates the incremental snapshots.
+background child process with mode `checkpoint`. The LLM encodes the segment
+(cheaper model / lower thinking) and appends a `## Checkpoint HH:MM` block to
+`logs/YYYY-MM-DD.md`. The user's conversation is never interrupted. Session-end
+reflect produces the comprehensive `## Session HH:MM–HH:MM` entry (emphasizing
+activity since the last checkpoint when checkpoints exist).
 
 **Key design principle:** The app window closes in <100ms. All LLM work is
 in detached background processes. The skeleton is the crash-proof minimum;

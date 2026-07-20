@@ -272,31 +272,31 @@ platform-specific install instructions is shown and setup cannot continue.
 - **And** the next app start detects any remaining "reflect pending" skeletons and runs catch-up (same background process pattern)
 - **Note:** The LLM sees the FULL conversation in context (not a cold file list), producing meaningful reflect output comparable to what a human would capture.
 
-**FR-REFLECT-03 — Incremental mid-session reflect (forked, background)**
+**FR-REFLECT-03 — Checkpoint mid-session reflect (forked, background)**
 
 - **Given** a session has been running for N messages (configurable, default 15)
 - **Or given** Pi emits a `compaction_start` event (context window about to be compressed)
-- **When** the worker detects the threshold or the compaction event
-- **Then** the worker forks the current session state and spawns a background child process
-- **And** the child process runs a lightweight LLM reflect (encoding, not deep analysis) on the forked session context
-- **And** the snapshot is written to disk and committed without interrupting the user's conversation
-- **And** a cheaper model or lower thinking level is used
-- **And** the session-end reflect incorporates the incremental snapshots
-- **Note:** The compaction trigger is critical — Pi discards context during compaction. The fork happens BEFORE compaction so the reflect has access to what's about to be lost.
+- **When** the worker detects the threshold or the compaction event (and there has been activity since the last checkpoint)
+- **Then** the worker forks the current session file and spawns a background child process with mode `checkpoint`
+- **And** the child runs a lightweight LLM reflect on the forked session context (Context + Notes sections only)
+- **And** the child appends a `## Checkpoint HH:MM` block to `logs/YYYY-MM-DD.md` (session start date) using a fast-tier model
+- **And** the user's conversation is never interrupted
+- **And** the session-end reflect (FR-REFLECT-02) produces the comprehensive `## Session HH:MM–HH:MM` entry covering the full session, emphasizing activity since the last checkpoint when checkpoints exist
+- **Note:** Checkpoints are best-effort; only session-end writes a pending skeleton for crash recovery. The compaction trigger is critical — Pi discards context during compaction. The fork happens BEFORE compaction so the reflect has access to what's about to be lost.
 
 **Reflect architecture summary:**
 
 ```
 Normal shutdown:
   app (sync, <100ms): write skeleton → fork session file → spawn child → close
-  child (async):      open fork → LLM reflect → write log → commit → exit
+  child (async):      open fork → LLM reflect → append ## Session to daily log → commit → exit
 
 Mid-session (every N turns / pre-compaction):
-  worker (sync):      fork session file → spawn child → continue serving user
-  child (async):      open fork → LLM reflect → write snapshot → commit → exit
+  worker (sync):      fork session file → spawn child (checkpoint) → continue serving user
+  child (async):      open fork → lightweight LLM → append ## Checkpoint to daily log → commit → exit
 
 Crash recovery (next app start):
-  boot: detect reflect-pending without complete log → spawn child → same as above
+  boot: detect reflect-pending skeleton → spawn child → same as session-end (skeleton fallback if no fork)
 ```
 
 ### 3.5 Permission Layer (FR-PERM)

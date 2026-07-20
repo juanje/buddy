@@ -1,88 +1,86 @@
-// tests/unit/incremental-reflect.test.ts — FR-REFLECT-03 incremental snapshots.
+// tests/unit/incremental-reflect.test.ts — FR-REFLECT-03 checkpoint reflect.
 
-import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { saveIncrementalSnapshot } from "../../backends/reflect";
+import type { SpawnReflectOptions } from "../../backends/reflect-spawn";
 import { SessionLifecycle } from "../../backends/session-lifecycle";
 import { initTestGitRepo } from "../support/test-git";
 
-describe("SessionLifecycle incremental reflect", () => {
+describe("SessionLifecycle checkpoint reflect", () => {
   let dir: string;
+  const spawns: SpawnReflectOptions[] = [];
 
   afterEach(() => {
     if (dir) rmSync(dir, { recursive: true, force: true });
+    spawns.length = 0;
   });
 
-  it("writes snapshot on turn threshold", async () => {
-    dir = mkdtempSync(join(tmpdir(), "ab-incr-"));
-    await initTestGitRepo(dir);
-    const lifecycle = new SessionLifecycle({
+  function lifecycle(every: number): SessionLifecycle {
+    return new SessionLifecycle({
       abDirectory: dir,
       sessionId: "sess",
-      incrementalEvery: 2,
+      sessionFile: "/tmp/fake-session.jsonl",
+      incrementalEvery: every,
+      spawnReflect: (options) => {
+        spawns.push(options);
+        return 1;
+      },
     });
+  }
 
-    await lifecycle.handleEvent({
+  it("spawns checkpoint reflect on turn threshold", async () => {
+    dir = mkdtempSync(join(tmpdir(), "ab-checkpoint-"));
+    await initTestGitRepo(dir);
+    const lc = lifecycle(2);
+
+    await lc.handleEvent({
       type: "tool_execution_end",
       toolCall: { name: "write", args: { path: "user/inbox.md" } },
     });
-    await lifecycle.handleEvent({ type: "agent_end" });
-    expect(existsSync(join(dir, ".ab-app", "snapshots"))).toBe(false);
+    await lc.handleEvent({ type: "agent_end" });
+    expect(spawns).toHaveLength(0);
 
-    await lifecycle.handleEvent({
+    await lc.handleEvent({
       type: "tool_execution_end",
       toolCall: { name: "write", args: { path: "user/notes.md" } },
     });
-    await lifecycle.handleEvent({ type: "agent_end" });
+    await lc.handleEvent({ type: "agent_end" });
 
-    const snapDir = join(dir, ".ab-app", "snapshots");
-    expect(existsSync(snapDir)).toBe(true);
-    const file = readFileSync(join(snapDir, "sess_2.md"), "utf8");
-    expect(file).toContain("user/notes.md");
+    expect(spawns).toHaveLength(1);
+    expect(spawns[0].mode).toBe("checkpoint");
+    expect(spawns[0].logPath).toBe("");
+    expect(spawns[0].forkedSessionFile).toBe("/tmp/fake-session.jsonl");
+    expect(spawns[0].checkpointDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(spawns[0].checkpointTime).toMatch(/^\d{2}:\d{2}$/);
+    expect(lc.tracker.lastCheckpointTurn).toBe(2);
   });
 
-  it("writes snapshot on compaction_start", async () => {
+  it("spawns checkpoint reflect on compaction_start", async () => {
     dir = mkdtempSync(join(tmpdir(), "ab-compact-"));
     await initTestGitRepo(dir);
-    const lifecycle = new SessionLifecycle({
-      abDirectory: dir,
-      sessionId: "sess",
-      incrementalEvery: 99,
-    });
+    const lc = lifecycle(99);
 
-    await lifecycle.handleEvent({
+    await lc.handleEvent({
       type: "tool_execution_end",
       toolCall: { name: "write", args: { path: "user/inbox.md" } },
     });
-    await lifecycle.handleEvent({ type: "compaction_start" });
+    await lc.handleEvent({ type: "compaction_start" });
 
-    expect(existsSync(join(dir, ".ab-app", "snapshots", "sess_0.md"))).toBe(true);
+    expect(spawns).toHaveLength(1);
+    expect(spawns[0].mode).toBe("checkpoint");
   });
-});
 
-describe("saveIncrementalSnapshot", () => {
-  it("formats segment body", () => {
-    const dir = mkdtempSync(join(tmpdir(), "ab-snap-"));
-    const path = saveIncrementalSnapshot(
-      dir,
-      "sess",
-      5,
-      {
-        filesRead: [],
-        filesWritten: ["user/a.md"],
-        toolCalls: [],
-        startTurn: 1,
-        endTurn: 5,
-      },
-      "### Notes\nCaptured.",
-    );
-    const content = readFileSync(path, "utf8");
-    expect(content).toContain("turns 1-5");
-    expect(content).toContain("user/a.md");
-    expect(content).toContain("Captured.");
-    rmSync(dir, { recursive: true, force: true });
+  it("does not spawn checkpoint reflect without activity", async () => {
+    dir = mkdtempSync(join(tmpdir(), "ab-checkpoint-"));
+    await initTestGitRepo(dir);
+    const lc = lifecycle(2);
+
+    await lc.handleEvent({ type: "agent_end" });
+    await lc.handleEvent({ type: "agent_end" });
+
+    expect(spawns).toHaveLength(0);
   });
 });

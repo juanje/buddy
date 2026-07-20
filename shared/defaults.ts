@@ -7,8 +7,6 @@ export const CRASH_RECOVERY_MAX = 3;
 
 /** Internal reflect queue (not agent-visible). */
 export const PENDING_DIR = ".ab-app/pending";
-/** Incremental reflect snapshots (internal, not agent daily logs). */
-export const SNAPSHOTS_DIR = ".ab-app/snapshots";
 /** Forked Pi sessions for background reflect (internal). */
 export const REFLECT_SESSIONS_DIR = ".ab-app/reflect-sessions";
 /** App instrumentation logs (JSONL, machine-oriented). */
