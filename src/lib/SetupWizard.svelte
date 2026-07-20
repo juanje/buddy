@@ -48,15 +48,15 @@
     return unregister;
   });
 
-  async function createAb() {
-    try {
-      wizard.beginCreating();
-      onComplete?.();
-      await wizard.finishSetup();
-    } catch {
-      onSetupFailed?.();
-    }
+async function createAb() {
+  try {
+    wizard.beginCreating();
+    await wizard.finishSetup();
+    onComplete?.();
+  } catch {
+    onSetupFailed?.();
   }
+}
 
   async function importExistingAb() {
     try {
