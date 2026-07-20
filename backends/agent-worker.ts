@@ -31,6 +31,7 @@ import { logEvent } from "./app-logger";
 import { defaultAbLocation, validateLocation } from "./location";
 import { listModelsForProvider } from "./model-listing";
 import { OAuthService } from "./oauth-service";
+import { createHebbianTracker } from "./hebbian";
 import { createPermissionGate } from "./permissions";
 import { alignHttpDispatcherWithPi } from "./pi-http-dispatcher";
 import { checkPrerequisites } from "./prereqs";
@@ -147,9 +148,11 @@ async function main(): Promise<void> {
 
     const sessionId = randomUUID().slice(0, 8);
     logEvent(abDirectory, { event: "session_start", session: sessionId });
+    const hebbianTracker = createHebbianTracker(abDirectory);
     lifecycle = new SessionLifecycle({
       abDirectory,
       sessionId,
+      hebbianTracker,
     });
 
     sessionAllowedPaths = new Set<string>();
@@ -190,6 +193,15 @@ async function main(): Promise<void> {
       if (prior?.block) return prior;
       const blocked = await gate.check(ctx.toolCall.name, ctx.args);
       return blocked ?? prior;
+    };
+
+    const originalAfterToolCall = session.agent.afterToolCall;
+    session.agent.afterToolCall = async (ctx, signal) => {
+      if (ctx.toolCall.name === "read" && !ctx.isError) {
+        const path = (ctx.args as { path?: unknown }).path;
+        if (typeof path === "string") hebbianTracker.trackAccess(path);
+      }
+      return originalAfterToolCall?.(ctx, signal);
     };
 
     const sessionLike = asPiSessionLike(session);

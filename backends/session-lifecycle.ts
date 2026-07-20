@@ -3,8 +3,10 @@
 import type { AgentEvent } from "../shared/api";
 import { INCREMENTAL_REFLECT_EVERY } from "../shared/defaults";
 import { toIsoDay } from "../shared/dates";
+import { extractToolInfo } from "../shared/pi-events";
 import { logEvent } from "./app-logger";
 import { commitAll } from "./git";
+import { createHebbianTracker, type HebbianTracker } from "./hebbian";
 import { savePendingSkeleton, shouldRunCheckpointReflect } from "./reflect";
 import { spawnReflectChild, type SpawnReflectFn, type SpawnReflectOptions } from "./reflect-spawn";
 import { SessionTracker } from "./session-tracker";
@@ -17,10 +19,12 @@ export interface SessionLifecycleOptions {
   sessionFile?: string;
   incrementalEvery?: number;
   spawnReflect?: SpawnReflectFn;
+  hebbianTracker?: HebbianTracker;
 }
 
 export class SessionLifecycle {
   readonly tracker: SessionTracker;
+  readonly hebbianTracker: HebbianTracker;
   private readonly abDirectory: string;
   private sessionFile: string | undefined;
   private readonly incrementalEvery: number;
@@ -33,6 +37,7 @@ export class SessionLifecycle {
     this.abDirectory = options.abDirectory;
     this.sessionFile = options.sessionFile;
     this.tracker = new SessionTracker(options.sessionId);
+    this.hebbianTracker = options.hebbianTracker ?? createHebbianTracker(options.abDirectory);
     this.incrementalEvery = options.incrementalEvery ?? INCREMENTAL_REFLECT_EVERY;
     this.spawnReflect = options.spawnReflect ?? spawnReflectChild;
   }
@@ -53,9 +58,12 @@ export class SessionLifecycle {
 
   private async handleEventInner(event: AgentEvent): Promise<void> {
     if (event.type === "tool_execution_end") {
-      const info = event.toolCall as { name?: string } | undefined;
-      const name = info?.name ?? (event.toolName as string | undefined);
+      const info = extractToolInfo(event);
+      const name = info?.name;
       if (name === "write" || name === "edit") this.turnDirty = true;
+      if (name === "read" && info?.path && event.isError !== true) {
+        this.hebbianTracker.trackAccess(info.path);
+      }
     }
 
     const flags = this.tracker.recordEvent(event, this.abDirectory);
@@ -69,6 +77,7 @@ export class SessionLifecycle {
         session: this.tracker.sessionId,
         turn: this.tracker.turnCount,
       });
+      if (this.hebbianTracker.flush()) this.turnDirty = true;
       await this.onTurnEnd();
     }
   }
