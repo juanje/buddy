@@ -38,7 +38,7 @@ Frontend (Svelte, system webview)
 Node.js Worker (TypeScript)
     ├── Pi SDK: createAgentSession()
     ├── Permission layer (beforeToolCall hook)
-    ├── Hebbian tracker (Phase 2 — afterToolCall hook)
+    ├── Hebbian tracker (afterToolCall hook)
     ├── Heartbeat scheduler (Phase 2 — setInterval)
     └── Consolidation runner (Phase 2 — separate Pi session)
     │
@@ -53,7 +53,7 @@ AB File System (git repo)
 **Key patterns:**
 - `kkrpc` for frontend↔worker communication (type-safe, bidirectional)
 - `excludeTools: ["bash"]` — file operations only, no shell
-- Hook chaining on `beforeToolCall` for permissions (Hebbian hook chaining: Phase 2)
+- Hook chaining on `beforeToolCall` for permissions and `afterToolCall` for Hebbian tracking
 - `DefaultResourceLoader` with assembled system prompt at session start
 - Separate Pi session for maintenance (consolidation never touches live session)
 
@@ -504,10 +504,10 @@ Crash recovery (next app start):
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-HEBB-01 | Intercept read tool calls | 2 |
-| FR-HEBB-02 | Frontmatter update | 2 |
-| FR-HEBB-03 | Exclusions | 2 |
-| FR-HEBB-04 | Lazy commit | 2 |
+| FR-HEBB-01 | Intercept read tool calls | 2 ✓ |
+| FR-HEBB-02 | Frontmatter update | 2 ✓ |
+| FR-HEBB-03 | Exclusions | 2 ✓ |
+| FR-HEBB-04 | Lazy commit | 2 ✓ |
 
 **FR-HEBB-01 — Intercept reads**
 
@@ -970,7 +970,6 @@ AB remembers the conversation, knows their name, surfaces any pending reminders.
 **Explicitly excluded from Phase 1 and why:**
 - System tray (window close = quit; daemon is Phase 4)
 - Heartbeat/scheduler (no periodic checks; consolidation is Phase 2)
-- Hebbian tracking (Phase 2 — needs heartbeat for promotion cycles)
 - Tool call rendering as cards (shown as plain text; visual polish is Phase 3)
 - Thinking blocks as collapsible (shown inline; Phase 3)
 - Settings UI (configure via `.pi/settings.json` directly; Phase 3)

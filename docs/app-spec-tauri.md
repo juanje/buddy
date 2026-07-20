@@ -1378,7 +1378,7 @@ everything in Phase 0 plus the features needed for day-one value:
 - Tool call rendering (show as plain text, not cards)
 - Thinking blocks (show inline, not collapsible)
 - Model switching from UI (use Pi's default)
-- Hebbian tracking (Phase 2)
+- Hebbian tracking (**implemented** — `backends/hebbian.ts`)
 - Worker compiled as binary (use system Node.js for dev)
 
 ### Traceability: principles → spec phases
