@@ -840,6 +840,7 @@ Full specification in [specs/BRAIN-SPEC.md](BRAIN-SPEC.md).
 | NFR-SEC-04 | Hardcoded denylist paths are never accessible, regardless of user confirmation |
 | NFR-SEC-05 | API keys stored with restrictive file permissions (mode 600); no credentials inside the AB repo |
 | NFR-SEC-06 | The agent cannot modify its own model configuration (`.pi/settings.json` writes blocked) |
+| NFR-SEC-07 | AB uses its own credential store (`~/.ab-app/auth.json`), completely isolated from Pi CLI's `~/.pi/agent/auth.json`. Changing provider/model in one tool never affects the other. |
 
 ### 4.3 Reliability
 

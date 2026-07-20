@@ -171,13 +171,6 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
   async function pickLocation(path: string): Promise<void> {
     location.set(path);
     locationCheck.set(await worker.validateLocation(path));
-    const auth = await worker.detectExistingAuth();
-    detectedAuth.set(auth);
-    if (auth) {
-      provider.set(auth.provider);
-      model.set(auth.model);
-      authReady.set(true);
-    }
   }
 
   function selectDetectedProvider(piProvider: string): void {
@@ -353,12 +346,6 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
       let nextStep = STEP_ORDER[Math.min(index + 1, STEP_ORDER.length - 1)];
       if (nextStep === "prerequisites" && get(prereq)?.gitInstalled) {
         nextStep = "location";
-      }
-      const auth = get(detectedAuth);
-      if (nextStep === "provider" && auth) {
-        if (!auth.options || auth.options.length <= 1) {
-          nextStep = "creating";
-        }
       }
       return nextStep;
     });

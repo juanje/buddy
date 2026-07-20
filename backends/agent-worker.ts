@@ -27,7 +27,6 @@ import type {
 } from "../shared/api";
 import { imageMimeType, isImageFormat } from "../shared/ingest-formats";
 import { adoptAbInstance, createAbInstance } from "./create-ab";
-import { detectExistingAuth } from "./detect-auth";
 import { defaultAbLocation, validateLocation } from "./location";
 import { listModelsForProvider } from "./model-listing";
 import { OAuthService } from "./oauth-service";
@@ -36,7 +35,7 @@ import { alignHttpDispatcherWithPi } from "./pi-http-dispatcher";
 import { checkPrerequisites } from "./prereqs";
 import { runCrashRecoveryCatchUp } from "./reflect-recovery";
 import { assembleSystemPrompt } from "./prompt";
-import { configureProviderKey } from "./provider-auth";
+import { configureProviderKey, defaultAuthPath } from "./provider-auth";
 import {
   fromPiProviderId,
   toPiProviderId,
@@ -70,7 +69,7 @@ function asPiSessionLike(session: {
 async function main(): Promise<void> {
   await alignHttpDispatcherWithPi();
 
-  const authPath = join(getAgentDir(), "auth.json");
+  const authPath = defaultAuthPath();
   const modelRuntime = await ModelRuntime.create({ authPath });
 
   // FR-SETUP-01: on first run there is no AB directory to open a session in.
@@ -274,7 +273,7 @@ async function main(): Promise<void> {
         return { providers };
       },
       async detectExistingAuth() {
-        return detectExistingAuth();
+        return null;
       },
       async runSetup(config, mode = "create") {
         if (mode === "import") {

@@ -1,7 +1,6 @@
 <script lang="ts">
   // Setup wizard (FR-SETUP-01 routing target).
   import { onMount } from "svelte";
-  import { get } from "svelte/store";
   import { createSetupController } from "./setup-controller";
   import { gitInstallInstructions, t } from "./i18n";
   import LanguageStep from "./wizard/LanguageStep.svelte";
@@ -70,25 +69,7 @@
 
   async function validateAndMaybeContinue() {
     await wizard.pickLocation(locationInput);
-    const auth = get(wizard.detectedAuth);
-    if (auth && (!auth.options || auth.options.length <= 1)) {
-      wizard.next();
-      if (get(wizard.step) === "creating") {
-        onComplete?.();
-        try {
-          await wizard.finishSetup();
-        } catch {
-          onSetupFailed?.();
-        }
-      }
-    } else {
-      wizard.next();
-    }
-  }
-
-  function pickDetectedAndFinish(piProvider: string) {
-    wizard.selectDetectedProvider(piProvider);
-    createAb();
+    wizard.next();
   }
 
   function locationError(status: string): string | undefined {
@@ -160,7 +141,6 @@
       controller={wizard}
       bind:apiKeyInput
       bind:baseUrlInput
-      onDetectedSelect={(piProvider) => pickDetectedAndFinish(piProvider)}
     />
   {:else if $step === "model"}
     <ModelStep controller={wizard} onContinue={createAb} />

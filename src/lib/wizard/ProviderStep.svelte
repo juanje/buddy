@@ -7,12 +7,10 @@
     controller,
     apiKeyInput = $bindable(""),
     baseUrlInput = $bindable(""),
-    onDetectedSelect,
   }: {
     controller: SetupController;
     apiKeyInput?: string;
     baseUrlInput?: string;
-    onDetectedSelect?: (piProvider: string) => void;
   } = $props();
 
   const provider = $derived(controller.provider);
@@ -22,7 +20,6 @@
   const oauthLoggingIn = $derived(controller.oauthLoggingIn);
   const oauthError = $derived(controller.oauthError);
   const showApiKey = $derived(controller.showApiKey);
-  const detectedAuth = $derived(controller.detectedAuth);
 
   const PROVIDERS: Array<{ id: "openai" | "anthropic" | "google" | "custom"; recommended?: boolean }> =
     [
@@ -60,75 +57,59 @@
   }
 </script>
 
-{#if $detectedAuth?.options && $detectedAuth.options.length > 1}
-  <h2>{$t.providerTitle}</h2>
-  <p class="muted">{$t.providerHint}</p>
-  <div class="providers">
-    {#each $detectedAuth.options as option (option.piProvider)}
-      <button class="provider-detected" onclick={() => {
-        controller.selectDetectedProvider(option.piProvider);
-        onDetectedSelect?.(option.piProvider);
-      }}>
-        <strong>{option.piProvider}</strong>
-        <span class="tier">{option.model}</span>
-      </button>
-    {/each}
-  </div>
-{:else}
-  <h2>{$t.providerTitle}</h2>
-  <p class="muted">{$t.providerHint}</p>
-  <div class="providers">
-    {#each PROVIDERS as p (p.id)}
-      <button
-        class:selected={$provider === p.id}
-        onclick={() => controller.selectProvider(p.id)}
-      >
-        {providerLabel(p.id)}
-        {#if p.recommended}
-          <span class="badge">{$t.modelRecommended}</span>
-        {/if}
-      </button>
-    {/each}
-  </div>
+<h2>{$t.providerTitle}</h2>
+<p class="muted">{$t.providerHint}</p>
+<div class="providers">
+  {#each PROVIDERS as p (p.id)}
+    <button
+      class:selected={$provider === p.id}
+      onclick={() => controller.selectProvider(p.id)}
+    >
+      {providerLabel(p.id)}
+      {#if p.recommended}
+        <span class="badge">{$t.modelRecommended}</span>
+      {/if}
+    </button>
+  {/each}
+</div>
 
-  {#if $provider}
-    {#if supportsOAuth($provider) && !$showApiKey}
-      <button class="primary oauth" onclick={signInOAuth} disabled={$oauthLoggingIn}>
-        {$oauthLoggingIn ? $t.oauthWaiting : $t.oauthSignIn}
-      </button>
-      {#if $oauthError}
-        <p class="error">{$oauthError}</p>
-      {/if}
-      <button class="link" type="button" onclick={() => controller.setShowApiKey(true)}>
-        {$t.oauthUseApiKey}
-      </button>
-    {:else}
-      {#if supportsOAuth($provider)}
-        <button class="link" type="button" onclick={() => controller.setShowApiKey(false)}>
-          {$t.oauthBackToSignIn}
-        </button>
-      {/if}
-      {#if $needsBaseUrl}
-        <label class="field">
-          <span>{$t.baseUrlLabel}</span>
-          <input type="text" bind:value={baseUrlInput} spellcheck="false" />
-        </label>
-      {/if}
-      <label class="field">
-        <span>{$t.apiKeyLabel}</span>
-        <input type="password" bind:value={apiKeyInput} spellcheck="false" />
-      </label>
-      {#if $keyCheck && !$keyCheck.valid}
-        <p class="error">{$keyCheck.error}</p>
-      {/if}
-      <button
-        class="primary"
-        onclick={submitKeyAndContinue}
-        disabled={$validatingKey || apiKeyInput.length === 0}
-      >
-        {$validatingKey ? $t.apiKeyValidating : $t.apiKeyValidate}
+{#if $provider}
+  {#if supportsOAuth($provider) && !$showApiKey}
+    <button class="primary oauth" onclick={signInOAuth} disabled={$oauthLoggingIn}>
+      {$oauthLoggingIn ? $t.oauthWaiting : $t.oauthSignIn}
+    </button>
+    {#if $oauthError}
+      <p class="error">{$oauthError}</p>
+    {/if}
+    <button class="link" type="button" onclick={() => controller.setShowApiKey(true)}>
+      {$t.oauthUseApiKey}
+    </button>
+  {:else}
+    {#if supportsOAuth($provider)}
+      <button class="link" type="button" onclick={() => controller.setShowApiKey(false)}>
+        {$t.oauthBackToSignIn}
       </button>
     {/if}
+    {#if $needsBaseUrl}
+      <label class="field">
+        <span>{$t.baseUrlLabel}</span>
+        <input type="text" bind:value={baseUrlInput} spellcheck="false" />
+      </label>
+    {/if}
+    <label class="field">
+      <span>{$t.apiKeyLabel}</span>
+      <input type="password" bind:value={apiKeyInput} spellcheck="false" />
+    </label>
+    {#if $keyCheck && !$keyCheck.valid}
+      <p class="error">{$keyCheck.error}</p>
+    {/if}
+    <button
+      class="primary"
+      onclick={submitKeyAndContinue}
+      disabled={$validatingKey || apiKeyInput.length === 0}
+    >
+      {$validatingKey ? $t.apiKeyValidating : $t.apiKeyValidate}
+    </button>
   {/if}
 {/if}
 
@@ -155,19 +136,6 @@
   .providers button.selected {
     border-color: var(--accent, #4f46e5);
     outline: 2px solid var(--accent, #4f46e5);
-  }
-  .provider-detected {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    align-items: flex-start;
-    text-align: left;
-    padding: 12px 16px;
-    min-width: 180px;
-  }
-  .provider-detected .tier {
-    font-size: 12px;
-    color: var(--muted);
   }
   .field {
     display: flex;

@@ -61,6 +61,7 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 | FR-GIT-02 | Git invisible to user | done | 842635e |
 | FR-GIT-03 | Index rebuild on session end | done | 842635e |
 | NFR-I18N | Locale module (es + en) | done | rework-sprint |
+| NFR-AUTH-ISO | Auth isolation (AB ≠ Pi CLI) | done | (this commit) |
 
 ## Phase 3 — Chat polish (early)
 

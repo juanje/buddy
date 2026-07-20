@@ -4,9 +4,10 @@
 // model-listing endpoint: it authenticates the key without spending any
 // tokens (a chat call would). Tests always inject a fake probe — no network.
 //
-// Storage writes ~/.pi/agent/auth.json (Pi's own auth store, so the Pi SDK
-// picks the key up transparently) with 0600 permissions. The path is
-// injectable; tests only ever touch temp files.
+// Storage writes ~/.ab-app/auth.json (AB's own auth store, isolated from
+// Pi CLI's ~/.pi/agent/auth.json — NFR-AUTH-ISO). Entry shape matches
+// pi-ai's ApiKeyCredential so the SDK reads it natively when ModelRuntime
+// is pointed at this path. The path is injectable; tests only touch temp files.
 
 import { chmodSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
@@ -59,9 +60,9 @@ export const httpKeyProbe: KeyProbe = async (provider, apiKey, baseUrl) => {
   }
 };
 
-/** Default Pi auth store location. */
+/** AB's own auth store — separate from Pi CLI's ~/.pi/agent/auth.json (NFR-AUTH-ISO). */
 export function defaultAuthPath(): string {
-  return process.env.AB_AUTH_PATH ?? join(homedir(), ".pi", "agent", "auth.json");
+  return process.env.AB_AUTH_PATH ?? join(homedir(), ".ab-app", "auth.json");
 }
 
 /**
@@ -88,7 +89,7 @@ export async function configureProviderKey(
 }
 
 /**
- * Merge the key into Pi's auth.json. Entry shape matches pi-ai's
+ * Merge the key into AB's auth.json. Entry shape matches pi-ai's
  * ApiKeyCredential ({ type: "api_key", key }) so the SDK reads it natively.
  */
 function storeApiKey(authPath: string, piProvider: string, apiKey: string): void {
