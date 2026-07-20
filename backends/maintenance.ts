@@ -3,15 +3,12 @@
 import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { LOCK_STALE_MS } from "../shared/defaults";
+import { CATCH_UP_MAX, LOCK_STALE_MS } from "../shared/defaults";
 import { commitAll } from "./git";
 import {
-  appendDailyLog,
-  deletePendingSkeleton,
+  finalizeReflectToDailyLog,
   findPendingReflects,
-  parseFrontmatter,
   rebuildLogsIndex,
-  sessionHeaderFromSkeleton,
 } from "./reflect";
 
 export interface MaintenanceLock {
@@ -22,7 +19,7 @@ export interface MaintenanceLock {
 export interface CatchUpOptions {
   /** Max pending skeletons to process per run (default 3). */
   max?: number;
-  /** Inject LLM encoding for tests; real worker passes Pi maintenance session. */
+  /** Inject LLM encoding for tests; production uses reflect-child spawn. */
   encodeReflect?: (logPath: string, skeleton: string) => Promise<string>;
 }
 
@@ -85,19 +82,18 @@ export async function runCatchUpReflects(
 
   const processed: string[] = [];
   try {
-    const max = options.max ?? 3;
+    const max = options.max ?? CATCH_UP_MAX;
     for (const item of pending.slice(0, max)) {
       const skeleton = readFileSync(item.path, "utf8");
       const encoded = options.encodeReflect
         ? await options.encodeReflect(item.path, skeleton)
         : defaultReflectSummary(skeleton);
-      const fm = parseFrontmatter(skeleton);
-      appendDailyLog(abDirectory, {
-        date: fm.date ?? item.date,
-        sessionHeader: sessionHeaderFromSkeleton(skeleton),
+      finalizeReflectToDailyLog({
+        abDirectory,
+        skeletonPath: item.path,
+        skeletonContent: skeleton,
         sections: encoded,
       });
-      deletePendingSkeleton(item.path);
       processed.push(item.path);
     }
     rebuildLogsIndex(abDirectory);
@@ -109,8 +105,8 @@ export async function runCatchUpReflects(
 }
 
 function defaultReflectSummary(skeleton: string): string {
-  const hasWrites = skeleton.includes("## Files written") && !skeleton.includes("(none)");
-  const hasReads = skeleton.includes("## Files read") && !skeleton.match(/## Files read\n\(none\)/);
+  const hasWrites = /## Files written\r?\n(?!\(none\))/m.test(skeleton);
+  const hasReads = /## Files read\r?\n(?!\(none\))/m.test(skeleton);
   const lines = ["### Context", "Session activity captured in factual skeleton."];
   if (hasWrites) lines.push("- Agent wrote files during the session.");
   if (hasReads) lines.push("- Agent read context files during the session.");

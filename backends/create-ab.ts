@@ -43,6 +43,19 @@ ${about}
 `;
 }
 
+function writePiSettings(abDirectory: string, config: Pick<SetupConfig, "provider" | "model">): void {
+  const settingsPath = join(abDirectory, ".pi", "settings.json");
+  mkdirSync(dirname(settingsPath), { recursive: true });
+  writeFileSync(
+    settingsPath,
+    JSON.stringify(
+      { defaultProvider: toPiProviderId(config.provider), defaultModel: config.model },
+      null,
+      2,
+    ) + "\n",
+  );
+}
+
 /**
  * Create the AB home: copy templates (agent_brain/, user/, logs/, AGENTS.md),
  * write project Pi settings, init git with a single initial commit, and mark
@@ -61,15 +74,7 @@ export async function createAbInstance(options: CreateAbOptions): Promise<void> 
 
   // Project-scoped Pi settings: the session created in this cwd uses the
   // provider/model chosen in the wizard (FR-SETTINGS-01).
-  mkdirSync(join(ab, ".pi"), { recursive: true });
-  writeFileSync(
-    join(ab, ".pi", "settings.json"),
-    JSON.stringify(
-      { defaultProvider: toPiProviderId(config.provider), defaultModel: config.model },
-      null,
-      2,
-    ) + "\n",
-  );
+  writePiSettings(ab, config);
 
   // Git identity is repo-local: the target user may have no global git
   // config, and setup must never fail on that (NFR: git invisible).
@@ -95,16 +100,7 @@ export function adoptAbInstance(options: Pick<CreateAbOptions, "config" | "confi
   const settingsPath = join(config.abDirectory, ".pi", "settings.json");
 
   if (!existsSync(settingsPath)) {
-    mkdirSync(dirname(settingsPath), { recursive: true });
-    writeFileSync(
-      settingsPath,
-      JSON.stringify(
-        { defaultProvider: toPiProviderId(config.provider), defaultModel: config.model },
-        null,
-        2,
-      ) +
-        "\n",
-    );
+    writePiSettings(config.abDirectory, config);
   }
 
   markConfigured(config, configPath);

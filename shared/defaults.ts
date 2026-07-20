@@ -7,8 +7,16 @@ export const CRASH_RECOVERY_MAX = 3;
 
 /** Internal reflect queue (not agent-visible). */
 export const PENDING_DIR = ".ab-app/pending";
+/** Incremental reflect snapshots (internal, not agent daily logs). */
+export const SNAPSHOTS_DIR = ".ab-app/snapshots";
+/** Forked Pi sessions for background reflect (internal). */
+export const REFLECT_SESSIONS_DIR = ".ab-app/reflect-sessions";
 /** App instrumentation logs (JSONL, machine-oriented). */
 export const APP_LOGS_DIR = ".ab-app/logs";
+/** Max pending reflects processed per catch-up run. */
+export const CATCH_UP_MAX = 3;
+/** Fallback Pi provider when `.pi/settings.json` is missing or invalid. */
+export const DEFAULT_PI_PROVIDER = "anthropic";
 
 // --- Security constants (NFR-CONFIG-03) ---
 export const DENYLIST_HOME_DIRS = [".ssh", ".gnupg", ".aws"];

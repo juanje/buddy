@@ -12,7 +12,7 @@ import { findPendingReflects, parseFrontmatter, savePendingSkeleton } from "../.
 import { runCrashRecoveryCatchUp } from "../../backends/reflect-recovery";
 import type { SpawnReflectOptions } from "../../backends/reflect-spawn";
 import { SessionTracker } from "../../backends/session-tracker";
-import { PENDING_DIR } from "../../shared/defaults";
+import { PENDING_DIR, SNAPSHOTS_DIR } from "../../shared/defaults";
 import type { SetupConfig } from "../../shared/api";
 import type { AbWorld } from "../support/world";
 
@@ -127,14 +127,14 @@ Then("a pending reflect skeleton exists with status {string}", function (this: M
 });
 
 Then("an incremental snapshot exists for turn {int}", function (this: MemoryWorld, turn: number) {
-  const dir = join(this.abDir!, ".ab-app", "snapshots");
+  const dir = join(this.abDir!, SNAPSHOTS_DIR);
   assert.ok(existsSync(dir), "snapshots dir should exist");
   const file = readdirSync(dir).find((f) => f.endsWith(`_${turn}.md`));
   assert.ok(file, `expected snapshot for turn ${turn}`);
 });
 
 Then("an incremental snapshot exists", function (this: MemoryWorld) {
-  const dir = join(this.abDir!, ".ab-app", "snapshots");
+  const dir = join(this.abDir!, SNAPSHOTS_DIR);
   assert.ok(existsSync(dir), "snapshots dir should exist");
   const files = readdirSync(dir).filter((f) => f.endsWith(".md"));
   assert.ok(files.length > 0, "expected at least one snapshot");
