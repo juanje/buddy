@@ -1,15 +1,22 @@
-// backends/reflect.ts — Factual skeletons, log index, incremental snapshots (FR-REFLECT-01/03).
+// backends/reflect.ts — Pending skeletons, daily agent logs, incremental snapshots (FR-REFLECT-01/03).
 
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import type { SessionSegment, SessionTrackerSnapshot } from "./session-tracker";
+import { PENDING_DIR } from "../shared/defaults";
 import { toIsoDay } from "../shared/dates";
+import type { SessionSegment, SessionTrackerSnapshot } from "./session-tracker";
 
 export interface PendingReflect {
   path: string;
   date: string;
   sessionId: string;
+}
+
+export interface DailyLogAppend {
+  date: string;
+  sessionHeader: string;
+  sections: string;
 }
 
 function isoDay(date: Date): string {
@@ -68,17 +75,21 @@ export function formatSegmentBody(segment: SessionSegment, encoded?: string): st
   return lines.join("\n") + "\n";
 }
 
-export function sessionLogPath(abDirectory: string, snapshot: SessionTrackerSnapshot): string {
-  const date = isoDay(new Date(snapshot.endTime));
-  return join(abDirectory, "logs", `${date}_${snapshot.sessionId}.md`);
+export function pendingSkeletonPath(abDirectory: string, sessionId: string): string {
+  return join(abDirectory, PENDING_DIR, `${sessionId}.md`);
 }
 
-export function saveSessionSkeleton(abDirectory: string, snapshot: SessionTrackerSnapshot): string {
-  const logsDir = join(abDirectory, "logs");
-  mkdirSync(logsDir, { recursive: true });
-  const path = sessionLogPath(abDirectory, snapshot);
+/** Write internal reflect skeleton to `.ab-app/pending/{sessionId}.md`. */
+export function savePendingSkeleton(abDirectory: string, snapshot: SessionTrackerSnapshot): string {
+  const pendingDir = join(abDirectory, PENDING_DIR);
+  mkdirSync(pendingDir, { recursive: true });
+  const path = pendingSkeletonPath(abDirectory, snapshot.sessionId);
   writeFileSync(path, formatSkeletonFrontmatter(snapshot) + formatSkeletonBody(snapshot), "utf8");
   return path;
+}
+
+export function deletePendingSkeleton(pendingPath: string): void {
+  if (existsSync(pendingPath)) rmSync(pendingPath);
 }
 
 export function snapshotPath(
@@ -129,13 +140,26 @@ export function parseFrontmatter(content: string): Record<string, string> {
   return fields;
 }
 
+export function sessionHeaderFromSkeleton(content: string): string {
+  const fm = parseFrontmatter(content);
+  if (fm.start && fm.end) {
+    const start = fm.start.slice(11, 16);
+    const end = fm.end.slice(11, 16);
+    return `${start}–${end}`;
+  }
+  const bodyMatch = content.match(/\((\d{2}:\d{2})–(\d{2}:\d{2})/);
+  if (bodyMatch) return `${bodyMatch[1]}–${bodyMatch[2]}`;
+  return "session";
+}
+
+/** Scan `.ab-app/pending/` for skeletons awaiting reflect. */
 export function findPendingReflects(abDirectory: string): PendingReflect[] {
-  const logsDir = join(abDirectory, "logs");
-  if (!existsSync(logsDir)) return [];
+  const pendingDir = join(abDirectory, PENDING_DIR);
+  if (!existsSync(pendingDir)) return [];
   const pending: PendingReflect[] = [];
-  for (const name of readdirSync(logsDir)) {
-    if (!name.endsWith(".md") || name === "index.md") continue;
-    const path = join(logsDir, name);
+  for (const name of readdirSync(pendingDir)) {
+    if (!name.endsWith(".md")) continue;
+    const path = join(pendingDir, name);
     const fm = parseFrontmatter(readFileSync(path, "utf8"));
     if (fm.status !== "reflect-pending") continue;
     pending.push({
@@ -147,13 +171,55 @@ export function findPendingReflects(abDirectory: string): PendingReflect[] {
   return pending.sort((a, b) => a.date.localeCompare(b.date) || a.path.localeCompare(b.path));
 }
 
-export function markReflectComplete(logPath: string, sections: string): void {
-  const content = readFileSync(logPath, "utf8");
-  const updated = content.replace(/^status:\s*reflect-pending/m, "status: complete");
-  const body = updated.includes("## Reflect summary")
-    ? updated
-    : `${updated.trimEnd()}\n\n## Reflect summary\n\n${sections.trim()}\n`;
-  writeFileSync(logPath, body, "utf8");
+function updateLastUpdatedFrontmatter(content: string, now: Date): string {
+  const stamp = now.toISOString().slice(0, 16);
+  if (/^last_updated:/m.test(content)) {
+    return content.replace(/^last_updated:.*$/m, `last_updated: ${stamp}`);
+  }
+  return content.replace(/^---\r?\n([\s\S]*?)\r?\n---/, (_, body: string) => {
+    return `---\n${body.trimEnd()}\nlast_updated: ${stamp}\n---`;
+  });
+}
+
+/**
+ * Append reflect output to `logs/YYYY-MM-DD.md` in process-conversation-compatible format.
+ */
+export function appendDailyLog(abDirectory: string, append: DailyLogAppend, now = new Date()): string {
+  const logsDir = join(abDirectory, "logs");
+  mkdirSync(logsDir, { recursive: true });
+  const logPath = join(logsDir, `${append.date}.md`);
+  const sessionBlock = `## Session ${append.sessionHeader}\n\n${append.sections.trim()}\n`;
+
+  if (existsSync(logPath)) {
+    const existing = readFileSync(logPath, "utf8");
+    writeFileSync(logPath, updateLastUpdatedFrontmatter(existing, now).trimEnd() + "\n\n" + sessionBlock, "utf8");
+  } else {
+    const stamp = now.toISOString().slice(0, 16);
+    writeFileSync(
+      logPath,
+      [
+        "---",
+        `date: ${append.date}`,
+        `last_updated: ${stamp}`,
+        "---",
+        "",
+        `# Log — ${append.date}`,
+        "",
+        sessionBlock,
+      ].join("\n"),
+      "utf8",
+    );
+  }
+  return logPath;
+}
+
+/** Mark an incremental snapshot file with LLM encoding (internal, not agent daily log). */
+export function markSnapshotEncoded(snapshotPath: string, sections: string): void {
+  const content = readFileSync(snapshotPath, "utf8");
+  const body = content.includes("## Encoding")
+    ? content
+    : `${content.trimEnd()}\n\n## Encoding\n\n${sections.trim()}\n`;
+  writeFileSync(snapshotPath, body, "utf8");
 }
 
 export function rebuildLogsIndex(abDirectory: string): void {
@@ -168,7 +234,7 @@ export function rebuildLogsIndex(abDirectory: string): void {
     const fm = parseFrontmatter(content);
     const summary = extractOneLinerSummary(content);
     entries.push({
-      date: fm.date ?? name.slice(0, 10),
+      date: fm.date ?? name.replace(/\.md$/, ""),
       summary,
       file: name,
     });
@@ -178,7 +244,7 @@ export function rebuildLogsIndex(abDirectory: string): void {
   const lines = [
     "# Session logs",
     "",
-    "Per-session: `logs/YYYY-MM-DD_SESSIONID.md` — after daily consolidation: `logs/YYYY-MM-DD.md`.",
+    "Daily agent logs: `logs/YYYY-MM-DD.md` (process-conversation format).",
     "Derive path: `logs/{stem}.md` where stem is the first field of each entry.",
     "",
     ...entries.map((e) => {
@@ -191,13 +257,16 @@ export function rebuildLogsIndex(abDirectory: string): void {
 }
 
 function extractOneLinerSummary(content: string): string {
-  const contextMatch = content.match(/### Context\r?\n([\s\S]*?)(?=\r?\n###|\r?\n$)/);
+  const contextMatch = content.match(/### Context\r?\n([\s\S]*?)(?=\r?\n###|\r?\n##|\r?\n$)/);
   if (contextMatch) {
-    const firstLine = contextMatch[1].trim().split("\n")[0].trim();
-    if (firstLine.length > 0) return firstLine;
+    const firstLine = contextMatch[1].trim().split("\n").find((l) => l.trim().length > 0);
+    if (firstLine) return firstLine.replace(/^-\s*/, "").trim();
   }
-  const fm = parseFrontmatter(content);
-  if (fm.status === "reflect-pending") return "(reflect pending)";
+  const legacyContext = content.match(/## Context\r?\n([\s\S]*?)(?=\r?\n##|\r?\n$)/);
+  if (legacyContext) {
+    const firstLine = legacyContext[1].trim().split("\n").find((l) => l.trim().length > 0);
+    if (firstLine) return firstLine.replace(/^-\s*/, "").trim();
+  }
   return "(no summary)";
 }
 

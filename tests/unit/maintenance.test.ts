@@ -13,7 +13,7 @@ import {
   releaseLock,
   runCatchUpReflects,
 } from "../../backends/maintenance";
-import { saveSessionSkeleton } from "../../backends/reflect";
+import { findPendingReflects, savePendingSkeleton } from "../../backends/reflect";
 import { SessionTracker } from "../../backends/session-tracker";
 
 describe("maintenance lock", () => {
@@ -58,10 +58,11 @@ describe("runCatchUpReflects", () => {
     await git.addConfig("user.name", "AB");
     await git.addConfig("user.email", "ab@localhost");
     const tracker = new SessionTracker("sess1");
-    saveSessionSkeleton(dir, tracker.toSnapshot());
+    savePendingSkeleton(dir, tracker.toSnapshot());
     const processed = await runCatchUpReflects(dir, {
       encodeReflect: async () => "### Context\nEncoded.",
     });
     expect(processed).toHaveLength(1);
+    expect(findPendingReflects(dir)).toHaveLength(0);
   });
 });

@@ -5,7 +5,14 @@ import { join } from "node:path";
 
 import { LOCK_STALE_MS } from "../shared/defaults";
 import { commitAll } from "./git";
-import { findPendingReflects, markReflectComplete } from "./reflect";
+import {
+  appendDailyLog,
+  deletePendingSkeleton,
+  findPendingReflects,
+  parseFrontmatter,
+  rebuildLogsIndex,
+  sessionHeaderFromSkeleton,
+} from "./reflect";
 
 export interface MaintenanceLock {
   pid: number;
@@ -13,7 +20,7 @@ export interface MaintenanceLock {
 }
 
 export interface CatchUpOptions {
-  /** Max pending logs to process per run (default 3). */
+  /** Max pending skeletons to process per run (default 3). */
   max?: number;
   /** Inject LLM encoding for tests; real worker passes Pi maintenance session. */
   encodeReflect?: (logPath: string, skeleton: string) => Promise<string>;
@@ -84,9 +91,16 @@ export async function runCatchUpReflects(
       const encoded = options.encodeReflect
         ? await options.encodeReflect(item.path, skeleton)
         : defaultReflectSummary(skeleton);
-      markReflectComplete(item.path, encoded);
+      const fm = parseFrontmatter(skeleton);
+      appendDailyLog(abDirectory, {
+        date: fm.date ?? item.date,
+        sessionHeader: sessionHeaderFromSkeleton(skeleton),
+        sections: encoded,
+      });
+      deletePendingSkeleton(item.path);
       processed.push(item.path);
     }
+    rebuildLogsIndex(abDirectory);
     await commitAll(abDirectory, "ab: catch-up reflect");
   } finally {
     releaseLock(abDirectory);

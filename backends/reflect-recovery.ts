@@ -1,4 +1,4 @@
-// backends/reflect-recovery.ts — Crash recovery: spawn reflect children for pending logs.
+// backends/reflect-recovery.ts — Crash recovery: spawn reflect children for pending skeletons.
 
 import { CRASH_RECOVERY_MAX } from "../shared/defaults";
 import { findPendingReflects } from "./reflect";
@@ -7,7 +7,7 @@ import { spawnReflectChild, type SpawnReflectOptions } from "./reflect-spawn";
 export type SpawnReflectFn = (options: SpawnReflectOptions) => number | undefined;
 
 /**
- * Detect reflect-pending logs and spawn background children (non-blocking).
+ * Detect reflect-pending skeletons and spawn background children (non-blocking).
  * Returns spawn options for each child (test contract); PIDs when using the real spawner.
  */
 export function runCrashRecoveryCatchUp(

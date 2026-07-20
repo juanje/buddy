@@ -8,8 +8,8 @@ created:
 
 ## When to use
 
-Triggered by the user ("reflect", "save the conversation"), at the end of a work
-session, or by the app after a session ends.
+Triggered by the user ("reflect", "save the conversation"), when you want to
+capture something important mid-session, or by the app after a session ends.
 
 ## Procedure
 
@@ -27,7 +27,20 @@ Read the current or most recent conversation. Identify:
 
 Open `logs/YYYY-MM-DD.md` (today's date). If it exists, append new content
 under the existing sections (avoid duplicating information already logged earlier
-in the day). If it doesn't exist, create it with this structure:
+in the day). When appending a **new session** on a day that already has a log,
+start with a session header so multiple sessions are distinguishable:
+
+```markdown
+## Session HH:MM–HH:MM
+
+### Decisions
+- ...
+
+### Tasks captured
+- ...
+```
+
+If the file doesn't exist, create it with this structure:
 
 ```markdown
 ---

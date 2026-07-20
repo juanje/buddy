@@ -9,9 +9,8 @@ Feature: Session end skeleton
     Given an initialized AB git repository
     And the app is running with memory lifecycle enabled
 
-  Scenario: Shutdown writes a reflect-pending session log
+  Scenario: Shutdown writes a reflect-pending skeleton
     When the agent writes file "user/inbox.md"
     And the agent turn ends
     And the app shuts down
-    Then a session log exists with status "reflect-pending"
-    And the session logs index lists the session
+    Then a pending reflect skeleton exists with status "reflect-pending"

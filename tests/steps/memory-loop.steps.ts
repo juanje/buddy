@@ -8,10 +8,11 @@ import { dirname, join } from "node:path";
 import { simpleGit } from "simple-git";
 
 import { createAbInstance, defaultTemplatesDir } from "../../backends/create-ab";
-import { findPendingReflects, parseFrontmatter, saveSessionSkeleton } from "../../backends/reflect";
+import { findPendingReflects, parseFrontmatter, savePendingSkeleton } from "../../backends/reflect";
 import { runCrashRecoveryCatchUp } from "../../backends/reflect-recovery";
 import type { SpawnReflectOptions } from "../../backends/reflect-spawn";
 import { SessionTracker } from "../../backends/session-tracker";
+import { PENDING_DIR } from "../../shared/defaults";
 import type { SetupConfig } from "../../shared/api";
 import type { AbWorld } from "../support/world";
 
@@ -25,10 +26,10 @@ After(function (this: MemoryWorld) {
   if (this.memoryTmpDir) rmSync(this.memoryTmpDir, { recursive: true, force: true });
 });
 
-function sessionLogFiles(abDir: string): string[] {
-  const logsDir = join(abDir, "logs");
-  if (!existsSync(logsDir)) return [];
-  return readdirSync(logsDir).filter((f) => f.endsWith(".md") && f !== "index.md");
+function pendingSkeletonFiles(abDir: string): string[] {
+  const pendingDir = join(abDir, PENDING_DIR);
+  if (!existsSync(pendingDir)) return [];
+  return readdirSync(pendingDir).filter((f) => f.endsWith(".md"));
 }
 
 Given("an initialized AB git repository", async function (this: MemoryWorld) {
@@ -56,10 +57,10 @@ Given("incremental reflect runs every {int} turns", function (this: MemoryWorld,
   this.connect(this.abDir, { incrementalEvery: n, force: true });
 });
 
-Given("a pending session log exists", function (this: MemoryWorld) {
+Given("a pending reflect skeleton exists", function (this: MemoryWorld) {
   const tracker = new SessionTracker("pending-1");
   tracker.filesWritten.push("user/inbox.md");
-  saveSessionSkeleton(this.abDir!, tracker.toSnapshot());
+  savePendingSkeleton(this.abDir!, tracker.toSnapshot());
 });
 
 When("the agent writes file {string}", async function (this: MemoryWorld, relPath: string) {
@@ -89,15 +90,16 @@ When("crash recovery runs at boot", function (this: MemoryWorld) {
 
 Then("pending reflects are detected", function (this: MemoryWorld) {
   const pending = findPendingReflects(this.abDir!);
-  assert.ok(pending.length > 0, "expected at least one reflect-pending log");
+  assert.ok(pending.length > 0, "expected at least one reflect-pending skeleton");
 });
 
-Then("a reflect child spawn is requested for each pending log", function (this: MemoryWorld) {
+Then("a reflect child spawn is requested for each pending skeleton", function (this: MemoryWorld) {
   const pending = findPendingReflects(this.abDir!);
   assert.equal(this.spawnCalls?.length ?? 0, pending.length);
   for (const call of this.spawnCalls ?? []) {
     assert.equal(call.mode, "crash-catchup");
     assert.equal(call.abDirectory, this.abDir);
+    assert.ok(call.logPath.includes(PENDING_DIR));
     assert.ok(call.logPath.endsWith(".md"));
   }
 });
@@ -117,30 +119,11 @@ Then("the latest commit message starts with {string}", async function (this: Mem
   assert.ok(log.latest?.message.startsWith(prefix), log.latest?.message ?? "no commit");
 });
 
-Then("a session log exists with status {string}", function (this: MemoryWorld, status: string) {
-  const files = sessionLogFiles(this.abDir!);
-  assert.ok(files.length > 0, "expected a session log file");
-  const content = readFileSync(join(this.abDir!, "logs", files[0]), "utf8");
+Then("a pending reflect skeleton exists with status {string}", function (this: MemoryWorld, status: string) {
+  const files = pendingSkeletonFiles(this.abDir!);
+  assert.ok(files.length > 0, "expected a pending reflect skeleton");
+  const content = readFileSync(join(this.abDir!, PENDING_DIR, files[0]), "utf8");
   assert.equal(parseFrontmatter(content).status, status);
-});
-
-Then("the session logs index lists the session", function (this: MemoryWorld) {
-  const index = readFileSync(join(this.abDir!, "logs", "index.md"), "utf8");
-  assert.match(index, /2026-|reflect pending|no summary/);
-});
-
-Then("the session log status is {string}", function (this: MemoryWorld, status: string) {
-  const file = sessionLogFiles(this.abDir!).find((f) => f.includes("pending"));
-  assert.ok(file, "pending session log not found");
-  const content = readFileSync(join(this.abDir!, "logs", file!), "utf8");
-  assert.equal(parseFrontmatter(content).status, status);
-});
-
-Then("the session log contains {string}", function (this: MemoryWorld, text: string) {
-  const file = sessionLogFiles(this.abDir!).find((f) => f.includes("pending"));
-  assert.ok(file, "pending session log not found");
-  const content = readFileSync(join(this.abDir!, "logs", file!), "utf8");
-  assert.match(content, new RegExp(text));
 });
 
 Then("an incremental snapshot exists for turn {int}", function (this: MemoryWorld, turn: number) {

@@ -27,6 +27,7 @@ import type {
 } from "../shared/api";
 import { imageMimeType, isImageFormat } from "../shared/ingest-formats";
 import { adoptAbInstance, createAbInstance } from "./create-ab";
+import { logEvent } from "./app-logger";
 import { defaultAbLocation, validateLocation } from "./location";
 import { listModelsForProvider } from "./model-listing";
 import { OAuthService } from "./oauth-service";
@@ -145,6 +146,7 @@ async function main(): Promise<void> {
     }
 
     const sessionId = randomUUID().slice(0, 8);
+    logEvent(abDirectory, { event: "session_start", session: sessionId });
     lifecycle = new SessionLifecycle({
       abDirectory,
       sessionId,

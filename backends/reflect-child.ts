@@ -3,9 +3,9 @@
 //   [0] node, [1] script, [2] abDirectory, [3] forkedSessionFile, [4] logPath, [5] mode
 //
 // Modes:
-//   "session-end"   — full reflect (Decisions, Lessons, Context, Open threads)
-//   "incremental"   — lightweight encoding (Tasks, Context, Notes)
-//   "crash-catchup" — recover pending reflects from skeleton (fallback)
+//   "session-end"   — full reflect → append to logs/YYYY-MM-DD.md
+//   "incremental"   — lightweight encoding on snapshot file
+//   "crash-catchup" — recover pending skeletons without forked session
 
 import {
   createAgentSession,
@@ -19,12 +19,20 @@ import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { AgentEvent } from "../shared/api";
 import { fastModelForProvider } from "../src/lib/model-catalog";
+import { logEvent } from "./app-logger";
 import { commitAll } from "./git";
 import { acquireLock, releaseLock } from "./maintenance";
 import { alignHttpDispatcherWithPi } from "./pi-http-dispatcher";
 import { collectAssistantText } from "./pi-utils";
 import { defaultAuthPath } from "./provider-auth";
-import { markReflectComplete, rebuildLogsIndex } from "./reflect";
+import {
+  appendDailyLog,
+  deletePendingSkeleton,
+  markSnapshotEncoded,
+  parseFrontmatter,
+  rebuildLogsIndex,
+  sessionHeaderFromSkeleton,
+} from "./reflect";
 
 const SESSION_END_PROMPT = `You are a memory consolidation agent. Analyze this session and produce a structured reflect with these sections:
 
@@ -97,15 +105,23 @@ async function acquireLockWithRetry(abDirectory: string): Promise<boolean> {
   return false;
 }
 
+function sessionIdFromPath(abDirectory: string, targetPath: string): string {
+  const fm = parseFrontmatter(readFileSync(targetPath, "utf8"));
+  if (fm.session_id) return fm.session_id;
+  const base = targetPath.split("/").pop() ?? "";
+  return base.replace(/\.md$/, "");
+}
+
 async function runReflect(
   abDirectory: string,
   forkedSessionFile: string,
-  logPath: string,
+  targetPath: string,
   mode: string,
 ): Promise<void> {
   await alignHttpDispatcherWithPi();
 
   const systemPrompt = mode === "incremental" ? INCREMENTAL_PROMPT : SESSION_END_PROMPT;
+  const sessionId = sessionIdFromPath(abDirectory, targetPath);
 
   let sm: SessionManager;
   if (forkedSessionFile && existsSync(forkedSessionFile)) {
@@ -138,8 +154,9 @@ async function runReflect(
   const unsub = session.subscribe((event) => events.push(event));
 
   try {
+    const skeleton = readFileSync(targetPath, "utf8");
     const userPrompt = mode === "crash-catchup"
-      ? `Process this session skeleton into a reflect:\n\n${readFileSync(logPath, "utf8")}`
+      ? `Process this session skeleton into a reflect:\n\n${skeleton}`
       : "Reflect on this session. What was discussed, decided, learned? What's open?";
     await session.prompt(userPrompt);
     const result = collectAssistantText(events);
@@ -150,13 +167,38 @@ async function runReflect(
         return;
       }
       try {
-        markReflectComplete(logPath, result);
-        rebuildLogsIndex(abDirectory);
+        if (mode === "incremental") {
+          markSnapshotEncoded(targetPath, result);
+        } else {
+          const fm = parseFrontmatter(skeleton);
+          const date = fm.date ?? new Date().toISOString().slice(0, 10);
+          const dailyPath = appendDailyLog(abDirectory, {
+            date,
+            sessionHeader: sessionHeaderFromSkeleton(skeleton),
+            sections: result,
+          });
+          deletePendingSkeleton(targetPath);
+          rebuildLogsIndex(abDirectory);
+          logEvent(abDirectory, {
+            event: "reflect_complete",
+            session: sessionId,
+            mode,
+            logPath: dailyPath,
+          });
+        }
         await commitAll(abDirectory, "ab: session reflect");
       } finally {
         releaseLock(abDirectory);
       }
     }
+  } catch (err) {
+    logEvent(abDirectory, {
+      event: "reflect_error",
+      session: sessionId,
+      mode,
+      message: err instanceof Error ? err.message : String(err),
+    });
+    throw err;
   } finally {
     unsub();
     session.dispose();

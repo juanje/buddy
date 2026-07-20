@@ -2,13 +2,13 @@
 
 import type { AgentEvent } from "../shared/api";
 import { INCREMENTAL_REFLECT_EVERY } from "../shared/defaults";
+import { logEvent } from "./app-logger";
 import { commitAll } from "./git";
 import {
   cleanupSnapshots,
   listSnapshots,
-  rebuildLogsIndex,
   saveIncrementalSnapshot,
-  saveSessionSkeleton,
+  savePendingSkeleton,
   shouldRunIncrementalReflect,
 } from "./reflect";
 import { spawnReflectChild } from "./reflect-spawn";
@@ -64,6 +64,11 @@ export class SessionLifecycle {
       await this.runIncrementalReflect("compaction");
     }
     if (flags.turnEnded) {
+      logEvent(this.abDirectory, {
+        event: "turn_end",
+        session: this.tracker.sessionId,
+        turn: this.tracker.turnCount,
+      });
       await this.onTurnEnd();
     }
   }
@@ -73,13 +78,17 @@ export class SessionLifecycle {
     snapshot.snapshots = listSnapshots(this.abDirectory, this.tracker.sessionId).map(
       (name) => `.ab-app/snapshots/${name}`,
     );
-    const logPath = saveSessionSkeleton(this.abDirectory, snapshot);
-    rebuildLogsIndex(this.abDirectory);
+    const pendingPath = savePendingSkeleton(this.abDirectory, snapshot);
+    logEvent(this.abDirectory, {
+      event: "session_end",
+      session: this.tracker.sessionId,
+      turns: snapshot.turnCount,
+    });
     await commitAll(this.abDirectory, "ab: session end skeleton");
     cleanupSnapshots(this.abDirectory, this.tracker.sessionId);
 
-    this.spawnReflect(logPath, "session-end");
-    return logPath;
+    this.spawnReflect(pendingPath, "session-end");
+    return pendingPath;
   }
 
   private async onTurnEnd(): Promise<void> {
@@ -127,12 +136,20 @@ export class SessionLifecycle {
     }
   }
 
-  private spawnReflect(logPath: string, mode: "session-end" | "incremental"): void {
+  private spawnReflect(pendingPath: string, mode: "session-end" | "incremental"): void {
     const forkedSessionFile = this.sessionFile ?? "";
+    if (mode === "session-end") {
+      logEvent(this.abDirectory, {
+        event: "reflect_spawned",
+        session: this.tracker.sessionId,
+        mode,
+        pendingPath,
+      });
+    }
     spawnReflectChild({
       abDirectory: this.abDirectory,
       forkedSessionFile,
-      logPath,
+      logPath: pendingPath,
       mode,
     });
   }

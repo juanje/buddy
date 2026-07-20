@@ -13,6 +13,7 @@ You operate inside the AB app. The app handles:
 - Scheduling (consolidation runs when due — follow the procedure when invoked)
 - Date and time (always provided in your context — use it directly)
 - Directory creation (if you write to a path whose directory doesn't exist yet, the app creates it automatically — just write the file)
+- Session logging on shutdown (app reflect appends to `logs/YYYY-MM-DD.md` in a format compatible with `process-conversation`)
 
 Your tools: **read, write, edit, ls, find, grep**. No bash, no shell commands.
 If you need something beyond file operations, tell the user you can't do it.
@@ -96,7 +97,7 @@ New directories inside `agent_brain/` or `user/` are created as needed. Add them
 
 Read the full skill file ONLY when the trigger matches. Don't read skills preemptively.
 
-- [process-conversation](agent_brain/skills/process-conversation.md) — Logs the conversation and detects learning observations. Use **only** when the user explicitly asks ("reflect", "save the conversation"). The app handles session logging automatically on shutdown — the agent must never create `logs/` files unprompted.
+- [process-conversation](agent_brain/skills/process-conversation.md) — Logs the conversation and detects learning observations. Use on "reflect", "save the conversation", or when you want to capture something important mid-session. The app also logs each session automatically on shutdown — the formats are compatible.
 - [triage-inbox](agent_brain/skills/triage-inbox.md) — Daily inbox triage following GTD. Use on "triage", "process inbox", "triage my inbox", "what should I work on?", or during consolidation.
 - [consolidation](agent_brain/skills/consolidation.md) — Depth-parameterized maintenance (daily, weekly, monthly synthesis). Use when the app invokes a consolidation cycle. *(Ships in a later iteration — follow inline instructions if the file is not present yet.)*
 
@@ -114,4 +115,3 @@ Read the full skill file ONLY when the trigger matches. Don't read skills preemp
 10. **Logs and memory files are context, not changelogs.** Don't annotate corrections, edit history, or "was X, now Y" notes in `logs/`, `user/`, or `agent_brain/` files. If something was wrong, fix it cleanly. Track errors and their causes in `agent_brain/observations.md` — that's where the system learns from mistakes.
 11. **Don't edit system-level structures during normal sessions** — AGENTS.md rules, skill procedures, and identity files change through maintenance cycles or explicit user requests, not ad-hoc edits. Propose changes instead. **Exception:** factual updates to Active context → Right now (changed dates, flipped statuses, scheduling shifts) are allowed mid-session when reality changes — these aren't structural edits, they're reconciliation with reality. Confirm briefly with the user before patching.
 12. **Execute skills silently.** When a skill has internal steps (fetch, read, process), do the work and present the result — don't narrate each step to the user ("Step 1: fetching...", "Step 2: reading..."). The user invokes a skill for its output, not its play-by-play.
-13. **Never write to `logs/` during a conversation.** Session logging is handled automatically by the app on shutdown. Only write to `logs/` when explicitly running the `process-conversation` skill at the user's request.
