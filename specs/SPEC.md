@@ -242,7 +242,7 @@ platform-specific install instructions is shown and setup cannot continue.
 - **When** the shutdown sequence runs
 - **Then** a factual skeleton is extracted from session events (deterministic, no LLM)
 - **And** the skeleton is saved and the session is marked "reflect pending"
-- **And** `logs/index.md` is rebuilt from per-session frontmatter (code, no LLM)
+- **And** `logs/index.md` is rebuilt from daily log frontmatter (code, no LLM)
 
 ### 3.4 Reflect (FR-REFLECT)
 
@@ -268,9 +268,9 @@ platform-specific install instructions is shown and setup cannot continue.
 - **Then** the reflect child forks the live session via `SessionManager.forkFrom(sessionFile, abDirectory, forkDir)` — creating a new JSONL with full conversation context in `.ab-app/reflect-sessions/`
 - **And** a background `child_process.fork()` is spawned to run the LLM reflect independently of the app window
 - **And** the app window closes immediately (<100ms total shutdown time)
-- **And** the background process: opens the forked session → prompts for reflect (Decisions, Lessons, Context, Open threads) → writes the session log → commits → exits
-- **And** if the background process fails, the factual skeleton (FR-REFLECT-01) remains as a pending fallback
-- **And** the next app start detects any remaining "reflect pending" logs and runs catch-up (same background process pattern)
+- **And** the background process: opens the forked session → prompts for reflect (Decisions, Lessons, Context, Open threads, Tasks captured, Ideas, System observations) → appends a `## Session HH:MM–HH:MM` block to `logs/YYYY-MM-DD.md` (session start date, local calendar day) → deletes the pending skeleton in `.ab-app/pending/` → rebuilds `logs/index.md` → commits → exits
+- **And** if the background process fails, the factual skeleton (FR-REFLECT-01) remains in `.ab-app/pending/` as a pending fallback
+- **And** the next app start detects any remaining "reflect pending" skeletons and runs catch-up (same background process pattern)
 - **Note:** The LLM sees the FULL conversation in context (not a cold file list), producing meaningful reflect output comparable to what a human would capture.
 
 **FR-REFLECT-03 — Incremental mid-session reflect (forked, background)**
@@ -455,11 +455,11 @@ Crash recovery (next app start):
 
 | Depth | Name | Trigger | Input | Output |
 |-------|------|---------|-------|--------|
-| 1 | Daily synthesis | N sessions since last depth-1 (default 3) | Per-session logs from the day | Single `logs/YYYY-MM-DD.md` with aggregated Decisions, Lessons, Context, Open threads. Per-session files move to `logs/archive/YYYY-MM/`. |
+| 1 | Daily synthesis | N sessions since last depth-1 (default 3) | Daily log (`logs/YYYY-MM-DD.md`) with raw session blocks | Day summary + journal + inbox triage + knowledge extraction. No file merge needed — daily log already exists. |
 | 2 | Weekly calibration | N depth-1 runs since last depth-2 (default 5) | Daily logs from the week | Pattern extraction, observation updates, active-context reconciliation |
 | 3 | Monthly pruning | N depth-2 runs since last depth-3 (default 3) | Weekly summaries + knowledge files | Stale observation cleanup, idea/concept promotion/demotion, archive candidates |
 
-**Why per-session files consolidate into daily:** Per-session files avoid merge conflicts on multi-device sync (each session writes a unique filename). Once sessions are no longer "hot" (same day, no sync risk), they should be one file per day for efficient agent context loading. The agent reads `logs/YYYY-MM-DD.md` to know what happened that day — not N separate session fragments.
+**Why daily-append:** Reflect writes session blocks directly to `logs/YYYY-MM-DD.md` at session end (one file per calendar day, multiple `## Session` blocks). Consolidation enriches that file — it does not merge separate session files. `logs/archive/YYYY-MM/` holds **old daily files** after log rotation (28+ daily logs in root), not per-session cleanup.
 
 **FR-CONSOL-01 — Usage-based triggers**
 
@@ -582,7 +582,7 @@ Crash recovery (next app start):
 
 - **Given** a session ends
 - **When** the shutdown sequence runs
-- **Then** `logs/index.md` is rebuilt from per-session file frontmatter
+- **Then** `logs/index.md` is rebuilt from daily log frontmatter
 - **And** the rebuild is deterministic (code, no LLM)
 
 ### 3.12 Settings / Configuration (FR-SETTINGS)
