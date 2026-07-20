@@ -8,8 +8,9 @@ created:
 
 ## When to use
 
-Triggered by the user ("reflect", "save the conversation"), when you want to
-capture something important mid-session, or by the app after a session ends.
+Triggered by the user ("reflect", "save the conversation") or by the app
+after a session ends. Never run this skill autonomously — the app handles
+session logging on shutdown.
 
 ## Procedure
 

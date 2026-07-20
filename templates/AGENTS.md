@@ -97,7 +97,7 @@ New directories inside `agent_brain/` or `user/` are created as needed. Add them
 
 Read the full skill file ONLY when the trigger matches. Don't read skills preemptively.
 
-- [process-conversation](agent_brain/skills/process-conversation.md) — Logs the conversation and detects learning observations. Use on "reflect", "save the conversation", or when you want to capture something important mid-session. The app also logs each session automatically on shutdown — the formats are compatible.
+- [process-conversation](agent_brain/skills/process-conversation.md) — Logs the conversation and detects learning observations. Use **only** when the user explicitly asks ("reflect", "save the conversation"). Never run it autonomously — the app logs each session automatically on shutdown.
 - [triage-inbox](agent_brain/skills/triage-inbox.md) — Daily inbox triage following GTD. Use on "triage", "process inbox", "triage my inbox", "what should I work on?", or during consolidation.
 - [consolidation](agent_brain/skills/consolidation.md) — Depth-parameterized maintenance (daily, weekly, monthly synthesis). Use when the app invokes a consolidation cycle. *(Ships in a later iteration — follow inline instructions if the file is not present yet.)*
 
