@@ -242,7 +242,6 @@ platform-specific install instructions is shown and setup cannot continue.
 - **When** the shutdown sequence runs
 - **Then** a factual skeleton is extracted from session events (deterministic, no LLM)
 - **And** the skeleton is saved and the session is marked "reflect pending"
-- **And** `logs/index.md` is rebuilt from daily log frontmatter (code, no LLM)
 
 ### 3.4 Reflect (FR-REFLECT)
 
