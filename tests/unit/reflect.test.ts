@@ -42,6 +42,10 @@ describe("savePendingSkeleton", () => {
     expect(parseFrontmatter(content).status).toBe("reflect-pending");
     expect(content).toContain("turns: 3");
     expect(content).toContain("# Session —");
+    expect(content).toContain("## Files written");
+    expect(content).toContain("- user/inbox.md");
+    expect(content).toContain("## Files read");
+    expect(content).toContain("(none)");
     expect(existsSync(join(dir, "logs"))).toBe(false);
   });
 

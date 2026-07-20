@@ -3,7 +3,7 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { PENDING_DIR } from "../shared/defaults";
+import { PENDING_DIR, SNAPSHOTS_DIR } from "../shared/defaults";
 import { toIsoDay } from "../shared/dates";
 import type { SessionSegment, SessionTrackerSnapshot } from "./session-tracker";
 
@@ -16,6 +16,13 @@ export interface PendingReflect {
 export interface DailyLogAppend {
   date: string;
   sessionHeader: string;
+  sections: string;
+}
+
+export interface FinalizeReflectOptions {
+  abDirectory: string;
+  skeletonPath: string;
+  skeletonContent: string;
   sections: string;
 }
 
@@ -38,7 +45,19 @@ export function formatSkeletonBody(snapshot: SessionTrackerSnapshot): string {
   const date = isoDay(new Date(snapshot.startTime));
   const startTime = snapshot.startTime.slice(11, 16);
   const endTime = snapshot.endTime.slice(11, 16);
-  return `# Session — ${date} (${startTime}–${endTime}, ${snapshot.turnCount} turns)\n`;
+  const lines = [
+    `# Session — ${date} (${startTime}–${endTime}, ${snapshot.turnCount} turns)`,
+    "",
+    "## Files written",
+    snapshot.filesWritten.length ? snapshot.filesWritten.map((f) => `- ${f}`).join("\n") : "(none)",
+    "",
+    "## Files read",
+    snapshot.filesRead.length ? snapshot.filesRead.map((f) => `- ${f}`).join("\n") : "(none)",
+    "",
+    "## Tool calls",
+    formatToolCalls(snapshot.toolCalls).trimEnd(),
+  ];
+  return lines.join("\n") + "\n";
 }
 
 export function formatSkeletonFrontmatter(snapshot: SessionTrackerSnapshot): string {
@@ -97,7 +116,7 @@ export function snapshotPath(
   sessionId: string,
   turn: number,
 ): string {
-  const dir = join(abDirectory, ".ab-app", "snapshots");
+  const dir = join(abDirectory, SNAPSHOTS_DIR);
   mkdirSync(dir, { recursive: true });
   return join(dir, `${sessionId}_${turn}.md`);
 }
@@ -115,7 +134,7 @@ export function saveIncrementalSnapshot(
 }
 
 export function listSnapshots(abDirectory: string, sessionId: string): string[] {
-  const dir = join(abDirectory, ".ab-app", "snapshots");
+  const dir = join(abDirectory, SNAPSHOTS_DIR);
   if (!existsSync(dir)) return [];
   return readdirSync(dir)
     .filter((name) => name.startsWith(`${sessionId}_`) && name.endsWith(".md"))
@@ -124,7 +143,7 @@ export function listSnapshots(abDirectory: string, sessionId: string): string[] 
 
 export function cleanupSnapshots(abDirectory: string, sessionId: string): void {
   for (const name of listSnapshots(abDirectory, sessionId)) {
-    rmSync(join(abDirectory, ".ab-app", "snapshots", name));
+    rmSync(join(abDirectory, SNAPSHOTS_DIR, name));
   }
 }
 
@@ -211,6 +230,20 @@ export function appendDailyLog(abDirectory: string, append: DailyLogAppend, now 
     );
   }
   return logPath;
+}
+
+/** Append reflect output to daily log and remove the pending skeleton. */
+export function finalizeReflectToDailyLog(options: FinalizeReflectOptions): string {
+  const { abDirectory, skeletonPath, skeletonContent, sections } = options;
+  const fm = parseFrontmatter(skeletonContent);
+  const date = fm.date ?? new Date().toISOString().slice(0, 10);
+  const dailyPath = appendDailyLog(abDirectory, {
+    date,
+    sessionHeader: sessionHeaderFromSkeleton(skeletonContent),
+    sections,
+  });
+  deletePendingSkeleton(skeletonPath);
+  return dailyPath;
 }
 
 /** Mark an incremental snapshot file with LLM encoding (internal, not agent daily log). */
