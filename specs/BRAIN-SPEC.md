@@ -113,7 +113,7 @@ Idea file format, File metadata, Active context, Where to find things, Skills, R
 | Rule 4: "Create directories with mkdir -p" | Worker creates dirs via fs API |
 | Rule 8: "Commit regularly" | Worker auto-commits after writes |
 | Rule 3: "Update metadata (last_accessed, access_count)" | Worker Hebbian tracker updates frontmatter |
-| "Update logs/index.md" in consolidation steps | Worker rebuilds index at session end |
+| "Update logs/index.md" in consolidation steps | Worker rebuilds index after reflect appends daily log |
 | Night-owl date resolution paragraph (Rule 10 partial) | Worker resolves before injecting date in context |
 | Rule 14: "Current date from system" | Worker always injects current date in system prompt |
 | Maintenance scheduling logic | Worker scheduler with usage-based counters |

@@ -47,7 +47,7 @@ AB File System (git repo)
     ├── AGENTS.md (portable behavioral rules)
     ├── agent_brain/ (agent's learned knowledge)
     ├── user/ (user's tasks, drafts, journal)
-    └── logs/ (session records)
+    └── logs/ (daily agent logs)
 ```
 
 **Key patterns:**
@@ -254,7 +254,7 @@ platform-specific install instructions is shown and setup cannot continue.
 
 **FR-REFLECT-01 — Factual skeleton capture (crash fallback)**
 
-- **Given** a session ends (app close or new session)
+- **Given** the app closes
 - **When** the worker runs shutdown
 - **Then** a minimal skeleton is saved containing: timestamps, files read/written, commits
 - **And** the skeleton is written without any LLM call (pure event extraction, <100ms)
@@ -562,7 +562,7 @@ Crash recovery (next app start):
 |----|-------------|-------|
 | FR-GIT-01 | Auto-commit after agent writes | 1 |
 | FR-GIT-02 | Git invisible to user | 1 |
-| FR-GIT-03 | Index rebuild on session end | 1 |
+| FR-GIT-03 | Index rebuild on reflect complete | 1 |
 
 **FR-GIT-01 — Auto-commit**
 
@@ -580,8 +580,8 @@ Crash recovery (next app start):
 
 **FR-GIT-03 — Index rebuild**
 
-- **Given** a session ends
-- **When** the shutdown sequence runs
+- **Given** a reflect completes (session-end or catch-up)
+- **When** the daily log is appended
 - **Then** `logs/index.md` is rebuilt from daily log frontmatter
 - **And** the rebuild is deterministic (code, no LLM)
 
@@ -874,7 +874,7 @@ Full specification in [specs/BRAIN-SPEC.md](BRAIN-SPEC.md).
 | ID | Requirement |
 |----|-------------|
 | NFR-ACC-01 | Dark and light mode following system preference (`prefers-color-scheme`) |
-| NFR-ACC-02 | Keyboard shortcuts for all primary actions (send, abort, new session, settings) |
+| NFR-ACC-02 | Keyboard shortcuts for all primary actions (send, abort, settings) |
 | NFR-ACC-03 | Semantic HTML in chat messages for screen reader compatibility |
 
 ### 4.7 Internationalization (i18n)
@@ -940,7 +940,7 @@ git operations, tool call rendering, thinking blocks, markdown rendering.
 - Drag & drop / attach for file ingest (markdown/plain text/images)
 - Auto-commit after agent writes
 - Git invisible to user
-- `logs/index.md` rebuild on session end
+- `logs/index.md` rebuild on reflect complete
 
 **Success criteria:**
 User installs → completes wizard → talks to AB → closes app → reopens →
