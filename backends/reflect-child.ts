@@ -146,7 +146,7 @@ async function runReflect(
     cwd: abDirectory,
     resourceLoader,
     sessionManager: sm,
-    excludeTools: ["bash"],
+    excludeTools: ["bash", "write", "edit"],
     ...incrementalOptions,
   });
 
