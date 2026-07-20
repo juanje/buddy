@@ -10,7 +10,6 @@ const WORKER_NAME = "agent-worker";
 
 export interface WorkerConnection {
   api: WorkerAPI;
-  restart(): Promise<void>;
 }
 
 export async function connectWorker(
@@ -43,9 +42,6 @@ export async function connectWorker(
   return {
     get api() {
       return api;
-    },
-    async restart() {
-      api = await boot();
     },
   };
 }

@@ -42,9 +42,6 @@ export class AbWorld extends World {
   /** Id of the most recent simulated permission request. */
   lastPermissionId?: number;
 
-  /** Last prompt options sent through the controller (FR-INGEST). */
-  lastPromptOptions?: PromptOptions;
-
   constructor(options: IWorldOptions) {
     super(options);
   }
@@ -89,7 +86,6 @@ export class AbWorld extends World {
     this.controller = createChatController({
       ...this.core.api,
       async prompt(text: string, options?: PromptOptions) {
-        self.lastPromptOptions = options;
         let finalText = text;
         if (options?.attachments?.length) {
           const header = options.attachments.map((p) => `User attached: ${p}`).join("\n");

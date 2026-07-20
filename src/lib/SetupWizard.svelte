@@ -152,8 +152,6 @@ async function createAb() {
       <h2>{$t.creatingTitle}</h2>
       <p class="muted">{$t.creatingHint}</p>
     {/if}
-  {:else}
-    <p class="muted">{$t.wizardComingSoon}</p>
   {/if}
 
   {#if $oauthPrompt?.type === "prompt"}

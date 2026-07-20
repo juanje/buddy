@@ -16,7 +16,6 @@ import type { AbWorld } from "../support/world";
 interface PrereqWorld extends AbWorld {
   gitInstalled?: boolean;
   wizard?: SetupController;
-  instructions?: string;
 }
 
 function wizardOf(world: PrereqWorld): SetupController {

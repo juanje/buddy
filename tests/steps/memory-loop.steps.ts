@@ -26,12 +26,6 @@ After(function (this: MemoryWorld) {
   if (this.memoryTmpDir) rmSync(this.memoryTmpDir, { recursive: true, force: true });
 });
 
-function pendingSkeletonFiles(abDir: string): string[] {
-  const pendingDir = join(abDir, PENDING_DIR);
-  if (!existsSync(pendingDir)) return [];
-  return readdirSync(pendingDir).filter((f) => f.endsWith(".md"));
-}
-
 Given("an initialized AB git repository", async function (this: MemoryWorld) {
   this.memoryTmpDir = mkdtempSync(join(tmpdir(), "ab-memory-"));
   this.abDir = join(this.memoryTmpDir, "my-ab");
@@ -120,9 +114,9 @@ Then("the latest commit message starts with {string}", async function (this: Mem
 });
 
 Then("a pending reflect skeleton exists with status {string}", function (this: MemoryWorld, status: string) {
-  const files = pendingSkeletonFiles(this.abDir!);
-  assert.ok(files.length > 0, "expected a pending reflect skeleton");
-  const content = readFileSync(join(this.abDir!, PENDING_DIR, files[0]), "utf8");
+  const pending = findPendingReflects(this.abDir!);
+  assert.ok(pending.length > 0, "expected a pending reflect skeleton");
+  const content = readFileSync(pending[0].path, "utf8");
   assert.equal(parseFrontmatter(content).status, status);
 });
 
