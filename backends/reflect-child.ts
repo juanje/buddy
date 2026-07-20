@@ -23,6 +23,7 @@ import { commitAll } from "./git";
 import { acquireLock, releaseLock } from "./maintenance";
 import { alignHttpDispatcherWithPi } from "./pi-http-dispatcher";
 import { collectAssistantText } from "./pi-utils";
+import { defaultAuthPath } from "./provider-auth";
 import { markReflectComplete, rebuildLogsIndex } from "./reflect";
 
 const SESSION_END_PROMPT = `You are a memory consolidation agent. Analyze this session and produce a structured reflect with these sections:
@@ -74,7 +75,7 @@ async function resolveIncrementalSessionOptions(abDirectory: string): Promise<{
   if (!fastModelId) return { thinkingLevel: "minimal" };
 
   const runtime = await ModelRuntime.create({
-    authPath: join(getAgentDir(), "auth.json"),
+    authPath: defaultAuthPath(),
   });
   let model = runtime.getModel(provider, fastModelId);
   if (!model) {
