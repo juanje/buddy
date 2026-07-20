@@ -249,9 +249,10 @@ export function finalizeReflectToDailyLog(options: FinalizeReflectOptions): stri
 /** Mark an incremental snapshot file with LLM encoding (internal, not agent daily log). */
 export function markSnapshotEncoded(snapshotPath: string, sections: string): void {
   const content = readFileSync(snapshotPath, "utf8");
+  const encodingBlock = `## Encoding\n\n${sections.trim()}\n`;
   const body = content.includes("## Encoding")
-    ? content
-    : `${content.trimEnd()}\n\n## Encoding\n\n${sections.trim()}\n`;
+    ? content.replace(/## Encoding[\s\S]*$/, encodingBlock)
+    : `${content.trimEnd()}\n\n${encodingBlock}`;
   writeFileSync(snapshotPath, body, "utf8");
 }
 
