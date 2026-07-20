@@ -249,7 +249,7 @@ platform-specific install instructions is shown and setup cannot continue.
 |----|-------------|-------|
 | FR-REFLECT-01 | Factual skeleton capture (crash fallback) | 1 |
 | FR-REFLECT-02 | Forked reflect on session end (primary) | 1 |
-| FR-REFLECT-03 | Incremental mid-session reflect (forked, background) | 1 |
+| FR-REFLECT-03 | Checkpoint mid-session reflect (forked, background) | 1 |
 
 **FR-REFLECT-01 — Factual skeleton capture (crash fallback)**
 
