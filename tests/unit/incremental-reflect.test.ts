@@ -4,17 +4,10 @@ import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { simpleGit } from "simple-git";
 
 import { saveIncrementalSnapshot } from "../../backends/reflect";
 import { SessionLifecycle } from "../../backends/session-lifecycle";
-
-async function initGit(dir: string): Promise<void> {
-  const git = simpleGit(dir);
-  await git.init();
-  await git.addConfig("user.name", "AB");
-  await git.addConfig("user.email", "ab@localhost");
-}
+import { initTestGitRepo } from "../support/test-git";
 
 describe("SessionLifecycle incremental reflect", () => {
   let dir: string;
@@ -25,7 +18,7 @@ describe("SessionLifecycle incremental reflect", () => {
 
   it("writes snapshot on turn threshold", async () => {
     dir = mkdtempSync(join(tmpdir(), "ab-incr-"));
-    await initGit(dir);
+    await initTestGitRepo(dir);
     const lifecycle = new SessionLifecycle({
       abDirectory: dir,
       sessionId: "sess",
@@ -53,7 +46,7 @@ describe("SessionLifecycle incremental reflect", () => {
 
   it("writes snapshot on compaction_start", async () => {
     dir = mkdtempSync(join(tmpdir(), "ab-compact-"));
-    await initGit(dir);
+    await initTestGitRepo(dir);
     const lifecycle = new SessionLifecycle({
       abDirectory: dir,
       sessionId: "sess",

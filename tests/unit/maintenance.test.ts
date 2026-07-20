@@ -4,7 +4,6 @@ import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { simpleGit } from "simple-git";
 
 import {
   acquireLock,
@@ -15,6 +14,7 @@ import {
 } from "../../backends/maintenance";
 import { findPendingReflects, savePendingSkeleton } from "../../backends/reflect";
 import { SessionTracker } from "../../backends/session-tracker";
+import { initTestGitRepo } from "../support/test-git";
 
 describe("maintenance lock", () => {
   let dir: string;
@@ -53,10 +53,7 @@ describe("runCatchUpReflects", () => {
 
   it("processes pending reflects", async () => {
     dir = mkdtempSync(join(tmpdir(), "ab-catchup-"));
-    const git = simpleGit(dir);
-    await git.init();
-    await git.addConfig("user.name", "AB");
-    await git.addConfig("user.email", "ab@localhost");
+    await initTestGitRepo(dir);
     const tracker = new SessionTracker("sess1");
     savePendingSkeleton(dir, tracker.toSnapshot());
     const processed = await runCatchUpReflects(dir, {

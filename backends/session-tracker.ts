@@ -1,6 +1,7 @@
 // backends/session-tracker.ts — In-memory session event accumulator (FR-REFLECT-01/03).
 
 import type { AgentEvent } from "../shared/api";
+import { extractToolInfo } from "../shared/pi-events";
 import { READ_TOOLS, WRITE_TOOLS } from "../shared/defaults";
 
 export interface TrackedToolCall {
@@ -27,16 +28,6 @@ export interface SessionTrackerSnapshot {
   toolCalls: TrackedToolCall[];
   commits: string[];
   snapshots: string[];
-}
-
-function extractToolInfo(event: AgentEvent): { name: string; path?: string } | null {
-  const name = (event.toolName as string | undefined) ??
-    (event.toolCall as { name?: string } | undefined)?.name;
-  if (!name) return null;
-  const args = (event.args as { path?: string } | undefined) ??
-    (event.toolCall as { args?: { path?: string } } | undefined)?.args;
-  const path = typeof args?.path === "string" ? args.path : undefined;
-  return { name, path };
 }
 
 function relPath(abDirectory: string, absOrRel: string): string {

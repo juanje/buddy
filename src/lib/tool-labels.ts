@@ -2,11 +2,7 @@
 
 import type { ToolCallEntry } from "./chat-controller";
 import type { LocaleStrings } from "./i18n";
-
-function basename(path: string): string {
-  const parts = path.replace(/\\/g, "/").split("/");
-  return parts[parts.length - 1] || path;
-}
+import { basename } from "../utils/path";
 
 export function toolCallLabel(entry: ToolCallEntry, strings: LocaleStrings): string {
   const file = entry.path ? basename(entry.path) : undefined;

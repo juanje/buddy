@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { simpleGit } from "simple-git";
 
 import { buildCommitMessage, commitAll, hasUncommittedChanges } from "../../backends/git";
+import { initTestGitRepo } from "../support/test-git";
 
 describe("buildCommitMessage", () => {
   it("summarizes one file", () => {
@@ -28,10 +29,7 @@ describe("commitAll", () => {
 
   it("commits uncommitted changes", async () => {
     dir = mkdtempSync(join(tmpdir(), "ab-git-"));
-    const git = simpleGit(dir);
-    await git.init();
-    await git.addConfig("user.name", "AB");
-    await git.addConfig("user.email", "ab@localhost");
+    await initTestGitRepo(dir);
     writeFileSync(join(dir, "note.md"), "hello");
     expect(await hasUncommittedChanges(dir)).toBe(true);
     const message = await commitAll(dir);
@@ -41,10 +39,8 @@ describe("commitAll", () => {
 
   it("returns null when clean", async () => {
     dir = mkdtempSync(join(tmpdir(), "ab-git-"));
+    await initTestGitRepo(dir);
     const git = simpleGit(dir);
-    await git.init();
-    await git.addConfig("user.name", "AB");
-    await git.addConfig("user.email", "ab@localhost");
     writeFileSync(join(dir, "note.md"), "hello");
     await git.add(".");
     await git.commit("initial");

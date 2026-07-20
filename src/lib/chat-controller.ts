@@ -17,11 +17,8 @@ import type {
   PromptOptions,
 } from "../../shared/api";
 import { isSupportedIngestFormat } from "../../shared/ingest-formats";
-
-function basename(path: string): string {
-  const parts = path.replace(/\\/g, "/").split("/");
-  return parts[parts.length - 1] || path;
-}
+import { extractToolInfo } from "../../shared/pi-events";
+import { basename } from "../utils/path";
 
 export interface ToolCallEntry {
   name: string;
@@ -95,18 +92,6 @@ export interface ChatController {
   dismissPermission(id: number): void;
   /** Hide the welcome banner without sending a message. */
   dismissWelcome(): void;
-}
-
-function extractToolInfo(event: AgentEvent): { name: string; path?: string } | null {
-  const name =
-    (event.toolName as string | undefined) ??
-    (event.toolCall as { name?: string } | undefined)?.name;
-  if (!name) return null;
-  const args =
-    (event.args as { path?: string } | undefined) ??
-    (event.toolCall as { args?: { path?: string } } | undefined)?.args;
-  const path = typeof args?.path === "string" ? args.path : undefined;
-  return { name, path };
 }
 
 export function createChatController(worker: ChatWorkerAPI): ChatController {
