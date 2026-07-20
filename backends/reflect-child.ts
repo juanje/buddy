@@ -39,16 +39,25 @@ const SESSION_END_PROMPT = `You are a memory consolidation agent. Analyze this s
 ### Decisions
 Decisions made during this session (or "None" if none).
 
-### Lessons
-Patterns, insights, or corrections learned (or "None").
+### Tasks captured
+What was captured and where it was filed (or "None" if nothing actionable).
+
+### Ideas
+Ideas discussed, whether filed or not (or "None").
 
 ### Context
 What was the session about — topics discussed, tasks worked on, state of things.
 
+### Lessons
+Patterns, insights, or corrections learned (or "None").
+
 ### Open threads
 Things left unresolved, pending, or to follow up on (or "None").
 
-Be concise. Capture substance, not mechanics. Write in the user's language.`;
+### System observations
+Skill, rule, concept, or structure candidates detected (or "None").
+
+Be concise. Capture substance, not mechanics. Write in English.`;
 
 const INCREMENTAL_PROMPT = `You are a memory encoding agent. Briefly encode this session segment:
 

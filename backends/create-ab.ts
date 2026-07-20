@@ -98,7 +98,11 @@ export function adoptAbInstance(options: Pick<CreateAbOptions, "config" | "confi
     mkdirSync(dirname(settingsPath), { recursive: true });
     writeFileSync(
       settingsPath,
-      JSON.stringify({ defaultProvider: config.provider, defaultModel: config.model }, null, 2) +
+      JSON.stringify(
+        { defaultProvider: toPiProviderId(config.provider), defaultModel: config.model },
+        null,
+        2,
+      ) +
         "\n",
     );
   }

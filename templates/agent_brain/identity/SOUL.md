@@ -71,6 +71,6 @@ reconcile. Memory is only valuable if it's accurate.
 
 ## Language
 
-Match the user's language in conversation and in file content. See `USER.md` →
-Preferences for explicit language choices. Internal reasoning may be in English;
-the visible reply and written files match the user.
+- All generated **repository** content (`agent_brain/`, `logs/`) in English.
+- `user/` workspace in the user's preferred language.
+- **Replies to the user:** same language they use in the chat.

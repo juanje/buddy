@@ -37,7 +37,9 @@ function readIfExists(path: string): string | undefined {
 }
 
 export function assembleSystemPrompt(abDirectory: string, now: Date = new Date()): AssembledPrompt {
-  const agents = readIfExists(join(abDirectory, "AGENTS.md"));
+  const agents =
+    readIfExists(join(abDirectory, "AGENTS.md")) ??
+    readIfExists(join(abDirectory, "CLAUDE.md"));
   const soul = readIfExists(join(abDirectory, "agent_brain", "identity", "SOUL.md"));
   const user = readIfExists(join(abDirectory, "agent_brain", "identity", "USER.md"));
   const deferredRaw = readIfExists(join(abDirectory, "agent_brain", "deferred.md"));
