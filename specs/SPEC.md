@@ -697,6 +697,8 @@ Full specification in [specs/BRAIN-SPEC.md](BRAIN-SPEC.md).
 | FR-SHELL-02 | Explicit end-session button | 3 |
 | FR-SHELL-03 | About / app info panel | 3 |
 | FR-SHELL-04 | Attach button in input bar | 1 |
+| FR-SHELL-05 | Input bar layout (stacked: attachments / text / buttons) | 1 |
+| FR-SHELL-06 | Wizard back navigation | 1 |
 
 **FR-SHELL-01 — App header bar**
 
@@ -724,6 +726,26 @@ Full specification in [specs/BRAIN-SPEC.md](BRAIN-SPEC.md).
 - **When** the user clicks the attach (paperclip) button
 - **Then** a native file picker opens and selected files appear as chips (same as FR-INGEST-02)
 - **Note:** This is the same as FR-INGEST-02 but scoped to the input bar UX component
+
+**FR-SHELL-05 — Input bar layout (stacked)**
+
+- **Given** the chat view is active
+- **When** the user looks at the input area
+- **Then** the layout is stacked vertically:
+  1. Attachment chips (if any) on top
+  2. Text input field in the middle
+  3. Action buttons (send, attach, model selector) aligned on a bottom row
+- **And** the button row never shifts vertically when attachments appear or the text area grows
+- **And** the send button uses an upward-pointing arrow icon (message going "up" into the conversation)
+- **Note:** Inspired by Cursor's input layout. Prevents misalignment between the text area and action buttons when images/attachments are added.
+
+**FR-SHELL-06 — Wizard back navigation**
+
+- **Given** the user is on any wizard step past the first one
+- **When** they realize they made a mistake or want to change a previous choice
+- **Then** a "Back" button is available that returns to the previous step
+- **And** previously entered values are preserved when going back and forward
+- **Note:** Common wizard pattern. Especially useful after model selection (user may want to change provider or revisit personalization).
 
 ### 3.16 Git Sync (FR-SYNC)
 
