@@ -11,7 +11,7 @@
   import { get } from "svelte/store";
   import { connectWorker, type WorkerConnection } from "./utils/agent";
   import { devLog, onDevCommand } from "./utils/dev-log";
-  import { resolveInitialView, type AppView } from "./lib/app-view";
+  import { resolveInitialView, applyLocaleFromSetup, type AppView } from "./lib/app-view";
   import ChatView from "./lib/ChatView.svelte";
   import InputBar from "./lib/InputBar.svelte";
   import SetupWizard from "./lib/SetupWizard.svelte";
@@ -152,6 +152,7 @@
       );
       devLog("connect(): worker connected");
       const setupState = await connection.api.getSetupState();
+      applyLocaleFromSetup(setupState);
       view = resolveInitialView(setupState);
       if (view === "chat") {
         deferredItems = await connection.api.getDeferredItems();
