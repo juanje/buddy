@@ -64,12 +64,43 @@ Given("the AB directory has no USER.md", function (this: PromptWorld) {
   unlinkSync(join(this.abDir!, "agent_brain", "identity", "USER.md"));
 });
 
+Given("the AB directory has CLAUDE.md instead of AGENTS.md", function (this: PromptWorld) {
+  const agentsPath = join(this.abDir!, "AGENTS.md");
+  const claudePath = join(this.abDir!, "CLAUDE.md");
+  writeFileSync(claudePath, "# Cursor rules\n\nFrom Claude file.\n");
+  unlinkSync(agentsPath);
+});
+
+Given("the AB directory has neither AGENTS.md nor CLAUDE.md", function (this: PromptWorld) {
+  const agentsPath = join(this.abDir!, "AGENTS.md");
+  const claudePath = join(this.abDir!, "CLAUDE.md");
+  try {
+    unlinkSync(agentsPath);
+  } catch {
+    // already absent
+  }
+  try {
+    unlinkSync(claudePath);
+  } catch {
+    // already absent
+  }
+});
+
 When("the system prompt is assembled", function (this: PromptWorld) {
   this.assembled = assembleSystemPrompt(this.abDir!, NOW);
 });
 
 Then("it contains the AGENTS.md rules", function (this: PromptWorld) {
   assert.match(this.assembled!.prompt, /Always be kind\./);
+});
+
+Then("it contains the CLAUDE.md rules", function (this: PromptWorld) {
+  assert.match(this.assembled!.prompt, /From Claude file\./);
+});
+
+Then("the prompt has no rules section", function (this: PromptWorld) {
+  assert.doesNotMatch(this.assembled!.prompt, /Always be kind\./);
+  assert.doesNotMatch(this.assembled!.prompt, /From Claude file\./);
 });
 
 Then("it contains the SOUL.md character definition", function (this: PromptWorld) {

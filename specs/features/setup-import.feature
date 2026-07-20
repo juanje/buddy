@@ -22,3 +22,8 @@ Feature: Import existing AB instance (FR-SETUP-08)
     When the user imports it from the location step
     Then the wizard continues to the provider step in import mode
     And completing the wizard adopts the directory without copying templates
+
+  Scenario: Adopting with OpenAI maps provider correctly
+    Given an existing AB directory without Pi settings
+    When the wizard adopts it with provider "openai"
+    Then ".pi/settings.json" contains defaultProvider "openai-codex"

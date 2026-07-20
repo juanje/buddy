@@ -102,3 +102,12 @@ Then("first-run detection reports the AB as configured", function (this: CreateW
   assert.equal(state.firstRun, false);
   if (!state.firstRun) assert.equal(state.config.abDirectory, this.abDir);
 });
+
+Then("the AB directory contains file {string}", function (this: CreateWorld, relPath: string) {
+  assert.ok(existsSync(join(this.abDir!, relPath)), `${relPath} should exist`);
+});
+
+Then("{string} excludes {string}", function (this: CreateWorld, relPath: string, pattern: string) {
+  const content = readFileSync(join(this.abDir!, relPath), "utf8");
+  assert.match(content, new RegExp(`^${pattern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`, "m"));
+});

@@ -159,3 +159,25 @@ Then(
     });
   },
 );
+
+When("the wizard adopts it with provider {string}", function (this: ImportWorld, provider: string) {
+  adoptAbInstance({
+    config: {
+      abDirectory: this.abDir!,
+      provider: provider as "openai" | "anthropic" | "google" | "custom",
+      model: "gpt-5",
+    },
+    configPath: this.importConfigPath ?? join(this.importTmpDir!, "config.json"),
+  });
+  if (!this.importConfigPath && this.importTmpDir) {
+    this.importConfigPath = join(this.importTmpDir, "config.json");
+  }
+});
+
+Then(
+  "{string} contains defaultProvider {string}",
+  function (this: ImportWorld, relPath: string, expectedProvider: string) {
+    const settings = JSON.parse(readFileSync(join(this.abDir!, relPath), "utf8"));
+    assert.equal(settings.defaultProvider, expectedProvider);
+  },
+);

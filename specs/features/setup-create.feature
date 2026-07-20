@@ -31,3 +31,15 @@ Feature: Deterministic AB directory setup (FR-SETUP-06)
   Scenario: The app is marked as configured
     When setup runs
     Then first-run detection reports the AB as configured
+
+  Scenario: Index hubs and scaffolding are created
+    When setup runs
+    Then the AB directory contains file "agent_brain/concepts/index.md"
+    And the AB directory contains file "agent_brain/projects/index.md"
+    And the AB directory contains file "agent_brain/ideas/index.md"
+    And the AB directory contains file "agent_brain/ideas/_scratchpad.md"
+
+  Scenario: .gitignore excludes app internals
+    When setup runs
+    Then ".gitignore" excludes ".ab-app/"
+    And ".gitignore" excludes ".pi/"
