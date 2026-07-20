@@ -1,8 +1,11 @@
 // tests/steps/setup-model.steps.ts — FR-SETUP-05 model selection.
 // Controller + curated catalog only: no worker calls, no network, no LLM.
 
-import { Given, When, Then } from "@cucumber/cucumber";
+import { Given, When, Then, After } from "@cucumber/cucumber";
 import assert from "node:assert/strict";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { get } from "svelte/store";
 
 import {
@@ -17,12 +20,18 @@ import { makeSetupWorkerFake } from "../support/setup-worker-fake";
 import type { AbWorld } from "../support/world";
 
 interface ModelWorld extends AbWorld {
+  modelTmpDir?: string;
   wizard?: SetupController;
   modelProvider?: ProviderId;
   chosenModel?: string;
 }
 
+After(function (this: ModelWorld) {
+  if (this.modelTmpDir) rmSync(this.modelTmpDir, { recursive: true, force: true });
+});
+
 async function wizardOnModelStep(world: ModelWorld, provider: ProviderId): Promise<void> {
+  world.modelTmpDir = mkdtempSync(join(tmpdir(), "ab-model-step-"));
   world.modelProvider = provider;
   world.wizard = createSetupController(
     makeSetupWorkerFake({
@@ -34,7 +43,7 @@ async function wizardOnModelStep(world: ModelWorld, provider: ProviderId): Promi
       },
     }),
   );
-  await advanceToModelStep(world.wizard, "/tmp/ab-model-step", provider);
+  await advanceToModelStep(world.wizard, world.modelTmpDir, provider);
 }
 
 Given(

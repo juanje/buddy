@@ -14,7 +14,7 @@
     "test:bdd": "NODE_OPTIONS=\"--import tsx\" cucumber-js",
     "typecheck": "tsc --noEmit"
   },
-    "dependencies": {
+  "dependencies": {
     "@earendil-works/pi-coding-agent": "^0.80.10",
     "@tauri-apps/api": "^2.0.0",
     "@tauri-apps/plugin-dialog": "^2.7.2",

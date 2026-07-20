@@ -1,6 +1,6 @@
 // tests/unit/reflect.test.ts — FR-REFLECT-01 pending skeleton + daily logs + index rebuild.
 
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -140,7 +140,7 @@ describe("findPendingReflects", () => {
   it("ignores non-pending files", () => {
     dir = mkdtempSync(join(tmpdir(), "ab-pending-"));
     const pendingDir = join(dir, PENDING_DIR);
-    require("node:fs").mkdirSync(pendingDir, { recursive: true });
+    mkdirSync(pendingDir, { recursive: true });
     writeFileSync(
       join(pendingDir, "done.md"),
       "---\ndate: 2026-07-19\nstatus: complete\n---\n",
