@@ -10,9 +10,9 @@ import { join } from "node:path";
 import { get } from "svelte/store";
 
 import { validateLocation } from "../../backends/location";
-import { createSetupController, type SetupController } from "../../src/lib/setup-controller";
+import type { SetupController } from "../../src/lib/setup-controller";
 import { advanceToLocationStep } from "../support/setup-wizard-helpers";
-import { makeSetupWorkerFake } from "../support/setup-worker-fake";
+import { wizardOf } from "../support/setup-wizard-factory";
 import type { AbWorld } from "../support/world";
 
 interface LocationWorld extends AbWorld {
@@ -21,21 +21,14 @@ interface LocationWorld extends AbWorld {
   wizard?: SetupController;
 }
 
-function wizardOf(world: LocationWorld): SetupController {
-  if (!world.wizard) {
-    world.wizard = createSetupController(
-      makeSetupWorkerFake({
-        async getDefaultLocation() {
-          return join(world.locTmpDir!, "my-ab");
-        },
-        async validateLocation(path: string) {
-          return validateLocation(path);
-        },
-      }),
-    );
-  }
-  return world.wizard;
-}
+const locationOverrides = (world: LocationWorld) => ({
+  async getDefaultLocation() {
+    return join(world.locTmpDir!, "my-ab");
+  },
+  async validateLocation(path: string) {
+    return validateLocation(path);
+  },
+});
 
 After(function (this: LocationWorld) {
   if (this.locTmpDir) rmSync(this.locTmpDir, { recursive: true, force: true });
@@ -43,7 +36,7 @@ After(function (this: LocationWorld) {
 
 Given("the setup wizard is on the location step", async function (this: LocationWorld) {
   this.locTmpDir = mkdtempSync(join(tmpdir(), "ab-location-"));
-  await advanceToLocationStep(wizardOf(this));
+  await advanceToLocationStep(wizardOf(this, locationOverrides));
 });
 
 Given("the default location does not exist yet", async function (this: LocationWorld) {
@@ -67,23 +60,23 @@ Given("a directory containing an existing AB instance", function (this: Location
 });
 
 When("the user accepts the proposed location", async function (this: LocationWorld) {
-  await wizardOf(this).pickLocation(this.candidate!);
+  await wizardOf(this, locationOverrides).pickLocation(this.candidate!);
 });
 
 When("the user picks that directory as the location", async function (this: LocationWorld) {
-  await wizardOf(this).pickLocation(this.candidate!);
+  await wizardOf(this, locationOverrides).pickLocation(this.candidate!);
 });
 
 Then("the location is stored for setup", function (this: LocationWorld) {
-  assert.equal(get(wizardOf(this).location), this.candidate);
+  assert.equal(get(wizardOf(this, locationOverrides).location), this.candidate);
 });
 
 Then("the location is rejected with a reason", function (this: LocationWorld) {
-  const check = get(wizardOf(this).locationCheck);
+  const check = get(wizardOf(this, locationOverrides).locationCheck);
   assert.equal(check?.status, "not-empty");
 });
 
 Then("the wizard offers to import the existing instance", function (this: LocationWorld) {
-  const check = get(wizardOf(this).locationCheck);
+  const check = get(wizardOf(this, locationOverrides).locationCheck);
   assert.equal(check?.status, "existing-ab");
 });

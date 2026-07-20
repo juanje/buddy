@@ -6,11 +6,11 @@ import { Given, When, Then } from "@cucumber/cucumber";
 import assert from "node:assert/strict";
 import { get } from "svelte/store";
 
-import { createSetupController, type SetupController } from "../../src/lib/setup-controller";
+import type { SetupController } from "../../src/lib/setup-controller";
 import { advancePastIntroSteps } from "../support/setup-wizard-helpers";
 import { gitInstallInstructions } from "../../src/lib/i18n";
 import type { PrereqStatus } from "../../shared/api";
-import { makeSetupWorkerFake } from "../support/setup-worker-fake";
+import { wizardOf } from "../support/setup-wizard-factory";
 import type { AbWorld } from "../support/world";
 
 interface PrereqWorld extends AbWorld {
@@ -18,25 +18,18 @@ interface PrereqWorld extends AbWorld {
   wizard?: SetupController;
 }
 
-function wizardOf(world: PrereqWorld): SetupController {
-  if (!world.wizard) {
-    world.wizard = createSetupController(
-      makeSetupWorkerFake({
-        async checkPrerequisites(): Promise<PrereqStatus> {
-          return {
-            gitInstalled: world.gitInstalled ?? true,
-            gitVersion: world.gitInstalled ? "git version 2.44.0" : undefined,
-            platform: "darwin",
-          };
-        },
-      }),
-    );
-  }
-  return world.wizard;
-}
+const prereqOverrides = (world: PrereqWorld) => ({
+  async checkPrerequisites(): Promise<PrereqStatus> {
+    return {
+      gitInstalled: world.gitInstalled ?? true,
+      gitVersion: world.gitInstalled ? "git version 2.44.0" : undefined,
+      platform: "darwin",
+    };
+  },
+});
 
 Given("the setup wizard has started", function (this: PrereqWorld) {
-  advancePastIntroSteps(wizardOf(this));
+  advancePastIntroSteps(wizardOf(this, prereqOverrides));
 });
 
 Given("git is installed on the system", function (this: PrereqWorld) {
@@ -50,7 +43,7 @@ Given("git is not installed on the system", function (this: PrereqWorld) {
 // Cucumber matches Given/When/And against the same expression pool, so one
 // definition serves both phrasings across scenarios.
 When("the prerequisites check runs", async function (this: PrereqWorld) {
-  await wizardOf(this).checkPrerequisites();
+  await wizardOf(this, prereqOverrides).checkPrerequisites();
 });
 
 When("git becomes available", function (this: PrereqWorld) {
@@ -58,24 +51,24 @@ When("git becomes available", function (this: PrereqWorld) {
 });
 
 When("the user retries the prerequisites check", async function (this: PrereqWorld) {
-  await wizardOf(this).checkPrerequisites();
+  await wizardOf(this, prereqOverrides).checkPrerequisites();
 });
 
 Then("the wizard allows proceeding to the next step", function (this: PrereqWorld) {
-  assert.equal(get(wizardOf(this).canProceed), true);
+  assert.equal(get(wizardOf(this, prereqOverrides).canProceed), true);
 });
 
 Then("the wizard does not allow proceeding", function (this: PrereqWorld) {
-  assert.equal(get(wizardOf(this).canProceed), false);
+  assert.equal(get(wizardOf(this, prereqOverrides).canProceed), false);
 });
 
 Then("a message explains that git is required", function (this: PrereqWorld) {
-  const prereq = get(wizardOf(this).prereq);
+  const prereq = get(wizardOf(this, prereqOverrides).prereq);
   assert.ok(prereq && !prereq.gitInstalled, "prereq status should report git missing");
 });
 
 Then("platform-specific install instructions are shown", function (this: PrereqWorld) {
-  const prereq = get(wizardOf(this).prereq);
+  const prereq = get(wizardOf(this, prereqOverrides).prereq);
   assert.ok(prereq, "prereq status should be present");
   const instructions = gitInstallInstructions(prereq.platform);
   assert.ok(instructions.length > 0, "instructions must exist for the platform");

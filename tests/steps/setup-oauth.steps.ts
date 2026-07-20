@@ -7,9 +7,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { get } from "svelte/store";
 
-import { createSetupController, type SetupController } from "../../src/lib/setup-controller";
+import type { SetupController } from "../../src/lib/setup-controller";
 import { advanceToProviderStep } from "../support/setup-wizard-helpers";
-import { catalogModelsFor, makeSetupWorkerFake } from "../support/setup-worker-fake";
+import { catalogModelsFor } from "../support/setup-worker-fake";
+import { wizardOf } from "../support/setup-wizard-factory";
 import type { AbWorld } from "../support/world";
 
 interface OAuthWorld extends AbWorld {
@@ -18,27 +19,20 @@ interface OAuthWorld extends AbWorld {
   lastAuthUrl?: string;
 }
 
-function wizardOf(world: OAuthWorld): SetupController {
-  if (!world.wizard) {
-    world.wizard = createSetupController(
-      makeSetupWorkerFake({
-        async validateLocation() {
-          return { status: "ok-new" as const };
-        },
-        async loginOAuth(provider) {
-          const url = `https://example.com/oauth/${provider}`;
-          world.lastAuthUrl = url;
-          world.wizard!.handleOAuthEvent({ type: "auth_url", url });
-          return { success: true as const };
-        },
-        async listModels(provider) {
-          return catalogModelsFor(provider);
-        },
-      }),
-    );
-  }
-  return world.wizard;
-}
+const oauthOverrides = (world: OAuthWorld) => ({
+  async validateLocation() {
+    return { status: "ok-new" as const };
+  },
+  async loginOAuth(provider: "anthropic" | "openai" | "google" | "custom") {
+    const url = `https://example.com/oauth/${provider}`;
+    world.lastAuthUrl = url;
+    world.wizard!.handleOAuthEvent({ type: "auth_url", url });
+    return { success: true as const };
+  },
+  async listModels(provider: "anthropic" | "openai" | "google" | "custom") {
+    return catalogModelsFor(provider);
+  },
+});
 
 After(function (this: OAuthWorld) {
   if (this.authTmpDir) rmSync(this.authTmpDir, { recursive: true, force: true });
@@ -46,27 +40,27 @@ After(function (this: OAuthWorld) {
 
 Given("the setup wizard is on the provider step for OAuth", async function (this: OAuthWorld) {
   this.authTmpDir = mkdtempSync(join(tmpdir(), "ab-oauth-"));
-  await advanceToProviderStep(wizardOf(this), join(this.authTmpDir, "my-ab"));
+  await advanceToProviderStep(wizardOf(this, oauthOverrides), join(this.authTmpDir, "my-ab"));
 });
 
 Given("the user has signed in with OAuth as {string}", async function (this: OAuthWorld, id: string) {
-  wizardOf(this).selectProvider(id as "openai" | "anthropic" | "google" | "custom");
-  await wizardOf(this).loginOAuth();
+  wizardOf(this, oauthOverrides).selectProvider(id as "openai" | "anthropic" | "google" | "custom");
+  await wizardOf(this, oauthOverrides).loginOAuth();
 });
 
 When("they sign in with OAuth successfully", async function (this: OAuthWorld) {
-  await wizardOf(this).loginOAuth();
+  await wizardOf(this, oauthOverrides).loginOAuth();
 });
 
 When("they start OAuth login", async function (this: OAuthWorld) {
-  const promise = wizardOf(this).loginOAuth();
+  const promise = wizardOf(this, oauthOverrides).loginOAuth();
   await promise;
 });
 
 When("an auth URL event is received", function (this: OAuthWorld) {
   const url = "https://example.com/oauth/manual";
   this.lastAuthUrl = url;
-  wizardOf(this).handleOAuthEvent({ type: "auth_url", url });
+  wizardOf(this, oauthOverrides).handleOAuthEvent({ type: "auth_url", url });
 });
 
 Then("the auth URL is available for browser open", function (this: OAuthWorld) {
@@ -74,10 +68,10 @@ Then("the auth URL is available for browser open", function (this: OAuthWorld) {
 });
 
 When("the wizard loads models for the provider", async function (this: OAuthWorld) {
-  await wizardOf(this).loadModels();
+  await wizardOf(this, oauthOverrides).loadModels();
 });
 
 Then("models are available for selection", function (this: OAuthWorld) {
-  const models = get(wizardOf(this).availableModels);
+  const models = get(wizardOf(this, oauthOverrides).availableModels);
   assert.ok(models.length >= 2, "expected at least two models after OAuth");
 });
