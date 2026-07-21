@@ -7,10 +7,12 @@
     controller,
     apiKeyInput = $bindable(""),
     baseUrlInput = $bindable(""),
+    onBack,
   }: {
     controller: SetupController;
     apiKeyInput?: string;
     baseUrlInput?: string;
+    onBack?: () => void;
   } = $props();
 
   const provider = $derived(controller.provider);
@@ -113,6 +115,12 @@
   {/if}
 {/if}
 
+{#if onBack}
+  <div class="actions">
+    <button type="button" onclick={onBack}>{$t.wizardBack}</button>
+  </div>
+{/if}
+
 <style>
   .muted {
     color: var(--muted);
@@ -191,5 +199,11 @@
     border-radius: 999px;
     padding: 1px 8px;
     margin-left: 6px;
+  }
+  .actions {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 12px;
   }
 </style>

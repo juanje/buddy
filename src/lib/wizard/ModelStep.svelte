@@ -5,9 +5,11 @@
   let {
     controller,
     onContinue,
+    onBack,
   }: {
     controller: SetupController;
     onContinue: () => void;
+    onBack?: () => void;
   } = $props();
 
   const provider = $derived(controller.provider);
@@ -63,9 +65,14 @@
   <p class="muted">{$t.modelCustomHint}</p>
 {/if}
 
-<button class="primary" onclick={onContinue} disabled={!$canProceed}>
-  {$t.wizardContinue}
-</button>
+<div class="actions">
+  {#if onBack}
+    <button type="button" onclick={onBack}>{$t.wizardBack}</button>
+  {/if}
+  <button class="primary" onclick={onContinue} disabled={!$canProceed}>
+    {$t.wizardContinue}
+  </button>
+</div>
 
 <style>
   .muted {
@@ -130,6 +137,12 @@
     padding: 8px 20px;
     cursor: pointer;
     font-size: 14px;
+  }
+  .actions {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
     margin-top: 8px;
   }
   button:disabled {

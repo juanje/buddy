@@ -79,7 +79,16 @@
         {/each}
       </div>
     {/if}
-    <div class="input-row">
+    <textarea
+      bind:this={textarea}
+      bind:value={$input}
+      onkeydown={handleKeydown}
+      oninput={autoResize}
+      disabled={$inputDisabled}
+      placeholder={$t.inputPlaceholder}
+      rows="1"
+    ></textarea>
+    <div class="button-row">
       <button
         type="button"
         class="attach"
@@ -89,19 +98,10 @@
       >
         📎
       </button>
-      <textarea
-        bind:this={textarea}
-        bind:value={$input}
-        onkeydown={handleKeydown}
-        oninput={autoResize}
-        disabled={$inputDisabled}
-        placeholder={$t.inputPlaceholder}
-        rows="1"
-      ></textarea>
       {#if $showAbort}
         <button class="abort" onclick={onAbort} title={$t.abortTitle}>◼</button>
       {:else}
-        <button class="send" onclick={sendNow} disabled={!$canSend} title={$t.sendTitle}>➤</button>
+        <button class="send" onclick={sendNow} disabled={!$canSend} title={$t.sendTitle}>↑</button>
       {/if}
     </div>
   </div>
@@ -118,10 +118,11 @@
     flex-direction: column;
     gap: 8px;
   }
-  .input-row {
+  .button-row {
     display: flex;
     gap: 8px;
-    align-items: flex-end;
+    justify-content: flex-end;
+    align-items: center;
   }
   .attachment-chips {
     display: flex;
@@ -170,7 +171,7 @@
     padding: 0 4px;
   }
   textarea {
-    flex: 1;
+    width: 100%;
     resize: none;
     border: 1px solid var(--border);
     border-radius: 10px;

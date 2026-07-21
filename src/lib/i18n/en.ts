@@ -21,6 +21,7 @@ export const en: LocaleStrings = {
   gitCheckRetry: "Check again",
   gitChecking: "Checking…",
   wizardContinue: "Continue",
+  wizardBack: "Back",
   locationTitle: "Where will your assistant live?",
   locationHint:
     "It's a normal folder on your computer. It will store its memory, your notes, and everything it learns.",

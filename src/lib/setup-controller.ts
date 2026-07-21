@@ -67,6 +67,7 @@ export interface SetupController {
   loadModels(): Promise<void>;
   selectModel(modelId: string): void;
   next(): void;
+  back(): void;
   beginCreating(): void;
   finishSetup(): Promise<void>;
   importMode: Readable<boolean>;
@@ -343,6 +344,18 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
     }
   }
 
+  function back(): void {
+    step.update(($step) => {
+      const index = STEP_ORDER.indexOf($step);
+      if (index <= 0) return $step;
+      let prevStep = STEP_ORDER[index - 1];
+      if (prevStep === "prerequisites" && get(prereq)?.gitInstalled) {
+        prevStep = STEP_ORDER[index - 2] ?? "language";
+      }
+      return prevStep;
+    });
+  }
+
   return {
     step,
     prereq,
@@ -381,6 +394,7 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
     loadModels,
     selectModel,
     next,
+    back,
     beginCreating,
     finishSetup,
     importMode,

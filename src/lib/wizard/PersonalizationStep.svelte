@@ -5,10 +5,12 @@
     name = $bindable(""),
     about = $bindable(""),
     onContinue,
+    onBack,
   }: {
     name?: string;
     about?: string;
     onContinue: () => void;
+    onBack?: () => void;
   } = $props();
 
   const canContinue = $derived(name.trim().length > 0);
@@ -23,7 +25,12 @@
   <span>{$t.personalizationAboutLabel}</span>
   <textarea bind:value={about} placeholder={$t.personalizationAboutHint} rows="4"></textarea>
 </label>
-<button class="primary" onclick={onContinue} disabled={!canContinue}>{$t.wizardContinue}</button>
+<div class="actions">
+  {#if onBack}
+    <button type="button" onclick={onBack}>{$t.wizardBack}</button>
+  {/if}
+  <button class="primary" onclick={onContinue} disabled={!canContinue}>{$t.wizardContinue}</button>
+</div>
 
 <style>
   .field {
@@ -61,5 +68,11 @@
   button.primary:disabled {
     opacity: 0.5;
     cursor: default;
+  }
+  .actions {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
   }
 </style>

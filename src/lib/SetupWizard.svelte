@@ -94,18 +94,22 @@ async function createAb() {
     await wizard.answerOAuthPrompt(oauthPromptInput);
     oauthPromptInput = "";
   }
+  function goBack() {
+    wizard.back();
+  }
 </script>
 
 <div class="wizard">
   {#if $step === "language"}
     <LanguageStep onSelect={(lang) => wizard.selectLanguage(lang)} />
   {:else if $step === "welcome"}
-    <WelcomeStep onContinue={() => wizard.next()} />
+    <WelcomeStep onContinue={() => wizard.next()} onBack={goBack} />
   {:else if $step === "personalization"}
     <PersonalizationStep
       bind:name={nameInput}
       bind:about={aboutInput}
       onContinue={savePersonalizationAndContinue}
+      onBack={goBack}
     />
   {:else if $step === "prerequisites"}
     <h1>{$t.wizardTitle}</h1>
@@ -118,9 +122,12 @@ async function createAb() {
         </button>
       </div>
     {:else}
-      <button class="primary" onclick={() => wizard.next()} disabled={!$canProceed || $checking}>
-        {$checking ? $t.gitChecking : $t.wizardContinue}
-      </button>
+      <div class="actions">
+        <button type="button" onclick={goBack}>{$t.wizardBack}</button>
+        <button class="primary" onclick={() => wizard.next()} disabled={!$canProceed || $checking}>
+          {$checking ? $t.gitChecking : $t.wizardContinue}
+        </button>
+      </div>
     {/if}
   {:else if $step === "location"}
     <h2>{$t.locationTitle}</h2>
@@ -129,25 +136,32 @@ async function createAb() {
     {#if $locationCheck && locationError($locationCheck.status)}
       <p class="error">{locationError($locationCheck.status)}</p>
     {/if}
-    {#if $locationCheck?.status === "existing-ab"}
-      <button class="primary" onclick={importExistingAb}>{$t.locationImport}</button>
-    {:else}
-      <button class="primary" onclick={validateAndMaybeContinue}>
-        {$t.wizardContinue}
-      </button>
-    {/if}
+    <div class="actions">
+      <button type="button" onclick={goBack}>{$t.wizardBack}</button>
+      {#if $locationCheck?.status === "existing-ab"}
+        <button class="primary" onclick={importExistingAb}>{$t.locationImport}</button>
+      {:else}
+        <button class="primary" onclick={validateAndMaybeContinue}>
+          {$t.wizardContinue}
+        </button>
+      {/if}
+    </div>
   {:else if $step === "provider"}
     <ProviderStep
       controller={wizard}
       bind:apiKeyInput
       bind:baseUrlInput
+      onBack={goBack}
     />
   {:else if $step === "model"}
-    <ModelStep controller={wizard} onContinue={createAb} />
+    <ModelStep controller={wizard} onContinue={createAb} onBack={goBack} />
   {:else if $step === "creating"}
     {#if $setupError}
       <p class="error">{$t.creatingError}: {$setupError}</p>
-      <button class="primary" onclick={createAb}>{$t.creatingRetry}</button>
+      <div class="actions">
+        <button type="button" onclick={goBack}>{$t.wizardBack}</button>
+        <button class="primary" onclick={createAb}>{$t.creatingRetry}</button>
+      </div>
     {:else}
       <h2>{$t.creatingTitle}</h2>
       <p class="muted">{$t.creatingHint}</p>
@@ -228,6 +242,12 @@ async function createAb() {
   button:disabled {
     opacity: 0.5;
     cursor: default;
+  }
+  .actions {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
   }
   input.location {
     width: min(480px, 80vw);

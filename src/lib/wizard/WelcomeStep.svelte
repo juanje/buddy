@@ -1,12 +1,17 @@
 <script lang="ts">
   import { t } from "../i18n";
 
-  let { onContinue }: { onContinue: () => void } = $props();
+  let { onContinue, onBack }: { onContinue: () => void; onBack?: () => void } = $props();
 </script>
 
 <h2>{$t.wizardTitle}</h2>
 <p>{$t.wizardIntro}</p>
-<button class="primary" onclick={onContinue}>{$t.wizardContinue}</button>
+<div class="actions">
+  {#if onBack}
+    <button type="button" onclick={onBack}>{$t.wizardBack}</button>
+  {/if}
+  <button class="primary" onclick={onContinue}>{$t.wizardContinue}</button>
+</div>
 
 <style>
   p {
@@ -21,5 +26,11 @@
     padding: 8px 20px;
     cursor: pointer;
     font-size: 14px;
+  }
+  .actions {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
   }
 </style>

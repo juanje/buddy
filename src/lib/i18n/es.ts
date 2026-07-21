@@ -16,6 +16,7 @@ export type LocaleStrings = {
   gitCheckRetry: string;
   gitChecking: string;
   wizardContinue: string;
+  wizardBack: string;
   locationTitle: string;
   locationHint: string;
   locationNotEmpty: string;
@@ -100,6 +101,7 @@ export const es: LocaleStrings = {
   gitCheckRetry: "Volver a comprobar",
   gitChecking: "Comprobando…",
   wizardContinue: "Continuar",
+  wizardBack: "Atrás",
   locationTitle: "¿Dónde vivirá tu asistente?",
   locationHint:
     "Es una carpeta normal de tu equipo. Ahí guardará su memoria, tus notas y todo lo que aprenda.",
