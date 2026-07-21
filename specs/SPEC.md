@@ -69,8 +69,8 @@ AB File System (git repo)
 | FR-CHAT-02 | User input with send | 0 |
 | FR-CHAT-03 | Abort generation | 0 |
 | FR-CHAT-04 | Markdown rendering in assistant messages | 3 ✓ |
-| FR-CHAT-05 | Thinking block display (collapsible) | 3 |
-| FR-CHAT-06 | Tool call display (expandable cards) | 3 |
+| FR-CHAT-05 | Thinking block display (collapsible) | 3 ✓ |
+| FR-CHAT-06 | Tool call display (expandable cards) | 3 ✓ |
 | FR-CHAT-07 | Auto-scroll with manual override | 0 |
 
 **FR-CHAT-01 — Streaming message display**
