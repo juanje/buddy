@@ -33,7 +33,7 @@ After(function (this: PermWorld) {
 Given("a permission layer for an AB directory", function (this: PermWorld) {
   this.permTmpDir = mkdtempSync(join(tmpdir(), "ab-perm-"));
   this.home = join(this.permTmpDir, "home");
-  this.abDir = join(this.home, "my-ab");
+  this.abDir = join(this.home, "buddy");
   this.asked = [];
   this.gate = createPermissionGate(
     this.abDir,

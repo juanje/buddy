@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { evaluateToolCall, createPermissionGate } from "../../backends/permissions";
 
 const HOME = "/home/u";
-const AB = "/home/u/my-ab";
+const AB = "/home/u/buddy";
 
 const evaluate = (tool: string, args: unknown) => evaluateToolCall(tool, args, AB, HOME);
 

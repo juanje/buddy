@@ -11,7 +11,7 @@ import type { LocationCheck } from "../shared/api";
 
 /** Proposed default AB location (FR-SETUP-03). */
 export function defaultAbLocation(): string {
-  return join(homedir(), "my-ab");
+  return join(homedir(), "buddy");
 }
 
 export function validateLocation(path: string): LocationCheck {

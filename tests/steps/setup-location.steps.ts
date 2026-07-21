@@ -23,7 +23,7 @@ interface LocationWorld extends AbWorld {
 
 const locationOverrides = (world: LocationWorld) => ({
   async getDefaultLocation() {
-    return join(world.locTmpDir!, "my-ab");
+    return join(world.locTmpDir!, "buddy");
   },
   async validateLocation(path: string) {
     return validateLocation(path);
@@ -40,7 +40,7 @@ Given("the setup wizard is on the location step", async function (this: Location
 });
 
 Given("the default location does not exist yet", async function (this: LocationWorld) {
-  this.candidate = join(this.locTmpDir!, "my-ab"); // never created
+  this.candidate = join(this.locTmpDir!, "buddy"); // never created
 });
 
 Given("an empty directory chosen by the user", function (this: LocationWorld) {

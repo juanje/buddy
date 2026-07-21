@@ -57,7 +57,7 @@ Then("the prompt does not include {string}", function (this: IngestWorld, text: 
 Given("a permission layer with session-allowed paths", function (this: IngestWorld) {
   this.ingestTmpDir = mkdtempSync(join(tmpdir(), "ab-ingest-"));
   this.home = join(this.ingestTmpDir, "home");
-  this.abDir = join(this.home, "my-ab");
+  this.abDir = join(this.home, "buddy");
   this.sessionAllowedPaths = new Set<string>();
   this.gate = createPermissionGate(
     this.abDir,

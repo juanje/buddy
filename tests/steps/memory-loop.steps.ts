@@ -28,7 +28,7 @@ After(function (this: MemoryWorld) {
 
 Given("an initialized AB git repository", async function (this: MemoryWorld) {
   this.memoryTmpDir = mkdtempSync(join(tmpdir(), "ab-memory-"));
-  this.abDir = join(this.memoryTmpDir, "my-ab");
+  this.abDir = join(this.memoryTmpDir, "buddy");
   const config: SetupConfig = {
     abDirectory: this.abDir,
     provider: "anthropic",

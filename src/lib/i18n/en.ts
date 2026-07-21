@@ -7,7 +7,7 @@ export const en: LocaleStrings = {
   sendTitle: "Send (Enter)",
   abortTitle: "Abort (Esc)",
   scrollToBottom: "Scroll to bottom",
-  wizardTitle: "Welcome to AB",
+  wizardTitle: "Welcome to Buddy",
   wizardIntro:
     "Let's set up your personal assistant. It will live in a folder on your computer, with its own memory and notes.",
   personalizationTitle: "Tell your assistant a bit about you",
@@ -17,7 +17,7 @@ export const en: LocaleStrings = {
   personalizationAboutHint:
     "The more you share, the more useful it is from day one — work, interests, what you'll use it for…",
   gitRequired:
-    "AB needs git to store your assistant's memory safely. We couldn't find it on your system.",
+    "Buddy needs git to store your assistant's memory safely. We couldn't find it on your system.",
   gitCheckRetry: "Check again",
   gitChecking: "Checking…",
   wizardContinue: "Continue",
@@ -26,7 +26,7 @@ export const en: LocaleStrings = {
     "It's a normal folder on your computer. It will store its memory, your notes, and everything it learns.",
   locationNotEmpty: "That folder already has files. Choose an empty folder or one that doesn't exist yet.",
   locationNotADirectory: "That path is not a folder.",
-  locationExistingAb: "That folder already contains an AB assistant.",
+  locationExistingAb: "That folder already contains a Buddy assistant.",
   locationImport: "Import this assistant",
   providerTitle: "Connect your AI provider",
   providerHint:

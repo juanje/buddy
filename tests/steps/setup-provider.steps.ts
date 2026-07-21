@@ -47,7 +47,7 @@ Given("the setup wizard is on the provider step", async function (this: Provider
   this.authTmpDir = mkdtempSync(join(tmpdir(), "ab-provider-"));
   this.authPath = join(this.authTmpDir, "auth.json");
 
-  await advanceToProviderStep(wizardOf(this, providerOverrides), join(this.authTmpDir, "my-ab"));
+  await advanceToProviderStep(wizardOf(this, providerOverrides), join(this.authTmpDir, "buddy"));
 });
 
 // One definition serves Given/When/And phrasings alike.

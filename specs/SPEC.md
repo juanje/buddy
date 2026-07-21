@@ -157,7 +157,7 @@ AB File System (git repo)
 **FR-SETUP-04 — Location picker**
 
 - **Given** the user is on the location step of the wizard
-- **When** they accept the default (`~/my-ab`) or choose a custom path
+- **When** they accept the default (`~/buddy`) or choose a custom path
 - **Then** the path is validated (doesn't exist or is empty) and stored
 
 **FR-SETUP-05 — Provider authentication**
@@ -1041,7 +1041,7 @@ AB remembers the conversation, knows their name, surfaces any pending reminders.
 
 | Term | Definition |
 |------|-----------|
-| **AB** | Agentic Buddy — the personal assistant system |
+| **AB** | Buddy — the personal assistant system |
 | **AB directory** | The git-backed folder containing the agent's memory (`agent_brain/`, `user/`, `logs/`) |
 | **Pi** | The coding agent framework (by Anthropic) used as a library via its SDK |
 | **Worker** | The Node.js process (managed by `tauri-plugin-js`) that runs Pi and all backend logic |

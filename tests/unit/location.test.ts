@@ -58,7 +58,7 @@ describe("validateLocation", () => {
 });
 
 describe("defaultAbLocation", () => {
-  it("proposes my-ab under the home directory", () => {
-    expect(defaultAbLocation().endsWith("my-ab")).toBe(true);
+  it("proposes buddy under the home directory", () => {
+    expect(defaultAbLocation().endsWith("buddy")).toBe(true);
   });
 });

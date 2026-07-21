@@ -4,7 +4,7 @@
   "private": true,
   "license": "GPL-3.0-only",
   "type": "module",
-  "description": "Agentic Buddy — native desktop personal assistant with persistent memory (Tauri + Pi SDK)",
+  "description": "Buddy — native desktop personal assistant with persistent memory (Tauri + Pi SDK)",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

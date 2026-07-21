@@ -125,7 +125,7 @@ import type { WorkerAPI, FrontendAPI } from "../shared/api";
 
 // --- Pi Session Setup ---
 
-const AB_DIR = process.env.AB_DIR || "~/my-ab";
+const AB_DIR = process.env.AB_DIR || "~/buddy";
 
 const modelRuntime = await ModelRuntime.create();
 
@@ -366,7 +366,7 @@ default, no virtual DOM overhead, good DX for streaming updates.
 App.svelte
 ├── SetupWizard.svelte (shown on first run only)
 │   ├── WelcomeScreen.svelte
-│   ├── LocationPicker.svelte (file picker, default ~/my-ab)
+│   ├── LocationPicker.svelte (file picker, default ~/buddy)
 │   ├── ProviderSelector.svelte (cards: Anthropic, OpenAI, Google, Custom)
 │   ├── ApiKeyInput.svelte (for remote providers)
 │   ├── ModelSelector.svelte (list from provider, with recommendations)
@@ -944,7 +944,7 @@ Zone 2 paths and preferences persist in `~/.ab-app/config.json`:
 
 ```json
 {
-    "abDirectory": "/Users/juanje/my-ab",
+    "abDirectory": "/Users/juanje/buddy",
     "trustedPaths": [
         "~/Documents/articles/",
         "~/git/complex-system-kb/"
@@ -1256,11 +1256,11 @@ async function setupAB(abDir: string, llmConfig: LLMConfig) {
 Before Phase A runs, the frontend shows a minimal wizard (Svelte screens):
 
 **Screen 1 — Welcome:**
-"Bienvenido a Agentic Buddy. Vamos a configurar tu asistente personal."
+"Bienvenido a Buddy. Vamos a configurar tu asistente personal."
 
 **Screen 2 — AB location:**
 - File picker / path input
-- Default: `~/my-ab`
+- Default: `~/buddy`
 - Validation: directory doesn't exist or is empty
 
 **Screen 3 — LLM provider:**

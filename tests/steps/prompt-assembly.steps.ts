@@ -25,7 +25,7 @@ After(function (this: PromptWorld) {
 
 Given("an AB directory with identity files", function (this: PromptWorld) {
   this.promptTmpDir = mkdtempSync(join(tmpdir(), "ab-prompt-"));
-  this.abDir = join(this.promptTmpDir, "my-ab");
+  this.abDir = join(this.promptTmpDir, "buddy");
   mkdirSync(join(this.abDir, "agent_brain", "identity"), { recursive: true });
   writeFileSync(join(this.abDir, "AGENTS.md"), "# Behavioral rules\n\nAlways be kind.\n");
   writeFileSync(

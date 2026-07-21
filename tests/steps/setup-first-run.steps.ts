@@ -36,7 +36,7 @@ Given("a configuration file pointing to an AB directory", function (this: SetupW
   const path = freshConfigPath(this);
   writeFileSync(
     path,
-    JSON.stringify({ abDirectory: join(this.setupTmpDir!, "my-ab"), provider: "anthropic", model: "claude-haiku" }),
+    JSON.stringify({ abDirectory: join(this.setupTmpDir!, "buddy"), provider: "anthropic", model: "claude-haiku" }),
   );
 });
 

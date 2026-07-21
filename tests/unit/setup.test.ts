@@ -28,10 +28,10 @@ describe("detectFirstRun", () => {
 
   it("is configured when abDirectory is a non-empty string", () => {
     const state = detectFirstRun(
-      configIn(JSON.stringify({ abDirectory: "/tmp/my-ab", provider: "anthropic", model: "m" })),
+      configIn(JSON.stringify({ abDirectory: "/tmp/buddy", provider: "anthropic", model: "m" })),
     );
     expect(state.firstRun).toBe(false);
-    if (!state.firstRun) expect(state.config.abDirectory).toBe("/tmp/my-ab");
+    if (!state.firstRun) expect(state.config.abDirectory).toBe("/tmp/buddy");
   });
 
   it("is first run when abDirectory is missing", () => {

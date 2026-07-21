@@ -86,7 +86,7 @@ export const es: LocaleStrings = {
   sendTitle: "Send (Enter)",
   abortTitle: "Abort (Esc)",
   scrollToBottom: "Scroll to bottom",
-  wizardTitle: "Bienvenido a AB",
+  wizardTitle: "Bienvenido a Buddy",
   wizardIntro:
     "Vamos a preparar tu asistente personal. Este asistente vivirá en una carpeta de tu equipo, con su memoria y sus notas.",
   personalizationTitle: "Cuéntale un poco sobre ti",
@@ -96,7 +96,7 @@ export const es: LocaleStrings = {
   personalizationAboutHint:
     "Cuanto más compartas, más útil será desde el primer día — trabajo, intereses, para qué lo usarás…",
   gitRequired:
-    "AB necesita git para guardar la memoria de tu asistente de forma segura. No lo hemos encontrado en tu equipo.",
+    "Buddy necesita git para guardar la memoria de tu asistente de forma segura. No lo hemos encontrado en tu equipo.",
   gitCheckRetry: "Volver a comprobar",
   gitChecking: "Comprobando…",
   wizardContinue: "Continuar",
@@ -105,7 +105,7 @@ export const es: LocaleStrings = {
     "Es una carpeta normal de tu equipo. Ahí guardará su memoria, tus notas y todo lo que aprenda.",
   locationNotEmpty: "Esa carpeta ya contiene archivos. Elige una carpeta vacía o una que no exista.",
   locationNotADirectory: "Esa ruta no es una carpeta.",
-  locationExistingAb: "Esa carpeta ya contiene un asistente AB.",
+  locationExistingAb: "Esa carpeta ya contiene un asistente Buddy.",
   locationImport: "Importar este asistente",
   providerTitle: "Conecta tu proveedor de IA",
   providerHint:

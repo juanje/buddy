@@ -1,4 +1,4 @@
-# AB — Agentic Buddy
+# Buddy
 
 A native desktop app that gives non-technical users a personal assistant with
 persistent, learning memory. You talk; it captures, organizes, remembers, and

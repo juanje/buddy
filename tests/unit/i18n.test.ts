@@ -9,13 +9,13 @@ describe("i18n", () => {
   it("can be set to Spanish", () => {
     setLocale("es");
     expect(getLocale()).toBe("es");
-    expect(get(t).wizardTitle).toBe("Bienvenido a AB");
+    expect(get(t).wizardTitle).toBe("Bienvenido a Buddy");
   });
 
   it("switches to English with setLocale", () => {
     setLocale("en");
     expect(getLocale()).toBe("en");
-    expect(get(t).wizardTitle).toBe("Welcome to AB");
+    expect(get(t).wizardTitle).toBe("Welcome to Buddy");
     setLocale("es");
   });
 });
