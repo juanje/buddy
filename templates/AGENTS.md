@@ -65,7 +65,7 @@ created: YYYY-MM-DD
 ---
 ```
 
-Update `last_accessed` and increment `access_count` when you **read a file for its content** (consulting it for context or decisions). Do not increment when you open a file only to modify it.
+Update `last_accessed` and increment `access_count` when you **read a file for its content** (consulting it for context or decisions). Do not increment when you open a file only to modify it. **Inside the app**, the worker tracks this automatically via code — do not update frontmatter manually. Only do it when operating outside the app (Cursor, Claude Code).
 
 Exception: `identity/SOUL.md` and `identity/USER.md` don't use this frontmatter. Directory `index.md` files, `observations.md`, `deferred.md`, and core skills are also exempt (read mechanically, not as interest signal).
 
