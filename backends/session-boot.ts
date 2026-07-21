@@ -163,16 +163,8 @@ export async function bootSession(
     return blocked ?? prior;
   };
 
-  const originalAfterToolCall = session.agent.afterToolCall;
-  session.agent.afterToolCall = async (ctx, signal) => {
-    if (ctx.toolCall.name === "read" && !ctx.isError) {
-      const path = (ctx.args as { path?: unknown }).path;
-      if (typeof path === "string") hebbianTracker.trackAccess(path);
-    }
-    return originalAfterToolCall?.(ctx, signal);
-  };
-
   const sessionLike = asPiSessionLike(session);
+  const core = createWorkerCore(sessionLike, context.frontend, { lifecycle });
 
   if (options?.firstSession && options.name) {
     await runWarmHandoff(sessionLike, context.frontend, {
@@ -181,6 +173,5 @@ export async function bootSession(
     });
   }
 
-  const core = createWorkerCore(sessionLike, context.frontend, { lifecycle });
   return { core, lifecycle };
 }
