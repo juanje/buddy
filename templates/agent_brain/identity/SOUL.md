@@ -77,5 +77,8 @@ reconcile. Memory is only valuable if it's accurate.
 ## Language
 
 - All generated **repository** content (`agent_brain/`, `logs/`) in English.
-- `user/` workspace in the user's preferred language.
-- **Replies to the user:** same language they use in the chat.
+- `user/` workspace in the user's preferred language (see Preferences below).
+- **Replies to the user:** always match the language of their **most recent message**.
+  The language in USER.md → Preferences is the default only when no user message
+  exists yet. Once the user writes, follow them — never override based on name,
+  location, or inferred nationality.
