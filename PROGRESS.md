@@ -77,8 +77,10 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 | FR-CHAT-06 | Tool call display (expandable activity block) | done | 5e89120 |
 | FR-CHAT-08 | Input textarea resets height after send | done | 491b6e9 |
 | FR-SETTINGS-02 | Settings UI (language + read-only config) | done | 6ea7f89 |
+| FR-SETTINGS-03 | Cross-provider model switching + inline provider auth | done | (this commit) |
+| FR-SETTINGS-04 | Language switching from settings | done | 6ea7f89 |
 
-**Phase 1 complete:** YES — all Phase 1 FRs implemented and passing (129 unit tests, 97 BDD scenarios).
+**Phase 1 complete:** YES — all Phase 1 FRs implemented and passing (140 unit tests, 99 BDD scenarios).
 
 ## Phase 2 — Implemented early
 
@@ -109,9 +111,18 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 
 ## Current focus
 
-> **Sprint: Chat polish + Settings (2026-07-21) complete.** FR-CHAT-08,
-> FR-REFLECT-04, FR-SETTINGS-02 shipped. Next: Phase 2
-> (FR-CONSOL heartbeat, FR-WIKI, FR-COST, FR-SETTINGS-03/04).
+> **Sprint: Settings model switch (2026-07-21) complete.** FR-SETTINGS-03/04
+> shipped. Next: Phase 2 (FR-CONSOL heartbeat, FR-WIKI, FR-COST).
+
+### Sprint: Settings model switch — DONE (2026-07-21)
+
+| FR-ID | Feature | Status | Commit |
+|-------|---------|--------|--------|
+| FR-SETTINGS-03 | Cross-provider model dropdown + add-provider auth | done | (this commit) |
+| FR-SETTINGS-04 | Language switching (from FR-SETTINGS-02) | done | 6ea7f89 |
+
+Model switch resolves Pi models via `ModelRuntime`, persists to `.pi/settings.json`
+and `~/.buddy/config.json`. Input bar model selector remains future work (FR-SHELL-05 gap).
 
 ### Sprint: Chat polish + Settings — DONE (2026-07-21)
 
@@ -120,8 +131,6 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 | FR-CHAT-08 | Textarea height reset after send | done | 491b6e9 |
 | FR-REFLECT-04 | Reflect log output sanitizer | done | 7c5bd69 |
 | FR-SETTINGS-02 | Settings modal (Cmd/Ctrl+,) | done | 6ea7f89 |
-
-Language editable in settings; provider/model/directory read-only until FR-SETTINGS-03/04.
 
 ### Sprint: OAuth Setup — DONE (2026-07-20)
 

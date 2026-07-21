@@ -27,3 +27,19 @@ Feature: Settings UI (FR-SETTINGS-02)
     Given the settings panel is open
     When I close settings
     Then the settings panel is hidden
+
+  Scenario: User changes model in settings
+    Given the settings panel is open
+    When I change the settings model to "claude-haiku-4-5"
+    Then the settings show model "claude-haiku-4-5"
+    And changeModel was called with provider "anthropic" and model "claude-haiku-4-5"
+
+  Scenario: User adds a provider and switches to its model
+    Given the settings panel is open
+    When I add provider "openai" in settings
+    Then provider "openai" was authenticated in settings
+    And the settings model list includes "gpt-5"
+    When I switch settings model to "gpt-5" on provider "openai"
+    Then the settings show provider "openai"
+    And the settings show model "gpt-5"
+    And changeModel was called with provider "openai" and model "gpt-5"

@@ -96,6 +96,9 @@ export type LocaleStrings = {
   settingsVersion: string;
   settingsClose: string;
   settingsReadOnlyHint: string;
+  settingsModelLoading: string;
+  settingsAddProvider: string;
+  settingsProviderAdded: string;
 };
 
 export const es: LocaleStrings = {
@@ -200,7 +203,10 @@ export const es: LocaleStrings = {
   settingsDirectory: "Carpeta de memoria",
   settingsVersion: "Versión",
   settingsClose: "Cerrar",
-  settingsReadOnlyHint: "El proveedor, el modelo y la carpeta se configuran durante la instalación inicial.",
+  settingsReadOnlyHint: "La carpeta de memoria se configura durante la instalación inicial.",
+  settingsModelLoading: "Cargando modelos…",
+  settingsAddProvider: "Añadir proveedor",
+  settingsProviderAdded: "Proveedor añadido — selecciona un modelo arriba",
 };
 
 /** Short cost/capability description per model tier (FR-SETUP-05). */

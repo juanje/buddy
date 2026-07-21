@@ -618,8 +618,8 @@ Crash recovery (next app start):
 |----|-------------|-------|
 | FR-SETTINGS-01 | Provider and model stored in Pi settings | 1 ✓ |
 | FR-SETTINGS-02 | Settings UI | 3 ✓ |
-| FR-SETTINGS-03 | Model switching from UI | 3 |
-| FR-SETTINGS-04 | Language switching from settings | 3 |
+| FR-SETTINGS-03 | Model switching from UI | 3 ✓ |
+| FR-SETTINGS-04 | Language switching from settings | 3 ✓ |
 
 **FR-SETTINGS-01 — Pi settings**
 
@@ -636,9 +636,11 @@ Crash recovery (next app start):
 
 **FR-SETTINGS-03 — Model switching**
 
-- **Given** the user changes the model in settings
-- **When** they confirm the change
-- **Then** `session.setModel()` is called and subsequent messages use the new model
+- **Given** the user opens settings and one or more providers are authenticated
+- **When** they select a model from the dropdown (grouped by provider)
+- **Then** `session.setModel()` is called with the resolved Pi model and subsequent messages use the new model
+- **And** the choice persists to `.pi/settings.json` and `~/.buddy/config.json`
+- **And** the user can authenticate additional providers inline ("Add provider") without leaving settings
 
 **FR-SETTINGS-04 — Language switching**
 

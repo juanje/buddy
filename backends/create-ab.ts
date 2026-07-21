@@ -43,7 +43,7 @@ ${about}
 `;
 }
 
-function writePiSettings(abDirectory: string, config: Pick<SetupConfig, "provider" | "model">): void {
+export function writePiSettings(abDirectory: string, config: Pick<SetupConfig, "provider" | "model">): void {
   const settingsPath = join(abDirectory, ".pi", "settings.json");
   mkdirSync(dirname(settingsPath), { recursive: true });
   writeFileSync(

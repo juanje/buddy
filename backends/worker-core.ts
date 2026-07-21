@@ -12,7 +12,9 @@ import type { SessionLifecycle } from "./session-lifecycle";
  * the worker entry point (it owns the pending-request map), so it is
  * excluded here and composed into the RPC surface there.
  */
-export type SessionWorkerAPI = Omit<ChatWorkerAPI, "resolvePermission">;
+export type SessionWorkerAPI = Omit<ChatWorkerAPI, "resolvePermission"> & {
+  setModel(model: unknown): Promise<void>;
+};
 
 /**
  * Structural subset of Pi's AgentSession that the worker core needs.
@@ -24,6 +26,7 @@ export interface PiSessionLike {
   prompt(text: string, options?: unknown): Promise<void>;
   abort(): Promise<void>;
   subscribe(listener: (event: AgentEvent) => void): () => void;
+  setModel(model: unknown): Promise<void>;
   readonly isStreaming: boolean;
   dispose(): void;
 }
@@ -65,6 +68,10 @@ export function createWorkerCore(
         isStreaming: session.isStreaming,
         messageCount: lifecycle?.tracker.turnCount ?? 0,
       };
+    },
+
+    async setModel(model: unknown): Promise<void> {
+      await session.setModel(model);
     },
 
     async shutdown(): Promise<void> {

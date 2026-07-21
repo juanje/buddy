@@ -77,4 +77,19 @@ describe("updateAppConfig", () => {
     expect(reread.firstRun).toBe(false);
     if (!reread.firstRun) expect(reread.config.language).toBe("en");
   });
+
+  it("merges provider and model into an existing config file", () => {
+    const path = configIn(
+      JSON.stringify({
+        abDirectory: "/tmp/buddy",
+        provider: "anthropic",
+        model: "claude-sonnet-5",
+        language: "es",
+      }),
+    );
+    const updated = updateAppConfig({ provider: "openai", model: "gpt-5" }, path);
+    expect(updated.provider).toBe("openai");
+    expect(updated.model).toBe("gpt-5");
+    expect(updated.language).toBe("es");
+  });
 });

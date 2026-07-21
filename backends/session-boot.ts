@@ -43,6 +43,7 @@ function asPiSessionLike(session: {
   prompt(text: string, options?: unknown): Promise<void>;
   abort(): Promise<void>;
   subscribe(listener: (event: AgentEvent) => void): () => void;
+  setModel(model: unknown): Promise<void>;
   readonly isStreaming: boolean;
   dispose(): void;
 }): PiSessionLike {
@@ -50,6 +51,7 @@ function asPiSessionLike(session: {
     prompt: (text, options) => session.prompt(text, options),
     abort: () => session.abort(),
     subscribe: (listener) => session.subscribe(listener),
+    setModel: (model) => session.setModel(model),
     get isStreaming() {
       return session.isStreaming;
     },

@@ -167,6 +167,8 @@ export interface WorkerAPI {
   resolvePermission(id: number, allow: boolean, persist?: AllowedPathPersist): Promise<void>;
   /** Merge settings into ~/.buddy/config.json (FR-SETTINGS-02). */
   updateConfig(patch: Partial<Pick<SetupConfig, "language">>): Promise<void>;
+  /** Switch model mid-session and persist (FR-SETTINGS-03). */
+  changeModel(provider: SetupConfig["provider"], model: string): Promise<void>;
   shutdown(): Promise<void>;
 }
 

@@ -102,7 +102,10 @@ export const en: LocaleStrings = {
   settingsDirectory: "Memory folder",
   settingsVersion: "Version",
   settingsClose: "Close",
-  settingsReadOnlyHint: "Provider, model, and folder are configured during initial setup.",
+  settingsReadOnlyHint: "The memory folder is configured during initial setup.",
+  settingsModelLoading: "Loading models…",
+  settingsAddProvider: "Add provider",
+  settingsProviderAdded: "Provider added — select a model above",
 };
 
 export function tierDescriptionEn(tier: "fast" | "balanced" | "powerful"): string {

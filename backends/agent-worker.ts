@@ -17,9 +17,10 @@ import type {
 } from "../shared/api";
 import type { AllowedEntry } from "./allowed-paths";
 import { addAllowedPath, defaultConfigDir, loadAllowedPaths } from "./allowed-paths";
-import { adoptAbInstance, createAbInstance } from "./create-ab";
+import { adoptAbInstance, createAbInstance, writePiSettings } from "./create-ab";
 import { defaultAbLocation, validateLocation } from "./location";
 import { listModelsForProvider } from "./model-listing";
+import { resolveSessionModel } from "./model-switch";
 import { OAuthService } from "./oauth-service";
 import { alignHttpDispatcherWithPi } from "./pi-http-dispatcher";
 import { checkPrerequisites } from "./prereqs";
@@ -196,6 +197,19 @@ async function main(): Promise<void> {
           throw new Error("App is not configured");
         }
         const updated = updateAppConfig(patch, defaultConfigPath());
+        setupState = { firstRun: false, config: updated };
+      },
+      async changeModel(provider, model) {
+        if (setupState.firstRun) {
+          throw new Error("App is not configured");
+        }
+        if (!core) {
+          throw new Error("No active session");
+        }
+        const resolved = await resolveSessionModel(modelRuntime, provider, model);
+        await core.api.setModel(resolved);
+        writePiSettings(setupState.config.abDirectory, { provider, model });
+        const updated = updateAppConfig({ provider, model }, defaultConfigPath());
         setupState = { firstRun: false, config: updated };
       },
       async shutdown() {
