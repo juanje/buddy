@@ -323,7 +323,7 @@ Crash recovery (next app start):
 | FR-PERM-02 | Identity file write confirmation | 1 ✓ |
 | FR-PERM-03 | Zone 3: confirm all outside access | 1 ✓ |
 | FR-PERM-04 | Hardcoded denylist | 1 ✓ |
-| FR-PERM-05 | Implicit permission from user messages | 2 |
+| FR-PERM-05 | Implicit permission from user messages | reconsider |
 | FR-PERM-06 | Zone 2: user-designated paths | 1 ✓ |
 | FR-PERM-07 | Permission prompt in chat | 1 ✓ |
 
@@ -356,11 +356,12 @@ Crash recovery (next app start):
 - **When** the permission layer evaluates the path
 - **Then** access is denied silently — no user prompt, no override possible
 
-**FR-PERM-05 — Implicit permission from messages**
+**FR-PERM-05 — Implicit permission from messages** *(reconsider)*
 
 - **Given** the user mentions a file path in their chat message
 - **When** the agent subsequently reads that path
 - **Then** read access is granted silently for the current session
+- **Note (2026-07-21):** Deprioritized. Drag & drop (FR-INGEST-03) already covers the primary ingest flow. Parsing paths from free text is ambiguous and error-prone. The Zone 3 confirmation prompt provides valuable trust signal for non-technical users — removing it saves one click but loses transparency. Revisit only if real-world usage shows the permission prompt causes friction.
 
 **FR-PERM-06 — Zone 2: user-designated paths**
 
