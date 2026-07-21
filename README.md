@@ -100,4 +100,4 @@ docs/           — Design principles, technical architecture, decisions
 
 ## License
 
-MIT
+GPL-3.0 — see [LICENSE](LICENSE).
