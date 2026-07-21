@@ -18,8 +18,6 @@ import type { PiSessionLike } from "../../backends/worker-core";
 export class FakeSession implements PiSessionLike {
   promptCalls: string[] = [];
   abortCalls = 0;
-  setModelCalls: unknown[] = [];
-  disposed = false;
 
   private listeners = new Set<(event: AgentEvent) => void>();
   private streaming = false;
@@ -48,13 +46,9 @@ export class FakeSession implements PiSessionLike {
     }
   }
 
-  async setModel(model: unknown): Promise<void> {
-    this.setModelCalls.push(model);
-  }
+  async setModel(_model: unknown): Promise<void> {}
 
-  dispose(): void {
-    this.disposed = true;
-  }
+  dispose(): void {}
 
   // --- Test drivers -------------------------------------------------------
 

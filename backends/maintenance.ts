@@ -27,7 +27,7 @@ export function lockPath(abDirectory: string): string {
   return join(abDirectory, ".buddy", "maintenance.lock");
 }
 
-export function readLock(abDirectory: string): MaintenanceLock | null {
+function readLock(abDirectory: string): MaintenanceLock | null {
   const path = lockPath(abDirectory);
   if (!existsSync(path)) return null;
   try {
