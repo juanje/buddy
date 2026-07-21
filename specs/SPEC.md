@@ -364,11 +364,11 @@ Crash recovery (next app start):
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-INGEST-01 | Drag and drop files onto chat | 1 |
-| FR-INGEST-02 | Attach button | 1 |
-| FR-INGEST-03 | Dropped file implicit permission | 1 |
-| FR-INGEST-04 | Supported formats | 1 |
-| FR-INGEST-05 | Image attachments (vision) | 1 |
+| FR-INGEST-01 | Drag and drop files onto chat | 1 ✓ |
+| FR-INGEST-02 | Attach button | 1 ✓ |
+| FR-INGEST-03 | Dropped file implicit permission | 1 ✓ |
+| FR-INGEST-04 | Supported formats | 1 ✓ |
+| FR-INGEST-05 | Image attachments (vision) | 1 ✓ |
 | FR-INGEST-06 | PDF attachments (native provider support) | 2 |
 
 **FR-INGEST-01 — Drag and drop**
@@ -420,7 +420,7 @@ Crash recovery (next app start):
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-DEFERRED-01 | Surface due items on app start | 1 |
+| FR-DEFERRED-01 | Surface due items on app start | 1 ✓ |
 | FR-DEFERRED-02 | Heartbeat periodic check | 2 |
 | FR-DEFERRED-03 | OS notification for due items | 2 |
 
@@ -705,7 +705,7 @@ Full specification in [specs/BRAIN-SPEC.md](BRAIN-SPEC.md).
 | FR-SHELL-01 | App header bar with session controls | 3 |
 | FR-SHELL-02 | Explicit end-session button | 3 |
 | FR-SHELL-03 | About / app info panel | 3 |
-| FR-SHELL-04 | Attach button in input bar | 1 |
+| FR-SHELL-04 | Attach button in input bar | 1 ✓ |
 | FR-SHELL-05 | Input bar layout (stacked: attachments / text / buttons) | 1 |
 | FR-SHELL-06 | Wizard back navigation | 1 |
 
