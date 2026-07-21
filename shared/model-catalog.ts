@@ -1,4 +1,4 @@
-// src/lib/model-catalog.ts — curated model choices per provider (FR-SETUP-05).
+// shared/model-catalog.ts — curated model choices per provider (FR-SETUP-05).
 // A hand-picked v1 catalog (not a live provider query): the target user needs
 // three understandable choices, not fifty ids. Ids must match Pi's model
 // catalog for the provider. "custom" has no catalog — the user types the id

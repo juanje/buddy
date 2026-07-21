@@ -13,7 +13,7 @@ import {
   type ProviderId,
   type SetupController,
 } from "../../src/lib/setup-controller";
-import { modelChoicesFor, recommendedModelFor } from "../../src/lib/model-catalog";
+import { modelChoicesFor, recommendedModelFor } from "../../shared/model-catalog";
 import { tierDescription } from "../../src/lib/i18n";
 import { advanceToModelStep } from "../support/setup-wizard-helpers";
 import { makeSetupWorkerFake } from "../support/setup-worker-fake";

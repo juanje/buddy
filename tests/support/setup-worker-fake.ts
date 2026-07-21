@@ -3,7 +3,7 @@
 // silent defaults, so a step reaching the wrong surface fails visibly.
 
 import type { ModelInfo, SetupProviderId, SetupWorkerAPI } from "../../shared/api";
-import { modelChoicesFor } from "../../src/lib/model-catalog";
+import { modelChoicesFor } from "../../shared/model-catalog";
 
 export function catalogModelsFor(provider: SetupProviderId): ModelInfo[] {
   const choices = modelChoicesFor(provider);

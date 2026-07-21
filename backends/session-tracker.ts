@@ -3,6 +3,7 @@
 import type { AgentEvent } from "../shared/api";
 import { extractToolInfo } from "../shared/pi-events";
 import { READ_TOOLS, WRITE_TOOLS } from "../shared/defaults";
+import { sep } from "node:path";
 
 export interface TrackedToolCall {
   name: string;
@@ -22,9 +23,10 @@ export interface SessionTrackerSnapshot {
 }
 
 function relPath(abDirectory: string, absOrRel: string): string {
-  if (!absOrRel.startsWith(abDirectory)) return absOrRel;
-  const trimmed = absOrRel.slice(abDirectory.length).replace(/^[/\\]/, "");
-  return trimmed || absOrRel;
+  if (absOrRel === abDirectory) return absOrRel;
+  const prefix = abDirectory.endsWith(sep) ? abDirectory : abDirectory + sep;
+  if (!absOrRel.startsWith(prefix)) return absOrRel;
+  return absOrRel.slice(prefix.length) || absOrRel;
 }
 
 export class SessionTracker {

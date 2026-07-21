@@ -2,7 +2,7 @@
 
 import { describe, expect, it } from "vitest";
 
-import { modelChoicesFor, recommendedModelFor, defaultModelForProvider, fastModelForProvider } from "../../src/lib/model-catalog";
+import { modelChoicesFor, recommendedModelFor, defaultModelForProvider, fastModelForProvider } from "../../shared/model-catalog";
 
 const LISTED_PROVIDERS = ["anthropic", "openai", "google"] as const;
 

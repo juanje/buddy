@@ -3,7 +3,7 @@
 import { describe, expect, it } from "vitest";
 
 import { listModelsForProvider } from "../../backends/model-listing";
-import { modelChoicesFor, recommendedModelFor } from "../../src/lib/model-catalog";
+import { modelChoicesFor, recommendedModelFor } from "../../shared/model-catalog";
 
 describe("listModelsForProvider", () => {
   it("returns live models when the SDK has entries", async () => {

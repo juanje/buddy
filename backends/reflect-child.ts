@@ -20,7 +20,7 @@ import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { AgentEvent } from "../shared/api";
 import { DEFAULT_PI_PROVIDER, REFLECT_SESSIONS_DIR } from "../shared/defaults";
-import { fastModelForProvider } from "../src/lib/model-catalog";
+import { fastModelForProvider } from "../shared/model-catalog";
 import { logEvent } from "./app-logger";
 import { commitAll } from "./git";
 import { acquireLock, releaseLock } from "./maintenance";

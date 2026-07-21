@@ -3,7 +3,7 @@
 // chat-controller pattern.
 
 import { derived, get, writable, type Readable, type Writable } from "svelte/store";
-import { recommendedModelFor } from "./model-catalog";
+import { recommendedModelFor } from "../../shared/model-catalog";
 import { DEFAULT_SETUP_PROVIDER, isApiKeyOnlyProvider } from "./provider-setup";
 import type {
   KeyCheck,

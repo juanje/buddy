@@ -5,7 +5,7 @@ import {
   modelChoicesFor,
   recommendedModelFor,
   type ModelChoice,
-} from "../src/lib/model-catalog";
+} from "../shared/model-catalog";
 import { toPiProviderId } from "./provider-mapping";
 
 export interface ModelRuntimeLike {
