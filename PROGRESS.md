@@ -76,14 +76,40 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 | FR-CHAT-05 | Thinking block display (collapsible) | done | 5e89120 |
 | FR-CHAT-06 | Tool call display (expandable activity block) | done | 5e89120 |
 
-**Phase 1 complete:** YES — all Phase 1 FRs implemented and passing (118 unit tests, 93 BDD scenarios).
+**Phase 1 complete:** YES — all Phase 1 FRs implemented and passing (122 unit tests, 93 BDD scenarios).
+
+## Phase 2 — Implemented early
+
+| FR-ID | Feature | Status | Commit |
+|-------|---------|--------|--------|
+| FR-HEBB-01 | Intercept read tool calls | done | b977e60 |
+| FR-HEBB-02 | Frontmatter update | done | b977e60 |
+| FR-HEBB-03 | Exclusions | done | b977e60 |
+| FR-HEBB-04 | Lazy commit | done | b977e60 |
+| FR-REFLECT-03 | Checkpoint mid-session reflect | done | fbee7f9 |
+
+## Post-MVP — Fable review fixes (2026-07-21)
+
+| Finding | Description | Commit |
+|---------|-------------|--------|
+| A | NFR-SEC-06: block writes to `.pi/settings.json` | b167d04 |
+| B | FR-PERM-04: denylist wins over sessionAllowedPaths | b167d04 |
+| C | FR-SETUP-05: fix stale auth path in spec | 81a5234 |
+| E | AGENTS.md: only SOUL.md needs confirmation | 81a5234 |
+| F | Remove redundant afterToolCall Hebbian path | 7987112 |
+| G | Wire lifecycle before warm handoff | 7987112 |
+| I | Delete dead AppHeader/AboutPanel components | 0c0ce59 |
+| J | Remove stray `.ab-app.bak/config.json` | 0c0ce59 |
+| K | Move `model-catalog.ts` to `shared/` | 0c0ce59 |
+| L | Fix `relPath` prefix match without separator | 0c0ce59 |
+| D | Clarify Hebbian is automatic inside app | 0f178ad |
 
 ## Current focus
 
-> **Phase 1 MVP complete (2026-07-21).** All functional requirements for Phase 1
-> implemented and verified: chat, setup wizard, permissions (including persistent
-> allow-always), reflect, session lifecycle, file ingest (images + PDF), git,
-> deferred surfacing. Next: Phase 2 (FR-CONSOL, FR-HEBB promotions, FR-PERM-05).
+> **Phase 1 MVP complete + post-review hardened (2026-07-21).** All Phase 1 FRs
+> implemented and verified. FR-HEBB (Phase 2) also shipped. External review
+> findings resolved (security, docs, cleanup). Next: Phase 2
+> (FR-CONSOL heartbeat, FR-WIKI, FR-PERM-05, FR-COST).
 
 ### Sprint: OAuth Setup — DONE (2026-07-20)
 

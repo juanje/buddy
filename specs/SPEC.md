@@ -539,7 +539,7 @@ Crash recovery (next app start):
 **FR-HEBB-01 — Intercept reads**
 
 - **Given** the agent calls the `read` tool on a file inside the AB directory
-- **When** `afterToolCall` fires and `ctx.isError` is false
+- **When** the `tool_execution_end` event fires and `isError` is false
 - **Then** the access is recorded by the Hebbian tracker
 
 **FR-HEBB-02 — Frontmatter update**
