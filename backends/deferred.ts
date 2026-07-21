@@ -5,6 +5,11 @@
 // monthly | user. Unparseable lines are ignored — the queue is written by
 // the LLM during autonomous cycles, so tolerance beats strictness.
 
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
+import { toIsoDay } from "../shared/dates";
+
 export interface ParsedDeferredItem {
   type: string;
   dueDate: string; // YYYY-MM-DD
@@ -31,6 +36,17 @@ export function dueDeferredItems(
   today: string,
 ): ParsedDeferredItem[] {
   return items.filter((item) => item.dueDate <= today);
+}
+
+/** Due/overdue deferred items without assembling the full system prompt. */
+export function getDueDeferred(abDirectory: string, now: Date = new Date()): ParsedDeferredItem[] {
+  let deferredRaw: string | undefined;
+  try {
+    deferredRaw = readFileSync(join(abDirectory, "agent_brain", "deferred.md"), "utf8");
+  } catch {
+    return [];
+  }
+  return dueDeferredItems(parseDeferredItems(deferredRaw), toIsoDay(now));
 }
 
 export { toIsoDay } from "../shared/dates";

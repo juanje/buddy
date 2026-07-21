@@ -9,7 +9,7 @@ import { simpleGit } from "simple-git";
 
 import type { SetupConfig } from "../shared/api";
 import { DEFAULT_LANGUAGE, GIT_USER_EMAIL, GIT_USER_NAME } from "../shared/defaults";
-import { toPiProviderId } from "./provider-mapping";
+import { writePiSettings } from "../shared/pi-settings";
 
 /** Bundled templates location (dev: repo root; packaging revisits this). */
 export function defaultTemplatesDir(): string {
@@ -44,18 +44,7 @@ ${about}
 `;
 }
 
-export function writePiSettings(abDirectory: string, config: Pick<SetupConfig, "provider" | "model">): void {
-  const settingsPath = join(abDirectory, ".pi", "settings.json");
-  mkdirSync(dirname(settingsPath), { recursive: true });
-  writeFileSync(
-    settingsPath,
-    JSON.stringify(
-      { defaultProvider: toPiProviderId(config.provider), defaultModel: config.model },
-      null,
-      2,
-    ) + "\n",
-  );
-}
+export { writePiSettings } from "../shared/pi-settings";
 
 /**
  * Create the AB home: copy templates (agent_brain/, user/, logs/, AGENTS.md),

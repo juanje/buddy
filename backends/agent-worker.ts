@@ -17,23 +17,23 @@ import type {
 } from "../shared/api";
 import type { AllowedEntry } from "./allowed-paths";
 import { addAllowedPath, defaultConfigDir, loadAllowedPaths } from "./allowed-paths";
-import { adoptAbInstance, createAbInstance, writePiSettings } from "./create-ab";
+import { adoptAbInstance, createAbInstance } from "./create-ab";
 import { defaultAbLocation, validateLocation } from "./location";
 import { listModelsForProvider } from "./model-listing";
 import { resolveSessionModel } from "./model-switch";
 import { OAuthService } from "./oauth-service";
 import { alignHttpDispatcherWithPi } from "./pi-http-dispatcher";
 import { checkPrerequisites } from "./prereqs";
-import { assembleSystemPrompt } from "./prompt";
 import { configureProviderKey, defaultAuthPath } from "./provider-auth";
 import {
   fromPiProviderId,
   toPiProviderId,
   WIZARD_PI_PROVIDERS,
 } from "./provider-mapping";
-import { toIsoDay } from "./deferred";
+import { getDueDeferred, toIsoDay } from "./deferred";
 import { bootSession } from "./session-boot";
 import { defaultConfigPath, detectFirstRun, updateAppConfig } from "./setup";
+import { writePiSettings } from "../shared/pi-settings";
 import { createWorkerCore } from "./worker-core";
 
 async function main(): Promise<void> {
@@ -115,7 +115,7 @@ async function main(): Promise<void> {
       async getDeferredItems() {
         if (setupState.firstRun) return [];
         const today = toIsoDay(new Date());
-        const { dueItems } = assembleSystemPrompt(setupState.config.abDirectory);
+        const dueItems = getDueDeferred(setupState.config.abDirectory);
         return dueItems.map((item) => ({
           type: item.type,
           dueDate: item.dueDate,

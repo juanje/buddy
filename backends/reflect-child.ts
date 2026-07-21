@@ -19,8 +19,9 @@ import {
 import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { AgentEvent } from "../shared/api";
-import { DEFAULT_PI_PROVIDER, EXCLUDED_TOOLS, AGENT_TOOLS, LOCK_MAX_RETRIES, LOCK_RETRY_MS, REFLECT_SESSIONS_DIR } from "../shared/defaults";
+import { EXCLUDED_TOOLS, AGENT_TOOLS, LOCK_MAX_RETRIES, LOCK_RETRY_MS, REFLECT_SESSIONS_DIR } from "../shared/defaults";
 import { fastModelForProvider } from "../shared/model-catalog";
+import { readPiProvider } from "../shared/pi-settings";
 import { logEvent } from "./app-logger";
 import { commitAll } from "./git";
 import { acquireLock, releaseLock } from "./maintenance";
@@ -36,22 +37,11 @@ import {
 } from "./reflect";
 import { CHECKPOINT_PROMPT, SESSION_END_PROMPT } from "./reflect-prompts";
 
-function readAbProvider(abDirectory: string): string {
-  const settingsPath = join(abDirectory, ".pi", "settings.json");
-  if (!existsSync(settingsPath)) return DEFAULT_PI_PROVIDER;
-  try {
-    const settings = JSON.parse(readFileSync(settingsPath, "utf8")) as { defaultProvider?: string };
-    return settings.defaultProvider ?? DEFAULT_PI_PROVIDER;
-  } catch {
-    return DEFAULT_PI_PROVIDER;
-  }
-}
-
 async function resolveFastModelOptions(abDirectory: string): Promise<{
   model?: Awaited<ReturnType<ModelRuntime["getModel"]>>;
   thinkingLevel: "minimal";
 }> {
-  const provider = readAbProvider(abDirectory);
+  const provider = readPiProvider(abDirectory);
   const fastModelId = fastModelForProvider(provider);
   if (!fastModelId) return { thinkingLevel: "minimal" };
 

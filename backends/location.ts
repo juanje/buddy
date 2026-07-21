@@ -3,11 +3,12 @@
 // empty directory; a directory with agent_brain/ is an existing AB instance
 // offered for import.
 
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { readdirSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
 import type { LocationCheck } from "../shared/api";
+import { readPiSettings } from "../shared/pi-settings";
 
 /** Proposed default AB location (FR-SETUP-03). */
 export function defaultAbLocation(): string {
@@ -45,13 +46,7 @@ export function validateLocation(path: string): LocationCheck {
 }
 
 function readAbSettings(abPath: string): LocationCheck["abSettings"] {
-  try {
-    const raw = JSON.parse(readFileSync(join(abPath, ".pi", "settings.json"), "utf8")) as {
-      defaultProvider?: string;
-      defaultModel?: string;
-    };
-    return { provider: raw.defaultProvider, model: raw.defaultModel };
-  } catch {
-    return undefined;
-  }
+  const raw = readPiSettings(abPath);
+  if (!raw) return undefined;
+  return { provider: raw.defaultProvider, model: raw.defaultModel };
 }
