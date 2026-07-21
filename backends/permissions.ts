@@ -13,6 +13,8 @@
 
 import { basename, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { homedir } from "node:os";
+import type { AllowedEntry } from "./allowed-paths";
+import { isPathPersistentlyAllowed } from "./allowed-paths";
 import { DENYLIST_BASENAMES, DENYLIST_HOME_DIRS, READ_TOOLS, WRITE_TOOLS } from "../shared/defaults";
 
 export type PermissionOp = "read" | "write";
@@ -101,9 +103,14 @@ export function createPermissionGate(
   abDirectory: string,
   askUser: (request: Omit<PermissionRequest, "id">) => Promise<boolean>,
   home: string = homedir(),
-  options?: { skipIdentityPrompt?: boolean; sessionAllowedPaths?: Set<string> },
+  options?: {
+    skipIdentityPrompt?: boolean;
+    sessionAllowedPaths?: Set<string>;
+    persistentAllowedPaths?: AllowedEntry[];
+  },
 ): PermissionGate {
   const sessionAllowedPaths = options?.sessionAllowedPaths;
+  const persistentAllowedPaths = options?.persistentAllowedPaths ?? [];
 
   return {
     async check(toolName, args) {
@@ -134,6 +141,13 @@ export function createPermissionGate(
         case "deny":
           return { block: true, reason: decision.reason };
         case "ask": {
+          if (
+            decision.op === "read" &&
+            decision.kind === "outside" &&
+            isPathPersistentlyAllowed(decision.path, persistentAllowedPaths)
+          ) {
+            return undefined;
+          }
           const allowed = await askUser({
             kind: decision.kind,
             op: decision.op,

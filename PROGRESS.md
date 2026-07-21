@@ -44,6 +44,7 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 | FR-PERM-02 | SOUL.md write confirmation (USER.md silent) | done | rework-sprint |
 | FR-PERM-03 | Zone 3: outside access prompt | done | d3e57f3 |
 | FR-PERM-04 | Hardcoded denylist | done | d3e57f3 |
+| FR-PERM-06 | Zone 2: user-designated paths | done | pending |
 | FR-PERM-07 | Permission prompt in chat | done | 1031c99 |
 | FR-SESSION-01 | Fresh session on every launch | done | rework-sprint |
 | FR-SESSION-02 | New session | N/A (every launch is fresh) | |

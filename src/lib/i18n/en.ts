@@ -50,6 +50,8 @@ export const en: LocaleStrings = {
   permissionOpRead: "Read",
   permissionOpWrite: "Write",
   permissionAllowOnce: "Allow once",
+  permissionAllowAlwaysFile: "Allow this file always",
+  permissionAllowAlwaysFolder: "Allow this folder always",
   permissionDeny: "Don't allow",
   permissionAllowed: "Allowed",
   permissionDenied: "Denied",

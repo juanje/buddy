@@ -2,6 +2,8 @@
   // Inline permission prompt (FR-PERM-07): user-friendly description of what
   // the agent wants to do, without exposing file paths for identity writes.
   import { get } from "svelte/store";
+  import type { AllowedPathPersist } from "../../shared/api";
+  import { dirname } from "../utils/path";
   import { t } from "./i18n";
   import type { PermissionCard } from "./chat-controller";
 
@@ -11,7 +13,7 @@
     onDismiss,
   }: {
     card: PermissionCard;
-    onRespond: (id: number, allow: boolean) => void;
+    onRespond: (id: number, allow: boolean, persist?: AllowedPathPersist) => void;
     onDismiss: (id: number) => void;
   } = $props();
 
@@ -27,9 +29,25 @@
     card.request.op === "write" ? strings.permissionOpWrite : strings.permissionOpRead,
   );
   const showPath = $derived(card.request.kind !== "identity-write");
+  const showPersistentOptions = $derived(card.request.kind === "outside");
 
   function dismiss() {
     onDismiss(card.request.id);
+  }
+
+  function allowOnce() {
+    onRespond(card.request.id, true);
+  }
+
+  function allowFileAlways() {
+    onRespond(card.request.id, true, { path: card.request.path, type: "file" });
+  }
+
+  function allowFolderAlways() {
+    onRespond(card.request.id, true, {
+      path: dirname(card.request.path),
+      type: "directory",
+    });
   }
 </script>
 
@@ -53,9 +71,17 @@
     {/if}
     {#if card.verdict === undefined}
       <div class="actions">
-        <button class="allow" onclick={() => onRespond(card.request.id, true)}>
+        <button class="allow" onclick={allowOnce}>
           {strings.permissionAllowOnce}
         </button>
+        {#if showPersistentOptions}
+          <button class="secondary" onclick={allowFileAlways}>
+            {strings.permissionAllowAlwaysFile}
+          </button>
+          <button class="secondary" onclick={allowFolderAlways}>
+            {strings.permissionAllowAlwaysFolder}
+          </button>
+        {/if}
         <button class="deny" onclick={() => onRespond(card.request.id, false)}>
           {strings.permissionDeny}
         </button>
@@ -149,6 +175,7 @@
   }
   .actions {
     display: flex;
+    flex-wrap: wrap;
     gap: 8px;
     margin-top: 10px;
   }
@@ -165,6 +192,9 @@
     background: var(--accent, #4f46e5);
     border-color: transparent;
     color: #fff;
+  }
+  .actions button.secondary {
+    color: var(--muted);
   }
   .actions button.deny {
     border-color: var(--abort);

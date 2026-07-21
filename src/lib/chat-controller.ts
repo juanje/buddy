@@ -11,6 +11,7 @@
 import { derived, get, writable, type Readable, type Writable } from "svelte/store";
 import type {
   AgentEvent,
+  AllowedPathPersist,
   AssistantMessageEventLike,
   ChatWorkerAPI,
   PermissionRequest,
@@ -87,7 +88,7 @@ export interface ChatController {
   /** A tool call is waiting for the user's decision (FR-PERM-07). */
   handlePermissionRequest(request: PermissionRequest): void;
   /** Answer a pending permission card. */
-  respondPermission(id: number, allow: boolean): Promise<void>;
+  respondPermission(id: number, allow: boolean, persist?: AllowedPathPersist): Promise<void>;
   /** Remove a resolved permission card from the list (dismiss). */
   dismissPermission(id: number): void;
   /** Hide the welcome banner without sending a message. */
@@ -330,8 +331,12 @@ export function createChatController(worker: ChatWorkerAPI): ChatController {
     permissions.update((cards) => [...cards, { request }]);
   }
 
-  async function respondPermission(id: number, allow: boolean): Promise<void> {
-    await worker.resolvePermission(id, allow);
+  async function respondPermission(
+    id: number,
+    allow: boolean,
+    persist?: AllowedPathPersist,
+  ): Promise<void> {
+    await worker.resolvePermission(id, allow, persist);
     permissions.update((cards) =>
       cards.map((card) =>
         card.request.id === id ? { ...card, verdict: allow ? "allowed" : "denied" } : card,

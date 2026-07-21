@@ -308,7 +308,7 @@ Crash recovery (next app start):
 | FR-PERM-03 | Zone 3: confirm all outside access | 1 ✓ |
 | FR-PERM-04 | Hardcoded denylist | 1 ✓ |
 | FR-PERM-05 | Implicit permission from user messages | 2 |
-| FR-PERM-06 | Zone 2: user-designated paths | 2 |
+| FR-PERM-06 | Zone 2: user-designated paths | 1 ✓ |
 | FR-PERM-07 | Permission prompt in chat | 1 ✓ |
 
 **FR-PERM-01 — Zone 1: AB home**

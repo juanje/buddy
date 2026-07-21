@@ -43,6 +43,8 @@ export type LocaleStrings = {
   permissionOpRead: string;
   permissionOpWrite: string;
   permissionAllowOnce: string;
+  permissionAllowAlwaysFile: string;
+  permissionAllowAlwaysFolder: string;
   permissionDeny: string;
   permissionAllowed: string;
   permissionDenied: string;
@@ -138,6 +140,8 @@ export const es: LocaleStrings = {
   permissionOpRead: "Leer",
   permissionOpWrite: "Escribir",
   permissionAllowOnce: "Permitir una vez",
+  permissionAllowAlwaysFile: "Permitir este archivo siempre",
+  permissionAllowAlwaysFolder: "Permitir esta carpeta siempre",
   permissionDeny: "No permitir",
   permissionAllowed: "Permitido",
   permissionDenied: "Denegado",

@@ -16,6 +16,7 @@ import { imageMimeType, isImageFormat, isPdfFormat } from "../shared/ingest-form
 import { logEvent } from "./app-logger";
 import { createHebbianTracker } from "./hebbian";
 import { createPermissionGate, type PermissionRequest } from "./permissions";
+import type { AllowedEntry } from "./allowed-paths";
 import { extractPdfText } from "./pdf-extract";
 import { assembleSystemPrompt } from "./prompt";
 import { runCrashRecoveryCatchUp } from "./reflect-recovery";
@@ -28,6 +29,7 @@ export interface SessionBootContext {
   modelRuntime: ModelRuntime;
   requestPermission: (request: Omit<PermissionRequest, "id">) => Promise<boolean>;
   sessionAllowedPaths: Set<string>;
+  persistentAllowedPaths: AllowedEntry[];
 }
 
 export interface BootSessionOptions {
@@ -143,7 +145,11 @@ export async function bootSession(
     abDirectory,
     context.requestPermission,
     undefined,
-    { skipIdentityPrompt: options?.firstSession === true, sessionAllowedPaths: context.sessionAllowedPaths },
+    {
+      skipIdentityPrompt: options?.firstSession === true,
+      sessionAllowedPaths: context.sessionAllowedPaths,
+      persistentAllowedPaths: context.persistentAllowedPaths,
+    },
   );
   const originalBeforeToolCall = session.agent.beforeToolCall;
   session.agent.beforeToolCall = async (ctx, signal) => {

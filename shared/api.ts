@@ -100,6 +100,12 @@ export type OAuthUIEvent =
   | { type: "complete" }
   | { type: "error"; message: string };
 
+/** Persistent outside-path approval (FR-PERM-06). */
+export interface AllowedPathPersist {
+  path: string;
+  type: "file" | "directory";
+}
+
 /** A permission question the agent is waiting on (FR-PERM-02/03/07). */
 export interface PermissionRequest {
   id: number;
@@ -158,7 +164,7 @@ export interface WorkerAPI {
    */
   runSetup(config: SetupConfig, mode?: "create" | "import"): Promise<void>;
   /** Answer a pending permission request (FR-PERM-07). */
-  resolvePermission(id: number, allow: boolean): Promise<void>;
+  resolvePermission(id: number, allow: boolean, persist?: AllowedPathPersist): Promise<void>;
   shutdown(): Promise<void>;
 }
 
