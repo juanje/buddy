@@ -84,9 +84,9 @@
         <div class="field">
           <dt>{$t.settingsLanguage}</dt>
           <dd>
-            <select value={$config.language} onchange={onLanguageChange}>
-              <option value="es">Español</option>
-              <option value="en">English</option>
+            <select onchange={onLanguageChange}>
+              <option value="es" selected={$config.language === "es"}>Español</option>
+              <option value="en" selected={$config.language === "en"}>English</option>
             </select>
           </dd>
         </div>
@@ -96,9 +96,9 @@
             {#if $loadingModels}
               <span class="muted">{$t.settingsModelLoading}</span>
             {:else if authenticatedProviders.length > 0}
-              <select value={$config.provider} onchange={onProviderChange}>
+              <select onchange={onProviderChange}>
                 {#each authenticatedProviders as p (p)}
-                  <option value={p}>{providerLabel(p, $t)}</option>
+                  <option value={p} selected={p === $config.provider}>{providerLabel(p, $t)}</option>
                 {/each}
               </select>
             {:else}
@@ -180,9 +180,9 @@
             {#if $loadingModels}
               <span class="muted">{$t.settingsModelLoading}</span>
             {:else if modelsForCurrentProvider.length > 0}
-              <select value={$config.model} onchange={onModelChange}>
+              <select onchange={onModelChange}>
                 {#each modelsForCurrentProvider as m (m.id)}
-                  <option value={m.id}>{m.label}</option>
+                  <option value={m.id} selected={m.id === $config.model}>{m.label}</option>
                 {/each}
               </select>
             {:else}
@@ -270,13 +270,20 @@
     font-size: 15px;
   }
   select {
+    appearance: none;
+    -webkit-appearance: none;
     font: inherit;
     padding: 6px 10px;
+    padding-right: 28px;
     border-radius: 8px;
     border: 1px solid var(--border);
     background: var(--bg-secondary);
     color: var(--fg);
     max-width: 100%;
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M3 4.5L6 8l3-3.5H3z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
   }
   .path {
     word-break: break-all;

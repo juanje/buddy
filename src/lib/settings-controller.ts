@@ -226,10 +226,21 @@ export function createSettingsController(options: {
     },
     async setModel(provider, model) {
       lastModelByProvider.set(provider, model);
-      await options.worker.changeModel(provider, model);
-      const updated: SetupConfig = { ...options.getConfig(), provider, model };
+      const previous = options.getConfig();
+      const updated: SetupConfig = { ...previous, provider, model };
       options.onConfigChange(updated);
       config.update((current) => ({ ...current, provider, model }));
+      try {
+        await options.worker.changeModel(provider, model);
+      } catch {
+        options.onConfigChange(previous);
+        config.update((current) => ({
+          ...current,
+          provider: previous.provider,
+          model: previous.model,
+        }));
+        lastModelByProvider.set(previous.provider, previous.model);
+      }
     },
     getLastModelForProvider(provider) {
       return lastModelByProvider.get(provider);
