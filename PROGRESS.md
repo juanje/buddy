@@ -81,7 +81,7 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 | FR-SETTINGS-04 | Language switching from settings | done | 6ea7f89 |
 | FR-SETTINGS-05 | Settings access from UI (gear icon + menu) | done | 2e051c5 |
 
-**Phase 1 complete:** YES — all Phase 1 FRs implemented and passing (141 unit tests, 99 BDD scenarios).
+**Phase 1 complete:** YES — all Phase 1 FRs implemented and passing (139 unit tests, 99 BDD scenarios).
 
 ## Phase 2 — Implemented early
 

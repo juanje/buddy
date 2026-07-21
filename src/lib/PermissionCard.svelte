@@ -61,8 +61,8 @@
         {opLabel} · <code>{showPath ? card.request.path.split("/").slice(-2).join("/") : "SOUL.md"}</code>
         — {card.verdict === "allowed" ? strings.permissionAllowed : strings.permissionDenied}
       </span>
-      <button class="expand-btn" onclick={() => (expanded = true)} title="expand">⋯</button>
-      <button class="dismiss-btn" onclick={dismiss} title="dismiss">×</button>
+      <button class="expand-btn" onclick={() => (expanded = true)} title={strings.permissionExpand}>⋯</button>
+      <button class="dismiss-btn" onclick={dismiss} title={strings.permissionDismiss}>×</button>
     </div>
   {:else}
     <p class="title">{title}</p>
@@ -89,7 +89,7 @@
     {:else}
       <div class="resolved-row">
         <p class="verdict">{card.verdict === "allowed" ? strings.permissionAllowed : strings.permissionDenied}</p>
-        <button class="dismiss-btn" onclick={dismiss} title="dismiss">×</button>
+        <button class="dismiss-btn" onclick={dismiss} title={strings.permissionDismiss}>×</button>
       </div>
     {/if}
   {/if}

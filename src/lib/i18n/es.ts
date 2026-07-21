@@ -5,6 +5,10 @@ export type LocaleStrings = {
   sendTitle: string;
   abortTitle: string;
   scrollToBottom: string;
+  typingIndicatorLabel: string;
+  removeAttachmentTitle: string;
+  permissionExpand: string;
+  permissionDismiss: string;
   wizardTitle: string;
   wizardIntro: string;
   personalizationTitle: string;
@@ -98,9 +102,13 @@ export const es: LocaleStrings = {
   inputPlaceholder: "Escribe un mensaje…",
   connectionLost: "Se perdió la conexión con el asistente",
   restart: "Reiniciar",
-  sendTitle: "Send (Enter)",
-  abortTitle: "Abort (Esc)",
-  scrollToBottom: "Scroll to bottom",
+  sendTitle: "Enviar (Enter)",
+  abortTitle: "Cancelar (Esc)",
+  scrollToBottom: "Ir al final",
+  typingIndicatorLabel: "El asistente está escribiendo",
+  removeAttachmentTitle: "Quitar",
+  permissionExpand: "Expandir",
+  permissionDismiss: "Cerrar",
   wizardTitle: "Bienvenido a Buddy",
   wizardIntro:
     "Vamos a preparar tu asistente personal. Este asistente vivirá en una carpeta de tu equipo, con su memoria y sus notas.",

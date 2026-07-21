@@ -5,7 +5,7 @@ import { DEFAULT_SETUP_PROVIDER, supportsOAuth } from "../shared/provider-consta
 
 export { DEFAULT_SETUP_PROVIDER, supportsOAuth };
 
-/** Pi SDK provider id for each ab-app wizard provider. */
+/** Pi SDK provider id for each Buddy wizard provider. */
 export function toPiProviderId(provider: SetupProviderId): string {
   switch (provider) {
     case "openai":
@@ -19,7 +19,7 @@ export function toPiProviderId(provider: SetupProviderId): string {
   }
 }
 
-/** Map Pi auth.json key back to ab-app provider id. */
+/** Map Pi auth.json key back to Buddy provider id. */
 export function fromPiProviderId(piProviderId: string): SetupProviderId | undefined {
   switch (piProviderId) {
     case "openai-codex":

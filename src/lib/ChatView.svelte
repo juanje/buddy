@@ -70,7 +70,7 @@
       />
     {/each}
     {#if $typingIndicator}
-      <div class="typing" aria-label="assistant is typing">
+      <div class="typing" aria-label={$t.typingIndicatorLabel}>
         <span></span><span></span><span></span>
       </div>
     {/if}

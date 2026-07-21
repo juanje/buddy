@@ -7,6 +7,10 @@ export const en: LocaleStrings = {
   sendTitle: "Send (Enter)",
   abortTitle: "Abort (Esc)",
   scrollToBottom: "Scroll to bottom",
+  typingIndicatorLabel: "Assistant is typing",
+  removeAttachmentTitle: "Remove",
+  permissionExpand: "Expand",
+  permissionDismiss: "Dismiss",
   wizardTitle: "Welcome to Buddy",
   wizardIntro:
     "Let's set up your personal assistant. It will live in a folder on your computer, with its own memory and notes.",

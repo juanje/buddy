@@ -13,7 +13,7 @@ export interface ModelRuntimeForSwitch {
   getAvailable(providerId?: string): Promise<readonly SessionModelLike[]>;
 }
 
-/** Resolve a Pi Model for session.setModel from ab-app provider + model id. */
+/** Resolve a Pi Model for session.setModel from Buddy provider + model id. */
 export async function resolveSessionModel(
   runtime: ModelRuntimeForSwitch,
   provider: SetupProviderId,

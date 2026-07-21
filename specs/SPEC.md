@@ -38,7 +38,7 @@ Frontend (Svelte, system webview)
 Node.js Worker (TypeScript)
     ├── Pi SDK: createAgentSession()
     ├── Permission layer (beforeToolCall hook)
-    ├── Hebbian tracker (afterToolCall hook)
+    ├── Hebbian tracker (tool_execution_end via session.subscribe)
     ├── Heartbeat scheduler (Phase 2 — setInterval)
     └── Consolidation runner (Phase 2 — separate Pi session)
     │
@@ -53,7 +53,7 @@ AB File System (git repo)
 **Key patterns:**
 - `kkrpc` for frontend↔worker communication (type-safe, bidirectional)
 - `excludeTools: ["bash"]` — file operations only, no shell
-- Hook chaining on `beforeToolCall` for permissions and `afterToolCall` for Hebbian tracking
+- Hook chaining on `beforeToolCall` for permissions; Hebbian tracking via `tool_execution_end` in `session.subscribe()`
 - `DefaultResourceLoader` with assembled system prompt at session start
 - Separate Pi session for maintenance (consolidation never touches live session)
 
@@ -1043,7 +1043,7 @@ AB remembers the conversation, knows their name, surfaces any pending reminders.
 |-----------|---------------|
 | Session creation | `createAgentSession()` with `excludeTools: ["bash"]` produces a session with file tools only |
 | Event streaming | `session.subscribe()` emits expected event types in correct order |
-| Hook chaining | Custom `beforeToolCall` / `afterToolCall` are called alongside Pi extension hooks |
+| Hook chaining | Custom `beforeToolCall` chains with Pi extension hooks; Hebbian uses `tool_execution_end` via `session.subscribe()` |
 | Session fork for reflect | `SessionManager.forkFrom()` produces a valid fork for background reflect without touching the live session |
 | Maintenance session | Separate session for consolidation doesn't interfere with the live session |
 

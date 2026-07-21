@@ -70,7 +70,7 @@
               type="button"
               class="chip-remove"
               onclick={() => controller.removeAttachment(file.path)}
-              title="Remove"
+              title={$t.removeAttachmentTitle}
             >
               ×
             </button>
