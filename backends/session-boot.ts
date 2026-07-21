@@ -136,6 +136,7 @@ export async function bootSession(
     resourceLoader,
     sessionManager: SessionManager.create(abDirectory),
     excludeTools: ["bash"],
+    tools: ["read", "write", "edit", "grep", "find", "ls"],
     modelRuntime: context.modelRuntime,
   });
 
