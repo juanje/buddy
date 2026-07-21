@@ -76,14 +76,14 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 | FR-CHAT-05 | Thinking block display (collapsible) | done | 5e89120 |
 | FR-CHAT-06 | Tool call display (expandable activity block) | done | 5e89120 |
 
-**Phase 1 complete:** NO
+**Phase 1 complete:** YES — all Phase 1 FRs implemented and passing (118 unit tests, 93 BDD scenarios).
 
 ## Current focus
 
-> **OAuth Setup Sprint complete (2026-07-20).** Pi SDK `ModelRuntime.login()` as
-> primary auth path (OpenAI/Anthropic OAuth); API key fallback; live model listing
-> via `getAvailable()` with curated catalog fallback; browser open via Tauri shell.
-> Next: Phase 2.
+> **Phase 1 MVP complete (2026-07-21).** All functional requirements for Phase 1
+> implemented and verified: chat, setup wizard, permissions (including persistent
+> allow-always), reflect, session lifecycle, file ingest (images + PDF), git,
+> deferred surfacing. Next: Phase 2 (FR-CONSOL, FR-HEBB promotions, FR-PERM-05).
 
 ### Sprint: OAuth Setup — DONE (2026-07-20)
 

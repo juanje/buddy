@@ -145,6 +145,7 @@ const { session } = await createAgentSession({
     modelRuntime,
     resourceLoader,
     excludeTools: ["bash"],  // file-only tool set (security decision)
+    tools: ["read", "write", "edit", "grep", "find", "ls"],  // explicit activation (SDK default is only read/write/edit)
     cwd: AB_DIR,
 });
 
@@ -298,6 +299,7 @@ const { session } = await createAgentSession({
     modelRuntime,
     resourceLoader,
     excludeTools: ["bash"],
+    tools: ["read", "write", "edit", "grep", "find", "ls"],
     cwd: AB_DIR,
 });
 ```
@@ -601,6 +603,7 @@ async function runSingleDepth(depth: number) {
         modelRuntime,
         resourceLoader: maintenanceLoader,
         excludeTools: ["bash"],
+        tools: ["read", "write", "edit", "grep", "find", "ls"],
         cwd: AB_DIR,
     });
 
@@ -785,11 +788,10 @@ Zone 1 — AB Home (full access, never ask):
   AB_DIR/**              → read, write, edit, delete
   Exceptions (require user confirmation even inside Zone 1):
     - agent_brain/identity/SOUL.md  → write confirms
-    - agent_brain/identity/USER.md  → write confirms
     - .pi/settings.json             → write blocked (agent can't reconfigure its own model)
 
 Zone 2 — User-designated (read silent, write confirms):
-  Explicitly shared paths (persisted in config)
+  Explicitly shared paths (persisted in ~/.buddy/allowed-paths.json)
   e.g. ~/Documents/articles/, ~/git/complex-system-kb/
   → read: allowed silently
   → write: ask user in chat
@@ -940,26 +942,36 @@ export type PermissionResponse = "allow_once" | "allow_session" | "allow_always"
 
 ### Persistence
 
-Zone 2 paths and preferences persist in `~/.buddy/config.json`:
+Zone 2 paths persist in `~/.buddy/allowed-paths.json`:
+
+```json
+{
+    "allowedPaths": [
+        { "path": "/Users/juanje/Documents/articles", "type": "directory" },
+        { "path": "/Users/juanje/git/complex-system-kb", "type": "directory" }
+    ]
+}
+```
+
+App configuration lives in `~/.buddy/config.json`:
 
 ```json
 {
     "abDirectory": "/Users/juanje/buddy",
-    "trustedPaths": [
-        "~/Documents/articles/",
-        "~/git/complex-system-kb/"
-    ]
+    "provider": "openai",
+    "model": "gpt-5.6-luna"
 }
 ```
 
 ### MVP vs full implementation
 
-**MVP (Phase 1):** Simple version — Zone 1 always allow (with identity file
-confirmation), everything else confirm in chat. No "allow always" yet, no
-extracted-path-from-message logic. Just: inside AB = OK, outside = ask.
-
-**Phase 2+:** Full zone model with path extraction from messages, persistent
-Zone 2, denylist.
+**MVP (Phase 1) — implemented:** Zone 1 always allow (with SOUL.md
+confirmation), everything outside asks in chat with three options: "Allow
+once", "Allow this file always", "Allow this folder always", or "Deny".
+Zone 2 (persistent allows) implemented via `~/.buddy/allowed-paths.json`.
+Denylist (hardcoded never-access paths) active. Implicit permission from
+user-mentioned paths active (session-scoped). USER.md writes are Zone 1
+(silent allow — the agent manages profile freely).
 
 ## File Ingest (Drag & Drop / Attach)
 
@@ -999,9 +1011,9 @@ discusses the file. Structured wiki ingest is NOT v1.
 - **"Read this"**, not "index this." Dropping a file means the agent reads
   and discusses it in the current session. Structured wiki ingest
   (`wiki-ingest` skill) is a separate flow, not triggered by drag & drop.
-- **Formats:** v1 supports markdown and plain text natively. PDF/docx are
-  out of scope for v1 — show a polite message suggesting export to text.
-  Format converters are a Phase 2+ addition.
+- **Formats:** v1 supports markdown, plain text, images (via Pi vision API),
+  and PDF (local text extraction via `pdf-parse`). Unsupported formats
+  (.docx, etc.) show a message suggesting export to text.
 
 ### Phase
 
@@ -1375,10 +1387,7 @@ everything in Phase 0 plus the features needed for day-one value:
 - Heartbeat/scheduler (consolidation, periodic deferred checks)
 - Extension UI proxy (notifications only, no confirm/select)
 - Settings UI (configure via Pi's own settings.json)
-- Tool call rendering (show as plain text, not cards)
-- Thinking blocks (show inline, not collapsible)
 - Model switching from UI (use Pi's default)
-- Hebbian tracking (**implemented** — `backends/hebbian.ts`)
 - Worker compiled as binary (use system Node.js for dev)
 
 ### Traceability: principles → spec phases
@@ -1707,6 +1716,7 @@ All critical APIs verified against Pi source code. Summary:
 | `session.prompt/steer/abort/compact` | All confirmed | `prompt` has `PromptOptions`; `steer` is text+images |
 | `session.setModel/setThinkingLevel` | Both confirmed | `setModel` async; `setThinkingLevel` sync |
 | `excludeTools: ["bash"]` | Confirmed | Clean way to disable bash at session creation |
+| `tools: ["read", ...]` | Confirmed | Explicit active tool list (SDK default is only read/bash/edit/write; grep/find/ls must be explicitly activated) |
 | System prompt | Via `DefaultResourceLoader({ systemPromptOverride: () => prompt })` | Not a direct `createAgentSession` param |
 | Cost/usage data | On `AssistantMessage.usage` in `message_end` events | Full token + cost breakdown |
 | Extensions in SDK mode | Fully operational | Extensions load and run normally |

@@ -25,7 +25,7 @@ Frontend (Svelte 5, system webview)
     │ kkrpc (type-safe bidirectional RPC)
     ▼
 Node.js Worker (TypeScript)
-    ├── Pi SDK: createAgentSession({ excludeTools: ["bash"] })
+    ├── Pi SDK: createAgentSession({ tools: [...], excludeTools: ["bash"] })
     ├── Permission layer (zone-based file access control)
     ├── Session lifecycle (auto-commit, reflect on shutdown)
     └── App logger (.buddy/logs/ JSONL instrumentation)
@@ -73,7 +73,7 @@ npm run test:bdd        # BDD scenarios only (cucumber-js)
 npm run typecheck       # TypeScript type checking (tsc --noEmit)
 ```
 
-**Current status:** 24 unit test files (96 tests), 24 feature files (87 scenarios passing, 5 undefined for upcoming features).
+**Current status:** 28 unit test files (118 tests), 93 BDD scenarios passing.
 
 ## Project structure
 
