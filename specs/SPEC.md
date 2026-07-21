@@ -791,16 +791,27 @@ Full specification in [specs/BRAIN-SPEC.md](BRAIN-SPEC.md).
 
 | ID | Description | Phase |
 |----|-------------|-------|
+| FR-DOCS-00 | Agent identity (name + self-awareness) in SOUL.md template | 1 ✓ |
 | FR-DOCS-01 | Self-documentation KB available for agent consultation | 3 |
 | FR-DOCS-02 | "Help me" / "How do you work?" triggers agent self-explanation | 3 |
+
+**FR-DOCS-00 — Agent identity in SOUL.md**
+
+- **Given** the AB instance is set up (FR-SETUP-08)
+- **When** the user refers to the agent by name, asks who it is, or shares information about the agent itself
+- **Then** the agent knows its name is "Buddy" and can identify itself
+- **And** SOUL.md includes a brief self-description: what it is (personal assistant with persistent memory), how it persists (files, not continuous experience)
+- **And** a user-facing definition: "If the user asks who you are, tell them you are Buddy, their personal assistant — you remember conversations, organize their tasks and ideas, and learn their preferences over time."
+- **Note:** The name "Buddy" comes from the SOUL.md template, not from the system prompt or AGENTS.md. AGENTS.md defines behavior; SOUL.md defines identity. No link to `agent_brain/docs/` yet — that's added by FR-DOCS-01 when the KB exists.
 
 **FR-DOCS-01 — Self-documentation KB**
 
 - **Given** the AB directory is set up
 - **When** the agent needs to explain what it is, how it works, or what it can do
 - **Then** it consults `agent_brain/docs/` — a small set of markdown files covering capabilities, usage tips, and how the memory system works
-- **And** these files are NOT loaded at session start (they are referenced in AGENTS.md as "consult on demand when asked")
+- **And** these files are NOT loaded at session start (they are referenced in SOUL.md as "for detailed capabilities and how I work, consult `agent_brain/docs/`")
 - **And** the KB is part of the template, shipped with new instances
+- **And** SOUL.md is updated to include the pointer to `agent_brain/docs/` in "Where to find things" (extends FR-DOCS-00)
 
 **FR-DOCS-02 — Self-explanation trigger**
 
