@@ -117,7 +117,7 @@
 
 {#if onBack}
   <div class="actions">
-    <button type="button" onclick={onBack}>{$t.wizardBack}</button>
+    <button type="button" class="ghost" onclick={onBack}>{$t.wizardBack}</button>
   </div>
 {/if}
 
@@ -205,5 +205,18 @@
     gap: 8px;
     justify-content: center;
     margin-top: 12px;
+  }
+  button.ghost {
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    border-radius: 8px;
+    padding: 8px 20px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  button.ghost:hover {
+    color: var(--fg);
+    background: var(--bg-secondary);
   }
 </style>

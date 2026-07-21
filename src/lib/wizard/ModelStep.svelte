@@ -67,7 +67,7 @@
 
 <div class="actions">
   {#if onBack}
-    <button type="button" onclick={onBack}>{$t.wizardBack}</button>
+    <button type="button" class="ghost" onclick={onBack}>{$t.wizardBack}</button>
   {/if}
   <button class="primary" onclick={onContinue} disabled={!$canProceed}>
     {$t.wizardContinue}
@@ -144,6 +144,19 @@
     justify-content: center;
     flex-wrap: wrap;
     margin-top: 8px;
+  }
+  button.ghost {
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    border-radius: 8px;
+    padding: 8px 20px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  button.ghost:hover {
+    color: var(--fg);
+    background: var(--bg-secondary);
   }
   button:disabled {
     opacity: 0.5;

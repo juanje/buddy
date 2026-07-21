@@ -27,7 +27,7 @@
 </label>
 <div class="actions">
   {#if onBack}
-    <button type="button" onclick={onBack}>{$t.wizardBack}</button>
+    <button type="button" class="ghost" onclick={onBack}>{$t.wizardBack}</button>
   {/if}
   <button class="primary" onclick={onContinue} disabled={!canContinue}>{$t.wizardContinue}</button>
 </div>
@@ -74,5 +74,18 @@
     gap: 8px;
     justify-content: center;
     flex-wrap: wrap;
+  }
+  button.ghost {
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    border-radius: 8px;
+    padding: 8px 20px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  button.ghost:hover {
+    color: var(--fg);
+    background: var(--bg-secondary);
   }
 </style>

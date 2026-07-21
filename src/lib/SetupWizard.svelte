@@ -123,7 +123,7 @@ async function createAb() {
       </div>
     {:else}
       <div class="actions">
-        <button type="button" onclick={goBack}>{$t.wizardBack}</button>
+        <button type="button" class="ghost" onclick={goBack}>{$t.wizardBack}</button>
         <button class="primary" onclick={() => wizard.next()} disabled={!$canProceed || $checking}>
           {$checking ? $t.gitChecking : $t.wizardContinue}
         </button>
@@ -137,7 +137,7 @@ async function createAb() {
       <p class="error">{locationError($locationCheck.status)}</p>
     {/if}
     <div class="actions">
-      <button type="button" onclick={goBack}>{$t.wizardBack}</button>
+      <button type="button" class="ghost" onclick={goBack}>{$t.wizardBack}</button>
       {#if $locationCheck?.status === "existing-ab"}
         <button class="primary" onclick={importExistingAb}>{$t.locationImport}</button>
       {:else}
@@ -159,7 +159,7 @@ async function createAb() {
     {#if $setupError}
       <p class="error">{$t.creatingError}: {$setupError}</p>
       <div class="actions">
-        <button type="button" onclick={goBack}>{$t.wizardBack}</button>
+        <button type="button" class="ghost" onclick={goBack}>{$t.wizardBack}</button>
         <button class="primary" onclick={createAb}>{$t.creatingRetry}</button>
       </div>
     {:else}
@@ -238,6 +238,15 @@ async function createAb() {
     background: var(--accent, #4f46e5);
     border-color: transparent;
     color: #fff;
+  }
+  button.ghost {
+    border: none;
+    background: transparent;
+    color: var(--muted);
+  }
+  button.ghost:hover {
+    color: var(--fg);
+    background: var(--bg-secondary);
   }
   button:disabled {
     opacity: 0.5;
