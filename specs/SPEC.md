@@ -65,13 +65,13 @@ AB File System (git repo)
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-CHAT-01 | Streaming message display | 0 |
-| FR-CHAT-02 | User input with send | 0 |
-| FR-CHAT-03 | Abort generation | 0 |
+| FR-CHAT-01 | Streaming message display | 0 ✓ |
+| FR-CHAT-02 | User input with send | 0 ✓ |
+| FR-CHAT-03 | Abort generation | 0 ✓ |
 | FR-CHAT-04 | Markdown rendering in assistant messages | 3 ✓ |
 | FR-CHAT-05 | Thinking block display (collapsible) | 3 ✓ |
 | FR-CHAT-06 | Tool call display (expandable cards) | 3 ✓ |
-| FR-CHAT-07 | Auto-scroll with manual override | 0 |
+| FR-CHAT-07 | Auto-scroll with manual override | 0 ✓ |
 
 **FR-CHAT-01 — Streaming message display**
 
@@ -123,16 +123,16 @@ AB File System (git repo)
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-SETUP-01 | First-run detection | 1 |
-| FR-SETUP-02 | Language selection | 1 |
-| FR-SETUP-03 | Welcome screen | 1 |
-| FR-SETUP-04 | Location picker | 1 |
-| FR-SETUP-05 | Provider authentication | 1 |
-| FR-SETUP-06 | Model selection | 1 |
-| FR-SETUP-07 | Personalization form (name + about) | 1 |
-| FR-SETUP-08 | Deterministic AB directory setup | 1 |
-| FR-SETUP-09 | First conversation with warm handoff | 1 |
-| FR-SETUP-10 | Import existing instance | 1 |
+| FR-SETUP-01 | First-run detection | 1 ✓ |
+| FR-SETUP-02 | Language selection | 1 ✓ |
+| FR-SETUP-03 | Welcome screen | 1 ✓ |
+| FR-SETUP-04 | Location picker | 1 ✓ |
+| FR-SETUP-05 | Provider authentication | 1 ✓ |
+| FR-SETUP-06 | Model selection | 1 ✓ |
+| FR-SETUP-07 | Personalization form (name + about) | 1 ✓ |
+| FR-SETUP-08 | Deterministic AB directory setup | 1 ✓ |
+| FR-SETUP-09 | First conversation with warm handoff | 1 ✓ |
+| FR-SETUP-10 | Import existing instance | 1 ✓ |
 
 **FR-SETUP-01 — First-run detection**
 
@@ -221,9 +221,9 @@ platform-specific install instructions is shown and setup cannot continue.
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-SESSION-01 | Fresh session on every launch | 1 |
+| FR-SESSION-01 | Fresh session on every launch | 1 ✓ |
 | FR-SESSION-02 | (removed — every launch is inherently fresh) | — |
-| FR-SESSION-03 | Session end on app close | 1 |
+| FR-SESSION-03 | Session end on app close | 1 ✓ |
 
 **FR-SESSION-01 — Fresh session on every launch**
 
@@ -247,9 +247,9 @@ platform-specific install instructions is shown and setup cannot continue.
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-REFLECT-01 | Factual skeleton capture (crash fallback) | 1 |
-| FR-REFLECT-02 | Forked reflect on session end (primary) | 1 |
-| FR-REFLECT-03 | Checkpoint mid-session reflect (forked, background) | 1 |
+| FR-REFLECT-01 | Factual skeleton capture (crash fallback) | 1 ✓ |
+| FR-REFLECT-02 | Forked reflect on session end (primary) | 1 ✓ |
+| FR-REFLECT-03 | Checkpoint mid-session reflect (forked, background) | 1 ✓ |
 
 **FR-REFLECT-01 — Factual skeleton capture (crash fallback)**
 
@@ -303,13 +303,13 @@ Crash recovery (next app start):
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-PERM-01 | Zone 1: AB home full access | 1 |
-| FR-PERM-02 | Identity file write confirmation | 1 |
-| FR-PERM-03 | Zone 3: confirm all outside access | 1 |
-| FR-PERM-04 | Hardcoded denylist | 1 |
+| FR-PERM-01 | Zone 1: AB home full access | 1 ✓ |
+| FR-PERM-02 | Identity file write confirmation | 1 ✓ |
+| FR-PERM-03 | Zone 3: confirm all outside access | 1 ✓ |
+| FR-PERM-04 | Hardcoded denylist | 1 ✓ |
 | FR-PERM-05 | Implicit permission from user messages | 2 |
 | FR-PERM-06 | Zone 2: user-designated paths | 2 |
-| FR-PERM-07 | Permission prompt in chat | 1 |
+| FR-PERM-07 | Permission prompt in chat | 1 ✓ |
 
 **FR-PERM-01 — Zone 1: AB home**
 
@@ -548,8 +548,8 @@ Crash recovery (next app start):
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-PROMPT-01 | Assembly from files | 1 |
-| FR-PROMPT-02 | Session-start enrichment | 1 |
+| FR-PROMPT-01 | Assembly from files | 1 ✓ |
+| FR-PROMPT-02 | Session-start enrichment | 1 ✓ |
 
 **FR-PROMPT-01 — Assembly**
 
@@ -568,9 +568,9 @@ Crash recovery (next app start):
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-GIT-01 | Auto-commit after agent writes | 1 |
-| FR-GIT-02 | Git invisible to user | 1 |
-| FR-GIT-03 | Index rebuild on reflect complete | 1 |
+| FR-GIT-01 | Auto-commit after agent writes | 1 ✓ |
+| FR-GIT-02 | Git invisible to user | 1 ✓ |
+| FR-GIT-03 | Index rebuild on reflect complete | 1 ✓ |
 
 **FR-GIT-01 — Auto-commit**
 
@@ -597,7 +597,7 @@ Crash recovery (next app start):
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-SETTINGS-01 | Provider and model stored in Pi settings | 1 |
+| FR-SETTINGS-01 | Provider and model stored in Pi settings | 1 ✓ |
 | FR-SETTINGS-02 | Settings UI | 3 |
 | FR-SETTINGS-03 | Model switching from UI | 3 |
 | FR-SETTINGS-04 | Language switching from settings | 3 |
@@ -661,9 +661,9 @@ detailed specification: [specs/BRAIN-SPEC.md](BRAIN-SPEC.md).
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-BRAIN-01 | AGENTS.md provides behavioral rules that produce AB behavior | 1 |
-| FR-BRAIN-02 | SOUL.md defines character and first-session personalization flow | 1 |
-| FR-BRAIN-03 | USER.md placeholder is correctly populated by agent in first conversation | 1 |
+| FR-BRAIN-01 | AGENTS.md provides behavioral rules that produce AB behavior | 1 ✓ |
+| FR-BRAIN-02 | SOUL.md defines character and first-session personalization flow | 1 ✓ |
+| FR-BRAIN-03 | USER.md placeholder is correctly populated by agent in first conversation | 1 ✓ |
 | FR-BRAIN-04 | Consolidation skills produce meaningful summaries when invoked | 2 |
 | FR-BRAIN-05 | Observation pipeline captures and promotes patterns | 2 |
 
