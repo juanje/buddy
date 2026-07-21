@@ -1,9 +1,10 @@
 // backends/hebbian.ts — Code-enforced Hebbian access tracking (FR-HEBB).
 
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
-import { isAbsolute, relative, resolve, sep } from "node:path";
+import { resolve } from "node:path";
 
 import { toIsoDay } from "../shared/dates";
+import { normalizeAbPath } from "../shared/path-utils";
 import { parseFrontmatter } from "./reflect";
 
 export interface HebbianTracker {
@@ -21,17 +22,6 @@ const CORE_SKILL_NAMES = new Set([
   "triage-inbox.md",
   "update-upstream.md",
 ]);
-
-function isWithin(child: string, parent: string): boolean {
-  const rel = relative(parent, child);
-  return rel === "" || (!rel.startsWith(`..${sep}`) && rel !== ".." && !isAbsolute(rel));
-}
-
-function normalizeRelPath(abDirectory: string, rawPath: string): string | null {
-  const abs = isAbsolute(rawPath) ? resolve(rawPath) : resolve(abDirectory, rawPath);
-  if (!isWithin(abs, abDirectory)) return null;
-  return relative(abDirectory, abs).split(sep).join("/");
-}
 
 function isExcluded(relPath: string): boolean {
   if (!relPath.startsWith("agent_brain/")) return true;
@@ -86,7 +76,7 @@ export function createHebbianTracker(abDirectory: string): HebbianTracker {
 
   return {
     trackAccess(path: string): void {
-      const relPath = normalizeRelPath(abDirectory, path);
+      const relPath = normalizeAbPath(abDirectory, path);
       if (!relPath) return;
       if (isExcluded(relPath)) return;
       if (sessionReadSet.has(relPath)) return;

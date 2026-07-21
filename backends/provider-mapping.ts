@@ -1,6 +1,9 @@
-// backends/provider-mapping.ts — ab-app provider ids ↔ Pi SDK provider ids (FR-SETUP-05).
+// backends/provider-mapping.ts — Buddy provider ids ↔ Pi SDK provider ids (FR-SETUP-05).
 
 import type { SetupProviderId } from "../shared/api";
+import { DEFAULT_SETUP_PROVIDER, supportsOAuth } from "../shared/provider-constants";
+
+export { DEFAULT_SETUP_PROVIDER, supportsOAuth };
 
 /** Pi SDK provider id for each ab-app wizard provider. */
 export function toPiProviderId(provider: SetupProviderId): string {
@@ -30,14 +33,6 @@ export function fromPiProviderId(piProviderId: string): SetupProviderId | undefi
       return undefined;
   }
 }
-
-/** Whether the provider supports browser OAuth via Pi SDK. */
-export function supportsOAuth(provider: SetupProviderId): boolean {
-  return provider === "openai" || provider === "anthropic";
-}
-
-/** Default wizard provider (ChatGPT OAuth — primary target user). */
-export const DEFAULT_SETUP_PROVIDER: SetupProviderId = "openai";
 
 /** Pi provider ids checked for auth status in the wizard. */
 export const WIZARD_PI_PROVIDERS = ["openai-codex", "anthropic", "google"] as const;

@@ -2,9 +2,10 @@
 // Stored in ~/.buddy/allowed-paths.json; read access only (writes still prompt).
 
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
-import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
+import { dirname, join, resolve } from "node:path";
 
 import { defaultConfigPath } from "./setup";
+import { isWithin } from "../shared/path-utils";
 
 export interface AllowedEntry {
   path: string;
@@ -15,12 +16,7 @@ interface AllowedPathsFile {
   allowedPaths: AllowedEntry[];
 }
 
-function isWithin(child: string, parent: string): boolean {
-  const rel = relative(parent, child);
-  return rel === "" || (!rel.startsWith(`..${sep}`) && rel !== ".." && !isAbsolute(rel));
-}
-
-/** Directory holding ~/.buddy/config.json (overridable via AB_CONFIG_PATH in tests). */
+/** Directory holding ~/.buddy/config.json (overridable via BUDDY_CONFIG_PATH in tests). */
 export function defaultConfigDir(): string {
   return dirname(defaultConfigPath());
 }

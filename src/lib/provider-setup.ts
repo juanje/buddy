@@ -1,12 +1,9 @@
 // src/lib/provider-setup.ts — wizard provider helpers (browser-safe, FR-SETUP-05).
 
 import type { SetupProviderId } from "../../shared/api";
+import { DEFAULT_SETUP_PROVIDER, supportsOAuth } from "../../shared/provider-constants";
 
-export const DEFAULT_SETUP_PROVIDER: SetupProviderId = "openai";
-
-export function supportsOAuth(provider: SetupProviderId): boolean {
-  return provider === "openai" || provider === "anthropic";
-}
+export { DEFAULT_SETUP_PROVIDER, supportsOAuth };
 
 export function isApiKeyOnlyProvider(provider: SetupProviderId): boolean {
   return provider === "google" || provider === "custom";

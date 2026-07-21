@@ -2,7 +2,7 @@
 
 import type { AgentEvent } from "../shared/api";
 import { INCREMENTAL_REFLECT_EVERY } from "../shared/defaults";
-import { toIsoDay } from "../shared/dates";
+import { formatLocalTime, toIsoDay } from "../shared/dates";
 import { extractToolInfo } from "../shared/pi-events";
 import { logEvent } from "./app-logger";
 import { commitAll } from "./git";
@@ -129,7 +129,7 @@ export class SessionLifecycle {
         mode: "checkpoint",
         logPath: "",
         checkpointDate: toIsoDay(this.tracker.startTime),
-        checkpointTime: now.toISOString().slice(11, 16),
+        checkpointTime: formatLocalTime(now.toISOString()),
       });
     } finally {
       this.reflectInFlight = false;

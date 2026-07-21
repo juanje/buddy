@@ -6,3 +6,8 @@ export function toIsoDay(date: Date): string {
   const d = String(date.getDate()).padStart(2, "0");
   return `${y}-${m}-${d}`;
 }
+
+/** Extract HH:MM from an ISO timestamp string. */
+export function formatLocalTime(isoTimestamp: string): string {
+  return isoTimestamp.slice(11, 16);
+}

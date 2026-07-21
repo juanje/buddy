@@ -16,6 +16,7 @@ import { homedir } from "node:os";
 import type { AllowedEntry } from "./allowed-paths";
 import { isPathPersistentlyAllowed } from "./allowed-paths";
 import { DENYLIST_BASENAMES, DENYLIST_HOME_DIRS, READ_TOOLS, WRITE_TOOLS } from "../shared/defaults";
+import { isWithin } from "../shared/path-utils";
 
 export type PermissionOp = "read" | "write";
 
@@ -34,11 +35,6 @@ export type PermissionDecision =
 const IDENTITY_FILES = ["SOUL.md"];
 /** Agent-managed config paths that must never be modified by the agent (NFR-SEC-06). */
 const PROTECTED_CONFIG_RELPATHS = [join(".pi", "settings.json")];
-
-function isWithin(child: string, parent: string): boolean {
-  const rel = relative(parent, child);
-  return rel === "" || (!rel.startsWith(`..${sep}`) && rel !== ".." && !isAbsolute(rel));
-}
 
 export function isDenylistedPath(absPath: string, home: string = homedir()): boolean {
   if (DENYLIST_BASENAMES.includes(basename(absPath))) return true;

@@ -4,13 +4,7 @@ import { Given, When, Then } from "@cucumber/cucumber";
 import assert from "node:assert/strict";
 
 import type { AbWorld } from "../support/world";
-import type { ChatMessage } from "../../src/lib/chat-controller";
-
-function assistantBubbles(world: AbWorld): ChatMessage[] {
-  return (world.read(world.controller.messages) as ChatMessage[]).filter(
-    (m) => m.role === "assistant",
-  );
-}
+import { assistantBubbles } from "../support/chat-helpers";
 
 Given("the chat is idle", function (this: AbWorld) {
   this.connect();

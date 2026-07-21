@@ -4,7 +4,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync
 import { join } from "node:path";
 
 import { PENDING_DIR } from "../shared/defaults";
-import { toIsoDay } from "../shared/dates";
+import { formatLocalTime, toIsoDay } from "../shared/dates";
 import type { SessionTrackerSnapshot } from "./session-tracker";
 
 export interface PendingReflect {
@@ -42,7 +42,7 @@ export function formatToolCalls(toolCalls: SessionTrackerSnapshot["toolCalls"]):
   if (toolCalls.length === 0) return "(none)\n";
   return toolCalls
     .map((t) => {
-      const time = t.timestamp.slice(11, 16);
+      const time = formatLocalTime(t.timestamp);
       const target = t.path ? ` ${t.path}` : "";
       return `- ${time} ${t.name}${target}`;
     })
@@ -51,8 +51,8 @@ export function formatToolCalls(toolCalls: SessionTrackerSnapshot["toolCalls"]):
 
 export function formatSkeletonBody(snapshot: SessionTrackerSnapshot): string {
   const date = isoDay(new Date(snapshot.startTime));
-  const startTime = snapshot.startTime.slice(11, 16);
-  const endTime = snapshot.endTime.slice(11, 16);
+  const startTime = formatLocalTime(snapshot.startTime);
+  const endTime = formatLocalTime(snapshot.endTime);
   const lines = [
     `# Session — ${date} (${startTime}–${endTime}, ${snapshot.turnCount} turns)`,
     "",
@@ -115,8 +115,8 @@ export function parseFrontmatter(content: string): Record<string, string> {
 export function sessionHeaderFromSkeleton(content: string): string {
   const fm = parseFrontmatter(content);
   if (fm.start && fm.end) {
-    const start = fm.start.slice(11, 16);
-    const end = fm.end.slice(11, 16);
+    const start = formatLocalTime(fm.start);
+    const end = formatLocalTime(fm.end);
     return `${start}–${end}`;
   }
   const bodyMatch = content.match(/\((\d{2}:\d{2})–(\d{2}:\d{2})/);

@@ -4,13 +4,18 @@ import { Given, When, Then } from "@cucumber/cucumber";
 import assert from "node:assert/strict";
 import { get } from "svelte/store";
 
-import type { ModelInfo, SetupConfig } from "../../shared/api";
+import type { SetupConfig } from "../../shared/api";
 import { getLocale } from "../../src/lib/i18n";
 import {
   createSettingsController,
   type SettingsController,
   type SettingsWorkerAPI,
 } from "../../src/lib/settings-controller";
+import {
+  buildMockWorker,
+  DEFAULT_TEST_CONFIG,
+  MODEL_CATALOG,
+} from "../support/settings-fixtures";
 import type { AbWorld } from "../support/world";
 
 interface SettingsWorld extends AbWorld {
@@ -22,25 +27,10 @@ interface SettingsWorld extends AbWorld {
   authedProviders: Set<SetupConfig["provider"]>;
 }
 
-const defaultConfig: SetupConfig = {
-  abDirectory: "/tmp/buddy-test",
-  provider: "anthropic",
-  model: "claude-sonnet-5",
-  language: "es",
-};
-
-const MODEL_CATALOG: Record<SetupConfig["provider"], ModelInfo[]> = {
-  anthropic: [
-    { id: "claude-sonnet-5", label: "Claude Sonnet", provider: "anthropic" },
-    { id: "claude-haiku-4-5", label: "Claude Haiku", provider: "anthropic" },
-  ],
-  openai: [{ id: "gpt-5", label: "GPT-5", provider: "openai" }],
-  google: [{ id: "gemini-3.5-flash", label: "Gemini Flash", provider: "google" }],
-  custom: [],
-};
+const defaultConfig: SetupConfig = DEFAULT_TEST_CONFIG;
 
 function buildWorker(this: SettingsWorld): SettingsWorkerAPI {
-  return {
+  return buildMockWorker({
     updateConfig: async (patch) => {
       this.updateConfigCalls.push(patch);
       this.appConfig = { ...this.appConfig, ...patch };
@@ -74,8 +64,7 @@ function buildWorker(this: SettingsWorld): SettingsWorkerAPI {
       this.authedProviders.add(provider);
       return { success: true };
     },
-    configureProviderKey: async () => ({ valid: true }),
-  };
+  });
 }
 
 function ensureSettings(this: SettingsWorld): SettingsController {
