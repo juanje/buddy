@@ -72,6 +72,7 @@ AB File System (git repo)
 | FR-CHAT-05 | Thinking block display (collapsible) | 3 ✓ |
 | FR-CHAT-06 | Tool call display (expandable cards) | 3 ✓ |
 | FR-CHAT-07 | Auto-scroll with manual override | 0 ✓ |
+| FR-CHAT-08 | Input textarea resets height after send | 2 |
 
 **FR-CHAT-01 — Streaming message display**
 
@@ -118,6 +119,13 @@ AB File System (git repo)
 - **Then** the view auto-scrolls to the latest content
 - **But when** the user has scrolled up manually
 - **Then** auto-scroll pauses and a "scroll to bottom" button appears
+
+**FR-CHAT-08 — Input textarea resets height after send**
+
+- **Given** the user has typed a multiline message (textarea auto-grew)
+- **When** the message is sent and the input clears
+- **Then** the textarea height resets to its single-line default
+- **And** subsequent messages start with the compact input bar
 
 ### 3.2 First-Run / Onboarding (FR-SETUP)
 
@@ -250,6 +258,7 @@ platform-specific install instructions is shown and setup cannot continue.
 | FR-REFLECT-01 | Factual skeleton capture (crash fallback) | 1 ✓ |
 | FR-REFLECT-02 | Forked reflect on session end (primary) | 1 ✓ |
 | FR-REFLECT-03 | Checkpoint mid-session reflect (forked, background) | 1 ✓ |
+| FR-REFLECT-04 | Log output sanitizer (strip tool-call artifacts) | 2 |
 
 **FR-REFLECT-01 — Factual skeleton capture (crash fallback)**
 
@@ -298,6 +307,13 @@ Mid-session (every N turns / pre-compaction):
 Crash recovery (next app start):
   boot: detect reflect-pending skeleton → spawn child → same as session-end (skeleton fallback if no fork)
 ```
+
+**FR-REFLECT-04 — Log output sanitizer (strip tool-call artifacts)**
+
+- **Given** the reflect process writes a session block to the daily log
+- **When** the output contains raw tool-call syntax leaked from the model (e.g. `to=functions.read code:` followed by JSON)
+- **Then** those lines are stripped before writing to the log file
+- **Note:** This is a cosmetic guard against LLM output corruption — the model occasionally emits tool invocation syntax as plain text instead of executing it. The sanitizer runs on the final text before file write.
 
 ### 3.5 Permission Layer (FR-PERM)
 
