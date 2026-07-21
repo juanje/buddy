@@ -160,6 +160,44 @@ describe("createSettingsController", () => {
     expect(get(controller.config).model).toBe("claude-haiku-4-5");
   });
 
+  it("remembers last selected model per provider across switches", async () => {
+    let config: SetupConfig = {
+      abDirectory: "/tmp/buddy",
+      provider: "anthropic",
+      model: "claude-sonnet-5",
+      language: "es",
+    };
+
+    const controller = createSettingsController({
+      worker: mockWorker({
+        getAuthStatus: async () => ({
+          providers: [
+            { piProviderId: "anthropic", abProvider: "anthropic", hasAuth: true },
+            { piProviderId: "openai-codex", abProvider: "openai", hasAuth: true },
+          ],
+        }),
+      }),
+      getConfig: () => config,
+      onConfigChange: (next) => {
+        config = next;
+      },
+      version: "0.1.0-test",
+    });
+
+    controller.openSettings();
+    expect(controller.getLastModelForProvider("anthropic")).toBe("claude-sonnet-5");
+
+    await controller.setModel("anthropic", "claude-haiku-4-5");
+    expect(controller.getLastModelForProvider("anthropic")).toBe("claude-haiku-4-5");
+
+    await controller.setModel("openai", "gpt-5");
+    expect(controller.getLastModelForProvider("openai")).toBe("gpt-5");
+
+    expect(controller.getLastModelForProvider("anthropic")).toBe("claude-haiku-4-5");
+
+    expect(controller.getLastModelForProvider("google")).toBeUndefined();
+  });
+
   it("add-provider OAuth flow refreshes models and collapses section", async () => {
     let config: SetupConfig = {
       abDirectory: "/tmp/buddy",

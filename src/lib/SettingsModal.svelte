@@ -48,8 +48,12 @@
     const select = event.currentTarget as HTMLSelectElement;
     const provider = select.value as SettingsProviderId;
     const providerModels = $models.filter((m) => m.provider === provider);
-    const firstModel = providerModels[0]?.id ?? $config.model;
-    await controller.setModel(provider, firstModel);
+    const remembered = controller.getLastModelForProvider(provider);
+    const model =
+      remembered && providerModels.some((m) => m.id === remembered)
+        ? remembered
+        : providerModels[0]?.id ?? $config.model;
+    await controller.setModel(provider, model);
   }
 
   async function onModelChange(event: Event) {

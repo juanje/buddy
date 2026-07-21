@@ -53,6 +53,7 @@ export interface SettingsController {
   closeSettings(): void;
   setLanguage(language: AppLocale): Promise<void>;
   setModel(provider: SettingsProviderId, model: string): Promise<void>;
+  getLastModelForProvider(provider: SettingsProviderId): string | undefined;
   startAddProvider(): void;
   cancelAddProvider(): void;
   selectAuthProvider(provider: SettingsProviderId): void;
@@ -163,6 +164,7 @@ export function createSettingsController(options: {
   const authShowApiKey = writable(false);
   const unauthenticatedProviders = writable<SettingsProviderId[]>([]);
   const providerAddedNotice = writable(false);
+  const lastModelByProvider = new Map<SettingsProviderId, string>();
 
   async function refreshModels(): Promise<void> {
     loadingModels.set(true);
@@ -197,7 +199,10 @@ export function createSettingsController(options: {
     unauthenticatedProviders,
     providerAddedNotice,
     openSettings() {
-      config.set(toDisplay(options.getConfig(), options.version));
+      const current = options.getConfig();
+      config.set(toDisplay(current, options.version));
+      lastModelByProvider.clear();
+      lastModelByProvider.set(current.provider, current.model);
       addingProvider.set(false);
       authProvider.set(undefined);
       authError.set(undefined);
@@ -220,10 +225,14 @@ export function createSettingsController(options: {
       config.update((current) => ({ ...current, language }));
     },
     async setModel(provider, model) {
+      lastModelByProvider.set(provider, model);
       await options.worker.changeModel(provider, model);
       const updated: SetupConfig = { ...options.getConfig(), provider, model };
       options.onConfigChange(updated);
       config.update((current) => ({ ...current, provider, model }));
+    },
+    getLastModelForProvider(provider) {
+      return lastModelByProvider.get(provider);
     },
     startAddProvider() {
       addingProvider.set(true);
