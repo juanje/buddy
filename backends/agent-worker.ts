@@ -32,8 +32,7 @@ import {
   WIZARD_PI_PROVIDERS,
 } from "./provider-mapping";
 import { toIsoDay } from "./deferred";
-import { SessionLifecycle } from "./session-lifecycle";
-import { augmentPromptWithAttachments, bootSession } from "./session-boot";
+import { bootSession } from "./session-boot";
 import { defaultConfigPath, detectFirstRun, updateAppConfig } from "./setup";
 import { createWorkerCore } from "./worker-core";
 
@@ -49,7 +48,6 @@ async function main(): Promise<void> {
   let setupState = detectFirstRun(defaultConfigPath());
 
   let core: ReturnType<typeof createWorkerCore> | undefined;
-  let lifecycle: SessionLifecycle | undefined;
   // Definite assignment: set right after the channel is created below, and
   // bootSession only runs after that.
   let frontend!: FrontendAPI;
@@ -98,7 +96,6 @@ async function main(): Promise<void> {
     );
     if (!booted) return;
     core = booted.core;
-    lifecycle = booted.lifecycle;
   }
 
   const transport = nodeStdioTransport();
@@ -216,7 +213,6 @@ async function main(): Promise<void> {
         await core?.api.shutdown();
         core?.dispose();
         core = undefined;
-        lifecycle = undefined;
       },
     },
   });

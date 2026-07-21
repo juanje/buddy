@@ -25,6 +25,7 @@
   } from "./lib/settings-controller";
   import { t } from "./lib/i18n";
   import type { AgentEvent, DeferredItemView, OAuthUIEvent, SetupConfig } from "../shared/api";
+  import { SHUTDOWN_TIMEOUT_MS } from "../shared/defaults";
 
   const APP_VERSION = "0.1.0";
 
@@ -36,11 +37,6 @@
   let dragOver = $state(false);
   let deferredItems: DeferredItemView[] = $state([]);
   let setupOAuthHandler: ((event: OAuthUIEvent) => void) | undefined = $state();
-  let abDirectory = $state("");
-  let configuredModel = $state("");
-  let aboutOpen = $state(false);
-  let aboutModel = $state("—");
-  let aboutTurns = $state(0);
   let appConfig = $state<SetupConfig | undefined>();
   let settingsController = $state<SettingsController | undefined>();
 
@@ -77,7 +73,7 @@
         await Promise.race([
           connection.api.shutdown(),
           new Promise((_, reject) =>
-            setTimeout(() => reject(new Error("shutdown timeout")), 2000),
+            setTimeout(() => reject(new Error("shutdown timeout")), SHUTDOWN_TIMEOUT_MS),
           ),
         ]);
       }
@@ -92,8 +88,6 @@
   }
 
   function applySetupConfig(config: SetupConfig): void {
-    abDirectory = config.abDirectory;
-    configuredModel = config.model;
     appConfig = config;
     if (!settingsController) {
       settingsController = createSettingsController({
@@ -103,26 +97,6 @@
         version: APP_VERSION,
       });
     }
-  }
-
-  async function refreshAboutInfo(): Promise<void> {
-    aboutModel = configuredModel || "—";
-    aboutTurns = 0;
-    if (!connection) return;
-    try {
-      const state = await connection.api.getState();
-      aboutTurns = state.messageCount;
-      if (state.model) aboutModel = state.model;
-    } catch {
-      // Worker not ready — keep config fallback.
-    }
-  }
-
-  async function toggleAbout(): Promise<void> {
-    if (!aboutOpen) {
-      await refreshAboutInfo();
-    }
-    aboutOpen = !aboutOpen;
   }
 
   async function connect() {

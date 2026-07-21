@@ -84,46 +84,6 @@ export function providerLabel(
   }
 }
 
-export function modelSelectValue(provider: SettingsProviderId, modelId: string): string {
-  return `${provider}:${modelId}`;
-}
-
-export function parseModelSelectValue(value: string): { provider: SettingsProviderId; model: string } {
-  const colon = value.indexOf(":");
-  if (colon <= 0) {
-    throw new Error(`Invalid model select value: ${value}`);
-  }
-  return {
-    provider: value.slice(0, colon) as SettingsProviderId,
-    model: value.slice(colon + 1),
-  };
-}
-
-export function groupModelsByProvider(
-  models: ModelInfo[],
-  labels: {
-    providerAnthropic: string;
-    providerOpenai: string;
-    providerGoogle: string;
-    providerCustom: string;
-  },
-): Array<{ provider: SettingsProviderId; label: string; models: ModelInfo[] }> {
-  const order: SettingsProviderId[] = ["openai", "anthropic", "google", "custom"];
-  const byProvider = new Map<SettingsProviderId, ModelInfo[]>();
-  for (const model of models) {
-    const list = byProvider.get(model.provider) ?? [];
-    list.push(model);
-    byProvider.set(model.provider, list);
-  }
-  return order
-    .filter((provider) => byProvider.has(provider))
-    .map((provider) => ({
-      provider,
-      label: providerLabel(provider, labels),
-      models: byProvider.get(provider)!,
-    }));
-}
-
 function toDisplay(config: SetupConfig, version: string): SettingsDisplayConfig {
   return {
     language: config.language ?? getLocale(),
@@ -316,8 +276,4 @@ export function createSettingsController(options: {
 /** True when the user pressed the platform settings shortcut (Cmd/Ctrl+,). */
 export function isSettingsShortcut(event: { key: string; metaKey?: boolean; ctrlKey?: boolean }): boolean {
   return event.key === "," && (event.metaKey === true || event.ctrlKey === true);
-}
-
-export function readSettingsOpen(open: Readable<boolean>): boolean {
-  return get(open);
 }
