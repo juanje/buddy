@@ -77,7 +77,7 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 | FR-CHAT-06 | Tool call display (expandable activity block) | done | 5e89120 |
 | FR-CHAT-08 | Input textarea resets height after send | done | 491b6e9 |
 | FR-SETTINGS-02 | Settings UI (language + read-only config) | done | 6ea7f89 |
-| FR-SETTINGS-03 | Cross-provider model switching + inline provider auth | done | (this commit) |
+| FR-SETTINGS-03 | Cross-provider model switching + inline provider auth | done | cece2f0 |
 | FR-SETTINGS-04 | Language switching from settings | done | 6ea7f89 |
 
 **Phase 1 complete:** YES — all Phase 1 FRs implemented and passing (140 unit tests, 99 BDD scenarios).
