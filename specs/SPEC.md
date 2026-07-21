@@ -137,7 +137,7 @@ AB File System (git repo)
 **FR-SETUP-01 — First-run detection**
 
 - **Given** the app launches
-- **When** no AB directory is configured in `~/.ab-app/config.json`
+- **When** no AB directory is configured in `~/.buddy/config.json`
 - **Then** the setup wizard is shown instead of the chat view
 
 **FR-SETUP-02 — Language selection**
@@ -264,11 +264,11 @@ platform-specific install instructions is shown and setup cannot continue.
 
 - **Given** a session ends normally (user closes app or ends session)
 - **When** the shutdown sequence runs
-- **Then** the reflect child forks the live session via `SessionManager.forkFrom(sessionFile, abDirectory, forkDir)` — creating a new JSONL with full conversation context in `.ab-app/reflect-sessions/`
+- **Then** the reflect child forks the live session via `SessionManager.forkFrom(sessionFile, abDirectory, forkDir)` — creating a new JSONL with full conversation context in `.buddy/reflect-sessions/`
 - **And** a background `child_process.fork()` is spawned to run the LLM reflect independently of the app window
 - **And** the app window closes immediately (<100ms total shutdown time)
-- **And** the background process: opens the forked session → prompts for reflect (Decisions, Lessons, Context, Open threads, Tasks captured, Ideas, System observations) → appends a `## Session HH:MM–HH:MM` block to `logs/YYYY-MM-DD.md` (session start date, local calendar day) → deletes the pending skeleton in `.ab-app/pending/` → rebuilds `logs/index.md` → commits → exits
-- **And** if the background process fails, the factual skeleton (FR-REFLECT-01) remains in `.ab-app/pending/` as a pending fallback
+- **And** the background process: opens the forked session → prompts for reflect (Decisions, Lessons, Context, Open threads, Tasks captured, Ideas, System observations) → appends a `## Session HH:MM–HH:MM` block to `logs/YYYY-MM-DD.md` (session start date, local calendar day) → deletes the pending skeleton in `.buddy/pending/` → rebuilds `logs/index.md` → commits → exits
+- **And** if the background process fails, the factual skeleton (FR-REFLECT-01) remains in `.buddy/pending/` as a pending fallback
 - **And** the next app start detects any remaining "reflect pending" skeletons and runs catch-up (same background process pattern)
 - **Note:** The LLM sees the FULL conversation in context (not a cold file list), producing meaningful reflect output comparable to what a human would capture.
 
@@ -509,7 +509,7 @@ Crash recovery (next app start):
 
 - **Given** a consolidation run completes (success or failure)
 - **When** the result is recorded
-- **Then** an entry is appended to `.ab-app/consolidation-log.json` with timestamp, depth, duration, and status
+- **Then** an entry is appended to `.buddy/consolidation-log.json` with timestamp, depth, duration, and status
 
 ### 3.9 Hebbian Tracking (FR-HEBB)
 
@@ -883,7 +883,7 @@ Full specification in [specs/BRAIN-SPEC.md](BRAIN-SPEC.md).
 | NFR-SEC-04 | Hardcoded denylist paths are never accessible, regardless of user confirmation |
 | NFR-SEC-05 | API keys stored with restrictive file permissions (mode 600); no credentials inside the AB repo |
 | NFR-SEC-06 | The agent cannot modify its own model configuration (`.pi/settings.json` writes blocked) |
-| NFR-SEC-07 | AB uses its own credential store (`~/.ab-app/auth.json`), completely isolated from Pi CLI's `~/.pi/agent/auth.json`. Changing provider/model in one tool never affects the other. |
+| NFR-SEC-07 | AB uses its own credential store (`~/.buddy/auth.json`), completely isolated from Pi CLI's `~/.pi/agent/auth.json`. Changing provider/model in one tool never affects the other. |
 
 ### 4.3 Reliability
 
@@ -934,7 +934,7 @@ Full specification in [specs/BRAIN-SPEC.md](BRAIN-SPEC.md).
 | ID | Requirement |
 |----|-------------|
 | NFR-CONFIG-01 | All operational defaults (thresholds, timeouts, intervals) centralized in a single `shared/defaults.ts` — no magic numbers scattered across the codebase |
-| NFR-CONFIG-02 | User-tunable settings (reflect interval, model, language) persisted in `.ab-app/settings.json` and editable from the settings UI |
+| NFR-CONFIG-02 | User-tunable settings (reflect interval, model, language) persisted in `.buddy/settings.json` and editable from the settings UI |
 | NFR-CONFIG-03 | Security-critical constants (denylist paths, excluded tools) centralized in `shared/defaults.ts` alongside operational defaults — not configurable by user or agent, but readable in one place for maintenance |
 
 ---
@@ -1074,5 +1074,5 @@ AB remembers the conversation, knows their name, surfaces any pending reminders.
 | **SOUL.md** | Agent character definition — stable, rarely modified, changes require user confirmation |
 | **USER.md** | User profile — updated as the agent learns about the user. Zone 1 (silent allow); only SOUL.md requires confirmation |
 | **Deferred queue** | Items in `agent_brain/deferred.md` with dates — parsed by code, surfaced by heartbeat or on app start |
-| **Maintenance lock** | A lock file (`.ab-app/maintenance.lock`) preventing concurrent consolidation operations |
+| **Maintenance lock** | A lock file (`.buddy/maintenance.lock`) preventing concurrent consolidation operations |
 | **Session-allowed paths** | Paths implicitly granted read access for the current session (from user messages or file drops) |

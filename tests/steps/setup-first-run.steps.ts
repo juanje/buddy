@@ -1,6 +1,6 @@
 // tests/steps/setup-first-run.steps.ts — FR-SETUP-01 first-run detection.
 // Uses the real filesystem on a per-scenario temp dir (no mocks): the unit
-// under test is exactly what the worker runs against ~/.ab-app/config.json.
+// under test is exactly what the worker runs against ~/.buddy/config.json.
 
 import { Given, When, Then, After } from "@cucumber/cucumber";
 import assert from "node:assert/strict";

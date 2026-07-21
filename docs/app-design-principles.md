@@ -212,7 +212,7 @@ maintained by code, not by the LLM).
 | Observations | Markdown (structured sections) | The user should see what patterns AB is tracking |
 | Deferred items | Markdown (with parseable date markers) | User can edit/add items in any editor |
 | Hebbian metadata | YAML frontmatter in each file | Visible in every file; code updates it silently |
-| App config | JSON (`~/.ab-app/config.json`) | Standard, readable, editable |
+| App config | JSON (`~/.buddy/config.json`) | Standard, readable, editable |
 | Scheduler state | JSON | Operational; user rarely needs to inspect |
 
 **What this means in practice:**

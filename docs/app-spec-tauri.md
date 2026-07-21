@@ -566,7 +566,7 @@ import { createAgentSession, SessionManager } from "@earendil-works/pi-coding-ag
 
 async function runConsolidation(targetDepth: number, state: ConsolidationState) {
     // Lock — prevent concurrent consolidations
-    const lock = await acquireLock(`${AB_DIR}/.ab-app/maintenance.lock`);
+    const lock = await acquireLock(`${AB_DIR}/.buddy/maintenance.lock`);
     if (!lock) return;
 
     try {
@@ -629,7 +629,7 @@ interacting), consolidation operations defer until the next heartbeat tick.
 Reflects no longer need idle-awareness since they run in separate processes.
 
 **Run journal:** Each consolidation run is logged to
-`AB_DIR/.ab-app/consolidation-log.json`:
+`AB_DIR/.buddy/consolidation-log.json`:
 
 ```json
 [
@@ -940,7 +940,7 @@ export type PermissionResponse = "allow_once" | "allow_session" | "allow_always"
 
 ### Persistence
 
-Zone 2 paths and preferences persist in `~/.ab-app/config.json`:
+Zone 2 paths and preferences persist in `~/.buddy/config.json`:
 
 ```json
 {
@@ -1325,8 +1325,8 @@ All configuration lives in standard Pi locations:
 |------|-------|-----------|
 | Provider + model | `AB_DIR/.pi/settings.json` | Wizard → later Settings UI |
 | API keys | `~/.pi/agent/auth.json` | Wizard → later Settings UI |
-| AB directory path | `~/.ab-app/config.json` | App (Tauri) |
-| Scheduler settings | `~/.ab-app/scheduler.json` | App (future Phase 3) |
+| AB directory path | `~/.buddy/config.json` | App (Tauri) |
+| Scheduler settings | `~/.buddy/scheduler.json` | App (future Phase 3) |
 
 No custom config format — Pi's native settings are the source of truth.
 The future Settings UI (Phase 2+) just edits these same files.
@@ -1509,7 +1509,7 @@ interface SyncConfig {
 }
 ```
 
-Stored in `~/.ab-app/config.json` (app-level, not inside the AB repo).
+Stored in `~/.buddy/config.json` (app-level, not inside the AB repo).
 
 ### Sync behavior
 

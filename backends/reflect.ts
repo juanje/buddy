@@ -87,7 +87,7 @@ export function pendingSkeletonPath(abDirectory: string, sessionId: string): str
   return join(abDirectory, PENDING_DIR, `${sessionId}.md`);
 }
 
-/** Write internal reflect skeleton to `.ab-app/pending/{sessionId}.md`. */
+/** Write internal reflect skeleton to `.buddy/pending/{sessionId}.md`. */
 export function savePendingSkeleton(abDirectory: string, snapshot: SessionTrackerSnapshot): string {
   const pendingDir = join(abDirectory, PENDING_DIR);
   mkdirSync(pendingDir, { recursive: true });
@@ -124,7 +124,7 @@ export function sessionHeaderFromSkeleton(content: string): string {
   return "session";
 }
 
-/** Scan `.ab-app/pending/` for skeletons awaiting reflect. */
+/** Scan `.buddy/pending/` for skeletons awaiting reflect. */
 export function findPendingReflects(abDirectory: string): PendingReflect[] {
   const pendingDir = join(abDirectory, PENDING_DIR);
   if (!existsSync(pendingDir)) return [];

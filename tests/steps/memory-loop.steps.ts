@@ -127,12 +127,12 @@ Then("a checkpoint reflect spawn was requested at turn {int}", function (this: M
   assert.equal(calls[0].logPath, "");
   assert.ok(calls[0].checkpointDate);
   assert.ok(calls[0].checkpointTime);
-  assert.equal(existsSync(join(this.abDir!, ".ab-app", "snapshots")), false);
+  assert.equal(existsSync(join(this.abDir!, ".buddy", "snapshots")), false);
 });
 
 Then("a checkpoint reflect spawn was requested", function (this: MemoryWorld) {
   const calls = (this.spawnCalls ?? []).filter((call) => call.mode === "checkpoint");
   assert.ok(calls.length > 0, "expected a checkpoint reflect spawn");
   assert.equal(calls[0].logPath, "");
-  assert.equal(existsSync(join(this.abDir!, ".ab-app", "snapshots")), false);
+  assert.equal(existsSync(join(this.abDir!, ".buddy", "snapshots")), false);
 });

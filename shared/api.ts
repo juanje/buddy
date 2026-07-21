@@ -37,7 +37,7 @@ export interface SetupConfig {
   about?: string;
 }
 
-/** Result of first-run detection against ~/.ab-app/config.json (FR-SETUP-01). */
+/** Result of first-run detection against ~/.buddy/config.json (FR-SETUP-01). */
 export type SetupState = { firstRun: true } | { firstRun: false; config: SetupConfig };
 
 /**

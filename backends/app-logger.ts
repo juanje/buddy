@@ -1,4 +1,4 @@
-// backends/app-logger.ts — Structured app event log (JSONL in .ab-app/logs/).
+// backends/app-logger.ts — Structured app event log (JSONL in .buddy/logs/).
 
 import { appendFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
@@ -20,7 +20,7 @@ function appLogPath(abDirectory: string, day: string): string {
   return join(abDirectory, APP_LOGS_DIR, `${day}.jsonl`);
 }
 
-/** Append one JSONL event line to `.ab-app/logs/YYYY-MM-DD.jsonl`. */
+/** Append one JSONL event line to `.buddy/logs/YYYY-MM-DD.jsonl`. */
 export function logEvent(abDirectory: string, payload: AppLogEvent, now = new Date()): void {
   const day = toIsoDay(now);
   const dir = join(abDirectory, APP_LOGS_DIR);

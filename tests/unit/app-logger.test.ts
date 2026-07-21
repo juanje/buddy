@@ -15,7 +15,7 @@ describe("logEvent", () => {
     if (dir) rmSync(dir, { recursive: true, force: true });
   });
 
-  it("appends JSONL lines to .ab-app/logs/YYYY-MM-DD.jsonl", () => {
+  it("appends JSONL lines to .buddy/logs/YYYY-MM-DD.jsonl", () => {
     dir = mkdtempSync(join(tmpdir(), "ab-applog-"));
     const now = new Date("2026-07-19T14:30:00.000Z");
     logEvent(dir, { event: "session_start", session: "abc12345" }, now);

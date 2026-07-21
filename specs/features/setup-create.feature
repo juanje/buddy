@@ -41,5 +41,5 @@ Feature: Deterministic AB directory setup (FR-SETUP-06)
 
   Scenario: .gitignore excludes app internals
     When setup runs
-    Then ".gitignore" excludes ".ab-app/"
+    Then ".gitignore" excludes ".buddy/"
     And ".gitignore" excludes ".pi/"

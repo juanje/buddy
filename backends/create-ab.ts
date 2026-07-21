@@ -17,7 +17,7 @@ export function defaultTemplatesDir(): string {
 
 export interface CreateAbOptions {
   config: SetupConfig;
-  /** Where ~/.ab-app/config.json lives (injectable for tests). */
+  /** Where ~/.buddy/config.json lives (injectable for tests). */
   configPath: string;
   templatesDir?: string;
 }

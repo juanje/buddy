@@ -32,7 +32,7 @@ describe("savePendingSkeleton", () => {
     if (dir) rmSync(dir, { recursive: true, force: true });
   });
 
-  it("writes reflect-pending skeleton under .ab-app/pending/", () => {
+  it("writes reflect-pending skeleton under .buddy/pending/", () => {
     dir = mkdtempSync(join(tmpdir(), "ab-reflect-"));
     const tracker = new SessionTracker("abc12345");
     tracker.filesWritten.push("user/inbox.md");
@@ -162,7 +162,7 @@ describe("findPendingReflects", () => {
     if (dir) rmSync(dir, { recursive: true, force: true });
   });
 
-  it("finds pending skeletons in .ab-app/pending/", () => {
+  it("finds pending skeletons in .buddy/pending/", () => {
     dir = mkdtempSync(join(tmpdir(), "ab-pending-"));
     const tracker = new SessionTracker("pending1");
     const path = savePendingSkeleton(dir, tracker.toSnapshot());

@@ -28,7 +28,7 @@ Node.js Worker (TypeScript)
     ├── Pi SDK: createAgentSession({ excludeTools: ["bash"] })
     ├── Permission layer (zone-based file access control)
     ├── Session lifecycle (auto-commit, reflect on shutdown)
-    └── App logger (.ab-app/logs/ JSONL instrumentation)
+    └── App logger (.buddy/logs/ JSONL instrumentation)
     │
     ▼
 AB Directory (git repo, user's data)

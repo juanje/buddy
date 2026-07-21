@@ -24,7 +24,7 @@ export interface CatchUpOptions {
 }
 
 export function lockPath(abDirectory: string): string {
-  return join(abDirectory, ".ab-app", "maintenance.lock");
+  return join(abDirectory, ".buddy", "maintenance.lock");
 }
 
 export function readLock(abDirectory: string): MaintenanceLock | null {
@@ -61,7 +61,7 @@ export function acquireLock(abDirectory: string): boolean {
   }
   const payload: MaintenanceLock = { pid: process.pid, timestamp: new Date().toISOString() };
   const path = lockPath(abDirectory);
-  mkdirSync(join(abDirectory, ".ab-app"), { recursive: true });
+  mkdirSync(join(abDirectory, ".buddy"), { recursive: true });
   writeFileSync(path, JSON.stringify(payload), "utf8");
   return true;
 }

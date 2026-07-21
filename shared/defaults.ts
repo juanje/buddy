@@ -6,11 +6,11 @@ export const LOCK_STALE_MS = 60 * 60 * 1000;
 export const CRASH_RECOVERY_MAX = 3;
 
 /** Internal reflect queue (not agent-visible). */
-export const PENDING_DIR = ".ab-app/pending";
+export const PENDING_DIR = ".buddy/pending";
 /** Forked Pi sessions for background reflect (internal). */
-export const REFLECT_SESSIONS_DIR = ".ab-app/reflect-sessions";
+export const REFLECT_SESSIONS_DIR = ".buddy/reflect-sessions";
 /** App instrumentation logs (JSONL, machine-oriented). */
-export const APP_LOGS_DIR = ".ab-app/logs";
+export const APP_LOGS_DIR = ".buddy/logs";
 /** Max pending reflects processed per catch-up run. */
 export const CATCH_UP_MAX = 3;
 /** Fallback Pi provider when `.pi/settings.json` is missing or invalid. */
