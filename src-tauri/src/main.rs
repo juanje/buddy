@@ -19,7 +19,7 @@ fn main() {
                     "Personal assistant with persistent memory.\nEverything lives in a local folder — nothing leaves your computer."
                         .to_string(),
                 ),
-                copyright: Some("© 2026 Juan Jesús Ojeda".to_string()),
+                copyright: Some("© 2026 Juanje Ojeda".to_string()),
                 license: Some("GPL-3.0".to_string()),
                 website: Some("https://github.com/juanje/ab-app".to_string()),
                 website_label: Some("GitHub".to_string()),
