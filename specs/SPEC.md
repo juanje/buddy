@@ -68,7 +68,7 @@ AB File System (git repo)
 | FR-CHAT-01 | Streaming message display | 0 |
 | FR-CHAT-02 | User input with send | 0 |
 | FR-CHAT-03 | Abort generation | 0 |
-| FR-CHAT-04 | Markdown rendering in assistant messages | 3 |
+| FR-CHAT-04 | Markdown rendering in assistant messages | 3 ✓ |
 | FR-CHAT-05 | Thinking block display (collapsible) | 3 |
 | FR-CHAT-06 | Tool call display (expandable cards) | 3 |
 | FR-CHAT-07 | Auto-scroll with manual override | 0 |
@@ -369,6 +369,7 @@ Crash recovery (next app start):
 | FR-INGEST-03 | Dropped file implicit permission | 1 |
 | FR-INGEST-04 | Supported formats | 1 |
 | FR-INGEST-05 | Image attachments (vision) | 1 |
+| FR-INGEST-06 | PDF attachments (native provider support) | 2 |
 
 **FR-INGEST-01 — Drag and drop**
 
@@ -406,6 +407,14 @@ Crash recovery (next app start):
 - **Then** the image is read as base64 and passed to Pi via `PromptOptions.images` as `ImageContent`
 - **And** the agent can see and discuss the image contents (multimodal vision)
 - **Note:** No file-read tool call is needed — the image is delivered inline in the prompt context. All standard models (Claude, GPT, Gemini) support vision.
+
+**FR-INGEST-06 — PDF attachments**
+
+- **Given** the user attaches a .pdf file
+- **When** the message is sent
+- **Then** the PDF is read and passed to Pi as document content (base64 or extracted text, depending on provider support)
+- **And** the agent can read and discuss the document contents
+- **Note:** All three v1 providers (Claude, GPT, Gemini) support native PDF input. This is a common end-user need — non-technical users frequently have PDFs to discuss. Implementation mirrors image attachments: detect format, read as base64, pass inline.
 
 ### 3.7 Deferred Queue (FR-DEFERRED)
 
