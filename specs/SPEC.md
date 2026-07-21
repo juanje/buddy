@@ -412,9 +412,10 @@ Crash recovery (next app start):
 
 - **Given** the user attaches a .pdf file
 - **When** the message is sent
-- **Then** the PDF is read and passed to Pi as document content (base64 or extracted text, depending on provider support)
+- **Then** the PDF text is extracted locally and injected into the prompt as text content
 - **And** the agent can read and discuss the document contents
-- **Note:** All three v1 providers (Claude, GPT, Gemini) support native PDF input. This is a common end-user need — non-technical users frequently have PDFs to discuss. Implementation mirrors image attachments: detect format, read as base64, pass inline.
+- **Blocker (Jul 2026):** Pi SDK has no PDF support. `ImageContent` with `mimeType: "application/pdf"` is passed raw to providers — OpenAI silently returns empty responses, Anthropic/Bedrock would also fail (their provider adapters cast to image MIME types only). Pi CLI reads PDFs as corrupted UTF-8 text, not as binary attachments. Verified by source inspection of `~/git/pi/packages/coding-agent/` and live testing (session `21fbab0a`: 0 output tokens on PDF prompt).
+- **Implementation path:** Local text extraction via `pdf-parse` (pure JS, no native deps). Read PDF → extract text → inject as `<document name="filename.pdf">\n{text}\n</document>` in the prompt text. Format gate in `isSupportedIngestFormat` accepts `.pdf`; the file is never sent as `ImageContent`. Works with any provider/model.
 
 ### 3.7 Deferred Queue (FR-DEFERRED)
 
