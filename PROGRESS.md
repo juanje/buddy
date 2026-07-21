@@ -75,8 +75,10 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 | FR-CHAT-04 | Markdown rendering in assistant messages | done | 19eef12 |
 | FR-CHAT-05 | Thinking block display (collapsible) | done | 5e89120 |
 | FR-CHAT-06 | Tool call display (expandable activity block) | done | 5e89120 |
+| FR-CHAT-08 | Input textarea resets height after send | done | 491b6e9 |
+| FR-SETTINGS-02 | Settings UI (language + read-only config) | done | 166904b |
 
-**Phase 1 complete:** YES — all Phase 1 FRs implemented and passing (122 unit tests, 93 BDD scenarios).
+**Phase 1 complete:** YES — all Phase 1 FRs implemented and passing (129 unit tests, 97 BDD scenarios).
 
 ## Phase 2 — Implemented early
 
@@ -87,6 +89,7 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 | FR-HEBB-03 | Exclusions | done | b977e60 |
 | FR-HEBB-04 | Lazy commit | done | b977e60 |
 | FR-REFLECT-03 | Checkpoint mid-session reflect | done | fbee7f9 |
+| FR-REFLECT-04 | Log output sanitizer | done | 7c5bd69 |
 
 ## Post-MVP — Fable review fixes (2026-07-21)
 
@@ -106,10 +109,19 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 
 ## Current focus
 
-> **Phase 1 MVP complete + post-review hardened (2026-07-21).** All Phase 1 FRs
-> implemented and verified. FR-HEBB (Phase 2) also shipped. External review
-> findings resolved (security, docs, cleanup). Next: Phase 2
-> (FR-CONSOL heartbeat, FR-WIKI, FR-PERM-05, FR-COST).
+> **Sprint: Chat polish + Settings (2026-07-21) complete.** FR-CHAT-08,
+> FR-REFLECT-04, FR-SETTINGS-02 shipped. Next: Phase 2
+> (FR-CONSOL heartbeat, FR-WIKI, FR-COST, FR-SETTINGS-03/04).
+
+### Sprint: Chat polish + Settings — DONE (2026-07-21)
+
+| FR-ID | Feature | Status | Commit |
+|-------|---------|--------|--------|
+| FR-CHAT-08 | Textarea height reset after send | done | 491b6e9 |
+| FR-REFLECT-04 | Reflect log output sanitizer | done | 7c5bd69 |
+| FR-SETTINGS-02 | Settings modal (Cmd/Ctrl+,) | done | 166904b |
+
+Language editable in settings; provider/model/directory read-only until FR-SETTINGS-03/04.
 
 ### Sprint: OAuth Setup — DONE (2026-07-20)
 

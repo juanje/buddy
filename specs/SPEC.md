@@ -72,7 +72,7 @@ AB File System (git repo)
 | FR-CHAT-05 | Thinking block display (collapsible) | 3 ✓ |
 | FR-CHAT-06 | Tool call display (expandable cards) | 3 ✓ |
 | FR-CHAT-07 | Auto-scroll with manual override | 0 ✓ |
-| FR-CHAT-08 | Input textarea resets height after send | 2 |
+| FR-CHAT-08 | Input textarea resets height after send | 2 ✓ |
 
 **FR-CHAT-01 — Streaming message display**
 
@@ -258,7 +258,7 @@ platform-specific install instructions is shown and setup cannot continue.
 | FR-REFLECT-01 | Factual skeleton capture (crash fallback) | 1 ✓ |
 | FR-REFLECT-02 | Forked reflect on session end (primary) | 1 ✓ |
 | FR-REFLECT-03 | Checkpoint mid-session reflect (forked, background) | 1 ✓ |
-| FR-REFLECT-04 | Log output sanitizer (strip tool-call artifacts) | 2 |
+| FR-REFLECT-04 | Log output sanitizer (strip tool-call artifacts) | 2 ✓ |
 
 **FR-REFLECT-01 — Factual skeleton capture (crash fallback)**
 
@@ -617,7 +617,7 @@ Crash recovery (next app start):
 | ID | Description | Phase |
 |----|-------------|-------|
 | FR-SETTINGS-01 | Provider and model stored in Pi settings | 1 ✓ |
-| FR-SETTINGS-02 | Settings UI | 3 |
+| FR-SETTINGS-02 | Settings UI | 3 ✓ |
 | FR-SETTINGS-03 | Model switching from UI | 3 |
 | FR-SETTINGS-04 | Language switching from settings | 3 |
 

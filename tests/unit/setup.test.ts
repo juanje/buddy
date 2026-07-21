@@ -5,7 +5,7 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { detectFirstRun } from "../../backends/setup";
+import { detectFirstRun, updateAppConfig } from "../../backends/setup";
 
 const tmpDirs: string[] = [];
 
@@ -57,5 +57,24 @@ describe("detectFirstRun", () => {
 
   it("is first run when the file is corrupted JSON", () => {
     expect(detectFirstRun(configIn("{ not valid json"))).toEqual({ firstRun: true });
+  });
+});
+
+describe("updateAppConfig", () => {
+  it("merges language into an existing config file", () => {
+    const path = configIn(
+      JSON.stringify({
+        abDirectory: "/tmp/buddy",
+        provider: "anthropic",
+        model: "claude-sonnet-5",
+        language: "es",
+      }),
+    );
+    const updated = updateAppConfig({ language: "en" }, path);
+    expect(updated.language).toBe("en");
+    expect(updated.abDirectory).toBe("/tmp/buddy");
+    const reread = detectFirstRun(path);
+    expect(reread.firstRun).toBe(false);
+    if (!reread.firstRun) expect(reread.config.language).toBe("en");
   });
 });

@@ -16,6 +16,12 @@
   import ChatView from "./lib/ChatView.svelte";
   import InputBar from "./lib/InputBar.svelte";
   import SetupWizard from "./lib/SetupWizard.svelte";
+  import SettingsModal from "./lib/SettingsModal.svelte";
+  import {
+    createSettingsController,
+    isSettingsShortcut,
+    type SettingsController,
+  } from "./lib/settings-controller";
   import { t } from "./lib/i18n";
   import type { AgentEvent, DeferredItemView, OAuthUIEvent, SetupConfig } from "../shared/api";
 
@@ -34,6 +40,8 @@
   let aboutOpen = $state(false);
   let aboutModel = $state("—");
   let aboutTurns = $state(0);
+  let appConfig = $state<SetupConfig | undefined>();
+  let settingsController = $state<SettingsController | undefined>();
 
   // The controller is created before the worker connects so the UI renders
   // immediately; prompts are proxied to whatever connection exists.
@@ -85,6 +93,15 @@
   function applySetupConfig(config: SetupConfig): void {
     abDirectory = config.abDirectory;
     configuredModel = config.model;
+    appConfig = config;
+    if (!settingsController) {
+      settingsController = createSettingsController({
+        worker: workerProxy,
+        getConfig: () => appConfig!,
+        onConfigChange: applySetupConfig,
+        version: APP_VERSION,
+      });
+    }
   }
 
   async function refreshAboutInfo(): Promise<void> {
@@ -208,6 +225,15 @@
   });
 
   function handleWindowKeydown(event: KeyboardEvent) {
+    if (isSettingsShortcut(event)) {
+      event.preventDefault();
+      settingsController?.openSettings();
+      return;
+    }
+    if (event.key === "Escape" && settingsController && get(settingsController.open)) {
+      settingsController.closeSettings();
+      return;
+    }
     if (event.key === "Escape") {
       controller?.onEscape();
     }
@@ -249,6 +275,9 @@
         onSent={() => scroll.onUserMessageSent()}
       />
     </div>
+    {#if settingsController}
+      <SettingsModal controller={settingsController} />
+    {/if}
   {/if}
 </main>
 

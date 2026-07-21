@@ -33,7 +33,7 @@ import {
 import { toIsoDay } from "./deferred";
 import { SessionLifecycle } from "./session-lifecycle";
 import { augmentPromptWithAttachments, bootSession } from "./session-boot";
-import { defaultConfigPath, detectFirstRun } from "./setup";
+import { defaultConfigPath, detectFirstRun, updateAppConfig } from "./setup";
 import { createWorkerCore } from "./worker-core";
 
 async function main(): Promise<void> {
@@ -190,6 +190,13 @@ async function main(): Promise<void> {
           persistentAllowedPaths = addAllowedPath(configDir, persist);
         }
         resolveAnswer?.(allow);
+      },
+      async updateConfig(patch) {
+        if (setupState.firstRun) {
+          throw new Error("App is not configured");
+        }
+        const updated = updateAppConfig(patch, defaultConfigPath());
+        setupState = { firstRun: false, config: updated };
       },
       async shutdown() {
         await core?.api.shutdown();

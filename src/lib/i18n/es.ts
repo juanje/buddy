@@ -88,6 +88,14 @@ export type LocaleStrings = {
   aboutModel: string;
   aboutTurns: string;
   aboutClose: string;
+  settingsTitle: string;
+  settingsLanguage: string;
+  settingsProvider: string;
+  settingsModel: string;
+  settingsDirectory: string;
+  settingsVersion: string;
+  settingsClose: string;
+  settingsReadOnlyHint: string;
 };
 
 export const es: LocaleStrings = {
@@ -185,6 +193,14 @@ export const es: LocaleStrings = {
   aboutModel: "Modelo",
   aboutTurns: "Turnos en esta sesión",
   aboutClose: "Cerrar",
+  settingsTitle: "Ajustes",
+  settingsLanguage: "Idioma",
+  settingsProvider: "Proveedor de IA",
+  settingsModel: "Modelo",
+  settingsDirectory: "Carpeta de memoria",
+  settingsVersion: "Versión",
+  settingsClose: "Cerrar",
+  settingsReadOnlyHint: "El proveedor, el modelo y la carpeta se configuran durante la instalación inicial.",
 };
 
 /** Short cost/capability description per model tier (FR-SETUP-05). */

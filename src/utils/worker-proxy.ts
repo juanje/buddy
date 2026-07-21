@@ -79,6 +79,11 @@ export function createWorkerProxy(getConnection: () => WorkerConnection | undefi
     async resolvePermission(id, allow, persist) {
       await getConnection()?.api.resolvePermission(id, allow, persist);
     },
+    async updateConfig(patch) {
+      const connection = getConnection();
+      if (!connection) throw new Error("worker not connected");
+      return connection.api.updateConfig(patch);
+    },
     async shutdown() {
       await getConnection()?.api.shutdown();
     },

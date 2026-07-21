@@ -165,6 +165,8 @@ export interface WorkerAPI {
   runSetup(config: SetupConfig, mode?: "create" | "import"): Promise<void>;
   /** Answer a pending permission request (FR-PERM-07). */
   resolvePermission(id: number, allow: boolean, persist?: AllowedPathPersist): Promise<void>;
+  /** Merge settings into ~/.buddy/config.json (FR-SETTINGS-02). */
+  updateConfig(patch: Partial<Pick<SetupConfig, "language">>): Promise<void>;
   shutdown(): Promise<void>;
 }
 

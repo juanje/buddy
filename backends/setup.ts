@@ -4,9 +4,9 @@
 // JSON, missing key) is a first run: the wizard owns recovery, so detection
 // never throws.
 
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 
 import type { SetupConfig, SetupState } from "../shared/api";
 
@@ -32,4 +32,19 @@ export function detectFirstRun(configPath: string): SetupState {
     // Corrupted config: treat as unconfigured; the wizard will rewrite it.
   }
   return { firstRun: true };
+}
+
+/** Persist partial updates to ~/.buddy/config.json (FR-SETTINGS-02). */
+export function updateAppConfig(
+  patch: Partial<Pick<SetupConfig, "language">>,
+  configPath: string = defaultConfigPath(),
+): SetupConfig {
+  const state = detectFirstRun(configPath);
+  if (state.firstRun) {
+    throw new Error("App is not configured");
+  }
+  const updated: SetupConfig = { ...state.config, ...patch };
+  mkdirSync(dirname(configPath), { recursive: true });
+  writeFileSync(configPath, JSON.stringify(updated, null, 2) + "\n");
+  return updated;
 }

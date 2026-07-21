@@ -95,6 +95,14 @@ export const en: LocaleStrings = {
   aboutModel: "Model",
   aboutTurns: "Turns this session",
   aboutClose: "Close",
+  settingsTitle: "Settings",
+  settingsLanguage: "Language",
+  settingsProvider: "AI Provider",
+  settingsModel: "Model",
+  settingsDirectory: "Memory folder",
+  settingsVersion: "Version",
+  settingsClose: "Close",
+  settingsReadOnlyHint: "Provider, model, and folder are configured during initial setup.",
 };
 
 export function tierDescriptionEn(tier: "fast" | "balanced" | "powerful"): string {
