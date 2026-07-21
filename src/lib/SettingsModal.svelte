@@ -2,11 +2,9 @@
   import { t } from "./i18n";
   import { supportsOAuth } from "./provider-setup";
   import {
-    groupModelsByProvider,
-    modelSelectValue,
-    parseModelSelectValue,
     providerLabel,
     type SettingsController,
+    type SettingsProviderId,
   } from "./settings-controller";
 
   let { controller }: { controller: SettingsController } = $props();
@@ -26,8 +24,12 @@
   let apiKeyInput = $state("");
   let baseUrlInput = $state("");
 
-  const currentModelValue = $derived(modelSelectValue($config.provider, $config.model));
-  const providerGroups = $derived(groupModelsByProvider($models, $t));
+  const authenticatedProviders = $derived(
+    [...new Set($models.map((m) => m.provider))] as SettingsProviderId[],
+  );
+  const modelsForCurrentProvider = $derived(
+    $models.filter((m) => m.provider === $config.provider),
+  );
   const showAddProviderLink = $derived($unauthenticatedProviders.length > 0 && !$addingProvider);
   const authNeedsBaseUrl = $derived($authProvider === "custom");
 
@@ -42,10 +44,17 @@
     await controller.setLanguage(select.value as "es" | "en");
   }
 
+  async function onProviderChange(event: Event) {
+    const select = event.currentTarget as HTMLSelectElement;
+    const provider = select.value as SettingsProviderId;
+    const providerModels = $models.filter((m) => m.provider === provider);
+    const firstModel = providerModels[0]?.id ?? $config.model;
+    await controller.setModel(provider, firstModel);
+  }
+
   async function onModelChange(event: Event) {
     const select = event.currentTarget as HTMLSelectElement;
-    const { provider, model } = parseModelSelectValue(select.value);
-    await controller.setModel(provider, model);
+    await controller.setModel($config.provider, select.value);
   }
 
   async function submitApiKey() {
@@ -79,25 +88,17 @@
         </div>
         <div class="field">
           <dt>{$t.settingsProvider}</dt>
-          <dd>{providerLabel($config.provider, $t)}</dd>
-        </div>
-        <div class="field">
-          <dt>{$t.settingsModel}</dt>
           <dd>
             {#if $loadingModels}
               <span class="muted">{$t.settingsModelLoading}</span>
-            {:else if $models.length > 0}
-              <select value={currentModelValue} onchange={onModelChange}>
-                {#each providerGroups as group (group.provider)}
-                  <optgroup label={group.label}>
-                    {#each group.models as m (m.id)}
-                      <option value={modelSelectValue(m.provider, m.id)}>{m.label}</option>
-                    {/each}
-                  </optgroup>
+            {:else if authenticatedProviders.length > 0}
+              <select value={$config.provider} onchange={onProviderChange}>
+                {#each authenticatedProviders as p (p)}
+                  <option value={p}>{providerLabel(p, $t)}</option>
                 {/each}
               </select>
             {:else}
-              {$config.model}
+              {providerLabel($config.provider, $t)}
             {/if}
           </dd>
         </div>
@@ -106,7 +107,7 @@
         {/if}
         {#if showAddProviderLink}
           <button type="button" class="link" onclick={() => controller.startAddProvider()}>
-            {$t.settingsAddProvider}
+            + {$t.settingsAddProvider}
           </button>
         {/if}
         {#if $addingProvider}
@@ -169,6 +170,22 @@
             </button>
           </div>
         {/if}
+        <div class="field">
+          <dt>{$t.settingsModel}</dt>
+          <dd>
+            {#if $loadingModels}
+              <span class="muted">{$t.settingsModelLoading}</span>
+            {:else if modelsForCurrentProvider.length > 0}
+              <select value={$config.model} onchange={onModelChange}>
+                {#each modelsForCurrentProvider as m (m.id)}
+                  <option value={m.id}>{m.label}</option>
+                {/each}
+              </select>
+            {:else}
+              {$config.model}
+            {/if}
+          </dd>
+        </div>
         <div class="field">
           <dt>{$t.settingsDirectory}</dt>
           <dd class="path">{$config.abDirectory}</dd>

@@ -206,7 +206,7 @@ export const es: LocaleStrings = {
   settingsReadOnlyHint: "La carpeta de memoria se configura durante la instalación inicial.",
   settingsModelLoading: "Cargando modelos…",
   settingsAddProvider: "Añadir proveedor",
-  settingsProviderAdded: "Proveedor añadido — selecciona un modelo arriba",
+  settingsProviderAdded: "Proveedor añadido — sus modelos ya están disponibles",
 };
 
 /** Short cost/capability description per model tier (FR-SETUP-05). */
