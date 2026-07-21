@@ -15,9 +15,12 @@
   import { resolveInitialView, applyLocaleFromSetup, type AppView } from "./lib/app-view";
   import ChatView from "./lib/ChatView.svelte";
   import InputBar from "./lib/InputBar.svelte";
+  import AppHeader from "./lib/AppHeader.svelte";
   import SetupWizard from "./lib/SetupWizard.svelte";
   import { t } from "./lib/i18n";
-  import type { AgentEvent, DeferredItemView, OAuthUIEvent } from "../shared/api";
+  import type { AgentEvent, DeferredItemView, OAuthUIEvent, SetupConfig } from "../shared/api";
+
+  const APP_VERSION = "0.1.0";
 
   let connection: WorkerConnection | undefined = $state();
   let connectionError: string | undefined = $state();
@@ -27,6 +30,11 @@
   let dragOver = $state(false);
   let deferredItems: DeferredItemView[] = $state([]);
   let setupOAuthHandler: ((event: OAuthUIEvent) => void) | undefined = $state();
+  let abDirectory = $state("");
+  let configuredModel = $state("");
+  let aboutOpen = $state(false);
+  let aboutModel = $state("—");
+  let aboutTurns = $state(0);
 
   // The controller is created before the worker connects so the UI renders
   // immediately; prompts are proxied to whatever connection exists.
@@ -53,6 +61,51 @@
     return () => {
       if (setupOAuthHandler === handler) setupOAuthHandler = undefined;
     };
+  }
+
+  async function endSession(): Promise<void> {
+    try {
+      if (connection) {
+        await Promise.race([
+          connection.api.shutdown(),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("shutdown timeout")), 2000),
+          ),
+        ]);
+      }
+    } catch {
+      // Best-effort shutdown; allow close anyway.
+    }
+    try {
+      await getCurrentWindow().destroy();
+    } catch {
+      // Browser dev without Tauri window API.
+    }
+  }
+
+  function applySetupConfig(config: SetupConfig): void {
+    abDirectory = config.abDirectory;
+    configuredModel = config.model;
+  }
+
+  async function refreshAboutInfo(): Promise<void> {
+    aboutModel = configuredModel || "—";
+    aboutTurns = 0;
+    if (!connection) return;
+    try {
+      const state = await connection.api.getState();
+      aboutTurns = state.messageCount;
+      if (state.model) aboutModel = state.model;
+    } catch {
+      // Worker not ready — keep config fallback.
+    }
+  }
+
+  async function toggleAbout(): Promise<void> {
+    if (!aboutOpen) {
+      await refreshAboutInfo();
+    }
+    aboutOpen = !aboutOpen;
   }
 
   async function connect() {
@@ -86,6 +139,9 @@
       const setupState = await connection.api.getSetupState();
       applyLocaleFromSetup(setupState);
       view = resolveInitialView(setupState);
+      if (!setupState.firstRun) {
+        applySetupConfig(setupState.config);
+      }
       if (view === "chat") {
         deferredItems = await connection.api.getDeferredItems();
       }
@@ -105,19 +161,7 @@
       const win = getCurrentWindow();
       unlistenClose = await win.onCloseRequested(async (event) => {
         event.preventDefault();
-        try {
-          if (connection) {
-            await Promise.race([
-              connection.api.shutdown(),
-              new Promise((_, reject) =>
-                setTimeout(() => reject(new Error("shutdown timeout")), 2000),
-              ),
-            ]);
-          }
-        } catch {
-          // Best-effort shutdown; allow close anyway.
-        }
-        await win.destroy();
+        await endSession();
       });
 
       try {
@@ -186,6 +230,10 @@
       onRegisterOAuth={registerSetupOAuth}
       onComplete={async () => {
         view = "chat";
+        const setupState = await workerProxy.getSetupState();
+        if (!setupState.firstRun) {
+          applySetupConfig(setupState.config);
+        }
         deferredItems = await workerProxy.getDeferredItems();
       }}
       onSetupFailed={() => (view = "setup")}
@@ -195,6 +243,15 @@
       {#if dragOver}
         <div class="drop-overlay">{$t.dropOverlay}</div>
       {/if}
+      <AppHeader
+        aboutOpen={aboutOpen}
+        aboutVersion={APP_VERSION}
+        aboutDirectory={abDirectory}
+        aboutModel={aboutModel}
+        aboutTurns={aboutTurns}
+        onAboutToggle={() => void toggleAbout()}
+        onEndSession={() => void endSession()}
+      />
       <ChatView bind:this={chatView} {controller} {scroll} {deferredItems} />
       <InputBar
         {controller}

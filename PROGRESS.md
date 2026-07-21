@@ -58,6 +58,9 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 | FR-INGEST-04 | Supported formats | done | 656634b |
 | FR-INGEST-05 | Image attachments (vision) | done | 656634b |
 | FR-INGEST-06 | PDF attachments (local text extraction) | done | 03f6b7f |
+| FR-SHELL-01 | App header bar with session controls | done | (this commit) |
+| FR-SHELL-02 | Explicit end-session button | done | (this commit) |
+| FR-SHELL-03 | About / app info panel | done | (this commit) |
 | FR-GIT-01 | Auto-commit after writes | done | 842635e |
 | FR-GIT-02 | Git invisible to user | done | 842635e |
 | FR-GIT-03 | Index rebuild on session end | done | 842635e |

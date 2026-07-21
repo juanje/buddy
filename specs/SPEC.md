@@ -704,9 +704,9 @@ Full specification in [specs/BRAIN-SPEC.md](BRAIN-SPEC.md).
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-SHELL-01 | App header bar with session controls | 3 |
-| FR-SHELL-02 | Explicit end-session button | 3 |
-| FR-SHELL-03 | About / app info panel | 3 |
+| FR-SHELL-01 | App header bar with session controls | 1 ✓ |
+| FR-SHELL-02 | Explicit end-session button | 1 ✓ |
+| FR-SHELL-03 | About / app info panel | 1 ✓ |
 | FR-SHELL-04 | Attach button in input bar | 1 ✓ |
 | FR-SHELL-05 | Input bar layout (stacked: attachments / text / buttons) | 1 ✓ |
 | FR-SHELL-06 | Wizard back navigation | 1 ✓ |

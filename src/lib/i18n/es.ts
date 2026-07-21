@@ -78,6 +78,14 @@ export type LocaleStrings = {
   oauthBackToSignIn: string;
   oauthCancel: string;
   modelLoading: string;
+  headerEndSession: string;
+  headerAbout: string;
+  aboutTitle: string;
+  aboutVersion: string;
+  aboutDirectory: string;
+  aboutModel: string;
+  aboutTurns: string;
+  aboutClose: string;
 };
 
 export const es: LocaleStrings = {
@@ -165,6 +173,14 @@ export const es: LocaleStrings = {
   oauthBackToSignIn: "Volver a iniciar sesión",
   oauthCancel: "Cancelar",
   modelLoading: "Cargando modelos…",
+  headerEndSession: "Cerrar sesión",
+  headerAbout: "Acerca de",
+  aboutTitle: "Acerca de Buddy",
+  aboutVersion: "Versión",
+  aboutDirectory: "Directorio",
+  aboutModel: "Modelo",
+  aboutTurns: "Turnos en esta sesión",
+  aboutClose: "Cerrar",
 };
 
 /** Short cost/capability description per model tier (FR-SETUP-05). */
