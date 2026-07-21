@@ -5,11 +5,12 @@ import assert from "node:assert/strict";
 
 import type { AbWorld } from "../support/world";
 import { resolveInputKey } from "../../src/lib/keyboard";
+import { autoResizeTextarea, sendAndResetTextarea } from "../../src/lib/input-bar";
 
 async function pressKey(world: AbWorld, key: string, shiftKey = false): Promise<void> {
   const action = resolveInputKey({ key, shiftKey });
   if (action === "send") {
-    await world.controller.send();
+    await sendAndResetTextarea(() => world.controller.send(), world.mockTextarea);
   } else if (action === "newline") {
     world.controller.input.update((v) => v + "\n");
   }
@@ -89,4 +90,13 @@ Then("the input bar is disabled", function (this: AbWorld) {
 
 Then("the send button is replaced by an abort button", function (this: AbWorld) {
   assert.equal(this.read(this.controller.showAbort), true);
+});
+
+When("the textarea has grown for multiline input", function (this: AbWorld) {
+  autoResizeTextarea(this.mockTextarea);
+  assert.notEqual(this.mockTextarea.style.height, "auto");
+});
+
+Then("the textarea height is reset to compact", function (this: AbWorld) {
+  assert.equal(this.mockTextarea.style.height, "auto");
 });

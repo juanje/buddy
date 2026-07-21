@@ -2,6 +2,7 @@
   import type { ChatController } from "./chat-controller";
   import { resolveInputKey } from "./keyboard";
   import { t } from "./i18n";
+  import { autoResizeTextarea, sendAndResetTextarea } from "./input-bar";
 
   let {
     controller,
@@ -18,8 +19,12 @@
 
   let textarea: HTMLTextAreaElement | undefined = $state();
 
+  function autoResize() {
+    autoResizeTextarea(textarea ?? undefined);
+  }
+
   async function sendNow() {
-    await controller.send();
+    await sendAndResetTextarea(() => controller.send(), textarea);
     onSent?.();
   }
 
@@ -29,12 +34,6 @@
       event.preventDefault();
       await sendNow();
     }
-  }
-
-  function autoResize() {
-    if (!textarea) return;
-    textarea.style.height = "auto";
-    textarea.style.height = Math.min(textarea.scrollHeight, 160) + "px";
   }
 
   async function pickFiles() {

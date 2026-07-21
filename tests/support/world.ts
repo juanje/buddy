@@ -38,6 +38,9 @@ export class AbWorld extends World {
   /** DOM focus simulation (focus is a view concern; steps track it here). */
   inputFocused = false;
 
+  /** Simulated textarea element for FR-CHAT-08 height reset. */
+  mockTextarea = { style: { height: "auto" }, scrollHeight: 96 };
+
   /** Permission verdicts the controller sent to the worker (FR-PERM-07). */
   permissionResolutions: Array<{ id: number; allow: boolean }> = [];
 
