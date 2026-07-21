@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { SetupController } from "../setup-controller";
   import { tierDescription, t } from "../i18n";
+  import "./wizard-shared.css";
 
   let {
     controller,
@@ -106,14 +107,6 @@
     font-size: 12px;
     color: var(--muted);
   }
-  .badge {
-    font-size: 11px;
-    color: var(--accent, #4f46e5);
-    border: 1px solid var(--accent, #4f46e5);
-    border-radius: 999px;
-    padding: 1px 8px;
-    margin-left: 6px;
-  }
   .field {
     display: flex;
     flex-direction: column;
@@ -129,34 +122,8 @@
     color: var(--fg);
     font-size: 14px;
   }
-  button.primary {
-    background: var(--accent, #4f46e5);
-    border-color: transparent;
-    color: #fff;
-    border-radius: 8px;
-    padding: 8px 20px;
-    cursor: pointer;
-    font-size: 14px;
-  }
   .actions {
-    display: flex;
-    gap: 8px;
-    justify-content: center;
-    flex-wrap: wrap;
     margin-top: 8px;
-  }
-  button.ghost {
-    border: none;
-    background: transparent;
-    color: var(--muted);
-    border-radius: 8px;
-    padding: 8px 20px;
-    cursor: pointer;
-    font-size: 14px;
-  }
-  button.ghost:hover {
-    color: var(--fg);
-    background: var(--bg-secondary);
   }
   button:disabled {
     opacity: 0.5;

@@ -2,6 +2,7 @@
   import type { SetupController } from "../setup-controller";
   import { supportsOAuth } from "../provider-setup";
   import { t } from "../i18n";
+  import "./wizard-shared.css";
 
   let {
     controller,
@@ -171,15 +172,6 @@
     padding: 8px 14px;
     font-size: 13px;
   }
-  button.primary {
-    background: var(--accent, #4f46e5);
-    border-color: transparent;
-    color: #fff;
-    border-radius: 8px;
-    padding: 8px 20px;
-    cursor: pointer;
-    font-size: 14px;
-  }
   button.primary.oauth {
     margin-top: 8px;
   }
@@ -192,31 +184,7 @@
     text-decoration: underline;
     margin-top: 8px;
   }
-  .badge {
-    font-size: 11px;
-    color: var(--accent, #4f46e5);
-    border: 1px solid var(--accent, #4f46e5);
-    border-radius: 999px;
-    padding: 1px 8px;
-    margin-left: 6px;
-  }
   .actions {
-    display: flex;
-    gap: 8px;
-    justify-content: center;
     margin-top: 12px;
-  }
-  button.ghost {
-    border: none;
-    background: transparent;
-    color: var(--muted);
-    border-radius: 8px;
-    padding: 8px 20px;
-    cursor: pointer;
-    font-size: 14px;
-  }
-  button.ghost:hover {
-    color: var(--fg);
-    background: var(--bg-secondary);
   }
 </style>

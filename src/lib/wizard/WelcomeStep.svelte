@@ -1,5 +1,6 @@
 <script lang="ts">
   import { t } from "../i18n";
+  import "./wizard-shared.css";
 
   let { onContinue, onBack }: { onContinue: () => void; onBack?: () => void } = $props();
 </script>
@@ -17,33 +18,5 @@
   p {
     max-width: 480px;
     line-height: 1.5;
-  }
-  button.primary {
-    border: 1px solid transparent;
-    background: var(--accent, #4f46e5);
-    color: #fff;
-    border-radius: 8px;
-    padding: 8px 20px;
-    cursor: pointer;
-    font-size: 14px;
-  }
-  .actions {
-    display: flex;
-    gap: 8px;
-    justify-content: center;
-    flex-wrap: wrap;
-  }
-  button.ghost {
-    border: none;
-    background: transparent;
-    color: var(--muted);
-    border-radius: 8px;
-    padding: 8px 20px;
-    cursor: pointer;
-    font-size: 14px;
-  }
-  button.ghost:hover {
-    color: var(--fg);
-    background: var(--bg-secondary);
   }
 </style>

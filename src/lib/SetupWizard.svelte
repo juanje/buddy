@@ -8,6 +8,7 @@
   import PersonalizationStep from "./wizard/PersonalizationStep.svelte";
   import ProviderStep from "./wizard/ProviderStep.svelte";
   import ModelStep from "./wizard/ModelStep.svelte";
+  import "./wizard/wizard-shared.css";
   import type { OAuthUIEvent, SetupWorkerAPI } from "../../shared/api";
 
   let {
@@ -234,29 +235,9 @@ async function createAb() {
     cursor: pointer;
     font-size: 14px;
   }
-  button.primary {
-    background: var(--accent, #4f46e5);
-    border-color: transparent;
-    color: #fff;
-  }
-  button.ghost {
-    border: none;
-    background: transparent;
-    color: var(--muted);
-  }
-  button.ghost:hover {
-    color: var(--fg);
-    background: var(--bg-secondary);
-  }
   button:disabled {
     opacity: 0.5;
     cursor: default;
-  }
-  .actions {
-    display: flex;
-    gap: 8px;
-    justify-content: center;
-    flex-wrap: wrap;
   }
   input.location {
     width: min(480px, 80vw);

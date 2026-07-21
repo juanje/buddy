@@ -1,5 +1,6 @@
 <script lang="ts">
   import { t } from "../i18n";
+  import "./wizard-shared.css";
 
   let {
     name = $bindable(""),
@@ -55,37 +56,5 @@
     color: var(--fg);
     font-size: 14px;
     font-family: inherit;
-  }
-  button.primary {
-    border: 1px solid transparent;
-    background: var(--accent, #4f46e5);
-    color: #fff;
-    border-radius: 8px;
-    padding: 8px 20px;
-    cursor: pointer;
-    font-size: 14px;
-  }
-  button.primary:disabled {
-    opacity: 0.5;
-    cursor: default;
-  }
-  .actions {
-    display: flex;
-    gap: 8px;
-    justify-content: center;
-    flex-wrap: wrap;
-  }
-  button.ghost {
-    border: none;
-    background: transparent;
-    color: var(--muted);
-    border-radius: 8px;
-    padding: 8px 20px;
-    cursor: pointer;
-    font-size: 14px;
-  }
-  button.ghost:hover {
-    color: var(--fg);
-    background: var(--bg-secondary);
   }
 </style>
