@@ -32,15 +32,23 @@ export type PermissionDecision =
   | { action: "ask"; kind: PermissionRequest["kind"]; op: PermissionOp; path: string };
 
 const IDENTITY_FILES = ["SOUL.md"];
+/** Agent-managed config paths that must never be modified by the agent (NFR-SEC-06). */
+const PROTECTED_CONFIG_RELPATHS = [join(".pi", "settings.json")];
 
 function isWithin(child: string, parent: string): boolean {
   const rel = relative(parent, child);
   return rel === "" || (!rel.startsWith(`..${sep}`) && rel !== ".." && !isAbsolute(rel));
 }
 
-function isDenylisted(absPath: string, home: string): boolean {
+export function isDenylistedPath(absPath: string, home: string = homedir()): boolean {
   if (DENYLIST_BASENAMES.includes(basename(absPath))) return true;
   return DENYLIST_HOME_DIRS.some((dir) => isWithin(absPath, join(home, dir)));
+}
+
+function isProtectedConfig(absPath: string, abDirectory: string): boolean {
+  return PROTECTED_CONFIG_RELPATHS.some(
+    (rel) => resolve(abDirectory, rel) === absPath,
+  );
 }
 
 function isIdentityFile(absPath: string, abDirectory: string): boolean {
@@ -73,11 +81,14 @@ export function evaluateToolCall(
   // Relative paths resolve against the session cwd, which is the AB home.
   const absPath = resolve(abDirectory, expandHome(rawPath, home));
 
-  if (isDenylisted(absPath, home)) {
+  if (isDenylistedPath(absPath, home)) {
     return { action: "deny", reason: `Access to ${absPath} is not allowed.` };
   }
   if (op === "write" && isIdentityFile(absPath, abDirectory)) {
     return { action: "ask", kind: "identity-write", op, path: absPath };
+  }
+  if (op === "write" && isProtectedConfig(absPath, abDirectory)) {
+    return { action: "deny", reason: "Modifying model configuration is not allowed." };
   }
   if (isWithin(absPath, abDirectory)) {
     return { action: "allow" };
@@ -115,15 +126,18 @@ export function createPermissionGate(
   return {
     async check(toolName, args) {
       const rawPath = (args as { path?: unknown } | undefined)?.path;
-      if (
-        sessionAllowedPaths &&
-        typeof rawPath === "string" &&
-        rawPath.trim() !== "" &&
-        READ_TOOLS.has(toolName)
-      ) {
+      if (typeof rawPath === "string" && rawPath.trim() !== "") {
         const absPath = resolve(abDirectory, expandHome(rawPath, home));
-        for (const allowed of sessionAllowedPaths) {
-          if (resolve(allowed) === absPath) return undefined;
+        if (isDenylistedPath(absPath, home)) {
+          return { block: true, reason: `Access to ${absPath} is not allowed.` };
+        }
+        if (
+          sessionAllowedPaths &&
+          READ_TOOLS.has(toolName)
+        ) {
+          for (const allowed of sessionAllowedPaths) {
+            if (resolve(allowed) === absPath) return undefined;
+          }
         }
       }
 

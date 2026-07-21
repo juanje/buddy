@@ -15,7 +15,7 @@ import type { AgentEvent, FrontendAPI, PromptOptions } from "../shared/api";
 import { imageMimeType, isImageFormat, isPdfFormat } from "../shared/ingest-formats";
 import { logEvent } from "./app-logger";
 import { createHebbianTracker } from "./hebbian";
-import { createPermissionGate, type PermissionRequest } from "./permissions";
+import { createPermissionGate, isDenylistedPath, type PermissionRequest } from "./permissions";
 import type { AllowedEntry } from "./allowed-paths";
 import { extractPdfText } from "./pdf-extract";
 import { assembleSystemPrompt } from "./prompt";
@@ -68,7 +68,10 @@ export async function augmentPromptWithAttachments(
   const images: Array<{ type: "image"; data: string; mimeType: string }> = [];
 
   for (const path of options.attachments) {
-    sessionAllowedPaths.add(resolve(path));
+    const absPath = resolve(path);
+    if (!isDenylistedPath(absPath)) {
+      sessionAllowedPaths.add(absPath);
+    }
     if (isImageFormat(path)) {
       try {
         const data = readFileSync(path).toString("base64");

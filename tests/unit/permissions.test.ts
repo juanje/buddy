@@ -48,6 +48,15 @@ describe("evaluateToolCall", () => {
     expect(write).toMatchObject({ action: "ask", kind: "outside", op: "write" });
   });
 
+  it("denies writes to .pi/settings.json inside the AB (NFR-SEC-06)", () => {
+    const decision = evaluate("write", { path: `${AB}/.pi/settings.json` });
+    expect(decision).toEqual({
+      action: "deny",
+      reason: "Modifying model configuration is not allowed.",
+    });
+    expect(evaluate("read", { path: `${AB}/.pi/settings.json` })).toEqual({ action: "allow" });
+  });
+
   it("denies the hardcoded denylist silently, wherever it appears", () => {
     for (const path of [
       "/home/u/.ssh/id_rsa",
@@ -76,5 +85,22 @@ describe("createPermissionGate sessionAllowedPaths", () => {
     );
     const outcome = await gate.check("read", { path: "/home/u/Documents/draft.md" });
     expect(outcome).toBeUndefined();
+  });
+
+  it("denies reads for denylist paths even when sessionAllowedPaths includes them", async () => {
+    const allowed = new Set(["/anywhere/project/.env"]);
+    const gate = createPermissionGate(
+      AB,
+      async () => {
+        throw new Error("should not ask");
+      },
+      HOME,
+      { sessionAllowedPaths: allowed },
+    );
+    const outcome = await gate.check("read", { path: "/anywhere/project/.env" });
+    expect(outcome).toEqual({
+      block: true,
+      reason: "Access to /anywhere/project/.env is not allowed.",
+    });
   });
 });
