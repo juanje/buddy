@@ -76,7 +76,7 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 | FR-CHAT-05 | Thinking block display (collapsible) | done | 5e89120 |
 | FR-CHAT-06 | Tool call display (expandable activity block) | done | 5e89120 |
 | FR-CHAT-08 | Input textarea resets height after send | done | 491b6e9 |
-| FR-SETTINGS-02 | Settings UI (language + read-only config) | done | 166904b |
+| FR-SETTINGS-02 | Settings UI (language + read-only config) | done | 6ea7f89 |
 
 **Phase 1 complete:** YES — all Phase 1 FRs implemented and passing (129 unit tests, 97 BDD scenarios).
 
@@ -119,7 +119,7 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 |-------|---------|--------|--------|
 | FR-CHAT-08 | Textarea height reset after send | done | 491b6e9 |
 | FR-REFLECT-04 | Reflect log output sanitizer | done | 7c5bd69 |
-| FR-SETTINGS-02 | Settings modal (Cmd/Ctrl+,) | done | 166904b |
+| FR-SETTINGS-02 | Settings modal (Cmd/Ctrl+,) | done | 6ea7f89 |
 
 Language editable in settings; provider/model/directory read-only until FR-SETTINGS-03/04.
 
