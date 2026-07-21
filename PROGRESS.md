@@ -51,7 +51,7 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 | FR-SESSION-03 | Session end on app close | done | 842635e, 6d58175 |
 | FR-REFLECT-01 | Factual skeleton (crash fallback) | done | 842635e |
 | FR-REFLECT-02 | Forked reflect on session end (background child) | done | 6d58175 |
-| FR-REFLECT-03 | Incremental mid-session reflect (background child) | done | 6d58175 |
+| FR-REFLECT-03 | Checkpoint mid-session reflect (base framework) | done | 6d58175 |
 | FR-DEFERRED-01 | Surface deferred on start | done | d7a3c12 |
 | FR-INGEST-01 | Drag & drop file ingest | done | 656634b |
 | FR-INGEST-02 | Attach button | done | 656634b |
@@ -81,7 +81,7 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 | FR-SETTINGS-04 | Language switching from settings | done | 6ea7f89 |
 | FR-SETTINGS-05 | Settings access from UI (gear icon + menu) | done | 2e051c5 |
 
-**Phase 1 complete:** YES — all Phase 1 FRs implemented and passing (140 unit tests, 99 BDD scenarios).
+**Phase 1 complete:** YES — all Phase 1 FRs implemented and passing (141 unit tests, 99 BDD scenarios).
 
 ## Phase 2 — Implemented early
 

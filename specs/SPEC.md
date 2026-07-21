@@ -638,9 +638,11 @@ Crash recovery (next app start):
 **FR-SETTINGS-03 — Model switching**
 
 - **Given** the user opens settings and one or more providers are authenticated
-- **When** they select a model from the dropdown (grouped by provider)
-- **Then** `session.setModel()` is called with the resolved Pi model and subsequent messages use the new model
+- **When** they select a provider from the first dropdown and a model from the second (cascading: provider filters model list)
+- **Then** a provider dropdown filters the model list; changing provider shows only that provider's models
+- **And** `session.setModel()` is called with the resolved Pi `Model` object and subsequent messages use the new model
 - **And** the choice persists to `.pi/settings.json` and `~/.buddy/config.json`
+- **And** the last selected model per provider is remembered within the session (switching back restores the previous choice)
 - **And** the user can authenticate additional providers inline ("Add provider") without leaving settings
 
 **FR-SETTINGS-04 — Language switching**
@@ -652,9 +654,9 @@ Crash recovery (next app start):
 **FR-SETTINGS-05 — Settings access from UI**
 
 - **Given** the user is on the chat screen
-- **When** they click the gear icon (floating, bottom-right area near the input bar) or select Preferences from the native app menu (macOS: Buddy → Settings / Cmd+,)
+- **When** they click the gear icon (floating, bottom-right area near the input bar) or select Settings from the native app menu (macOS: Buddy → Settings… / Cmd+,)
 - **Then** the settings modal opens
-- **Notes:** Currently settings are only accessible via keyboard shortcut (Cmd+,). This FR adds two visual entry points: (1) a floating gear icon in the chat area, and (2) a native macOS menu item under the app menu. The gear icon should be unobtrusive — low opacity until hover.
+- **Implementation:** Three entry points: (1) keyboard shortcut Cmd/Ctrl+, (2) floating gear icon (cog SVG, subtle border, visible on hover), (3) native macOS "Settings…" menu item under the Buddy submenu with Cmd+, accelerator. The menu emits a `menu-settings` Tauri event that the frontend listens for.
 
 ### 3.13 Cost Visibility (FR-COST)
 
@@ -767,7 +769,7 @@ The native window close (X) already triggers the full shutdown sequence (skeleto
 - **Then** the layout is stacked vertically:
   1. Attachment chips (if any) on top
   2. Text input field in the middle
-  3. Action buttons (send, attach, model selector) aligned on a bottom row
+  3. Action buttons (send, attach) aligned on a bottom row
 - **And** the button row never shifts vertically when attachments appear or the text area grows
 - **And** the send button uses an upward-pointing arrow icon (message going "up" into the conversation)
 - **Note:** Inspired by Cursor's input layout. Prevents misalignment between the text area and action buttons when images/attachments are added.
@@ -1014,14 +1016,8 @@ AB remembers the conversation, knows their name, surfaces any pending reminders.
 **Explicitly excluded from Phase 1 and why:**
 - System tray (window close = quit; daemon is Phase 4)
 - Heartbeat/scheduler (no periodic checks; consolidation is Phase 2)
-- Tool call rendering as cards (shown as plain text; visual polish is Phase 3)
-- Thinking blocks as collapsible (shown inline; Phase 3)
-- Settings UI (configure via `.pi/settings.json` directly; Phase 3)
-- Model switching from UI (Phase 3)
 - Cost visibility (Phase 2+)
 - Git sync (Phase 3+)
-- Implicit path permission from messages (Phase 2; MVP uses simple confirm-all for Zone 3)
-- Zone 2 persistent paths (Phase 2)
 
 ---
 

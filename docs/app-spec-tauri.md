@@ -160,13 +160,9 @@ session.agent.beforeToolCall = async (ctx, signal) => {
     return originalBefore?.(ctx, signal);
 };
 
-const originalAfter = session.agent.afterToolCall;
-session.agent.afterToolCall = async (ctx, signal) => {
-    if (ctx.toolCall.name === "read" && !ctx.isError) {
-        hebbianTracker.trackAccess(ctx.args.path);
-    }
-    return originalAfter?.(ctx, signal);
-};
+// Note: Hebbian tracking uses session.subscribe() on tool_execution_end,
+// not afterToolCall (see Hebbian Tracking Layer section below).
+// afterToolCall is reserved for extension hooks only.
 
 // --- RPC API exposed to frontend ---
 
@@ -184,7 +180,8 @@ const workerApi: WorkerAPI = {
     },
 
     async setModel(provider: string, modelId: string) {
-        await session.setModel({ provider, modelId });
+        const model = await resolveModel(modelRuntime, provider, modelId);
+        await session.setModel(model);
     },
 
     async setThinkingLevel(level: string) {
@@ -384,15 +381,12 @@ App.svelte
 │   ├── TextArea (auto-resize, shift+enter for newlines)
 │   ├── SendButton (disabled while streaming)
 │   └── AbortButton (visible while streaming)
-├── StatusBar.svelte
-│   ├── ModelIndicator (current model name)
-│   ├── ConnectionStatus (connected / reconnecting / error)
-│   └── SessionInfo (session name, message count)
-└── SettingsModal.svelte (accessed via status bar or system tray)
-    ├── AB directory path
-    ├── Model selection (from Pi's available models)
-    ├── Thinking level selector
-    └── Heartbeat interval
+└── SettingsModal.svelte (accessed via gear icon, Cmd+,, or app menu)
+    ├── Provider dropdown (cascading: filters model list)
+    ├── Model dropdown (per-provider)
+    ├── Language selector
+    ├── AB directory path (read-only)
+    └── Add provider inline auth (OAuth + API key fallback)
 ```
 
 **Frontend ↔ Worker connection:**
@@ -479,7 +473,6 @@ function handleEvent(event: AgentEvent) {
 - `Enter` — send message
 - `Shift+Enter` — newline in input
 - `Escape` — abort current generation
-- `Cmd/Ctrl+N` — new session
 - `Cmd/Ctrl+,` — settings
 
 ### 5. Heartbeat Scheduler (in worker)
@@ -1092,18 +1085,18 @@ history meaningful (no per-turn commits for metadata-only changes).
 
 **Integration with worker hooks:**
 
-Hebbian tracking runs in the chained `afterToolCall` (see worker setup).
-Permission checks run in the chained `beforeToolCall`. Flushing queued
-frontmatter updates happens on the `agent_end` event:
+Hebbian tracking runs via the `tool_execution_end` event in
+`session.subscribe()` (sole path — the chained `afterToolCall` Hebbian
+path was removed as redundant per Fable review finding F). Permission
+checks run in the chained `beforeToolCall`. Flushing queued frontmatter
+updates happens on the `agent_end` event:
 
 ```typescript
-// Hebbian tracking (in chained afterToolCall — see worker setup)
-if (ctx.toolCall.name === "read" && !ctx.isError) {
-    hebbianTracker.trackAccess(ctx.args.path);
-}
-
-// Flush queued frontmatter updates after each agent turn
+// Hebbian tracking (via subscribe, not afterToolCall)
 session.subscribe((event) => {
+    if (event.type === "tool_execution_end" && event.toolName === "Read" && !event.isError) {
+        hebbianTracker.trackAccess(event.args?.path);
+    }
     if (event.type === "agent_end") {
         hebbianTracker.flush();
     }
@@ -1120,7 +1113,7 @@ ab-app/
 │   ├── capabilities/
 │   │   └── default.json         # Permissions for plugin-js, notification, etc.
 │   └── src/
-│       └── main.rs              # ~30 lines: plugin registration + tray setup
+│       └── main.rs              # Plugin registration + menu + tray setup
 ├── backends/
 │   ├── agent-worker.ts          # Pi SDK session + kkrpc API + scheduler
 │   ├── permissions.ts           # Trust zones, file-path permission layer
@@ -1249,7 +1242,7 @@ async function setupAB(abDir: string, llmConfig: LLMConfig) {
 
     // 4. Write API key (if remote provider)
     if (llmConfig.apiKey) {
-        const authPath = `${homedir()}/.pi/agent/auth.json`;
+        const authPath = `${homedir()}/.buddy/auth.json`;
         await writeFile(authPath, JSON.stringify({
             [llmConfig.provider]: { apiKey: llmConfig.apiKey }
         }, null, 2));
@@ -1336,22 +1329,23 @@ All configuration lives in standard Pi locations:
 | What | Where | Managed by |
 |------|-------|-----------|
 | Provider + model | `AB_DIR/.pi/settings.json` | Wizard → later Settings UI |
-| API keys | `~/.pi/agent/auth.json` | Wizard → later Settings UI |
+| API keys | `~/.buddy/auth.json` | Wizard → later Settings UI |
 | AB directory path | `~/.buddy/config.json` | App (Tauri) |
 | Scheduler settings | `~/.buddy/scheduler.json` | App (future Phase 3) |
 
 No custom config format — Pi's native settings are the source of truth.
 The future Settings UI (Phase 2+) just edits these same files.
 
-**Future: account login.** Pi supports provider account login flows
-(OAuth-style). Investigate exposing this via SDK to eliminate manual API
-key entry. Not v1.
+**Account login (implemented):** OAuth is the primary authentication path
+via `ModelRuntime.login()`. The wizard and settings modal both support
+OAuth (browser-based) as primary and API key as fallback. Credentials
+are stored in `~/.buddy/auth.json` (NFR-SEC-07).
 
-**API key security:** Keys are written to `~/.pi/agent/auth.json` (Pi
-standard). The file is created with mode 600 (owner read/write only).
-Future improvement: evaluate OS keychain integration (macOS Keychain,
-libsecret on Linux) to avoid plaintext storage. Set file mode 600 on
-`auth.json` as minimum protection.
+**API key security:** Keys are written to `~/.buddy/auth.json` (isolated
+from Pi CLI's `~/.pi/agent/auth.json` per NFR-SEC-07). The file is created
+with mode 600 (owner read/write only). Future improvement: evaluate OS
+keychain integration (macOS Keychain, libsecret on Linux) to avoid plaintext
+storage.
 
 ## Phase 0 — Architecture PoC
 
@@ -1554,12 +1548,15 @@ should be rare. However, **append-only files** are conflict magnets:
 `logs/index.md`, `agent_brain/observations.md`, `agent_brain/deferred.md`.
 Multiple sessions on different devices append to the same file.
 
-**Mitigation — per-session log files:** Each session writes its own log
-file (`logs/YYYY-MM-DD_session-id.md`). `logs/index.md` is a derived file,
-rebuilt from per-session file frontmatter at every session end (in code, no
-LLM, near-zero cost). This eliminates the most common conflict source.
-Conflicts in `logs/index.md` are resolved by regeneration — it's derived
-state, not authored content.
+**Mitigation — daily-append log model:** All sessions on a given day
+append `## Session HH:MM–HH:MM` blocks to a single daily file
+(`logs/YYYY-MM-DD.md`). `logs/index.md` is a derived file, rebuilt from
+daily log frontmatter after each reflect (in code, no LLM, near-zero
+cost). Multi-device conflicts on the same daily file are less likely than
+they appear — sessions rarely overlap across devices. When they do, git's
+line-level merge usually succeeds (different `## Session` blocks appended
+at different positions). Conflicts in `logs/index.md` are resolved by
+regeneration — it's derived state, not authored content.
 
 **Before multi-device ships:** `observations.md` and `deferred.md` need
 conflict mitigation — either a `merge=union` driver via `.gitattributes`
