@@ -49,7 +49,7 @@
   }
 
   async function submitApiKey() {
-    await controller.submitAuthApiKey(apiKeyInput, $authNeedsBaseUrl ? baseUrlInput : undefined);
+    await controller.submitAuthApiKey(apiKeyInput, authNeedsBaseUrl ? baseUrlInput : undefined);
     if (!$authError) {
       apiKeyInput = "";
       baseUrlInput = "";
@@ -141,7 +141,7 @@
                     {$t.oauthBackToSignIn}
                   </button>
                 {/if}
-                {#if $authNeedsBaseUrl}
+                {#if authNeedsBaseUrl}
                   <label class="inline-field">
                     <span>{$t.baseUrlLabel}</span>
                     <input type="text" bind:value={baseUrlInput} spellcheck="false" />

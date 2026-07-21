@@ -620,6 +620,7 @@ Crash recovery (next app start):
 | FR-SETTINGS-02 | Settings UI | 3 ✓ |
 | FR-SETTINGS-03 | Model switching from UI | 3 ✓ |
 | FR-SETTINGS-04 | Language switching from settings | 3 ✓ |
+| FR-SETTINGS-05 | Settings access from UI (gear icon + menu) | 3 |
 
 **FR-SETTINGS-01 — Pi settings**
 
@@ -647,6 +648,13 @@ Crash recovery (next app start):
 - **Given** the user changes language in settings
 - **When** they confirm
 - **Then** the UI switches immediately and the preference is stored
+
+**FR-SETTINGS-05 — Settings access from UI**
+
+- **Given** the user is on the chat screen
+- **When** they click the gear icon (floating, bottom-right area near the input bar) or select Preferences from the native app menu (macOS: Buddy → Settings / Cmd+,)
+- **Then** the settings modal opens
+- **Notes:** Currently settings are only accessible via keyboard shortcut (Cmd+,). This FR adds two visual entry points: (1) a floating gear icon in the chat area, and (2) a native macOS menu item under the app menu. The gear icon should be unobtrusive — low opacity until hover.
 
 ### 3.13 Cost Visibility (FR-COST)
 
