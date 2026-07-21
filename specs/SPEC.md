@@ -175,9 +175,9 @@ AB File System (git repo)
 - **Then** an OAuth "Sign in" button appears as the primary option
 - **And** an "I have an API key" link shows the key input as a secondary option
 - **And (OAuth path)** clicking "Sign in" opens the browser for OAuth authentication
-- **And (OAuth path)** tokens are stored in `~/.pi/agent/auth.json` upon successful login
+- **And (OAuth path)** tokens are stored in `~/.buddy/auth.json` upon successful login
 - **And (API key path)** the key is validated with a test API call before proceeding
-- **And (API key path)** the key is stored in `~/.pi/agent/auth.json` with restrictive file permissions
+- **And (API key path)** the key is stored in `~/.buddy/auth.json` with restrictive file permissions
 
 **FR-SETUP-06 — Model selection**
 

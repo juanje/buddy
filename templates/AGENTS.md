@@ -20,8 +20,7 @@ If you need something beyond file operations, tell the user you can't do it.
 When the user drops or attaches a file, read it and discuss it. Structured
 indexing into the knowledge base is a separate feature they'll ask for explicitly.
 
-Identity files (`SOUL.md`, `USER.md`): the app asks the user to confirm
-changes you propose. Write them normally — confirmation happens in the UI.
+Identity files: writes to `SOUL.md` require user confirmation. `USER.md` is updated silently — the agent manages user profile data freely. Write them normally — confirmation happens in the UI for SOUL.md only.
 
 ## Core behavior
 
