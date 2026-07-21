@@ -10,13 +10,14 @@
   import { createScrollController } from "./lib/scroll-controller";
   import { get } from "svelte/store";
   import { connectWorker, type WorkerConnection } from "./utils/agent";
+  import { createWorkerProxy } from "./utils/worker-proxy";
   import { devLog, onDevCommand } from "./utils/dev-log";
   import { resolveInitialView, applyLocaleFromSetup, type AppView } from "./lib/app-view";
   import ChatView from "./lib/ChatView.svelte";
   import InputBar from "./lib/InputBar.svelte";
   import SetupWizard from "./lib/SetupWizard.svelte";
   import { t } from "./lib/i18n";
-  import type { AgentEvent, DeferredItemView, OAuthUIEvent, PromptOptions, WorkerAPI } from "../shared/api";
+  import type { AgentEvent, DeferredItemView, OAuthUIEvent, PromptOptions } from "../shared/api";
 
   let connection: WorkerConnection | undefined = $state();
   let connectionError: string | undefined = $state();
@@ -29,72 +30,7 @@
 
   // The controller is created before the worker connects so the UI renders
   // immediately; prompts are proxied to whatever connection exists.
-  const workerProxy: WorkerAPI = {
-    async prompt(text, options?: PromptOptions) {
-      await connection?.api.prompt(text, options);
-    },
-    async abort() {
-      await connection?.api.abort();
-    },
-    async getState() {
-      if (!connection) throw new Error("worker not connected");
-      return connection.api.getState();
-    },
-    async getDeferredItems() {
-      if (!connection) return [];
-      return connection.api.getDeferredItems();
-    },
-    async getSetupState() {
-      if (!connection) throw new Error("worker not connected");
-      return connection.api.getSetupState();
-    },
-    async checkPrerequisites() {
-      if (!connection) throw new Error("worker not connected");
-      return connection.api.checkPrerequisites();
-    },
-    async getDefaultLocation() {
-      if (!connection) throw new Error("worker not connected");
-      return connection.api.getDefaultLocation();
-    },
-    async validateLocation(path) {
-      if (!connection) throw new Error("worker not connected");
-      return connection.api.validateLocation(path);
-    },
-    async configureProviderKey(provider, apiKey, baseUrl) {
-      if (!connection) throw new Error("worker not connected");
-      return connection.api.configureProviderKey(provider, apiKey, baseUrl);
-    },
-    async loginOAuth(provider) {
-      if (!connection) throw new Error("worker not connected");
-      return connection.api.loginOAuth(provider);
-    },
-    async answerOAuthPrompt(requestId, value) {
-      if (!connection) throw new Error("worker not connected");
-      return connection.api.answerOAuthPrompt(requestId, value);
-    },
-    async cancelOAuthLogin() {
-      if (!connection) throw new Error("worker not connected");
-      return connection.api.cancelOAuthLogin();
-    },
-    async listModels(provider) {
-      if (!connection) throw new Error("worker not connected");
-      return connection.api.listModels(provider);
-    },
-    async getAuthStatus() {
-      if (!connection) throw new Error("worker not connected");
-      return connection.api.getAuthStatus();
-    },
-    async runSetup(config, mode) {
-      if (!connection) throw new Error("worker not connected");
-      return connection.api.runSetup(config, mode);
-    },
-    async resolvePermission(id, allow) {
-      await connection?.api.resolvePermission(id, allow);
-    },
-    async shutdown() {
-      await connection?.api.shutdown();
-    },
-  };
+  const workerProxy = createWorkerProxy(() => connection);
 
   controller = createChatController(workerProxy);
 
