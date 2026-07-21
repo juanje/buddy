@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 import { simpleGit } from "simple-git";
 
 import type { SetupConfig } from "../shared/api";
+import { DEFAULT_LANGUAGE, GIT_USER_EMAIL, GIT_USER_NAME } from "../shared/defaults";
 import { toPiProviderId } from "./provider-mapping";
 
 /** Bundled templates location (dev: repo root; packaging revisits this). */
@@ -26,7 +27,7 @@ export interface CreateAbOptions {
 export function buildUserProfile(config: SetupConfig): string {
   const name = config.name?.trim() ?? "";
   const about = config.about?.trim() || "(to be discovered)";
-  const language = config.language ?? "es";
+  const language = config.language ?? DEFAULT_LANGUAGE;
   return `# User profile
 
 ## About
@@ -80,10 +81,10 @@ export async function createAbInstance(options: CreateAbOptions): Promise<void> 
   // config, and setup must never fail on that (NFR: git invisible).
   const git = simpleGit(ab);
   await git.init();
-  await git.addConfig("user.name", "AB");
-  await git.addConfig("user.email", "ab@localhost");
+  await git.addConfig("user.name", GIT_USER_NAME);
+  await git.addConfig("user.email", GIT_USER_EMAIL);
   await git.add(".");
-  await git.commit("chore: initial AB setup");
+  await git.commit("chore: initial Buddy setup");
 
   // Written last: only a fully created AB counts as configured (FR-SETUP-01).
   markConfigured(config, configPath);

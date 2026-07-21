@@ -12,7 +12,7 @@ import type { SetupConfig, SetupState } from "../shared/api";
 
 /** Default location of the app config; overridable for dev/tests via env. */
 export function defaultConfigPath(): string {
-  return process.env.AB_CONFIG_PATH ?? join(homedir(), ".buddy", "config.json");
+  return process.env.BUDDY_CONFIG_PATH ?? process.env.AB_CONFIG_PATH ?? join(homedir(), ".buddy", "config.json");
 }
 
 export function detectFirstRun(configPath: string): SetupState {

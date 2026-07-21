@@ -11,6 +11,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { randomUUID } from "node:crypto";
 import { basename, resolve } from "node:path";
 
+import { AGENT_TOOLS, EXCLUDED_TOOLS } from "../shared/defaults";
 import type { AgentEvent, FrontendAPI, PromptOptions } from "../shared/api";
 import { imageMimeType, isImageFormat, isPdfFormat } from "../shared/ingest-formats";
 import { logEvent } from "./app-logger";
@@ -140,8 +141,8 @@ export async function bootSession(
     cwd: abDirectory,
     resourceLoader,
     sessionManager: SessionManager.create(abDirectory),
-    excludeTools: ["bash"],
-    tools: ["read", "write", "edit", "grep", "find", "ls"],
+    excludeTools: [...EXCLUDED_TOOLS],
+    tools: [...AGENT_TOOLS],
     modelRuntime: context.modelRuntime,
   });
 

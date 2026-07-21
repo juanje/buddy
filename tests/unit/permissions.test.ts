@@ -3,6 +3,7 @@
 import { describe, expect, it } from "vitest";
 
 import { evaluateToolCall, createPermissionGate } from "../../backends/permissions";
+import { DENYLIST_BASENAMES, DENYLIST_HOME_DIRS } from "../../shared/defaults";
 
 const HOME = "/home/u";
 const AB = "/home/u/buddy";
@@ -58,14 +59,13 @@ describe("evaluateToolCall", () => {
   });
 
   it("denies the hardcoded denylist silently, wherever it appears", () => {
-    for (const path of [
-      "/home/u/.ssh/id_rsa",
-      "/home/u/.gnupg/pubring.kbx",
-      "/home/u/.aws/credentials",
-      "/anywhere/project/.env",
-      `${AB}/secrets/auth.json`, // even inside the AB
-      "~/.ssh/config", // tilde expansion
-    ]) {
+    const denylistPaths = [
+      ...DENYLIST_HOME_DIRS.map((dir) => `/home/u/${dir}/secret`),
+      `/anywhere/project/${DENYLIST_BASENAMES[0]}`,
+      `${AB}/secrets/${DENYLIST_BASENAMES[1]}`,
+      `~/${DENYLIST_HOME_DIRS[0]}/config`,
+    ];
+    for (const path of denylistPaths) {
       const decision = evaluate("read", { path });
       expect(decision.action, path).toBe("deny");
     }

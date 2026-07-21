@@ -19,7 +19,7 @@ import {
 import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { AgentEvent } from "../shared/api";
-import { DEFAULT_PI_PROVIDER, REFLECT_SESSIONS_DIR } from "../shared/defaults";
+import { DEFAULT_PI_PROVIDER, EXCLUDED_TOOLS, AGENT_TOOLS, LOCK_MAX_RETRIES, LOCK_RETRY_MS, REFLECT_SESSIONS_DIR } from "../shared/defaults";
 import { fastModelForProvider } from "../shared/model-catalog";
 import { logEvent } from "./app-logger";
 import { commitAll } from "./git";
@@ -66,9 +66,6 @@ async function resolveFastModelOptions(abDirectory: string): Promise<{
   if (!model) return { thinkingLevel: "minimal" };
   return { model, thinkingLevel: "minimal" };
 }
-
-const LOCK_RETRY_MS = 500;
-const LOCK_MAX_RETRIES = 20;
 
 async function acquireLockWithRetry(abDirectory: string): Promise<boolean> {
   for (let i = 0; i < LOCK_MAX_RETRIES; i++) {
@@ -122,7 +119,7 @@ async function runReflect(
     cwd: abDirectory,
     resourceLoader,
     sessionManager: sm,
-    excludeTools: ["bash", "read", "write", "edit", "ls", "find", "grep"],
+    excludeTools: [...EXCLUDED_TOOLS, ...AGENT_TOOLS],
     ...fastModelOptions,
   });
 

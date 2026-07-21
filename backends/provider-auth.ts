@@ -14,6 +14,7 @@ import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 
 import type { KeyCheck, SetupConfig } from "../shared/api";
+import { AUTH_FILE_MODE } from "../shared/defaults";
 import { toPiProviderId } from "./provider-mapping";
 
 export type ProviderId = SetupConfig["provider"];
@@ -62,7 +63,7 @@ export const httpKeyProbe: KeyProbe = async (provider, apiKey, baseUrl) => {
 
 /** AB's own auth store — separate from Pi CLI's ~/.pi/agent/auth.json (NFR-AUTH-ISO). */
 export function defaultAuthPath(): string {
-  return process.env.AB_AUTH_PATH ?? join(homedir(), ".buddy", "auth.json");
+  return process.env.BUDDY_AUTH_PATH ?? process.env.AB_AUTH_PATH ?? join(homedir(), ".buddy", "auth.json");
 }
 
 /**
@@ -104,5 +105,5 @@ function storeApiKey(authPath: string, piProvider: string, apiKey: string): void
 
   mkdirSync(dirname(authPath), { recursive: true });
   writeFileSync(authPath, JSON.stringify(store, null, 2) + "\n");
-  chmodSync(authPath, 0o600);
+  chmodSync(authPath, AUTH_FILE_MODE);
 }

@@ -16,6 +16,16 @@ export const CATCH_UP_MAX = 3;
 /** Fallback Pi provider when `.pi/settings.json` is missing or invalid. */
 export const DEFAULT_PI_PROVIDER = "anthropic";
 
+export const AGENT_TOOLS = ["read", "write", "edit", "grep", "find", "ls"] as const;
+export const EXCLUDED_TOOLS = ["bash"] as const;
+export const LOCK_RETRY_MS = 500;
+export const LOCK_MAX_RETRIES = 20;
+export const AUTH_FILE_MODE = 0o600;
+export const DEFAULT_LANGUAGE = "es";
+export const SHUTDOWN_TIMEOUT_MS = 2000;
+export const GIT_USER_NAME = "Buddy";
+export const GIT_USER_EMAIL = "buddy@localhost";
+
 // --- Security constants (NFR-CONFIG-03) ---
 export const DENYLIST_HOME_DIRS = [".ssh", ".gnupg", ".aws"];
 export const DENYLIST_BASENAMES = [".env", "auth.json"];

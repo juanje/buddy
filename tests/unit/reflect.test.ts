@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { PENDING_DIR } from "../../shared/defaults";
+import { PENDING_DIR, INCREMENTAL_REFLECT_EVERY } from "../../shared/defaults";
 import {
   appendDailyLog,
   findPendingReflects,
@@ -20,9 +20,9 @@ import { SessionTracker } from "../../backends/session-tracker";
 
 describe("shouldRunCheckpointReflect", () => {
   it("fires on multiples of N after last checkpoint", () => {
-    expect(shouldRunCheckpointReflect(15, 15, 0)).toBe(true);
-    expect(shouldRunCheckpointReflect(14, 15, 0)).toBe(false);
-    expect(shouldRunCheckpointReflect(30, 15, 15)).toBe(true);
+    expect(shouldRunCheckpointReflect(INCREMENTAL_REFLECT_EVERY, INCREMENTAL_REFLECT_EVERY, 0)).toBe(true);
+    expect(shouldRunCheckpointReflect(INCREMENTAL_REFLECT_EVERY - 1, INCREMENTAL_REFLECT_EVERY, 0)).toBe(false);
+    expect(shouldRunCheckpointReflect(INCREMENTAL_REFLECT_EVERY * 2, INCREMENTAL_REFLECT_EVERY, INCREMENTAL_REFLECT_EVERY)).toBe(true);
   });
 });
 
