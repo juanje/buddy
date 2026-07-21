@@ -704,32 +704,27 @@ Full specification in [specs/BRAIN-SPEC.md](BRAIN-SPEC.md).
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-SHELL-01 | App header bar with session controls | 1 ✓ |
-| FR-SHELL-02 | Explicit end-session button | 1 ✓ |
-| FR-SHELL-03 | About / app info panel | 1 ✓ |
+| FR-SHELL-01 | App header bar with session controls | — removed |
+| FR-SHELL-02 | Explicit end-session button | — removed |
+| FR-SHELL-03 | About / app info panel (native macOS menu) | 1 ✓ |
 | FR-SHELL-04 | Attach button in input bar | 1 ✓ |
 | FR-SHELL-05 | Input bar layout (stacked: attachments / text / buttons) | 1 ✓ |
 | FR-SHELL-06 | Wizard back navigation | 1 ✓ |
 
-**FR-SHELL-01 — App header bar**
+**FR-SHELL-01 — App header bar** *(removed)*
 
-- **Given** the chat view is active
-- **When** the user looks at the top of the window
-- **Then** a minimal header shows the app name and action icons (settings, about, end session)
-- **And** the header does not waste vertical space (single line, compact)
+Tried and removed: a custom header bar is redundant with the native macOS title bar. The chat gains vertical space without it.
 
-**FR-SHELL-02 — End-session button**
+**FR-SHELL-02 — End-session button** *(removed)*
 
-- **Given** the user wants to close the session explicitly
-- **When** they click the end-session icon in the header
-- **Then** the shutdown sequence runs (skeleton, commit, reflect) and the window closes
-- **Note:** More discoverable than relying on the tiny OS window close button
+The native window close (X) already triggers the full shutdown sequence (skeleton, commit, reflect). An extra button adds no value.
 
 **FR-SHELL-03 — About panel**
 
-- **Given** the user clicks the about/info icon
-- **When** the panel appears
-- **Then** it shows: app version, AB directory path, current model, session stats (turns, cost if available)
+- **Given** the user clicks "About Buddy" in the macOS app menu
+- **When** the native About dialog appears
+- **Then** it shows: app name, version, and copyright
+- **Note:** Implemented via custom Rust menu with `AboutMetadata`. Dynamic info (directory, model, turns) would require a custom frontend window — deferred.
 
 **FR-SHELL-04 — Attach button**
 
