@@ -10,5 +10,5 @@ fn main() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_shell::init())
         .run(tauri::generate_context!())
-        .expect("error while running ab-app");
+        .expect("error while running buddy");
 }

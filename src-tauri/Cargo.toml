@@ -1,5 +1,5 @@
 [package]
-name = "ab-app"
+name = "buddy"
 version = "0.1.0"
 description = "Buddy — personal assistant with persistent memory"
 license = "GPL-3.0-only"
@@ -17,5 +17,5 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 
 [[bin]]
-name = "ab-app"
+name = "buddy"
 path = "src/main.rs"

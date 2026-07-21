@@ -15,7 +15,6 @@
   import { resolveInitialView, applyLocaleFromSetup, type AppView } from "./lib/app-view";
   import ChatView from "./lib/ChatView.svelte";
   import InputBar from "./lib/InputBar.svelte";
-  import AppHeader from "./lib/AppHeader.svelte";
   import SetupWizard from "./lib/SetupWizard.svelte";
   import { t } from "./lib/i18n";
   import type { AgentEvent, DeferredItemView, OAuthUIEvent, SetupConfig } from "../shared/api";
@@ -243,15 +242,6 @@
       {#if dragOver}
         <div class="drop-overlay">{$t.dropOverlay}</div>
       {/if}
-      <AppHeader
-        aboutOpen={aboutOpen}
-        aboutVersion={APP_VERSION}
-        aboutDirectory={abDirectory}
-        aboutModel={aboutModel}
-        aboutTurns={aboutTurns}
-        onAboutToggle={() => void toggleAbout()}
-        onEndSession={() => void endSession()}
-      />
       <ChatView bind:this={chatView} {controller} {scroll} {deferredItems} />
       <InputBar
         {controller}
