@@ -79,7 +79,7 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 | FR-SETTINGS-02 | Settings UI (language + read-only config) | done | 6ea7f89 |
 | FR-SETTINGS-03 | Cross-provider model switching + inline provider auth | done | cece2f0 |
 | FR-SETTINGS-04 | Language switching from settings | done | 6ea7f89 |
-| FR-SETTINGS-05 | Settings access from UI (gear icon + menu) | done | c7c6a20 |
+| FR-SETTINGS-05 | Settings access from UI (gear icon + menu) | done | 2e051c5 |
 
 **Phase 1 complete:** YES — all Phase 1 FRs implemented and passing (140 unit tests, 99 BDD scenarios).
 
@@ -119,7 +119,7 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 
 | FR-ID | Feature | Status | Commit |
 |-------|---------|--------|--------|
-| FR-SETTINGS-05 | Gear icon + Buddy → Settings menu (Cmd+,) | done | 6c28192 |
+| FR-SETTINGS-05 | Gear icon + Buddy → Settings menu (Cmd+,) | done | 2e051c5 |
 
 ### Sprint: Settings model switch — DONE (2026-07-21)
 
