@@ -32,6 +32,7 @@ import {
   finalizeReflectToDailyLog,
   parseFrontmatter,
   rebuildLogsIndex,
+  sanitizeReflectOutput,
 } from "./reflect";
 import { CHECKPOINT_PROMPT, SESSION_END_PROMPT } from "./reflect-prompts";
 
@@ -136,7 +137,8 @@ async function runReflect(
         ? "Encode this session segment before compaction. What happened and what's worth keeping?"
         : "Reflect on this session. What was discussed, decided, learned? What's open?";
     await session.prompt(userPrompt);
-    const result = collectAssistantText(events);
+    const raw = collectAssistantText(events);
+    const result = raw ? sanitizeReflectOutput(raw) : "";
 
     if (result) {
       if (!await acquireLockWithRetry(abDirectory)) {

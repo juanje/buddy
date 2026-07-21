@@ -272,3 +272,18 @@ export function shouldRunCheckpointReflect(
 ): boolean {
   return every > 0 && turnCount > 0 && turnCount !== lastCheckpointTurn && turnCount % every === 0;
 }
+
+/** Strip raw tool-call syntax leaked into LLM reflect output (FR-REFLECT-04). */
+const TOOL_LEAK_PATTERNS: RegExp[] = [
+  /^to=functions\.\w+.*$/gm,
+  /^```json\s*\n\{[^}]*"path"[^}]*\}\s*\n```$/gm,
+  /^\{"name":"(read|write|edit|ls|find|grep)".*\}$/gm,
+];
+
+export function sanitizeReflectOutput(text: string): string {
+  let result = text;
+  for (const pattern of TOOL_LEAK_PATTERNS) {
+    result = result.replace(pattern, "");
+  }
+  return result.replace(/\n{3,}/g, "\n\n").trim();
+}

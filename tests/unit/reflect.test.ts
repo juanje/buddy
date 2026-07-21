@@ -11,6 +11,7 @@ import {
   findPendingReflects,
   parseFrontmatter,
   rebuildLogsIndex,
+  sanitizeReflectOutput,
   savePendingSkeleton,
   shouldRunCheckpointReflect,
   finalizeCheckpointToDailyLog,
@@ -22,6 +23,29 @@ describe("shouldRunCheckpointReflect", () => {
     expect(shouldRunCheckpointReflect(15, 15, 0)).toBe(true);
     expect(shouldRunCheckpointReflect(14, 15, 0)).toBe(false);
     expect(shouldRunCheckpointReflect(30, 15, 15)).toBe(true);
+  });
+});
+
+describe("sanitizeReflectOutput", () => {
+  it("strips to=functions tool leak lines", () => {
+    const input = "### Context\nNormal note.\n\nto=functions.read code: {\"path\":\"foo.md\"}\n\n### Lessons\nAll good.";
+    const out = sanitizeReflectOutput(input);
+    expect(out).not.toContain("to=functions.read");
+    expect(out).toContain("Normal note.");
+    expect(out).toContain("All good.");
+  });
+
+  it("strips inline JSON tool call objects", () => {
+    const input = '### Context\n{"name":"read","arguments":{"path":"user/inbox.md"}}\nDone.';
+    const out = sanitizeReflectOutput(input);
+    expect(out).not.toContain('"name":"read"');
+    expect(out).toContain("Done.");
+  });
+
+  it("preserves normal markdown and collapses extra blank lines", () => {
+    const input = "### Context\n\nLine one.\n\n\n\n### Lessons\nLine two.";
+    const out = sanitizeReflectOutput(input);
+    expect(out).toBe("### Context\n\nLine one.\n\n### Lessons\nLine two.");
   });
 });
 
