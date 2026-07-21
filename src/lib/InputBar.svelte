@@ -51,7 +51,7 @@
 </script>
 
 <div class="input-bar">
-  <div class="input-column">
+  <div class="input-capsule">
     {#if $attachmentErrors.length > 0}
       <div class="attachment-errors" role="alert">
         {#each $attachmentErrors as name (name)}
@@ -110,18 +110,23 @@
 <style>
   .input-bar {
     padding: 12px;
-    border-top: 1px solid var(--border);
     background: var(--bg);
   }
-  .input-column {
+  .input-capsule {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--bg-secondary);
+    padding: 10px 14px;
+  }
+  .input-capsule:focus-within {
+    border-color: var(--accent);
   }
   .button-row {
     display: flex;
-    gap: 8px;
-    justify-content: flex-end;
+    justify-content: space-between;
     align-items: center;
   }
   .attachment-chips {
@@ -173,19 +178,15 @@
   textarea {
     width: 100%;
     resize: none;
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 9px 12px;
+    border: none;
+    background: transparent;
+    padding: 4px 0;
     font: inherit;
-    background: var(--bg);
     color: var(--fg);
     outline: none;
-    min-height: 40px;
+    min-height: 24px;
     max-height: 160px;
     box-sizing: border-box;
-  }
-  textarea:focus {
-    border-color: var(--accent);
   }
   textarea:disabled {
     opacity: 0.6;
@@ -194,25 +195,39 @@
   button.send,
   button.abort {
     border: none;
-    border-radius: 10px;
-    width: 40px;
-    height: 40px;
-    font-size: 16px;
     cursor: pointer;
     flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
   button.attach {
     background: transparent;
-    border: 1px solid var(--border);
+    color: var(--muted);
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    font-size: 16px;
+  }
+  button.attach:hover:not(:disabled) {
     color: var(--fg);
+    background: var(--bg);
   }
   button.send {
     background: var(--accent);
     color: var(--accent-fg);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-size: 16px;
   }
   button.abort {
     background: var(--abort);
     color: #fff;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-size: 14px;
   }
   button:disabled {
     opacity: 0.4;
