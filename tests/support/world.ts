@@ -6,6 +6,7 @@ import { setWorldConstructor, World, type IWorldOptions } from "@cucumber/cucumb
 import { get } from "svelte/store";
 
 import { FakeSession } from "./fake-session";
+import { augmentPromptWithAttachments } from "../../backends/session-boot";
 import { createWorkerCore, type WorkerCore } from "../../backends/worker-core";
 import { SessionLifecycle } from "../../backends/session-lifecycle";
 import type { SpawnReflectOptions } from "../../backends/reflect-spawn";
@@ -98,12 +99,12 @@ export class AbWorld extends World {
     this.controller = createChatController({
       ...this.core.api,
       async prompt(text: string, options?: PromptOptions) {
-        let finalText = text;
-        if (options?.attachments?.length) {
-          const header = options.attachments.map((p) => `User attached: ${p}`).join("\n");
-          finalText = text.trim() ? `${header}\n\n${text}` : header;
-        }
-        await self.core.api.prompt(finalText, options);
+        const sessionAllowedPaths = new Set<string>();
+        const augmented = await augmentPromptWithAttachments(text, sessionAllowedPaths, options);
+        await self.core.api.prompt(
+          augmented.text,
+          augmented.images ? { images: augmented.images } : undefined,
+        );
       },
       resolvePermission: async (id, allow) => {
         self.permissionResolutions.push({ id, allow });

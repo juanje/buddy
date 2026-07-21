@@ -369,7 +369,7 @@ Crash recovery (next app start):
 | FR-INGEST-03 | Dropped file implicit permission | 1 ✓ |
 | FR-INGEST-04 | Supported formats | 1 ✓ |
 | FR-INGEST-05 | Image attachments (vision) | 1 ✓ |
-| FR-INGEST-06 | PDF attachments (native provider support) | 2 |
+| FR-INGEST-06 | PDF attachments (local text extraction) | 1 ✓ |
 
 **FR-INGEST-01 — Drag and drop**
 
@@ -397,8 +397,9 @@ Crash recovery (next app start):
 - **Given** the user attaches a file
 - **When** it is markdown, plain text, or extensionless
 - **Then** the agent reads and discusses it normally
-- **But when** it is PDF, DOCX, or another unsupported format
+- **But when** it is DOCX or another unsupported format
 - **Then** a friendly message suggests exporting to text
+- **Note:** PDF is supported via local text extraction (FR-INGEST-06); `.pdf` is accepted and its text is injected into the prompt.
 
 **FR-INGEST-05 — Image attachments (vision)**
 
@@ -414,8 +415,8 @@ Crash recovery (next app start):
 - **When** the message is sent
 - **Then** the PDF text is extracted locally and injected into the prompt as text content
 - **And** the agent can read and discuss the document contents
-- **Blocker (Jul 2026):** Pi SDK has no PDF support. `ImageContent` with `mimeType: "application/pdf"` is passed raw to providers — OpenAI silently returns empty responses, Anthropic/Bedrock would also fail (their provider adapters cast to image MIME types only). Pi CLI reads PDFs as corrupted UTF-8 text, not as binary attachments. Verified by source inspection of `~/git/pi/packages/coding-agent/` and live testing (session `21fbab0a`: 0 output tokens on PDF prompt).
-- **Implementation path:** Local text extraction via `pdf-parse` (pure JS, no native deps). Read PDF → extract text → inject as `<document name="filename.pdf">\n{text}\n</document>` in the prompt text. Format gate in `isSupportedIngestFormat` accepts `.pdf`; the file is never sent as `ImageContent`. Works with any provider/model.
+- **Implementation:** Local text extraction via `pdf-parse`. Read PDF → extract text → inject as `<document name="filename.pdf">\n{text}\n</document>` in the prompt text. Format gate in `isSupportedIngestFormat` accepts `.pdf`; the file is never sent as `ImageContent`. Works with any provider/model. If extraction fails, falls back to `User attached: /path.pdf` so the agent can try its read tool.
+- **Background (Jul 2026):** Pi SDK has no native PDF support — passing PDFs as `ImageContent` fails silently on OpenAI and would fail on other providers. Native provider PDF APIs are not used; extraction happens in the worker before `session.prompt()`.
 
 ### 3.7 Deferred Queue (FR-DEFERRED)
 

@@ -16,9 +16,17 @@ Feature: File ingest
     And the prompt includes "Summarize this"
 
   Scenario: An unsupported format is rejected
-    When I attach the file "/tmp/report.pdf"
+    When I attach the file "/tmp/report.docx"
     Then no attachment chips are shown
-    And an attachment error is shown for "report.pdf"
+    And an attachment error is shown for "report.docx"
+
+  Scenario: A PDF file is attached and its text is extracted into the prompt
+    Given a PDF file exists at "/tmp/sample.pdf" with text "Hello from PDF"
+    When I attach the file "/tmp/sample.pdf"
+    Then the attachment is accepted
+    And I type "Summarize this"
+    And I press Enter
+    Then the prompt includes "Hello from PDF"
 
   Scenario: Attached outside path is allowed without permission prompt
     Given a permission layer with session-allowed paths

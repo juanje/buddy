@@ -99,7 +99,7 @@ async function main(): Promise<void> {
   const channel = new RPCChannel<WorkerAPI, FrontendAPI>(transport, {
     expose: {
       async prompt(text: string, options?: PromptOptions) {
-        const augmented = augmentPromptWithAttachments(text, sessionAllowedPaths, options);
+        const augmented = await augmentPromptWithAttachments(text, sessionAllowedPaths, options);
         await core?.api.prompt(augmented.text, augmented.images ? { images: augmented.images } : undefined);
       },
       async abort() {

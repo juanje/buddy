@@ -57,6 +57,7 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 | FR-INGEST-03 | Dropped file implicit permission | done | 656634b |
 | FR-INGEST-04 | Supported formats | done | 656634b |
 | FR-INGEST-05 | Image attachments (vision) | done | 656634b |
+| FR-INGEST-06 | PDF attachments (local text extraction) | done | 81c2fdf |
 | FR-GIT-01 | Auto-commit after writes | done | 842635e |
 | FR-GIT-02 | Git invisible to user | done | 842635e |
 | FR-GIT-03 | Index rebuild on session end | done | 842635e |

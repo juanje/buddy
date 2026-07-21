@@ -2,9 +2,11 @@
 
 import { Given, Then, When } from "@cucumber/cucumber";
 import assert from "node:assert/strict";
-import { mkdtempSync } from "node:fs";
+import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+
+import { createMinimalPdf } from "../support/minimal-pdf";
 
 import {
   createPermissionGate,
@@ -25,12 +27,24 @@ Given("the chat is connected", function (this: IngestWorld) {
   this.connect(undefined, { force: true });
 });
 
+Given(
+  "a PDF file exists at {string} with text {string}",
+  function (this: IngestWorld, path: string, text: string) {
+    writeFileSync(path, createMinimalPdf(text));
+  },
+);
+
 When("I attach the file {string}", function (this: IngestWorld, path: string) {
   this.controller.addAttachments([path]);
 });
 
 When("I remove the attachment {string}", function (this: IngestWorld, path: string) {
   this.controller.removeAttachment(path);
+});
+
+Then("the attachment is accepted", function (this: IngestWorld) {
+  assert.equal(this.read(this.controller.attachmentErrors).length, 0);
+  assert.equal(this.read(this.controller.attachments).length, 1);
 });
 
 Then("no attachment chips are shown", function (this: IngestWorld) {

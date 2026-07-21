@@ -9,13 +9,14 @@ import {
 } from "@earendil-works/pi-coding-agent";
 import { existsSync, readFileSync } from "node:fs";
 import { randomUUID } from "node:crypto";
-import { resolve } from "node:path";
+import { basename, resolve } from "node:path";
 
 import type { AgentEvent, FrontendAPI, PromptOptions } from "../shared/api";
-import { imageMimeType, isImageFormat } from "../shared/ingest-formats";
+import { imageMimeType, isImageFormat, isPdfFormat } from "../shared/ingest-formats";
 import { logEvent } from "./app-logger";
 import { createHebbianTracker } from "./hebbian";
 import { createPermissionGate, type PermissionRequest } from "./permissions";
+import { extractPdfText } from "./pdf-extract";
 import { assembleSystemPrompt } from "./prompt";
 import { runCrashRecoveryCatchUp } from "./reflect-recovery";
 import { SessionLifecycle } from "./session-lifecycle";
@@ -54,14 +55,14 @@ function asPiSessionLike(session: {
   };
 }
 
-export function augmentPromptWithAttachments(
+export async function augmentPromptWithAttachments(
   text: string,
   sessionAllowedPaths: Set<string>,
   options?: PromptOptions,
-): { text: string; images?: Array<{ type: "image"; data: string; mimeType: string }> } {
+): Promise<{ text: string; images?: Array<{ type: "image"; data: string; mimeType: string }> }> {
   if (!options?.attachments?.length) return { text };
 
-  const textPaths: string[] = [];
+  const textBlocks: string[] = [];
   const images: Array<{ type: "image"; data: string; mimeType: string }> = [];
 
   for (const path of options.attachments) {
@@ -71,15 +72,23 @@ export function augmentPromptWithAttachments(
         const data = readFileSync(path).toString("base64");
         images.push({ type: "image", data, mimeType: imageMimeType(path) });
       } catch {
-        textPaths.push(path);
+        textBlocks.push(`User attached: ${path}`);
+      }
+    } else if (isPdfFormat(path)) {
+      const extracted = await extractPdfText(path);
+      const name = basename(path);
+      if (extracted) {
+        textBlocks.push(`<document name="${name}">\n${extracted}\n</document>`);
+      } else {
+        textBlocks.push(`User attached: ${path}`);
       }
     } else {
-      textPaths.push(path);
+      textBlocks.push(`User attached: ${path}`);
     }
   }
 
-  if (textPaths.length > 0) {
-    const header = textPaths.map((p) => `User attached: ${p}`).join("\n");
+  if (textBlocks.length > 0) {
+    const header = textBlocks.join("\n\n");
     text = text.trim() ? `${header}\n\n${text}` : header;
   }
 

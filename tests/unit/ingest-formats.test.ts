@@ -2,7 +2,7 @@
 
 import { describe, expect, it } from "vitest";
 
-import { isSupportedIngestFormat, isImageFormat, imageMimeType } from "../../shared/ingest-formats";
+import { isSupportedIngestFormat, isImageFormat, isPdfFormat, imageMimeType } from "../../shared/ingest-formats";
 
 describe("isSupportedIngestFormat", () => {
   it("accepts markdown and plain text", () => {
@@ -19,9 +19,20 @@ describe("isSupportedIngestFormat", () => {
     expect(isSupportedIngestFormat("/tmp/modern.webp")).toBe(true);
   });
 
-  it("rejects binary document formats", () => {
-    expect(isSupportedIngestFormat("/tmp/report.pdf")).toBe(false);
+  it("accepts PDF format", () => {
+    expect(isSupportedIngestFormat("/tmp/report.pdf")).toBe(true);
+  });
+
+  it("rejects other binary document formats", () => {
     expect(isSupportedIngestFormat("/tmp/doc.docx")).toBe(false);
+  });
+});
+
+describe("isPdfFormat", () => {
+  it("identifies PDF extension", () => {
+    expect(isPdfFormat("/tmp/report.pdf")).toBe(true);
+    expect(isPdfFormat("/tmp/report.PDF")).toBe(true);
+    expect(isPdfFormat("/tmp/notes.md")).toBe(false);
   });
 });
 

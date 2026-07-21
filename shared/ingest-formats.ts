@@ -2,7 +2,8 @@
 
 const TEXT_EXTENSIONS = new Set([".md", ".txt", ""]);
 const IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".gif", ".webp"]);
-const SUPPORTED_EXTENSIONS = new Set([...TEXT_EXTENSIONS, ...IMAGE_EXTENSIONS]);
+const PDF_EXTENSIONS = new Set([".pdf"]);
+const SUPPORTED_EXTENSIONS = new Set([...TEXT_EXTENSIONS, ...IMAGE_EXTENSIONS, ...PDF_EXTENSIONS]);
 
 function extname(filePath: string): string {
   const base = filePath.replace(/\\/g, "/").split("/").pop() ?? "";
@@ -19,6 +20,11 @@ export function isSupportedIngestFormat(filePath: string): boolean {
 /** True for image formats that should be sent inline as vision content. */
 export function isImageFormat(filePath: string): boolean {
   return IMAGE_EXTENSIONS.has(extname(filePath).toLowerCase());
+}
+
+/** True for PDF files that need local text extraction before prompt injection. */
+export function isPdfFormat(filePath: string): boolean {
+  return PDF_EXTENSIONS.has(extname(filePath).toLowerCase());
 }
 
 /** Map file extension to MIME type for images. */
