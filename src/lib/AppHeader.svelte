@@ -22,7 +22,7 @@
 </script>
 
 <header class="app-header">
-  <span class="app-name">Buddy</span>
+  <div class="spacer"></div>
   <div class="actions">
     <button
       type="button"
@@ -32,9 +32,9 @@
       aria-label={$t.headerAbout}
       aria-expanded={aboutOpen}
     >
-      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-        <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2" />
-        <path d="M12 10v6M12 7h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+        <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.75" />
+        <path d="M12 11v5M12 7.5h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
       </svg>
     </button>
     <button
@@ -44,12 +44,12 @@
       title={$t.headerEndSession}
       aria-label={$t.headerEndSession}
     >
-      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
         <path
-          d="M12 2v10M8.5 8.5 12 12l3.5-3.5M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"
+          d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"
           fill="none"
           stroke="currentColor"
-          stroke-width="2"
+          stroke-width="1.75"
           stroke-linecap="round"
           stroke-linejoin="round"
         />
@@ -73,17 +73,14 @@
     flex-shrink: 0;
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-end;
     height: 40px;
     padding: 0 12px;
     border-bottom: 1px solid var(--border);
     background: var(--bg);
   }
-  .app-name {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--muted);
-    letter-spacing: 0.02em;
+  .spacer {
+    flex: 1;
   }
   .actions {
     display: flex;
