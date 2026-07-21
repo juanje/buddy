@@ -4,7 +4,8 @@
 
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use tauri::menu::{AboutMetadata, MenuBuilder, SubmenuBuilder};
+use tauri::menu::{AboutMetadata, MenuBuilder, MenuItemBuilder, SubmenuBuilder};
+use tauri::Emitter;
 
 fn main() {
     tauri::Builder::default()
@@ -26,8 +27,13 @@ fn main() {
                 ..Default::default()
             };
 
+            let settings_item = MenuItemBuilder::with_id("settings", "Settings...")
+                .accelerator("CmdOrCtrl+,")
+                .build(app)?;
+
             let app_submenu = SubmenuBuilder::new(app, "Buddy")
                 .about(Some(about))
+                .item(&settings_item)
                 .separator()
                 .services()
                 .separator()
@@ -58,6 +64,13 @@ fn main() {
                 .build()?;
 
             app.set_menu(menu)?;
+
+            app.on_menu_event(move |app, event| {
+                if event.id() == settings_item.id() {
+                    let _ = app.emit("menu-settings", ());
+                }
+            });
+
             Ok(())
         })
         .run(tauri::generate_context!())

@@ -99,6 +99,7 @@ export type LocaleStrings = {
   settingsModelLoading: string;
   settingsAddProvider: string;
   settingsProviderAdded: string;
+  settingsGearTooltip: string;
 };
 
 export const es: LocaleStrings = {
@@ -207,6 +208,7 @@ export const es: LocaleStrings = {
   settingsModelLoading: "Cargando modelos…",
   settingsAddProvider: "Añadir proveedor",
   settingsProviderAdded: "Proveedor añadido — sus modelos ya están disponibles",
+  settingsGearTooltip: "Ajustes",
 };
 
 /** Short cost/capability description per model tier (FR-SETUP-05). */

@@ -79,6 +79,7 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 | FR-SETTINGS-02 | Settings UI (language + read-only config) | done | 6ea7f89 |
 | FR-SETTINGS-03 | Cross-provider model switching + inline provider auth | done | cece2f0 |
 | FR-SETTINGS-04 | Language switching from settings | done | 6ea7f89 |
+| FR-SETTINGS-05 | Settings access from UI (gear icon + menu) | done | c7c6a20 |
 
 **Phase 1 complete:** YES — all Phase 1 FRs implemented and passing (140 unit tests, 99 BDD scenarios).
 
@@ -111,14 +112,20 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 
 ## Current focus
 
-> **Sprint: Settings model switch (2026-07-21) complete.** FR-SETTINGS-03/04
-> shipped. Next: Phase 2 (FR-CONSOL heartbeat, FR-WIKI, FR-COST).
+> **Sprint: Settings UX (2026-07-22) complete.** FR-SETTINGS-05 shipped.
+> Next: Phase 2 (FR-CONSOL heartbeat, FR-WIKI, FR-COST).
+
+### Sprint: Settings access UI — DONE (2026-07-22)
+
+| FR-ID | Feature | Status | Commit |
+|-------|---------|--------|--------|
+| FR-SETTINGS-05 | Gear icon + Buddy → Settings menu (Cmd+,) | done | 6c28192 |
 
 ### Sprint: Settings model switch — DONE (2026-07-21)
 
 | FR-ID | Feature | Status | Commit |
 |-------|---------|--------|--------|
-| FR-SETTINGS-03 | Cross-provider model dropdown + add-provider auth | done | (this commit) |
+| FR-SETTINGS-03 | Cross-provider model dropdown + add-provider auth | done | cece2f0 |
 | FR-SETTINGS-04 | Language switching (from FR-SETTINGS-02) | done | 6ea7f89 |
 
 Model switch resolves Pi models via `ModelRuntime`, persists to `.pi/settings.json`

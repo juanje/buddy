@@ -3,6 +3,7 @@
   // FR-CHAT-02 input/send · FR-CHAT-01 streaming · FR-CHAT-03 abort ·
   // FR-CHAT-07 auto-scroll · FR-SETUP-01 first-run wizard routing.
   import { onMount } from "svelte";
+  import { listen } from "@tauri-apps/api/event";
   import { getCurrentWindow } from "@tauri-apps/api/window";
   import { getCurrentWebview } from "@tauri-apps/api/webview";
   import { open } from "@tauri-apps/plugin-shell";
@@ -173,12 +174,21 @@
 
     let unlistenClose: (() => void) | undefined;
     let unlistenDrag: (() => void) | undefined;
+    let unlistenSettingsMenu: (() => void) | undefined;
     void (async () => {
       const win = getCurrentWindow();
       unlistenClose = await win.onCloseRequested(async (event) => {
         event.preventDefault();
         await endSession();
       });
+
+      try {
+        unlistenSettingsMenu = await listen("menu-settings", () => {
+          settingsController?.openSettings();
+        });
+      } catch {
+        // Browser dev without Tauri event API.
+      }
 
       try {
         const webview = getCurrentWebview();
@@ -201,6 +211,7 @@
     return () => {
       unlistenClose?.();
       unlistenDrag?.();
+      unlistenSettingsMenu?.();
     };
   });
 
@@ -269,6 +280,20 @@
         <div class="drop-overlay">{$t.dropOverlay}</div>
       {/if}
       <ChatView bind:this={chatView} {controller} {scroll} {deferredItems} />
+      {#if settingsController}
+        <button
+          type="button"
+          class="settings-gear"
+          onclick={() => settingsController?.openSettings()}
+          title={$t.settingsGearTooltip}
+          aria-label={$t.settingsGearTooltip}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="3" />
+            <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+          </svg>
+        </button>
+      {/if}
       <InputBar
         {controller}
         onAbort={() => controller?.abort()}
@@ -328,5 +353,28 @@
     font-size: 18px;
     font-weight: 500;
     pointer-events: none;
+  }
+  .settings-gear {
+    position: absolute;
+    bottom: 80px;
+    right: 16px;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--muted);
+    opacity: 0.4;
+    cursor: pointer;
+    transition: opacity 0.15s ease, color 0.15s ease, background 0.15s ease;
+  }
+  .settings-gear:hover {
+    opacity: 1;
+    color: var(--fg);
+    background: var(--bg-secondary);
   }
 </style>

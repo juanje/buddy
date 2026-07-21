@@ -620,7 +620,7 @@ Crash recovery (next app start):
 | FR-SETTINGS-02 | Settings UI | 3 ✓ |
 | FR-SETTINGS-03 | Model switching from UI | 3 ✓ |
 | FR-SETTINGS-04 | Language switching from settings | 3 ✓ |
-| FR-SETTINGS-05 | Settings access from UI (gear icon + menu) | 3 |
+| FR-SETTINGS-05 | Settings access from UI (gear icon + menu) | 3 ✓ |
 
 **FR-SETTINGS-01 — Pi settings**
 

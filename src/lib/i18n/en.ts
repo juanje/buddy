@@ -106,6 +106,7 @@ export const en: LocaleStrings = {
   settingsModelLoading: "Loading models…",
   settingsAddProvider: "Add provider",
   settingsProviderAdded: "Provider added — its models are now available",
+  settingsGearTooltip: "Settings",
 };
 
 export function tierDescriptionEn(tier: "fast" | "balanced" | "powerful"): string {
