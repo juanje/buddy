@@ -17,7 +17,7 @@
   import InputBar from "./lib/InputBar.svelte";
   import SetupWizard from "./lib/SetupWizard.svelte";
   import { t } from "./lib/i18n";
-  import type { AgentEvent, DeferredItemView, OAuthUIEvent, PromptOptions } from "../shared/api";
+  import type { AgentEvent, DeferredItemView, OAuthUIEvent } from "../shared/api";
 
   let connection: WorkerConnection | undefined = $state();
   let connectionError: string | undefined = $state();
