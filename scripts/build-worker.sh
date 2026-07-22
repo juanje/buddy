@@ -13,7 +13,7 @@ BUN="${ROOT}/node_modules/.bin/bun"
 mkdir -p "${OUT_DIR}"
 
 echo "Compiling worker sidecar with bun…"
-"${BUN}" build --compile backends/agent-worker.ts --outfile "${OUT}"
+"${BUN}" build --compile backends/sidecar-entry.ts --outfile "${OUT}"
 chmod +x "${OUT}"
 
 echo "Sidecar ready: ${OUT}"
