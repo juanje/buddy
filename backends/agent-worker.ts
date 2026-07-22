@@ -30,7 +30,8 @@ import {
   toPiProviderId,
   WIZARD_PI_PROVIDERS,
 } from "./provider-mapping";
-import { getDueDeferred, toDeferredItemViews, toIsoDay } from "./deferred";
+import { getDueDeferred, removeDueDeferredItems, toDeferredItemViews, toIsoDay } from "./deferred";
+import { commitAll } from "./git";
 import { bootSession, augmentPromptWithAttachments } from "./session-boot";
 import { defaultConfigPath, detectFirstRun, updateAppConfig } from "./setup";
 import { writePiSettings } from "../shared/pi-settings";
@@ -137,6 +138,11 @@ async function main(): Promise<void> {
         if (setupState.firstRun) return [];
         const today = toIsoDay(new Date());
         return toDeferredItemViews(getDueDeferred(setupState.config.abDirectory), today);
+      },
+      async dismissDeferredItems() {
+        if (setupState.firstRun) return;
+        removeDueDeferredItems(setupState.config.abDirectory);
+        await commitAll(setupState.config.abDirectory, "ab: dismiss deferred reminders");
       },
       async getSetupState() {
         return setupState;

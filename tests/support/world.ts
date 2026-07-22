@@ -113,6 +113,7 @@ export class AbWorld extends World {
       resolvePermission: async (id, allow) => {
         self.permissionResolutions.push({ id, allow });
       },
+      dismissDeferredItems: async () => {},
     });
     controllerRef = this.controller;
 

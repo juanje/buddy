@@ -5,7 +5,7 @@
 // monthly | user. Unparseable lines are ignored — the queue is written by
 // the LLM during autonomous cycles, so tolerance beats strictness.
 
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { toIsoDay } from "../shared/dates";
@@ -48,6 +48,27 @@ export function getDueDeferred(abDirectory: string, now: Date = new Date()): Par
     return [];
   }
   return dueDeferredItems(parseDeferredItems(deferredRaw), toIsoDay(now));
+}
+
+/**
+ * Remove due/overdue entries from deferred.md (FR-DEFERRED-01 dismiss = acknowledge).
+ * Preserves future entries, headers, and non-entry lines.
+ */
+export function removeDueDeferredItems(abDirectory: string, now: Date = new Date()): void {
+  const path = join(abDirectory, "agent_brain", "deferred.md");
+  let content: string;
+  try {
+    content = readFileSync(path, "utf8");
+  } catch {
+    return;
+  }
+  const today = toIsoDay(now);
+  const kept = content.split("\n").filter((line) => {
+    const match = ENTRY_RE.exec(line.trim());
+    if (!match) return true;
+    return match[2] > today;
+  });
+  writeFileSync(path, kept.join("\n"), "utf8");
 }
 
 /** Map parsed deferred items to frontend view models (FR-DEFERRED-01/02). */

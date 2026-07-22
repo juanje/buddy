@@ -17,6 +17,7 @@ function fakeWorker() {
       messageCount: 0,
     }),
     resolvePermission: async () => {},
+    dismissDeferredItems: async () => {},
     shutdown: async () => {},
   };
 }
@@ -71,6 +72,20 @@ describe("chat controller display polish", () => {
     expect(get(controller.welcomeVisible)).toBe(true);
     controller.input.set("Hi");
     await controller.send();
+    expect(get(controller.welcomeVisible)).toBe(false);
+  });
+
+  it("dismissWelcome calls worker dismissDeferredItems", async () => {
+    let dismissed = false;
+    const controller = createChatController({
+      ...fakeWorker(),
+      dismissDeferredItems: async () => {
+        dismissed = true;
+      },
+    });
+    controller.dismissWelcome();
+    await Promise.resolve();
+    expect(dismissed).toBe(true);
     expect(get(controller.welcomeVisible)).toBe(false);
   });
 });

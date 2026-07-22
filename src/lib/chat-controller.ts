@@ -91,7 +91,7 @@ export interface ChatController {
   respondPermission(id: number, allow: boolean, persist?: AllowedPathPersist): Promise<void>;
   /** Remove a resolved permission card from the list (dismiss). */
   dismissPermission(id: number): void;
-  /** Hide the welcome banner without sending a message. */
+  /** Hide the welcome banner and acknowledge due deferred items (FR-DEFERRED-01). */
   dismissWelcome(): void;
 }
 
@@ -212,6 +212,7 @@ export function createChatController(worker: ChatWorkerAPI): ChatController {
   }
 
   function dismissWelcome(): void {
+    void worker.dismissDeferredItems();
     welcomeVisible.set(false);
   }
 

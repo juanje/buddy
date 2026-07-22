@@ -21,6 +21,9 @@ export function createWorkerProxy(getConnection: () => WorkerConnection | undefi
       if (!connection) return [];
       return connection.api.getDeferredItems();
     },
+    async dismissDeferredItems() {
+      await getConnection()?.api.dismissDeferredItems();
+    },
     async getSetupState() {
       const connection = getConnection();
       if (!connection) throw new Error("worker not connected");

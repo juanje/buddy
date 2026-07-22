@@ -12,7 +12,7 @@ import type { SessionLifecycle } from "./session-lifecycle";
  * the worker entry point (it owns the pending-request map), so it is
  * excluded here and composed into the RPC surface there.
  */
-export type SessionWorkerAPI = Omit<ChatWorkerAPI, "resolvePermission"> & {
+export type SessionWorkerAPI = Omit<ChatWorkerAPI, "resolvePermission" | "dismissDeferredItems"> & {
   setModel(model: unknown): Promise<void>;
 };
 

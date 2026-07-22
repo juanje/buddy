@@ -138,6 +138,8 @@ export interface WorkerAPI {
   getState(): Promise<AgentState>;
   /** Due/overdue deferred items for the chat welcome state (FR-DEFERRED-01). */
   getDeferredItems(): Promise<DeferredItemView[]>;
+  /** Acknowledge due items: remove from deferred.md (FR-DEFERRED-01 dismiss). */
+  dismissDeferredItems(): Promise<void>;
   getSetupState(): Promise<SetupState>;
   checkPrerequisites(): Promise<PrereqStatus>;
   getDefaultLocation(): Promise<string>;
@@ -179,7 +181,7 @@ export interface WorkerAPI {
  */
 export type ChatWorkerAPI = Pick<
   WorkerAPI,
-  "prompt" | "abort" | "getState" | "resolvePermission" | "shutdown"
+  "prompt" | "abort" | "getState" | "resolvePermission" | "shutdown" | "dismissDeferredItems"
 >;
 
 /** Setup-scoped subset of WorkerAPI: what the wizard needs (FR-SETUP-02+). */
