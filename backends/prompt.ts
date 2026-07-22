@@ -2,7 +2,7 @@
 // Deterministic composition from the AB's own files. Missing files skip
 // their section instead of failing: a half-personalized AB must still boot.
 
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
 import { dueDeferredItems, parseDeferredItems, toIsoDay, type ParsedDeferredItem } from "./deferred";
@@ -56,6 +56,16 @@ export function assembleSystemPrompt(abDirectory: string, now: Date = new Date()
 
   sections.push(`# Current date and time\n\n${now.toISOString()} (local: ${now.toString()})`);
 
+  const logsIndex = readIfExists(join(abDirectory, "logs", "index.md"));
+  if (logsIndex) {
+    sections.push(`# Sessions index\n\n${logsIndex.trim()}`);
+  }
+
+  const lastLog = findLastActiveLog(abDirectory, logsIndex);
+  if (lastLog) {
+    sections.push(`# Last session log\n\n${lastLog.trim()}`);
+  }
+
   if (dueItems.length > 0) {
     const lines = dueItems.map(
       (item) => `- [${item.type}] due ${item.dueDate} (${item.source}): ${item.text}`,
@@ -99,4 +109,44 @@ export function assembleSystemPrompt(abDirectory: string, now: Date = new Date()
   }
 
   return { prompt: sections.join("\n\n---\n\n"), dueItems, personalizationPending };
+}
+
+/**
+ * Find the last "active" session date from logs/index.md and read that log.
+ * Mirrors the logic in my-ab's session-start.py hook.
+ */
+function findLastActiveLog(abDirectory: string, indexContent: string | undefined): string | undefined {
+  if (!indexContent) {
+    return findMostRecentLogFile(abDirectory);
+  }
+
+  let lastDate: string | undefined;
+  for (const line of indexContent.split("\n")) {
+    if (/active/i.test(line)) {
+      const match = /(\d{4}-\d{2}-\d{2})/.exec(line);
+      if (match) lastDate = match[1];
+    }
+  }
+
+  if (lastDate) {
+    return readIfExists(join(abDirectory, "logs", `${lastDate}.md`));
+  }
+
+  return findMostRecentLogFile(abDirectory);
+}
+
+/** Fallback when logs/index.md is missing or has no active entries. */
+function findMostRecentLogFile(abDirectory: string): string | undefined {
+  const logsDir = join(abDirectory, "logs");
+  if (!existsSync(logsDir)) return undefined;
+  try {
+    const files = readdirSync(logsDir)
+      .filter((f) => /^\d{4}-\d{2}-\d{2}\.md$/.test(f))
+      .sort()
+      .reverse();
+    if (files.length === 0) return undefined;
+    return readIfExists(join(logsDir, files[0]));
+  } catch {
+    return undefined;
+  }
 }
