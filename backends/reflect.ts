@@ -241,12 +241,11 @@ export function rebuildLogsIndex(abDirectory: string): void {
     });
   }
 
-  entries.sort((a, b) => b.date.localeCompare(a.date) || b.file.localeCompare(a.file));
+  entries.sort((a, b) => a.date.localeCompare(b.date) || a.file.localeCompare(b.file));
   const lines = [
-    "# Session logs",
+    "# Sessions index",
     "",
-    "Daily agent logs: `logs/YYYY-MM-DD.md` (process-conversation format).",
-    "Derive path: `logs/{stem}.md` where stem is the first field of each entry.",
+    "Log files: `logs/YYYY-MM-DD.md` (derive from the date in each entry).",
     "",
     ...entries.map((e) => {
       const stem = e.file.replace(/\.md$/, "");
