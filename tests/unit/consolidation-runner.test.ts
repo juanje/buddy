@@ -26,10 +26,10 @@ describe("consolidation runner", () => {
 
   function setupAb(): void {
     dir = mkdtempSync(join(tmpdir(), "ab-consol-run-"));
-    mkdirSync(join(dir, "agent_brain", "skills"), { recursive: true });
+    mkdirSync(join(dir, ".buddy", "prompts"), { recursive: true });
     writeFileSync(join(dir, "AGENTS.md"), "# Rules\n");
     writeFileSync(
-      join(dir, "agent_brain", "skills", "consolidation.md"),
+      join(dir, ".buddy", "prompts", "consolidation.md"),
       "# Skill\n\nDo consolidation.\n",
     );
     writeFileSync(join(dir, "notes.txt"), "hello\n");

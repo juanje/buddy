@@ -1,9 +1,3 @@
----
-last_accessed:
-access_count: 0
-created:
----
-
 # Skill: Consolidation
 
 ## When to use
@@ -20,7 +14,7 @@ input scope — follow the scheduler's depth parameter.
 log all decisions and changes made. No approval gates — the maintenance cycles
 and git history provide the correction mechanism.
 
-**Prerequisite:** Session reflect runs automatically at session end (FR-REFLECT-02).
+**Prerequisite:** Session reflect runs automatically at session end.
 The daily log already contains `## Session` blocks from reflect. Do not re-run
 reflect before consolidating — read what's already in the log.
 
@@ -176,7 +170,7 @@ never archived, depth is cooling):
    how it relates. Add a functional link from the specific to the general
    only if it serves the reader of the specific file.
 3. If no general exists but 2+ related concepts now share a pattern →
-   consider creating a Phase 1 general (general file + "Specific instances"
+   consider creating a general concept file (general file + "Specific instances"
    linking to specifics; specifics stay as individual files at root). See
    Rule 6 (retention by memory type).
 4. If standalone (domain-specific, no cluster) → leave at root; listed in

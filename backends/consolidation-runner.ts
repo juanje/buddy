@@ -26,7 +26,7 @@ import { acquireLock, releaseLock } from "./maintenance";
 import { assembleSystemPrompt } from "./prompt";
 import { appendDailyLog, updateLogsIndexEntry } from "./reflect";
 
-const CONSOLIDATION_SKILL = join("agent_brain", "skills", "consolidation.md");
+const CONSOLIDATION_SKILL = join(".buddy", "prompts", "consolidation.md");
 
 export interface MaintenanceSessionLike {
   prompt(text: string): Promise<void>;

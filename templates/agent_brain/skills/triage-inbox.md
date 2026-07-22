@@ -1,7 +1,3 @@
----
-created:
----
-
 # Skill: Triage inbox
 
 ## When to use

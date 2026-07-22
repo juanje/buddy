@@ -1,9 +1,3 @@
----
-last_accessed:
-access_count: 0
-created:
----
-
 # Skill: Process conversation
 
 ## When to use

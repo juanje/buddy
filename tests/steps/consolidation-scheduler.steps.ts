@@ -33,10 +33,11 @@ After(function (this: ConsolidationWorld) {
 Given("an AB directory prepared for consolidation", async function (this: ConsolidationWorld) {
   this.consolTmpDir = mkdtempSync(join(tmpdir(), "ab-consol-bdd-"));
   this.abDir = join(this.consolTmpDir, "buddy");
-  mkdirSync(join(this.abDir, "agent_brain", "skills"), { recursive: true });
+  mkdirSync(join(this.abDir, "agent_brain"), { recursive: true });
+  mkdirSync(join(this.abDir, ".buddy", "prompts"), { recursive: true });
   writeFileSync(join(this.abDir, "AGENTS.md"), "# Rules\n");
   writeFileSync(
-    join(this.abDir, "agent_brain", "skills", "consolidation.md"),
+    join(this.abDir, ".buddy", "prompts", "consolidation.md"),
     "# Skill\n\nConsolidate.\n",
   );
   await initTestGitRepo(this.abDir);
