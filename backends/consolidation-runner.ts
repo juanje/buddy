@@ -24,6 +24,7 @@ import { logEvent } from "./app-logger";
 import { commitAll } from "./git";
 import { acquireLock, releaseLock } from "./maintenance";
 import { assembleSystemPrompt } from "./prompt";
+import { appendDailyLog, rebuildLogsIndex } from "./reflect";
 
 const CONSOLIDATION_SKILL = join("agent_brain", "skills", "consolidation.md");
 
@@ -167,6 +168,19 @@ export async function runConsolidation(options: RunConsolidationOptions): Promis
     }
 
     saveConsolidationState(abDirectory, state);
+
+    if (completedDepths.length > 0) {
+      const depthLabel = completedDepths.map((d) => `depth-${d}`).join(", ");
+      appendDailyLog(abDirectory, {
+        date: toIsoDay(now),
+        sessionHeader: `${now.toISOString().slice(11, 16)} consolidation`,
+        sections: `Maintenance cycle completed: ${depthLabel}.`,
+        status: "maintenance",
+      }, now);
+      rebuildLogsIndex(abDirectory);
+      await commitAll(abDirectory, `maintenance: log entry for ${depthLabel}`);
+    }
+
     return { ran: completedDepths.length > 0, completedDepths, state };
   } finally {
     maintenanceSession?.dispose();

@@ -164,7 +164,7 @@ describe("rebuildLogsIndex", () => {
     if (dir) rmSync(dir, { recursive: true, force: true });
   });
 
-  it("lists daily logs in index.md with summary", () => {
+  it("lists daily logs in index.md with status and summary", () => {
     dir = mkdtempSync(join(tmpdir(), "ab-index-"));
     appendDailyLog(dir, {
       date: "2026-07-19",
@@ -174,8 +174,20 @@ describe("rebuildLogsIndex", () => {
     rebuildLogsIndex(dir);
     const index = readFileSync(join(dir, "logs", "index.md"), "utf8");
     expect(index).toContain("logs/YYYY-MM-DD.md");
-    expect(index).toContain("2026-07-19:");
-    expect(index).toContain("Reflect pipeline redesign.");
+    expect(index).toContain("2026-07-19: active — Reflect pipeline redesign.");
+  });
+
+  it("uses maintenance status from frontmatter", () => {
+    dir = mkdtempSync(join(tmpdir(), "ab-index-"));
+    appendDailyLog(dir, {
+      date: "2026-07-20",
+      sessionHeader: "03:00 consolidation",
+      sections: "Maintenance cycle completed: depth-1.",
+      status: "maintenance",
+    });
+    rebuildLogsIndex(dir);
+    const index = readFileSync(join(dir, "logs", "index.md"), "utf8");
+    expect(index).toContain("2026-07-20: maintenance —");
   });
 });
 

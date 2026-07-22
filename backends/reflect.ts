@@ -13,11 +13,14 @@ export interface PendingReflect {
   sessionId: string;
 }
 
+export type LogStatus = "active" | "maintenance";
+
 export interface DailyLogAppend {
   date: string;
   sessionHeader: string;
   sections: string;
   blockKind?: "session" | "checkpoint";
+  status?: LogStatus;
 }
 
 export interface FinalizeReflectOptions {
@@ -161,6 +164,7 @@ export function appendDailyLog(abDirectory: string, append: DailyLogAppend, now 
   mkdirSync(logsDir, { recursive: true });
   const logPath = join(logsDir, `${append.date}.md`);
   const blockKind = append.blockKind ?? "session";
+  const status = append.status ?? "active";
   const heading =
     blockKind === "checkpoint"
       ? `## Checkpoint ${append.sessionHeader}`
@@ -177,6 +181,7 @@ export function appendDailyLog(abDirectory: string, append: DailyLogAppend, now 
       [
         "---",
         `date: ${append.date}`,
+        `status: ${status}`,
         `last_updated: ${stamp}`,
         "---",
         "",
@@ -220,7 +225,7 @@ export function finalizeCheckpointToDailyLog(options: FinalizeCheckpointOptions)
 export function rebuildLogsIndex(abDirectory: string): void {
   const logsDir = join(abDirectory, "logs");
   mkdirSync(logsDir, { recursive: true });
-  const entries: Array<{ date: string; summary: string; file: string }> = [];
+  const entries: Array<{ date: string; summary: string; file: string; status: LogStatus }> = [];
 
   for (const name of readdirSync(logsDir)) {
     if (!name.endsWith(".md") || name === "index.md") continue;
@@ -230,6 +235,7 @@ export function rebuildLogsIndex(abDirectory: string): void {
     const summary = extractOneLinerSummary(content);
     entries.push({
       date: fm.date ?? name.replace(/\.md$/, ""),
+      status: (fm.status as LogStatus) ?? "active",
       summary,
       file: name,
     });
@@ -244,7 +250,8 @@ export function rebuildLogsIndex(abDirectory: string): void {
     "",
     ...entries.map((e) => {
       const stem = e.file.replace(/\.md$/, "");
-      return `- ${stem}: ${e.summary}`;
+      const status = e.status ?? "active";
+      return `- ${stem}: ${status} — ${e.summary}`;
     }),
     "",
   ];
