@@ -73,6 +73,8 @@ AB File System (git repo)
 | FR-CHAT-06 | Tool call display (expandable cards) | 3 ✓ |
 | FR-CHAT-07 | Auto-scroll with manual override | 0 ✓ |
 | FR-CHAT-08 | Input textarea resets height after send | 2 ✓ |
+| FR-CHAT-09 | Local file links open in system default app | 2 |
+| FR-CHAT-10 | Inline file viewer for markdown/text links | 3 |
 
 **FR-CHAT-01 — Streaming message display**
 
@@ -126,6 +128,25 @@ AB File System (git repo)
 - **When** the message is sent and the input clears
 - **Then** the textarea height resets to its single-line default
 - **And** subsequent messages start with the compact input bar
+
+**FR-CHAT-09 — Local file links open in system default app**
+
+- **Given** the agent response contains a markdown link to a local file (relative path without `://` protocol, e.g. `[name](agent_brain/skills/foo.md)`)
+- **When** the link renders in the chat
+- **Then** it is marked with a `data-local-path` attribute (no `target="_blank"`)
+- **And** clicking it resolves the path against the AB directory and opens it via `tauri-plugin-shell` `open()` in the system default app
+- **And** external URLs (`http://`, `https://`) continue to open in the browser as before
+- **Note:** The renderer in `src/lib/markdown.ts` must distinguish local paths from external URLs. A path is local if it has no protocol prefix or uses `file://`.
+
+**FR-CHAT-10 — Inline file viewer for markdown/text links**
+
+- **Given** the user clicks a local file link that points to a `.md` or `.txt` file
+- **When** the file exists and is readable
+- **Then** instead of opening the system app, a read-only panel/modal opens inside Buddy showing the file content rendered as markdown (for `.md`) or plain text (for `.txt`)
+- **And** the panel includes a "Close" button and optionally an "Open externally" button
+- **But when** the file is not `.md` or `.txt` (e.g. `.pdf`, `.png`)
+- **Then** fall back to FR-CHAT-09 behavior (open in system app)
+- **Note:** This is the enhanced experience over FR-CHAT-09; both can coexist (FR-CHAT-10 overrides FR-CHAT-09 for supported file types).
 
 ### 3.2 First-Run / Onboarding (FR-SETUP)
 
