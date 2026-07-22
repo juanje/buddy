@@ -26,12 +26,17 @@ export async function connectWorker(
     // Note: tauri-plugin-js appends `args` AFTER the script, so Node flags
     // must go through NODE_OPTIONS. cwd must be absolute: the Tauri process
     // runs from src-tauri/, not the project root.
-    await spawn(WORKER_NAME, {
-      runtime: "node",
-      script: "backends/agent-worker.ts",
-      cwd: __AB_PROJECT_ROOT__,
-      env: { NODE_OPTIONS: "--import tsx" },
-    });
+    // Production: compiled sidecar (E12). Dev: Node + tsx against source tree.
+    if (import.meta.env.PROD) {
+      await spawn(WORKER_NAME, { sidecar: "agent-worker" });
+    } else {
+      await spawn(WORKER_NAME, {
+        runtime: "node",
+        script: "backends/agent-worker.ts",
+        cwd: __AB_PROJECT_ROOT__,
+        env: { NODE_OPTIONS: "--import tsx" },
+      });
+    }
     await onExit(WORKER_NAME, onCrash);
     const { api } = await createChannel<FrontendAPI, WorkerAPI>(WORKER_NAME, frontendApi);
     return api;

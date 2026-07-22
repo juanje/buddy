@@ -26,6 +26,7 @@
   "bundle": {
     "active": true,
     "targets": ["app"],
+    "externalBin": ["binaries/agent-worker"],
     "icon": [
       "icons/icon.png",
       "icons/icon.icns"
