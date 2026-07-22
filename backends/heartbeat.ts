@@ -11,10 +11,9 @@ import {
   saveConsolidationState,
   type ConsolidationState,
 } from "../shared/consolidation-state";
-import { toIsoDay } from "../shared/dates";
 import { hasNewContentSinceConsolidation } from "./consolidation-content";
 import { runConsolidation } from "./consolidation-runner";
-import { getDueDeferred } from "./deferred";
+import { getDueDeferred, toDeferredItemViews, toIsoDay } from "./deferred";
 
 export interface HeartbeatDeps {
   abDirectory: string;
@@ -34,19 +33,6 @@ export interface HeartbeatHandle {
   tick: () => Promise<void>;
   incrementSessionCounter: (hadActivity?: boolean) => void;
   getState: () => ConsolidationState;
-}
-
-function toDeferredViews(
-  items: ReturnType<typeof getDueDeferred>,
-  today: string,
-): DeferredItemView[] {
-  return items.map((item) => ({
-    type: item.type,
-    dueDate: item.dueDate,
-    source: item.source,
-    text: item.text,
-    overdue: item.dueDate < today,
-  }));
 }
 
 export function startHeartbeat(deps: HeartbeatDeps): HeartbeatHandle {
@@ -98,7 +84,7 @@ export function startHeartbeat(deps: HeartbeatDeps): HeartbeatHandle {
     const today = toIsoDay(now);
     const dueItems = getDueDeferred(deps.abDirectory, now);
     if (dueItems.length > 0) {
-      deps.onDeferredDue(toDeferredViews(dueItems, today));
+      deps.onDeferredDue(toDeferredItemViews(dueItems, today));
     }
     await evaluateConsolidation();
   }

@@ -4,6 +4,7 @@ import { Given, When, Then } from "@cucumber/cucumber";
 import assert from "node:assert/strict";
 
 import type { AbWorld } from "../support/world";
+import type { ChatMessage } from "../../src/lib/chat-controller";
 import { assistantBubbles } from "../support/chat-helpers";
 
 Given("the chat is idle", function (this: AbWorld) {

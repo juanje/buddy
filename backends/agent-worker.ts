@@ -3,7 +3,7 @@
 // (FR-SETUP-01), creates a real Pi SDK session in the configured AB directory
 // (excludeTools: ["bash"]) and exposes WorkerAPI to the frontend over kkrpc
 // stdio transport. Includes permission layer, system prompt assembly,
-// auto-commit lifecycle, and forked reflect on shutdown.
+// auto-commit lifecycle, forked reflect on shutdown, and heartbeat scheduler.
 
 import { ModelRuntime } from "@earendil-works/pi-coding-agent";
 import { RPCChannel } from "kkrpc";
@@ -30,7 +30,7 @@ import {
   toPiProviderId,
   WIZARD_PI_PROVIDERS,
 } from "./provider-mapping";
-import { getDueDeferred, toIsoDay } from "./deferred";
+import { getDueDeferred, toDeferredItemViews, toIsoDay } from "./deferred";
 import { bootSession, augmentPromptWithAttachments } from "./session-boot";
 import { defaultConfigPath, detectFirstRun, updateAppConfig } from "./setup";
 import { writePiSettings } from "../shared/pi-settings";
@@ -94,8 +94,6 @@ async function main(): Promise<void> {
   ): Promise<void> {
     if (core) return;
 
-    let sessionHeartbeat: HeartbeatHandle | undefined;
-
     const booted = await bootSession(
       abDirectory,
       {
@@ -113,13 +111,12 @@ async function main(): Promise<void> {
       },
       {
         ...options,
-        onSessionComplete: (hadActivity) => sessionHeartbeat?.incrementSessionCounter(hadActivity),
+        onSessionComplete: (hadActivity) => heartbeat?.incrementSessionCounter(hadActivity),
       },
     );
     if (!booted) return;
     core = booted.core;
     startHeartbeatForAb(abDirectory);
-    sessionHeartbeat = heartbeat;
   }
 
   const transport = nodeStdioTransport();
@@ -139,14 +136,7 @@ async function main(): Promise<void> {
       async getDeferredItems() {
         if (setupState.firstRun) return [];
         const today = toIsoDay(new Date());
-        const dueItems = getDueDeferred(setupState.config.abDirectory);
-        return dueItems.map((item) => ({
-          type: item.type,
-          dueDate: item.dueDate,
-          source: item.source,
-          text: item.text,
-          overdue: item.dueDate < today,
-        }));
+        return toDeferredItemViews(getDueDeferred(setupState.config.abDirectory), today);
       },
       async getSetupState() {
         return setupState;
@@ -234,8 +224,8 @@ async function main(): Promise<void> {
         setupState = { firstRun: false, config: updated };
       },
       async shutdown() {
-        stopHeartbeat();
         await core?.api.shutdown();
+        stopHeartbeat();
         core?.dispose();
         core = undefined;
       },

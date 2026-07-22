@@ -110,11 +110,7 @@ export function determineTargetDepth(state: ConsolidationState): 1 | 2 | 3 | nul
 
 /** Depths to run in cascade order when consolidating at `targetDepth` (FR-CONSOL-02). */
 export function cascadeDepths(targetDepth: 1 | 2 | 3): Array<1 | 2 | 3> {
-  const depths: Array<1 | 2 | 3> = [];
-  for (let d = 1 as 1 | 2 | 3; d <= targetDepth; d++) {
-    depths.push(d);
-  }
-  return depths;
+  return Array.from({ length: targetDepth }, (_, i) => (i + 1) as 1 | 2 | 3);
 }
 
 export function advanceCounters(state: ConsolidationState, depth: 1 | 2 | 3, now?: Date): void {

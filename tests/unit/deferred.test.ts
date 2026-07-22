@@ -2,7 +2,7 @@
 
 import { describe, expect, it } from "vitest";
 
-import { dueDeferredItems, parseDeferredItems, toIsoDay } from "../../backends/deferred";
+import { dueDeferredItems, parseDeferredItems, toDeferredItemViews, toIsoDay } from "../../backends/deferred";
 
 describe("parseDeferredItems", () => {
   it("parses well-formed entries", () => {
@@ -52,5 +52,16 @@ describe("toIsoDay", () => {
   it("formats local dates as YYYY-MM-DD", () => {
     expect(toIsoDay(new Date(2026, 6, 19, 23, 59))).toBe("2026-07-19");
     expect(toIsoDay(new Date(2026, 0, 5))).toBe("2026-01-05");
+  });
+});
+
+describe("toDeferredItemViews", () => {
+  it("maps overdue flag from due date", () => {
+    const items = parseDeferredItems(
+      "- **reminder** (2026-07-01, user): Overdue.\n- **reminder** (2026-07-19, user): Due today.\n",
+    );
+    const views = toDeferredItemViews(items, "2026-07-19");
+    expect(views[0]?.overdue).toBe(true);
+    expect(views[1]?.overdue).toBe(false);
   });
 });

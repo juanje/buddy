@@ -11,7 +11,6 @@ import {
   isSettingsShortcut,
   type SettingsWorkerAPI,
 } from "../../src/lib/settings-controller";
-import { buildMockWorker } from "../support/settings-fixtures";
 
 function mockWorker(overrides: Partial<SettingsWorkerAPI> = {}): SettingsWorkerAPI {
   return buildMockWorker(overrides);

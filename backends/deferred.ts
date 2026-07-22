@@ -9,6 +9,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { toIsoDay } from "../shared/dates";
+import type { DeferredItemView } from "../shared/api";
 
 export interface ParsedDeferredItem {
   type: string;
@@ -47,6 +48,20 @@ export function getDueDeferred(abDirectory: string, now: Date = new Date()): Par
     return [];
   }
   return dueDeferredItems(parseDeferredItems(deferredRaw), toIsoDay(now));
+}
+
+/** Map parsed deferred items to frontend view models (FR-DEFERRED-01/02). */
+export function toDeferredItemViews(
+  items: ParsedDeferredItem[],
+  today: string,
+): DeferredItemView[] {
+  return items.map((item) => ({
+    type: item.type,
+    dueDate: item.dueDate,
+    source: item.source,
+    text: item.text,
+    overdue: item.dueDate < today,
+  }));
 }
 
 export { toIsoDay } from "../shared/dates";

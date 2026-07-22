@@ -93,13 +93,13 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 | FR-HEBB-04 | Lazy commit | done | b977e60 |
 | FR-REFLECT-03 | Checkpoint mid-session reflect | done | fbee7f9 |
 | FR-REFLECT-04 | Log output sanitizer | done | 7c5bd69 |
-| FR-DEFERRED-02 | Heartbeat periodic deferred check | done | pending |
-| FR-CONSOL-01 | Usage-based consolidation triggers | done | pending |
-| FR-CONSOL-02 | Cascade ordering | done | pending |
-| FR-CONSOL-03 | Separate maintenance session | done | pending |
-| FR-CONSOL-04 | Lock management | done | pending |
-| FR-CONSOL-05 | Idle-aware scheduling | done | pending |
-| FR-CONSOL-06 | Run journal | done | pending |
+| FR-DEFERRED-02 | Heartbeat periodic deferred check | done | 7b53829 |
+| FR-CONSOL-01 | Usage-based consolidation triggers | done | 7b53829 |
+| FR-CONSOL-02 | Cascade ordering | done | 7b53829 |
+| FR-CONSOL-03 | Separate maintenance session | done | 7b53829 |
+| FR-CONSOL-04 | Lock management | done | 7b53829 |
+| FR-CONSOL-05 | Idle-aware scheduling | done | 7b53829 |
+| FR-CONSOL-06 | Run journal | done | 7b53829 |
 
 ## Post-MVP — Fable review fixes (2026-07-21)
 

@@ -18,7 +18,11 @@ export async function hasNewContentSinceConsolidation(
   abDirectory: string,
   state: ConsolidationState,
 ): Promise<boolean> {
-  if (await hasUncommittedChanges(abDirectory)) return true;
+  try {
+    if (await hasUncommittedChanges(abDirectory)) return true;
+  } catch {
+    return state.sessionsSinceLastDepth1 > 0 || latestConsolidationTimestamp(state) === null;
+  }
 
   const since = latestConsolidationTimestamp(state);
   if (!since) return true;
@@ -28,7 +32,6 @@ export async function hasNewContentSinceConsolidation(
     const log = await git.log({ "--since": since, maxCount: 1 });
     return log.total > 0;
   } catch {
-    // Non-git AB directory or git error — treat as having content if sessions accumulated.
     return state.sessionsSinceLastDepth1 > 0;
   }
 }

@@ -21,7 +21,6 @@ interface ConsolidationWorld extends AbWorld {
   deferredNotifications?: DeferredItemView[][];
   consolidationRuns?: number[];
   streaming?: boolean;
-  lockHeld?: boolean;
   heartbeat?: ReturnType<typeof startHeartbeat>;
 }
 
@@ -48,7 +47,6 @@ Given("an AB directory prepared for consolidation", async function (this: Consol
   this.deferredNotifications = [];
   this.consolidationRuns = [];
   this.streaming = false;
-  this.lockHeld = false;
 
   this.heartbeat = startHeartbeat({
     abDirectory: this.abDir,
@@ -61,7 +59,6 @@ Given("an AB directory prepared for consolidation", async function (this: Consol
     now: () => new Date("2026-07-22T10:00:00Z"),
     hasNewContentFn: async () => true,
     runConsolidationFn: async (options) => {
-      if (this.lockHeld) return { ran: false, completedDepths: [], state: options.state! };
       const createSession = async (): Promise<MaintenanceSessionLike> => ({
         prompt: async () => {},
         dispose: () => {},
@@ -110,7 +107,6 @@ Given("depth 2 consolidation is due", function (this: ConsolidationWorld) {
 });
 
 Given("the maintenance lock is held", function (this: ConsolidationWorld) {
-  this.lockHeld = true;
   acquireLock(this.abDir!);
 });
 
