@@ -25,11 +25,31 @@ const CHILD_SCRIPT = join(
 );
 
 /**
+ * In a bun-compiled binary, fork() re-executes the full binary (not the child
+ * script), which triggers main() → crash recovery → more forks = fork bomb.
+ * Detect this and skip spawn entirely; pending skeletons persist for next
+ * dev-mode session or future inline-reflect implementation.
+ */
+function isCompiledBinary(): boolean {
+  return process.execPath.includes("/$bunfs/") ||
+    process.execPath.endsWith("/agent-worker") ||
+    process.execPath.includes("/MacOS/agent-worker");
+}
+
+/**
  * Spawn a detached child process that runs the reflect LLM call.
  * The child inherits the environment (auth, PATH) and runs independently.
  * Returns the child PID for logging; the process is unref'd so the parent can exit.
+ *
+ * In production (compiled sidecar), fork is unsafe — skips spawn and returns
+ * undefined. The pending skeleton remains for consolidation or next dev session.
  */
 export function spawnReflectChild(options: SpawnReflectOptions): number | undefined {
+  if (isCompiledBinary()) {
+    console.error(`[reflect-spawn] skip fork in compiled binary (mode=${options.mode})`);
+    return undefined;
+  }
+
   const args = [
     options.rootDir,
     options.forkedSessionFile,
