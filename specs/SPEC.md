@@ -202,8 +202,9 @@ rootDir (git repo — user/agent content only)
 **FR-SETUP-04 — Location picker**
 
 - **Given** the user is on the location step of the wizard
-- **When** they accept the default (`~/buddy`) or choose a custom path
-- **Then** the path is validated (doesn't exist or is empty) and stored
+- **When** they accept the default (`~/buddy`), type a custom path, or use the native "Browse" button
+- **Then** a native directory picker dialog opens (via `tauri-plugin-dialog`) on Browse, or the typed path is used directly
+- **And** the path is validated (doesn't exist or is empty) and stored
 
 **FR-SETUP-05 — Provider authentication**
 
@@ -254,7 +255,9 @@ rootDir (git repo — user/agent content only)
 
 - **Given** the location picker step shows an existing AB directory (one with `agent_brain/`)
 - **When** the user confirms import
-- **Then** the app adopts the existing directory without modifying its content
+- **Then** the app verifies auth credentials exist for the detected provider (`getAuthStatus()`)
+- **And** if auth is valid, the directory is adopted without modifying its content
+- **But when** auth is missing (e.g. `~/.buddy/auth.json` deleted), the wizard routes to the provider step with the instance's provider/model pre-selected for re-authentication
 - **And** platform artifacts (`.cursor/`, `.codex/`) are ignored
 - **And** the wizard skips personalization (existing instance already has data)
 
@@ -477,7 +480,7 @@ Crash recovery (next app start):
 | ID | Description | Phase |
 |----|-------------|-------|
 | FR-DEFERRED-01 | Surface due items on app start | 1 ✓ |
-| FR-DEFERRED-02 | Heartbeat periodic check | 2 | done |
+| FR-DEFERRED-02 | Heartbeat periodic check | 2 ✓ |
 | FR-DEFERRED-03 | OS notification for due items | 2 |
 
 **FR-DEFERRED-01 — Surface on start**
@@ -508,12 +511,12 @@ Crash recovery (next app start):
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-CONSOL-01 | Usage-based trigger evaluation | 2 | done |
-| FR-CONSOL-02 | Cascade ordering | 2 | done |
-| FR-CONSOL-03 | Separate maintenance session | 2 | done |
-| FR-CONSOL-04 | Lock management | 2 | done |
-| FR-CONSOL-05 | Idle-aware scheduling | 2 | done |
-| FR-CONSOL-06 | Run journal | 2 | done |
+| FR-CONSOL-01 | Usage-based trigger evaluation | 2 ✓ |
+| FR-CONSOL-02 | Cascade ordering | 2 ✓ |
+| FR-CONSOL-03 | Separate maintenance session | 2 ✓ |
+| FR-CONSOL-04 | Lock management | 2 ✓ |
+| FR-CONSOL-05 | Idle-aware scheduling | 2 ✓ |
+| FR-CONSOL-06 | Run journal | 2 ✓ |
 
 **Consolidation depths:**
 
@@ -606,7 +609,7 @@ Crash recovery (next app start):
 |----|-------------|-------|
 | FR-PROMPT-01 | Assembly from files | 1 ✓ |
 | FR-PROMPT-02 | Session-start enrichment | 1 ✓ |
-| FR-PROMPT-03 | Global base prompt (agents-base.md) | 2 |
+| FR-PROMPT-03 | Global base prompt (agents-base.md) | 2 ✓ |
 
 **FR-PROMPT-01 — Assembly**
 

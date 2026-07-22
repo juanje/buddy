@@ -81,7 +81,7 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 | FR-SETTINGS-04 | Language switching from settings | done | 6ea7f89 |
 | FR-SETTINGS-05 | Settings access from UI (gear icon + menu) | done | 2e051c5 |
 
-**Phase 1 complete:** YES — all Phase 1 FRs implemented and passing (153 unit tests, 103 BDD scenarios).
+**Phase 1 complete:** YES — all Phase 1 FRs implemented and passing (175 unit tests, 104 BDD scenarios).
 
 ## Phase 2 — Implemented early
 
@@ -117,10 +117,22 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 | L | Fix `relPath` prefix match without separator | 0c0ce59 |
 | D | Clarify Hebbian is automatic inside app | 0f178ad |
 
+## Phase 2 — Global config + wizard hardening
+
+| FR-ID | Feature | Status | Commit |
+|-------|---------|--------|--------|
+| FR-PROMPT-03 | Global base prompt (agents-base.md from ~/.buddy/prompts/) | done | 7a4f405 |
+| NFR-PORT-05 | Core prompts in ~/.buddy/ (not rootDir) | done | 7a4f405 |
+| NFR-CONFIG-04 | Core prompts populated via schema migration | done | 7a4f405 |
+| NFR-MIGRATE-01..05 | Schema versioning + migration system | done | 7a4f405 |
+| FR-SETUP-04 | Native directory picker in wizard (Browse button) | done | 72ba219 |
+| FR-SETUP-10 | Import auth verification (re-auth if credentials missing) | done | 72ba219 |
+| — | Settings re-auth prompt when configured provider lacks auth | done | 72ba219 |
+
 ## Current focus
 
-> **Sprint: FR-CONSOL + heartbeat (2026-07-22) complete.** Scheduler, runner, and BDD shipped.
-> Next: FR-WIKI, FR-COST, FR-DEFERRED-03 (OS notifications).
+> **Sprint: E11 global config + wizard auth hardening (2026-07-22) complete.**
+> Next: FR-WIKI, FR-COST, FR-DEFERRED-03 (OS notifications), FR-CHAT-09 (local links).
 
 ### Sprint: Settings access UI — DONE (2026-07-22)
 
