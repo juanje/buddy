@@ -1009,7 +1009,31 @@ The native window close (X) already triggers the full shutdown sequence (skeleto
 | NFR-CONFIG-01 | All operational defaults (thresholds, timeouts, intervals) centralized in a single `shared/defaults.ts` — no magic numbers scattered across the codebase |
 | NFR-CONFIG-02 | User-tunable settings (reflect interval, model, language) persisted in `.buddy/settings.json` and editable from the settings UI |
 | NFR-CONFIG-03 | Security-critical constants (denylist paths, excluded tools) centralized in `shared/defaults.ts` alongside operational defaults — not configurable by user or agent, but readable in one place for maintenance |
-| NFR-CONFIG-04 | Core prompts (`~/.buddy/prompts/`) are populated on first run and refreshed on app updates. The app ensures this directory exists before any session starts. |
+| NFR-CONFIG-04 | Core prompts (`~/.buddy/prompts/`) are populated via the schema migration system (NFR-MIGRATE). The app ensures this directory exists before any session starts. |
+
+### 4.9 Schema Migration (NFR-MIGRATE)
+
+| ID | Requirement |
+|----|-------------|
+| NFR-MIGRATE-01 | `~/.buddy/version` contains a single integer representing the installed schema version. Default: `0` when the file is absent (fresh install). |
+| NFR-MIGRATE-02 | The app embeds a compile-time constant `APP_SCHEMA_VERSION` (monotonically increasing integer). On boot, if the file version is lower than the embedded version, sequential migrations run before any session starts. |
+| NFR-MIGRATE-03 | Each migration is an idempotent function `migrate_N_to_N+1()` that transforms `~/.buddy/` state from schema N to schema N+1. Migrations run in order and never skip intermediate versions. |
+| NFR-MIGRATE-04 | After all migrations succeed, `~/.buddy/version` is updated atomically to the new schema version. If a migration fails, the version file is NOT updated — the migration retries on next boot. |
+| NFR-MIGRATE-05 | Migrations must not require user interaction — they run silently during boot before the UI is shown. If a migration cannot complete silently (future: breaking config format change), it writes a marker and the UI surfaces a one-time explanation. |
+
+**Schema version history (maintained as migrations are added):**
+
+| Version | Migration | Description |
+|---------|-----------|-------------|
+| 1 | `migrate_0_to_1` | Create `~/.buddy/prompts/`; populate `agents-base.md`, `consolidation.md`, `process-conversation.md` from embedded templates. |
+
+**Design rationale:**
+
+- **File, not field:** The version lives in its own file (`~/.buddy/version`), not inside `config.json`. This allows reading the version before parsing potentially-incompatible config formats during a config schema migration.
+- **Integer, not semver:** This is an internal schema counter, not a public API version. It increments only when a migration is needed — many app releases may share the same schema version.
+- **Sequential, not declarative:** Migrations run in strict order (0→1→2→…). This guarantees that each migration can assume the exact state left by the previous one, preventing combinatorial complexity.
+- **Idempotent:** If interrupted, re-running the same migration produces the correct end state (e.g., file writes use create-or-overwrite, not append).
+- **Scope:** Migrations apply to `~/.buddy/` (global config directory). Per-instance (`rootDir`) changes are handled differently — the app adapts to what it finds (backward compat), not by migrating user repos.
 
 ---
 
