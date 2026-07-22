@@ -31,9 +31,7 @@ const CHILD_SCRIPT = join(
  * dev-mode session or future inline-reflect implementation.
  */
 function isCompiledBinary(): boolean {
-  return process.execPath.includes("/$bunfs/") ||
-    process.execPath.endsWith("/agent-worker") ||
-    process.execPath.includes("/MacOS/agent-worker");
+  return typeof (globalThis as any).Bun !== "undefined";
 }
 
 /**
