@@ -107,6 +107,8 @@ export const en: LocaleStrings = {
   settingsProviderAdded: "Provider added — its models are now available",
   settingsGearTooltip: "Settings",
   settingsAuthRequired: "Sign in to {provider} to manage models",
+  notificationTitle: "Buddy",
+  notificationBody: "{count} pending reminder(s)",
 };
 
 export function tierDescriptionEn(tier: "fast" | "balanced" | "powerful"): string {

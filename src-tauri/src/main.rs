@@ -12,6 +12,7 @@ fn main() {
         .plugin(tauri_plugin_js::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_notification::init())
         .setup(|app| {
             let about = AboutMetadata {
                 name: Some("Buddy".to_string()),

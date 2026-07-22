@@ -100,6 +100,8 @@ export type LocaleStrings = {
   locationBrowse: string;
   locationBrowseTitle: string;
   settingsAuthRequired: string;
+  notificationTitle: string;
+  notificationBody: string;
 };
 
 export const es: LocaleStrings = {
@@ -209,6 +211,8 @@ export const es: LocaleStrings = {
   settingsProviderAdded: "Proveedor añadido — sus modelos ya están disponibles",
   settingsGearTooltip: "Ajustes",
   settingsAuthRequired: "Inicia sesión en {provider} para gestionar modelos",
+  notificationTitle: "Buddy",
+  notificationBody: "{count} recordatorios pendientes",
 };
 
 /** Short cost/capability description per model tier (FR-SETUP-05). */

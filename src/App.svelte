@@ -23,6 +23,7 @@
     isSettingsShortcut,
     type SettingsController,
   } from "./lib/settings-controller";
+  import { notifyDeferredDue } from "./utils/deferred-notify";
   import { t } from "./lib/i18n";
   import type { AgentEvent, DeferredItemView, OAuthUIEvent, SetupConfig } from "../shared/api";
   import { SHUTDOWN_TIMEOUT_MS } from "../shared/defaults";
@@ -123,6 +124,11 @@
           onDeferredDue(items) {
             devLog(`deferred due: ${items.length} item(s)`);
             deferredItems = items;
+            const strings = get(t);
+            void notifyDeferredDue(items.length, {
+              title: strings.notificationTitle,
+              body: strings.notificationBody.replace("{count}", String(items.length)),
+            });
           },
         },
         (code) => {
