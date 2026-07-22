@@ -13,6 +13,11 @@
   } = $props();
 
   const hasDeferred = $derived(deferredItems.length > 0);
+
+  function localizedType(raw: string): string {
+    const map = $t.deferredTypes as Record<string, string> | undefined;
+    return map?.[raw] ?? raw;
+  }
 </script>
 
 {#if visible}
@@ -25,7 +30,7 @@
         <ul>
           {#each deferredItems as item (item.dueDate + item.text)}
             <li>
-              <span class="type">[{item.type}]</span>
+              <span class="type">{localizedType(item.type)}</span>
               {#if item.overdue}
                 <span class="badge overdue">{$t.welcomeOverdue}</span>
               {:else}
@@ -36,9 +41,11 @@
           {/each}
         </ul>
         {#if onDismiss}
-          <button type="button" class="dismiss-btn" onclick={onDismiss}>
-            {$t.welcomeDismiss}
-          </button>
+          <div class="dismiss-row">
+            <button type="button" class="dismiss-btn" onclick={onDismiss}>
+              {$t.welcomeDismiss}
+            </button>
+          </div>
         {/if}
       </div>
     {:else}
@@ -84,9 +91,15 @@
     line-height: 1.4;
   }
   .type {
+    display: inline-block;
     color: var(--muted);
-    font-size: 11px;
-    margin-right: 4px;
+    font-size: 10px;
+    font-weight: 500;
+    padding: 1px 6px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    margin-right: 6px;
+    vertical-align: middle;
   }
   .badge {
     display: inline-block;
@@ -106,19 +119,23 @@
     background: color-mix(in srgb, var(--error-fg, #c44) 15%, transparent);
     color: var(--error-fg, #c44);
   }
+  .dismiss-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 8px;
+  }
   .dismiss-btn {
-    display: block;
-    margin: 10px auto 0;
-    border: 1px solid var(--border);
+    border: 1px solid var(--fg-secondary, var(--muted));
     border-radius: 6px;
     background: transparent;
-    color: var(--muted);
+    color: var(--fg-secondary, var(--fg));
     font-size: 12px;
+    font-weight: 500;
     cursor: pointer;
     padding: 4px 14px;
   }
   .dismiss-btn:hover {
     color: var(--fg);
-    border-color: var(--fg-secondary, var(--fg));
+    border-color: var(--fg);
   }
 </style>

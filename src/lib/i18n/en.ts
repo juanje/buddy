@@ -84,6 +84,7 @@ export const en: LocaleStrings = {
   welcomeDueToday: "due",
   welcomeOverdue: "overdue",
   welcomeDismiss: "Got it",
+  deferredTypes: { reminder: "reminder", decision: "decision", info: "info", review: "review" },
   welcomeRegion: "Welcome",
   oauthSignIn: "Sign in",
   oauthWaiting: "Waiting for browser…",
