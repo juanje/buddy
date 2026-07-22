@@ -4,6 +4,7 @@
 
 import { derived, get, writable, type Readable, type Writable } from "svelte/store";
 import { recommendedModelFor } from "../../shared/model-catalog";
+import { fromPiProviderId } from "../../shared/provider-mapping";
 import { DEFAULT_SETUP_PROVIDER, isApiKeyOnlyProvider } from "./provider-setup";
 import type {
   KeyCheck,
@@ -299,6 +300,16 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
 
   const KNOWN_PROVIDERS: ReadonlyArray<ProviderId> = ["anthropic", "openai", "google", "custom"];
 
+  function resolveImportProvider(piOrAbProvider: string | undefined): ProviderId | undefined {
+    if (!piOrAbProvider) return undefined;
+    const fromPi = fromPiProviderId(piOrAbProvider);
+    if (fromPi) return fromPi;
+    if (KNOWN_PROVIDERS.includes(piOrAbProvider as ProviderId)) {
+      return piOrAbProvider as ProviderId;
+    }
+    return undefined;
+  }
+
   async function importExisting(): Promise<"adopted" | "needs-provider"> {
     const rootDir = get(location);
     const check = get(locationCheck);
@@ -308,17 +319,25 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
     importMode.set(true);
 
     const settings = check.abSettings;
-    const knownProvider = KNOWN_PROVIDERS.find((p) => p === settings?.provider);
+    const knownProvider = resolveImportProvider(settings?.provider);
     if (knownProvider && settings?.model) {
       provider.set(knownProvider);
       model.set(settings.model);
-      await runSetupWith({
-        rootDir,
-        provider: knownProvider,
-        model: settings.model,
-        language: get(language) ?? "es",
-      });
-      return "adopted";
+
+      const authStatus = await worker.getAuthStatus();
+      const providerAuth = authStatus.providers.find((p) => p.abProvider === knownProvider);
+      if (providerAuth?.hasAuth) {
+        await runSetupWith({
+          rootDir,
+          provider: knownProvider,
+          model: settings.model,
+          language: get(language) ?? "es",
+        });
+        return "adopted";
+      }
+
+      step.set("provider");
+      return "needs-provider";
     }
 
     step.set("provider");

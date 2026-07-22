@@ -54,7 +54,7 @@ export interface SettingsController {
   setLanguage(language: AppLocale): Promise<void>;
   setModel(provider: SettingsProviderId, model: string): Promise<void>;
   getLastModelForProvider(provider: SettingsProviderId): string | undefined;
-  startAddProvider(): void;
+  startAddProvider(preferred?: SettingsProviderId): void;
   cancelAddProvider(): void;
   selectAuthProvider(provider: SettingsProviderId): void;
   submitAuthOAuth(): Promise<void>;
@@ -204,11 +204,11 @@ export function createSettingsController(options: {
     getLastModelForProvider(provider) {
       return lastModelByProvider.get(provider);
     },
-    startAddProvider() {
+    startAddProvider(preferred?: SettingsProviderId) {
       addingProvider.set(true);
-      authProvider.set(undefined);
+      authProvider.set(preferred);
       authError.set(undefined);
-      authShowApiKey.set(false);
+      authShowApiKey.set(preferred ? isApiKeyOnlyProvider(preferred) : false);
       providerAddedNotice.set(false);
     },
     cancelAddProvider() {

@@ -32,6 +32,11 @@
   );
   const showAddProviderLink = $derived($unauthenticatedProviders.length > 0 && !$addingProvider);
   const authNeedsBaseUrl = $derived($authProvider === "custom");
+  const currentProviderNeedsAuth = $derived(
+    !$loadingModels &&
+      !authenticatedProviders.includes($config.provider) &&
+      $unauthenticatedProviders.includes($config.provider),
+  );
 
   function onBackdropClick(event: MouseEvent) {
     if (event.target === event.currentTarget) {
@@ -103,6 +108,21 @@
               </select>
             {:else}
               {providerLabel($config.provider, $t)}
+            {/if}
+            {#if currentProviderNeedsAuth && !$addingProvider}
+              <p class="auth-required">
+                {$t.settingsAuthRequired.replace(
+                  "{provider}",
+                  providerLabel($config.provider, $t),
+                )}
+              </p>
+              <button
+                type="button"
+                class="link"
+                onclick={() => controller.startAddProvider($config.provider)}
+              >
+                {$t.oauthSignIn}
+              </button>
             {/if}
           </dd>
         </div>
@@ -303,6 +323,11 @@
     margin: 0;
     font-size: 13px;
     color: var(--accent, #4f46e5);
+  }
+  .auth-required {
+    margin: 6px 0 0;
+    font-size: 13px;
+    color: var(--muted);
   }
   .link {
     border: none;

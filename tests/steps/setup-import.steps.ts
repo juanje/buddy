@@ -33,6 +33,7 @@ interface ImportWorld extends AbWorld {
   wizard?: SetupController;
   snapshot?: Map<string, string>;
   importOutcome?: "adopted" | "needs-provider";
+  authHasAnthropic?: boolean;
 }
 
 function snapshotAb(world: ImportWorld): Map<string, string> {
@@ -48,7 +49,30 @@ function snapshotAb(world: ImportWorld): Map<string, string> {
   return files;
 }
 
-function makeWizard(world: ImportWorld): SetupController {
+function authedAnthropicStatus() {
+  return {
+    providers: [
+      {
+        piProviderId: "anthropic",
+        abProvider: "anthropic" as const,
+        hasAuth: true,
+        authType: "oauth" as const,
+      },
+      {
+        piProviderId: "openai-codex",
+        abProvider: "openai" as const,
+        hasAuth: false,
+      },
+      {
+        piProviderId: "google",
+        abProvider: "google" as const,
+        hasAuth: false,
+      },
+    ],
+  };
+}
+
+function makeWizard(world: ImportWorld, authHasAnthropic = true): SetupController {
   world.wizard = createSetupController(
     makeSetupWorkerFake({
       async validateLocation(path: string) {
@@ -56,6 +80,12 @@ function makeWizard(world: ImportWorld): SetupController {
       },
       async configureProviderKey() {
         return { valid: true as const };
+      },
+      async getAuthStatus() {
+        if (authHasAnthropic) return authedAnthropicStatus();
+        return {
+          providers: authedAnthropicStatus().providers.map((p) => ({ ...p, hasAuth: false })),
+        };
       },
       async runSetup(config, mode) {
         assert.equal(mode, "import", "adopting an existing AB must use import mode");
@@ -108,8 +138,16 @@ Given("an existing AB directory without Pi settings", function (this: ImportWorl
   seedAb(this, { piSettings: false });
 });
 
+Given("the configured provider has valid auth credentials", function (this: ImportWorld) {
+  this.authHasAnthropic = true;
+});
+
+Given("the configured provider has no auth credentials", function (this: ImportWorld) {
+  this.authHasAnthropic = false;
+});
+
 When("the user imports it from the location step", async function (this: ImportWorld) {
-  const wizard = makeWizard(this);
+  const wizard = makeWizard(this, this.authHasAnthropic !== false);
   await advanceToLocationStep(wizard);
   await wizard.pickLocation(this.abDir!);
   assert.equal(get(wizard.locationCheck)?.status, "existing-ab");
@@ -136,6 +174,11 @@ Then("the wizard continues to the provider step in import mode", function (this:
   assert.equal(this.importOutcome, "needs-provider");
   assert.equal(get(this.wizard!.step), "provider");
   assert.equal(get(this.wizard!.importMode), true);
+});
+
+Then("the provider step is pre-selected with the instance provider", function (this: ImportWorld) {
+  assert.equal(get(this.wizard!.provider), "anthropic");
+  assert.equal(get(this.wizard!.model), "claude-haiku-4-5");
 });
 
 Then(

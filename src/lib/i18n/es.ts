@@ -97,6 +97,9 @@ export type LocaleStrings = {
   settingsAddProvider: string;
   settingsProviderAdded: string;
   settingsGearTooltip: string;
+  locationBrowse: string;
+  locationBrowseTitle: string;
+  settingsAuthRequired: string;
 };
 
 export const es: LocaleStrings = {
@@ -132,6 +135,8 @@ export const es: LocaleStrings = {
   locationNotADirectory: "Esa ruta no es una carpeta.",
   locationExistingAb: "Esa carpeta ya contiene un asistente Buddy.",
   locationImport: "Importar este asistente",
+  locationBrowse: "Explorar…",
+  locationBrowseTitle: "Elige una carpeta",
   providerTitle: "Conecta tu proveedor de IA",
   providerHint:
     "Tu asistente necesita un servicio de IA para pensar. Inicia sesión con tu cuenta o usa una clave de API.",
@@ -203,6 +208,7 @@ export const es: LocaleStrings = {
   settingsAddProvider: "Añadir proveedor",
   settingsProviderAdded: "Proveedor añadido — sus modelos ya están disponibles",
   settingsGearTooltip: "Ajustes",
+  settingsAuthRequired: "Inicia sesión en {provider} para gestionar modelos",
 };
 
 /** Short cost/capability description per model tier (FR-SETUP-05). */

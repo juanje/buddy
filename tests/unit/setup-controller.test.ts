@@ -62,4 +62,55 @@ describe("createSetupController back()", () => {
     expect(get(wizard.step)).toBe("location");
     expect(get(wizard.location)).toBe("/tmp/buddy");
   });
+
+  it("requires re-authentication when importing an AB with settings but no auth", async () => {
+    const wizard = createSetupController(
+      makeSetupWorkerFake({
+        validateLocation: async () => ({
+          status: "existing-ab",
+          abSettings: { provider: "anthropic", model: "claude-haiku-4-5" },
+        }),
+        getAuthStatus: async () => ({
+          providers: [
+            { piProviderId: "anthropic", abProvider: "anthropic", hasAuth: false },
+          ],
+        }),
+        runSetup: async () => {
+          throw new Error("runSetup should not run without auth");
+        },
+      }),
+    );
+    await wizard.pickLocation("/tmp/old-ab");
+    const outcome = await wizard.importExisting();
+    expect(outcome).toBe("needs-provider");
+    expect(get(wizard.step)).toBe("provider");
+    expect(get(wizard.provider)).toBe("anthropic");
+    expect(get(wizard.model)).toBe("claude-haiku-4-5");
+    expect(get(wizard.completed)).toBe(false);
+  });
+
+  it("adopts directly when importing an AB with settings and valid auth", async () => {
+    let setupCalled = false;
+    const wizard = createSetupController(
+      makeSetupWorkerFake({
+        validateLocation: async () => ({
+          status: "existing-ab",
+          abSettings: { provider: "anthropic", model: "claude-haiku-4-5" },
+        }),
+        getAuthStatus: async () => ({
+          providers: [
+            { piProviderId: "anthropic", abProvider: "anthropic", hasAuth: true },
+          ],
+        }),
+        runSetup: async () => {
+          setupCalled = true;
+        },
+      }),
+    );
+    await wizard.pickLocation("/tmp/old-ab");
+    const outcome = await wizard.importExisting();
+    expect(outcome).toBe("adopted");
+    expect(setupCalled).toBe(true);
+    expect(get(wizard.completed)).toBe(true);
+  });
 });

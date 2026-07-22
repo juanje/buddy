@@ -33,6 +33,8 @@ export const en: LocaleStrings = {
   locationNotADirectory: "That path is not a folder.",
   locationExistingAb: "That folder already contains a Buddy assistant.",
   locationImport: "Import this assistant",
+  locationBrowse: "Browse…",
+  locationBrowseTitle: "Choose a folder",
   providerTitle: "Connect your AI provider",
   providerHint:
     "Your assistant needs an AI service to think. Sign in with your account or use an API key.",
@@ -104,6 +106,7 @@ export const en: LocaleStrings = {
   settingsAddProvider: "Add provider",
   settingsProviderAdded: "Provider added — its models are now available",
   settingsGearTooltip: "Settings",
+  settingsAuthRequired: "Sign in to {provider} to manage models",
 };
 
 export function tierDescriptionEn(tier: "fast" | "balanced" | "powerful"): string {

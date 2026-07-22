@@ -73,6 +73,15 @@ async function createAb() {
     wizard.next();
   }
 
+  async function browseDirectory() {
+    const { open } = await import("@tauri-apps/plugin-dialog");
+    const selected = await open({ directory: true, title: $t.locationBrowseTitle });
+    if (typeof selected === "string") {
+      locationInput = selected;
+      await wizard.pickLocation(selected);
+    }
+  }
+
   function locationError(status: string): string | undefined {
     switch (status) {
       case "not-empty":
@@ -133,7 +142,10 @@ async function createAb() {
   {:else if $step === "location"}
     <h2>{$t.locationTitle}</h2>
     <p class="muted">{$t.locationHint}</p>
-    <input class="location" type="text" bind:value={locationInput} spellcheck="false" />
+    <div class="location-row">
+      <input class="location" type="text" bind:value={locationInput} spellcheck="false" />
+      <button type="button" class="ghost" onclick={browseDirectory}>{$t.locationBrowse}</button>
+    </div>
     {#if $locationCheck && locationError($locationCheck.status)}
       <p class="error">{locationError($locationCheck.status)}</p>
     {/if}
@@ -240,7 +252,8 @@ async function createAb() {
     cursor: default;
   }
   input.location {
-    width: min(480px, 80vw);
+    flex: 1;
+    min-width: 0;
     padding: 8px 12px;
     border: 1px solid var(--border);
     border-radius: 8px;
@@ -248,6 +261,12 @@ async function createAb() {
     color: var(--fg);
     font-size: 14px;
     font-family: ui-monospace, monospace;
+  }
+  .location-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    width: min(560px, 90vw);
   }
   .error {
     color: var(--error-fg);
