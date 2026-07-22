@@ -6,16 +6,20 @@
   import PermissionCard from "./PermissionCard.svelte";
   import ToolActivity from "./ToolActivity.svelte";
   import WelcomeBanner from "./WelcomeBanner.svelte";
+  import { open } from "@tauri-apps/plugin-shell";
+  import { resolveLocalPathForOpen } from "./local-path";
   import { t } from "./i18n";
 
   let {
     controller,
     scroll,
     deferredItems = [],
+    rootDir = "",
   }: {
     controller: ChatController;
     scroll: ScrollController;
     deferredItems?: DeferredItemView[];
+    rootDir?: string;
   } = $props();
 
   // $derived (not plain destructuring) so the stores track prop reassignment;
@@ -46,10 +50,27 @@
       container.scrollTop + container.clientHeight >= container.scrollHeight - NEAR_BOTTOM_PX;
     scroll.onUserScrolled(atBottom);
   }
+
+  async function handleChatClick(event: MouseEvent) {
+    if (!rootDir) return;
+    const anchor = (event.target as HTMLElement).closest("a[data-local-path]");
+    if (!anchor) return;
+    event.preventDefault();
+    const rel = anchor.getAttribute("data-local-path");
+    if (!rel) return;
+    const abs = resolveLocalPathForOpen(rootDir, rel);
+    if (!abs) return;
+    try {
+      await open(abs);
+    } catch {
+      // Browser dev without Tauri shell — ignore.
+    }
+  }
 </script>
 
 <div class="chat-wrap">
-  <div class="chat" bind:this={container} onscroll={handleScroll}>
+  <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+  <div class="chat" bind:this={container} onscroll={handleScroll} onclick={handleChatClick}>
     <WelcomeBanner
       {deferredItems}
       visible={$welcomeVisible}

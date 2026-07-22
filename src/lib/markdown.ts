@@ -1,6 +1,15 @@
 // src/lib/markdown.ts — Markdown → HTML for assistant bubbles (FR-CHAT-04).
 
 import { Marked } from "marked";
+
+import { isExternalHref } from "./local-path";
+
+function escapeAttr(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;");
+}
 import hljs from "highlight.js/lib/core";
 import bash from "highlight.js/lib/languages/bash";
 import css from "highlight.js/lib/languages/css";
@@ -34,8 +43,11 @@ const parser = new Marked({
   renderer: {
     link({ href, title, text }) {
       const safeHref = href ?? "#";
-      const titleAttr = title ? ` title="${title}"` : "";
-      return `<a href="${safeHref}" target="_blank" rel="noopener noreferrer"${titleAttr}>${text}</a>`;
+      const titleAttr = title ? ` title="${escapeAttr(title)}"` : "";
+      if (isExternalHref(safeHref)) {
+        return `<a href="${escapeAttr(safeHref)}" target="_blank" rel="noopener noreferrer"${titleAttr}>${text}</a>`;
+      }
+      return `<a href="#" data-local-path="${escapeAttr(safeHref)}"${titleAttr}>${text}</a>`;
     },
     code({ text, lang }) {
       const language = lang?.trim();

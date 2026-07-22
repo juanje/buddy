@@ -257,7 +257,13 @@
       {#if dragOver}
         <div class="drop-overlay">{$t.dropOverlay}</div>
       {/if}
-      <ChatView bind:this={chatView} {controller} {scroll} {deferredItems} />
+      <ChatView
+        bind:this={chatView}
+        {controller}
+        {scroll}
+        {deferredItems}
+        rootDir={appConfig?.rootDir ?? ""}
+      />
       {#if settingsController}
         <button
           type="button"

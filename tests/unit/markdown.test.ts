@@ -25,10 +25,16 @@ describe("renderMarkdown", () => {
     expect(html).toContain("language-json");
   });
 
-  it("renders links with target blank", () => {
+  it("renders external links with target blank", () => {
     const html = renderMarkdown("[docs](https://example.com)");
     expect(html).toContain('href="https://example.com"');
     expect(html).toContain('target="_blank"');
+  });
+
+  it("renders local links with data-local-path and no target blank", () => {
+    const html = renderMarkdown("[skill](agent_brain/skills/foo.md)");
+    expect(html).toContain('data-local-path="agent_brain/skills/foo.md"');
+    expect(html).not.toContain('target="_blank"');
   });
 
   it("returns empty string for blank input", () => {
