@@ -8,9 +8,9 @@ created:
 
 ## When to use
 
-Triggered by the app's maintenance scheduler when usage-based thresholds are
-met (FR-CONSOL-01), or manually by the user. This is the consolidation cycle —
-where the system summarizes recent work and learns from it.
+Triggered automatically when usage-based thresholds are met, or manually by
+the user. This is the consolidation cycle — where the system summarizes recent
+work and learns from it.
 
 Depth 1 (daily synthesis) is the default when unspecified. Higher depths
 (weekly calibration, monthly pruning) extend the same procedure with broader
@@ -332,7 +332,7 @@ remain findable in `logs/archive/YYYY-MM/`.
    `monthly_*.md` files).
 2. If the count exceeds **28**, for each file to archive (oldest first):
    a. Move the file to `logs/archive/YYYY-MM/` (based on the file's
-      date). Create the directory with `mkdir -p` if needed.
+      date). The directory is created automatically if needed.
    b. **Remove** the corresponding line from `logs/index.md`.
    c. **Append** the line to `logs/archive/YYYY-MM/index.md`. If the
       month index doesn't exist, create it with:
@@ -354,8 +354,7 @@ how sessions are spread across the calendar.
 
 ### Finalize
 
-#### 10. Git commit
+#### 10. Done
 
-```bash
-git add AGENTS.md agent_brain/ logs/ user/ && git commit -m "daily: YYYY-MM-DD" 2>/dev/null || true
-```
+All file changes are committed automatically when the consolidation cycle ends.
+No manual action needed — just finish writing and the system persists everything.

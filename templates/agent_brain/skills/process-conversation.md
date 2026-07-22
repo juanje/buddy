@@ -8,9 +8,8 @@ created:
 
 ## When to use
 
-Triggered by the user ("reflect", "save the conversation") or by the app
-after a session ends. Never run this skill autonomously — the app handles
-session logging on shutdown.
+Triggered by the user ("reflect", "save the conversation"). Never run this
+skill autonomously — session logging happens automatically on shutdown.
 
 ## Procedure
 
@@ -101,7 +100,7 @@ If anything was missed (capture or link), add it now.
 
 ### 4. Patch stale active context
 
-*The app may skip this step in fully autonomous mode — follow any mode
+*This step may be skipped in fully autonomous mode — follow any mode
 instructions in your context.*
 
 Scan the **Active context → Right now** section in `AGENTS.md` and the hot files listed under **Active context → Files**. For each item, ask: did something in this session change it?
