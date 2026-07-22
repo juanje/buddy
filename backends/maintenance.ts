@@ -1,26 +1,13 @@
-// backends/maintenance.ts — Catch-up reflect + lock management (FR-REFLECT-02).
+// backends/maintenance.ts — Lock management for reflect and consolidation (FR-REFLECT-02).
 
 import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { CATCH_UP_MAX, LOCK_STALE_MS } from "../shared/defaults";
-import { commitAll } from "./git";
-import {
-  finalizeReflectToDailyLog,
-  findPendingReflects,
-  rebuildLogsIndex,
-} from "./reflect";
+import { LOCK_STALE_MS } from "../shared/defaults";
 
 export interface MaintenanceLock {
   pid: number;
   timestamp: string;
-}
-
-export interface CatchUpOptions {
-  /** Max pending skeletons to process per run (default 3). */
-  max?: number;
-  /** Inject LLM encoding for tests; production uses reflect-child spawn. */
-  encodeReflect?: (logPath: string, skeleton: string) => Promise<string>;
 }
 
 export function lockPath(abDirectory: string): string {
@@ -69,47 +56,4 @@ export function acquireLock(abDirectory: string): boolean {
 export function releaseLock(abDirectory: string): void {
   const path = lockPath(abDirectory);
   if (existsSync(path)) unlinkSync(path);
-}
-
-export async function runCatchUpReflects(
-  abDirectory: string,
-  options: CatchUpOptions = {},
-): Promise<string[]> {
-  const pending = findPendingReflects(abDirectory);
-  if (pending.length === 0) return [];
-
-  if (!acquireLock(abDirectory)) return [];
-
-  const processed: string[] = [];
-  try {
-    const max = options.max ?? CATCH_UP_MAX;
-    for (const item of pending.slice(0, max)) {
-      const skeleton = readFileSync(item.path, "utf8");
-      const encoded = options.encodeReflect
-        ? await options.encodeReflect(item.path, skeleton)
-        : defaultReflectSummary(skeleton);
-      finalizeReflectToDailyLog({
-        abDirectory,
-        skeletonPath: item.path,
-        skeletonContent: skeleton,
-        sections: encoded,
-      });
-      processed.push(item.path);
-    }
-    rebuildLogsIndex(abDirectory);
-    await commitAll(abDirectory, "ab: catch-up reflect");
-  } finally {
-    releaseLock(abDirectory);
-  }
-  return processed;
-}
-
-function defaultReflectSummary(skeleton: string): string {
-  const hasWrites = /## Files written\r?\n(?!\(none\))/m.test(skeleton);
-  const hasReads = /## Files read\r?\n(?!\(none\))/m.test(skeleton);
-  const lines = ["### Context", "Session activity captured in factual skeleton."];
-  if (hasWrites) lines.push("- Agent wrote files during the session.");
-  if (hasReads) lines.push("- Agent read context files during the session.");
-  lines.push("", "### Open threads", "- (none recorded in skeleton)");
-  return lines.join("\n");
 }

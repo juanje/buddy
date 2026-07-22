@@ -5,8 +5,9 @@ import assert from "node:assert/strict";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { runCatchUpReflects } from "../../backends/maintenance";
-import { findPendingReflects, savePendingSkeleton } from "../../backends/reflect";
+import { commitAll } from "../../backends/git";
+import { findPendingReflects, finalizeReflectToDailyLog, rebuildLogsIndex, savePendingSkeleton } from "../../backends/reflect";
+import { runCrashRecoveryCatchUp } from "../../backends/reflect-recovery";
 import { SessionTracker } from "../../backends/session-tracker";
 import type { AbWorld } from "../support/world";
 
@@ -39,9 +40,21 @@ When("catch-up reflect runs", async function (this: ReflectDailyWorld) {
   const pending = findPendingReflects(this.abDir!);
   assert.ok(pending.length > 0, "expected a pending skeleton before catch-up");
   this.lastSkeletonDate = pending[0].date;
-  await runCatchUpReflects(this.abDir!, {
-    encodeReflect: async () => "### Context\nCatch-up reflect for BDD.",
+
+  runCrashRecoveryCatchUp(this.abDir!, (options) => {
+    const skeleton = readFileSync(options.logPath, "utf8");
+    finalizeReflectToDailyLog({
+      abDirectory: options.abDirectory,
+      skeletonPath: options.logPath,
+      skeletonContent: skeleton,
+      sections: "### Context\nCatch-up reflect for BDD.",
+    });
+    return 12345;
   });
+
+  rebuildLogsIndex(this.abDir!);
+  await commitAll(this.abDir!, "ab: catch-up reflect");
+
   if (this.lastSkeletonDate) {
     this.lastDailyLogPath = join(this.abDir!, "logs", `${this.lastSkeletonDate}.md`);
   }
