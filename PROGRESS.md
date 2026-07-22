@@ -81,7 +81,7 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 | FR-SETTINGS-04 | Language switching from settings | done | 6ea7f89 |
 | FR-SETTINGS-05 | Settings access from UI (gear icon + menu) | done | 2e051c5 |
 
-**Phase 1 complete:** YES — all Phase 1 FRs implemented and passing (175 unit tests, 104 BDD scenarios).
+**Phase 1 complete:** YES — all Phase 1 FRs implemented and passing (182 unit tests, 104 BDD scenarios).
 
 ## Phase 2 — Implemented early
 
@@ -129,10 +129,20 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 | FR-SETUP-10 | Import auth verification (re-auth if credentials missing) | done | 72ba219 |
 | — | Settings re-auth prompt when configured provider lacks auth | done | 72ba219 |
 
+## Sprint: UX + distribution (2026-07-23)
+
+| FR-ID | Feature | Status | Commit |
+|-------|---------|--------|--------|
+| FR-CHAT-09 | Local file links open via shell.open() | done | a22cbda |
+| FR-DEFERRED-03 | OS notifications for due deferred items | done | 2bca847 |
+| E12 | Production worker sidecar (bun compile + externalBin) | done | 74e871a |
+
+**Tests at sprint close:** 182 unit + 104 BDD green.
+
 ## Current focus
 
-> **Sprint: E11 global config + wizard auth hardening (2026-07-22) complete.**
-> Next: FR-WIKI, FR-COST, FR-DEFERRED-03 (OS notifications), FR-CHAT-09 (local links).
+> **Sprint: UX + distribution (2026-07-23) complete** — FR-CHAT-09, FR-DEFERRED-03, E12 sidecar.
+> Next: FR-WIKI, FR-COST, FR-CHAT-10 (inline viewer).
 
 ### Sprint: Settings access UI — DONE (2026-07-22)
 

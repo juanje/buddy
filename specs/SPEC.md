@@ -89,7 +89,7 @@ rootDir (git repo — user/agent content only)
 | FR-CHAT-06 | Tool call display (expandable cards) | 3 ✓ |
 | FR-CHAT-07 | Auto-scroll with manual override | 0 ✓ |
 | FR-CHAT-08 | Input textarea resets height after send | 2 ✓ |
-| FR-CHAT-09 | Local file links open in system default app | 2 |
+| FR-CHAT-09 | Local file links open in system default app | 2 ✓ |
 | FR-CHAT-10 | Inline file viewer for markdown/text links | 3 |
 
 **FR-CHAT-01 — Streaming message display**
@@ -481,7 +481,7 @@ Crash recovery (next app start):
 |----|-------------|-------|
 | FR-DEFERRED-01 | Surface due items on app start | 1 ✓ |
 | FR-DEFERRED-02 | Heartbeat periodic check | 2 ✓ |
-| FR-DEFERRED-03 | OS notification for due items | 2 |
+| FR-DEFERRED-03 | OS notification for due items | 2 ✓ |
 
 **FR-DEFERRED-01 — Surface on start**
 
