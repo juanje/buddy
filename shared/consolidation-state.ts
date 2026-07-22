@@ -42,16 +42,16 @@ export function defaultConsolidationState(): ConsolidationState {
   };
 }
 
-export function stateFilePath(abDirectory: string): string {
-  return join(abDirectory, CONSOLIDATION_STATE_PATH);
+export function stateFilePath(rootDir: string): string {
+  return join(rootDir, CONSOLIDATION_STATE_PATH);
 }
 
-export function logFilePath(abDirectory: string): string {
-  return join(abDirectory, CONSOLIDATION_LOG_PATH);
+export function logFilePath(rootDir: string): string {
+  return join(rootDir, CONSOLIDATION_LOG_PATH);
 }
 
-export function loadConsolidationState(abDirectory: string): ConsolidationState {
-  const path = stateFilePath(abDirectory);
+export function loadConsolidationState(rootDir: string): ConsolidationState {
+  const path = stateFilePath(rootDir);
   if (!existsSync(path)) return defaultConsolidationState();
   try {
     const parsed = JSON.parse(readFileSync(path, "utf8")) as Partial<ConsolidationState>;
@@ -61,14 +61,14 @@ export function loadConsolidationState(abDirectory: string): ConsolidationState 
   }
 }
 
-export function saveConsolidationState(abDirectory: string, state: ConsolidationState): void {
-  const path = stateFilePath(abDirectory);
+export function saveConsolidationState(rootDir: string, state: ConsolidationState): void {
+  const path = stateFilePath(rootDir);
   mkdirSync(dirname(path), { recursive: true });
   writeFileSync(path, JSON.stringify(state, null, 2) + "\n");
 }
 
-export function loadConsolidationLog(abDirectory: string): ConsolidationLogEntry[] {
-  const path = logFilePath(abDirectory);
+export function loadConsolidationLog(rootDir: string): ConsolidationLogEntry[] {
+  const path = logFilePath(rootDir);
   if (!existsSync(path)) return [];
   try {
     const parsed = JSON.parse(readFileSync(path, "utf8")) as ConsolidationLogEntry[];
@@ -79,11 +79,11 @@ export function loadConsolidationLog(abDirectory: string): ConsolidationLogEntry
 }
 
 export function appendConsolidationLogEntry(
-  abDirectory: string,
+  rootDir: string,
   entry: ConsolidationLogEntry,
 ): void {
-  const path = logFilePath(abDirectory);
-  const log = loadConsolidationLog(abDirectory);
+  const path = logFilePath(rootDir);
+  const log = loadConsolidationLog(rootDir);
   log.push(entry);
   mkdirSync(dirname(path), { recursive: true });
   writeFileSync(path, JSON.stringify(log, null, 2) + "\n");

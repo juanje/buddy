@@ -79,10 +79,10 @@ async function main(): Promise<void> {
     heartbeat = undefined;
   }
 
-  function startHeartbeatForAb(abDirectory: string): void {
+  function startHeartbeatForAb(rootDir: string): void {
     stopHeartbeat();
     heartbeat = startHeartbeat({
-      abDirectory,
+      rootDir,
       modelRuntime,
       isStreaming: () => core?.isStreaming() ?? false,
       onDeferredDue: (items) => frontend.onDeferredDue(items),
@@ -90,13 +90,13 @@ async function main(): Promise<void> {
   }
 
   async function startSession(
-    abDirectory: string,
+    rootDir: string,
     options?: { firstSession?: boolean; name?: string; about?: string },
   ): Promise<void> {
     if (core) return;
 
     const booted = await bootSession(
-      abDirectory,
+      rootDir,
       {
         frontend,
         modelRuntime,
@@ -117,7 +117,7 @@ async function main(): Promise<void> {
     );
     if (!booted) return;
     core = booted.core;
-    startHeartbeatForAb(abDirectory);
+    startHeartbeatForAb(rootDir);
   }
 
   const transport = nodeStdioTransport();
@@ -137,12 +137,12 @@ async function main(): Promise<void> {
       async getDeferredItems() {
         if (setupState.firstRun) return [];
         const today = toIsoDay(new Date());
-        return toDeferredItemViews(getDueDeferred(setupState.config.abDirectory), today);
+        return toDeferredItemViews(getDueDeferred(setupState.config.rootDir), today);
       },
       async dismissDeferredItems() {
         if (setupState.firstRun) return;
-        removeDueDeferredItems(setupState.config.abDirectory);
-        await commitAll(setupState.config.abDirectory, "ab: dismiss deferred reminders");
+        removeDueDeferredItems(setupState.config.rootDir);
+        await commitAll(setupState.config.rootDir, "ab: dismiss deferred reminders");
       },
       async getSetupState() {
         return setupState;
@@ -195,7 +195,7 @@ async function main(): Promise<void> {
           await createAbInstance({ config, configPath: defaultConfigPath() });
         }
         setupState = { firstRun: false, config };
-        await startSession(config.abDirectory, {
+        await startSession(config.rootDir, {
           firstSession: mode === "create",
           name: config.name,
           about: config.about,
@@ -225,7 +225,7 @@ async function main(): Promise<void> {
         }
         const resolved = await resolveSessionModel(modelRuntime, provider, model);
         await core.api.setModel(resolved);
-        writePiSettings(setupState.config.abDirectory, { provider, model });
+        writePiSettings(setupState.config.rootDir, { provider, model });
         const updated = updateAppConfig({ provider, model }, defaultConfigPath());
         setupState = { firstRun: false, config: updated };
       },
@@ -241,7 +241,7 @@ async function main(): Promise<void> {
   frontend = channel.getAPI();
 
   if (!setupState.firstRun) {
-    await startSession(setupState.config.abDirectory);
+    await startSession(setupState.config.rootDir);
   }
 }
 

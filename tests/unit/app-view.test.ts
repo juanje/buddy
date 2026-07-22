@@ -15,7 +15,7 @@ describe("resolveInitialView", () => {
       resolveInitialView({
         firstRun: false,
         config: {
-          abDirectory: "/tmp/ab",
+          rootDir: "/tmp/ab",
           provider: "anthropic",
           model: "claude-haiku-4-5",
           language: "es",
@@ -31,7 +31,7 @@ describe("applyLocaleFromSetup", () => {
     applyLocaleFromSetup({
       firstRun: false,
       config: {
-        abDirectory: "/tmp/ab",
+        rootDir: "/tmp/ab",
         provider: "openai",
         model: "gpt-5",
         language: "es",
@@ -45,7 +45,7 @@ describe("applyLocaleFromSetup", () => {
     applyLocaleFromSetup({
       firstRun: false,
       config: {
-        abDirectory: "/tmp/ab",
+        rootDir: "/tmp/ab",
         provider: "openai",
         model: "gpt-5",
       },

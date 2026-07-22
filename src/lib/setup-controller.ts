@@ -262,14 +262,14 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
   const importMode = writable(false);
 
   function buildConfig(): SetupConfig {
-    const abDirectory = get(location);
+    const rootDir = get(location);
     const providerId = get(provider);
     const modelId = get(model);
-    if (!abDirectory || !providerId || !modelId) {
+    if (!rootDir || !providerId || !modelId) {
       throw new Error("buildConfig called before the wizard collected all answers");
     }
     return {
-      abDirectory,
+      rootDir,
       provider: providerId,
       model: modelId,
       language: get(language) ?? "es",
@@ -300,9 +300,9 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
   const KNOWN_PROVIDERS: ReadonlyArray<ProviderId> = ["anthropic", "openai", "google", "custom"];
 
   async function importExisting(): Promise<"adopted" | "needs-provider"> {
-    const abDirectory = get(location);
+    const rootDir = get(location);
     const check = get(locationCheck);
-    if (!abDirectory || check?.status !== "existing-ab") {
+    if (!rootDir || check?.status !== "existing-ab") {
       throw new Error("importExisting called without an existing AB at the chosen location");
     }
     importMode.set(true);
@@ -313,7 +313,7 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
       provider.set(knownProvider);
       model.set(settings.model);
       await runSetupWith({
-        abDirectory,
+        rootDir,
         provider: knownProvider,
         model: settings.model,
         language: get(language) ?? "es",

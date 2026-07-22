@@ -35,21 +35,21 @@ export interface MaintenanceSessionLike {
 
 export interface CreateMaintenanceSessionFn {
   (options: {
-    abDirectory: string;
+    rootDir: string;
     modelRuntime: ModelRuntime;
   }): Promise<MaintenanceSessionLike>;
 }
 
-function readConsolidationSkill(abDirectory: string): string {
+function readConsolidationSkill(rootDir: string): string {
   try {
-    return readFileSync(join(abDirectory, CONSOLIDATION_SKILL), "utf8");
+    return readFileSync(join(rootDir, CONSOLIDATION_SKILL), "utf8");
   } catch {
     return "# Consolidation\n\nRun the consolidation procedure for the requested depth.";
   }
 }
 
-export function buildConsolidationPrompt(abDirectory: string, depth: number): string {
-  const skill = readConsolidationSkill(abDirectory);
+export function buildConsolidationPrompt(rootDir: string, depth: number): string {
+  const skill = readConsolidationSkill(rootDir);
   return (
     `Run consolidation at depth ${depth}.\n\n` +
     `Follow the procedure below. Do not run git commands — the runner commits after you finish.\n\n` +
@@ -72,22 +72,22 @@ function commitMessageForDepth(depth: number, now: Date): string {
 }
 
 export async function createMaintenanceSession(options: {
-  abDirectory: string;
+  rootDir: string;
   modelRuntime: ModelRuntime;
 }): Promise<MaintenanceSessionLike> {
-  const { abDirectory, modelRuntime } = options;
-  const { prompt: systemPrompt } = assembleSystemPrompt(abDirectory);
+  const { rootDir, modelRuntime } = options;
+  const { prompt: systemPrompt } = assembleSystemPrompt(rootDir);
   const resourceLoader = new DefaultResourceLoader({
-    cwd: abDirectory,
+    cwd: rootDir,
     agentDir: getAgentDir(),
     systemPromptOverride: () => systemPrompt,
   });
   await resourceLoader.reload();
 
   const { session } = await createAgentSession({
-    cwd: abDirectory,
+    cwd: rootDir,
     resourceLoader,
-    sessionManager: SessionManager.create(abDirectory),
+    sessionManager: SessionManager.create(rootDir),
     excludeTools: [...EXCLUDED_TOOLS],
     tools: [...AGENT_TOOLS],
     modelRuntime,
@@ -100,7 +100,7 @@ export async function createMaintenanceSession(options: {
 }
 
 export interface RunConsolidationOptions {
-  abDirectory: string;
+  rootDir: string;
   targetDepth: 1 | 2 | 3;
   modelRuntime: ModelRuntime;
   state?: ConsolidationState;
@@ -120,31 +120,31 @@ export interface RunConsolidationResult {
  */
 export async function runConsolidation(options: RunConsolidationOptions): Promise<RunConsolidationResult> {
   const {
-    abDirectory,
+    rootDir,
     targetDepth,
     modelRuntime,
     createSession = createMaintenanceSession,
     now = new Date(),
   } = options;
-  const state = options.state ?? loadConsolidationState(abDirectory);
+  const state = options.state ?? loadConsolidationState(rootDir);
   const completedDepths: number[] = [];
 
-  if (!acquireLock(abDirectory)) {
+  if (!acquireLock(rootDir)) {
     return { ran: false, completedDepths, state };
   }
 
   let maintenanceSession: MaintenanceSessionLike | undefined;
 
   try {
-    maintenanceSession = await createSession({ abDirectory, modelRuntime });
+    maintenanceSession = await createSession({ rootDir, modelRuntime });
 
     for (const depth of cascadeDepths(targetDepth)) {
       const start = Date.now();
       try {
-        logEvent(abDirectory, { event: "consolidation_start", depth });
-        await maintenanceSession.prompt(buildConsolidationPrompt(abDirectory, depth));
-        await commitAll(abDirectory, commitMessageForDepth(depth, now));
-        appendConsolidationLogEntry(abDirectory, {
+        logEvent(rootDir, { event: "consolidation_start", depth });
+        await maintenanceSession.prompt(buildConsolidationPrompt(rootDir, depth));
+        await commitAll(rootDir, commitMessageForDepth(depth, now));
+        appendConsolidationLogEntry(rootDir, {
           timestamp: now.toISOString(),
           depth,
           duration_ms: Date.now() - start,
@@ -152,39 +152,39 @@ export async function runConsolidation(options: RunConsolidationOptions): Promis
         });
         advanceCounters(state, depth, now);
         completedDepths.push(depth);
-        logEvent(abDirectory, { event: "consolidation_complete", depth });
+        logEvent(rootDir, { event: "consolidation_complete", depth });
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        appendConsolidationLogEntry(abDirectory, {
+        appendConsolidationLogEntry(rootDir, {
           timestamp: now.toISOString(),
           depth,
           duration_ms: Date.now() - start,
           status: "fail",
           error: message,
         });
-        logEvent(abDirectory, { event: "consolidation_error", depth, error: message });
+        logEvent(rootDir, { event: "consolidation_error", depth, error: message });
         throw error;
       }
     }
 
-    saveConsolidationState(abDirectory, state);
+    saveConsolidationState(rootDir, state);
 
     if (completedDepths.length > 0) {
       const depthLabel = completedDepths.map((d) => `depth-${d}`).join(", ");
       const maintenanceDate = toIsoDay(now);
-      appendDailyLog(abDirectory, {
+      appendDailyLog(rootDir, {
         date: maintenanceDate,
         sessionHeader: `${now.toISOString().slice(11, 16)} consolidation`,
         sections: `Maintenance cycle completed: ${depthLabel}.`,
         status: "maintenance",
       }, now);
-      updateLogsIndexEntry(abDirectory, maintenanceDate, "maintenance");
-      await commitAll(abDirectory, `maintenance: log entry for ${depthLabel}`);
+      updateLogsIndexEntry(rootDir, maintenanceDate, "maintenance");
+      await commitAll(rootDir, `maintenance: log entry for ${depthLabel}`);
     }
 
     return { ran: completedDepths.length > 0, completedDepths, state };
   } finally {
     maintenanceSession?.dispose();
-    releaseLock(abDirectory);
+    releaseLock(rootDir);
   }
 }

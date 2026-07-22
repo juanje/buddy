@@ -11,14 +11,14 @@ export type SpawnReflectFn = (options: SpawnReflectOptions) => number | undefine
  * Returns spawn options for each child (test contract); PIDs when using the real spawner.
  */
 export function runCrashRecoveryCatchUp(
-  abDirectory: string,
+  rootDir: string,
   spawn: SpawnReflectFn = spawnReflectChild,
 ): SpawnReflectOptions[] {
-  const pending = findPendingReflects(abDirectory);
+  const pending = findPendingReflects(rootDir);
   const spawned: SpawnReflectOptions[] = [];
   for (const item of pending.slice(0, CRASH_RECOVERY_MAX)) {
     const options: SpawnReflectOptions = {
-      abDirectory,
+      rootDir,
       forkedSessionFile: "",
       logPath: item.path,
       mode: "crash-catchup",

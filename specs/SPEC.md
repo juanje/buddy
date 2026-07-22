@@ -294,7 +294,7 @@ platform-specific install instructions is shown and setup cannot continue.
 
 - **Given** a session ends normally (user closes app or ends session)
 - **When** the shutdown sequence runs
-- **Then** the reflect child forks the live session via `SessionManager.forkFrom(sessionFile, abDirectory, forkDir)` — creating a new JSONL with full conversation context in `.buddy/reflect-sessions/`
+- **Then** the reflect child forks the live session via `SessionManager.forkFrom(sessionFile, rootDir, forkDir)` — creating a new JSONL with full conversation context in `.buddy/reflect-sessions/`
 - **And** a background `child_process.fork()` is spawned to run the LLM reflect independently of the app window
 - **And** the app window closes immediately (<100ms total shutdown time)
 - **And** the background process: opens the forked session → prompts for reflect (Decisions, Lessons, Context, Open threads, Tasks captured, Ideas, System observations) → appends a `## Session HH:MM–HH:MM` block to `logs/YYYY-MM-DD.md` (session start date, local calendar day) → deletes the pending skeleton in `.buddy/pending/` → rebuilds `logs/index.md` → commits → exits

@@ -25,7 +25,7 @@ export function detectFirstRun(configPath: string): SetupState {
 
   try {
     const parsed = JSON.parse(raw) as Partial<SetupConfig>;
-    if (typeof parsed.abDirectory === "string" && parsed.abDirectory.trim() !== "") {
+    if (typeof parsed.rootDir === "string" && parsed.rootDir.trim() !== "") {
       return { firstRun: false, config: parsed as SetupConfig };
     }
   } catch {

@@ -12,12 +12,12 @@ export interface PiSettings {
   defaultModel?: string;
 }
 
-export function piSettingsPath(abDirectory: string): string {
-  return join(abDirectory, ".pi", "settings.json");
+export function piSettingsPath(rootDir: string): string {
+  return join(rootDir, ".pi", "settings.json");
 }
 
-export function writePiSettings(abDirectory: string, config: Pick<SetupConfig, "provider" | "model">): void {
-  const settingsPath = piSettingsPath(abDirectory);
+export function writePiSettings(rootDir: string, config: Pick<SetupConfig, "provider" | "model">): void {
+  const settingsPath = piSettingsPath(rootDir);
   mkdirSync(dirname(settingsPath), { recursive: true });
   writeFileSync(
     settingsPath,
@@ -29,8 +29,8 @@ export function writePiSettings(abDirectory: string, config: Pick<SetupConfig, "
   );
 }
 
-export function readPiProvider(abDirectory: string): string {
-  const settingsPath = piSettingsPath(abDirectory);
+export function readPiProvider(rootDir: string): string {
+  const settingsPath = piSettingsPath(rootDir);
   if (!existsSync(settingsPath)) return DEFAULT_PI_PROVIDER;
   try {
     const settings = JSON.parse(readFileSync(settingsPath, "utf8")) as PiSettings;
@@ -40,9 +40,9 @@ export function readPiProvider(abDirectory: string): string {
   }
 }
 
-export function readPiSettings(abDirectory: string): PiSettings | undefined {
+export function readPiSettings(rootDir: string): PiSettings | undefined {
   try {
-    return JSON.parse(readFileSync(piSettingsPath(abDirectory), "utf8")) as PiSettings;
+    return JSON.parse(readFileSync(piSettingsPath(rootDir), "utf8")) as PiSettings;
   } catch {
     return undefined;
   }

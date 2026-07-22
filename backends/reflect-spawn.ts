@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 export interface SpawnReflectOptions {
-  abDirectory: string;
+  rootDir: string;
   forkedSessionFile: string;
   /** Pending skeleton path (session-end/crash) or empty for checkpoint. */
   logPath: string;
@@ -31,7 +31,7 @@ const CHILD_SCRIPT = join(
  */
 export function spawnReflectChild(options: SpawnReflectOptions): number | undefined {
   const args = [
-    options.abDirectory,
+    options.rootDir,
     options.forkedSessionFile,
     options.logPath,
     options.mode,

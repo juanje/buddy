@@ -36,13 +36,13 @@ function readIfExists(path: string): string | undefined {
   }
 }
 
-export function assembleSystemPrompt(abDirectory: string, now: Date = new Date()): AssembledPrompt {
+export function assembleSystemPrompt(rootDir: string, now: Date = new Date()): AssembledPrompt {
   const agents =
-    readIfExists(join(abDirectory, "AGENTS.md")) ??
-    readIfExists(join(abDirectory, "CLAUDE.md"));
-  const soul = readIfExists(join(abDirectory, "agent_brain", "identity", "SOUL.md"));
-  const user = readIfExists(join(abDirectory, "agent_brain", "identity", "USER.md"));
-  const deferredRaw = readIfExists(join(abDirectory, "agent_brain", "deferred.md"));
+    readIfExists(join(rootDir, "AGENTS.md")) ??
+    readIfExists(join(rootDir, "CLAUDE.md"));
+  const soul = readIfExists(join(rootDir, "agent_brain", "identity", "SOUL.md"));
+  const user = readIfExists(join(rootDir, "agent_brain", "identity", "USER.md"));
+  const deferredRaw = readIfExists(join(rootDir, "agent_brain", "deferred.md"));
 
   const dueItems = deferredRaw
     ? dueDeferredItems(parseDeferredItems(deferredRaw), toIsoDay(now))
@@ -56,12 +56,12 @@ export function assembleSystemPrompt(abDirectory: string, now: Date = new Date()
 
   sections.push(`# Current date and time\n\n${now.toISOString()} (local: ${now.toString()})`);
 
-  const logsIndex = readIfExists(join(abDirectory, "logs", "index.md"));
+  const logsIndex = readIfExists(join(rootDir, "logs", "index.md"));
   if (logsIndex) {
     sections.push(`# Sessions index\n\n${logsIndex.trim()}`);
   }
 
-  const lastLog = findLastLog(abDirectory, logsIndex);
+  const lastLog = findLastLog(rootDir, logsIndex);
   if (lastLog) {
     sections.push(`# Last session log\n\n${lastLog.trim()}`);
   }
@@ -115,9 +115,9 @@ export function assembleSystemPrompt(abDirectory: string, now: Date = new Date()
  * Find the last dated entry in logs/index.md and read that log.
  * Status is informational only — do not filter by active/maintenance.
  */
-function findLastLog(abDirectory: string, indexContent: string | undefined): string | undefined {
+function findLastLog(rootDir: string, indexContent: string | undefined): string | undefined {
   if (!indexContent) {
-    return findMostRecentLogFile(abDirectory);
+    return findMostRecentLogFile(rootDir);
   }
 
   let lastDate: string | undefined;
@@ -127,15 +127,15 @@ function findLastLog(abDirectory: string, indexContent: string | undefined): str
   }
 
   if (lastDate) {
-    return readIfExists(join(abDirectory, "logs", `${lastDate}.md`));
+    return readIfExists(join(rootDir, "logs", `${lastDate}.md`));
   }
 
-  return findMostRecentLogFile(abDirectory);
+  return findMostRecentLogFile(rootDir);
 }
 
 /** Fallback when logs/index.md is missing or has no dated entries. */
-function findMostRecentLogFile(abDirectory: string): string | undefined {
-  const logsDir = join(abDirectory, "logs");
+function findMostRecentLogFile(rootDir: string): string | undefined {
+  const logsDir = join(rootDir, "logs");
   if (!existsSync(logsDir)) return undefined;
   try {
     const files = readdirSync(logsDir)

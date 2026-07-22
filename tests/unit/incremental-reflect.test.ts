@@ -20,7 +20,7 @@ describe("SessionLifecycle checkpoint reflect", () => {
 
   function lifecycle(every: number): SessionLifecycle {
     return new SessionLifecycle({
-      abDirectory: dir,
+      rootDir: dir,
       sessionId: "sess",
       sessionFile: "/tmp/fake-session.jsonl",
       incrementalEvery: every,

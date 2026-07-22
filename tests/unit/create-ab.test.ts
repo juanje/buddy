@@ -7,7 +7,7 @@ import { buildUserProfile } from "../../backends/create-ab";
 describe("buildUserProfile", () => {
   it("writes real content with no template prose", () => {
     const md = buildUserProfile({
-      abDirectory: "/tmp/ab",
+      rootDir: "/tmp/ab",
       provider: "anthropic",
       model: "claude-haiku-4-5",
       language: "en",
@@ -22,7 +22,7 @@ describe("buildUserProfile", () => {
 
   it("uses defaults when about is empty", () => {
     const md = buildUserProfile({
-      abDirectory: "/tmp/ab",
+      rootDir: "/tmp/ab",
       provider: "openai",
       model: "gpt-4o-mini",
       name: "Sam",

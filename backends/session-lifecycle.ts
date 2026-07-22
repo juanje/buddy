@@ -14,7 +14,7 @@ import { SessionTracker } from "./session-tracker";
 export type { SpawnReflectFn } from "./reflect-spawn";
 
 export interface SessionLifecycleOptions {
-  abDirectory: string;
+  rootDir: string;
   sessionId: string;
   sessionFile?: string;
   incrementalEvery?: number;
@@ -27,7 +27,7 @@ export interface SessionLifecycleOptions {
 export class SessionLifecycle {
   readonly tracker: SessionTracker;
   readonly hebbianTracker: HebbianTracker;
-  private readonly abDirectory: string;
+  private readonly rootDir: string;
   private sessionFile: string | undefined;
   private readonly incrementalEvery: number;
   private readonly spawnReflect: SpawnReflectFn;
@@ -37,10 +37,10 @@ export class SessionLifecycle {
   private eventChain: Promise<void> = Promise.resolve();
 
   constructor(options: SessionLifecycleOptions) {
-    this.abDirectory = options.abDirectory;
+    this.rootDir = options.rootDir;
     this.sessionFile = options.sessionFile;
     this.tracker = new SessionTracker(options.sessionId);
-    this.hebbianTracker = options.hebbianTracker ?? createHebbianTracker(options.abDirectory);
+    this.hebbianTracker = options.hebbianTracker ?? createHebbianTracker(options.rootDir);
     this.incrementalEvery = options.incrementalEvery ?? INCREMENTAL_REFLECT_EVERY;
     this.spawnReflect = options.spawnReflect ?? spawnReflectChild;
     this.onSessionComplete = options.onSessionComplete;
@@ -70,13 +70,13 @@ export class SessionLifecycle {
       }
     }
 
-    const flags = this.tracker.recordEvent(event, this.abDirectory);
+    const flags = this.tracker.recordEvent(event, this.rootDir);
 
     if (flags.compactionStart) {
       await this.runCheckpointReflect("compaction");
     }
     if (flags.turnEnded) {
-      logEvent(this.abDirectory, {
+      logEvent(this.rootDir, {
         event: "turn_end",
         session: this.tracker.sessionId,
         turn: this.tracker.turnCount,
@@ -88,13 +88,13 @@ export class SessionLifecycle {
 
   async shutdown(): Promise<string | undefined> {
     const snapshot = this.tracker.toSnapshot();
-    const pendingPath = savePendingSkeleton(this.abDirectory, snapshot);
-    logEvent(this.abDirectory, {
+    const pendingPath = savePendingSkeleton(this.rootDir, snapshot);
+    logEvent(this.rootDir, {
       event: "session_end",
       session: this.tracker.sessionId,
       turns: snapshot.turnCount,
     });
-    await commitAll(this.abDirectory, "ab: session end skeleton");
+    await commitAll(this.rootDir, "ab: session end skeleton");
 
     this.requestReflect({
       mode: "session-end",
@@ -106,7 +106,7 @@ export class SessionLifecycle {
 
   private async onTurnEnd(): Promise<void> {
     if (this.turnDirty) {
-      await commitAll(this.abDirectory);
+      await commitAll(this.rootDir);
       this.turnDirty = false;
     }
 
@@ -140,9 +140,9 @@ export class SessionLifecycle {
     }
   }
 
-  private requestReflect(options: Omit<SpawnReflectOptions, "abDirectory" | "forkedSessionFile">): void {
+  private requestReflect(options: Omit<SpawnReflectOptions, "rootDir" | "forkedSessionFile">): void {
     if (options.mode === "session-end") {
-      logEvent(this.abDirectory, {
+      logEvent(this.rootDir, {
         event: "reflect_spawned",
         session: this.tracker.sessionId,
         mode: options.mode,
@@ -150,7 +150,7 @@ export class SessionLifecycle {
       });
     }
     this.spawnReflect({
-      abDirectory: this.abDirectory,
+      rootDir: this.rootDir,
       forkedSessionFile: this.sessionFile ?? "",
       ...options,
     });

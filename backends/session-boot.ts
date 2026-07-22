@@ -105,25 +105,25 @@ export async function augmentPromptWithAttachments(
 }
 
 export async function bootSession(
-  abDirectory: string,
+  rootDir: string,
   context: SessionBootContext,
   options?: BootSessionOptions,
 ): Promise<{ core: WorkerCore; lifecycle: SessionLifecycle } | undefined> {
-  if (!existsSync(abDirectory)) {
-    context.frontend.onWorkerError(`AB directory not found: ${abDirectory}`);
+  if (!existsSync(rootDir)) {
+    context.frontend.onWorkerError(`AB directory not found: ${rootDir}`);
     return undefined;
   }
 
-  const spawned = runCrashRecoveryCatchUp(abDirectory);
+  const spawned = runCrashRecoveryCatchUp(rootDir);
   for (const item of spawned) {
     console.error("[agent-worker] crash recovery: spawning reflect for", item.logPath);
   }
 
   const sessionId = randomUUID().slice(0, 8);
-  logEvent(abDirectory, { event: "session_start", session: sessionId });
-  const hebbianTracker = createHebbianTracker(abDirectory);
+  logEvent(rootDir, { event: "session_start", session: sessionId });
+  const hebbianTracker = createHebbianTracker(rootDir);
   const lifecycle = new SessionLifecycle({
-    abDirectory,
+    rootDir,
     sessionId,
     hebbianTracker,
     onSessionComplete: options?.onSessionComplete,
@@ -131,18 +131,18 @@ export async function bootSession(
 
   context.sessionAllowedPaths.clear();
 
-  const { prompt } = assembleSystemPrompt(abDirectory);
+  const { prompt } = assembleSystemPrompt(rootDir);
   const resourceLoader = new DefaultResourceLoader({
-    cwd: abDirectory,
+    cwd: rootDir,
     agentDir: getAgentDir(),
     systemPromptOverride: () => prompt,
   });
   await resourceLoader.reload();
 
   const { session } = await createAgentSession({
-    cwd: abDirectory,
+    cwd: rootDir,
     resourceLoader,
-    sessionManager: SessionManager.create(abDirectory),
+    sessionManager: SessionManager.create(rootDir),
     excludeTools: [...EXCLUDED_TOOLS],
     tools: [...AGENT_TOOLS],
     modelRuntime: context.modelRuntime,
@@ -151,7 +151,7 @@ export async function bootSession(
   lifecycle.setSessionFile((session as unknown as { sessionFile?: string }).sessionFile ?? "");
 
   const gate = createPermissionGate(
-    abDirectory,
+    rootDir,
     context.requestPermission,
     undefined,
     {

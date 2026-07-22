@@ -26,31 +26,31 @@ describe("detectFirstRun", () => {
     expect(detectFirstRun(configIn())).toEqual({ firstRun: true });
   });
 
-  it("is configured when abDirectory is a non-empty string", () => {
+  it("is configured when rootDir is a non-empty string", () => {
     const state = detectFirstRun(
-      configIn(JSON.stringify({ abDirectory: "/tmp/buddy", provider: "anthropic", model: "m" })),
+      configIn(JSON.stringify({ rootDir: "/tmp/buddy", provider: "anthropic", model: "m" })),
     );
     expect(state.firstRun).toBe(false);
-    if (!state.firstRun) expect(state.config.abDirectory).toBe("/tmp/buddy");
+    if (!state.firstRun) expect(state.config.rootDir).toBe("/tmp/buddy");
   });
 
-  it("is first run when abDirectory is missing", () => {
+  it("is first run when rootDir is missing", () => {
     expect(detectFirstRun(configIn(JSON.stringify({ provider: "anthropic" })))).toEqual({
       firstRun: true,
     });
   });
 
-  it("is first run when abDirectory is empty or blank", () => {
-    expect(detectFirstRun(configIn(JSON.stringify({ abDirectory: "" })))).toEqual({
+  it("is first run when rootDir is empty or blank", () => {
+    expect(detectFirstRun(configIn(JSON.stringify({ rootDir: "" })))).toEqual({
       firstRun: true,
     });
-    expect(detectFirstRun(configIn(JSON.stringify({ abDirectory: "   " })))).toEqual({
+    expect(detectFirstRun(configIn(JSON.stringify({ rootDir: "   " })))).toEqual({
       firstRun: true,
     });
   });
 
-  it("is first run when abDirectory has the wrong type", () => {
-    expect(detectFirstRun(configIn(JSON.stringify({ abDirectory: 42 })))).toEqual({
+  it("is first run when rootDir has the wrong type", () => {
+    expect(detectFirstRun(configIn(JSON.stringify({ rootDir: 42 })))).toEqual({
       firstRun: true,
     });
   });
@@ -64,7 +64,7 @@ describe("updateAppConfig", () => {
   it("merges language into an existing config file", () => {
     const path = configIn(
       JSON.stringify({
-        abDirectory: "/tmp/buddy",
+        rootDir: "/tmp/buddy",
         provider: "anthropic",
         model: "claude-sonnet-5",
         language: "es",
@@ -72,7 +72,7 @@ describe("updateAppConfig", () => {
     );
     const updated = updateAppConfig({ language: "en" }, path);
     expect(updated.language).toBe("en");
-    expect(updated.abDirectory).toBe("/tmp/buddy");
+    expect(updated.rootDir).toBe("/tmp/buddy");
     const reread = detectFirstRun(path);
     expect(reread.firstRun).toBe(false);
     if (!reread.firstRun) expect(reread.config.language).toBe("en");
@@ -81,7 +81,7 @@ describe("updateAppConfig", () => {
   it("merges provider and model into an existing config file", () => {
     const path = configIn(
       JSON.stringify({
-        abDirectory: "/tmp/buddy",
+        rootDir: "/tmp/buddy",
         provider: "anthropic",
         model: "claude-sonnet-5",
         language: "es",

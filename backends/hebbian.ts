@@ -70,13 +70,13 @@ function updateAccessFrontmatter(content: string, today: string): string | null 
   return `---\n${lines.join("\n")}\n---${match[2]}`;
 }
 
-export function createHebbianTracker(abDirectory: string): HebbianTracker {
+export function createHebbianTracker(rootDir: string): HebbianTracker {
   const sessionReadSet = new Set<string>();
   const pendingUpdates = new Set<string>();
 
   return {
     trackAccess(path: string): void {
-      const relPath = normalizeAbPath(abDirectory, path);
+      const relPath = normalizeAbPath(rootDir, path);
       if (!relPath) return;
       if (isExcluded(relPath)) return;
       if (sessionReadSet.has(relPath)) return;
@@ -92,7 +92,7 @@ export function createHebbianTracker(abDirectory: string): HebbianTracker {
       let wrote = false;
 
       for (const relPath of pendingUpdates) {
-        const absPath = resolve(abDirectory, relPath);
+        const absPath = resolve(rootDir, relPath);
         if (!existsSync(absPath)) continue;
 
         const content = readFileSync(absPath, "utf8");

@@ -10,12 +10,12 @@ export interface MaintenanceLock {
   timestamp: string;
 }
 
-export function lockPath(abDirectory: string): string {
-  return join(abDirectory, ".buddy", "maintenance.lock");
+export function lockPath(rootDir: string): string {
+  return join(rootDir, ".buddy", "maintenance.lock");
 }
 
-function readLock(abDirectory: string): MaintenanceLock | null {
-  const path = lockPath(abDirectory);
+function readLock(rootDir: string): MaintenanceLock | null {
+  const path = lockPath(rootDir);
   if (!existsSync(path)) return null;
   try {
     return JSON.parse(readFileSync(path, "utf8")) as MaintenanceLock;
@@ -24,8 +24,8 @@ function readLock(abDirectory: string): MaintenanceLock | null {
   }
 }
 
-export function isLockStale(abDirectory: string, now = Date.now()): boolean {
-  const lock = readLock(abDirectory);
+export function isLockStale(rootDir: string, now = Date.now()): boolean {
+  const lock = readLock(rootDir);
   if (!lock) return true;
   const age = now - Date.parse(lock.timestamp);
   if (Number.isNaN(age) || age > LOCK_STALE_MS) return true;
@@ -37,23 +37,23 @@ export function isLockStale(abDirectory: string, now = Date.now()): boolean {
   }
 }
 
-export function acquireLock(abDirectory: string): boolean {
-  if (!isLockStale(abDirectory)) return false;
-  if (existsSync(lockPath(abDirectory))) {
+export function acquireLock(rootDir: string): boolean {
+  if (!isLockStale(rootDir)) return false;
+  if (existsSync(lockPath(rootDir))) {
     try {
-      unlinkSync(lockPath(abDirectory));
+      unlinkSync(lockPath(rootDir));
     } catch {
       return false;
     }
   }
   const payload: MaintenanceLock = { pid: process.pid, timestamp: new Date().toISOString() };
-  const path = lockPath(abDirectory);
-  mkdirSync(join(abDirectory, ".buddy"), { recursive: true });
+  const path = lockPath(rootDir);
+  mkdirSync(join(rootDir, ".buddy"), { recursive: true });
   writeFileSync(path, JSON.stringify(payload), "utf8");
   return true;
 }
 
-export function releaseLock(abDirectory: string): void {
-  const path = lockPath(abDirectory);
+export function releaseLock(rootDir: string): void {
+  const path = lockPath(rootDir);
   if (existsSync(path)) unlinkSync(path);
 }

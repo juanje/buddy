@@ -1,6 +1,6 @@
 // backends/reflect-child.ts — Background child process for session reflect (FR-REFLECT-02/03).
 // Spawned by the worker via child_process.fork(). Receives args via process.argv:
-//   [0] node, [1] script, [2] abDirectory, [3] forkedSessionFile, [4] logPath, [5] mode
+//   [0] node, [1] script, [2] rootDir, [3] forkedSessionFile, [4] logPath, [5] mode
 //   checkpoint mode also: [6] checkpointDate, [7] checkpointTime
 //
 // Modes:
@@ -37,11 +37,11 @@ import {
 } from "./reflect";
 import { CHECKPOINT_PROMPT, SESSION_END_PROMPT } from "./reflect-prompts";
 
-async function resolveFastModelOptions(abDirectory: string): Promise<{
+async function resolveFastModelOptions(rootDir: string): Promise<{
   model?: Awaited<ReturnType<ModelRuntime["getModel"]>>;
   thinkingLevel: "minimal";
 }> {
-  const provider = readPiProvider(abDirectory);
+  const provider = readPiProvider(rootDir);
   const fastModelId = fastModelForProvider(provider);
   if (!fastModelId) return { thinkingLevel: "minimal" };
 
@@ -57,15 +57,15 @@ async function resolveFastModelOptions(abDirectory: string): Promise<{
   return { model, thinkingLevel: "minimal" };
 }
 
-async function acquireLockWithRetry(abDirectory: string): Promise<boolean> {
+async function acquireLockWithRetry(rootDir: string): Promise<boolean> {
   for (let i = 0; i < LOCK_MAX_RETRIES; i++) {
-    if (acquireLock(abDirectory)) return true;
+    if (acquireLock(rootDir)) return true;
     await new Promise((r) => setTimeout(r, LOCK_RETRY_MS));
   }
   return false;
 }
 
-function sessionIdFromPath(abDirectory: string, targetPath: string): string {
+function sessionIdFromPath(rootDir: string, targetPath: string): string {
   if (!targetPath) return "checkpoint";
   const fm = parseFrontmatter(readFileSync(targetPath, "utf8"));
   if (fm.session_id) return fm.session_id;
@@ -74,7 +74,7 @@ function sessionIdFromPath(abDirectory: string, targetPath: string): string {
 }
 
 async function runReflect(
-  abDirectory: string,
+  rootDir: string,
   forkedSessionFile: string,
   targetPath: string,
   mode: string,
@@ -85,28 +85,28 @@ async function runReflect(
 
   const isCheckpoint = mode === "checkpoint";
   const systemPrompt = isCheckpoint ? CHECKPOINT_PROMPT : SESSION_END_PROMPT;
-  const sessionId = isCheckpoint ? "checkpoint" : sessionIdFromPath(abDirectory, targetPath);
+  const sessionId = isCheckpoint ? "checkpoint" : sessionIdFromPath(rootDir, targetPath);
 
   let sm: SessionManager;
   if (forkedSessionFile && existsSync(forkedSessionFile)) {
-    const forkDir = join(abDirectory, REFLECT_SESSIONS_DIR);
+    const forkDir = join(rootDir, REFLECT_SESSIONS_DIR);
     mkdirSync(forkDir, { recursive: true });
-    sm = SessionManager.forkFrom(forkedSessionFile, abDirectory, forkDir);
+    sm = SessionManager.forkFrom(forkedSessionFile, rootDir, forkDir);
   } else {
-    sm = SessionManager.create(abDirectory);
+    sm = SessionManager.create(rootDir);
   }
 
   const resourceLoader = new DefaultResourceLoader({
-    cwd: abDirectory,
+    cwd: rootDir,
     agentDir: getAgentDir(),
     systemPromptOverride: () => systemPrompt,
   });
   await resourceLoader.reload();
 
-  const fastModelOptions = isCheckpoint ? await resolveFastModelOptions(abDirectory) : {};
+  const fastModelOptions = isCheckpoint ? await resolveFastModelOptions(rootDir) : {};
 
   const { session } = await createAgentSession({
-    cwd: abDirectory,
+    cwd: rootDir,
     resourceLoader,
     sessionManager: sm,
     excludeTools: [...EXCLUDED_TOOLS, ...AGENT_TOOLS],
@@ -128,8 +128,8 @@ async function runReflect(
     const result = raw ? sanitizeReflectOutput(raw) : "";
 
     if (result) {
-      if (!await acquireLockWithRetry(abDirectory)) {
-        logEvent(abDirectory, {
+      if (!await acquireLockWithRetry(rootDir)) {
+        logEvent(rootDir, {
           event: "reflect_skipped",
           session: sessionId,
           mode,
@@ -140,7 +140,7 @@ async function runReflect(
       try {
         if (isCheckpoint) {
           if (!checkpointDate || !checkpointTime) {
-            logEvent(abDirectory, {
+            logEvent(rootDir, {
               event: "reflect_skipped",
               session: sessionId,
               mode,
@@ -149,12 +149,12 @@ async function runReflect(
             return;
           }
           const dailyPath = finalizeCheckpointToDailyLog({
-            abDirectory,
+            rootDir,
             date: checkpointDate,
             checkpointTime,
             sections: result,
           });
-          logEvent(abDirectory, {
+          logEvent(rootDir, {
             event: "reflect_complete",
             session: sessionId,
             mode,
@@ -162,27 +162,27 @@ async function runReflect(
           });
         } else {
           const dailyPath = finalizeReflectToDailyLog({
-            abDirectory,
+            rootDir,
             skeletonPath: targetPath,
             skeletonContent: skeleton,
             sections: result,
           });
           const fm = parseFrontmatter(skeleton);
           const logDate = fm.date ?? new Date().toISOString().slice(0, 10);
-          updateLogsIndexEntry(abDirectory, logDate);
-          logEvent(abDirectory, {
+          updateLogsIndexEntry(rootDir, logDate);
+          logEvent(rootDir, {
             event: "reflect_complete",
             session: sessionId,
             mode,
             logPath: dailyPath,
           });
         }
-        await commitAll(abDirectory, "ab: session reflect");
+        await commitAll(rootDir, "ab: session reflect");
       } finally {
-        releaseLock(abDirectory);
+        releaseLock(rootDir);
       }
     } else {
-      logEvent(abDirectory, {
+      logEvent(rootDir, {
         event: "reflect_skipped",
         session: sessionId,
         mode,
@@ -190,7 +190,7 @@ async function runReflect(
       });
     }
   } catch (err) {
-    logEvent(abDirectory, {
+    logEvent(rootDir, {
       event: "reflect_error",
       session: sessionId,
       mode,
@@ -204,9 +204,9 @@ async function runReflect(
 }
 
 async function main(): Promise<void> {
-  const [, , abDirectory, forkedSessionFile, logPath, mode, checkpointDate, checkpointTime] =
+  const [, , rootDir, forkedSessionFile, logPath, mode, checkpointDate, checkpointTime] =
     process.argv;
-  if (!abDirectory || !mode) {
+  if (!rootDir || !mode) {
     console.error("[reflect-child] missing arguments");
     process.exit(1);
   }
@@ -217,7 +217,7 @@ async function main(): Promise<void> {
 
   try {
     await runReflect(
-      abDirectory,
+      rootDir,
       forkedSessionFile,
       logPath,
       mode,

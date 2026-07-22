@@ -153,7 +153,7 @@ Then("the settings show model {string}", function (this: SettingsWorld, model: s
 });
 
 Then("the settings show directory {string}", function (this: SettingsWorld, directory: string) {
-  assert.equal(get(ensureSettings.call(this).config).abDirectory, directory);
+  assert.equal(get(ensureSettings.call(this).config).rootDir, directory);
 });
 
 Then("the UI language is {string}", function (this: SettingsWorld, language: string) {

@@ -29,7 +29,7 @@ export interface PromptOptions {
 
 // FR-SETUP-01/02: first-run wizard configuration.
 export interface SetupConfig {
-  abDirectory: string;
+  rootDir: string;
   provider: "anthropic" | "openai" | "google" | "custom";
   model: string;
   language?: "es" | "en";

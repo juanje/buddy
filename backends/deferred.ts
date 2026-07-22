@@ -40,10 +40,10 @@ export function dueDeferredItems(
 }
 
 /** Due/overdue deferred items without assembling the full system prompt. */
-export function getDueDeferred(abDirectory: string, now: Date = new Date()): ParsedDeferredItem[] {
+export function getDueDeferred(rootDir: string, now: Date = new Date()): ParsedDeferredItem[] {
   let deferredRaw: string | undefined;
   try {
-    deferredRaw = readFileSync(join(abDirectory, "agent_brain", "deferred.md"), "utf8");
+    deferredRaw = readFileSync(join(rootDir, "agent_brain", "deferred.md"), "utf8");
   } catch {
     return [];
   }
@@ -54,8 +54,8 @@ export function getDueDeferred(abDirectory: string, now: Date = new Date()): Par
  * Remove due/overdue entries from deferred.md (FR-DEFERRED-01 dismiss = acknowledge).
  * Preserves future entries, headers, and non-entry lines.
  */
-export function removeDueDeferredItems(abDirectory: string, now: Date = new Date()): void {
-  const path = join(abDirectory, "agent_brain", "deferred.md");
+export function removeDueDeferredItems(rootDir: string, now: Date = new Date()): void {
+  const path = join(rootDir, "agent_brain", "deferred.md");
   let content: string;
   try {
     content = readFileSync(path, "utf8");

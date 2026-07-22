@@ -27,7 +27,7 @@ describe("isSettingsShortcut", () => {
 describe("createSettingsController", () => {
   it("opens, changes language, and persists via worker", async () => {
     let config: SetupConfig = {
-      abDirectory: "/tmp/buddy",
+      rootDir: "/tmp/buddy",
       provider: "anthropic",
       model: "claude-sonnet-5",
       language: "es",
@@ -60,7 +60,7 @@ describe("createSettingsController", () => {
 
   it("loads models from authenticated providers on open", async () => {
     let config: SetupConfig = {
-      abDirectory: "/tmp/buddy",
+      rootDir: "/tmp/buddy",
       provider: "anthropic",
       model: "claude-sonnet-5",
       language: "es",
@@ -83,7 +83,7 @@ describe("createSettingsController", () => {
 
   it("setModel calls changeModel and updates config", async () => {
     let config: SetupConfig = {
-      abDirectory: "/tmp/buddy",
+      rootDir: "/tmp/buddy",
       provider: "anthropic",
       model: "claude-sonnet-5",
       language: "es",
@@ -111,7 +111,7 @@ describe("createSettingsController", () => {
 
   it("remembers last selected model per provider across switches", async () => {
     let config: SetupConfig = {
-      abDirectory: "/tmp/buddy",
+      rootDir: "/tmp/buddy",
       provider: "anthropic",
       model: "claude-sonnet-5",
       language: "es",
@@ -149,7 +149,7 @@ describe("createSettingsController", () => {
 
   it("add-provider OAuth flow refreshes models and collapses section", async () => {
     let config: SetupConfig = {
-      abDirectory: "/tmp/buddy",
+      rootDir: "/tmp/buddy",
       provider: "anthropic",
       model: "claude-sonnet-5",
       language: "es",

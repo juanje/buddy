@@ -192,7 +192,7 @@
         </div>
         <div class="field">
           <dt>{$t.settingsDirectory}</dt>
-          <dd class="path">{$config.abDirectory}</dd>
+          <dd class="path">{$config.rootDir}</dd>
         </div>
         <div class="field">
           <dt>{$t.settingsVersion}</dt>

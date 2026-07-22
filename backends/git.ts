@@ -10,12 +10,12 @@ export function buildCommitMessage(filePaths: string[]): string {
   return `ab: update ${filePaths.slice(0, 3).join(", ")} (+${filePaths.length - 3} more)`;
 }
 
-export function gitClient(abDirectory: string): SimpleGit {
-  return simpleGit(abDirectory);
+export function gitClient(rootDir: string): SimpleGit {
+  return simpleGit(rootDir);
 }
 
-export async function hasUncommittedChanges(abDirectory: string): Promise<boolean> {
-  const status = await gitClient(abDirectory).status();
+export async function hasUncommittedChanges(rootDir: string): Promise<boolean> {
+  const status = await gitClient(rootDir).status();
   return !status.isClean();
 }
 
@@ -23,10 +23,10 @@ export async function hasUncommittedChanges(abDirectory: string): Promise<boolea
  * Stage all changes and commit. Returns the commit message, or null if nothing to commit.
  */
 export async function commitAll(
-  abDirectory: string,
+  rootDir: string,
   summary?: string,
 ): Promise<string | null> {
-  const git = gitClient(abDirectory);
+  const git = gitClient(rootDir);
   const status = await git.status();
   if (status.isClean()) return null;
 

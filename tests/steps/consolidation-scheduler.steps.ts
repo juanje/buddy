@@ -49,7 +49,7 @@ Given("an AB directory prepared for consolidation", async function (this: Consol
   this.streaming = false;
 
   this.heartbeat = startHeartbeat({
-    abDirectory: this.abDir,
+    rootDir: this.abDir,
     modelRuntime: {} as never,
     isStreaming: () => this.streaming === true,
     onDeferredDue: (items) => {

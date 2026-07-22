@@ -21,9 +21,9 @@ export interface SessionTrackerSnapshot {
   toolCalls: TrackedToolCall[];
 }
 
-function relPath(abDirectory: string, absOrRel: string): string {
-  if (absOrRel === abDirectory) return absOrRel;
-  const prefix = abDirectory.endsWith(sep) ? abDirectory : abDirectory + sep;
+function relPath(rootDir: string, absOrRel: string): string {
+  if (absOrRel === rootDir) return absOrRel;
+  const prefix = rootDir.endsWith(sep) ? rootDir : rootDir + sep;
   if (!absOrRel.startsWith(prefix)) return absOrRel;
   return absOrRel.slice(prefix.length) || absOrRel;
 }
@@ -45,7 +45,7 @@ export class SessionTracker {
     this.startTime = startTime;
   }
 
-  recordEvent(event: AgentEvent, abDirectory: string): {
+  recordEvent(event: AgentEvent, rootDir: string): {
     turnEnded: boolean;
     compactionStart: boolean;
   } {
@@ -57,7 +57,7 @@ export class SessionTracker {
       }
     }
     if (event.type === "tool_execution_end") {
-      this.trackToolEnd(event, abDirectory);
+      this.trackToolEnd(event, rootDir);
     }
     if (event.type === "agent_end") {
       this.turnCount += 1;
@@ -90,7 +90,7 @@ export class SessionTracker {
     };
   }
 
-  private trackToolEnd(event: AgentEvent, abDirectory: string): void {
+  private trackToolEnd(event: AgentEvent, rootDir: string): void {
     const toolCallId = event.toolCallId as string | undefined;
     const endInfo = extractToolInfo(event);
     const startInfo = toolCallId ? this.pendingArgs.get(toolCallId) : undefined;
@@ -101,7 +101,7 @@ export class SessionTracker {
 
     const path = startInfo?.path ?? endInfo?.path;
     const timestamp = new Date().toISOString();
-    const relP = path ? relPath(abDirectory, path) : undefined;
+    const relP = path ? relPath(rootDir, path) : undefined;
     const entry: TrackedToolCall = { name, path: relP, timestamp };
     this.toolCalls.push(entry);
     this.activitySinceCheckpoint = true;

@@ -29,7 +29,7 @@ export interface SettingsDisplayConfig {
   language: AppLocale;
   provider: SetupConfig["provider"];
   model: string;
-  abDirectory: string;
+  rootDir: string;
   version: string;
 }
 
@@ -88,7 +88,7 @@ function toDisplay(config: SetupConfig, version: string): SettingsDisplayConfig 
     language: config.language ?? getLocale(),
     provider: config.provider,
     model: config.model,
-    abDirectory: config.abDirectory,
+    rootDir: config.rootDir,
     version,
   };
 }

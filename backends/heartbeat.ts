@@ -16,7 +16,7 @@ import { runConsolidation } from "./consolidation-runner";
 import { getDueDeferred, toDeferredItemViews, toIsoDay } from "./deferred";
 
 export interface HeartbeatDeps {
-  abDirectory: string;
+  rootDir: string;
   modelRuntime: ModelRuntime;
   isStreaming: () => boolean;
   onDeferredDue: (items: DeferredItemView[]) => void;
@@ -25,7 +25,7 @@ export interface HeartbeatDeps {
   intervalMs?: number;
   now?: () => Date;
   runConsolidationFn?: typeof runConsolidation;
-  hasNewContentFn?: (abDirectory: string, state: ConsolidationState) => Promise<boolean>;
+  hasNewContentFn?: (rootDir: string, state: ConsolidationState) => Promise<boolean>;
 }
 
 export interface HeartbeatHandle {
@@ -40,7 +40,7 @@ export function startHeartbeat(deps: HeartbeatDeps): HeartbeatHandle {
   const nowFn = deps.now ?? (() => new Date());
   const runConsolidationImpl = deps.runConsolidationFn ?? runConsolidation;
   const hasNewContentImpl = deps.hasNewContentFn ?? hasNewContentSinceConsolidation;
-  let state = loadConsolidationState(deps.abDirectory);
+  let state = loadConsolidationState(deps.rootDir);
   let consolidationInFlight = false;
   let timer: ReturnType<typeof setInterval> | undefined;
 
@@ -51,13 +51,13 @@ export function startHeartbeat(deps: HeartbeatDeps): HeartbeatHandle {
     const targetDepth = determineTargetDepth(state, nowFn());
     if (!targetDepth) return;
 
-    if (!(await hasNewContentImpl(deps.abDirectory, state))) return;
+    if (!(await hasNewContentImpl(deps.rootDir, state))) return;
 
     consolidationInFlight = true;
     deps.onConsolidationStart?.(targetDepth);
     try {
       const result = await runConsolidationImpl({
-        abDirectory: deps.abDirectory,
+        rootDir: deps.rootDir,
         targetDepth,
         modelRuntime: deps.modelRuntime,
         state,
@@ -78,11 +78,11 @@ export function startHeartbeat(deps: HeartbeatDeps): HeartbeatHandle {
 
   async function tick(): Promise<void> {
     if (!consolidationInFlight) {
-      state = loadConsolidationState(deps.abDirectory);
+      state = loadConsolidationState(deps.rootDir);
     }
     const now = nowFn();
     const today = toIsoDay(now);
-    const dueItems = getDueDeferred(deps.abDirectory, now);
+    const dueItems = getDueDeferred(deps.rootDir, now);
     if (dueItems.length > 0) {
       deps.onDeferredDue(toDeferredItemViews(dueItems, today));
     }
@@ -104,7 +104,7 @@ export function startHeartbeat(deps: HeartbeatDeps): HeartbeatHandle {
     incrementSessionCounter(hadActivity = true) {
       if (!hadActivity) return;
       incrementSessionCounter(state);
-      saveConsolidationState(deps.abDirectory, state);
+      saveConsolidationState(deps.rootDir, state);
     },
     getState() {
       return { ...state };

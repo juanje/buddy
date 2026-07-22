@@ -62,7 +62,7 @@ describe("consolidation runner", () => {
     state.depth1RunsSinceLastDepth2 = 5;
 
     const result = await runConsolidation({
-      abDirectory: dir,
+      rootDir: dir,
       targetDepth: 2,
       modelRuntime: {} as never,
       state,
@@ -90,7 +90,7 @@ describe("consolidation runner", () => {
     state.sessionsSinceLastDepth1 = 3;
 
     const result = await runConsolidation({
-      abDirectory: dir,
+      rootDir: dir,
       targetDepth: 1,
       modelRuntime: {} as never,
       state,
@@ -121,7 +121,7 @@ describe("consolidation runner", () => {
 
     await expect(
       runConsolidation({
-        abDirectory: dir,
+        rootDir: dir,
         targetDepth: 2,
         modelRuntime: {} as never,
         state,

@@ -24,14 +24,14 @@ export interface DailyLogAppend {
 }
 
 export interface FinalizeReflectOptions {
-  abDirectory: string;
+  rootDir: string;
   skeletonPath: string;
   skeletonContent: string;
   sections: string;
 }
 
 export interface FinalizeCheckpointOptions {
-  abDirectory: string;
+  rootDir: string;
   date: string;
   checkpointTime: string;
   sections: string;
@@ -86,15 +86,15 @@ export function formatSkeletonFrontmatter(snapshot: SessionTrackerSnapshot): str
   ].join("\n");
 }
 
-export function pendingSkeletonPath(abDirectory: string, sessionId: string): string {
-  return join(abDirectory, PENDING_DIR, `${sessionId}.md`);
+export function pendingSkeletonPath(rootDir: string, sessionId: string): string {
+  return join(rootDir, PENDING_DIR, `${sessionId}.md`);
 }
 
 /** Write internal reflect skeleton to `.buddy/pending/{sessionId}.md`. */
-export function savePendingSkeleton(abDirectory: string, snapshot: SessionTrackerSnapshot): string {
-  const pendingDir = join(abDirectory, PENDING_DIR);
+export function savePendingSkeleton(rootDir: string, snapshot: SessionTrackerSnapshot): string {
+  const pendingDir = join(rootDir, PENDING_DIR);
   mkdirSync(pendingDir, { recursive: true });
-  const path = pendingSkeletonPath(abDirectory, snapshot.sessionId);
+  const path = pendingSkeletonPath(rootDir, snapshot.sessionId);
   writeFileSync(path, formatSkeletonFrontmatter(snapshot) + formatSkeletonBody(snapshot), "utf8");
   return path;
 }
@@ -128,8 +128,8 @@ export function sessionHeaderFromSkeleton(content: string): string {
 }
 
 /** Scan `.buddy/pending/` for skeletons awaiting reflect. */
-export function findPendingReflects(abDirectory: string): PendingReflect[] {
-  const pendingDir = join(abDirectory, PENDING_DIR);
+export function findPendingReflects(rootDir: string): PendingReflect[] {
+  const pendingDir = join(rootDir, PENDING_DIR);
   if (!existsSync(pendingDir)) return [];
   const pending: PendingReflect[] = [];
   for (const name of readdirSync(pendingDir)) {
@@ -159,8 +159,8 @@ function updateLastUpdatedFrontmatter(content: string, now: Date): string {
 /**
  * Append reflect output to `logs/YYYY-MM-DD.md` in process-conversation-compatible format.
  */
-export function appendDailyLog(abDirectory: string, append: DailyLogAppend, now = new Date()): string {
-  const logsDir = join(abDirectory, "logs");
+export function appendDailyLog(rootDir: string, append: DailyLogAppend, now = new Date()): string {
+  const logsDir = join(rootDir, "logs");
   mkdirSync(logsDir, { recursive: true });
   const logPath = join(logsDir, `${append.date}.md`);
   const blockKind = append.blockKind ?? "session";
@@ -197,10 +197,10 @@ export function appendDailyLog(abDirectory: string, append: DailyLogAppend, now 
 
 /** Append reflect output to daily log and remove the pending skeleton. */
 export function finalizeReflectToDailyLog(options: FinalizeReflectOptions): string {
-  const { abDirectory, skeletonPath, skeletonContent, sections } = options;
+  const { rootDir, skeletonPath, skeletonContent, sections } = options;
   const fm = parseFrontmatter(skeletonContent);
   const date = fm.date ?? new Date().toISOString().slice(0, 10);
-  const dailyPath = appendDailyLog(abDirectory, {
+  const dailyPath = appendDailyLog(rootDir, {
     date,
     sessionHeader: sessionHeaderFromSkeleton(skeletonContent),
     sections,
@@ -211,14 +211,14 @@ export function finalizeReflectToDailyLog(options: FinalizeReflectOptions): stri
 
 /** Append checkpoint reflect output to the daily log and update its index entry. */
 export function finalizeCheckpointToDailyLog(options: FinalizeCheckpointOptions): string {
-  const { abDirectory, date, checkpointTime, sections } = options;
-  const dailyPath = appendDailyLog(abDirectory, {
+  const { rootDir, date, checkpointTime, sections } = options;
+  const dailyPath = appendDailyLog(rootDir, {
     date,
     sessionHeader: checkpointTime,
     sections,
     blockKind: "checkpoint",
   });
-  updateLogsIndexEntry(abDirectory, date);
+  updateLogsIndexEntry(rootDir, date);
   return dailyPath;
 }
 
@@ -229,8 +229,8 @@ const INDEX_HEADER = "# Sessions index\n\nLog files: `logs/YYYY-MM-DD.md` (deriv
  * preserving all other lines (archived entries, date ranges, curated summaries).
  * Creates the index with standard header if it doesn't exist.
  */
-export function updateLogsIndexEntry(abDirectory: string, date: string, status: LogStatus = "active"): void {
-  const logsDir = join(abDirectory, "logs");
+export function updateLogsIndexEntry(rootDir: string, date: string, status: LogStatus = "active"): void {
+  const logsDir = join(rootDir, "logs");
   mkdirSync(logsDir, { recursive: true });
   const indexPath = join(logsDir, "index.md");
 

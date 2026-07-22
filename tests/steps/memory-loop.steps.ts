@@ -30,7 +30,7 @@ Given("an initialized AB git repository", async function (this: MemoryWorld) {
   this.memoryTmpDir = mkdtempSync(join(tmpdir(), "ab-memory-"));
   this.abDir = join(this.memoryTmpDir, "buddy");
   const config: SetupConfig = {
-    abDirectory: this.abDir,
+    rootDir: this.abDir,
     provider: "anthropic",
     model: "claude-haiku-4-5",
     language: "en",
@@ -92,7 +92,7 @@ Then("a reflect child spawn is requested for each pending skeleton", function (t
   assert.equal(this.spawnCalls?.length ?? 0, pending.length);
   for (const call of this.spawnCalls ?? []) {
     assert.equal(call.mode, "crash-catchup");
-    assert.equal(call.abDirectory, this.abDir);
+    assert.equal(call.rootDir, this.abDir);
     assert.ok(call.logPath.includes(PENDING_DIR));
     assert.ok(call.logPath.endsWith(".md"));
   }

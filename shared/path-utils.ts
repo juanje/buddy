@@ -8,9 +8,9 @@ export function isWithin(child: string, parent: string): boolean {
   return rel === "" || (!rel.startsWith(`..${sep}`) && rel !== ".." && !isAbsolute(rel));
 }
 
-/** Resolve `rawPath` against `abDirectory` when relative; null if outside AB home. */
-export function normalizeAbPath(abDirectory: string, rawPath: string): string | null {
-  const abs = isAbsolute(rawPath) ? resolve(rawPath) : resolve(abDirectory, rawPath);
-  if (!isWithin(abs, abDirectory)) return null;
-  return relative(abDirectory, abs).split(sep).join("/");
+/** Resolve `rawPath` against `rootDir` when relative; null if outside AB home. */
+export function normalizeAbPath(rootDir: string, rawPath: string): string | null {
+  const abs = isAbsolute(rawPath) ? resolve(rawPath) : resolve(rootDir, rawPath);
+  if (!isWithin(abs, rootDir)) return null;
+  return relative(rootDir, abs).split(sep).join("/");
 }

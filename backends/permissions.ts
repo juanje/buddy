@@ -41,14 +41,14 @@ export function isDenylistedPath(absPath: string, home: string = homedir()): boo
   return DENYLIST_HOME_DIRS.some((dir) => isWithin(absPath, join(home, dir)));
 }
 
-function isProtectedConfig(absPath: string, abDirectory: string): boolean {
+function isProtectedConfig(absPath: string, rootDir: string): boolean {
   return PROTECTED_CONFIG_RELPATHS.some(
-    (rel) => resolve(abDirectory, rel) === absPath,
+    (rel) => resolve(rootDir, rel) === absPath,
   );
 }
 
-function isIdentityFile(absPath: string, abDirectory: string): boolean {
-  const identityDir = join(abDirectory, "agent_brain", "identity");
+function isIdentityFile(absPath: string, rootDir: string): boolean {
+  const identityDir = join(rootDir, "agent_brain", "identity");
   return IDENTITY_FILES.some((file) => resolve(identityDir, file) === absPath);
 }
 
@@ -59,7 +59,7 @@ function isIdentityFile(absPath: string, abDirectory: string): boolean {
 export function evaluateToolCall(
   toolName: string,
   args: unknown,
-  abDirectory: string,
+  rootDir: string,
   home: string = homedir(),
 ): PermissionDecision {
   const op: PermissionOp | undefined = WRITE_TOOLS.has(toolName)
@@ -75,18 +75,18 @@ export function evaluateToolCall(
   }
 
   // Relative paths resolve against the session cwd, which is the AB home.
-  const absPath = resolve(abDirectory, expandHome(rawPath, home));
+  const absPath = resolve(rootDir, expandHome(rawPath, home));
 
   if (isDenylistedPath(absPath, home)) {
     return { action: "deny", reason: `Access to ${absPath} is not allowed.` };
   }
-  if (op === "write" && isIdentityFile(absPath, abDirectory)) {
+  if (op === "write" && isIdentityFile(absPath, rootDir)) {
     return { action: "ask", kind: "identity-write", op, path: absPath };
   }
-  if (op === "write" && isProtectedConfig(absPath, abDirectory)) {
+  if (op === "write" && isProtectedConfig(absPath, rootDir)) {
     return { action: "deny", reason: "Modifying model configuration is not allowed." };
   }
-  if (isWithin(absPath, abDirectory)) {
+  if (isWithin(absPath, rootDir)) {
     return { action: "allow" };
   }
   return { action: "ask", kind: "outside", op, path: absPath };
@@ -107,7 +107,7 @@ export interface PermissionGate {
 }
 
 export function createPermissionGate(
-  abDirectory: string,
+  rootDir: string,
   askUser: (request: Omit<PermissionRequest, "id">) => Promise<boolean>,
   home: string = homedir(),
   options?: {
@@ -123,7 +123,7 @@ export function createPermissionGate(
     async check(toolName, args) {
       const rawPath = (args as { path?: unknown } | undefined)?.path;
       if (typeof rawPath === "string" && rawPath.trim() !== "") {
-        const absPath = resolve(abDirectory, expandHome(rawPath, home));
+        const absPath = resolve(rootDir, expandHome(rawPath, home));
         if (isDenylistedPath(absPath, home)) {
           return { block: true, reason: `Access to ${absPath} is not allowed.` };
         }
@@ -137,7 +137,7 @@ export function createPermissionGate(
         }
       }
 
-      const decision = evaluateToolCall(toolName, args, abDirectory, home);
+      const decision = evaluateToolCall(toolName, args, rootDir, home);
       if (
         options?.skipIdentityPrompt &&
         decision.action === "ask" &&

@@ -44,7 +44,7 @@ When("catch-up reflect runs", async function (this: ReflectDailyWorld) {
   runCrashRecoveryCatchUp(this.abDir!, (options) => {
     const skeleton = readFileSync(options.logPath, "utf8");
     finalizeReflectToDailyLog({
-      abDirectory: options.abDirectory,
+      rootDir: options.rootDir,
       skeletonPath: options.logPath,
       skeletonContent: skeleton,
       sections: "### Context\nCatch-up reflect for BDD.",

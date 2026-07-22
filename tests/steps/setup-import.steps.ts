@@ -119,7 +119,7 @@ When("the user imports it from the location step", async function (this: ImportW
 Then("the app is configured to use that directory", function (this: ImportWorld) {
   const state = detectFirstRun(this.importConfigPath!);
   assert.equal(state.firstRun, false);
-  if (!state.firstRun) assert.equal(state.config.abDirectory, this.abDir);
+  if (!state.firstRun) assert.equal(state.config.rootDir, this.abDir);
   assert.equal(get(this.wizard!.completed), true);
 });
 
@@ -163,7 +163,7 @@ Then(
 When("the wizard adopts it with provider {string}", function (this: ImportWorld, provider: string) {
   adoptAbInstance({
     config: {
-      abDirectory: this.abDir!,
+      rootDir: this.abDir!,
       provider: provider as "openai" | "anthropic" | "google" | "custom",
       model: "gpt-5",
     },

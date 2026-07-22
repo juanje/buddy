@@ -30,7 +30,7 @@ Given("a completed wizard configuration", function (this: CreateWorld) {
   this.abDir = join(this.createTmpDir, "buddy");
   this.createConfigPath = join(this.createTmpDir, "config.json");
   this.setupConfig = {
-    abDirectory: this.abDir,
+    rootDir: this.abDir,
     provider: "anthropic",
     model: "claude-haiku-4-5",
     language: "es",
@@ -100,7 +100,7 @@ Then(
 Then("first-run detection reports the AB as configured", function (this: CreateWorld) {
   const state = detectFirstRun(this.createConfigPath!);
   assert.equal(state.firstRun, false);
-  if (!state.firstRun) assert.equal(state.config.abDirectory, this.abDir);
+  if (!state.firstRun) assert.equal(state.config.rootDir, this.abDir);
 });
 
 Then("the AB directory contains file {string}", function (this: CreateWorld, relPath: string) {

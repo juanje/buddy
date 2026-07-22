@@ -2,7 +2,7 @@ import type { ModelInfo, SetupConfig } from "../../shared/api";
 import type { SettingsWorkerAPI } from "../../src/lib/settings-controller";
 
 export const DEFAULT_TEST_CONFIG: SetupConfig = {
-  abDirectory: "/tmp/buddy-test",
+  rootDir: "/tmp/buddy-test",
   provider: "anthropic",
   model: "claude-sonnet-5",
   language: "es",

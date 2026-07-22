@@ -52,26 +52,26 @@ export class AbWorld extends World {
   }
 
   /** Optional AB directory for memory-loop scenarios (FR-GIT-01+). */
-  abDirectory?: string;
+  rootDir?: string;
   lifecycle?: SessionLifecycle;
   spawnCalls?: SpawnReflectOptions[];
 
   /** Background: "the app is running" + "the Pi SDK session is connected". */
   connect(
-    abDirectory?: string,
+    rootDir?: string,
     options?: { incrementalEvery?: number; force?: boolean; trackSpawn?: boolean },
   ): void {
     if (this.controller && !options?.force) return;
-    this.abDirectory = abDirectory;
+    this.rootDir = rootDir;
     this.session = new FakeSession();
 
     if (options?.trackSpawn) {
       this.spawnCalls = [];
     }
 
-    this.lifecycle = abDirectory
+    this.lifecycle = rootDir
       ? new SessionLifecycle({
-          abDirectory,
+          rootDir,
           sessionId: "test-session",
           incrementalEvery: options?.incrementalEvery,
           spawnReflect: options?.trackSpawn

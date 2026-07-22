@@ -339,7 +339,7 @@ export interface WorkerAPI {
 }
 
 export interface SetupConfig {
-    abDirectory: string;
+    rootDir: string;
     provider: string;         // "anthropic" | "openai" | "google" | "custom"
     model: string;            // e.g. "claude-sonnet-4-20250514"
     apiKey?: string;
@@ -736,7 +736,7 @@ Session end (normal close):
 5. Worker: rebuild logs/index.md, session.dispose()
 6. Frontend: win.destroy() — window closes immediately
 7. Background child (async, independent of app):
-   - SessionManager.forkFrom(sessionFile, abDirectory, forkDir) — full conversation context
+   - SessionManager.forkFrom(sessionFile, rootDir, forkDir) — full conversation context
    - createAgentSession({ sessionManager: forkedSM }) on the forked JSONL
    - LLM prompt → writes Decisions, Lessons, Context, Open threads
    - Updates session log (reflect-pending → complete), commits, exits
@@ -950,7 +950,7 @@ App configuration lives in `~/.buddy/config.json`:
 
 ```json
 {
-    "abDirectory": "/Users/juanje/buddy",
+    "rootDir": "/Users/juanje/buddy",
     "provider": "openai",
     "model": "gpt-5.6-luna"
 }
@@ -1722,7 +1722,7 @@ All critical APIs verified against Pi source code. Summary:
 - System prompt: `DefaultResourceLoader({ systemPromptOverride: () => assembled })` → `createAgentSession({ resourceLoader })`
 - Bash disabled: `createAgentSession({ excludeTools: ["bash"] })`
 - Fresh session: `SessionManager.create(cwd)` every launch (E5 decision)
-- Forked reflect: `SessionManager.forkFrom(sessionFile, abDirectory, forkDir)` in background child → separate JSONL, no live session pollution
+- Forked reflect: `SessionManager.forkFrom(sessionFile, rootDir, forkDir)` in background child → separate JSONL, no live session pollution
 - Hook chaining: save `session.agent.beforeToolCall`, install ours, delegate to original
 - Hebbian tracking: `afterToolCall` with `ctx.isError` check before counting
 - Event names: `compaction_start/end` (not `session_compact`); no `model_select` in subscribe events

@@ -146,7 +146,7 @@ describe("finalizeCheckpointToDailyLog", () => {
   it("writes checkpoint section and rebuilds index", () => {
     dir = mkdtempSync(join(tmpdir(), "ab-checkpoint-log-"));
     const path = finalizeCheckpointToDailyLog({
-      abDirectory: dir,
+      rootDir: dir,
       date: "2026-07-21",
       checkpointTime: "11:45",
       sections: "### Context\nMid-session encode.",

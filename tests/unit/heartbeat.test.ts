@@ -30,7 +30,7 @@ describe("heartbeat", () => {
 
     const onDeferredDue = vi.fn();
     const hb = startHeartbeat({
-      abDirectory: dir,
+      rootDir: dir,
       modelRuntime: {} as never,
       isStreaming: () => false,
       onDeferredDue,
@@ -58,7 +58,7 @@ describe("heartbeat", () => {
     }));
 
     const hb = startHeartbeat({
-      abDirectory: dir,
+      rootDir: dir,
       modelRuntime: {} as never,
       isStreaming: () => true,
       onDeferredDue: vi.fn(),
@@ -86,7 +86,7 @@ describe("heartbeat", () => {
     }));
 
     const hb = startHeartbeat({
-      abDirectory: dir,
+      rootDir: dir,
       modelRuntime: {} as never,
       isStreaming: () => false,
       onDeferredDue: vi.fn(),

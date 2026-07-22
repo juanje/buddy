@@ -19,15 +19,15 @@ export type AppLogEvent =
   | { event: "consolidation_error"; depth: number; error: string }
   | { event: "error"; message: string; context?: string };
 
-function appLogPath(abDirectory: string, day: string): string {
-  return join(abDirectory, APP_LOGS_DIR, `${day}.jsonl`);
+function appLogPath(rootDir: string, day: string): string {
+  return join(rootDir, APP_LOGS_DIR, `${day}.jsonl`);
 }
 
 /** Append one JSONL event line to `.buddy/logs/YYYY-MM-DD.jsonl`. */
-export function logEvent(abDirectory: string, payload: AppLogEvent, now = new Date()): void {
+export function logEvent(rootDir: string, payload: AppLogEvent, now = new Date()): void {
   const day = toIsoDay(now);
-  const dir = join(abDirectory, APP_LOGS_DIR);
+  const dir = join(rootDir, APP_LOGS_DIR);
   mkdirSync(dir, { recursive: true });
   const line = JSON.stringify({ ts: now.toISOString(), ...payload }) + "\n";
-  appendFileSync(appLogPath(abDirectory, day), line, "utf8");
+  appendFileSync(appLogPath(rootDir, day), line, "utf8");
 }

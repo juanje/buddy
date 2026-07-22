@@ -54,7 +54,7 @@ export { writePiSettings } from "../shared/pi-settings";
 export async function createAbInstance(options: CreateAbOptions): Promise<void> {
   const { config, configPath } = options;
   const templatesDir = options.templatesDir ?? defaultTemplatesDir();
-  const ab = config.abDirectory;
+  const ab = config.rootDir;
 
   cpSync(templatesDir, ab, { recursive: true });
 
@@ -87,10 +87,10 @@ export async function createAbInstance(options: CreateAbOptions): Promise<void> 
  */
 export function adoptAbInstance(options: Pick<CreateAbOptions, "config" | "configPath">): void {
   const { config, configPath } = options;
-  const settingsPath = join(config.abDirectory, ".pi", "settings.json");
+  const settingsPath = join(config.rootDir, ".pi", "settings.json");
 
   if (!existsSync(settingsPath)) {
-    writePiSettings(config.abDirectory, config);
+    writePiSettings(config.rootDir, config);
   }
 
   markConfigured(config, configPath);

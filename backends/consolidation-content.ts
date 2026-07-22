@@ -15,11 +15,11 @@ export function latestConsolidationTimestamp(state: ConsolidationState): string 
  * Used by the heartbeat before triggering consolidation (FR-CONSOL-01).
  */
 export async function hasNewContentSinceConsolidation(
-  abDirectory: string,
+  rootDir: string,
   state: ConsolidationState,
 ): Promise<boolean> {
   try {
-    if (await hasUncommittedChanges(abDirectory)) return true;
+    if (await hasUncommittedChanges(rootDir)) return true;
   } catch {
     return state.sessionsSinceLastDepth1 > 0 || latestConsolidationTimestamp(state) === null;
   }
@@ -28,7 +28,7 @@ export async function hasNewContentSinceConsolidation(
   if (!since) return true;
 
   try {
-    const git = gitClient(abDirectory);
+    const git = gitClient(rootDir);
     const log = await git.log({ "--since": since, maxCount: 1 });
     return log.total > 0;
   } catch {
