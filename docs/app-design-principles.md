@@ -392,34 +392,84 @@ separation between agent space and user space immediately clear when
 browsing the filesystem. Users (even non-technical ones) can understand
 "this folder is the agent's brain, that folder is mine."
 
-### App-native conventions
+### Global vs instance: the separation principle
+
+**Pain point from AB:** Core prompts, skills, and structural rules lived inside
+the instance repo mixed with user/agent content. Updating them required
+migrating every instance. Adopting an existing AB directory missed new prompts.
+The ownership boundary was ambiguous.
+
+**Design decision (E11):** Core app assets live in `~/.buddy/` (global,
+app-managed). Instance content lives in `rootDir` (user/agent-owned).
 
 ```
-AGENTS.md          ← minimal fallback for Cursor/Claude compatibility
-agent_brain/       ← agent's space (unchanged name)
-  identity/
-    SOUL.md        ← character, never auto-modified
-    USER.md        ← user profile, updated by agent silently (Zone 1)
-  concepts/
-  projects/
-  skills/
-  ideas/
-  observations.md  ← still markdown, structured sections
-  deferred.md      ← still markdown, parseable date markers
-user/              ← user's space (unchanged)
-logs/              ← session records (unchanged format)
-  index.md         ← markdown with structured frontmatter per entry
+~/.buddy/                  ← global, app-managed, safely updatable
+  config.json              ← rootDir pointer, language, model
+  auth.json                ← OAuth tokens / API keys (mode 600)
+  allowed-paths.json       ← Zone 2 user-designated paths
+  prompts/                 ← core prompts (updated with the app)
+    agents-base.md         ← universal behavior (tools, limits, automatic ops)
+    consolidation.md       ← consolidation procedure
+    process-conversation.md← reflect format
+
+rootDir/                   ← git repo, user/agent content
+  AGENTS.md                ← instance-specific: skills, routing, conventions
+  agent_brain/             ← agent's space
+    identity/
+      SOUL.md              ← character, never auto-modified
+      USER.md              ← user profile, updated by agent silently (Zone 1)
+    concepts/
+    projects/
+    skills/                ← user/agent-created skills (not core prompts)
+    ideas/
+    observations.md        ← structured sections
+    deferred.md            ← parseable date markers
+  user/                    ← user's space
+  logs/                    ← session records
+    index.md               ← structured index
+  .pi/settings.json        ← per-instance provider/model (Pi SDK cwd discovery)
+  .buddy/                  ← runtime state (gitignored)
+    maintenance.lock
+    consolidation-state.json
+    pending/               ← reflect skeletons
+    logs/*.jsonl           ← app events
 ```
 
-**Backward compatibility:** a minimal `AGENTS.md` stays in the repo root. It
-contains the core behavioral rules that allow any AI editor (Cursor, Claude
+**Why global prompts:**
+- **Updates are safe:** app updates overwrite `~/.buddy/prompts/` — no user
+  content at risk
+- **Backward compat is free:** adopting an old AB instance doesn't require
+  copying prompts into it; they're always in `~/.buddy/`
+- **Multi-instance works:** all instances share the same core behavior; only
+  instance-specific content varies per rootDir
+- **Ownership is unambiguous:** if it's in `~/.buddy/`, the app owns it; if
+  it's in rootDir, the user/agent owns it
+
+**System prompt layering:**
+1. `~/.buddy/prompts/agents-base.md` — tools, limits, automatic behaviors
+2. `rootDir/AGENTS.md` (or `CLAUDE.md`) — instance skills, routing, active context
+3. Identity files (SOUL.md, USER.md)
+4. Dynamic context (date, logs/index, last session, deferred items)
+
+The base takes precedence for capability constraints. Old `CLAUDE.md` files
+that mention git commands or bash are overridden by the base's explicit "No
+bash, git is automatic" declaration — the LLM follows the most specific/earliest
+constraint.
+
+**Backward compatibility:** `AGENTS.md` stays in rootDir. It contains the
+instance-specific behavioral rules that allow any AI editor (Cursor, Claude
 Code) to operate on the repo with basic functionality. The app assembles a
-richer system prompt from code + files, but the repo is never broken if
-opened elsewhere.
+richer system prompt from `agents-base.md` + instance file, but the repo is
+self-contained if opened elsewhere.
 
 **Platform artifacts:** `.cursor/`, `.codex/`, `.claude/` are irrelevant to
 the app and ignored. They may exist in imported instances — the app doesn't
 touch them.
+
+**What stays per-instance (`.pi/settings.json`):** Pi discovers settings from
+cwd. Multi-instance support (different providers per instance) requires
+per-rootDir settings. Cost: one small file. Moving it would require symlinks
+or Pi SDK changes — not worth the complexity.
 
 ---
 
@@ -525,3 +575,9 @@ user need on day one to get value?
 
 7. **Tool set:** File tools only (read, write, edit, ls, find, grep). No bash.
    Future capabilities added as custom Pi SDK tools — typed, scoped, auditable.
+
+8. **Global/local split (E11):** Core prompts and the universal system prompt
+   base (`agents-base.md`) live in `~/.buddy/prompts/`, not inside rootDir.
+   App updates refresh them without touching user content. Instance-specific
+   behavior stays in `rootDir/AGENTS.md`. Old instances with `CLAUDE.md` work
+   without migration — the base layer overrides stale capability claims.
