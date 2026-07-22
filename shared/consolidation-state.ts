@@ -26,7 +26,7 @@ export interface ConsolidationLogEntry {
 }
 
 export const CONSOLIDATION_THRESHOLDS = {
-  depth1: { sessions: 3 },
+  depth1: { sessions: 3, maxHours: 24 },
   depth2: { depth1Runs: 5 },
   depth3: { depth2Runs: 4 },
 } as const;
@@ -89,10 +89,30 @@ export function appendConsolidationLogEntry(
   writeFileSync(path, JSON.stringify(log, null, 2) + "\n");
 }
 
-export function isDepthDue(depth: 1 | 2 | 3, state: ConsolidationState): boolean {
+function hoursSince(isoTimestamp: string | null, now: Date): number {
+  if (!isoTimestamp) return Infinity;
+  try {
+    return (now.getTime() - new Date(isoTimestamp).getTime()) / 3_600_000;
+  } catch {
+    return Infinity;
+  }
+}
+
+/**
+ * Depth-1 uses a hybrid trigger: fires when EITHER the session count threshold
+ * is met OR enough hours have elapsed since the last run (with at least 1 session
+ * of new content). This prevents stale content from sitting unconsolidated when
+ * the user has few but long sessions.
+ */
+export function isDepthDue(depth: 1 | 2 | 3, state: ConsolidationState, now?: Date): boolean {
   switch (depth) {
-    case 1:
-      return state.sessionsSinceLastDepth1 >= CONSOLIDATION_THRESHOLDS.depth1.sessions;
+    case 1: {
+      const sessionsDue = state.sessionsSinceLastDepth1 >= CONSOLIDATION_THRESHOLDS.depth1.sessions;
+      const timeDue =
+        state.sessionsSinceLastDepth1 > 0 &&
+        hoursSince(state.lastDepth1, now ?? new Date()) >= CONSOLIDATION_THRESHOLDS.depth1.maxHours;
+      return sessionsDue || timeDue;
+    }
     case 2:
       return state.depth1RunsSinceLastDepth2 >= CONSOLIDATION_THRESHOLDS.depth2.depth1Runs;
     case 3:
@@ -101,10 +121,10 @@ export function isDepthDue(depth: 1 | 2 | 3, state: ConsolidationState): boolean
 }
 
 /** Highest consolidation depth whose usage threshold is met, or null. */
-export function determineTargetDepth(state: ConsolidationState): 1 | 2 | 3 | null {
-  if (isDepthDue(3, state)) return 3;
-  if (isDepthDue(2, state)) return 2;
-  if (isDepthDue(1, state)) return 1;
+export function determineTargetDepth(state: ConsolidationState, now?: Date): 1 | 2 | 3 | null {
+  if (isDepthDue(3, state, now)) return 3;
+  if (isDepthDue(2, state, now)) return 2;
+  if (isDepthDue(1, state, now)) return 1;
   return null;
 }
 

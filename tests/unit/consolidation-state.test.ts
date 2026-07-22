@@ -82,11 +82,36 @@ describe("consolidation state", () => {
     expect(cascadeDepths(3)).toEqual([1, 2, 3]);
   });
 
-  it("checks depth due thresholds", () => {
+  it("checks depth due thresholds (session count)", () => {
     const state = defaultConsolidationState();
     expect(isDepthDue(1, state)).toBe(false);
     state.sessionsSinceLastDepth1 = 3;
     expect(isDepthDue(1, state)).toBe(true);
+  });
+
+  it("depth-1 fires on time threshold when content exists", () => {
+    const state = defaultConsolidationState();
+    const now = new Date("2026-07-22T12:00:00Z");
+    state.lastDepth1 = "2026-07-21T10:00:00Z";
+    state.sessionsSinceLastDepth1 = 0;
+    expect(isDepthDue(1, state, now)).toBe(false);
+
+    state.sessionsSinceLastDepth1 = 1;
+    expect(isDepthDue(1, state, now)).toBe(true);
+  });
+
+  it("depth-1 does not fire on time alone without sessions", () => {
+    const state = defaultConsolidationState();
+    const now = new Date("2026-07-23T12:00:00Z");
+    state.lastDepth1 = "2026-07-21T10:00:00Z";
+    state.sessionsSinceLastDepth1 = 0;
+    expect(isDepthDue(1, state, now)).toBe(false);
+  });
+
+  it("depth-1 fires on time when never consolidated", () => {
+    const state = defaultConsolidationState();
+    state.sessionsSinceLastDepth1 = 1;
+    expect(isDepthDue(1, state, new Date())).toBe(true);
   });
 
   it("appends consolidation log entries", () => {

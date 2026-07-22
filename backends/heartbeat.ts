@@ -48,7 +48,7 @@ export function startHeartbeat(deps: HeartbeatDeps): HeartbeatHandle {
     if (consolidationInFlight) return;
     if (deps.isStreaming()) return;
 
-    const targetDepth = determineTargetDepth(state);
+    const targetDepth = determineTargetDepth(state, nowFn());
     if (!targetDepth) return;
 
     if (!(await hasNewContentImpl(deps.abDirectory, state))) return;
