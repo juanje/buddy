@@ -14,9 +14,11 @@ import { initTestGitRepo } from "../support/test-git";
 import type { AbWorld } from "../support/world";
 import type { DeferredItemView } from "../../shared/api";
 import type { MaintenanceSessionLike } from "../../backends/consolidation-runner";
+import { setupGlobalConfigDir, teardownGlobalConfigDir } from "../support/global-config";
 
 interface ConsolidationWorld extends AbWorld {
   consolTmpDir?: string;
+  globalConfigDir?: string;
   abDir?: string;
   deferredNotifications?: DeferredItemView[][];
   consolidationRuns?: number[];
@@ -27,19 +29,18 @@ interface ConsolidationWorld extends AbWorld {
 After(function (this: ConsolidationWorld) {
   if (this.abDir) releaseLock(this.abDir);
   this.heartbeat?.stop();
+  teardownGlobalConfigDir(this.globalConfigDir);
   if (this.consolTmpDir) rmSync(this.consolTmpDir, { recursive: true, force: true });
 });
 
 Given("an AB directory prepared for consolidation", async function (this: ConsolidationWorld) {
+  ({ configDir: this.globalConfigDir } = setupGlobalConfigDir({
+    consolidationSkill: "# Skill\n\nConsolidate.\n",
+  }));
   this.consolTmpDir = mkdtempSync(join(tmpdir(), "ab-consol-bdd-"));
   this.abDir = join(this.consolTmpDir, "buddy");
   mkdirSync(join(this.abDir, "agent_brain"), { recursive: true });
-  mkdirSync(join(this.abDir, ".buddy", "prompts"), { recursive: true });
   writeFileSync(join(this.abDir, "AGENTS.md"), "# Rules\n");
-  writeFileSync(
-    join(this.abDir, ".buddy", "prompts", "consolidation.md"),
-    "# Skill\n\nConsolidate.\n",
-  );
   await initTestGitRepo(this.abDir);
   writeFileSync(join(this.abDir, "seed.txt"), "seed\n");
   const { simpleGit } = await import("simple-git");

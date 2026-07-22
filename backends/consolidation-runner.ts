@@ -25,8 +25,7 @@ import { commitAll } from "./git";
 import { acquireLock, releaseLock } from "./maintenance";
 import { assembleSystemPrompt } from "./prompt";
 import { appendDailyLog, updateLogsIndexEntry } from "./reflect";
-
-const CONSOLIDATION_SKILL = join(".buddy", "prompts", "consolidation.md");
+import { globalConfigDir } from "./schema-migration";
 
 export interface MaintenanceSessionLike {
   prompt(text: string): Promise<void>;
@@ -41,10 +40,16 @@ export interface CreateMaintenanceSessionFn {
 }
 
 function readConsolidationSkill(rootDir: string): string {
+  const globalPath = join(globalConfigDir(), "prompts", "consolidation.md");
+  const legacyPath = join(rootDir, ".buddy", "prompts", "consolidation.md");
   try {
-    return readFileSync(join(rootDir, CONSOLIDATION_SKILL), "utf8");
+    return readFileSync(globalPath, "utf8");
   } catch {
-    return "# Consolidation\n\nRun the consolidation procedure for the requested depth.";
+    try {
+      return readFileSync(legacyPath, "utf8");
+    } catch {
+      return "# Consolidation\n\nRun the consolidation procedure for the requested depth.";
+    }
   }
 }
 

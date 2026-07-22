@@ -1,5 +1,8 @@
 // shared/defaults.ts — Centralized operational defaults and security constants (NFR-CONFIG-01/03).
 
+/** Global ~/.buddy/ schema version (NFR-MIGRATE). Increment when migrations are added. */
+export const APP_SCHEMA_VERSION = 1;
+
 // --- Operational defaults (NFR-CONFIG-01) ---
 export const INCREMENTAL_REFLECT_EVERY = 15;
 export const LOCK_STALE_MS = 60 * 60 * 1000;

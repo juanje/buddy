@@ -6,15 +6,20 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { assembleSystemPrompt } from "../../backends/prompt";
+import { setupGlobalConfigDir, teardownGlobalConfigDir } from "../support/global-config";
 
 describe("assembleSystemPrompt last log selection", () => {
   let dir: string;
+  let globalConfigDir: string | undefined;
 
   afterEach(() => {
     if (dir) rmSync(dir, { recursive: true, force: true });
+    teardownGlobalConfigDir(globalConfigDir);
+    globalConfigDir = undefined;
   });
 
   it("loads the last index entry regardless of maintenance status", () => {
+    ({ configDir: globalConfigDir } = setupGlobalConfigDir({ agentsBase: "# Base\n" }));
     dir = mkdtempSync(join(tmpdir(), "ab-prompt-"));
     mkdirSync(join(dir, "logs"), { recursive: true });
     writeFileSync(
@@ -53,5 +58,20 @@ describe("assembleSystemPrompt last log selection", () => {
     const lastLogSection = prompt.split("# Last session log")[1]?.split("\n\n---\n\n")[0] ?? "";
     expect(lastLogSection).toContain("FR-CONSOL heartbeat shipped.");
     expect(lastLogSection).not.toContain("Prior day.");
+  });
+
+  it("includes agents-base before instance rules", () => {
+    ({ configDir: globalConfigDir } = setupGlobalConfigDir({
+      agentsBase: "# Your environment\n\nGlobal base rules.\n",
+    }));
+    dir = mkdtempSync(join(tmpdir(), "ab-prompt-"));
+    writeFileSync(join(dir, "AGENTS.md"), "# Instance\n\nInstance rules.\n");
+
+    const { prompt } = assembleSystemPrompt(dir, new Date("2026-07-22T12:00:00Z"));
+
+    const baseIndex = prompt.indexOf("Global base rules.");
+    const instanceIndex = prompt.indexOf("Instance rules.");
+    expect(baseIndex).toBeGreaterThanOrEqual(0);
+    expect(instanceIndex).toBeGreaterThan(baseIndex);
   });
 });

@@ -9,9 +9,11 @@ import { join } from "node:path";
 
 import { assembleSystemPrompt, type AssembledPrompt } from "../../backends/prompt";
 import type { AbWorld } from "../support/world";
+import { setupGlobalConfigDir, teardownGlobalConfigDir } from "../support/global-config";
 
 interface PromptWorld extends AbWorld {
   promptTmpDir?: string;
+  globalConfigDir?: string;
   abDir?: string;
   assembled?: AssembledPrompt;
 }
@@ -20,10 +22,12 @@ interface PromptWorld extends AbWorld {
 const NOW = new Date("2026-07-19T10:00:00");
 
 After(function (this: PromptWorld) {
+  teardownGlobalConfigDir(this.globalConfigDir);
   if (this.promptTmpDir) rmSync(this.promptTmpDir, { recursive: true, force: true });
 });
 
 Given("an AB directory with identity files", function (this: PromptWorld) {
+  ({ configDir: this.globalConfigDir } = setupGlobalConfigDir());
   this.promptTmpDir = mkdtempSync(join(tmpdir(), "ab-prompt-"));
   this.abDir = join(this.promptTmpDir, "buddy");
   mkdirSync(join(this.abDir, "agent_brain", "identity"), { recursive: true });

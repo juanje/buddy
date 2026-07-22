@@ -6,6 +6,7 @@ import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
 import { dueDeferredItems, parseDeferredItems, toIsoDay, type ParsedDeferredItem } from "./deferred";
+import { globalConfigDir } from "./schema-migration";
 
 export interface AssembledPrompt {
   prompt: string;
@@ -37,7 +38,8 @@ function readIfExists(path: string): string | undefined {
 }
 
 export function assembleSystemPrompt(rootDir: string, now: Date = new Date()): AssembledPrompt {
-  const agents =
+  const agentsBase = readIfExists(join(globalConfigDir(), "prompts", "agents-base.md"));
+  const instanceRules =
     readIfExists(join(rootDir, "AGENTS.md")) ??
     readIfExists(join(rootDir, "CLAUDE.md"));
   const soul = readIfExists(join(rootDir, "agent_brain", "identity", "SOUL.md"));
@@ -50,7 +52,8 @@ export function assembleSystemPrompt(rootDir: string, now: Date = new Date()): A
 
   const sections: string[] = [];
 
-  if (agents) sections.push(agents.trim());
+  if (agentsBase) sections.push(agentsBase.trim());
+  if (instanceRules) sections.push(instanceRules.trim());
   if (soul) sections.push(`# Your character\n\n${soul.trim()}`);
   if (user) sections.push(`# About your user\n\n${user.trim()}`);
 

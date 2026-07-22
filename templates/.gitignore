@@ -1,4 +1,2 @@
-.buddy/*
-!.buddy/prompts/
-!.buddy/prompts/**
+.buddy/
 .pi/

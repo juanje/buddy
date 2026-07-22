@@ -37,8 +37,10 @@ import { defaultConfigPath, detectFirstRun, updateAppConfig } from "./setup";
 import { writePiSettings } from "../shared/pi-settings";
 import { createWorkerCore } from "./worker-core";
 import { startHeartbeat, type HeartbeatHandle } from "./heartbeat";
+import { ensureSchema } from "./schema-migration";
 
 async function main(): Promise<void> {
+  ensureSchema();
   await alignHttpDispatcherWithPi();
 
   const authPath = defaultAuthPath();

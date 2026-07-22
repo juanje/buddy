@@ -1,6 +1,6 @@
 // tests/unit/consolidation-runner.test.ts — FR-CONSOL-03/04/06 runner behavior.
 
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -13,34 +13,49 @@ import {
 import { acquireLock, releaseLock } from "../../backends/maintenance";
 import { initTestGitRepo } from "../support/test-git";
 import { loadConsolidationLog, loadConsolidationState } from "../../shared/consolidation-state";
+import { setupGlobalConfigDir, teardownGlobalConfigDir } from "../support/global-config";
 
 describe("consolidation runner", () => {
   let dir: string;
+  let globalConfigDir: string | undefined;
 
   afterEach(() => {
     if (dir) {
       releaseLock(dir);
       rmSync(dir, { recursive: true, force: true });
     }
+    teardownGlobalConfigDir(globalConfigDir);
+    globalConfigDir = undefined;
   });
 
   function setupAb(): void {
+    ({ configDir: globalConfigDir } = setupGlobalConfigDir({
+      consolidationSkill: "# Skill\n\nDo consolidation.\n",
+    }));
     dir = mkdtempSync(join(tmpdir(), "ab-consol-run-"));
-    mkdirSync(join(dir, ".buddy", "prompts"), { recursive: true });
     writeFileSync(join(dir, "AGENTS.md"), "# Rules\n");
-    writeFileSync(
-      join(dir, ".buddy", "prompts", "consolidation.md"),
-      "# Skill\n\nDo consolidation.\n",
-    );
     writeFileSync(join(dir, "notes.txt"), "hello\n");
   }
 
-  it("builds consolidation prompt from the AB skill file", () => {
+  it("builds consolidation prompt from the global skill file", () => {
     setupAb();
     const prompt = buildConsolidationPrompt(dir, 1);
     expect(prompt).toContain("Run consolidation at depth 1");
     expect(prompt).toContain("Do consolidation.");
     expect(prompt).toContain("Do not run git commands");
+  });
+
+  it("falls back to legacy rootDir skill file", () => {
+    ({ configDir: globalConfigDir } = setupGlobalConfigDir());
+    dir = mkdtempSync(join(tmpdir(), "ab-consol-run-"));
+    mkdirSync(join(dir, ".buddy", "prompts"), { recursive: true });
+    writeFileSync(
+      join(dir, ".buddy", "prompts", "consolidation.md"),
+      "# Legacy\n\nLegacy consolidation.\n",
+    );
+
+    const prompt = buildConsolidationPrompt(dir, 1);
+    expect(prompt).toContain("Legacy consolidation.");
   });
 
   it("runs cascade depths, commits, and advances counters", async () => {
