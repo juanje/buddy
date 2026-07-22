@@ -31,10 +31,11 @@ import {
   WIZARD_PI_PROVIDERS,
 } from "./provider-mapping";
 import { getDueDeferred, toIsoDay } from "./deferred";
-import { bootSession } from "./session-boot";
+import { bootSession, augmentPromptWithAttachments } from "./session-boot";
 import { defaultConfigPath, detectFirstRun, updateAppConfig } from "./setup";
 import { writePiSettings } from "../shared/pi-settings";
 import { createWorkerCore } from "./worker-core";
+import { startHeartbeat, type HeartbeatHandle } from "./heartbeat";
 
 async function main(): Promise<void> {
   await alignHttpDispatcherWithPi();
@@ -48,6 +49,7 @@ async function main(): Promise<void> {
   let setupState = detectFirstRun(defaultConfigPath());
 
   let core: ReturnType<typeof createWorkerCore> | undefined;
+  let heartbeat: HeartbeatHandle | undefined;
   // Definite assignment: set right after the channel is created below, and
   // bootSession only runs after that.
   let frontend!: FrontendAPI;
@@ -71,11 +73,28 @@ async function main(): Promise<void> {
     return oauthService;
   }
 
+  function stopHeartbeat(): void {
+    heartbeat?.stop();
+    heartbeat = undefined;
+  }
+
+  function startHeartbeatForAb(abDirectory: string): void {
+    stopHeartbeat();
+    heartbeat = startHeartbeat({
+      abDirectory,
+      modelRuntime,
+      isStreaming: () => core?.isStreaming() ?? false,
+      onDeferredDue: (items) => frontend.onDeferredDue(items),
+    });
+  }
+
   async function startSession(
     abDirectory: string,
     options?: { firstSession?: boolean; name?: string; about?: string },
   ): Promise<void> {
     if (core) return;
+
+    let sessionHeartbeat: HeartbeatHandle | undefined;
 
     const booted = await bootSession(
       abDirectory,
@@ -92,10 +111,15 @@ async function main(): Promise<void> {
           });
         },
       },
-      options,
+      {
+        ...options,
+        onSessionComplete: (hadActivity) => sessionHeartbeat?.incrementSessionCounter(hadActivity),
+      },
     );
     if (!booted) return;
     core = booted.core;
+    startHeartbeatForAb(abDirectory);
+    sessionHeartbeat = heartbeat;
   }
 
   const transport = nodeStdioTransport();
@@ -210,6 +234,7 @@ async function main(): Promise<void> {
         setupState = { firstRun: false, config: updated };
       },
       async shutdown() {
+        stopHeartbeat();
         await core?.api.shutdown();
         core?.dispose();
         core = undefined;

@@ -205,4 +205,6 @@ export interface FrontendAPI {
   onPermissionRequest(request: PermissionRequest): void;
   /** OAuth login progress (FR-SETUP-05). */
   onOAuthEvent(event: OAuthUIEvent): void;
+  /** Deferred items surfaced by heartbeat (FR-DEFERRED-02). */
+  onDeferredDue(items: DeferredItemView[]): void;
 }

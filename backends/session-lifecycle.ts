@@ -20,6 +20,8 @@ export interface SessionLifecycleOptions {
   incrementalEvery?: number;
   spawnReflect?: SpawnReflectFn;
   hebbianTracker?: HebbianTracker;
+  /** Called after session-end reflect is spawned (FR-CONSOL-01 counter). */
+  onSessionComplete?: (hadActivity: boolean) => void;
 }
 
 export class SessionLifecycle {
@@ -29,6 +31,7 @@ export class SessionLifecycle {
   private sessionFile: string | undefined;
   private readonly incrementalEvery: number;
   private readonly spawnReflect: SpawnReflectFn;
+  private readonly onSessionComplete?: (hadActivity: boolean) => void;
   private turnDirty = false;
   private reflectInFlight = false;
   private eventChain: Promise<void> = Promise.resolve();
@@ -40,6 +43,7 @@ export class SessionLifecycle {
     this.hebbianTracker = options.hebbianTracker ?? createHebbianTracker(options.abDirectory);
     this.incrementalEvery = options.incrementalEvery ?? INCREMENTAL_REFLECT_EVERY;
     this.spawnReflect = options.spawnReflect ?? spawnReflectChild;
+    this.onSessionComplete = options.onSessionComplete;
   }
 
   setSessionFile(path: string): void {
@@ -96,6 +100,7 @@ export class SessionLifecycle {
       mode: "session-end",
       logPath: pendingPath,
     });
+    this.onSessionComplete?.(snapshot.turnCount > 0);
     return pendingPath;
   }
 

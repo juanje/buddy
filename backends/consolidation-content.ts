@@ -1,0 +1,34 @@
+// backends/consolidation-content.ts — New-content detection for consolidation triggers (FR-CONSOL-01).
+
+import { hasUncommittedChanges, gitClient } from "./git";
+import type { ConsolidationState } from "../shared/consolidation-state";
+
+/** Latest consolidation timestamp across all depths, or null if never run. */
+export function latestConsolidationTimestamp(state: ConsolidationState): string | null {
+  const stamps = [state.lastDepth1, state.lastDepth2, state.lastDepth3].filter(Boolean) as string[];
+  if (stamps.length === 0) return null;
+  return stamps.sort().at(-1) ?? null;
+}
+
+/**
+ * True when git shows uncommitted changes or commits since the last consolidation run.
+ * Used by the heartbeat before triggering consolidation (FR-CONSOL-01).
+ */
+export async function hasNewContentSinceConsolidation(
+  abDirectory: string,
+  state: ConsolidationState,
+): Promise<boolean> {
+  if (await hasUncommittedChanges(abDirectory)) return true;
+
+  const since = latestConsolidationTimestamp(state);
+  if (!since) return true;
+
+  try {
+    const git = gitClient(abDirectory);
+    const log = await git.log({ "--since": since, maxCount: 1 });
+    return log.total > 0;
+  } catch {
+    // Non-git AB directory or git error — treat as having content if sessions accumulated.
+    return state.sessionsSinceLastDepth1 > 0;
+  }
+}

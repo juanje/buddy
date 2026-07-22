@@ -93,6 +93,7 @@ export class AbWorld extends World {
         onWorkerError: () => {},
         onPermissionRequest: (request) => controllerRef?.handlePermissionRequest(request),
         onOAuthEvent: () => {},
+        onDeferredDue: () => {},
       },
       { lifecycle: this.lifecycle },
     );

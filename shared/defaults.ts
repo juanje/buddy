@@ -26,6 +26,13 @@ export const SHUTDOWN_TIMEOUT_MS = 2000;
 export const GIT_USER_NAME = "Buddy";
 export const GIT_USER_EMAIL = "buddy@localhost";
 
+/** Heartbeat interval for deferred checks and consolidation evaluation (FR-DEFERRED-02, FR-CONSOL-01). */
+export const HEARTBEAT_INTERVAL_MS = 30 * 60 * 1000;
+/** Usage-based consolidation counters (FR-CONSOL-01). */
+export const CONSOLIDATION_STATE_PATH = ".buddy/consolidation-state.json";
+/** Consolidation run journal (FR-CONSOL-06). */
+export const CONSOLIDATION_LOG_PATH = ".buddy/consolidation-log.json";
+
 // --- Security constants (NFR-CONFIG-03) ---
 export const DENYLIST_HOME_DIRS = [".ssh", ".gnupg", ".aws"];
 export const DENYLIST_BASENAMES = [".env", "auth.json"];

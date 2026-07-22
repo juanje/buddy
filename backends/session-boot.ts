@@ -37,6 +37,7 @@ export interface BootSessionOptions {
   firstSession?: boolean;
   name?: string;
   about?: string;
+  onSessionComplete?: (hadActivity: boolean) => void;
 }
 
 /** Map Pi AgentSession to the structural subset the worker core needs. */
@@ -125,6 +126,7 @@ export async function bootSession(
     abDirectory,
     sessionId,
     hebbianTracker,
+    onSessionComplete: options?.onSessionComplete,
   });
 
   context.sessionAllowedPaths.clear();

@@ -81,7 +81,7 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 | FR-SETTINGS-04 | Language switching from settings | done | 6ea7f89 |
 | FR-SETTINGS-05 | Settings access from UI (gear icon + menu) | done | 2e051c5 |
 
-**Phase 1 complete:** YES — all Phase 1 FRs implemented and passing (139 unit tests, 99 BDD scenarios).
+**Phase 1 complete:** YES — all Phase 1 FRs implemented and passing (153 unit tests, 103 BDD scenarios).
 
 ## Phase 2 — Implemented early
 
@@ -93,6 +93,13 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 | FR-HEBB-04 | Lazy commit | done | b977e60 |
 | FR-REFLECT-03 | Checkpoint mid-session reflect | done | fbee7f9 |
 | FR-REFLECT-04 | Log output sanitizer | done | 7c5bd69 |
+| FR-DEFERRED-02 | Heartbeat periodic deferred check | done | pending |
+| FR-CONSOL-01 | Usage-based consolidation triggers | done | pending |
+| FR-CONSOL-02 | Cascade ordering | done | pending |
+| FR-CONSOL-03 | Separate maintenance session | done | pending |
+| FR-CONSOL-04 | Lock management | done | pending |
+| FR-CONSOL-05 | Idle-aware scheduling | done | pending |
+| FR-CONSOL-06 | Run journal | done | pending |
 
 ## Post-MVP — Fable review fixes (2026-07-21)
 
@@ -112,8 +119,8 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 
 ## Current focus
 
-> **Sprint: Settings UX (2026-07-22) complete.** FR-SETTINGS-05 shipped.
-> Next: Phase 2 (FR-CONSOL heartbeat, FR-WIKI, FR-COST).
+> **Sprint: FR-CONSOL + heartbeat (2026-07-22) complete.** Scheduler, runner, and BDD shipped.
+> Next: FR-WIKI, FR-COST, FR-DEFERRED-03 (OS notifications).
 
 ### Sprint: Settings access UI — DONE (2026-07-22)
 

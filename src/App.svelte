@@ -120,6 +120,10 @@
           onOAuthEvent(event) {
             void handleOAuthEvent(event);
           },
+          onDeferredDue(items) {
+            devLog(`deferred due: ${items.length} item(s)`);
+            deferredItems = items;
+          },
         },
         (code) => {
           connectionError = `Worker exited (code ${code ?? "unknown"})`;

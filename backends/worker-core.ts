@@ -38,6 +38,7 @@ export interface WorkerCoreOptions {
 export interface WorkerCore {
   api: SessionWorkerAPI;
   dispose(): void;
+  isStreaming(): boolean;
 }
 
 export function createWorkerCore(
@@ -88,6 +89,9 @@ export function createWorkerCore(
     api,
     dispose() {
       unsubscribe();
+    },
+    isStreaming() {
+      return session.isStreaming;
     },
   };
 }

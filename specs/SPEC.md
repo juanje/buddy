@@ -440,7 +440,7 @@ Crash recovery (next app start):
 | ID | Description | Phase |
 |----|-------------|-------|
 | FR-DEFERRED-01 | Surface due items on app start | 1 ✓ |
-| FR-DEFERRED-02 | Heartbeat periodic check | 2 |
+| FR-DEFERRED-02 | Heartbeat periodic check | 2 | done |
 | FR-DEFERRED-03 | OS notification for due items | 2 |
 
 **FR-DEFERRED-01 — Surface on start**
@@ -471,12 +471,12 @@ Crash recovery (next app start):
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-CONSOL-01 | Usage-based trigger evaluation | 2 |
-| FR-CONSOL-02 | Cascade ordering | 2 |
-| FR-CONSOL-03 | Separate maintenance session | 2 |
-| FR-CONSOL-04 | Lock management | 2 |
-| FR-CONSOL-05 | Idle-aware scheduling | 2 |
-| FR-CONSOL-06 | Run journal | 2 |
+| FR-CONSOL-01 | Usage-based trigger evaluation | 2 | done |
+| FR-CONSOL-02 | Cascade ordering | 2 | done |
+| FR-CONSOL-03 | Separate maintenance session | 2 | done |
+| FR-CONSOL-04 | Lock management | 2 | done |
+| FR-CONSOL-05 | Idle-aware scheduling | 2 | done |
+| FR-CONSOL-06 | Run journal | 2 | done |
 
 **Consolidation depths:**
 
@@ -1015,7 +1015,7 @@ AB remembers the conversation, knows their name, surfaces any pending reminders.
 
 **Explicitly excluded from Phase 1 and why:**
 - System tray (window close = quit; daemon is Phase 4)
-- Heartbeat/scheduler (no periodic checks; consolidation is Phase 2)
+- OS notifications for deferred items (FR-DEFERRED-03; heartbeat check is Phase 2)
 - Cost visibility (Phase 2+)
 - Git sync (Phase 3+)
 
