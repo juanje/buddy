@@ -83,7 +83,7 @@ export const en: LocaleStrings = {
   welcomeDeferredHeading: "You have {count} items due today",
   welcomeDueToday: "due",
   welcomeOverdue: "overdue",
-  welcomeDismiss: "Dismiss",
+  welcomeDismiss: "Got it",
   welcomeRegion: "Welcome",
   oauthSignIn: "Sign in",
   oauthWaiting: "Waiting for browser…",

@@ -181,7 +181,7 @@ export const es: LocaleStrings = {
   welcomeDeferredHeading: "Tienes {count} elementos pendientes para hoy",
   welcomeDueToday: "hoy",
   welcomeOverdue: "vencido",
-  welcomeDismiss: "Cerrar",
+  welcomeDismiss: "Entendido",
   welcomeRegion: "Bienvenida",
   oauthSignIn: "Iniciar sesión",
   oauthWaiting: "Esperando al navegador…",

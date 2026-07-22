@@ -35,14 +35,14 @@
             </li>
           {/each}
         </ul>
+        {#if onDismiss}
+          <button type="button" class="dismiss-btn" onclick={onDismiss}>
+            {$t.welcomeDismiss}
+          </button>
+        {/if}
       </div>
     {:else}
       <p class="greeting">{$t.welcomeGreeting}</p>
-    {/if}
-    {#if onDismiss}
-      <button type="button" class="dismiss" onclick={onDismiss} aria-label={$t.welcomeDismiss}>
-        ×
-      </button>
     {/if}
   </div>
 {/if}
@@ -106,19 +106,19 @@
     background: color-mix(in srgb, var(--error-fg, #c44) 15%, transparent);
     color: var(--error-fg, #c44);
   }
-  .dismiss {
-    position: absolute;
-    top: 12px;
-    right: 16px;
-    border: none;
+  .dismiss-btn {
+    display: block;
+    margin: 10px auto 0;
+    border: 1px solid var(--border);
+    border-radius: 6px;
     background: transparent;
     color: var(--muted);
-    font-size: 18px;
-    line-height: 1;
+    font-size: 12px;
     cursor: pointer;
-    padding: 2px 6px;
+    padding: 4px 14px;
   }
-  .dismiss:hover {
+  .dismiss-btn:hover {
     color: var(--fg);
+    border-color: var(--fg-secondary, var(--fg));
   }
 </style>
