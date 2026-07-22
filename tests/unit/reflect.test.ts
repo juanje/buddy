@@ -10,11 +10,11 @@ import {
   appendDailyLog,
   findPendingReflects,
   parseFrontmatter,
-  rebuildLogsIndex,
   sanitizeReflectOutput,
   savePendingSkeleton,
   shouldRunCheckpointReflect,
   finalizeCheckpointToDailyLog,
+  updateLogsIndexEntry,
 } from "../../backends/reflect";
 import { SessionTracker } from "../../backends/session-tracker";
 
@@ -157,27 +157,85 @@ describe("finalizeCheckpointToDailyLog", () => {
   });
 });
 
-describe("rebuildLogsIndex", () => {
+describe("updateLogsIndexEntry", () => {
   let dir: string;
 
   afterEach(() => {
     if (dir) rmSync(dir, { recursive: true, force: true });
   });
 
-  it("lists daily logs in index.md with status and summary", () => {
+  it("creates index with header and entry when missing", () => {
     dir = mkdtempSync(join(tmpdir(), "ab-index-"));
     appendDailyLog(dir, {
       date: "2026-07-19",
       sessionHeader: "12:00–12:30",
       sections: "### Context\nReflect pipeline redesign.",
     });
-    rebuildLogsIndex(dir);
+    updateLogsIndexEntry(dir, "2026-07-19");
     const index = readFileSync(join(dir, "logs", "index.md"), "utf8");
-    expect(index).toContain("logs/YYYY-MM-DD.md");
+    expect(index).toContain("# Sessions index");
     expect(index).toContain("2026-07-19: active — Reflect pipeline redesign.");
   });
 
-  it("uses maintenance status from frontmatter", () => {
+  it("updates existing entry without touching others", () => {
+    dir = mkdtempSync(join(tmpdir(), "ab-index-"));
+    mkdirSync(join(dir, "logs"), { recursive: true });
+    writeFileSync(
+      join(dir, "logs", "index.md"),
+      [
+        "# Sessions index",
+        "",
+        "Log files: `logs/YYYY-MM-DD.md` (derive from the date in each entry).",
+        "",
+        "- 2026-07-18: active — Prior day work.",
+        "- 2026-07-19: active — Old summary.",
+        "- 2026-03-23 to 2026-03-26: archived (monthly). Content: Multi-day range.",
+        "",
+      ].join("\n"),
+      "utf8",
+    );
+    appendDailyLog(dir, {
+      date: "2026-07-19",
+      sessionHeader: "14:00–14:30",
+      sections: "### Context\nUpdated reflect.",
+    });
+    updateLogsIndexEntry(dir, "2026-07-19");
+    const index = readFileSync(join(dir, "logs", "index.md"), "utf8");
+    expect(index).toContain("2026-07-19: active — Updated reflect.");
+    expect(index).toContain("2026-07-18: active — Prior day work.");
+    expect(index).toContain("archived (monthly)");
+  });
+
+  it("inserts new entry in sorted position", () => {
+    dir = mkdtempSync(join(tmpdir(), "ab-index-"));
+    mkdirSync(join(dir, "logs"), { recursive: true });
+    writeFileSync(
+      join(dir, "logs", "index.md"),
+      [
+        "# Sessions index",
+        "",
+        "Log files: `logs/YYYY-MM-DD.md` (derive from the date in each entry).",
+        "",
+        "- 2026-07-18: active — Day 18.",
+        "- 2026-07-20: active — Day 20.",
+        "",
+      ].join("\n"),
+      "utf8",
+    );
+    appendDailyLog(dir, {
+      date: "2026-07-19",
+      sessionHeader: "10:00–10:30",
+      sections: "### Context\nInserted day.",
+    });
+    updateLogsIndexEntry(dir, "2026-07-19");
+    const index = readFileSync(join(dir, "logs", "index.md"), "utf8");
+    const lines = index.split("\n").filter((l) => l.startsWith("- "));
+    expect(lines[0]).toContain("2026-07-18");
+    expect(lines[1]).toContain("2026-07-19");
+    expect(lines[2]).toContain("2026-07-20");
+  });
+
+  it("uses maintenance status when specified", () => {
     dir = mkdtempSync(join(tmpdir(), "ab-index-"));
     appendDailyLog(dir, {
       date: "2026-07-20",
@@ -185,7 +243,7 @@ describe("rebuildLogsIndex", () => {
       sections: "Maintenance cycle completed: depth-1.",
       status: "maintenance",
     });
-    rebuildLogsIndex(dir);
+    updateLogsIndexEntry(dir, "2026-07-20", "maintenance");
     const index = readFileSync(join(dir, "logs", "index.md"), "utf8");
     expect(index).toContain("2026-07-20: maintenance —");
   });

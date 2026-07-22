@@ -209,7 +209,7 @@ export function finalizeReflectToDailyLog(options: FinalizeReflectOptions): stri
   return dailyPath;
 }
 
-/** Append checkpoint reflect output to the daily log and rebuild the index. */
+/** Append checkpoint reflect output to the daily log and update its index entry. */
 export function finalizeCheckpointToDailyLog(options: FinalizeCheckpointOptions): string {
   const { abDirectory, date, checkpointTime, sections } = options;
   const dailyPath = appendDailyLog(abDirectory, {
@@ -218,44 +218,62 @@ export function finalizeCheckpointToDailyLog(options: FinalizeCheckpointOptions)
     sections,
     blockKind: "checkpoint",
   });
-  rebuildLogsIndex(abDirectory);
+  updateLogsIndexEntry(abDirectory, date);
   return dailyPath;
 }
 
-export function rebuildLogsIndex(abDirectory: string): void {
+const INDEX_HEADER = "# Sessions index\n\nLog files: `logs/YYYY-MM-DD.md` (derive from the date in each entry).\n";
+
+/**
+ * Incremental index update: add or replace only the entry for `date`,
+ * preserving all other lines (archived entries, date ranges, curated summaries).
+ * Creates the index with standard header if it doesn't exist.
+ */
+export function updateLogsIndexEntry(abDirectory: string, date: string, status: LogStatus = "active"): void {
   const logsDir = join(abDirectory, "logs");
   mkdirSync(logsDir, { recursive: true });
-  const entries: Array<{ date: string; summary: string; file: string; status: LogStatus }> = [];
+  const indexPath = join(logsDir, "index.md");
 
-  for (const name of readdirSync(logsDir)) {
-    if (!name.endsWith(".md") || name === "index.md") continue;
-    const path = join(logsDir, name);
-    const content = readFileSync(path, "utf8");
-    const fm = parseFrontmatter(content);
-    const summary = extractOneLinerSummary(content);
-    entries.push({
-      date: fm.date ?? name.replace(/\.md$/, ""),
-      status: (fm.status as LogStatus) ?? "active",
-      summary,
-      file: name,
-    });
+  const logPath = join(logsDir, `${date}.md`);
+  const summary = existsSync(logPath)
+    ? extractOneLinerSummary(readFileSync(logPath, "utf8"))
+    : "(no summary)";
+
+  const newLine = `- ${date}: ${status} — ${summary}`;
+  const entryPattern = new RegExp(`^- ${date}:.*$`, "m");
+
+  if (!existsSync(indexPath)) {
+    writeFileSync(indexPath, `${INDEX_HEADER}\n${newLine}\n`, "utf8");
+    return;
   }
 
-  entries.sort((a, b) => a.date.localeCompare(b.date) || a.file.localeCompare(b.file));
-  const lines = [
-    "# Sessions index",
-    "",
-    "Log files: `logs/YYYY-MM-DD.md` (derive from the date in each entry).",
-    "",
-    ...entries.map((e) => {
-      const stem = e.file.replace(/\.md$/, "");
-      const status = e.status ?? "active";
-      return `- ${stem}: ${status} — ${e.summary}`;
-    }),
-    "",
-  ];
-  writeFileSync(join(logsDir, "index.md"), lines.join("\n"), "utf8");
+  const existing = readFileSync(indexPath, "utf8");
+
+  if (entryPattern.test(existing)) {
+    writeFileSync(indexPath, existing.replace(entryPattern, newLine), "utf8");
+    return;
+  }
+
+  const lines = existing.trimEnd().split("\n");
+  const entryLines: Array<{ idx: number; date: string }> = [];
+  for (let i = 0; i < lines.length; i++) {
+    const m = /^- (\d{4}-\d{2}-\d{2})/.exec(lines[i]);
+    if (m) entryLines.push({ idx: i, date: m[1] });
+  }
+
+  let insertAt = lines.length;
+  for (const entry of entryLines) {
+    if (date < entry.date) {
+      insertAt = entry.idx;
+      break;
+    }
+    insertAt = entry.idx + 1;
+  }
+
+  lines.splice(insertAt, 0, newLine);
+  writeFileSync(indexPath, lines.join("\n") + "\n", "utf8");
 }
+
 
 function extractOneLinerSummary(content: string): string {
   const contextMatch = content.match(/### Context\r?\n([\s\S]*?)(?=\r?\n###|\r?\n##|\r?\n$)/);

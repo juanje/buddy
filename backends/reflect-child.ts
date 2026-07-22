@@ -32,8 +32,8 @@ import {
   finalizeCheckpointToDailyLog,
   finalizeReflectToDailyLog,
   parseFrontmatter,
-  rebuildLogsIndex,
   sanitizeReflectOutput,
+  updateLogsIndexEntry,
 } from "./reflect";
 import { CHECKPOINT_PROMPT, SESSION_END_PROMPT } from "./reflect-prompts";
 
@@ -167,7 +167,9 @@ async function runReflect(
             skeletonContent: skeleton,
             sections: result,
           });
-          rebuildLogsIndex(abDirectory);
+          const fm = parseFrontmatter(skeleton);
+          const logDate = fm.date ?? new Date().toISOString().slice(0, 10);
+          updateLogsIndexEntry(abDirectory, logDate);
           logEvent(abDirectory, {
             event: "reflect_complete",
             session: sessionId,

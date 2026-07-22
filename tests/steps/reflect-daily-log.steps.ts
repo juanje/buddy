@@ -6,7 +6,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { commitAll } from "../../backends/git";
-import { findPendingReflects, finalizeReflectToDailyLog, rebuildLogsIndex, savePendingSkeleton } from "../../backends/reflect";
+import { findPendingReflects, finalizeReflectToDailyLog, savePendingSkeleton, updateLogsIndexEntry } from "../../backends/reflect";
 import { runCrashRecoveryCatchUp } from "../../backends/reflect-recovery";
 import { SessionTracker } from "../../backends/session-tracker";
 import type { AbWorld } from "../support/world";
@@ -52,7 +52,9 @@ When("catch-up reflect runs", async function (this: ReflectDailyWorld) {
     return 12345;
   });
 
-  rebuildLogsIndex(this.abDir!);
+  if (this.lastSkeletonDate) {
+    updateLogsIndexEntry(this.abDir!, this.lastSkeletonDate);
+  }
   await commitAll(this.abDir!, "ab: catch-up reflect");
 
   if (this.lastSkeletonDate) {
