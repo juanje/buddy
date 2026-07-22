@@ -60,7 +60,6 @@ export interface SettingsController {
   submitAuthOAuth(): Promise<void>;
   submitAuthApiKey(apiKey: string, baseUrl?: string): Promise<void>;
   setAuthShowApiKey(show: boolean): void;
-  dismissProviderAddedNotice(): void;
 }
 
 export function providerLabel(
@@ -266,9 +265,6 @@ export function createSettingsController(options: {
     setAuthShowApiKey(show) {
       authShowApiKey.set(show);
       authError.set(undefined);
-    },
-    dismissProviderAddedNotice() {
-      providerAddedNotice.set(false);
     },
   };
 }
