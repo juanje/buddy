@@ -247,6 +247,33 @@ describe("updateLogsIndexEntry", () => {
     const index = readFileSync(join(dir, "logs", "index.md"), "utf8");
     expect(index).toContain("2026-07-20: maintenance —");
   });
+
+  it("does not downgrade active to maintenance", () => {
+    dir = mkdtempSync(join(tmpdir(), "ab-index-"));
+    mkdirSync(join(dir, "logs"), { recursive: true });
+    writeFileSync(
+      join(dir, "logs", "index.md"),
+      [
+        "# Sessions index",
+        "",
+        "Log files: `logs/YYYY-MM-DD.md` (derive from the date in each entry).",
+        "",
+        "- 2026-07-21: active — Real work day.",
+        "",
+      ].join("\n"),
+      "utf8",
+    );
+    appendDailyLog(dir, {
+      date: "2026-07-21",
+      sessionHeader: "23:00 consolidation",
+      sections: "Maintenance cycle completed: depth-2.",
+      status: "maintenance",
+    });
+    updateLogsIndexEntry(dir, "2026-07-21", "maintenance");
+    const index = readFileSync(join(dir, "logs", "index.md"), "utf8");
+    expect(index).toContain("2026-07-21: active —");
+    expect(index).not.toContain("2026-07-21: maintenance —");
+  });
 });
 
 describe("findPendingReflects", () => {

@@ -250,6 +250,12 @@ export function updateLogsIndexEntry(abDirectory: string, date: string, status: 
   const existing = readFileSync(indexPath, "utf8");
 
   if (entryPattern.test(existing)) {
+    const currentLine = existing.match(entryPattern)![0];
+    if (currentLine.includes(": active") && status === "maintenance") {
+      const preservedLine = `- ${date}: active — ${summary}`;
+      writeFileSync(indexPath, existing.replace(entryPattern, preservedLine), "utf8");
+      return;
+    }
     writeFileSync(indexPath, existing.replace(entryPattern, newLine), "utf8");
     return;
   }

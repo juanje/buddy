@@ -61,7 +61,7 @@ export function assembleSystemPrompt(abDirectory: string, now: Date = new Date()
     sections.push(`# Sessions index\n\n${logsIndex.trim()}`);
   }
 
-  const lastLog = findLastActiveLog(abDirectory, logsIndex);
+  const lastLog = findLastLog(abDirectory, logsIndex);
   if (lastLog) {
     sections.push(`# Last session log\n\n${lastLog.trim()}`);
   }
@@ -112,20 +112,18 @@ export function assembleSystemPrompt(abDirectory: string, now: Date = new Date()
 }
 
 /**
- * Find the last "active" session date from logs/index.md and read that log.
- * Mirrors the logic in my-ab's session-start.py hook.
+ * Find the last dated entry in logs/index.md and read that log.
+ * Status is informational only — do not filter by active/maintenance.
  */
-function findLastActiveLog(abDirectory: string, indexContent: string | undefined): string | undefined {
+function findLastLog(abDirectory: string, indexContent: string | undefined): string | undefined {
   if (!indexContent) {
     return findMostRecentLogFile(abDirectory);
   }
 
   let lastDate: string | undefined;
   for (const line of indexContent.split("\n")) {
-    if (/active/i.test(line)) {
-      const match = /(\d{4}-\d{2}-\d{2})/.exec(line);
-      if (match) lastDate = match[1];
-    }
+    const match = /^- (\d{4}-\d{2}-\d{2})/.exec(line);
+    if (match) lastDate = match[1];
   }
 
   if (lastDate) {
@@ -135,7 +133,7 @@ function findLastActiveLog(abDirectory: string, indexContent: string | undefined
   return findMostRecentLogFile(abDirectory);
 }
 
-/** Fallback when logs/index.md is missing or has no active entries. */
+/** Fallback when logs/index.md is missing or has no dated entries. */
 function findMostRecentLogFile(abDirectory: string): string | undefined {
   const logsDir = join(abDirectory, "logs");
   if (!existsSync(logsDir)) return undefined;
