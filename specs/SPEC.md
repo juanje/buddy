@@ -42,12 +42,27 @@ Node.js Worker (TypeScript)
     ├── Heartbeat scheduler (Phase 2 — setInterval)
     └── Consolidation runner (Phase 2 — separate Pi session)
     │
+    ├─── reads ──▶ ~/.buddy/ (global config, core prompts)
+    │                ├── config.json (rootDir pointer, language)
+    │                ├── auth.json (credentials, mode 600)
+    │                ├── allowed-paths.json (Zone 2 paths)
+    │                └── prompts/ (app-managed, updatable)
+    │                     ├── agents-base.md (universal behavior)
+    │                     ├── consolidation.md
+    │                     └── process-conversation.md
+    │
     ▼
-AB File System (git repo)
-    ├── AGENTS.md (portable behavioral rules)
+rootDir (git repo — user/agent content only)
+    ├── AGENTS.md (instance-specific behavioral rules)
     ├── agent_brain/ (agent's learned knowledge)
     ├── user/ (user's tasks, drafts, journal)
-    └── logs/ (daily agent logs)
+    ├── logs/ (daily agent logs)
+    ├── .pi/settings.json (per-instance provider/model)
+    └── .buddy/ (runtime state, gitignored)
+         ├── maintenance.lock
+         ├── consolidation-state.json
+         ├── pending/ (reflect skeletons)
+         └── logs/*.jsonl (app events)
 ```
 
 **Key patterns:**
@@ -56,6 +71,7 @@ AB File System (git repo)
 - Hook chaining on `beforeToolCall` for permissions; Hebbian tracking via `tool_execution_end` in `session.subscribe()`
 - `DefaultResourceLoader` with assembled system prompt at session start
 - Separate Pi session for maintenance (consolidation never touches live session)
+- **Global/local split:** Core app assets (`~/.buddy/prompts/`) are app-managed and updatable; `rootDir` contains only instance-specific content owned by user/agent (NFR-PORT-05)
 
 ---
 
@@ -590,12 +606,13 @@ Crash recovery (next app start):
 |----|-------------|-------|
 | FR-PROMPT-01 | Assembly from files | 1 ✓ |
 | FR-PROMPT-02 | Session-start enrichment | 1 ✓ |
+| FR-PROMPT-03 | Global base prompt (agents-base.md) | 2 |
 
 **FR-PROMPT-01 — Assembly**
 
 - **Given** a session is starting
 - **When** the system prompt is built
-- **Then** it includes: AGENTS.md, SOUL.md, USER.md, due deferred items, current date/time
+- **Then** it includes: agents-base.md, AGENTS.md/CLAUDE.md, SOUL.md, USER.md, due deferred items, current date/time
 - **And** it is passed to Pi via `DefaultResourceLoader({ systemPromptOverride: () => prompt })`
 
 **FR-PROMPT-02 — Session-start enrichment**
@@ -603,6 +620,16 @@ Crash recovery (next app start):
 - **Given** the system prompt is assembled
 - **When** deferred items are due or overdue
 - **Then** they are formatted and included in the prompt so the agent surfaces them proactively
+
+**FR-PROMPT-03 — Global base prompt**
+
+- **Given** a session is starting
+- **When** the system prompt is assembled
+- **Then** `~/.buddy/prompts/agents-base.md` is read first and forms the base behavioral layer
+- **And** it defines: available tools, what's automatic (git, directory creation, session logging), agent limits (no bash, no shell)
+- **And** the instance-specific file (`rootDir/AGENTS.md` or `rootDir/CLAUDE.md`) is appended after it as an overlay
+- **And** if `agents-base.md` and the instance file contradict, the base takes precedence for capability constraints (the model follows the most specific/earliest instruction)
+- **Note:** This enables updating universal app behavior without modifying user instances. Old AB instances with `CLAUDE.md` containing git/bash references work safely — the base explicitly forbids those capabilities.
 
 ### 3.11 Git Operations (FR-GIT)
 
@@ -948,6 +975,7 @@ The native window close (X) already triggers the full shutdown sequence (skeleto
 | NFR-PORT-02 | The AB repo works in Cursor or Claude Code with basic functionality via AGENTS.md as fallback |
 | NFR-PORT-03 | The app never overwrites AGENTS.md — user customizations are preserved |
 | NFR-PORT-04 | Platform artifacts (`.cursor/`, `.codex/`, `.claude/`) in imported instances are ignored |
+| NFR-PORT-05 | Core app prompts live in `~/.buddy/prompts/`, not inside rootDir. App updates refresh these files without touching user content. Instances never need migration for prompt changes. |
 
 ### 4.5 Privacy
 
@@ -981,6 +1009,7 @@ The native window close (X) already triggers the full shutdown sequence (skeleto
 | NFR-CONFIG-01 | All operational defaults (thresholds, timeouts, intervals) centralized in a single `shared/defaults.ts` — no magic numbers scattered across the codebase |
 | NFR-CONFIG-02 | User-tunable settings (reflect interval, model, language) persisted in `.buddy/settings.json` and editable from the settings UI |
 | NFR-CONFIG-03 | Security-critical constants (denylist paths, excluded tools) centralized in `shared/defaults.ts` alongside operational defaults — not configurable by user or agent, but readable in one place for maintenance |
+| NFR-CONFIG-04 | Core prompts (`~/.buddy/prompts/`) are populated on first run and refreshed on app updates. The app ensures this directory exists before any session starts. |
 
 ---
 
@@ -1109,7 +1138,8 @@ AB remembers the conversation, knows their name, surfaces any pending reminders.
 | **Zone 2** | Trust zone: user-designated external paths — silent reads, confirmed writes |
 | **Zone 3** | Trust zone: everything else — all access requires user confirmation |
 | **Denylist** | Hardcoded paths never accessible by the agent (`~/.ssh/`, `~/.gnupg/`, etc.) |
-| **AGENTS.md** | Portable behavioral rules in the repo root — works as a fallback when the repo is opened in Cursor or Claude Code |
+| **agents-base.md** | Universal system prompt base (`~/.buddy/prompts/agents-base.md`) — defines tool capabilities, automatic behaviors, and agent limits. App-managed, updated with the app. |
+| **AGENTS.md** | Instance-specific behavioral rules in rootDir — skills, routing conventions, active context. Works as a standalone fallback when the repo is opened in Cursor or Claude Code |
 | **SOUL.md** | Agent character definition — stable, rarely modified, changes require user confirmation |
 | **USER.md** | User profile — updated as the agent learns about the user. Zone 1 (silent allow); only SOUL.md requires confirmation |
 | **Deferred queue** | Items in `agent_brain/deferred.md` with dates — parsed by code, surfaced by heartbeat or on app start |
