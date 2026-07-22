@@ -101,8 +101,7 @@ export class SessionLifecycle {
 
   private async onTurnEnd(): Promise<void> {
     if (this.turnDirty) {
-      const message = await commitAll(this.abDirectory);
-      if (message) this.tracker.recordCommit(message);
+      await commitAll(this.abDirectory);
       this.turnDirty = false;
     }
 

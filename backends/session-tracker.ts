@@ -19,7 +19,6 @@ export interface SessionTrackerSnapshot {
   filesRead: string[];
   filesWritten: string[];
   toolCalls: TrackedToolCall[];
-  commits: string[];
 }
 
 function relPath(abDirectory: string, absOrRel: string): string {
@@ -36,7 +35,6 @@ export class SessionTracker {
   filesRead: string[] = [];
   filesWritten: string[] = [];
   toolCalls: TrackedToolCall[] = [];
-  commits: string[] = [];
   lastCheckpointTurn = 0;
 
   private activitySinceCheckpoint = false;
@@ -45,10 +43,6 @@ export class SessionTracker {
   constructor(sessionId: string, startTime: Date = new Date()) {
     this.sessionId = sessionId;
     this.startTime = startTime;
-  }
-
-  recordCommit(message: string): void {
-    this.commits.push(message);
   }
 
   recordEvent(event: AgentEvent, abDirectory: string): {
@@ -93,7 +87,6 @@ export class SessionTracker {
       filesRead: [...this.filesRead],
       filesWritten: [...this.filesWritten],
       toolCalls: [...this.toolCalls],
-      commits: [...this.commits],
     };
   }
 
