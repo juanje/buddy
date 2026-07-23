@@ -103,6 +103,13 @@ export function deletePendingSkeleton(pendingPath: string): void {
   if (existsSync(pendingPath)) rmSync(pendingPath);
 }
 
+/** Mark a pending skeleton as in-progress so it won't be re-processed on next scan. */
+export function markPendingInProgress(pendingPath: string): void {
+  if (!existsSync(pendingPath)) return;
+  const content = readFileSync(pendingPath, "utf8");
+  writeFileSync(pendingPath, content.replace("status: reflect-pending", "status: reflect-in-progress"), "utf8");
+}
+
 export function parseFrontmatter(content: string): Record<string, string> {
   const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
   if (!match) return {};

@@ -57,6 +57,7 @@ export function spawnReflectChild(options: SpawnReflectOptions): number | undefi
     const child = cpSpawn(process.execPath, ["--reflect", ...args], {
       detached: true,
       stdio: "ignore",
+      env: { ...process.env, AB_REFLECT_CHILD: "1" },
     });
     child.unref();
     const pid = child.pid;
@@ -70,6 +71,7 @@ export function spawnReflectChild(options: SpawnReflectOptions): number | undefi
     detached: true,
     stdio: "ignore",
     execArgv: ["--import", "tsx"],
+    env: { ...process.env, AB_REFLECT_CHILD: "1" },
   });
   child.unref();
   const pid = child.pid;
