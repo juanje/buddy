@@ -122,13 +122,16 @@ rootDir (git repo — user/agent content only)
 
 - **Given** the agent response includes thinking content (`thinking_delta` events)
 - **When** the message renders
-- **Then** thinking appears in a collapsible section above the response text, collapsed by default
+- **Then** during streaming: thinking-only bubbles show a transient "Pensando…" indicator
+- **And** after the turn completes: thinking-only bubbles (no text content) are hidden entirely
+- **And** messages with both thinking and text show a collapsible toggle (collapsed by default)
 
 **FR-CHAT-06 — Tool call display**
 
 - **Given** the agent executes tool calls during a response
 - **When** tool events arrive (`tool_execution_start`, `tool_execution_end`)
-- **Then** each tool call appears as an expandable card showing tool name and result
+- **Then** during streaming: each active tool call appears as an expandable card showing tool name and status
+- **And** after the turn completes: the tool activity indicator is hidden (transient UX, not permanent record)
 
 **FR-CHAT-07 — Auto-scroll with manual override**
 
@@ -346,11 +349,16 @@ Mid-session (every N turns / pre-compaction):
   child (async):      open fork → user prompt only → lightweight LLM → append ## Checkpoint to daily log → commit → exit
 
 Crash recovery (next app start):
-  boot: detect reflect-pending skeleton → spawn child → skeleton as input (no fork available) → LLM → daily log → commit → exit
+  boot: detect reflect-pending skeleton → mark in-progress → spawn child → skeleton as input (no fork available) → LLM → daily log → commit → exit
 
 Spawn mechanism:
   dev:  child_process.fork(reflect-child.ts) with tsx
   prod: spawn(process.execPath, ["--reflect", ...]) — same binary, argv dispatch (E13b)
+
+Fork bomb defense (triple guard):
+  1. argv.includes("--reflect") — robust parsing regardless of Bun argv structure
+  2. AB_REFLECT_CHILD=1 env var — child skips crash recovery (recursion guard)
+  3. markPendingInProgress — skeleton status flipped before spawn (prevents re-processing)
 ```
 
 **FR-REFLECT-04 — Log output sanitizer (strip tool-call artifacts)**
@@ -504,6 +512,7 @@ Spawn mechanism:
 - **When** a tick fires
 - **Then** `deferred.md` is parsed and due items are detected
 - **And** the frontend is notified via `onDeferredDue()`
+- **Resilience:** A 5-second minimum gap rate limiter guards against runaway timer behavior in compiled binaries (where `setInterval` can fire at sub-second intervals if its argument resolves to 0/NaN). Each tick emits a `heartbeat_tick` JSONL event for observability.
 
 **FR-DEFERRED-03 — OS notification**
 
@@ -511,6 +520,7 @@ Spawn mechanism:
 - **When** the frontend receives the notification
 - **Then** an OS-level notification fires via `tauri-plugin-notification`
 - **And** clicking the notification focuses the app window
+- **Resilience:** A concurrency guard (`notifyInFlight`) prevents multiple simultaneous notification attempts when heartbeat ticks arrive faster than the async notification call resolves.
 
 ### 3.8 Consolidation (FR-CONSOL)
 

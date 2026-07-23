@@ -148,9 +148,22 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 
 **Tests at E13 close:** 193 unit + 104 BDD green.
 
+## Production hardening (2026-07-23)
+
+| Fix | Description | Commit |
+|-----|-------------|--------|
+| Heartbeat rate limit | Guard against runaway timer in Bun binary (5s min gap) | 2b56f20 |
+| Fork bomb defense | argv.includes dispatch + AB_REFLECT_CHILD env guard + markPendingInProgress | c548911 |
+| Deferred notify guard | Concurrency lock prevents notification plugin flood | f2a5c56 |
+| Deferred parser | Tolerate optional HH:MM in entry dates | 2e2ae95 |
+| Heartbeat observability | heartbeat_tick JSONL event for debugging | 4b4be94 |
+| UI: hide stale indicators | Thinking + tool-activity bubbles hidden after turn ends | ddcb441 |
+
+**Tests at hardening close:** 194 unit + 104 BDD green.
+
 ## Current focus
 
-> **E13 complete (2026-07-23)** — Reflect fork-only context (E13a) + production argv dispatch (E13b).
+> **Production hardening complete (2026-07-23)** — Sidecar stability, fork bomb prevention, notification wiring.
 > Next: FR-WIKI, FR-COST, FR-CHAT-10.
 
 ### Sprint: Settings access UI — DONE (2026-07-22)
