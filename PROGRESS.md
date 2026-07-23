@@ -177,7 +177,7 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 
 | Item | Description | Commit |
 |------|-------------|--------|
-| E14 | Remove skeleton/pending infrastructure; fork-only reflect with spawn metadata args; drop crash-catchup | pending |
+| E14 | Remove skeleton/pending infrastructure; fork-only reflect with spawn metadata args; drop crash-catchup | b1e755e |
 
 **Tests at E14 close:** 193 unit + 102 BDD green.
 
