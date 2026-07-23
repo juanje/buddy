@@ -21,7 +21,7 @@
     isSettingsShortcut,
     type SettingsController,
   } from "./lib/settings-controller";
-  import { notifyDeferredDue } from "./utils/deferred-notify";
+  import { ensureNotificationPermission, notifyDeferredDue } from "./utils/deferred-notify";
   import { t } from "./lib/i18n";
   import type { AgentEvent, DeferredItemView, OAuthUIEvent, SetupConfig } from "../shared/api";
   import { SHUTDOWN_TIMEOUT_MS } from "../shared/defaults";
@@ -152,6 +152,7 @@
   }
 
   onMount(() => {
+    void ensureNotificationPermission();
     void connect();
 
     let unlistenClose: (() => void) | undefined;

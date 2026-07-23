@@ -45,6 +45,27 @@ export async function ensureDeferredNotificationClickHandler(): Promise<void> {
   }
 }
 
+/**
+ * Request notification permission eagerly (call at app start when window has focus).
+ * macOS won't show the permission prompt to a background app.
+ */
+export async function ensureNotificationPermission(): Promise<boolean> {
+  try {
+    let granted = await isPermissionGranted();
+    if (!granted) {
+      console.warn("[deferred-notify] permission not yet granted, requesting…");
+      granted = (await requestPermission()) === "granted";
+    }
+    if (!granted) {
+      console.warn("[deferred-notify] permission denied by user/system");
+    }
+    return granted;
+  } catch (err) {
+    console.warn("[deferred-notify] ensurePermission failed:", err);
+    return false;
+  }
+}
+
 export async function notifyDeferredDue(
   count: number,
   labels: { title: string; body: string },
@@ -57,19 +78,16 @@ export async function notifyDeferredDue(
 
   notifyInFlight = true;
   try {
-    let granted = await isPermissionGranted();
+    const granted = await isPermissionGranted();
     if (!granted) {
-      console.warn("[deferred-notify] permission not granted, requesting…");
-      granted = (await requestPermission()) === "granted";
-    }
-    if (!granted) {
-      console.warn("[deferred-notify] permission denied by user/system");
+      console.warn("[deferred-notify] permission not granted — skipping (should have been requested at startup)");
       return;
     }
 
     await ensureDeferredNotificationClickHandler();
     sendNotification({ title: labels.title, body: labels.body, autoCancel: true });
     lastNotifiedAt = now;
+    console.info(`[deferred-notify] sent: "${labels.body}"`);
   } catch (err) {
     console.warn("[deferred-notify] failed:", err);
   } finally {
