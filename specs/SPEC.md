@@ -519,8 +519,10 @@ Fork bomb defense (triple guard):
 - **Given** the heartbeat detects due deferred items
 - **When** the frontend receives the notification
 - **Then** an OS-level notification fires via `tauri-plugin-notification`
-- **And** clicking the notification focuses the app window
-- **Resilience:** A concurrency guard (`notifyInFlight`) prevents multiple simultaneous notification attempts when heartbeat ticks arrive faster than the async notification call resolves.
+- **And** the notification body shows the actual reminder text (single item) or first item + count (multiple items)
+- **And** the deferred banner re-shows inside the app so the user sees the items whether they arrive via notification or are already in the app
+- **And** the user can dismiss the banner, which removes the items from `deferred.md`
+- **Resilience:** A concurrency guard (`notifyInFlight`) prevents multiple simultaneous notification attempts when heartbeat ticks arrive faster than the async notification call resolves. Permission is requested proactively at app start.
 
 ### 3.8 Consolidation (FR-CONSOL)
 

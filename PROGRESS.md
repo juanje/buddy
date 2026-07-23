@@ -160,11 +160,23 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 | UI: hide stale indicators | Thinking + tool-activity bubbles hidden after turn ends | ddcb441 |
 | Local file links | Migrate FR-CHAT-09 from shell `open()` to opener `openPath()` | b487784 |
 
-**Tests at hardening close:** 194 unit + 104 BDD green.
+## Codebase cleanup (2026-07-23)
+
+| Item | Description | Commit |
+|------|-------------|--------|
+| Batch 1 | Unify constants, remove dead exports, DEFAULT_LANGUAGE fallback | 728ba82 |
+| Batch 2 | Test infra: shared constants, parallel-safe env, reflect-recovery coverage | 29286eb |
+| Batch 3 | Prune tool-activity from state, sidecar target script, remove dead reflectInFlight | 10b4fcb |
+| getState removal | Remove dead AgentState + getState from entire RPC stack | 8b66be1 |
+| Notification content | Show actual reminder text in OS notification + re-show banner mid-session | b487784 |
+
+**Tests at cleanup close:** 201 unit + 104 BDD green.
+
+**Remaining:** Shared `ProviderAuthPanel.svelte` (extract duplicated OAuth/API key UI from wizard + settings). Deferred to next sprint.
 
 ## Current focus
 
-> **Production hardening complete (2026-07-23)** — Sidecar stability, fork bomb prevention, notification wiring.
+> **Cleanup + hardening complete (2026-07-23)** — Sidecar stable, fork bomb prevented, notifications with content, dead code removed, opener plugin for local links.
 > Next: FR-WIKI, FR-COST, FR-CHAT-10.
 
 ### Sprint: Settings access UI — DONE (2026-07-22)
