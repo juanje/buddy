@@ -473,38 +473,48 @@ or Pi SDK changes — not worth the complexity.
 
 ---
 
-## Rethinking reflect (encoding)
+## Reflect (encoding)
 
-### Current: LLM writes entire log
+### Design principle: the fork IS the context
 
-The LLM reads the conversation transcript, decides what's important, and
-writes the log entry (Decisions, Tasks, Lessons, Context, Open threads).
-
-### Proposed: code captures structure, LLM adds analysis
+The reflect child continues the conversation — it doesn't read a cold summary.
 
 ```
-Worker (code, no LLM):
-  - Save raw conversation to session archive (append-only JSONL)
-  - Extract structured facts: timestamps, files written, files read,
-    tool calls made, git commits
-  - Write skeleton log entry with factual metadata
+Worker (code, no LLM, <100ms):
+  - Write factual skeleton to .buddy/pending/ (crash fallback only)
+  - Fork the live session via SessionManager.forkFrom()
+  - Spawn background child process (detached, unref'd)
+  - Close app window
 
-LLM (judgment, depth):
-  - Read the skeleton + recent conversation
-  - Add: Decisions (with reasoning), Lessons, Context, Open threads
-  - Extract observations for the pipeline
-  - Propose Active context patches (if interactive session)
+Background child (LLM, async):
+  - Open the forked session (full conversation history: all turns, tool calls, results)
+  - Send a single user prompt: "Reflect on this session — Decisions, Lessons,
+    Context, Open threads, Tasks captured, Ideas, System observations"
+  - NO system prompt override, NO ResourceLoader, NO AGENTS.md, NO skeleton input
+  - The fork already contains everything the LLM needs
+  - Write structured output → logs/YYYY-MM-DD.md → commit → exit
+
+Crash recovery (no fork available):
+  - Skeleton IS the input — files read/written, timestamps, tool calls
+  - Output is thinner but non-zero
 ```
 
-**Benefit:** the factual record is never lost (code captures it deterministically).
-The LLM adds the interpretive layer. If the LLM fails or is interrupted, you
-still have the raw session data + the factual skeleton.
+**Why not skeleton + conversation?** The fork already has the full conversation.
+Passing the skeleton as additional input adds mechanical noise (file paths,
+tool names) that doesn't help the LLM produce better semantic summaries. The
+model saw those actions happen in context — it doesn't need a list.
 
-**Incremental reflect** during long sessions (the "every 15 messages (configurable via INCREMENTAL_REFLECT_EVERY in shared/defaults.ts)" pattern):
-- Worker counts messages; at threshold, invokes a lightweight reflect
-- Uses a **separate, cheaper model** (or lower thinking level) for mid-session
-  reflects — they're just encoding, not deep analysis
-- Full reflect at session end uses the configured model at full depth
+**Why not a ResourceLoader / system prompt?** The live session already had
+AGENTS.md and identity in its context. The fork inherits that. Loading them
+again would double-inject, and loading a *different* system prompt (e.g. a
+"reflect agent" persona) would pollute the context the model is summarizing.
+The reflect prompt goes as a user message — simple continuation.
+
+**Incremental reflect** during long sessions (every N messages, configurable
+via `INCREMENTAL_REFLECT_EVERY` in `shared/defaults.ts`):
+- Worker forks the session and spawns a checkpoint child (same fork-only pattern)
+- Uses a **cheaper model** (or lower thinking level) — checkpoints are encoding, not deep analysis
+- Session-end reflect uses the configured model at full depth
 
 ---
 
