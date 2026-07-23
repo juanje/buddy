@@ -19,6 +19,7 @@ import { registerBunOAuthFlows } from "../node_modules/@earendil-works/pi-coding
 import { configureHttpDispatcher } from "../node_modules/@earendil-works/pi-coding-agent/dist/core/http-dispatcher.js";
 import { registerEmbeddedAssets } from "./embedded-assets";
 import { EMBEDDED_PROMPTS, EMBEDDED_TEMPLATES } from "./embedded-assets.generated";
+import { sidecarBootTarget } from "./sidecar-dispatch";
 
 (globalThis as any).DOMMatrix = class DOMMatrix {
   a = 1; b = 0; c = 0; d = 1; e = 0; f = 0;
@@ -55,4 +56,9 @@ configureHttpDispatcher();
 // inside the compiled binary — register the build-time snapshot instead.
 registerEmbeddedAssets({ templates: EMBEDDED_TEMPLATES, prompts: EMBEDDED_PROMPTS });
 
-await import("./agent-worker");
+// E13b: same binary, two modes — worker RPC vs one-shot reflect child.
+if (sidecarBootTarget() === "reflect-child") {
+  await import("./reflect-child");
+} else {
+  await import("./agent-worker");
+}
