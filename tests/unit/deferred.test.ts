@@ -29,6 +29,15 @@ describe("parseDeferredItems", () => {
     ]);
   });
 
+  it("parses entries with optional time after date", () => {
+    const items = parseDeferredItems(
+      "- **reminder** (2026-07-23 01:56, user): Review the log status.\n",
+    );
+    expect(items).toEqual([
+      { type: "reminder", dueDate: "2026-07-23", source: "user", text: "Review the log status." },
+    ]);
+  });
+
   it("ignores prose, headers and malformed lines", () => {
     const items = parseDeferredItems(
       [

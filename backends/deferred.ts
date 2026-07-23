@@ -18,7 +18,8 @@ export interface ParsedDeferredItem {
   text: string;
 }
 
-const ENTRY_RE = /^-\s+\*\*(\w+)\*\*\s+\((\d{4}-\d{2}-\d{2}),\s*(\w+)\):\s*(.+)$/;
+// Tolerant: accepts optional time after date (e.g. "2026-07-23 01:56" or "2026-07-23").
+const ENTRY_RE = /^-\s+\*\*(\w+)\*\*\s+\((\d{4}-\d{2}-\d{2})(?:\s+\d{2}:\d{2})?,\s*(\w+)\):\s*(.+)$/;
 
 export function parseDeferredItems(markdown: string): ParsedDeferredItem[] {
   const items: ParsedDeferredItem[] = [];
