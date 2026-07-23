@@ -61,7 +61,6 @@ rootDir (git repo — user/agent content only)
     └── .buddy/ (runtime state, gitignored)
          ├── maintenance.lock
          ├── consolidation-state.json
-         ├── pending/ (reflect skeletons)
          └── logs/*.jsonl (app events)
 ```
 
@@ -291,26 +290,26 @@ platform-specific install instructions is shown and setup cannot continue.
 
 - **Given** the user closes the app window or quits
 - **When** the shutdown sequence runs
-- **Then** a factual skeleton is extracted from session events (deterministic, no LLM)
-- **And** the skeleton is saved and the session is marked "reflect pending"
+- **Then** session metadata (sessionId, start/end times, calendar date) is passed to the reflect child via spawn args
+- **And** a background reflect child is spawned with the forked session file (FR-REFLECT-02)
 
 ### 3.4 Reflect (FR-REFLECT)
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-REFLECT-01 | Factual skeleton capture (crash fallback) | 1 ✓ |
+| FR-REFLECT-01 | Session-end reflect finalization (daily log append) | 1 ✓ |
 | FR-REFLECT-02 | Forked reflect on session end (primary) | 1 ✓ |
 | FR-REFLECT-03 | Checkpoint mid-session reflect (forked, background) | 1 ✓ |
 | FR-REFLECT-04 | Log output sanitizer (strip tool-call artifacts) | 2 ✓ |
 
-**FR-REFLECT-01 — Factual skeleton capture (crash fallback)**
+**FR-REFLECT-01 — Session-end reflect finalization**
 
-- **Given** the app closes
-- **When** the worker runs shutdown
-- **Then** a minimal skeleton is saved containing: timestamps, files read/written, commits
-- **And** the skeleton is written without any LLM call (pure event extraction, <100ms)
-- **And** the session is marked "reflect pending" for LLM processing
-- **Note:** This is the **crash-recovery fallback** — if the app dies before the forked reflect completes, the skeleton ensures something is captured. Under normal operation, the forked reflect (FR-REFLECT-02) replaces this with richer output.
+- **Given** a session-end reflect child completes its LLM call
+- **When** the child finalizes output
+- **Then** a `## Session HH:MM–HH:MM` block is appended to `logs/YYYY-MM-DD.md` using session metadata passed via spawn args (sessionDate, sessionStart, sessionEnd)
+- **And** `logs/index.md` is rebuilt from daily log frontmatter
+- **And** the app commits all changes (`ab: session reflect`)
+- **Note:** Session metadata (date, header times, sessionId) is passed as spawn args — no intermediate pending file.
 
 **FR-REFLECT-02 — Forked reflect on session end (primary path)**
 
@@ -319,11 +318,8 @@ platform-specific install instructions is shown and setup cannot continue.
 - **Then** the reflect child forks the live session via `SessionManager.forkFrom(sessionFile, rootDir, forkDir)` — creating a new JSONL with full conversation context in `.buddy/reflect-sessions/`
 - **And** a background process is spawned to run the LLM reflect independently of the app window (dev: `child_process.fork()`; production: `spawn(execPath, ["--reflect", ...])` — see E13b)
 - **And** the app window closes immediately (<100ms total shutdown time)
-- **And** the background process: opens the forked session → sends a single user prompt asking for the reflect (Decisions, Lessons, Context, Open threads, Tasks captured, Ideas, System observations) → appends a `## Session HH:MM–HH:MM` block to `logs/YYYY-MM-DD.md` (session start date, local calendar day) → deletes the pending skeleton in `.buddy/pending/` → rebuilds `logs/index.md` → commits → exits
-- **And** if the background process fails, the factual skeleton (FR-REFLECT-01) remains in `.buddy/pending/` as a pending fallback
-- **And** the next app start detects any remaining "reflect pending" skeletons and runs catch-up (same background process pattern)
-- **Design principle — fork-only context:** The forked session already contains the full conversation (all user/assistant turns, tool calls, tool results). The reflect child does NOT load a system prompt, AGENTS.md, identity files, or resource loader — those weren't part of the session and would pollute the context. The skeleton (files read/written, tools used) is also NOT passed as LLM input — the model already saw those actions in the fork. The only input is a user prompt requesting the structured reflect.
-- **Crash-catchup exception:** When no fork exists (crash before fork was written), the skeleton IS the input — it's the only evidence of what happened. Output will be thinner but non-zero.
+- **And** the background process: opens the forked session → sends a single user prompt asking for the reflect (Decisions, Lessons, Context, Open threads, Tasks captured, Ideas, System observations) → commits agent file writes immediately → appends a `## Session HH:MM–HH:MM` block to `logs/YYYY-MM-DD.md` (session start date, local calendar day) → rebuilds `logs/index.md` → commits → exits
+- **Design principle — fork-only context:** The forked session already contains the full conversation (all user/assistant turns, tool calls, tool results). The reflect child does NOT load a system prompt, AGENTS.md, identity files, or resource loader — those weren't part of the session and would pollute the context. The only input is a user prompt requesting the structured reflect. Session metadata (date, header) comes from spawn args, not from any intermediate file.
 
 **FR-REFLECT-03 — Checkpoint mid-session reflect (forked, background)**
 
@@ -331,34 +327,30 @@ platform-specific install instructions is shown and setup cannot continue.
 - **Or given** Pi emits a `compaction_start` event (context window about to be compressed)
 - **When** the worker detects the threshold or the compaction event (and there has been activity since the last checkpoint)
 - **Then** the worker forks the current session file and spawns a background child process with mode `checkpoint`
-- **And** the child opens the forked session and sends a single user prompt requesting a lightweight encode (Context + Notes sections only) — no system prompt override, no resource loader, no skeleton input
+- **And** the child opens the forked session and sends a single user prompt requesting a lightweight encode (Context + Notes sections only) — no system prompt override, no resource loader
 - **And** the child appends a `## Checkpoint HH:MM` block to `logs/YYYY-MM-DD.md` (session start date) using a fast-tier model
 - **And** the user's conversation is never interrupted
 - **And** the session-end reflect (FR-REFLECT-02) produces the comprehensive `## Session HH:MM–HH:MM` entry covering the full session, emphasizing activity since the last checkpoint when checkpoints exist
-- **Note:** Checkpoints are best-effort; only session-end writes a pending skeleton for crash recovery. The compaction trigger is critical — Pi discards context during compaction. The fork happens BEFORE compaction so the reflect has access to what's about to be lost.
+- **Note:** Checkpoints are best-effort. The compaction trigger is critical — Pi discards context during compaction. The fork happens BEFORE compaction so the reflect has access to what's about to be lost.
 
 **Reflect architecture summary:**
 
 ```
 Normal shutdown:
-  app (sync, <100ms): write skeleton → fork session file → spawn child → close
-  child (async):      open fork → user prompt only (no sys prompt/resources) → LLM reflect → append ## Session to daily log → commit → exit
+  app (sync, <100ms): fork session file → spawn child with metadata args → close
+  child (async):      open fork → user prompt only (no sys prompt/resources) → LLM reflect → commit agent writes → append ## Session to daily log → commit → exit
 
 Mid-session (every N turns / pre-compaction):
   worker (sync):      fork session file → spawn child (checkpoint) → continue serving user
   child (async):      open fork → user prompt only → lightweight LLM → append ## Checkpoint to daily log → commit → exit
 
-Crash recovery (next app start):
-  boot: detect reflect-pending skeleton → mark in-progress → spawn child → skeleton as input (no fork available) → LLM → daily log → commit → exit
-
 Spawn mechanism:
   dev:  child_process.fork(reflect-child.ts) with tsx
   prod: spawn(process.execPath, ["--reflect", ...]) — same binary, argv dispatch (E13b)
 
-Fork bomb defense (triple guard):
+Fork bomb defense:
   1. argv.includes("--reflect") — robust parsing regardless of Bun argv structure
-  2. AB_REFLECT_CHILD=1 env var — child skips crash recovery (recursion guard)
-  3. markPendingInProgress — skeleton status flipped before spawn (prevents re-processing)
+  2. AB_REFLECT_CHILD=1 env var — child env marker for recursion guard
 ```
 
 **FR-REFLECT-04 — Log output sanitizer (strip tool-call artifacts)**
@@ -675,7 +667,7 @@ Fork bomb defense (triple guard):
 
 **FR-GIT-03 — Index rebuild**
 
-- **Given** a reflect completes (session-end or catch-up)
+- **Given** a reflect completes (session-end)
 - **When** the daily log is appended
 - **Then** `logs/index.md` is rebuilt from daily log frontmatter
 - **And** the rebuild is deterministic (code, no LLM)
@@ -814,7 +806,7 @@ Tried and removed: a custom header bar is redundant with the native macOS title 
 
 **FR-SHELL-02 — End-session button** *(removed)*
 
-The native window close (X) already triggers the full shutdown sequence (skeleton, commit, reflect). An extra button adds no value.
+The native window close (X) already triggers the full shutdown sequence (fork, spawn reflect, commit). An extra button adds no value.
 
 **FR-SHELL-03 — About panel**
 
@@ -963,7 +955,7 @@ The native window close (X) already triggers the full shutdown sequence (skeleto
 | NFR-PERF-01 | First token of a streaming response appears within 2s of the LLM beginning output (network latency excluded) |
 | NFR-PERF-02 | App starts and shows the chat view (or wizard) within 3s on a modern machine |
 | NFR-PERF-03 | Heartbeat checks (deferred parsing, counter evaluation) complete in <100ms and never block the UI |
-| NFR-PERF-04 | Factual skeleton extraction on shutdown completes in <500ms (no LLM call) |
+| NFR-PERF-04 | Shutdown sequence (fork + spawn reflect child) completes in <500ms (no LLM call in main process) |
 
 ### 4.2 Security
 
@@ -981,8 +973,8 @@ The native window close (X) already triggers the full shutdown sequence (skeleto
 
 | ID | Requirement |
 |----|-------------|
-| NFR-REL-01 | If the app crashes mid-session, the next start detects the missing reflect and processes it during catch-up |
-| NFR-REL-02 | Pending reflect markers survive crashes (written to disk before session dispose) |
+| NFR-REL-01 | If the reflect child is interrupted, agent file writes are committed immediately after the LLM call (before daily log finalization) |
+| NFR-REL-02 | Forked session files in `.buddy/reflect-sessions/` persist on disk for potential manual recovery |
 | NFR-REL-03 | Lock files include PID and timestamp; stale locks (process dead or >1h) are broken automatically |
 | NFR-REL-04 | Failed consolidation runs don't advance counters — the run retries on the next evaluation |
 | NFR-REL-05 | Worker crash shows a user-friendly error with a restart option, not a stack trace |
@@ -1175,8 +1167,7 @@ AB remembers the conversation, knows their name, surfaces any pending reminders.
 | **Consolidation depth** | Scope of a consolidation run: 0=reflect (session encoding), 1=daily synthesis, 2=weekly calibration, 3=monthly pruning |
 | **Cascade** | When a higher-depth consolidation triggers lower depths first if they haven't been run |
 | **Hebbian tracking** | Code-enforced file access counting (`access_count` / `last_accessed` in frontmatter) — drives promotion/demotion of knowledge |
-| **Reflect** | The encoding step: capturing what happened in a session into the log. Two layers: factual skeleton (code) + interpretive summary (LLM) |
-| **Factual skeleton** | Deterministic extraction of session events (files, tools, timestamps) — written without LLM, survives crashes |
+| **Reflect** | The encoding step: capturing what happened in a session into the daily log via a forked LLM call with full conversation context |
 | **Heartbeat** | Worker-side `setInterval` that checks deferred items and evaluates consolidation triggers |
 | **Zone 1** | Trust zone: the AB directory — full access, no prompts (except identity files) |
 | **Zone 2** | Trust zone: user-designated external paths — silent reads, confirmed writes |

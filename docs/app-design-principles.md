@@ -437,7 +437,7 @@ rootDir/                   ← git repo, user/agent content
   .buddy/                  ← runtime state (gitignored)
     maintenance.lock
     consolidation-state.json
-    pending/               ← reflect skeletons
+    reflect-sessions/        ← forked Pi sessions for background reflect
     logs/*.jsonl           ← app events
 ```
 
@@ -487,28 +487,22 @@ The reflect child continues the conversation — it doesn't read a cold summary.
 
 ```
 Worker (code, no LLM, <100ms):
-  - Write factual skeleton to .buddy/pending/ (crash fallback only)
   - Fork the live session via SessionManager.forkFrom()
-  - Spawn background child process (detached, unref'd)
+  - Spawn background child with session metadata args (sessionId, date, start/end times)
   - Close app window
 
 Background child (LLM, async):
   - Open the forked session (full conversation history: all turns, tool calls, results)
   - Send a single user prompt: "Reflect on this session — Decisions, Lessons,
     Context, Open threads, Tasks captured, Ideas, System observations"
-  - NO system prompt override, NO ResourceLoader, NO AGENTS.md, NO skeleton input
-  - The fork already contains everything the LLM needs
-  - Write structured output → logs/YYYY-MM-DD.md → commit → exit
-
-Crash recovery (no fork available):
-  - Skeleton IS the input — files read/written, timestamps, tool calls
-  - Output is thinner but non-zero
+  - NO system prompt override, NO ResourceLoader, NO AGENTS.md
+  - Commit agent file writes immediately after LLM call
+  - Append ## Session HH:MM–HH:MM to logs/YYYY-MM-DD.md using spawn metadata
+  - Rebuild logs/index.md → commit → exit
 ```
 
-**Why not skeleton + conversation?** The fork already has the full conversation.
-Passing the skeleton as additional input adds mechanical noise (file paths,
-tool names) that doesn't help the LLM produce better semantic summaries. The
-model saw those actions happen in context — it doesn't need a list.
+**Why fork-only?** The fork already has the full conversation. Session metadata
+(date, header times) comes from spawn args — no intermediate pending file.
 
 **Why not a ResourceLoader / system prompt?** The live session already had
 AGENTS.md and identity in its context. The fork inherits that. Loading them

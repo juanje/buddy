@@ -1,17 +1,7 @@
-// backends/reflect.ts — Pending skeletons and daily agent logs (FR-REFLECT-01/02/03).
+// backends/reflect.ts — Daily agent logs and reflect finalization (FR-REFLECT-01/02/03).
 
-import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-
-import { PENDING_DIR } from "../shared/defaults";
-import { formatLocalTime, toIsoDay } from "../shared/dates";
-import type { SessionTrackerSnapshot } from "./session-tracker";
-
-export interface PendingReflect {
-  path: string;
-  date: string;
-  sessionId: string;
-}
 
 export type LogStatus = "active" | "maintenance";
 
@@ -25,8 +15,8 @@ export interface DailyLogAppend {
 
 export interface FinalizeReflectOptions {
   rootDir: string;
-  skeletonPath: string;
-  skeletonContent: string;
+  sessionDate: string;
+  sessionHeader: string;
   sections: string;
 }
 
@@ -35,75 +25,6 @@ export interface FinalizeCheckpointOptions {
   date: string;
   checkpointTime: string;
   sections: string;
-}
-
-function formatToolCalls(toolCalls: SessionTrackerSnapshot["toolCalls"]): string {
-  if (toolCalls.length === 0) return "(none)\n";
-  return toolCalls
-    .map((t) => {
-      const time = formatLocalTime(t.timestamp);
-      const target = t.path ? ` ${t.path}` : "";
-      return `- ${time} ${t.name}${target}`;
-    })
-    .join("\n");
-}
-
-function formatSkeletonBody(snapshot: SessionTrackerSnapshot): string {
-  const date = toIsoDay(new Date(snapshot.startTime));
-  const startTime = formatLocalTime(snapshot.startTime);
-  const endTime = formatLocalTime(snapshot.endTime);
-  const lines = [
-    `# Session — ${date} (${startTime}–${endTime}, ${snapshot.turnCount} turns)`,
-    "",
-    "## Files written",
-    snapshot.filesWritten.length ? snapshot.filesWritten.map((f) => `- ${f}`).join("\n") : "(none)",
-    "",
-    "## Files read",
-    snapshot.filesRead.length ? snapshot.filesRead.map((f) => `- ${f}`).join("\n") : "(none)",
-    "",
-    "## Tool calls",
-    formatToolCalls(snapshot.toolCalls).trimEnd(),
-  ];
-  return lines.join("\n") + "\n";
-}
-
-function formatSkeletonFrontmatter(snapshot: SessionTrackerSnapshot): string {
-  const date = toIsoDay(new Date(snapshot.startTime));
-  return [
-    "---",
-    `date: ${date}`,
-    `session_id: ${snapshot.sessionId}`,
-    "status: reflect-pending",
-    `start: ${snapshot.startTime}`,
-    `end: ${snapshot.endTime}`,
-    `turns: ${snapshot.turnCount}`,
-    "---",
-    "",
-  ].join("\n");
-}
-
-function pendingSkeletonPath(rootDir: string, sessionId: string): string {
-  return join(rootDir, PENDING_DIR, `${sessionId}.md`);
-}
-
-/** Write internal reflect skeleton to `.buddy/pending/{sessionId}.md`. */
-export function savePendingSkeleton(rootDir: string, snapshot: SessionTrackerSnapshot): string {
-  const pendingDir = join(rootDir, PENDING_DIR);
-  mkdirSync(pendingDir, { recursive: true });
-  const path = pendingSkeletonPath(rootDir, snapshot.sessionId);
-  writeFileSync(path, formatSkeletonFrontmatter(snapshot) + formatSkeletonBody(snapshot), "utf8");
-  return path;
-}
-
-export function deletePendingSkeleton(pendingPath: string): void {
-  if (existsSync(pendingPath)) rmSync(pendingPath);
-}
-
-/** Mark a pending skeleton as in-progress so it won't be re-processed on next scan. */
-export function markPendingInProgress(pendingPath: string): void {
-  if (!existsSync(pendingPath)) return;
-  const content = readFileSync(pendingPath, "utf8");
-  writeFileSync(pendingPath, content.replace("status: reflect-pending", "status: reflect-in-progress"), "utf8");
 }
 
 export function parseFrontmatter(content: string): Record<string, string> {
@@ -116,37 +37,6 @@ export function parseFrontmatter(content: string): Record<string, string> {
     fields[line.slice(0, idx).trim()] = line.slice(idx + 1).trim();
   }
   return fields;
-}
-
-export function sessionHeaderFromSkeleton(content: string): string {
-  const fm = parseFrontmatter(content);
-  if (fm.start && fm.end) {
-    const start = formatLocalTime(fm.start);
-    const end = formatLocalTime(fm.end);
-    return `${start}–${end}`;
-  }
-  const bodyMatch = content.match(/\((\d{2}:\d{2})–(\d{2}:\d{2})/);
-  if (bodyMatch) return `${bodyMatch[1]}–${bodyMatch[2]}`;
-  return "session";
-}
-
-/** Scan `.buddy/pending/` for skeletons awaiting reflect. */
-export function findPendingReflects(rootDir: string): PendingReflect[] {
-  const pendingDir = join(rootDir, PENDING_DIR);
-  if (!existsSync(pendingDir)) return [];
-  const pending: PendingReflect[] = [];
-  for (const name of readdirSync(pendingDir)) {
-    if (!name.endsWith(".md")) continue;
-    const path = join(pendingDir, name);
-    const fm = parseFrontmatter(readFileSync(path, "utf8"));
-    if (fm.status !== "reflect-pending") continue;
-    pending.push({
-      path,
-      date: fm.date ?? name.slice(0, 10),
-      sessionId: fm.session_id ?? name.replace(/\.md$/, ""),
-    });
-  }
-  return pending.sort((a, b) => a.date.localeCompare(b.date) || a.path.localeCompare(b.path));
 }
 
 function updateLastUpdatedFrontmatter(content: string, now: Date): string {
@@ -198,18 +88,14 @@ export function appendDailyLog(rootDir: string, append: DailyLogAppend, now = ne
   return logPath;
 }
 
-/** Append reflect output to daily log and remove the pending skeleton. */
+/** Append reflect output to daily log using session metadata from spawn args. */
 export function finalizeReflectToDailyLog(options: FinalizeReflectOptions): string {
-  const { rootDir, skeletonPath, skeletonContent, sections } = options;
-  const fm = parseFrontmatter(skeletonContent);
-  const date = fm.date ?? new Date().toISOString().slice(0, 10);
-  const dailyPath = appendDailyLog(rootDir, {
-    date,
-    sessionHeader: sessionHeaderFromSkeleton(skeletonContent),
+  const { rootDir, sessionDate, sessionHeader, sections } = options;
+  return appendDailyLog(rootDir, {
+    date: sessionDate,
+    sessionHeader,
     sections,
   });
-  deletePendingSkeleton(skeletonPath);
-  return dailyPath;
 }
 
 /** Append checkpoint reflect output to the daily log and update its index entry. */
@@ -282,7 +168,6 @@ export function updateLogsIndexEntry(rootDir: string, date: string, status: LogS
   lines.splice(insertAt, 0, newLine);
   writeFileSync(indexPath, lines.join("\n") + "\n", "utf8");
 }
-
 
 function extractOneLinerSummary(content: string): string {
   const contextMatch = content.match(/### Context\r?\n([\s\S]*?)(?=\r?\n###|\r?\n##|\r?\n$)/);

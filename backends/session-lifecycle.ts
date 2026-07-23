@@ -1,4 +1,4 @@
-// backends/session-lifecycle.ts — Session persistence loop (FR-GIT-01, FR-REFLECT-01/03).
+// backends/session-lifecycle.ts — Session persistence loop (FR-GIT-01, FR-REFLECT-02/03).
 
 import type { AgentEvent } from "../shared/api";
 import { INCREMENTAL_REFLECT_EVERY } from "../shared/defaults";
@@ -7,7 +7,7 @@ import { extractToolInfo } from "../shared/pi-events";
 import { logEvent } from "./app-logger";
 import { commitAll } from "./git";
 import { createHebbianTracker, type HebbianTracker } from "./hebbian";
-import { savePendingSkeleton, shouldRunCheckpointReflect } from "./reflect";
+import { shouldRunCheckpointReflect } from "./reflect";
 import { spawnReflectChild, type SpawnReflectFn, type SpawnReflectOptions } from "./reflect-spawn";
 import { SessionTracker } from "./session-tracker";
 
@@ -83,22 +83,23 @@ export class SessionLifecycle {
     }
   }
 
-  async shutdown(): Promise<string | undefined> {
+  async shutdown(): Promise<void> {
     const snapshot = this.tracker.toSnapshot();
-    const pendingPath = savePendingSkeleton(this.rootDir, snapshot);
+    const now = new Date();
     logEvent(this.rootDir, {
       event: "session_end",
       session: this.tracker.sessionId,
       turns: snapshot.turnCount,
     });
-    await commitAll(this.rootDir, "ab: session end skeleton");
 
     this.requestReflect({
       mode: "session-end",
-      logPath: pendingPath,
+      sessionId: this.tracker.sessionId,
+      sessionDate: toIsoDay(this.tracker.startTime),
+      sessionStart: formatLocalTime(this.tracker.startTime.toISOString()),
+      sessionEnd: formatLocalTime(now.toISOString()),
     });
     this.onSessionComplete?.(snapshot.turnCount > 0);
-    return pendingPath;
   }
 
   private async onTurnEnd(): Promise<void> {
@@ -125,7 +126,10 @@ export class SessionLifecycle {
     const now = new Date();
     this.requestReflect({
       mode: "checkpoint",
-      logPath: "",
+      sessionId: this.tracker.sessionId,
+      sessionDate: toIsoDay(this.tracker.startTime),
+      sessionStart: formatLocalTime(this.tracker.startTime.toISOString()),
+      sessionEnd: formatLocalTime(now.toISOString()),
       checkpointDate: toIsoDay(this.tracker.startTime),
       checkpointTime: formatLocalTime(now.toISOString()),
     });
@@ -137,7 +141,6 @@ export class SessionLifecycle {
         event: "reflect_spawned",
         session: this.tracker.sessionId,
         mode: options.mode,
-        pendingPath: options.logPath,
       });
     }
     this.spawnReflect({

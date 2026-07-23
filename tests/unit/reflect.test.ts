@@ -1,23 +1,20 @@
-// tests/unit/reflect.test.ts — FR-REFLECT-01 pending skeleton + daily logs + index rebuild.
+// tests/unit/reflect.test.ts — FR-REFLECT daily logs + index rebuild.
 
 import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { PENDING_DIR, INCREMENTAL_REFLECT_EVERY } from "../../shared/defaults";
+import { INCREMENTAL_REFLECT_EVERY } from "../../shared/defaults";
 import {
   appendDailyLog,
-  findPendingReflects,
-  markPendingInProgress,
+  finalizeCheckpointToDailyLog,
+  finalizeReflectToDailyLog,
   parseFrontmatter,
   sanitizeReflectOutput,
-  savePendingSkeleton,
   shouldRunCheckpointReflect,
-  finalizeCheckpointToDailyLog,
   updateLogsIndexEntry,
 } from "../../backends/reflect";
-import { SessionTracker } from "../../backends/session-tracker";
 
 describe("shouldRunCheckpointReflect", () => {
   it("fires on multiples of N after last checkpoint", () => {
@@ -50,39 +47,37 @@ describe("sanitizeReflectOutput", () => {
   });
 });
 
-describe("savePendingSkeleton", () => {
+describe("finalizeReflectToDailyLog", () => {
   let dir: string;
 
   afterEach(() => {
     if (dir) rmSync(dir, { recursive: true, force: true });
   });
 
-  it("writes reflect-pending skeleton under .buddy/pending/", () => {
-    dir = mkdtempSync(join(tmpdir(), "ab-reflect-"));
-    const tracker = new SessionTracker("abc12345");
-    tracker.filesWritten.push("user/inbox.md");
-    tracker.turnCount = 3;
-    const path = savePendingSkeleton(dir, tracker.toSnapshot());
-    expect(path).toContain(PENDING_DIR);
+  it("appends session block using metadata args", () => {
+    dir = mkdtempSync(join(tmpdir(), "ab-finalize-"));
+    const path = finalizeReflectToDailyLog({
+      rootDir: dir,
+      sessionDate: "2026-07-23",
+      sessionHeader: "14:30–15:45",
+      sections: "### Context\nWorked on reflect pipeline.",
+    });
     const content = readFileSync(path, "utf8");
-    expect(parseFrontmatter(content).status).toBe("reflect-pending");
-    expect(content).toContain("turns: 3");
-    expect(content).toContain("# Session —");
-    expect(content).toContain("## Files written");
-    expect(content).toContain("- user/inbox.md");
-    expect(content).toContain("## Files read");
-    expect(content).toContain("(none)");
-    expect(existsSync(join(dir, "logs"))).toBe(false);
+    expect(content).toContain("# Log — 2026-07-23");
+    expect(content).toContain("## Session 14:30–15:45");
+    expect(content).toContain("Worked on reflect pipeline.");
   });
 
-  it("uses session start date when session crosses midnight", () => {
-    dir = mkdtempSync(join(tmpdir(), "ab-reflect-"));
-    const start = new Date(2026, 6, 20, 23, 45, 0);
-    const end = new Date(2026, 6, 21, 0, 15, 0);
-    const tracker = new SessionTracker("crossmid", start);
-    const path = savePendingSkeleton(dir, tracker.toSnapshot(end));
-    const fm = parseFrontmatter(readFileSync(path, "utf8"));
-    expect(fm.date).toBe("2026-07-20");
+  it("uses session start date for cross-midnight sessions", () => {
+    dir = mkdtempSync(join(tmpdir(), "ab-finalize-"));
+    finalizeReflectToDailyLog({
+      rootDir: dir,
+      sessionDate: "2026-07-20",
+      sessionHeader: "23:45–00:15",
+      sections: "### Context\nLate session.",
+    });
+    expect(existsSync(join(dir, "logs", "2026-07-20.md"))).toBe(true);
+    expect(existsSync(join(dir, "logs", "2026-07-21.md"))).toBe(false);
   });
 });
 
@@ -277,54 +272,10 @@ describe("updateLogsIndexEntry", () => {
   });
 });
 
-describe("findPendingReflects", () => {
-  let dir: string;
-
-  afterEach(() => {
-    if (dir) rmSync(dir, { recursive: true, force: true });
-  });
-
-  it("finds pending skeletons in .buddy/pending/", () => {
-    dir = mkdtempSync(join(tmpdir(), "ab-pending-"));
-    const tracker = new SessionTracker("pending1");
-    const path = savePendingSkeleton(dir, tracker.toSnapshot());
-    const pending = findPendingReflects(dir);
-    expect(pending).toHaveLength(1);
-    expect(pending[0].path).toBe(path);
-    expect(pending[0].sessionId).toBe("pending1");
-  });
-
-  it("ignores non-pending files", () => {
-    dir = mkdtempSync(join(tmpdir(), "ab-pending-"));
-    const pendingDir = join(dir, PENDING_DIR);
-    mkdirSync(pendingDir, { recursive: true });
-    writeFileSync(
-      join(pendingDir, "done.md"),
-      "---\ndate: 2026-07-19\nstatus: complete\n---\n",
-    );
-    expect(findPendingReflects(dir)).toHaveLength(0);
-  });
-
-  it("markPendingInProgress flips status to reflect-in-progress", () => {
-    dir = mkdtempSync(join(tmpdir(), "ab-pending-"));
-    const path = savePendingSkeleton(dir, new SessionTracker("flip").toSnapshot());
-
-    markPendingInProgress(path);
-
-    const content = readFileSync(path, "utf8");
-    expect(parseFrontmatter(content).status).toBe("reflect-in-progress");
-  });
-
-  it("skips reflect-in-progress skeletons", () => {
-    dir = mkdtempSync(join(tmpdir(), "ab-pending-"));
-    const path = savePendingSkeleton(dir, new SessionTracker("inprog").toSnapshot());
-    markPendingInProgress(path);
-
-    expect(findPendingReflects(dir)).toHaveLength(0);
-  });
-
-  it("markPendingInProgress is a no-op for missing path", () => {
-    dir = mkdtempSync(join(tmpdir(), "ab-pending-"));
-    expect(() => markPendingInProgress(join(dir, PENDING_DIR, "missing.md"))).not.toThrow();
+describe("parseFrontmatter", () => {
+  it("parses yaml frontmatter fields", () => {
+    const fm = parseFrontmatter("---\ndate: 2026-07-23\nstatus: active\n---\n");
+    expect(fm.date).toBe("2026-07-23");
+    expect(fm.status).toBe("active");
   });
 });

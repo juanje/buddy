@@ -1,17 +1,14 @@
-// tests/steps/memory-loop.steps.ts — FR-GIT-01, FR-SESSION-03, FR-REFLECT-01/02/03.
+// tests/steps/memory-loop.steps.ts — FR-GIT-01, FR-SESSION-03, FR-REFLECT-02/03.
 
 import { After, Given, Then, When } from "@cucumber/cucumber";
 import assert from "node:assert/strict";
-import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { simpleGit } from "simple-git";
 
 import { createAbInstance, defaultTemplatesDir } from "../../backends/create-ab";
-import { findPendingReflects, parseFrontmatter, savePendingSkeleton } from "../../backends/reflect";
-import { runCrashRecoveryCatchUp } from "../../backends/reflect-recovery";
-import { SessionTracker } from "../../backends/session-tracker";
-import { PENDING_DIR } from "../../shared/defaults";
+import { SessionLifecycle } from "../../backends/session-lifecycle";
 import type { SetupConfig } from "../../shared/api";
 import { MOCK_SPAWN_PID } from "../support/test-constants";
 import type { AbWorld } from "../support/world";
@@ -50,12 +47,6 @@ Given("checkpoint reflect runs every {int} turns", function (this: MemoryWorld, 
   this.connect(this.abDir, { incrementalEvery: n, force: true, trackSpawn: true });
 });
 
-Given("a pending reflect skeleton exists", function (this: MemoryWorld) {
-  const tracker = new SessionTracker("pending-1");
-  tracker.filesWritten.push("user/inbox.md");
-  savePendingSkeleton(this.abDir!, tracker.toSnapshot());
-});
-
 When("the agent writes file {string}", async function (this: MemoryWorld, relPath: string) {
   const fullPath = join(this.abDir!, relPath);
   mkdirSync(dirname(fullPath), { recursive: true });
@@ -73,38 +64,6 @@ When("the app shuts down", async function (this: MemoryWorld) {
   await this.core.api.shutdown();
 });
 
-When("crash recovery runs at boot", function (this: MemoryWorld) {
-  this.spawnCalls = [];
-  runCrashRecoveryCatchUp(this.abDir!, (options) => {
-    this.spawnCalls!.push(options);
-    return MOCK_SPAWN_PID;
-  });
-});
-
-Then("pending reflects are detected", function (this: MemoryWorld) {
-  assert.ok(
-    (this.spawnCalls?.length ?? 0) > 0,
-    "expected crash recovery to have spawned at least one reflect child",
-  );
-});
-
-Then("a reflect child spawn is requested for each pending skeleton", function (this: MemoryWorld) {
-  assert.ok((this.spawnCalls?.length ?? 0) > 0, "expected at least one spawn call");
-  for (const call of this.spawnCalls ?? []) {
-    assert.equal(call.mode, "crash-catchup");
-    assert.equal(call.rootDir, this.abDir);
-    assert.ok(call.logPath.includes(PENDING_DIR));
-    assert.ok(call.logPath.endsWith(".md"));
-    const content = readFileSync(call.logPath, "utf8");
-    assert.equal(parseFrontmatter(content).status, "reflect-in-progress");
-  }
-});
-
-When("compaction starts", async function (this: MemoryWorld) {
-  this.session.emitCompactionStart();
-  await this.lifecycle?.flush();
-});
-
 Then("the AB repository has a new commit", async function (this: MemoryWorld) {
   const log = await simpleGit(this.abDir!).log();
   assert.ok(log.total > 1, "expected more than the initial setup commit");
@@ -115,18 +74,15 @@ Then("the latest commit message starts with {string}", async function (this: Mem
   assert.ok(log.latest?.message.startsWith(prefix), log.latest?.message ?? "no commit");
 });
 
-Then("a pending reflect skeleton exists with status {string}", function (this: MemoryWorld, status: string) {
-  const pending = findPendingReflects(this.abDir!);
-  assert.ok(pending.length > 0, "expected a pending reflect skeleton");
-  const content = readFileSync(pending[0].path, "utf8");
-  assert.equal(parseFrontmatter(content).status, status);
+When("compaction starts", async function (this: MemoryWorld) {
+  this.session.emitCompactionStart();
+  await this.lifecycle?.flush();
 });
 
 Then("a checkpoint reflect spawn was requested at turn {int}", function (this: MemoryWorld, turn: number) {
   const calls = (this.spawnCalls ?? []).filter((call) => call.mode === "checkpoint");
   assert.ok(calls.length > 0, "expected a checkpoint reflect spawn");
   assert.equal(this.lifecycle?.tracker.turnCount, turn);
-  assert.equal(calls[0].logPath, "");
   assert.ok(calls[0].checkpointDate);
   assert.ok(calls[0].checkpointTime);
 });
@@ -134,5 +90,14 @@ Then("a checkpoint reflect spawn was requested at turn {int}", function (this: M
 Then("a checkpoint reflect spawn was requested", function (this: MemoryWorld) {
   const calls = (this.spawnCalls ?? []).filter((call) => call.mode === "checkpoint");
   assert.ok(calls.length > 0, "expected a checkpoint reflect spawn");
-  assert.equal(calls[0].logPath, "");
+});
+
+Then("a session-end reflect spawn was requested", function (this: MemoryWorld) {
+  const calls = (this.spawnCalls ?? []).filter((call) => call.mode === "session-end");
+  assert.ok(calls.length > 0, "expected a session-end reflect spawn");
+  const call = calls[0];
+  assert.ok(call.sessionId);
+  assert.ok(call.sessionDate);
+  assert.ok(call.sessionStart);
+  assert.ok(call.sessionEnd);
 });

@@ -20,7 +20,6 @@ import { createPermissionGate, isDenylistedPath, type PermissionRequest } from "
 import type { AllowedEntry } from "./allowed-paths";
 import { extractPdfText } from "./pdf-extract";
 import { assembleSystemPrompt } from "./prompt";
-import { runCrashRecoveryCatchUp } from "./reflect-recovery";
 import { SessionLifecycle } from "./session-lifecycle";
 import { runWarmHandoff } from "./warm-handoff";
 import { createWorkerCore, type PiSessionLike, type WorkerCore } from "./worker-core";
@@ -112,11 +111,6 @@ export async function bootSession(
   if (!existsSync(rootDir)) {
     context.frontend.onWorkerError(`AB directory not found: ${rootDir}`);
     return undefined;
-  }
-
-  const spawned = runCrashRecoveryCatchUp(rootDir);
-  for (const item of spawned) {
-    console.error("[agent-worker] crash recovery: spawning reflect for", item.logPath);
   }
 
   const sessionId = randomUUID().slice(0, 8);

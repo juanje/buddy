@@ -6,10 +6,7 @@ export const APP_SCHEMA_VERSION = 1;
 // --- Operational defaults (NFR-CONFIG-01) ---
 export const INCREMENTAL_REFLECT_EVERY = 15;
 export const LOCK_STALE_MS = 60 * 60 * 1000;
-export const CRASH_RECOVERY_MAX = 3;
 
-/** Internal reflect queue (not agent-visible). */
-export const PENDING_DIR = ".buddy/pending";
 /** Forked Pi sessions for background reflect (internal). */
 export const REFLECT_SESSIONS_DIR = ".buddy/reflect-sessions";
 /** App instrumentation logs (JSONL, machine-oriented). */

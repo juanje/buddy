@@ -193,10 +193,7 @@ const workerApi: WorkerAPI = {
     },
 
     async shutdown() {
-        // Build factual skeleton from session events (deterministic, no LLM)
-        const skeleton = buildSessionSkeleton(session);
-        await saveReflectSkeleton(AB_DIR, skeleton);
-        await markReflectPending(AB_DIR, session.id);
+        await core?.api.shutdown();
         session.dispose();
     },
 };
@@ -318,7 +315,7 @@ export interface WorkerAPI {
     setModel(provider: string, modelId: string): Promise<void>;
     setThinkingLevel(level: string): Promise<void>;
     compact(): Promise<void>;
-    shutdown(): Promise<void>;  // save skeleton + mark reflect pending
+    shutdown(): Promise<void>;  // fork session + spawn reflect child
 }
 
 export interface SetupConfig {
@@ -598,14 +595,9 @@ concurrent maintenance operations. Consolidation runs use the lock. The lock
 includes a PID and timestamp; stale locks (process dead or lock older than
 1 hour) are automatically broken.
 
-**Crash-recovery reflects:** On app start, if "reflect-pending" logs exist
-(rare — only if the background child died), background child processes are
-spawned for up to 3 pending logs. These run independently and do NOT block
-the user's session start.
-
 **Idle-awareness:** If `session.isStreaming` is true (user is actively
 interacting), consolidation operations defer until the next heartbeat tick.
-Reflects no longer need idle-awareness since they run in separate processes.
+Reflects run in separate processes and do not block the user session.
 
 **Run journal:** Each consolidation run is logged to
 `AB_DIR/.buddy/consolidation-log.json`:
@@ -636,8 +628,7 @@ few things that must be in Rust (OS-level integration).
 - Tray icon shows notification badge when deferred items are due
 - Double-click tray icon opens/focuses chat window
 - **Launch at login:** the app registers for launch-at-login (Tauri supports
-  this per-platform via `tauri-plugin-autostart`). On start, spawn background
-  children for any pending crash-recovery reflects and check overdue
+  this per-platform via `tauri-plugin-autostart`). On start, check overdue
   consolidations and deferred items
 
 ### 7. Extension UI Handling
@@ -708,32 +699,25 @@ JSON command needed. The SDK handles the callback directly.
 10. Worker: release lock, auto-commit results
 ```
 
-## Data Flow — App Close (two-layer reflect)
+## Data Flow — App Close (fork-only reflect)
 
 ```
 Session end (normal close):
 1. User closes window / quits app
 2. Frontend: api.shutdown()
-3. Worker: write factual skeleton (timestamps, files read/written, commits — no LLM, <50ms)
-4. Worker: spawn background child with live session path
-5. Worker: rebuild logs/index.md, session.dispose()
-6. Frontend: win.destroy() — window closes immediately
-7. Background child (async, independent of app):
+3. Worker: fork session file, spawn background child with metadata args
+4. Worker: session.dispose()
+5. Frontend: win.destroy() — window closes immediately
+6. Background child (async, independent of app):
    - SessionManager.forkFrom(sessionFile, rootDir, forkDir) — full conversation context
    - createAgentSession({ sessionManager: forkedSM }) on the forked JSONL
    - Single user prompt ("reflect on this session") — NO system prompt override,
-     NO ResourceLoader, NO AGENTS.md, NO skeleton content as input
+     NO ResourceLoader, NO AGENTS.md
    - LLM already sees the full conversation in the fork → writes Decisions,
      Lessons, Context, Open threads, Tasks captured, Ideas, System observations
-   - Appends ## Session HH:MM–HH:MM to logs/YYYY-MM-DD.md, deletes pending
-     skeleton, rebuilds logs/index.md, commits, exits
-
-Crash recovery (next app start):
-8. Worker: detect "reflect-pending" skeletons without a completed reflect
-9. Worker: spawn background child process
-   - If forked session file exists: same as normal (fork-only context)
-   - If no fork (crash before fork): skeleton IS the input (thin but non-zero)
-10. User can start chatting immediately — reflect runs in parallel
+   - Commits agent file writes immediately after LLM call
+   - Appends ## Session HH:MM–HH:MM to logs/YYYY-MM-DD.md (metadata from spawn args)
+   - Rebuilds logs/index.md, commits, exits
 
 Spawn mechanism:
   dev:  child_process.fork(reflect-child.ts) with tsx
@@ -756,8 +740,8 @@ part of the session and would dilute the context. The only LLM input beyond
 the fork itself is a user prompt requesting the structured output format.
 
 The app window closes in <100ms. All LLM work is in detached background
-processes. The skeleton is the crash-proof minimum (crash-only fallback);
-the forked reflect is the rich primary path. Both write to the same log file.
+processes. Agent file writes are committed immediately after the LLM call,
+before daily log finalization.
 
 ## Permission Model
 

@@ -32,7 +32,7 @@ using BDD + TDD.
 2. FR-PROMPT-01 (system prompt assembly)
 3. FR-PERM-01/02 (permission zones)
 4. FR-SESSION-01/02 (resume + new session)
-5. FR-REFLECT-01/02 (skeleton + catch-up)
+5. FR-REFLECT-01/02 (fork-only reflect + daily log finalization)
 6. FR-DEFERRED-01 (surface on start)
 7. FR-INGEST-01/02 (drag & drop)
 8. FR-GIT-01/02 (auto-commit + index)

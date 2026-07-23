@@ -17,8 +17,6 @@ import {
   type SpawnReflectOptions,
 } from "../../backends/reflect-spawn";
 
-// buildReflectArgs is internal — covered via spawnReflectChild argument assertions.
-
 describe("sidecarBootTarget", () => {
   it("routes --reflect to reflect-child module", () => {
     expect(sidecarBootTarget(["/bin/agent-worker", "--reflect", "/ab"])).toBe("reflect-child");
@@ -34,8 +32,11 @@ describe("spawnReflectChild", () => {
   const baseOptions: SpawnReflectOptions = {
     rootDir: "/tmp/ab",
     forkedSessionFile: "/tmp/session.jsonl",
-    logPath: "/tmp/ab/.buddy/pending/skel.md",
     mode: "session-end",
+    sessionId: "abc12345",
+    sessionDate: "2026-07-23",
+    sessionStart: "14:30",
+    sessionEnd: "15:45",
   };
 
   afterEach(() => {
@@ -56,8 +57,11 @@ describe("spawnReflectChild", () => {
     expect(forkArgs).toEqual([
       baseOptions.rootDir,
       baseOptions.forkedSessionFile,
-      baseOptions.logPath,
       "session-end",
+      baseOptions.sessionId,
+      baseOptions.sessionDate,
+      baseOptions.sessionStart,
+      baseOptions.sessionEnd,
     ]);
   });
 
@@ -76,8 +80,11 @@ describe("spawnReflectChild", () => {
     expect(argv.slice(1)).toEqual([
       baseOptions.rootDir,
       baseOptions.forkedSessionFile,
-      baseOptions.logPath,
       "session-end",
+      baseOptions.sessionId,
+      baseOptions.sessionDate,
+      baseOptions.sessionStart,
+      baseOptions.sessionEnd,
     ]);
   });
 
@@ -87,7 +94,6 @@ describe("spawnReflectChild", () => {
     spawnReflectChild({
       ...baseOptions,
       mode: "checkpoint",
-      logPath: "",
       checkpointDate: "2026-07-23",
       checkpointTime: "14:30",
     });
@@ -96,8 +102,11 @@ describe("spawnReflectChild", () => {
     expect(forkArgs).toEqual([
       baseOptions.rootDir,
       baseOptions.forkedSessionFile,
-      "",
       "checkpoint",
+      baseOptions.sessionId,
+      baseOptions.sessionDate,
+      baseOptions.sessionStart,
+      baseOptions.sessionEnd,
       "2026-07-23",
       "14:30",
     ]);

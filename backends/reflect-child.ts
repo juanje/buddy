@@ -1,13 +1,13 @@
 // backends/reflect-child.ts — Background child process for session reflect (FR-REFLECT-02/03).
 // Spawned by the worker via child_process.fork() (dev) or spawn(execPath, ["--reflect", ...]) (prod).
-// Receives args via process.argv:
-//   [0] node/binary, [1] script/--reflect, [2] rootDir, [3] forkedSessionFile, [4] logPath, [5] mode
-//   checkpoint mode also: [6] checkpointDate, [7] checkpointTime
+// Args after --reflect flag:
+//   rootDir, forkedSessionFile, mode, sessionId, sessionDate, sessionStart, sessionEnd
+//   checkpoint mode also: checkpointDate, checkpointTime
+// Uses indexOf("--reflect") for position-independent parsing (Bun may prepend extra argv entries).
 //
 // Modes:
-//   "session-end"   — full reflect → append to logs/YYYY-MM-DD.md
-//   "checkpoint"    — lightweight reflect → append ## Checkpoint to daily log
-//   "crash-catchup" — recover pending skeleton without forked session
+//   "session-end" — full reflect → append to logs/YYYY-MM-DD.md
+//   "checkpoint"  — lightweight reflect → append ## Checkpoint to daily log
 
 import {
   createAgentSession,
@@ -17,10 +17,11 @@ import {
   SessionManager,
 } from "@earendil-works/pi-coding-agent";
 
-import { existsSync, mkdirSync, readFileSync } from "node:fs";
+import { execSync } from "node:child_process";
+import { existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import type { AgentEvent } from "../shared/api";
-import { LOCK_MAX_RETRIES, LOCK_RETRY_MS, REFLECT_SESSIONS_DIR } from "../shared/defaults";
+import { LOCK_MAX_RETRIES, LOCK_RETRY_MS, REFLECT_ARGV_FLAG, REFLECT_SESSIONS_DIR } from "../shared/defaults";
 import { fastModelForProvider } from "../shared/model-catalog";
 import { readPiProvider } from "../shared/pi-settings";
 import { logEvent } from "./app-logger";
@@ -32,15 +33,10 @@ import { defaultAuthPath } from "./provider-auth";
 import {
   finalizeCheckpointToDailyLog,
   finalizeReflectToDailyLog,
-  parseFrontmatter,
   sanitizeReflectOutput,
   updateLogsIndexEntry,
 } from "./reflect";
-import {
-  CHECKPOINT_USER_PROMPT,
-  CRASH_CATCHUP_USER_PROMPT_PREFIX,
-  REFLECT_USER_PROMPT,
-} from "./reflect-prompts";
+import { CHECKPOINT_USER_PROMPT, REFLECT_USER_PROMPT } from "./reflect-prompts";
 
 async function resolveFastModelOptions(rootDir: string): Promise<{
   model?: Awaited<ReturnType<ModelRuntime["getModel"]>>;
@@ -70,46 +66,39 @@ async function acquireLockWithRetry(rootDir: string): Promise<boolean> {
   return false;
 }
 
-function sessionIdFromPath(rootDir: string, targetPath: string): string {
-  if (!targetPath) return "checkpoint";
-  const fm = parseFrontmatter(readFileSync(targetPath, "utf8"));
-  if (fm.session_id) return fm.session_id;
-  const base = targetPath.split("/").pop() ?? "";
-  return base.replace(/\.md$/, "");
-}
-
-function buildUserPrompt(mode: string, targetPath: string): string {
-  if (mode === "crash-catchup") {
-    const skeleton = targetPath ? readFileSync(targetPath, "utf8") : "";
-    return `${CRASH_CATCHUP_USER_PROMPT_PREFIX}${skeleton}`;
-  }
-  if (mode === "checkpoint") {
-    return CHECKPOINT_USER_PROMPT;
-  }
-  return REFLECT_USER_PROMPT;
+function buildUserPrompt(mode: string): string {
+  return mode === "checkpoint" ? CHECKPOINT_USER_PROMPT : REFLECT_USER_PROMPT;
 }
 
 async function runReflect(
   rootDir: string,
   forkedSessionFile: string,
-  targetPath: string,
   mode: string,
+  sessionId: string,
+  sessionDate: string,
+  sessionStart: string,
+  sessionEnd: string,
   checkpointDate?: string,
   checkpointTime?: string,
 ): Promise<void> {
   await alignHttpDispatcherWithPi();
 
   const isCheckpoint = mode === "checkpoint";
-  const sessionId = isCheckpoint ? "checkpoint" : sessionIdFromPath(rootDir, targetPath);
+  const logSessionId = isCheckpoint ? "checkpoint" : sessionId;
 
-  let sm: SessionManager;
-  if (forkedSessionFile && existsSync(forkedSessionFile)) {
-    const forkDir = join(rootDir, REFLECT_SESSIONS_DIR);
-    mkdirSync(forkDir, { recursive: true });
-    sm = SessionManager.forkFrom(forkedSessionFile, rootDir, forkDir);
-  } else {
-    sm = SessionManager.create(rootDir);
+  if (!forkedSessionFile || !existsSync(forkedSessionFile)) {
+    logEvent(rootDir, {
+      event: "reflect_skipped",
+      session: logSessionId,
+      mode,
+      reason: "missing_forked_session",
+    });
+    return;
   }
+
+  const forkDir = join(rootDir, REFLECT_SESSIONS_DIR);
+  mkdirSync(forkDir, { recursive: true });
+  const sm = SessionManager.forkFrom(forkedSessionFile, rootDir, forkDir);
 
   // Fork-only context: no system prompt injection — the fork already has the conversation.
   const resourceLoader = new DefaultResourceLoader({
@@ -133,8 +122,11 @@ async function runReflect(
   const unsub = session.subscribe((event) => events.push(event));
 
   try {
-    const userPrompt = buildUserPrompt(mode, targetPath);
-    await session.prompt(userPrompt);
+    await session.prompt(buildUserPrompt(mode));
+
+    // Commit agent writes immediately — before lock, before finalization.
+    await commitAll(rootDir, `ab: reflect ${mode} (agent writes)`);
+
     const raw = collectAssistantText(events);
     const result = raw ? sanitizeReflectOutput(raw) : "";
 
@@ -142,9 +134,9 @@ async function runReflect(
       if (!await acquireLockWithRetry(rootDir)) {
         logEvent(rootDir, {
           event: "reflect_skipped",
-          session: sessionId,
+          session: logSessionId,
           mode,
-          reason: "lock_unavailable",
+          reason: "lock_unavailable_for_finalization",
         });
         return;
       }
@@ -153,7 +145,7 @@ async function runReflect(
           if (!checkpointDate || !checkpointTime) {
             logEvent(rootDir, {
               event: "reflect_skipped",
-              session: sessionId,
+              session: logSessionId,
               mode,
               reason: "missing_checkpoint_metadata",
             });
@@ -167,24 +159,21 @@ async function runReflect(
           });
           logEvent(rootDir, {
             event: "reflect_complete",
-            session: sessionId,
+            session: logSessionId,
             mode,
             logPath: dailyPath,
           });
         } else {
-          const skeleton = targetPath ? readFileSync(targetPath, "utf8") : "";
           const dailyPath = finalizeReflectToDailyLog({
             rootDir,
-            skeletonPath: targetPath,
-            skeletonContent: skeleton,
+            sessionDate,
+            sessionHeader: `${sessionStart}–${sessionEnd}`,
             sections: result,
           });
-          const fm = parseFrontmatter(skeleton);
-          const logDate = fm.date ?? new Date().toISOString().slice(0, 10);
-          updateLogsIndexEntry(rootDir, logDate);
+          updateLogsIndexEntry(rootDir, sessionDate);
           logEvent(rootDir, {
             event: "reflect_complete",
-            session: sessionId,
+            session: logSessionId,
             mode,
             logPath: dailyPath,
           });
@@ -196,7 +185,7 @@ async function runReflect(
     } else {
       logEvent(rootDir, {
         event: "reflect_skipped",
-        session: sessionId,
+        session: logSessionId,
         mode,
         reason: "empty_llm_result",
       });
@@ -204,7 +193,7 @@ async function runReflect(
   } catch (err) {
     logEvent(rootDir, {
       event: "reflect_error",
-      session: sessionId,
+      session: logSessionId,
       mode,
       message: err instanceof Error ? err.message : String(err),
     });
@@ -216,23 +205,48 @@ async function runReflect(
 }
 
 async function main(): Promise<void> {
-  const [, , rootDir, forkedSessionFile, logPath, mode, checkpointDate, checkpointTime] =
-    process.argv;
-  if (!rootDir || !mode) {
-    console.error("[reflect-child] missing arguments");
+  const flagIndex = process.argv.indexOf(REFLECT_ARGV_FLAG);
+  const argsAfterFlag = flagIndex >= 0
+    ? process.argv.slice(flagIndex + 1)
+    : process.argv.slice(2);
+
+  const [
+    rootDir,
+    forkedSessionFile,
+    mode,
+    sessionId,
+    sessionDate,
+    sessionStart,
+    sessionEnd,
+    checkpointDate,
+    checkpointTime,
+  ] = argsAfterFlag;
+
+  if (!rootDir || !mode || !sessionId || !sessionDate || !sessionStart || !sessionEnd) {
+    console.error("[reflect-child] missing arguments, argv:", process.argv);
     process.exit(1);
   }
-  if (mode !== "checkpoint" && !logPath) {
-    console.error("[reflect-child] missing logPath for mode", mode);
-    process.exit(1);
-  }
+
+  process.on("SIGTERM", () => {
+    try {
+      execSync("git add -A && git commit -m 'ab: reflect interrupted (SIGTERM)' --allow-empty-message", {
+        cwd: rootDir,
+        stdio: "ignore",
+        timeout: 5000,
+      });
+    } catch { /* best effort */ }
+    process.exit(0);
+  });
 
   try {
     await runReflect(
       rootDir,
       forkedSessionFile,
-      logPath,
       mode,
+      sessionId,
+      sessionDate,
+      sessionStart,
+      sessionEnd,
       checkpointDate,
       checkpointTime,
     );

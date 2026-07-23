@@ -37,6 +37,3 @@ What was happening in this segment of the session.
 Anything worth remembering from this segment.
 
 Be very concise — this is a checkpoint, not a full reflect. Write in English.`;
-
-export const CRASH_CATCHUP_USER_PROMPT_PREFIX =
-  "Process this session skeleton into a reflect. The skeleton is the only available context — produce the best summary you can:\n\n";

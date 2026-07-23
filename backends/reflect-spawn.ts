@@ -13,9 +13,11 @@ import {
 export interface SpawnReflectOptions {
   rootDir: string;
   forkedSessionFile: string;
-  /** Pending skeleton path (session-end/crash) or empty for checkpoint. */
-  logPath: string;
-  mode: "session-end" | "checkpoint" | "crash-catchup";
+  mode: "session-end" | "checkpoint";
+  sessionId: string;
+  sessionDate: string;
+  sessionStart: string;
+  sessionEnd: string;
   /** Session-start calendar day for checkpoint daily log (YYYY-MM-DD). */
   checkpointDate?: string;
   /** Local time label for ## Checkpoint HH:MM. */
@@ -39,8 +41,11 @@ function buildReflectArgs(options: SpawnReflectOptions): string[] {
   const args = [
     options.rootDir,
     options.forkedSessionFile,
-    options.logPath,
     options.mode,
+    options.sessionId,
+    options.sessionDate,
+    options.sessionStart,
+    options.sessionEnd,
   ];
   if (options.mode === "checkpoint") {
     args.push(options.checkpointDate ?? "", options.checkpointTime ?? "");

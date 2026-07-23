@@ -173,11 +173,19 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 
 **Tests at cleanup close:** 201 unit + 104 BDD green.
 
-**Remaining:** none — cleanup complete.
+## E14 — Skeleton/pending cleanup (2026-07-24)
+
+| Item | Description | Commit |
+|------|-------------|--------|
+| E14 | Remove skeleton/pending infrastructure; fork-only reflect with spawn metadata args; drop crash-catchup | pending |
+
+**Tests at E14 close:** 193 unit + 102 BDD green.
+
+**Remaining:** none — skeleton cleanup complete.
 
 ## Current focus
 
-> **Cleanup + hardening complete (2026-07-23)** — Sidecar stable, fork bomb prevented, notifications with content, dead code removed, opener plugin for local links.
+> **E14 skeleton cleanup complete (2026-07-24)** — Pending files, crash-catchup, and skeleton metadata coupling removed. Reflect is fork-only; session metadata passed via spawn args.
 > Next: FR-WIKI, FR-COST, FR-CHAT-10.
 
 ### Sprint: Settings access UI — DONE (2026-07-22)

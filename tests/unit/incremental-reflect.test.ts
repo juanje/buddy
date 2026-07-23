@@ -51,15 +51,15 @@ describe("SessionLifecycle checkpoint reflect", () => {
 
     expect(spawns).toHaveLength(1);
     expect(spawns[0].mode).toBe("checkpoint");
-    expect(spawns[0].logPath).toBe("");
     expect(spawns[0].forkedSessionFile).toBe("/tmp/fake-session.jsonl");
+    expect(spawns[0].sessionId).toBe("sess");
     expect(spawns[0].checkpointDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(spawns[0].checkpointTime).toMatch(/^\d{2}:\d{2}$/);
     expect(lc.tracker.lastCheckpointTurn).toBe(2);
   });
 
   it("spawns checkpoint reflect on compaction_start", async () => {
-    dir = mkdtempSync(join(tmpdir(), "ab-compact-"));
+    dir = mkdtempSync(join(tmpdir(), "ab-checkpoint-"));
     await initTestGitRepo(dir);
     const lc = lifecycle(99);
 
