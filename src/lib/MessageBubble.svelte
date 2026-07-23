@@ -3,12 +3,16 @@
   import { renderMarkdown } from "./markdown";
   import { t } from "./i18n";
 
-  let { message }: { message: ChatMessage } = $props();
+  let { message, streaming = false }: { message: ChatMessage; streaming?: boolean } = $props();
 
   let thinkingExpanded = $state(false);
 
   const html = $derived(message.role === "assistant" ? renderMarkdown(message.text) : "");
   const hasThinking = $derived(Boolean(message.thinking?.trim()));
+  const thinkingOnlyBubble = $derived(hasThinking && !message.text);
+  const thinkingLabel = $derived(
+    streaming && thinkingOnlyBubble ? $t.thinkingShow : $t.thinkingDone,
+  );
 </script>
 
 <div class="row {message.role}">
@@ -18,10 +22,11 @@
         <button
           type="button"
           class="thinking-toggle"
+          class:done={!streaming || !thinkingOnlyBubble}
           onclick={() => (thinkingExpanded = !thinkingExpanded)}
           aria-expanded={thinkingExpanded}
         >
-          {thinkingExpanded ? $t.thinkingHide : $t.thinkingShow}
+          {thinkingExpanded ? $t.thinkingHide : thinkingLabel}
         </button>
         {#if thinkingExpanded}
           <div class="thinking">{message.thinking}</div>
@@ -74,8 +79,12 @@
     padding: 0 0 6px;
     margin-bottom: 4px;
   }
+  .thinking-toggle.done {
+    opacity: 0.7;
+  }
   .thinking-toggle:hover {
     color: var(--fg);
+    opacity: 1;
   }
   .thinking {
     font-size: 12px;

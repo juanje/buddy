@@ -80,7 +80,7 @@
       {#if message.role === "tool-activity"}
         <ToolActivity {message} />
       {:else}
-        <MessageBubble {message} />
+        <MessageBubble {message} streaming={$typingIndicator} />
       {/if}
     {/each}
     {#each $permissions as card (card.request.id)}
