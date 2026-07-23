@@ -78,7 +78,7 @@
     />
     {#each $messages as message (message.id)}
       {#if message.role === "tool-activity"}
-        <ToolActivity {message} />
+        <ToolActivity {message} streaming={$typingIndicator} />
       {:else}
         <MessageBubble {message} streaming={$typingIndicator} />
       {/if}

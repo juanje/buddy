@@ -10,27 +10,28 @@
   const html = $derived(message.role === "assistant" ? renderMarkdown(message.text) : "");
   const hasThinking = $derived(Boolean(message.thinking?.trim()));
   const thinkingOnlyBubble = $derived(hasThinking && !message.text);
-  const thinkingLabel = $derived(
-    streaming && thinkingOnlyBubble ? $t.thinkingShow : $t.thinkingDone,
-  );
+  const hidden = $derived(thinkingOnlyBubble && !streaming);
 </script>
 
+{#if !hidden}
 <div class="row {message.role}">
   {#if message.role === "assistant"}
     <div class="bubble assistant prose">
-      {#if hasThinking}
+      {#if hasThinking && message.text}
         <button
           type="button"
           class="thinking-toggle"
-          class:done={!streaming || !thinkingOnlyBubble}
           onclick={() => (thinkingExpanded = !thinkingExpanded)}
           aria-expanded={thinkingExpanded}
         >
-          {thinkingExpanded ? $t.thinkingHide : thinkingLabel}
+          {thinkingExpanded ? $t.thinkingHide : $t.thinkingShow}
         </button>
         {#if thinkingExpanded}
           <div class="thinking">{message.thinking}</div>
         {/if}
+      {/if}
+      {#if thinkingOnlyBubble && streaming}
+        <span class="thinking-indicator">{$t.thinkingShow}</span>
       {/if}
       {#if message.text}
         {@html html}
@@ -40,6 +41,7 @@
     <div class="bubble user">{message.text}</div>
   {/if}
 </div>
+{/if}
 
 <style>
   .row {
@@ -79,12 +81,13 @@
     padding: 0 0 6px;
     margin-bottom: 4px;
   }
-  .thinking-toggle.done {
-    opacity: 0.7;
-  }
   .thinking-toggle:hover {
     color: var(--fg);
-    opacity: 1;
+  }
+  .thinking-indicator {
+    display: block;
+    color: var(--muted);
+    font-size: 11px;
   }
   .thinking {
     font-size: 12px;

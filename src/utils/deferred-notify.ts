@@ -13,10 +13,12 @@ export const DEFERRED_NOTIFY_DEDUP_MS = 25 * 60 * 1000;
 
 let lastNotifiedAt = 0;
 let clickHandlerRegistered = false;
+let notifyInFlight = false;
 
 export function resetDeferredNotifyStateForTests(): void {
   lastNotifiedAt = 0;
   clickHandlerRegistered = false;
+  notifyInFlight = false;
 }
 
 export async function focusAppWindow(): Promise<void> {
@@ -48,21 +50,29 @@ export async function notifyDeferredDue(
   labels: { title: string; body: string },
 ): Promise<void> {
   if (count <= 0) return;
+  if (notifyInFlight) return;
 
   const now = Date.now();
   if (now - lastNotifiedAt < DEFERRED_NOTIFY_DEDUP_MS) return;
 
+  notifyInFlight = true;
   try {
     let granted = await isPermissionGranted();
     if (!granted) {
+      console.warn("[deferred-notify] permission not granted, requesting…");
       granted = (await requestPermission()) === "granted";
     }
-    if (!granted) return;
+    if (!granted) {
+      console.warn("[deferred-notify] permission denied by user/system");
+      return;
+    }
 
     await ensureDeferredNotificationClickHandler();
     sendNotification({ title: labels.title, body: labels.body, autoCancel: true });
     lastNotifiedAt = now;
-  } catch {
-    // Browser dev without notification plugin.
+  } catch (err) {
+    console.warn("[deferred-notify] failed:", err);
+  } finally {
+    notifyInFlight = false;
   }
 }

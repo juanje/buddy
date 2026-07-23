@@ -3,15 +3,17 @@
   import { toolActivitySummary, toolCallLabel } from "./tool-labels";
   import { t } from "./i18n";
 
-  let { message }: { message: ChatMessage } = $props();
+  let { message, streaming = false }: { message: ChatMessage; streaming?: boolean } = $props();
 
   let expanded = $state(false);
 
   const calls = $derived(message.toolCalls ?? []);
   const summary = $derived(toolActivitySummary(calls, $t));
   const running = $derived(calls.some((c) => c.status === "running"));
+  const hidden = $derived(!streaming && !running);
 </script>
 
+{#if !hidden}
 <div class="tool-activity">
   <button
     type="button"
@@ -36,6 +38,7 @@
     </ul>
   {/if}
 </div>
+{/if}
 
 <style>
   .tool-activity {
