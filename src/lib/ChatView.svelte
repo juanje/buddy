@@ -62,8 +62,8 @@
     if (!abs) return;
     try {
       await openPath(abs);
-    } catch {
-      // Browser dev without Tauri opener — ignore.
+    } catch (err) {
+      console.error("[local-link] openPath failed:", abs, err);
     }
   }
 </script>
