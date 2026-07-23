@@ -4,7 +4,7 @@
   import { listen } from "@tauri-apps/api/event";
   import { getCurrentWindow } from "@tauri-apps/api/window";
   import { getCurrentWebview } from "@tauri-apps/api/webview";
-  import { open } from "@tauri-apps/plugin-shell";
+  import { openUrl } from "@tauri-apps/plugin-opener";
   import { createChatController, type ChatController } from "./lib/chat-controller";
   import { createScrollController } from "./lib/scroll-controller";
   import { get } from "svelte/store";
@@ -51,9 +51,9 @@
   async function handleOAuthEvent(event: OAuthUIEvent): Promise<void> {
     if (event.type === "auth_url" && event.url) {
       try {
-        await open(event.url);
+        await openUrl(event.url);
       } catch {
-        // Browser dev without Tauri shell — URL still visible in wizard state.
+        // Browser dev without Tauri opener — URL still visible in wizard state.
       }
     }
     setupOAuthHandler?.(event);
@@ -122,10 +122,17 @@
           onDeferredDue(items) {
             devLog(`deferred due: ${items.length} item(s)`);
             deferredItems = items;
+            if (items.length > 0) {
+              controller?.showDeferredBanner();
+            }
             const strings = get(t);
+            const first = items[0]?.text ?? "";
+            const body = items.length <= 1
+              ? first
+              : `${first} (+${items.length - 1})`;
             void notifyDeferredDue(items.length, {
               title: strings.notificationTitle,
-              body: strings.notificationBody.replace("{count}", String(items.length)),
+              body,
             });
           },
         },

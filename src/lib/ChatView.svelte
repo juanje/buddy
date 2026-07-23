@@ -6,7 +6,7 @@
   import PermissionCard from "./PermissionCard.svelte";
   import ToolActivity from "./ToolActivity.svelte";
   import WelcomeBanner from "./WelcomeBanner.svelte";
-  import { open } from "@tauri-apps/plugin-shell";
+  import { openPath } from "@tauri-apps/plugin-opener";
   import { resolveLocalPathForOpen } from "./local-path";
   import { t } from "./i18n";
 
@@ -61,9 +61,9 @@
     const abs = resolveLocalPathForOpen(rootDir, rel);
     if (!abs) return;
     try {
-      await open(abs);
+      await openPath(abs);
     } catch {
-      // Browser dev without Tauri shell — ignore.
+      // Browser dev without Tauri opener — ignore.
     }
   }
 </script>

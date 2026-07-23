@@ -153,7 +153,7 @@ rootDir (git repo — user/agent content only)
 - **Given** the agent response contains a markdown link to a local file (relative path without `://` protocol, e.g. `[name](agent_brain/skills/foo.md)`)
 - **When** the link renders in the chat
 - **Then** it is marked with a `data-local-path` attribute (no `target="_blank"`)
-- **And** clicking it resolves the path against the AB directory and opens it via `tauri-plugin-shell` `open()` in the system default app
+- **And** clicking it resolves the path against the AB directory and opens it via `tauri-plugin-opener` `openPath()` in the system default app
 - **And** external URLs (`http://`, `https://`) continue to open in the browser as before
 - **Note:** The renderer in `src/lib/markdown.ts` must distinguish local paths from external URLs. A path is local if it has no protocol prefix or uses `file://`.
 
