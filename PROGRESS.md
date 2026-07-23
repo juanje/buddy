@@ -158,7 +158,7 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 | Deferred parser | Tolerate optional HH:MM in entry dates | 2e2ae95 |
 | Heartbeat observability | heartbeat_tick JSONL event for debugging | 4b4be94 |
 | UI: hide stale indicators | Thinking + tool-activity bubbles hidden after turn ends | ddcb441 |
-| Local file links | Migrate FR-CHAT-09 from shell `open()` to opener `openPath()` | pending |
+| Local file links | Migrate FR-CHAT-09 from shell `open()` to opener `openPath()` | b487784 |
 
 **Tests at hardening close:** 194 unit + 104 BDD green.
 
