@@ -12,6 +12,9 @@ BUN="${ROOT}/node_modules/.bin/bun"
 
 mkdir -p "${OUT_DIR}"
 
+echo "Snapshotting embedded assets (templates + prompts)…"
+"${BUN}" scripts/generate-embedded-assets.ts
+
 echo "Compiling worker sidecar with bun…"
 "${BUN}" build --compile backends/sidecar-entry.ts --outfile "${OUT}"
 chmod +x "${OUT}"

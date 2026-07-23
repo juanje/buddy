@@ -5,6 +5,20 @@
 //
 // IMPORTANT: uses dynamic import so polyfills are installed before any
 // dependency module-level code executes (static imports are hoisted in ESM).
+//
+// OAuth flows and the undici dispatcher are wired statically below because
+// Pi loads them through bundler-opaque dynamic imports (variable specifiers)
+// that cannot resolve inside a bun-compiled binary — the files aren't on disk.
+// Without registerBunOAuthFlows(), every OAuth-authenticated prompt fails with
+// "OAuth auth derivation failed for <provider>" and the chat shows no reply.
+// This mirrors Pi's own standalone bun binary (pi/src/bun/cli.ts). The deep
+// relative paths bypass package export maps on purpose: pi-ai is a nested
+// dependency of pi-coding-agent and neither exports these entry points to us.
+
+import { registerBunOAuthFlows } from "../node_modules/@earendil-works/pi-coding-agent/node_modules/@earendil-works/pi-ai/dist/bun-oauth.js";
+import { configureHttpDispatcher } from "../node_modules/@earendil-works/pi-coding-agent/dist/core/http-dispatcher.js";
+import { registerEmbeddedAssets } from "./embedded-assets";
+import { EMBEDDED_PROMPTS, EMBEDDED_TEMPLATES } from "./embedded-assets.generated";
 
 (globalThis as any).DOMMatrix = class DOMMatrix {
   a = 1; b = 0; c = 0; d = 1; e = 0; f = 0;
@@ -33,5 +47,12 @@
   arc() {} arcTo() {} ellipse() {} bezierCurveTo() {}
   quadraticCurveTo() {}
 };
+
+registerBunOAuthFlows();
+configureHttpDispatcher();
+
+// Templates and bundled prompts live in the repo tree, which doesn't exist
+// inside the compiled binary — register the build-time snapshot instead.
+registerEmbeddedAssets({ templates: EMBEDDED_TEMPLATES, prompts: EMBEDDED_PROMPTS });
 
 await import("./agent-worker");

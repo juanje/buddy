@@ -9,11 +9,36 @@ import { simpleGit } from "simple-git";
 
 import type { SetupConfig } from "../shared/api";
 import { DEFAULT_LANGUAGE, GIT_USER_EMAIL, GIT_USER_NAME } from "../shared/defaults";
+import { getEmbeddedAssets } from "./embedded-assets";
 import { writePiSettings } from "../shared/pi-settings";
 
-/** Bundled templates location (dev: repo root; packaging revisits this). */
+/** Bundled templates location (dev: repo root; not present in the compiled sidecar). */
 export function defaultTemplatesDir(): string {
   return join(dirname(fileURLToPath(import.meta.url)), "..", "templates");
+}
+
+/**
+ * Materialize the AB template tree at targetDir. Precedence: an explicit
+ * templatesDir (tests) > assets embedded in the compiled sidecar > repo
+ * templates/ on disk (dev).
+ */
+export function copyTemplates(targetDir: string, templatesDir?: string): void {
+  if (templatesDir) {
+    cpSync(templatesDir, targetDir, { recursive: true });
+    return;
+  }
+
+  const embedded = getEmbeddedAssets();
+  if (embedded) {
+    for (const [path, content] of Object.entries(embedded.templates)) {
+      const target = join(targetDir, path);
+      mkdirSync(dirname(target), { recursive: true });
+      writeFileSync(target, content, "utf8");
+    }
+    return;
+  }
+
+  cpSync(defaultTemplatesDir(), targetDir, { recursive: true });
 }
 
 export interface CreateAbOptions {
@@ -53,10 +78,9 @@ export { writePiSettings } from "../shared/pi-settings";
  */
 export async function createAbInstance(options: CreateAbOptions): Promise<void> {
   const { config, configPath } = options;
-  const templatesDir = options.templatesDir ?? defaultTemplatesDir();
   const ab = config.rootDir;
 
-  cpSync(templatesDir, ab, { recursive: true });
+  copyTemplates(ab, options.templatesDir);
 
   if (config.name?.trim()) {
     writeFileSync(join(ab, "agent_brain", "identity", "USER.md"), buildUserProfile(config));
