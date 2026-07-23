@@ -31,7 +31,6 @@ export class SessionLifecycle {
   private readonly spawnReflect: SpawnReflectFn;
   private readonly onSessionComplete?: (hadActivity: boolean) => void;
   private turnDirty = false;
-  private reflectInFlight = false;
   private eventChain: Promise<void> = Promise.resolve();
 
   constructor(options: SessionLifecycleOptions) {
@@ -120,22 +119,16 @@ export class SessionLifecycle {
   }
 
   private async runCheckpointReflect(): Promise<void> {
-    if (this.reflectInFlight) return;
     if (!this.tracker.hasActivitySinceCheckpoint()) return;
 
-    this.reflectInFlight = true;
-    try {
-      this.tracker.recordCheckpoint();
-      const now = new Date();
-      this.requestReflect({
-        mode: "checkpoint",
-        logPath: "",
-        checkpointDate: toIsoDay(this.tracker.startTime),
-        checkpointTime: formatLocalTime(now.toISOString()),
-      });
-    } finally {
-      this.reflectInFlight = false;
-    }
+    this.tracker.recordCheckpoint();
+    const now = new Date();
+    this.requestReflect({
+      mode: "checkpoint",
+      logPath: "",
+      checkpointDate: toIsoDay(this.tracker.startTime),
+      checkpointTime: formatLocalTime(now.toISOString()),
+    });
   }
 
   private requestReflect(options: Omit<SpawnReflectOptions, "rootDir" | "forkedSessionFile">): void {

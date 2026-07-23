@@ -5,9 +5,10 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-TARGET="$(rustc -vV | grep host | cut -d' ' -f2)"
+# shellcheck source=sidecar-target.sh
+source "${ROOT}/scripts/sidecar-target.sh"
 OUT_DIR="src-tauri/binaries"
-OUT="${OUT_DIR}/agent-worker-${TARGET}"
+OUT="${OUT_DIR}/agent-worker-${SIDECAR_TARGET}"
 BUN="${ROOT}/node_modules/.bin/bun"
 
 mkdir -p "${OUT_DIR}"

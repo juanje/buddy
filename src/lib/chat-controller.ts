@@ -93,6 +93,8 @@ export interface ChatController {
   dismissPermission(id: number): void;
   /** Hide the welcome banner and acknowledge due deferred items (FR-DEFERRED-01). */
   dismissWelcome(): void;
+  /** Re-show the deferred banner when mid-session items come due (FR-DEFERRED-03). */
+  showDeferredBanner(): void;
 }
 
 export function createChatController(worker: ChatWorkerAPI): ChatController {
@@ -216,6 +218,10 @@ export function createChatController(worker: ChatWorkerAPI): ChatController {
     welcomeVisible.set(false);
   }
 
+  function showDeferredBanner(): void {
+    welcomeVisible.set(true);
+  }
+
   async function send(): Promise<void> {
     if (!get(canSend)) return;
     const text = get(input).trim();
@@ -322,6 +328,7 @@ export function createChatController(worker: ChatWorkerAPI): ChatController {
         finalizeToolActivityBlock();
         pendingThinking = "";
         streaming.set(false);
+        messages.update((list) => list.filter((m) => m.role !== "tool-activity"));
         break;
     }
   }
@@ -372,5 +379,6 @@ export function createChatController(worker: ChatWorkerAPI): ChatController {
     respondPermission,
     dismissPermission,
     dismissWelcome,
+    showDeferredBanner,
   };
 }

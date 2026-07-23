@@ -5,8 +5,9 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-TARGET="$(rustc -vV | grep host | cut -d' ' -f2)"
-OUT="src-tauri/binaries/agent-worker-${TARGET}"
+# shellcheck source=sidecar-target.sh
+source "${ROOT}/scripts/sidecar-target.sh"
+OUT="src-tauri/binaries/agent-worker-${SIDECAR_TARGET}"
 
 if [[ -x "${OUT}" ]]; then
   exit 0
