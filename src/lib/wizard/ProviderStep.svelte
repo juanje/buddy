@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { SetupController } from "../setup-controller";
-  import { supportsOAuth } from "../provider-setup";
+  import ProviderAuthForm from "../ProviderAuthForm.svelte";
   import { t } from "../i18n";
   import "./wizard-shared.css";
 
@@ -77,43 +77,18 @@
 </div>
 
 {#if $provider}
-  {#if supportsOAuth($provider) && !$showApiKey}
-    <button class="primary oauth" onclick={signInOAuth} disabled={$oauthLoggingIn}>
-      {$oauthLoggingIn ? $t.oauthWaiting : $t.oauthSignIn}
-    </button>
-    {#if $oauthError}
-      <p class="error">{$oauthError}</p>
-    {/if}
-    <button class="link" type="button" onclick={() => controller.setShowApiKey(true)}>
-      {$t.oauthUseApiKey}
-    </button>
-  {:else}
-    {#if supportsOAuth($provider)}
-      <button class="link" type="button" onclick={() => controller.setShowApiKey(false)}>
-        {$t.oauthBackToSignIn}
-      </button>
-    {/if}
-    {#if $needsBaseUrl}
-      <label class="field">
-        <span>{$t.baseUrlLabel}</span>
-        <input type="text" bind:value={baseUrlInput} spellcheck="false" />
-      </label>
-    {/if}
-    <label class="field">
-      <span>{$t.apiKeyLabel}</span>
-      <input type="password" bind:value={apiKeyInput} spellcheck="false" />
-    </label>
-    {#if $keyCheck && !$keyCheck.valid}
-      <p class="error">{$keyCheck.error}</p>
-    {/if}
-    <button
-      class="primary"
-      onclick={submitKeyAndContinue}
-      disabled={$validatingKey || apiKeyInput.length === 0}
-    >
-      {$validatingKey ? $t.apiKeyValidating : $t.apiKeyValidate}
-    </button>
-  {/if}
+  <ProviderAuthForm
+    provider={$provider}
+    showApiKey={$showApiKey}
+    loggingIn={$oauthLoggingIn || $validatingKey}
+    error={$oauthError || ($keyCheck && !$keyCheck.valid ? $keyCheck.error : null)}
+    needsBaseUrl={$needsBaseUrl}
+    bind:apiKeyInput
+    bind:baseUrlInput
+    onOAuthClick={signInOAuth}
+    onSubmitKey={submitKeyAndContinue}
+    onToggleMode={(show) => controller.setShowApiKey(show)}
+  />
 {/if}
 
 {#if onBack}
@@ -145,44 +120,6 @@
   .providers button.selected {
     border-color: var(--accent, #4f46e5);
     outline: 2px solid var(--accent, #4f46e5);
-  }
-  .field {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    align-items: flex-start;
-  }
-  .field span {
-    font-size: 13px;
-    color: var(--muted);
-  }
-  .field input {
-    width: min(420px, 80vw);
-    padding: 8px 12px;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    background: var(--bg-secondary);
-    color: var(--fg);
-    font-size: 14px;
-  }
-  .error {
-    color: var(--error-fg);
-    background: var(--error-bg);
-    border-radius: 8px;
-    padding: 8px 14px;
-    font-size: 13px;
-  }
-  button.primary.oauth {
-    margin-top: 8px;
-  }
-  button.link {
-    border: none;
-    background: transparent;
-    color: var(--muted);
-    font-size: 13px;
-    cursor: pointer;
-    text-decoration: underline;
-    margin-top: 8px;
   }
   .actions {
     margin-top: 12px;

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { t } from "./i18n";
-  import { supportsOAuth } from "./provider-setup";
+  import ProviderAuthForm from "./ProviderAuthForm.svelte";
   import {
     providerLabel,
     type SettingsController,
@@ -148,46 +148,18 @@
               {/each}
             </div>
             {#if $authProvider}
-              {#if supportsOAuth($authProvider) && !$authShowApiKey}
-                <button
-                  type="button"
-                  class="primary"
-                  onclick={() => controller.submitAuthOAuth()}
-                  disabled={$authLoggingIn}
-                >
-                  {$authLoggingIn ? $t.oauthWaiting : $t.oauthSignIn}
-                </button>
-                <button type="button" class="link" onclick={() => controller.setAuthShowApiKey(true)}>
-                  {$t.oauthUseApiKey}
-                </button>
-              {:else}
-                {#if supportsOAuth($authProvider)}
-                  <button type="button" class="link" onclick={() => controller.setAuthShowApiKey(false)}>
-                    {$t.oauthBackToSignIn}
-                  </button>
-                {/if}
-                {#if authNeedsBaseUrl}
-                  <label class="inline-field">
-                    <span>{$t.baseUrlLabel}</span>
-                    <input type="text" bind:value={baseUrlInput} spellcheck="false" />
-                  </label>
-                {/if}
-                <label class="inline-field">
-                  <span>{$t.apiKeyLabel}</span>
-                  <input type="password" bind:value={apiKeyInput} spellcheck="false" />
-                </label>
-                <button
-                  type="button"
-                  class="primary"
-                  onclick={submitApiKey}
-                  disabled={$authLoggingIn || apiKeyInput.length === 0}
-                >
-                  {$authLoggingIn ? $t.apiKeyValidating : $t.apiKeyValidate}
-                </button>
-              {/if}
-            {/if}
-            {#if $authError}
-              <p class="error">{$authError}</p>
+              <ProviderAuthForm
+                provider={$authProvider}
+                showApiKey={$authShowApiKey}
+                loggingIn={$authLoggingIn}
+                error={$authError}
+                needsBaseUrl={authNeedsBaseUrl}
+                bind:apiKeyInput
+                bind:baseUrlInput
+                onOAuthClick={() => controller.submitAuthOAuth()}
+                onSubmitKey={submitApiKey}
+                onToggleMode={(show) => controller.setAuthShowApiKey(show)}
+              />
             {/if}
             <button type="button" class="link" onclick={() => controller.cancelAddProvider()}>
               {$t.oauthCancel}
@@ -364,40 +336,6 @@
   .provider-buttons button.selected {
     border-color: var(--accent, #4f46e5);
     outline: 2px solid var(--accent, #4f46e5);
-  }
-  button.primary {
-    border: none;
-    background: var(--accent, #4f46e5);
-    color: #fff;
-    border-radius: 8px;
-    padding: 8px 16px;
-    cursor: pointer;
-    font-size: 14px;
-    justify-self: start;
-  }
-  .inline-field {
-    display: grid;
-    gap: 4px;
-  }
-  .inline-field span {
-    font-size: 13px;
-    color: var(--muted);
-  }
-  .inline-field input {
-    font: inherit;
-    padding: 6px 10px;
-    border-radius: 8px;
-    border: 1px solid var(--border);
-    background: var(--bg);
-    color: var(--fg);
-  }
-  .error {
-    margin: 0;
-    color: var(--error-fg);
-    background: var(--error-bg);
-    border-radius: 8px;
-    padding: 8px 12px;
-    font-size: 13px;
   }
   button:disabled {
     opacity: 0.5;
