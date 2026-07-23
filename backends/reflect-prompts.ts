@@ -1,6 +1,7 @@
-// backends/reflect-prompts.ts — LLM prompts for reflect child (FR-REFLECT-02/03).
+// backends/reflect-prompts.ts — User message templates for reflect child (FR-REFLECT-02/03).
+// The fork carries full conversation context; these prompts request structured output only.
 
-export const SESSION_END_PROMPT = `You are a memory consolidation agent. Analyze this session and produce a structured reflect with these sections:
+export const REFLECT_USER_PROMPT = `Reflect on this session and produce a structured summary with these sections:
 
 ### Decisions
 Decisions made during this session (or "None" if none).
@@ -27,7 +28,7 @@ If today's daily log already contains ## Checkpoint entries from this session, e
 
 Be concise. Capture substance, not mechanics. Write in English.`;
 
-export const CHECKPOINT_PROMPT = `You are a memory encoding agent. Briefly encode the recent segment of this session before context compaction:
+export const CHECKPOINT_USER_PROMPT = `Briefly encode the recent segment of this session before context compaction:
 
 ### Context
 What was happening in this segment of the session.
@@ -36,3 +37,6 @@ What was happening in this segment of the session.
 Anything worth remembering from this segment.
 
 Be very concise — this is a checkpoint, not a full reflect. Write in English.`;
+
+export const CRASH_CATCHUP_USER_PROMPT_PREFIX =
+  "Process this session skeleton into a reflect. The skeleton is the only available context — produce the best summary you can:\n\n";

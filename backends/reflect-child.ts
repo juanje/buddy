@@ -1,6 +1,7 @@
 // backends/reflect-child.ts — Background child process for session reflect (FR-REFLECT-02/03).
-// Spawned by the worker via child_process.fork(). Receives args via process.argv:
-//   [0] node, [1] script, [2] rootDir, [3] forkedSessionFile, [4] logPath, [5] mode
+// Spawned by the worker via child_process.fork() (dev) or spawn(execPath, ["--reflect", ...]) (prod).
+// Receives args via process.argv:
+//   [0] node/binary, [1] script/--reflect, [2] rootDir, [3] forkedSessionFile, [4] logPath, [5] mode
 //   checkpoint mode also: [6] checkpointDate, [7] checkpointTime
 //
 // Modes:
@@ -19,7 +20,7 @@ import {
 import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { AgentEvent } from "../shared/api";
-import { EXCLUDED_TOOLS, AGENT_TOOLS, LOCK_MAX_RETRIES, LOCK_RETRY_MS, REFLECT_SESSIONS_DIR } from "../shared/defaults";
+import { LOCK_MAX_RETRIES, LOCK_RETRY_MS, REFLECT_SESSIONS_DIR } from "../shared/defaults";
 import { fastModelForProvider } from "../shared/model-catalog";
 import { readPiProvider } from "../shared/pi-settings";
 import { logEvent } from "./app-logger";
@@ -35,7 +36,11 @@ import {
   sanitizeReflectOutput,
   updateLogsIndexEntry,
 } from "./reflect";
-import { CHECKPOINT_PROMPT, SESSION_END_PROMPT } from "./reflect-prompts";
+import {
+  CHECKPOINT_USER_PROMPT,
+  CRASH_CATCHUP_USER_PROMPT_PREFIX,
+  REFLECT_USER_PROMPT,
+} from "./reflect-prompts";
 
 async function resolveFastModelOptions(rootDir: string): Promise<{
   model?: Awaited<ReturnType<ModelRuntime["getModel"]>>;
@@ -73,6 +78,17 @@ function sessionIdFromPath(rootDir: string, targetPath: string): string {
   return base.replace(/\.md$/, "");
 }
 
+function buildUserPrompt(mode: string, targetPath: string): string {
+  if (mode === "crash-catchup") {
+    const skeleton = targetPath ? readFileSync(targetPath, "utf8") : "";
+    return `${CRASH_CATCHUP_USER_PROMPT_PREFIX}${skeleton}`;
+  }
+  if (mode === "checkpoint") {
+    return CHECKPOINT_USER_PROMPT;
+  }
+  return REFLECT_USER_PROMPT;
+}
+
 async function runReflect(
   rootDir: string,
   forkedSessionFile: string,
@@ -84,7 +100,6 @@ async function runReflect(
   await alignHttpDispatcherWithPi();
 
   const isCheckpoint = mode === "checkpoint";
-  const systemPrompt = isCheckpoint ? CHECKPOINT_PROMPT : SESSION_END_PROMPT;
   const sessionId = isCheckpoint ? "checkpoint" : sessionIdFromPath(rootDir, targetPath);
 
   let sm: SessionManager;
@@ -96,10 +111,11 @@ async function runReflect(
     sm = SessionManager.create(rootDir);
   }
 
+  // Fork-only context: no system prompt injection — the fork already has the conversation.
   const resourceLoader = new DefaultResourceLoader({
     cwd: rootDir,
     agentDir: getAgentDir(),
-    systemPromptOverride: () => systemPrompt,
+    systemPromptOverride: () => undefined,
   });
   await resourceLoader.reload();
 
@@ -109,7 +125,7 @@ async function runReflect(
     cwd: rootDir,
     resourceLoader,
     sessionManager: sm,
-    excludeTools: [...EXCLUDED_TOOLS, ...AGENT_TOOLS],
+    noTools: "all",
     ...fastModelOptions,
   });
 
@@ -117,12 +133,7 @@ async function runReflect(
   const unsub = session.subscribe((event) => events.push(event));
 
   try {
-    const skeleton = targetPath ? readFileSync(targetPath, "utf8") : "";
-    const userPrompt = mode === "crash-catchup"
-      ? `Process this session skeleton into a reflect:\n\n${skeleton}`
-      : isCheckpoint
-        ? "Encode this session segment before compaction. What happened and what's worth keeping?"
-        : "Reflect on this session. What was discussed, decided, learned? What's open?";
+    const userPrompt = buildUserPrompt(mode, targetPath);
     await session.prompt(userPrompt);
     const raw = collectAssistantText(events);
     const result = raw ? sanitizeReflectOutput(raw) : "";
@@ -161,6 +172,7 @@ async function runReflect(
             logPath: dailyPath,
           });
         } else {
+          const skeleton = targetPath ? readFileSync(targetPath, "utf8") : "";
           const dailyPath = finalizeReflectToDailyLog({
             rootDir,
             skeletonPath: targetPath,
