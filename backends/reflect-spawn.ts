@@ -4,6 +4,12 @@ import { fork as cpFork, spawn as cpSpawn } from "node:child_process";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import {
+  REFLECT_ARGV_FLAG,
+  REFLECT_CHILD_ENV_KEY,
+  REFLECT_CHILD_ENV_VALUE,
+} from "../shared/defaults";
+
 export interface SpawnReflectOptions {
   rootDir: string;
   forkedSessionFile: string;
@@ -54,10 +60,10 @@ export function spawnReflectChild(options: SpawnReflectOptions): number | undefi
   const args = buildReflectArgs(options);
 
   if (isCompiledBinary()) {
-    const child = cpSpawn(process.execPath, ["--reflect", ...args], {
+    const child = cpSpawn(process.execPath, [REFLECT_ARGV_FLAG, ...args], {
       detached: true,
       stdio: "ignore",
-      env: { ...process.env, AB_REFLECT_CHILD: "1" },
+      env: { ...process.env, [REFLECT_CHILD_ENV_KEY]: REFLECT_CHILD_ENV_VALUE },
     });
     child.unref();
     const pid = child.pid;
@@ -71,7 +77,7 @@ export function spawnReflectChild(options: SpawnReflectOptions): number | undefi
     detached: true,
     stdio: "ignore",
     execArgv: ["--import", "tsx"],
-    env: { ...process.env, AB_REFLECT_CHILD: "1" },
+    env: { ...process.env, [REFLECT_CHILD_ENV_KEY]: REFLECT_CHILD_ENV_VALUE },
   });
   child.unref();
   const pid = child.pid;

@@ -3,7 +3,7 @@
 import type { ModelRuntime } from "@earendil-works/pi-coding-agent";
 
 import type { DeferredItemView } from "../shared/api";
-import { HEARTBEAT_INTERVAL_MS } from "../shared/defaults";
+import { HEARTBEAT_INTERVAL_MS, HEARTBEAT_MIN_TICK_MS } from "../shared/defaults";
 import {
   determineTargetDepth,
   incrementSessionCounter,
@@ -37,7 +37,7 @@ export interface HeartbeatHandle {
 }
 
 export function startHeartbeat(deps: HeartbeatDeps): HeartbeatHandle {
-  const intervalMs = deps.intervalMs ?? HEARTBEAT_INTERVAL_MS ?? 1_800_000;
+  const intervalMs = deps.intervalMs ?? HEARTBEAT_INTERVAL_MS;
   const nowFn = deps.now ?? (() => new Date());
   const runConsolidationImpl = deps.runConsolidationFn ?? runConsolidation;
   const hasNewContentImpl = deps.hasNewContentFn ?? hasNewContentSinceConsolidation;
@@ -103,7 +103,7 @@ export function startHeartbeat(deps: HeartbeatDeps): HeartbeatHandle {
   // resolves to 0 or undefined).
   function guardedTick(): void {
     const nowMs = Date.now();
-    if (nowMs - lastTickAt < 5_000) return;
+    if (nowMs - lastTickAt < HEARTBEAT_MIN_TICK_MS) return;
     lastTickAt = nowMs;
     void tickInner();
   }

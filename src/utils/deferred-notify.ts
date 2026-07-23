@@ -21,7 +21,7 @@ export function resetDeferredNotifyStateForTests(): void {
   notifyInFlight = false;
 }
 
-export async function focusAppWindow(): Promise<void> {
+async function focusAppWindow(): Promise<void> {
   try {
     const win = getCurrentWindow();
     await win.unminimize();

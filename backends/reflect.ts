@@ -37,11 +37,7 @@ export interface FinalizeCheckpointOptions {
   sections: string;
 }
 
-function isoDay(date: Date): string {
-  return toIsoDay(date);
-}
-
-export function formatToolCalls(toolCalls: SessionTrackerSnapshot["toolCalls"]): string {
+function formatToolCalls(toolCalls: SessionTrackerSnapshot["toolCalls"]): string {
   if (toolCalls.length === 0) return "(none)\n";
   return toolCalls
     .map((t) => {
@@ -52,8 +48,8 @@ export function formatToolCalls(toolCalls: SessionTrackerSnapshot["toolCalls"]):
     .join("\n");
 }
 
-export function formatSkeletonBody(snapshot: SessionTrackerSnapshot): string {
-  const date = isoDay(new Date(snapshot.startTime));
+function formatSkeletonBody(snapshot: SessionTrackerSnapshot): string {
+  const date = toIsoDay(new Date(snapshot.startTime));
   const startTime = formatLocalTime(snapshot.startTime);
   const endTime = formatLocalTime(snapshot.endTime);
   const lines = [
@@ -71,8 +67,8 @@ export function formatSkeletonBody(snapshot: SessionTrackerSnapshot): string {
   return lines.join("\n") + "\n";
 }
 
-export function formatSkeletonFrontmatter(snapshot: SessionTrackerSnapshot): string {
-  const date = isoDay(new Date(snapshot.startTime));
+function formatSkeletonFrontmatter(snapshot: SessionTrackerSnapshot): string {
+  const date = toIsoDay(new Date(snapshot.startTime));
   return [
     "---",
     `date: ${date}`,
@@ -86,7 +82,7 @@ export function formatSkeletonFrontmatter(snapshot: SessionTrackerSnapshot): str
   ].join("\n");
 }
 
-export function pendingSkeletonPath(rootDir: string, sessionId: string): string {
+function pendingSkeletonPath(rootDir: string, sessionId: string): string {
   return join(rootDir, PENDING_DIR, `${sessionId}.md`);
 }
 

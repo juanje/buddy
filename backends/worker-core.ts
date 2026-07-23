@@ -13,6 +13,7 @@ import type { SessionLifecycle } from "./session-lifecycle";
  * excluded here and composed into the RPC surface there.
  */
 export type SessionWorkerAPI = Omit<ChatWorkerAPI, "resolvePermission" | "dismissDeferredItems"> & {
+  getState(): Promise<AgentState>;
   setModel(model: unknown): Promise<void>;
 };
 

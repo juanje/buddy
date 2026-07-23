@@ -50,7 +50,7 @@ const PROBE_TARGETS: Record<ProviderId, ProbeTarget> = {
   },
 };
 
-export const httpKeyProbe: KeyProbe = async (provider, apiKey, baseUrl) => {
+const httpKeyProbe: KeyProbe = async (provider, apiKey, baseUrl) => {
   const target = PROBE_TARGETS[provider];
   try {
     const res = await fetch(target.url(baseUrl), { headers: target.headers(apiKey) });

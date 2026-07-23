@@ -11,7 +11,7 @@
 // The layer installs as a chained `beforeToolCall` hook: an earlier hook's
 // block wins; otherwise our decision applies.
 
-import { basename, isAbsolute, join, relative, resolve, sep } from "node:path";
+import { basename, join, resolve } from "node:path";
 import { homedir } from "node:os";
 import type { AllowedEntry } from "./allowed-paths";
 import { isPathPersistentlyAllowed } from "./allowed-paths";

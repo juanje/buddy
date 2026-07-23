@@ -11,8 +11,6 @@ import { savePendingSkeleton, shouldRunCheckpointReflect } from "./reflect";
 import { spawnReflectChild, type SpawnReflectFn, type SpawnReflectOptions } from "./reflect-spawn";
 import { SessionTracker } from "./session-tracker";
 
-export type { SpawnReflectFn } from "./reflect-spawn";
-
 export interface SessionLifecycleOptions {
   rootDir: string;
   sessionId: string;
@@ -73,7 +71,7 @@ export class SessionLifecycle {
     const flags = this.tracker.recordEvent(event, this.rootDir);
 
     if (flags.compactionStart) {
-      await this.runCheckpointReflect("compaction");
+      await this.runCheckpointReflect();
     }
     if (flags.turnEnded) {
       logEvent(this.rootDir, {
@@ -117,11 +115,11 @@ export class SessionLifecycle {
         this.tracker.lastCheckpointTurn,
       )
     ) {
-      await this.runCheckpointReflect("turn-threshold");
+      await this.runCheckpointReflect();
     }
   }
 
-  private async runCheckpointReflect(_reason: "compaction" | "turn-threshold"): Promise<void> {
+  private async runCheckpointReflect(): Promise<void> {
     if (this.reflectInFlight) return;
     if (!this.tracker.hasActivitySinceCheckpoint()) return;
 

@@ -1,5 +1,7 @@
 // backends/sidecar-dispatch.ts — E13b argv routing for compiled sidecar entry.
 
+import { REFLECT_ARGV_FLAG } from "../shared/defaults";
+
 /**
  * Which module sidecar-entry should boot (testable without loading the full binary).
  *
@@ -7,5 +9,5 @@
  * prepend extra entries (e.g. runtime path) before user-supplied args.
  */
 export function sidecarBootTarget(argv: string[] = process.argv): "reflect-child" | "agent-worker" {
-  return argv.includes("--reflect") ? "reflect-child" : "agent-worker";
+  return argv.includes(REFLECT_ARGV_FLAG) ? "reflect-child" : "agent-worker";
 }

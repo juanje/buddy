@@ -1,10 +1,8 @@
 // backends/reflect-recovery.ts — Crash recovery: spawn reflect children for pending skeletons.
 
-import { CRASH_RECOVERY_MAX } from "../shared/defaults";
+import { CRASH_RECOVERY_MAX, REFLECT_CHILD_ENV_KEY, REFLECT_CHILD_ENV_VALUE } from "../shared/defaults";
 import { findPendingReflects, markPendingInProgress } from "./reflect";
-import { spawnReflectChild, type SpawnReflectOptions } from "./reflect-spawn";
-
-export type SpawnReflectFn = (options: SpawnReflectOptions) => number | undefined;
+import { spawnReflectChild, type SpawnReflectFn, type SpawnReflectOptions } from "./reflect-spawn";
 
 /**
  * Detect reflect-pending skeletons and spawn background children (non-blocking).
@@ -18,7 +16,7 @@ export function runCrashRecoveryCatchUp(
   rootDir: string,
   spawn: SpawnReflectFn = spawnReflectChild,
 ): SpawnReflectOptions[] {
-  if (process.env.AB_REFLECT_CHILD === "1") return [];
+  if (process.env[REFLECT_CHILD_ENV_KEY] === REFLECT_CHILD_ENV_VALUE) return [];
 
   const pending = findPendingReflects(rootDir);
   const spawned: SpawnReflectOptions[] = [];

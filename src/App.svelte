@@ -1,7 +1,5 @@
 <script lang="ts">
-  // App shell. Chat UI built out feature by feature:
-  // FR-CHAT-02 input/send · FR-CHAT-01 streaming · FR-CHAT-03 abort ·
-  // FR-CHAT-07 auto-scroll · FR-SETUP-01 first-run wizard routing.
+  // App shell — main container for chat, wizard, and settings.
   import { onMount } from "svelte";
   import { listen } from "@tauri-apps/api/event";
   import { getCurrentWindow } from "@tauri-apps/api/window";

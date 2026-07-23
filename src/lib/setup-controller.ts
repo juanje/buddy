@@ -4,6 +4,7 @@
 
 import { derived, get, writable, type Readable, type Writable } from "svelte/store";
 import { recommendedModelFor } from "../../shared/model-catalog";
+import { DEFAULT_LANGUAGE } from "../../shared/defaults";
 import { fromPiProviderId } from "../../shared/provider-mapping";
 import { DEFAULT_SETUP_PROVIDER, isApiKeyOnlyProvider } from "./provider-setup";
 import type {
@@ -273,7 +274,7 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
       rootDir,
       provider: providerId,
       model: modelId,
-      language: get(language) ?? "es",
+      language: get(language) ?? DEFAULT_LANGUAGE,
       name: get(userName).trim(),
       about: get(userAbout).trim() || undefined,
     };
@@ -331,7 +332,7 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
           rootDir,
           provider: knownProvider,
           model: settings.model,
-          language: get(language) ?? "es",
+          language: get(language) ?? DEFAULT_LANGUAGE,
         });
         return "adopted";
       }

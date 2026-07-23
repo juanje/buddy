@@ -14,8 +14,6 @@ export const PENDING_DIR = ".buddy/pending";
 export const REFLECT_SESSIONS_DIR = ".buddy/reflect-sessions";
 /** App instrumentation logs (JSONL, machine-oriented). */
 export const APP_LOGS_DIR = ".buddy/logs";
-/** Max pending reflects processed per catch-up run. */
-export const CATCH_UP_MAX = 3;
 /** Fallback Pi provider when `.pi/settings.json` is missing or invalid. */
 export const DEFAULT_PI_PROVIDER = "anthropic";
 
@@ -31,6 +29,13 @@ export const GIT_USER_EMAIL = "buddy@localhost";
 
 /** Heartbeat interval for deferred checks and consolidation evaluation (FR-DEFERRED-02, FR-CONSOL-01). */
 export const HEARTBEAT_INTERVAL_MS = 30 * 60 * 1000;
+/** Minimum gap between timer-triggered heartbeat ticks (guards runaway timer in compiled binaries). */
+export const HEARTBEAT_MIN_TICK_MS = 5_000;
+/** Argv flag for production sidecar reflect dispatch (E13b). */
+export const REFLECT_ARGV_FLAG = "--reflect";
+/** Env var set on spawned reflect children to prevent crash-recovery recursion. */
+export const REFLECT_CHILD_ENV_KEY = "AB_REFLECT_CHILD";
+export const REFLECT_CHILD_ENV_VALUE = "1";
 /** Usage-based consolidation counters (FR-CONSOL-01). */
 export const CONSOLIDATION_STATE_PATH = ".buddy/consolidation-state.json";
 /** Consolidation run journal (FR-CONSOL-06). */

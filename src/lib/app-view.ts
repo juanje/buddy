@@ -3,6 +3,7 @@
 // App component renders.
 
 import type { SetupState } from "../../shared/api";
+import { DEFAULT_LANGUAGE } from "../../shared/defaults";
 import { setLocale } from "./i18n";
 
 export type AppView = "setup" | "chat";
@@ -14,5 +15,5 @@ export function resolveInitialView(state: SetupState): AppView {
 /** Sync UI locale from persisted config (NFR-I18N). */
 export function applyLocaleFromSetup(state: SetupState): void {
   if (state.firstRun) return;
-  setLocale(state.config.language ?? "es");
+  setLocale(state.config.language ?? DEFAULT_LANGUAGE);
 }

@@ -181,7 +181,7 @@ export interface WorkerAPI {
  */
 export type ChatWorkerAPI = Pick<
   WorkerAPI,
-  "prompt" | "abort" | "getState" | "resolvePermission" | "shutdown" | "dismissDeferredItems"
+  "prompt" | "abort" | "resolvePermission" | "shutdown" | "dismissDeferredItems"
 >;
 
 /** Setup-scoped subset of WorkerAPI: what the wizard needs (FR-SETUP-02+). */

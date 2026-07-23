@@ -69,8 +69,6 @@ ${about}
 `;
 }
 
-export { writePiSettings } from "../shared/pi-settings";
-
 /**
  * Create the AB home: copy templates (agent_brain/, user/, logs/, AGENTS.md),
  * write project Pi settings, init git with a single initial commit, and mark

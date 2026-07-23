@@ -10,12 +10,6 @@ function fakeWorker() {
   return {
     prompt: async () => {},
     abort: async () => {},
-    getState: async () => ({
-      model: undefined,
-      thinkingLevel: "off",
-      isStreaming: false,
-      messageCount: 0,
-    }),
     resolvePermission: async () => {},
     dismissDeferredItems: async () => {},
     shutdown: async () => {},
