@@ -314,12 +314,13 @@ platform-specific install instructions is shown and setup cannot continue.
 - **Given** a session ends normally (user closes app or ends session)
 - **When** the shutdown sequence runs
 - **Then** the reflect child forks the live session via `SessionManager.forkFrom(sessionFile, rootDir, forkDir)` — creating a new JSONL with full conversation context in `.buddy/reflect-sessions/`
-- **And** a background `child_process.fork()` is spawned to run the LLM reflect independently of the app window
+- **And** a background process is spawned to run the LLM reflect independently of the app window (dev: `child_process.fork()`; production: `spawn(execPath, ["--reflect", ...])` — see E13b)
 - **And** the app window closes immediately (<100ms total shutdown time)
-- **And** the background process: opens the forked session → prompts for reflect (Decisions, Lessons, Context, Open threads, Tasks captured, Ideas, System observations) → appends a `## Session HH:MM–HH:MM` block to `logs/YYYY-MM-DD.md` (session start date, local calendar day) → deletes the pending skeleton in `.buddy/pending/` → rebuilds `logs/index.md` → commits → exits
+- **And** the background process: opens the forked session → sends a single user prompt asking for the reflect (Decisions, Lessons, Context, Open threads, Tasks captured, Ideas, System observations) → appends a `## Session HH:MM–HH:MM` block to `logs/YYYY-MM-DD.md` (session start date, local calendar day) → deletes the pending skeleton in `.buddy/pending/` → rebuilds `logs/index.md` → commits → exits
 - **And** if the background process fails, the factual skeleton (FR-REFLECT-01) remains in `.buddy/pending/` as a pending fallback
 - **And** the next app start detects any remaining "reflect pending" skeletons and runs catch-up (same background process pattern)
-- **Note:** The LLM sees the FULL conversation in context (not a cold file list), producing meaningful reflect output comparable to what a human would capture.
+- **Design principle — fork-only context:** The forked session already contains the full conversation (all user/assistant turns, tool calls, tool results). The reflect child does NOT load a system prompt, AGENTS.md, identity files, or resource loader — those weren't part of the session and would pollute the context. The skeleton (files read/written, tools used) is also NOT passed as LLM input — the model already saw those actions in the fork. The only input is a user prompt requesting the structured reflect.
+- **Crash-catchup exception:** When no fork exists (crash before fork was written), the skeleton IS the input — it's the only evidence of what happened. Output will be thinner but non-zero.
 
 **FR-REFLECT-03 — Checkpoint mid-session reflect (forked, background)**
 
@@ -327,7 +328,7 @@ platform-specific install instructions is shown and setup cannot continue.
 - **Or given** Pi emits a `compaction_start` event (context window about to be compressed)
 - **When** the worker detects the threshold or the compaction event (and there has been activity since the last checkpoint)
 - **Then** the worker forks the current session file and spawns a background child process with mode `checkpoint`
-- **And** the child runs a lightweight LLM reflect on the forked session context (Context + Notes sections only)
+- **And** the child opens the forked session and sends a single user prompt requesting a lightweight encode (Context + Notes sections only) — no system prompt override, no resource loader, no skeleton input
 - **And** the child appends a `## Checkpoint HH:MM` block to `logs/YYYY-MM-DD.md` (session start date) using a fast-tier model
 - **And** the user's conversation is never interrupted
 - **And** the session-end reflect (FR-REFLECT-02) produces the comprehensive `## Session HH:MM–HH:MM` entry covering the full session, emphasizing activity since the last checkpoint when checkpoints exist
@@ -338,14 +339,18 @@ platform-specific install instructions is shown and setup cannot continue.
 ```
 Normal shutdown:
   app (sync, <100ms): write skeleton → fork session file → spawn child → close
-  child (async):      open fork → LLM reflect → append ## Session to daily log → commit → exit
+  child (async):      open fork → user prompt only (no sys prompt/resources) → LLM reflect → append ## Session to daily log → commit → exit
 
 Mid-session (every N turns / pre-compaction):
   worker (sync):      fork session file → spawn child (checkpoint) → continue serving user
-  child (async):      open fork → lightweight LLM → append ## Checkpoint to daily log → commit → exit
+  child (async):      open fork → user prompt only → lightweight LLM → append ## Checkpoint to daily log → commit → exit
 
 Crash recovery (next app start):
-  boot: detect reflect-pending skeleton → spawn child → same as session-end (skeleton fallback if no fork)
+  boot: detect reflect-pending skeleton → spawn child → skeleton as input (no fork available) → LLM → daily log → commit → exit
+
+Spawn mechanism:
+  dev:  child_process.fork(reflect-child.ts) with tsx
+  prod: spawn(process.execPath, ["--reflect", ...]) — same binary, argv dispatch (E13b)
 ```
 
 **FR-REFLECT-04 — Log output sanitizer (strip tool-call artifacts)**
