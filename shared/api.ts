@@ -14,13 +14,6 @@ export interface AssistantMessageEventLike {
   [key: string]: unknown;
 }
 
-export interface AgentState {
-  model: string | undefined;
-  thinkingLevel: string;
-  isStreaming: boolean;
-  messageCount: number;
-}
-
 /** Options for prompt() — FR-INGEST-03/05 file and image attachments. */
 export interface PromptOptions {
   attachments?: string[];
@@ -135,7 +128,6 @@ export interface DeferredItemView {
 export interface WorkerAPI {
   prompt(text: string, options?: PromptOptions): Promise<void>;
   abort(): Promise<void>;
-  getState(): Promise<AgentState>;
   /** Due/overdue deferred items for the chat welcome state (FR-DEFERRED-01). */
   getDeferredItems(): Promise<DeferredItemView[]>;
   /** Acknowledge due items: remove from deferred.md (FR-DEFERRED-01 dismiss). */

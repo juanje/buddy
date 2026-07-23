@@ -11,11 +11,6 @@ export function createWorkerProxy(getConnection: () => WorkerConnection | undefi
     async abort() {
       await getConnection()?.api.abort();
     },
-    async getState() {
-      const connection = getConnection();
-      if (!connection) throw new Error("worker not connected");
-      return connection.api.getState();
-    },
     async getDeferredItems() {
       const connection = getConnection();
       if (!connection) return [];

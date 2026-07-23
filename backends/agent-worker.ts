@@ -139,10 +139,6 @@ async function main(): Promise<void> {
       async abort() {
         await core?.api.abort();
       },
-      async getState() {
-        if (!core) throw new Error("worker not ready");
-        return core.api.getState();
-      },
       async getDeferredItems() {
         if (setupState.firstRun) return [];
         const today = toIsoDay(new Date());

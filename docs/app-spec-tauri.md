@@ -192,15 +192,6 @@ const workerApi: WorkerAPI = {
         await session.compact();
     },
 
-    async getState() {
-        return {
-            model: session.model?.name,
-            thinkingLevel: session.thinkingLevel,
-            isStreaming: session.isStreaming,
-            messageCount: session.messages.length,
-        };
-    },
-
     async shutdown() {
         // Build factual skeleton from session events (deterministic, no LLM)
         const skeleton = buildSessionSkeleton(session);
@@ -318,13 +309,6 @@ export interface DeferredItem {
     dueDate: string;
 }
 
-export interface AgentState {
-    model: string | undefined;
-    thinkingLevel: string;
-    isStreaming: boolean;
-    messageCount: number;
-}
-
 // Frontend calls these on the worker
 export interface WorkerAPI {
     setup(config: SetupConfig): Promise<void>;  // first-run: create AB + configure Pi
@@ -334,7 +318,6 @@ export interface WorkerAPI {
     setModel(provider: string, modelId: string): Promise<void>;
     setThinkingLevel(level: string): Promise<void>;
     compact(): Promise<void>;
-    getState(): Promise<AgentState>;
     shutdown(): Promise<void>;  // save skeleton + mark reflect pending
 }
 

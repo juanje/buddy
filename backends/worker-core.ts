@@ -4,7 +4,7 @@
 // Pi AgentSession here; BDD tests wire a fake session that emits the same
 // event shapes.
 
-import type { AgentEvent, AgentState, ChatWorkerAPI, FrontendAPI, PromptOptions } from "../shared/api";
+import type { AgentEvent, ChatWorkerAPI, FrontendAPI, PromptOptions } from "../shared/api";
 import type { SessionLifecycle } from "./session-lifecycle";
 
 /**
@@ -13,7 +13,6 @@ import type { SessionLifecycle } from "./session-lifecycle";
  * excluded here and composed into the RPC surface there.
  */
 export type SessionWorkerAPI = Omit<ChatWorkerAPI, "resolvePermission" | "dismissDeferredItems"> & {
-  getState(): Promise<AgentState>;
   setModel(model: unknown): Promise<void>;
 };
 
@@ -61,15 +60,6 @@ export function createWorkerCore(
 
     async abort(): Promise<void> {
       await session.abort();
-    },
-
-    async getState(): Promise<AgentState> {
-      return {
-        model: undefined,
-        thinkingLevel: "medium",
-        isStreaming: session.isStreaming,
-        messageCount: lifecycle?.tracker.turnCount ?? 0,
-      };
     },
 
     async setModel(model: unknown): Promise<void> {
