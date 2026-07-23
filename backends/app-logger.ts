@@ -17,6 +17,7 @@ export type AppLogEvent =
   | { event: "consolidation_start"; depth: number }
   | { event: "consolidation_complete"; depth: number }
   | { event: "consolidation_error"; depth: number; error: string }
+  | { event: "heartbeat_tick"; deferredDue: number; consolidationEvaluated: boolean }
   | { event: "error"; message: string; context?: string };
 
 function appLogPath(rootDir: string, day: string): string {

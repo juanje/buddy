@@ -11,6 +11,7 @@ import {
   saveConsolidationState,
   type ConsolidationState,
 } from "../shared/consolidation-state";
+import { logEvent } from "./app-logger";
 import { hasNewContentSinceConsolidation } from "./consolidation-content";
 import { runConsolidation } from "./consolidation-runner";
 import { getDueDeferred, toDeferredItemViews, toIsoDay } from "./deferred";
@@ -86,6 +87,12 @@ export function startHeartbeat(deps: HeartbeatDeps): HeartbeatHandle {
     if (dueItems.length > 0) {
       deps.onDeferredDue(toDeferredItemViews(dueItems, today));
     }
+    const willEvaluateConsolidation = !consolidationInFlight && !deps.isStreaming();
+    logEvent(deps.rootDir, {
+      event: "heartbeat_tick",
+      deferredDue: dueItems.length,
+      consolidationEvaluated: willEvaluateConsolidation,
+    }, now);
     await evaluateConsolidation();
   }
 
