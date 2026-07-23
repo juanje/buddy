@@ -738,26 +738,42 @@ Session end (normal close):
 7. Background child (async, independent of app):
    - SessionManager.forkFrom(sessionFile, rootDir, forkDir) — full conversation context
    - createAgentSession({ sessionManager: forkedSM }) on the forked JSONL
-   - LLM prompt → writes Decisions, Lessons, Context, Open threads
-   - Updates session log (reflect-pending → complete), commits, exits
+   - Single user prompt ("reflect on this session") — NO system prompt override,
+     NO ResourceLoader, NO AGENTS.md, NO skeleton content as input
+   - LLM already sees the full conversation in the fork → writes Decisions,
+     Lessons, Context, Open threads, Tasks captured, Ideas, System observations
+   - Appends ## Session HH:MM–HH:MM to logs/YYYY-MM-DD.md, deletes pending
+     skeleton, rebuilds logs/index.md, commits, exits
 
 Crash recovery (next app start):
-8. Worker: detect "reflect-pending" logs without a completed reflect
-9. Worker: spawn background child process → same LLM reflect flow
-   (uses forked session file if available, or skeleton as fallback)
+8. Worker: detect "reflect-pending" skeletons without a completed reflect
+9. Worker: spawn background child process
+   - If forked session file exists: same as normal (fork-only context)
+   - If no fork (crash before fork): skeleton IS the input (thin but non-zero)
 10. User can start chatting immediately — reflect runs in parallel
+
+Spawn mechanism:
+  dev:  child_process.fork(reflect-child.ts) with tsx
+  prod: spawn(process.execPath, ["--reflect", ...]) — same binary, argv dispatch
 ```
 
 **Checkpoint reflect (mid-session):** Every N messages (configurable, default 15)
 or on `compaction_start`, the worker forks the current session and spawns a
-background child process with mode `checkpoint`. The LLM encodes the segment
-(cheaper model / lower thinking) and appends a `## Checkpoint HH:MM` block to
-`logs/YYYY-MM-DD.md`. The user's conversation is never interrupted. Session-end
-reflect produces the comprehensive `## Session HH:MM–HH:MM` entry (emphasizing
-activity since the last checkpoint when checkpoints exist).
+background child process with mode `checkpoint`. The child opens the fork and
+sends a single user prompt (Context + Notes only) — no system prompt, no
+resource loader. Uses a fast-tier model. Appends a `## Checkpoint HH:MM` block
+to `logs/YYYY-MM-DD.md`. The user's conversation is never interrupted.
+Session-end reflect produces the comprehensive `## Session HH:MM–HH:MM` entry
+(emphasizing activity since the last checkpoint when checkpoints exist).
 
-**Key design principle:** The app window closes in <100ms. All LLM work is
-in detached background processes. The skeleton is the crash-proof minimum;
+**Key design principle:** The fork IS the context. The forked session file
+contains the full conversation (all user/assistant turns, tool calls, tool
+results). The reflect child does not inject external resources — those weren't
+part of the session and would dilute the context. The only LLM input beyond
+the fork itself is a user prompt requesting the structured output format.
+
+The app window closes in <100ms. All LLM work is in detached background
+processes. The skeleton is the crash-proof minimum (crash-only fallback);
 the forked reflect is the rich primary path. Both write to the same log file.
 
 ## Permission Model
@@ -1722,7 +1738,7 @@ All critical APIs verified against Pi source code. Summary:
 - System prompt: `DefaultResourceLoader({ systemPromptOverride: () => assembled })` → `createAgentSession({ resourceLoader })`
 - Bash disabled: `createAgentSession({ excludeTools: ["bash"] })`
 - Fresh session: `SessionManager.create(cwd)` every launch (E5 decision)
-- Forked reflect: `SessionManager.forkFrom(sessionFile, rootDir, forkDir)` in background child → separate JSONL, no live session pollution
+- Forked reflect: `SessionManager.forkFrom(sessionFile, rootDir, forkDir)` in background child → separate JSONL, no live session pollution. The reflect child does NOT use a ResourceLoader — the fork carries all context; the only input is a user prompt requesting the reflect format.
 - Hook chaining: save `session.agent.beforeToolCall`, install ours, delegate to original
 - Hebbian tracking: `afterToolCall` with `ctx.isError` check before counting
 - Event names: `compaction_start/end` (not `session_compact`); no `model_select` in subscribe events
