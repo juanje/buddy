@@ -139,14 +139,19 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 
 **Tests at sprint close:** 182 unit + 104 BDD green.
 
+## E13 — Production reflect (2026-07-23)
+
+| Item | Description | Status | Commit |
+|------|-------------|--------|--------|
+| E13a | Reflect child fork-only context (no system prompt, no skeleton LLM input) | done | 91a689a |
+| E13b | Argv dispatch (`--reflect`) + compiled spawn path | done | d945322 |
+
+**Tests at E13 close:** 193 unit + 104 BDD green.
+
 ## Current focus
 
-> **Sprint: UX + distribution (2026-07-23) complete** — FR-CHAT-09, FR-DEFERRED-03, E12 sidecar.
-> Next: **E13** (reflect design cleanup + production argv dispatch), then FR-WIKI, FR-COST, FR-CHAT-10.
->
-> **E12 production caveat:** Reflect is no-op in compiled mode (`typeof Bun` guard). Chat works; session memory persistence does not until E13 lands.
-> - E13a: Remove ResourceLoader/skeleton input from reflect child (fork-only context — design alignment)
-> - E13b: Argv dispatch for production spawn (`--reflect` mode in same binary)
+> **E13 complete (2026-07-23)** — Reflect fork-only context (E13a) + production argv dispatch (E13b).
+> Next: FR-WIKI, FR-COST, FR-CHAT-10.
 
 ### Sprint: Settings access UI — DONE (2026-07-22)
 
