@@ -5,6 +5,7 @@ import { get } from "svelte/store";
 
 import type { SetupConfig } from "../../shared/api";
 import { buildMockWorker } from "../support/settings-fixtures";
+import { catalogModelsFor } from "../support/setup-worker-fake";
 import { getLocale } from "../../src/lib/i18n";
 import {
   createSettingsController,
@@ -77,7 +78,7 @@ describe("createSettingsController", () => {
 
     controller.openSettings();
     await new Promise((r) => setTimeout(r, 0));
-    expect(get(controller.models)).toHaveLength(2);
+    expect(get(controller.models)).toHaveLength(catalogModelsFor("anthropic").length);
     expect(get(controller.unauthenticatedProviders)).toEqual(["openai", "google"]);
   });
 

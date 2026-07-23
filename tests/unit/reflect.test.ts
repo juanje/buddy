@@ -9,6 +9,7 @@ import { PENDING_DIR, INCREMENTAL_REFLECT_EVERY } from "../../shared/defaults";
 import {
   appendDailyLog,
   findPendingReflects,
+  markPendingInProgress,
   parseFrontmatter,
   sanitizeReflectOutput,
   savePendingSkeleton,
@@ -302,5 +303,28 @@ describe("findPendingReflects", () => {
       "---\ndate: 2026-07-19\nstatus: complete\n---\n",
     );
     expect(findPendingReflects(dir)).toHaveLength(0);
+  });
+
+  it("markPendingInProgress flips status to reflect-in-progress", () => {
+    dir = mkdtempSync(join(tmpdir(), "ab-pending-"));
+    const path = savePendingSkeleton(dir, new SessionTracker("flip").toSnapshot());
+
+    markPendingInProgress(path);
+
+    const content = readFileSync(path, "utf8");
+    expect(parseFrontmatter(content).status).toBe("reflect-in-progress");
+  });
+
+  it("skips reflect-in-progress skeletons", () => {
+    dir = mkdtempSync(join(tmpdir(), "ab-pending-"));
+    const path = savePendingSkeleton(dir, new SessionTracker("inprog").toSnapshot());
+    markPendingInProgress(path);
+
+    expect(findPendingReflects(dir)).toHaveLength(0);
+  });
+
+  it("markPendingInProgress is a no-op for missing path", () => {
+    dir = mkdtempSync(join(tmpdir(), "ab-pending-"));
+    expect(() => markPendingInProgress(join(dir, PENDING_DIR, "missing.md"))).not.toThrow();
   });
 });

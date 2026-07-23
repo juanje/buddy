@@ -14,7 +14,6 @@ import {
 import {
   buildMockWorker,
   DEFAULT_TEST_CONFIG,
-  MODEL_CATALOG,
 } from "../support/settings-fixtures";
 import type { AbWorld } from "../support/world";
 
@@ -39,7 +38,6 @@ function buildWorker(this: SettingsWorld): SettingsWorkerAPI {
       this.changeModelCalls.push({ provider, model });
       this.appConfig = { ...this.appConfig, provider, model };
     },
-    listModels: async (provider) => MODEL_CATALOG[provider] ?? [],
     getAuthStatus: async () => ({
       providers: [
         {

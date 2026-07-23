@@ -9,6 +9,7 @@ import { commitAll } from "../../backends/git";
 import { findPendingReflects, finalizeReflectToDailyLog, savePendingSkeleton, updateLogsIndexEntry } from "../../backends/reflect";
 import { runCrashRecoveryCatchUp } from "../../backends/reflect-recovery";
 import { SessionTracker } from "../../backends/session-tracker";
+import { MOCK_SPAWN_PID } from "../support/test-constants";
 import type { AbWorld } from "../support/world";
 
 interface ReflectDailyWorld extends AbWorld {
@@ -49,7 +50,7 @@ When("catch-up reflect runs", async function (this: ReflectDailyWorld) {
       skeletonContent: skeleton,
       sections: "### Context\nCatch-up reflect for BDD.",
     });
-    return 12345;
+    return MOCK_SPAWN_PID;
   });
 
   if (this.lastSkeletonDate) {

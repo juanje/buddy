@@ -4,21 +4,22 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-let savedBuddyConfigDir: string | undefined;
+/** Vitest env stub API (also satisfied by importing `vi` from vitest). */
+export interface EnvStub {
+  stubEnv: (key: string, value: string) => void;
+  unstubAllEnvs: () => void;
+}
+
+const buddyConfigDirStack: Array<string | undefined> = [];
 
 export interface GlobalConfigFixture {
   configDir: string;
 }
 
-/** Point BUDDY_CONFIG_DIR at a temp dir; optional prompt files. */
-export function setupGlobalConfigDir(options?: {
-  agentsBase?: string;
-  consolidationSkill?: string;
-}): GlobalConfigFixture {
-  const configDir = mkdtempSync(join(tmpdir(), "ab-global-config-"));
-  savedBuddyConfigDir = process.env.BUDDY_CONFIG_DIR;
-  process.env.BUDDY_CONFIG_DIR = configDir;
-
+function writePromptFiles(
+  configDir: string,
+  options?: { agentsBase?: string; consolidationSkill?: string },
+): void {
   const promptsDir = join(configDir, "prompts");
   mkdirSync(promptsDir, { recursive: true });
 
@@ -28,17 +29,41 @@ export function setupGlobalConfigDir(options?: {
   if (options?.consolidationSkill !== undefined) {
     writeFileSync(join(promptsDir, "consolidation.md"), options.consolidationSkill, "utf8");
   }
+}
+
+/** Point BUDDY_CONFIG_DIR at a temp dir; optional prompt files. */
+export function setupGlobalConfigDir(
+  options?: {
+    agentsBase?: string;
+    consolidationSkill?: string;
+  },
+  envStub?: EnvStub,
+): GlobalConfigFixture {
+  const configDir = mkdtempSync(join(tmpdir(), "ab-global-config-"));
+
+  if (envStub) {
+    envStub.stubEnv("BUDDY_CONFIG_DIR", configDir);
+  } else {
+    buddyConfigDirStack.push(process.env.BUDDY_CONFIG_DIR);
+    process.env.BUDDY_CONFIG_DIR = configDir;
+  }
+
+  writePromptFiles(configDir, options);
 
   return { configDir };
 }
 
-export function teardownGlobalConfigDir(configDir?: string): void {
-  if (savedBuddyConfigDir === undefined) {
-    delete process.env.BUDDY_CONFIG_DIR;
+export function teardownGlobalConfigDir(configDir?: string, envStub?: EnvStub): void {
+  if (envStub) {
+    envStub.unstubAllEnvs();
   } else {
-    process.env.BUDDY_CONFIG_DIR = savedBuddyConfigDir;
+    const saved = buddyConfigDirStack.pop();
+    if (saved === undefined) {
+      delete process.env.BUDDY_CONFIG_DIR;
+    } else {
+      process.env.BUDDY_CONFIG_DIR = saved;
+    }
   }
-  savedBuddyConfigDir = undefined;
 
   if (configDir) {
     rmSync(configDir, { recursive: true, force: true });

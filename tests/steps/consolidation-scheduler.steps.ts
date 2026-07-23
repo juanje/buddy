@@ -15,6 +15,7 @@ import type { AbWorld } from "../support/world";
 import type { DeferredItemView } from "../../shared/api";
 import type { MaintenanceSessionLike } from "../../backends/consolidation-runner";
 import { setupGlobalConfigDir, teardownGlobalConfigDir } from "../support/global-config";
+import { TEST_FROZEN_NOW, TEST_HEARTBEAT_INTERVAL_MS } from "../support/test-constants";
 
 interface ConsolidationWorld extends AbWorld {
   consolTmpDir?: string;
@@ -57,8 +58,8 @@ Given("an AB directory prepared for consolidation", async function (this: Consol
     onDeferredDue: (items) => {
       this.deferredNotifications!.push(items);
     },
-    intervalMs: 60_000,
-    now: () => new Date("2026-07-22T10:00:00Z"),
+    intervalMs: TEST_HEARTBEAT_INTERVAL_MS,
+    now: () => TEST_FROZEN_NOW,
     hasNewContentFn: async () => true,
     runConsolidationFn: async (options) => {
       const createSession = async (): Promise<MaintenanceSessionLike> => ({
@@ -68,7 +69,7 @@ Given("an AB directory prepared for consolidation", async function (this: Consol
       const result = await runConsolidation({
         ...options,
         createSession,
-        now: new Date("2026-07-22T10:00:00Z"),
+        now: TEST_FROZEN_NOW,
       });
       this.consolidationRuns!.push(...result.completedDepths);
       return result;

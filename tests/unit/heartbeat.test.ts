@@ -8,6 +8,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { startHeartbeat } from "../../backends/heartbeat";
 import type { RunConsolidationOptions } from "../../backends/consolidation-runner";
 import { defaultConsolidationState } from "../../shared/consolidation-state";
+import { TEST_FROZEN_NOW, TEST_HEARTBEAT_INTERVAL_MS } from "../support/test-constants";
 
 describe("heartbeat", () => {
   let dir: string;
@@ -34,8 +35,8 @@ describe("heartbeat", () => {
       modelRuntime: {} as never,
       isStreaming: () => false,
       onDeferredDue,
-      intervalMs: 60_000,
-      now: () => new Date("2026-07-22T10:00:00Z"),
+      intervalMs: TEST_HEARTBEAT_INTERVAL_MS,
+      now: () => TEST_FROZEN_NOW,
       hasNewContentFn: async () => false,
     });
 
@@ -62,7 +63,7 @@ describe("heartbeat", () => {
       modelRuntime: {} as never,
       isStreaming: () => true,
       onDeferredDue: vi.fn(),
-      intervalMs: 60_000,
+      intervalMs: TEST_HEARTBEAT_INTERVAL_MS,
       runConsolidationFn,
       hasNewContentFn: async () => true,
     });
@@ -90,7 +91,7 @@ describe("heartbeat", () => {
       modelRuntime: {} as never,
       isStreaming: () => false,
       onDeferredDue: vi.fn(),
-      intervalMs: 60_000,
+      intervalMs: TEST_HEARTBEAT_INTERVAL_MS,
       runConsolidationFn,
       hasNewContentFn: async () => true,
     });

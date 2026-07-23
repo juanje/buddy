@@ -24,14 +24,14 @@ describe("consolidation runner", () => {
       releaseLock(dir);
       rmSync(dir, { recursive: true, force: true });
     }
-    teardownGlobalConfigDir(globalConfigDir);
+    teardownGlobalConfigDir(globalConfigDir, vi);
     globalConfigDir = undefined;
   });
 
   function setupAb(): void {
     ({ configDir: globalConfigDir } = setupGlobalConfigDir({
       consolidationSkill: "# Skill\n\nDo consolidation.\n",
-    }));
+    }, vi));
     dir = mkdtempSync(join(tmpdir(), "ab-consol-run-"));
     writeFileSync(join(dir, "AGENTS.md"), "# Rules\n");
     writeFileSync(join(dir, "notes.txt"), "hello\n");
@@ -46,7 +46,7 @@ describe("consolidation runner", () => {
   });
 
   it("falls back to legacy rootDir skill file", () => {
-    ({ configDir: globalConfigDir } = setupGlobalConfigDir());
+    ({ configDir: globalConfigDir } = setupGlobalConfigDir(undefined, vi));
     dir = mkdtempSync(join(tmpdir(), "ab-consol-run-"));
     mkdirSync(join(dir, ".buddy", "prompts"), { recursive: true });
     writeFileSync(

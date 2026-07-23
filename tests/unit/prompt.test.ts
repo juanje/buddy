@@ -3,7 +3,7 @@
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { assembleSystemPrompt } from "../../backends/prompt";
 import { setupGlobalConfigDir, teardownGlobalConfigDir } from "../support/global-config";
@@ -14,12 +14,12 @@ describe("assembleSystemPrompt last log selection", () => {
 
   afterEach(() => {
     if (dir) rmSync(dir, { recursive: true, force: true });
-    teardownGlobalConfigDir(globalConfigDir);
+    teardownGlobalConfigDir(globalConfigDir, vi);
     globalConfigDir = undefined;
   });
 
   it("loads the last index entry regardless of maintenance status", () => {
-    ({ configDir: globalConfigDir } = setupGlobalConfigDir({ agentsBase: "# Base\n" }));
+    ({ configDir: globalConfigDir } = setupGlobalConfigDir({ agentsBase: "# Base\n" }, vi));
     dir = mkdtempSync(join(tmpdir(), "ab-prompt-"));
     mkdirSync(join(dir, "logs"), { recursive: true });
     writeFileSync(
@@ -63,7 +63,7 @@ describe("assembleSystemPrompt last log selection", () => {
   it("includes agents-base before instance rules", () => {
     ({ configDir: globalConfigDir } = setupGlobalConfigDir({
       agentsBase: "# Your environment\n\nGlobal base rules.\n",
-    }));
+    }, vi));
     dir = mkdtempSync(join(tmpdir(), "ab-prompt-"));
     writeFileSync(join(dir, "AGENTS.md"), "# Instance\n\nInstance rules.\n");
 

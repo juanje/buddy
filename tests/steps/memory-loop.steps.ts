@@ -10,16 +10,15 @@ import { simpleGit } from "simple-git";
 import { createAbInstance, defaultTemplatesDir } from "../../backends/create-ab";
 import { findPendingReflects, parseFrontmatter, savePendingSkeleton } from "../../backends/reflect";
 import { runCrashRecoveryCatchUp } from "../../backends/reflect-recovery";
-import type { SpawnReflectOptions } from "../../backends/reflect-spawn";
 import { SessionTracker } from "../../backends/session-tracker";
 import { PENDING_DIR } from "../../shared/defaults";
 import type { SetupConfig } from "../../shared/api";
+import { MOCK_SPAWN_PID } from "../support/test-constants";
 import type { AbWorld } from "../support/world";
 
 interface MemoryWorld extends AbWorld {
   memoryTmpDir?: string;
   abDir?: string;
-  spawnCalls?: SpawnReflectOptions[];
 }
 
 After(function (this: MemoryWorld) {
@@ -78,7 +77,7 @@ When("crash recovery runs at boot", function (this: MemoryWorld) {
   this.spawnCalls = [];
   runCrashRecoveryCatchUp(this.abDir!, (options) => {
     this.spawnCalls!.push(options);
-    return 12345;
+    return MOCK_SPAWN_PID;
   });
 });
 
@@ -96,6 +95,8 @@ Then("a reflect child spawn is requested for each pending skeleton", function (t
     assert.equal(call.rootDir, this.abDir);
     assert.ok(call.logPath.includes(PENDING_DIR));
     assert.ok(call.logPath.endsWith(".md"));
+    const content = readFileSync(call.logPath, "utf8");
+    assert.equal(parseFrontmatter(content).status, "reflect-in-progress");
   }
 });
 
