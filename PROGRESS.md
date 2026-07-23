@@ -169,7 +169,7 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 | Batch 3 | Prune tool-activity from state, sidecar target script, remove dead reflectInFlight | 10b4fcb |
 | getState removal | Remove dead AgentState + getState from entire RPC stack | 8b66be1 |
 | Notification content | Show actual reminder text in OS notification + re-show banner mid-session | b487784 |
-| ProviderAuthForm | Extract shared OAuth/API key UI from wizard + settings | pending |
+| ProviderAuthForm | Extract shared OAuth/API key UI from wizard + settings | 7fba097 |
 
 **Tests at cleanup close:** 201 unit + 104 BDD green.
 
