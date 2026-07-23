@@ -142,7 +142,11 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 ## Current focus
 
 > **Sprint: UX + distribution (2026-07-23) complete** — FR-CHAT-09, FR-DEFERRED-03, E12 sidecar.
-> Next: FR-WIKI, FR-COST, FR-CHAT-10 (inline viewer).
+> Next: **E13** (reflect design cleanup + production argv dispatch), then FR-WIKI, FR-COST, FR-CHAT-10.
+>
+> **E12 production caveat:** Reflect is no-op in compiled mode (`typeof Bun` guard). Chat works; session memory persistence does not until E13 lands.
+> - E13a: Remove ResourceLoader/skeleton input from reflect child (fork-only context — design alignment)
+> - E13b: Argv dispatch for production spawn (`--reflect` mode in same binary)
 
 ### Sprint: Settings access UI — DONE (2026-07-22)
 
