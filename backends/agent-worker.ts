@@ -87,7 +87,14 @@ async function main(): Promise<void> {
       rootDir,
       modelRuntime,
       isStreaming: () => core?.isStreaming() ?? false,
-      onDeferredDue: (items) => frontend.onDeferredDue(items),
+      onDeferredDue: (items) => {
+        console.error(`[heartbeat] onDeferredDue: ${items.length} item(s), forwarding to frontend…`);
+        try {
+          frontend.onDeferredDue(items);
+        } catch (err) {
+          console.error("[heartbeat] onDeferredDue RPC failed:", err);
+        }
+      },
     });
   }
 
