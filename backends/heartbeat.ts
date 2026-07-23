@@ -37,13 +37,14 @@ export interface HeartbeatHandle {
 }
 
 export function startHeartbeat(deps: HeartbeatDeps): HeartbeatHandle {
-  const intervalMs = deps.intervalMs ?? HEARTBEAT_INTERVAL_MS;
+  const intervalMs = deps.intervalMs ?? HEARTBEAT_INTERVAL_MS ?? 1_800_000;
   const nowFn = deps.now ?? (() => new Date());
   const runConsolidationImpl = deps.runConsolidationFn ?? runConsolidation;
   const hasNewContentImpl = deps.hasNewContentFn ?? hasNewContentSinceConsolidation;
   let state = loadConsolidationState(deps.rootDir);
   let consolidationInFlight = false;
   let timer: ReturnType<typeof setInterval> | undefined;
+  let lastTickAt = 0;
 
   async function evaluateConsolidation(): Promise<void> {
     if (consolidationInFlight) return;
@@ -77,7 +78,8 @@ export function startHeartbeat(deps: HeartbeatDeps): HeartbeatHandle {
     }
   }
 
-  async function tick(): Promise<void> {
+  async function tickInner(): Promise<void> {
+
     if (!consolidationInFlight) {
       state = loadConsolidationState(deps.rootDir);
     }
@@ -96,18 +98,29 @@ export function startHeartbeat(deps: HeartbeatDeps): HeartbeatHandle {
     await evaluateConsolidation();
   }
 
-  timer = setInterval(() => {
-    void tick();
-  }, intervalMs);
+  // Rate-limited tick for setInterval — guards against runaway timer
+  // (sub-second repetition seen in Bun compiled binaries where the interval
+  // resolves to 0 or undefined).
+  function guardedTick(): void {
+    const nowMs = Date.now();
+    if (nowMs - lastTickAt < 5_000) return;
+    lastTickAt = nowMs;
+    void tickInner();
+  }
 
-  void tick();
+  if (typeof process !== "undefined" && process.env.AB_DEBUG) {
+    console.error(`[heartbeat] starting with interval=${intervalMs}ms`);
+  }
+  timer = setInterval(guardedTick, intervalMs);
+
+  void tickInner();
 
   return {
     stop() {
       if (timer) clearInterval(timer);
       timer = undefined;
     },
-    tick,
+    tick: tickInner,
     incrementSessionCounter(hadActivity = true) {
       if (!hadActivity) return;
       incrementSessionCounter(state);
