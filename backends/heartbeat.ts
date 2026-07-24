@@ -35,7 +35,6 @@ export interface HeartbeatHandle {
   stop: () => void;
   tick: () => Promise<void>;
   incrementSessionCounter: (hadActivity?: boolean) => void;
-  getState: () => ConsolidationState;
 }
 
 export function startHeartbeat(deps: HeartbeatDeps): HeartbeatHandle {
@@ -128,9 +127,6 @@ export function startHeartbeat(deps: HeartbeatDeps): HeartbeatHandle {
       if (!hadActivity) return;
       incrementSessionCounter(state);
       saveConsolidationState(deps.rootDir, state);
-    },
-    getState() {
-      return { ...state };
     },
   };
 }

@@ -13,9 +13,10 @@ import {
 import { join, relative } from "node:path";
 
 import { addDays, toIsoDay } from "../shared/dates";
+import { LOG_ROTATION_THRESHOLD, NIGHT_OWL_HOUR_BOUNDARY } from "../shared/defaults";
 import { parseFrontmatter } from "./reflect";
 
-export const LOG_ROTATION_THRESHOLD = 28;
+export { LOG_ROTATION_THRESHOLD } from "../shared/defaults";
 
 const DATE_MARKER_RE = /\b(\d{4}-\d{2}-\d{2})\b/;
 const LOG_INDEX_ACTIVE_RE = /^-\s+(\d{4}-\d{2}-\d{2}):\s+active\b/;
@@ -47,7 +48,7 @@ export interface UpcomingReminder {
 /** Night-owl subjective day for log/journal file paths (00:00–04:59 → previous calendar day). */
 export function resolveSubjectiveDate(now: Date = new Date()): string {
   const hour = now.getHours();
-  if (hour >= 0 && hour < 5) {
+  if (hour >= 0 && hour < NIGHT_OWL_HOUR_BOUNDARY) {
     const yesterday = new Date(now);
     yesterday.setDate(yesterday.getDate() - 1);
     return toIsoDay(yesterday);
