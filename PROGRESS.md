@@ -196,8 +196,8 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 
 ## Current focus
 
-> **FR-COST-02/03 shipped (2026-07-24)** — Usage panel in Settings; default $10/month budget; 80% warning notification; 100% hard block on send. Reflect + consolidation costs tracked in `~/.buddy/usage.json`.
-> Next: FR-WIKI, FR-CHAT-10.
+> **Jul 24 design decisions spec'd (2026-07-24)** — Reflect redesign: FR-REFLECT-03/05 (compaction-only checkpoint, session persistence, crash recovery). Housekeeping: NFR-MAINT-01 (7-day session log retention). Prompt refresh: NFR-MIGRATE-06 (semver-triggered). Brain format: NFR-FORMAT-01 (`summary` frontmatter), FR-BRAIN-07 (health linter). See `my-ab/agent_brain/projects/agentic-buddy/design-decisions-jul24.md`.
+> **Implementation next:** FR-REFLECT-03/05 realignment, NFR-MIGRATE-06, NFR-MAINT-01, NFR-FORMAT-01, FR-BRAIN-07 — then FR-SKILL, FR-BRAIN-04/05/06 (evals), FR-WIKI, FR-CHAT-10.
 
 ### Sprint: Settings access UI — DONE (2026-07-22)
 
