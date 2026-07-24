@@ -4,7 +4,6 @@
 export const APP_SCHEMA_VERSION = 1;
 
 // --- Operational defaults (NFR-CONFIG-01) ---
-export const INCREMENTAL_REFLECT_EVERY = 15;
 export const LOCK_STALE_MS = 60 * 60 * 1000;
 
 /** Forked Pi sessions for background reflect (internal). */

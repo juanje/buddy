@@ -35,7 +35,6 @@ export class SessionTracker {
   filesRead: string[] = [];
   filesWritten: string[] = [];
   toolCalls: TrackedToolCall[] = [];
-  lastCheckpointTurn = 0;
 
   private activitySinceCheckpoint = false;
   private pendingArgs = new Map<string, { name: string; path?: string }>();
@@ -74,7 +73,6 @@ export class SessionTracker {
   }
 
   recordCheckpoint(): void {
-    this.lastCheckpointTurn = this.turnCount;
     this.activitySinceCheckpoint = false;
   }
 

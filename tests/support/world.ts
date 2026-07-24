@@ -59,7 +59,7 @@ export class AbWorld extends World {
   /** Background: "the app is running" + "the Pi SDK session is connected". */
   connect(
     rootDir?: string,
-    options?: { incrementalEvery?: number; force?: boolean; trackSpawn?: boolean },
+    options?: { force?: boolean; trackSpawn?: boolean },
   ): void {
     if (this.controller && !options?.force) return;
     this.rootDir = rootDir;
@@ -73,7 +73,6 @@ export class AbWorld extends World {
       ? new SessionLifecycle({
           rootDir,
           sessionId: "test-session",
-          incrementalEvery: options?.incrementalEvery,
           spawnReflect: options?.trackSpawn
             ? (spawnOptions) => {
                 this.spawnCalls!.push(spawnOptions);

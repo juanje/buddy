@@ -18,12 +18,11 @@ describe("SessionLifecycle checkpoint reflect", () => {
     spawns.length = 0;
   });
 
-  function lifecycle(every: number): SessionLifecycle {
+  function lifecycle(): SessionLifecycle {
     return new SessionLifecycle({
       rootDir: dir,
       sessionId: "sess",
       sessionFile: "/tmp/fake-session.jsonl",
-      incrementalEvery: every,
       spawnReflect: (options) => {
         spawns.push(options);
         return 1;
@@ -31,37 +30,10 @@ describe("SessionLifecycle checkpoint reflect", () => {
     });
   }
 
-  it("spawns checkpoint reflect on turn threshold", async () => {
-    dir = mkdtempSync(join(tmpdir(), "ab-checkpoint-"));
-    await initTestGitRepo(dir);
-    const lc = lifecycle(2);
-
-    await lc.handleEvent({
-      type: "tool_execution_end",
-      toolCall: { name: "write", args: { path: "user/inbox.md" } },
-    });
-    await lc.handleEvent({ type: "agent_end" });
-    expect(spawns).toHaveLength(0);
-
-    await lc.handleEvent({
-      type: "tool_execution_end",
-      toolCall: { name: "write", args: { path: "user/notes.md" } },
-    });
-    await lc.handleEvent({ type: "agent_end" });
-
-    expect(spawns).toHaveLength(1);
-    expect(spawns[0].mode).toBe("checkpoint");
-    expect(spawns[0].forkedSessionFile).toBe("/tmp/fake-session.jsonl");
-    expect(spawns[0].sessionId).toBe("sess");
-    expect(spawns[0].checkpointDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-    expect(spawns[0].checkpointTime).toMatch(/^\d{2}:\d{2}$/);
-    expect(lc.tracker.lastCheckpointTurn).toBe(2);
-  });
-
   it("spawns checkpoint reflect on compaction_start", async () => {
     dir = mkdtempSync(join(tmpdir(), "ab-checkpoint-"));
     await initTestGitRepo(dir);
-    const lc = lifecycle(99);
+    const lc = lifecycle();
 
     await lc.handleEvent({
       type: "tool_execution_end",
@@ -76,10 +48,36 @@ describe("SessionLifecycle checkpoint reflect", () => {
   it("does not spawn checkpoint reflect without activity", async () => {
     dir = mkdtempSync(join(tmpdir(), "ab-checkpoint-"));
     await initTestGitRepo(dir);
-    const lc = lifecycle(2);
+    const lc = lifecycle();
 
     await lc.handleEvent({ type: "agent_end" });
     await lc.handleEvent({ type: "agent_end" });
+
+    expect(spawns).toHaveLength(0);
+  });
+
+  it("does not spawn checkpoint reflect on turn count alone", async () => {
+    dir = mkdtempSync(join(tmpdir(), "ab-checkpoint-"));
+    await initTestGitRepo(dir);
+    const lc = lifecycle();
+
+    for (let i = 0; i < 20; i++) {
+      await lc.handleEvent({
+        type: "tool_execution_end",
+        toolCall: { name: "write", args: { path: `user/turn-${i}.md` } },
+      });
+      await lc.handleEvent({ type: "agent_end" });
+    }
+
+    expect(spawns).toHaveLength(0);
+  });
+
+  it("does not spawn checkpoint reflect on compaction without activity", async () => {
+    dir = mkdtempSync(join(tmpdir(), "ab-checkpoint-"));
+    await initTestGitRepo(dir);
+    const lc = lifecycle();
+
+    await lc.handleEvent({ type: "compaction_start" });
 
     expect(spawns).toHaveLength(0);
   });

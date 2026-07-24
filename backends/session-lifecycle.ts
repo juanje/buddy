@@ -1,13 +1,11 @@
 // backends/session-lifecycle.ts — Session persistence loop (FR-GIT-01, FR-REFLECT-02/03).
 
 import type { AgentEvent } from "../shared/api";
-import { INCREMENTAL_REFLECT_EVERY } from "../shared/defaults";
 import { formatLocalTime, toIsoDay } from "../shared/dates";
 import { extractToolInfo } from "../shared/pi-events";
 import { logEvent } from "./app-logger";
 import { commitAll } from "./git";
 import { createHebbianTracker, type HebbianTracker } from "./hebbian";
-import { shouldRunCheckpointReflect } from "./reflect";
 import { spawnReflectChild, type SpawnReflectFn, type SpawnReflectOptions } from "./reflect-spawn";
 import { SessionTracker } from "./session-tracker";
 
@@ -15,7 +13,6 @@ export interface SessionLifecycleOptions {
   rootDir: string;
   sessionId: string;
   sessionFile?: string;
-  incrementalEvery?: number;
   spawnReflect?: SpawnReflectFn;
   hebbianTracker?: HebbianTracker;
   /** Called after session-end reflect is spawned (FR-CONSOL-01 counter). */
@@ -29,7 +26,6 @@ export class SessionLifecycle {
   readonly hebbianTracker: HebbianTracker;
   private readonly rootDir: string;
   private sessionFile: string | undefined;
-  private readonly incrementalEvery: number;
   private readonly spawnReflect: SpawnReflectFn;
   private readonly onSessionComplete?: (hadActivity: boolean) => void;
   private readonly isBudgetNearLimit?: () => boolean;
@@ -41,7 +37,6 @@ export class SessionLifecycle {
     this.sessionFile = options.sessionFile;
     this.tracker = new SessionTracker(options.sessionId);
     this.hebbianTracker = options.hebbianTracker ?? createHebbianTracker(options.rootDir);
-    this.incrementalEvery = options.incrementalEvery ?? INCREMENTAL_REFLECT_EVERY;
     this.spawnReflect = options.spawnReflect ?? spawnReflectChild;
     this.onSessionComplete = options.onSessionComplete;
     this.isBudgetNearLimit = options.isBudgetNearLimit;
@@ -110,16 +105,6 @@ export class SessionLifecycle {
     if (this.turnDirty) {
       await commitAll(this.rootDir);
       this.turnDirty = false;
-    }
-
-    if (
-      shouldRunCheckpointReflect(
-        this.tracker.turnCount,
-        this.incrementalEvery,
-        this.tracker.lastCheckpointTurn,
-      )
-    ) {
-      await this.runCheckpointReflect();
     }
   }
 

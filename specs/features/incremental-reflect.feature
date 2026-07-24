@@ -1,22 +1,23 @@
-# FR-REFLECT-03 — Checkpoint mid-session reflect
+# FR-REFLECT-03 — Compaction-triggered checkpoint reflect
 
-Feature: Checkpoint mid-session reflect
-  As a user
-  I want long sessions encoded before compaction
-  So that context is not lost when the window compresses
+Feature: Compaction-triggered checkpoint reflect
+  As a user with long sessions
+  I want reflect to capture my conversation before Pi compacts context
+  So that detail is not lost when the context window compresses
 
   Background:
     Given an initialized AB git repository
-    And checkpoint reflect runs every 2 turns
-
-  Scenario: Turn threshold spawns a checkpoint reflect
-    When the agent writes file "user/inbox.md"
-    And the agent turn ends
-    And the agent writes file "user/notes.md"
-    And the agent turn ends
-    Then a checkpoint reflect spawn was requested at turn 2
+    And memory lifecycle is tracking reflect spawns
 
   Scenario: Compaction trigger spawns a checkpoint reflect
     When the agent writes file "user/inbox.md"
     And compaction starts
     Then a checkpoint reflect spawn was requested
+
+  Scenario: No checkpoint without activity
+    When compaction starts
+    Then no checkpoint reflect was spawned
+
+  Scenario: Turn count alone does NOT trigger checkpoint
+    When the agent completes 20 turns with activity
+    Then no checkpoint reflect was spawned

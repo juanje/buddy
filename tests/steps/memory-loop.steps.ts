@@ -40,11 +40,11 @@ Given("an initialized AB git repository", async function (this: MemoryWorld) {
 });
 
 Given("the app is running with memory lifecycle enabled", function (this: MemoryWorld) {
-  this.connect(this.abDir, { force: true });
+  this.connect(this.abDir, { force: true, trackSpawn: true });
 });
 
-Given("checkpoint reflect runs every {int} turns", function (this: MemoryWorld, n: number) {
-  this.connect(this.abDir, { incrementalEvery: n, force: true, trackSpawn: true });
+Given("memory lifecycle is tracking reflect spawns", function (this: MemoryWorld) {
+  this.connect(this.abDir, { force: true, trackSpawn: true });
 });
 
 When("the agent writes file {string}", async function (this: MemoryWorld, relPath: string) {
@@ -58,6 +58,17 @@ When("the agent writes file {string}", async function (this: MemoryWorld, relPat
 When("the agent turn ends", async function (this: MemoryWorld) {
   this.session.endStreaming();
   await this.lifecycle?.flush();
+});
+
+When("the agent completes {int} turns with activity", async function (this: MemoryWorld, n: number) {
+  for (let i = 0; i < n; i++) {
+    const fullPath = join(this.abDir!, `user/turn-${i}.md`);
+    mkdirSync(dirname(fullPath), { recursive: true });
+    writeFileSync(fullPath, `# turn ${i}\n`, "utf8");
+    this.session.emitToolExecutionEnd("write", fullPath);
+    this.session.endStreaming();
+    await this.lifecycle?.flush();
+  }
 });
 
 When("the app shuts down", async function (this: MemoryWorld) {
@@ -79,17 +90,14 @@ When("compaction starts", async function (this: MemoryWorld) {
   await this.lifecycle?.flush();
 });
 
-Then("a checkpoint reflect spawn was requested at turn {int}", function (this: MemoryWorld, turn: number) {
-  const calls = (this.spawnCalls ?? []).filter((call) => call.mode === "checkpoint");
-  assert.ok(calls.length > 0, "expected a checkpoint reflect spawn");
-  assert.equal(this.lifecycle?.tracker.turnCount, turn);
-  assert.ok(calls[0].checkpointDate);
-  assert.ok(calls[0].checkpointTime);
-});
-
 Then("a checkpoint reflect spawn was requested", function (this: MemoryWorld) {
   const calls = (this.spawnCalls ?? []).filter((call) => call.mode === "checkpoint");
   assert.ok(calls.length > 0, "expected a checkpoint reflect spawn");
+});
+
+Then("no checkpoint reflect was spawned", function (this: MemoryWorld) {
+  const calls = (this.spawnCalls ?? []).filter((call) => call.mode === "checkpoint");
+  assert.equal(calls.length, 0, "expected no checkpoint reflect spawn");
 });
 
 Then("a session-end reflect spawn was requested", function (this: MemoryWorld) {

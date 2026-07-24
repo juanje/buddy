@@ -183,14 +183,6 @@ function extractOneLinerSummary(content: string): string {
   return "(no summary)";
 }
 
-export function shouldRunCheckpointReflect(
-  turnCount: number,
-  every: number,
-  lastCheckpointTurn: number,
-): boolean {
-  return every > 0 && turnCount > 0 && turnCount !== lastCheckpointTurn && turnCount % every === 0;
-}
-
 /** Strip raw tool-call syntax leaked into LLM reflect output (FR-REFLECT-04). */
 const TOOL_LEAK_PATTERNS: RegExp[] = [
   /^to=functions\.\w+.*$/gm,

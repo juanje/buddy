@@ -5,24 +5,14 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { INCREMENTAL_REFLECT_EVERY } from "../../shared/defaults";
 import {
   appendDailyLog,
   finalizeCheckpointToDailyLog,
   finalizeReflectToDailyLog,
   parseFrontmatter,
   sanitizeReflectOutput,
-  shouldRunCheckpointReflect,
   updateLogsIndexEntry,
 } from "../../backends/reflect";
-
-describe("shouldRunCheckpointReflect", () => {
-  it("fires on multiples of N after last checkpoint", () => {
-    expect(shouldRunCheckpointReflect(INCREMENTAL_REFLECT_EVERY, INCREMENTAL_REFLECT_EVERY, 0)).toBe(true);
-    expect(shouldRunCheckpointReflect(INCREMENTAL_REFLECT_EVERY - 1, INCREMENTAL_REFLECT_EVERY, 0)).toBe(false);
-    expect(shouldRunCheckpointReflect(INCREMENTAL_REFLECT_EVERY * 2, INCREMENTAL_REFLECT_EVERY, INCREMENTAL_REFLECT_EVERY)).toBe(true);
-  });
-});
 
 describe("sanitizeReflectOutput", () => {
   it("strips to=functions tool leak lines", () => {
