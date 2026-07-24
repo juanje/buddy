@@ -1707,5 +1707,5 @@ All critical APIs verified against Pi source code. Summary:
 - Fresh session: `SessionManager.create(cwd)` every launch (E5 decision)
 - Forked reflect: `SessionManager.forkFrom(sessionFile, rootDir, forkDir)` in background child → separate JSONL, no live session pollution. The reflect child does NOT use a ResourceLoader — the fork carries all context; the only input is a user prompt requesting the reflect format.
 - Hook chaining: save `session.agent.beforeToolCall`, install ours, delegate to original
-- Hebbian tracking: `afterToolCall` with `ctx.isError` check before counting
+- Hebbian tracking: `tool_execution_end` via `session.subscribe()` — tracks file accesses
 - Event names: `compaction_start/end` (not `session_compact`); no `model_select` in subscribe events

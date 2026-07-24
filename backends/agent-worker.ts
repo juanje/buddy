@@ -30,7 +30,8 @@ import {
   toPiProviderId,
   WIZARD_PI_PROVIDERS,
 } from "./provider-mapping";
-import { getDueDeferred, removeDueDeferredItems, toDeferredItemViews, toIsoDay } from "./deferred";
+import { getDueDeferred, removeDueDeferredItems, toDeferredItemViews } from "./deferred";
+import { toIsoDay } from "../shared/dates";
 import { commitAll } from "./git";
 import { bootSession, augmentPromptWithAttachments } from "./session-boot";
 import { defaultConfigPath, detectFirstRun, updateAppConfig } from "./setup";

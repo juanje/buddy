@@ -85,5 +85,3 @@ export function toDeferredItemViews(
     overdue: item.dueDate < today,
   }));
 }
-
-export { toIsoDay } from "../shared/dates";

@@ -96,7 +96,7 @@ AB File System (git repo): agent_brain/ + user/ + logs/
 **Key technical patterns:**
 - System prompt: `DefaultResourceLoader({ systemPrompt })` → `createAgentSession({ resourceLoader })`
 - Bash disabled: `excludeTools: ["bash"]` — file tools only (read, write, edit, ls, find, grep)
-- Hook chaining: save original `beforeToolCall`/`afterToolCall`, install ours, delegate to original
+- Hook chaining: save original `beforeToolCall`, install ours, delegate to original (permissions only)
 - Session resume: `SessionManager.create(cwd)` — fresh session every launch; continuity via file memory
 - Separate session for maintenance (consolidation never touches user's live session)
 - Events: `agent_start/end`, `message_start/update/end`, `tool_execution_start/end`, `compaction_start/end`

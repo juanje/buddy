@@ -14,7 +14,8 @@ import {
 import { logEvent } from "./app-logger";
 import { hasNewContentSinceConsolidation } from "./consolidation-content";
 import { runConsolidation } from "./consolidation-runner";
-import { getDueDeferred, toDeferredItemViews, toIsoDay } from "./deferred";
+import { getDueDeferred, toDeferredItemViews } from "./deferred";
+import { toIsoDay } from "../shared/dates";
 
 export interface HeartbeatDeps {
   rootDir: string;

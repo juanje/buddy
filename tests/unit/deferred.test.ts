@@ -10,8 +10,8 @@ import {
   parseDeferredItems,
   removeDueDeferredItems,
   toDeferredItemViews,
-  toIsoDay,
 } from "../../backends/deferred";
+import { toIsoDay } from "../../shared/dates";
 
 describe("parseDeferredItems", () => {
   it("parses well-formed entries", () => {

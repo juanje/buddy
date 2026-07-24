@@ -5,7 +5,8 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
-import { dueDeferredItems, parseDeferredItems, toIsoDay, type ParsedDeferredItem } from "./deferred";
+import { dueDeferredItems, parseDeferredItems, type ParsedDeferredItem } from "./deferred";
+import { toIsoDay } from "../shared/dates";
 import { globalConfigDir } from "./schema-migration";
 
 export interface AssembledPrompt {

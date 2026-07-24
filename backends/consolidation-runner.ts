@@ -38,8 +38,6 @@ import { defaultConfigDir } from "./allowed-paths";
 import { globalConfigDir } from "./schema-migration";
 import { recordUsageToFile, sumUsageFromEvents } from "./usage-tracker";
 
-export { resolveSubjectiveDate } from "./consolidation-mechanics";
-
 export interface MaintenanceSessionLike {
   prompt(text: string): Promise<void>;
   dispose(): void;
