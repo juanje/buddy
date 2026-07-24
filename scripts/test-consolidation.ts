@@ -78,17 +78,46 @@ function prepareFixture(sourceDir: string): string {
   return testDir;
 }
 
-function showDiff(testDir: string): void {
+function getHeadSha(dir: string): string {
   try {
-    const stat = execSync("git diff --stat", { cwd: testDir, encoding: "utf8" });
-    console.log("\n--- Changes (stat) ---\n", stat.trim() || "(no changes)");
+    return execSync("git rev-parse HEAD", { cwd: dir, encoding: "utf8" }).trim();
   } catch {
-    console.log("\n--- Changes ---\n (git diff unavailable — is this a git repo?)");
+    return "";
+  }
+}
+
+function showChanges(testDir: string, baselineSha: string): void {
+  if (!baselineSha) {
+    console.log("\n--- Changes ---\n (no baseline SHA — cannot diff)");
     return;
   }
 
   try {
-    const fullDiff = execSync("git diff", { cwd: testDir, encoding: "utf8" });
+    const log = execSync(`git log --oneline ${baselineSha}..HEAD`, {
+      cwd: testDir,
+      encoding: "utf8",
+    });
+    console.log("\n--- Commits made during consolidation ---\n", log.trim() || "(none)");
+  } catch {
+    console.log("\n--- Changes ---\n (git log unavailable)");
+    return;
+  }
+
+  try {
+    const stat = execSync(`git diff --stat ${baselineSha}..HEAD`, {
+      cwd: testDir,
+      encoding: "utf8",
+    });
+    console.log("\n--- Files changed ---\n", stat.trim() || "(no file changes)");
+  } catch {
+    return;
+  }
+
+  try {
+    const fullDiff = execSync(`git diff ${baselineSha}..HEAD`, {
+      cwd: testDir,
+      encoding: "utf8",
+    });
     if (fullDiff.trim()) {
       const outPath = join(testDir, "consolidation-diff.patch");
       writeFileSync(outPath, fullDiff);
@@ -126,6 +155,7 @@ async function main(): Promise<void> {
   console.log(`Auth: ${authPath}`);
   console.log(`Running consolidation at depth ${depth}...`);
 
+  const baselineSha = getHeadSha(testDir);
   const modelRuntime = await ModelRuntime.create({ authPath });
   const start = Date.now();
 
@@ -139,7 +169,7 @@ async function main(): Promise<void> {
     console.log(
       `Done in ${elapsed}s — ran: ${result.ran}, completed depths: ${result.completedDepths.join(", ") || "(none)"}`,
     );
-    showDiff(testDir);
+    showChanges(testDir, baselineSha);
     console.log(`\nInspect results at: ${testDir}`);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
