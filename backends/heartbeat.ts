@@ -23,6 +23,7 @@ export interface HeartbeatDeps {
   onDeferredDue: (items: DeferredItemView[]) => void;
   onConsolidationStart?: (depth: number) => void;
   onConsolidationEnd?: (depth: number, status: "success" | "fail" | "skipped") => void;
+  isBudgetNearLimit?: () => boolean;
   intervalMs?: number;
   now?: () => Date;
   runConsolidationFn?: typeof runConsolidation;
@@ -54,6 +55,7 @@ export function startHeartbeat(deps: HeartbeatDeps): HeartbeatHandle {
     if (!targetDepth) return;
 
     if (!(await hasNewContentImpl(deps.rootDir, state))) return;
+    if (deps.isBudgetNearLimit?.()) return;
 
     consolidationInFlight = true;
     deps.onConsolidationStart?.(targetDepth);

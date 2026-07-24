@@ -211,13 +211,14 @@ rootDir (git repo — user/agent content only)
 **FR-SETUP-05 — Provider authentication**
 
 - **Given** the user is on the provider step
-- **When** they select a provider (Anthropic, OpenAI, Google, or OpenAI-compatible)
+- **When** they select a provider (Anthropic, OpenAI, or Google)
 - **Then** an OAuth "Sign in" button appears as the primary option
 - **And** an "I have an API key" link shows the key input as a secondary option
 - **And (OAuth path)** clicking "Sign in" opens the browser for OAuth authentication
 - **And (OAuth path)** tokens are stored in `~/.buddy/auth.json` upon successful login
 - **And (API key path)** the key is validated with a test API call before proceeding
 - **And (API key path)** the key is stored in `~/.buddy/auth.json` with restrictive file permissions
+- **Note:** OpenAI-compatible (custom) providers are available post-setup via Settings → Add provider, not in the setup wizard.
 
 **FR-SETUP-06 — Model selection**
 
@@ -723,8 +724,9 @@ Fork bomb defense:
 | ID | Description | Phase |
 |----|-------------|-------|
 | ~~FR-COST-01~~ | ~~Per-message cost~~ | — removed |
-| FR-COST-02 | Usage panel in Settings (session + monthly) | 2 |
-| FR-COST-03 | Budget alert | 3 |
+| FR-COST-02 | Usage panel in Settings (session + monthly) | 2 ✓ |
+| FR-COST-03 | Budget alert and hard limit | 2 ✓ |
+| FR-COST-04 | Memory depth presets (maintenance frequency) | 3+ |
 
 **FR-COST-01 — removed**
 
@@ -751,6 +753,19 @@ aggregate visibility (FR-COST-02) and budget safety nets (FR-COST-03).
 - **And** the send button is disabled with an inline explanation until the budget is raised or the month rolls over
 - **And** the Settings usage panel shows spend vs budget with a progress bar (green / yellow / red)
 - **Note:** Reflect and consolidation LLM costs count toward the monthly total. Each threshold fires once per app session.
+- **Note:** Background tasks (checkpoint reflect, consolidation) do not start when monthly usage is at or above 95% of budget. Session-end reflect still runs so closing the app does not lose the session summary.
+
+**FR-COST-04 — Memory depth presets**
+
+- **Given** the user wants to reduce background costs but doesn't understand the technical parameters
+- **When** they open a "Memory depth" setting (in Settings, under Usage)
+- **Then** they can choose between semantic presets:
+  - **Full** — best memory, highest background cost (default). All reflects and consolidations run at normal frequency.
+  - **Balanced** — consolidates less often, same reflect frequency. Good memory with lower maintenance cost.
+  - **Light** — minimal background work. Cheapest, but long-term memory is weaker (less pattern extraction, fewer cross-session connections).
+- **And** the choice maps internally to adjustments of `auto_reflect_threshold`, consolidation thresholds, and scheduling parameters
+- **And** the UI explains the trade-off for each preset in plain language
+- **Note:** This is a cost optimization lever for users who've hit budget limits repeatedly. It should not be prominent in the UI — advanced section within Usage, not a top-level setting. Raw numeric configuration remains available in `.buddy/consolidation-state.json` for power users but is not exposed in the app UI.
 
 ### 3.14 AB Brain Template (FR-BRAIN)
 

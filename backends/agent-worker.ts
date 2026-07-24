@@ -110,6 +110,7 @@ async function main(): Promise<void> {
       rootDir,
       modelRuntime,
       isStreaming: () => core?.isStreaming() ?? false,
+      isBudgetNearLimit: () => ensureUsageTracker().isBudgetNearLimit(),
       onDeferredDue: (items) => {
         console.error(`[heartbeat] onDeferredDue: ${items.length} item(s), forwarding to frontend…`);
         try {
@@ -146,6 +147,7 @@ async function main(): Promise<void> {
       {
         ...options,
         onSessionComplete: (hadActivity) => heartbeat?.incrementSessionCounter(hadActivity),
+        isBudgetNearLimit: () => ensureUsageTracker().isBudgetNearLimit(),
       },
     );
     if (!booted) return;

@@ -9,6 +9,7 @@ import {
   computeBudgetStatus,
   createUsageTracker,
   getMonthlySummaryFromFile,
+  isBudgetNearLimitFromStatus,
   loadUsageFile,
   recordUsageToFile,
   resolveMonthlyBudget,
@@ -44,6 +45,24 @@ describe("computeBudgetStatus", () => {
   it("is disabled without budget", () => {
     const status = computeBudgetStatus(99, null);
     expect(status.level).toBe("disabled");
+  });
+});
+
+describe("isBudgetNearLimitFromStatus", () => {
+  it("is false below 95%", () => {
+    expect(isBudgetNearLimitFromStatus(computeBudgetStatus(9, 10))).toBe(false);
+  });
+
+  it("is true at 95%", () => {
+    expect(isBudgetNearLimitFromStatus(computeBudgetStatus(9.5, 10))).toBe(true);
+  });
+
+  it("is true when exceeded", () => {
+    expect(isBudgetNearLimitFromStatus(computeBudgetStatus(10, 10))).toBe(true);
+  });
+
+  it("is false when budget disabled", () => {
+    expect(isBudgetNearLimitFromStatus(computeBudgetStatus(99, null))).toBe(false);
   });
 });
 
@@ -117,6 +136,18 @@ describe("createUsageTracker", () => {
     tracker.record({ cost: 1, tokens: 100 });
     expect(tracker.getUsageReport().budget.level).toBe("exceeded");
     expect(tracker.isBudgetExceeded()).toBe(true);
+    expect(tracker.isBudgetNearLimit()).toBe(true);
+  });
+
+  it("isBudgetNearLimit at 95% without blocking send threshold", () => {
+    configDir = mkdtempSync(join(tmpdir(), "ab-usage-"));
+    recordUsageToFile(configDir, { cost: 9.5, tokens: 100 }, new Date(2026, 6, 24));
+    const tracker = createUsageTracker(configDir, {
+      getBudget: () => 10,
+      nowFn: () => new Date(2026, 6, 24),
+    });
+    expect(tracker.isBudgetNearLimit()).toBe(true);
+    expect(tracker.isBudgetExceeded()).toBe(false);
   });
 
   it("reloads monthly totals from disk in a new tracker", () => {

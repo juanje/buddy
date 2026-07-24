@@ -24,6 +24,8 @@ export const DEFAULT_LANGUAGE = "es";
 export const DEFAULT_MONTHLY_BUDGET = 10;
 /** Warn when monthly usage reaches this fraction of budget (FR-COST-03). */
 export const BUDGET_WARNING_THRESHOLD = 0.8;
+/** Block new background tasks (reflect checkpoint, consolidation) at this fraction (FR-COST-03). */
+export const BUDGET_BACKGROUND_THRESHOLD = 0.95;
 /** Global usage persistence file name under ~/.buddy/ (FR-COST-02). */
 export const USAGE_FILE_NAME = "usage.json";
 export const SHUTDOWN_TIMEOUT_MS = 2000;

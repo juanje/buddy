@@ -20,6 +20,8 @@ export interface SessionLifecycleOptions {
   hebbianTracker?: HebbianTracker;
   /** Called after session-end reflect is spawned (FR-CONSOL-01 counter). */
   onSessionComplete?: (hadActivity: boolean) => void;
+  /** Skip checkpoint reflects when monthly budget is near limit (FR-COST-03). */
+  isBudgetNearLimit?: () => boolean;
 }
 
 export class SessionLifecycle {
@@ -30,6 +32,7 @@ export class SessionLifecycle {
   private readonly incrementalEvery: number;
   private readonly spawnReflect: SpawnReflectFn;
   private readonly onSessionComplete?: (hadActivity: boolean) => void;
+  private readonly isBudgetNearLimit?: () => boolean;
   private turnDirty = false;
   private eventChain: Promise<void> = Promise.resolve();
 
@@ -41,6 +44,7 @@ export class SessionLifecycle {
     this.incrementalEvery = options.incrementalEvery ?? INCREMENTAL_REFLECT_EVERY;
     this.spawnReflect = options.spawnReflect ?? spawnReflectChild;
     this.onSessionComplete = options.onSessionComplete;
+    this.isBudgetNearLimit = options.isBudgetNearLimit;
   }
 
   setSessionFile(path: string): void {
@@ -136,6 +140,9 @@ export class SessionLifecycle {
   }
 
   private requestReflect(options: Omit<SpawnReflectOptions, "rootDir" | "forkedSessionFile">): void {
+    if (options.mode !== "session-end" && this.isBudgetNearLimit?.()) {
+      return;
+    }
     if (options.mode === "session-end") {
       logEvent(this.rootDir, {
         event: "reflect_spawned",

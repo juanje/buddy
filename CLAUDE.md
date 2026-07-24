@@ -85,7 +85,7 @@ Frontend (Svelte, system webview)
 Node.js Worker (TypeScript)
     ├── Pi SDK: createAgentSession({ excludeTools: ["bash"] })
     ├── Permission layer (beforeToolCall — chained)
-    ├── Hebbian tracker (afterToolCall — chained)
+    ├── Hebbian tracker (tool_execution_end via subscribe)
     ├── Scheduler + Consolidation runner
     └── Setup, Reflect, Sync modules
     │
@@ -97,7 +97,7 @@ AB File System (git repo): agent_brain/ + user/ + logs/
 - System prompt: `DefaultResourceLoader({ systemPrompt })` → `createAgentSession({ resourceLoader })`
 - Bash disabled: `excludeTools: ["bash"]` — file tools only (read, write, edit, ls, find, grep)
 - Hook chaining: save original `beforeToolCall`/`afterToolCall`, install ours, delegate to original
-- Session resume: `SessionManager.continueRecent(cwd)` (falls back to `.create(cwd)`)
+- Session resume: `SessionManager.create(cwd)` — fresh session every launch; continuity via file memory
 - Separate session for maintenance (consolidation never touches user's live session)
 - Events: `agent_start/end`, `message_start/update/end`, `tool_execution_start/end`, `compaction_start/end`
 

@@ -5,6 +5,7 @@ import { join } from "node:path";
 
 import type { AgentEvent, BudgetStatus, SetupConfig, UsageReport, UsageSummary } from "../shared/api";
 import {
+  BUDGET_BACKGROUND_THRESHOLD,
   BUDGET_WARNING_THRESHOLD,
   DEFAULT_MONTHLY_BUDGET,
   USAGE_FILE_NAME,
@@ -165,11 +166,19 @@ export function recordUsageToFile(
   return data.months[key];
 }
 
+export function isBudgetNearLimitFromStatus(budget: BudgetStatus): boolean {
+  return (
+    budget.level === "exceeded" ||
+    (budget.budget != null && budget.percent >= BUDGET_BACKGROUND_THRESHOLD * 100)
+  );
+}
+
 export interface UsageTracker {
   record(input: RecordUsageInput, now?: Date): BudgetStatus;
   recordFromEvent(event: AgentEvent, now?: Date): BudgetStatus | null;
   getUsageReport(): UsageReport;
   isBudgetExceeded(): boolean;
+  isBudgetNearLimit(): boolean;
   checkAndFireAlerts(): BudgetStatus;
   resetSessionAlertDedup(): void;
 }
@@ -228,6 +237,9 @@ export function createUsageTracker(
     isBudgetExceeded() {
       const report = this.getUsageReport();
       return report.budget.level === "exceeded";
+    },
+    isBudgetNearLimit() {
+      return isBudgetNearLimitFromStatus(this.getUsageReport().budget);
     },
     checkAndFireAlerts() {
       const status = this.getUsageReport().budget;

@@ -39,6 +39,7 @@ export interface BootSessionOptions {
   name?: string;
   about?: string;
   onSessionComplete?: (hadActivity: boolean) => void;
+  isBudgetNearLimit?: () => boolean;
 }
 
 /** Map Pi AgentSession to the structural subset the worker core needs. */
@@ -123,6 +124,7 @@ export async function bootSession(
     sessionId,
     hebbianTracker,
     onSessionComplete: options?.onSessionComplete,
+    isBudgetNearLimit: options?.isBudgetNearLimit,
   });
 
   context.sessionAllowedPaths.clear();

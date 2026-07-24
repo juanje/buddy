@@ -16,6 +16,7 @@ import {
   spawnReflectChild,
   type SpawnReflectOptions,
 } from "../../backends/reflect-spawn";
+import { REFLECT_CHILD_ENV_KEY, REFLECT_CHILD_ENV_VALUE } from "../../shared/defaults";
 
 describe("sidecarBootTarget", () => {
   it("routes --reflect to reflect-child module", () => {
@@ -43,6 +44,18 @@ describe("spawnReflectChild", () => {
     forkMock.mockReset();
     spawnMock.mockReset();
     delete (globalThis as { Bun?: unknown }).Bun;
+    delete process.env[REFLECT_CHILD_ENV_KEY];
+  });
+
+  it("refuses nested spawn when already a reflect child", () => {
+    process.env[REFLECT_CHILD_ENV_KEY] = REFLECT_CHILD_ENV_VALUE;
+    forkMock.mockReturnValue({ unref: vi.fn(), pid: 42 });
+
+    const pid = spawnReflectChild(baseOptions);
+
+    expect(pid).toBeUndefined();
+    expect(forkMock).not.toHaveBeenCalled();
+    expect(spawnMock).not.toHaveBeenCalled();
   });
 
   it("forks reflect-child.ts in dev (no Bun global)", () => {

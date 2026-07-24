@@ -107,4 +107,33 @@ describe("heartbeat", () => {
     const firstCall = runConsolidationFn.mock.calls[0];
     expect(firstCall?.[0]?.targetDepth).toBe(1);
   });
+
+  it("skips consolidation when budget is near limit", async () => {
+    setupAb();
+    const runConsolidationFn = vi.fn(async (_options: RunConsolidationOptions) => ({
+      ran: true,
+      completedDepths: [1],
+      state: defaultConsolidationState(),
+    }));
+
+    const hb = startHeartbeat({
+      rootDir: dir,
+      modelRuntime: {} as never,
+      isStreaming: () => false,
+      onDeferredDue: vi.fn(),
+      intervalMs: TEST_HEARTBEAT_INTERVAL_MS,
+      runConsolidationFn,
+      hasNewContentFn: async () => true,
+      isBudgetNearLimit: () => true,
+    });
+
+    hb.incrementSessionCounter();
+    hb.incrementSessionCounter();
+    hb.incrementSessionCounter();
+
+    await hb.tick();
+    hb.stop();
+
+    expect(runConsolidationFn).not.toHaveBeenCalled();
+  });
 });
