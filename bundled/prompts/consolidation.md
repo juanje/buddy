@@ -11,30 +11,32 @@ Depth 1 (daily synthesis) is the default when unspecified. Higher depths
 input scope — follow the scheduler's depth parameter.
 
 **Autonomous mode:** All steps run without user interaction. Act with judgment;
-log all decisions and changes made. No approval gates — the maintenance cycles
-and git history provide the correction mechanism.
+log all decisions and changes made. No approval gates — if anything goes wrong,
+it can be corrected in the next cycle.
 
 **Prerequisite:** Session reflect runs automatically at session end.
 The daily log already contains `## Session` blocks from reflect. Do not re-run
 reflect before consolidating — read what's already in the log.
 
+**Automatic (handled by the runner — do not do these yourself):**
+- Log rotation — when `logs/` exceeds 28 files, older logs are archived automatically after consolidation.
+
 ## Procedure
 
 ---
 
-### Step -1: Resolve the subjective date
+### Step -1: Confirm the target log date
 
-Before any file writes, determine the user's subjective "today":
+The consolidation runner has already resolved the user's subjective "today"
+(adjusting for night-owl hours). Look for the line
+"Target log date (for file paths only): YYYY-MM-DD" in the prompt header.
 
-1. Run `date +%H:%M` to get the current system time.
-2. If the time is between **00:00 and 05:00**, the user's subjective day is
-   **yesterday** (previous calendar day). Use that date for all log files,
-   index entries, and journal paths created during this run.
-3. Otherwise, use today's calendar date as normal.
+Use that date for all log files, index entries, and journal paths created
+during this run. Do not attempt to resolve the date yourself.
 
-This implements the night-owl rule from `USER.md` → Preferences. The
-system-injected `currentDate` reflects the calendar date, not the user's
-subjective day boundary — this step is the correction.
+The real calendar date/time is in your system context — use that when
+communicating with the user or reasoning about time. The target log date
+is ONLY for file paths.
 
 ---
 
@@ -119,17 +121,18 @@ interaction — act or defer.
 
 #### 4b. Surface reminders
 
-Scan for deadlines and events the user should see at the next interactive
-session (within 24h from the subjective date resolved in Step -1):
+The prompt header includes an "Upcoming items" block listing inbox items
+and Active context deadlines within 24h of the target log date. If items
+are listed:
 
-1. Read `user/inbox.md` — items with a date marker matching **tomorrow**
-   (or **today** if the daily runs during the night-owl window, 00:00–05:00).
-2. Read AGENTS.md **Active context → Right now** — deadlines or events
-   within 24h.
-3. For each match, write to `agent_brain/deferred.md`:
+1. For each item, write to `agent_brain/deferred.md`:
    `- **reminder** (YYYY-MM-DD, daily): [description].`
-4. Remove date-triggered items from inbox once written to deferred — inbox
-   was storage; deferred is the surfacing mechanism for session start.
+2. Remove the date-triggered item from inbox — inbox was storage; deferred
+   is the surfacing mechanism for session start.
+
+If the block says "No dated items due within 24h" — skip this step.
+
+Do not scan files yourself — the runner has already done the date matching.
 
 ---
 
@@ -251,6 +254,11 @@ data before acting.
 
 #### 8. Update Active context
 
+The prompt header includes a "Hebbian promotion data" block with pre-computed
+access counts and active session counts. Use this data directly — do not read
+frontmatter yourself. Your job is to apply judgment on which files to promote
+or demote based on the data provided.
+
 Active context has two subsections: **Right now** (ephemeral state) and
 **Files** (pointers to semantic memory).
 
@@ -280,26 +288,29 @@ The visibility levels are:
 | 3 | "Where to find things" gets a specific entry with trigger | sustained high use |
 | 4 | Active context "Files" | hot — needed in most sessions |
 
-**Staleness is measured in active sessions, not calendar days.** Read
-`logs/index.md`. Count only lines marked `active` — maintenance-only days
-don't count as opportunities to access a file.
+**Staleness is measured in active sessions, not calendar days.** The
+Hebbian block includes active session totals and per-file counts since
+`last_accessed`. Maintenance-only days don't count as opportunities to
+access a file.
 
 Steps:
 
-1. Scan files in `agent_brain/` (excluding `identity/`, `skills/`, `archive/`).
-2. Read metadata (`access_count`, `last_accessed`). Identify files whose
-   access has grown since last consolidation.
+1. Use the pre-computed file list from the Hebbian block — do not scan
+   `agent_brain/` or read frontmatter yourself.
+2. Identify files whose access has grown since last consolidation.
+   **Important:** You read metadata for promotion decisions, but you never
+   write `access_count` or `last_accessed` fields. The worker updates those
+   automatically — manual edits would corrupt the signal.
 3. For each growing file, **promote one level** — not to Active context
    directly. A file accessed once today becomes more prominent in its
    subdir index. A file accessed repeatedly across sessions over multiple
    days earns a higher level. Only files at level 3 that continue to be
    accessed in most sessions graduate to Active context (level 4).
-4. For each file in Active context whose `access_count` hasn't grown,
-   count the number of `active` sessions in `logs/index.md` with a date
-   after the file's `last_accessed`. **Demote one level** if ≥ 3 active
-   sessions have elapsed without access. Don't remove from the system —
-   just move it one step further from working memory. Gradual cooling,
-   not deletion.
+4. For each file in Active context whose access hasn't grown, use the
+   "active sessions since last access" count from the Hebbian block.
+   **Demote one level** if ≥ 3 active sessions have elapsed without access.
+   Don't remove from the system — just move it one step further from working
+   memory. Gradual cooling, not deletion.
 5. **Promotion signal:** a file accessed in at least 2 of the last 3
    active sessions is a candidate for promotion to the next level.
 6. Skip files linked from `USER.md` as structural context (team, primary
@@ -317,38 +328,12 @@ Each file entry has two layers — **hot data** inline and a **read trigger**:
 Avoid: accumulated history, internal scores, operational detail that only
 matters during maintenance.
 
-#### 9. Log rotation
-
-Keep the `logs/` root at a manageable size. Older logs are archived but
-remain findable in `logs/archive/YYYY-MM/`.
-
-1. Count `*.md` files in `logs/` (excluding `index.md` and any
-   `monthly_*.md` files).
-2. If the count exceeds **28**, for each file to archive (oldest first):
-   a. Move the file to `logs/archive/YYYY-MM/` (based on the file's
-      date). The directory is created automatically if needed.
-   b. **Remove** the corresponding line from `logs/index.md`.
-   c. **Append** the line to `logs/archive/YYYY-MM/index.md`. If the
-      month index doesn't exist, create it with:
-      ```
-      # Sessions — YYYY-MM
-
-      Log files: `YYYY-MM-DD.md` (in this directory).
-      ```
-   Repeat until exactly 28 remain.
-3. Note what was archived in today's log under Decisions.
-
-Why 28: provides a comfortable window of recent history regardless of
-usage frequency. Weekly review always has enough recent logs; monthly
-review may need the archive. Count-based (not date-based) rotation
-ensures the root always has the same depth of history regardless of
-how sessions are spread across the calendar.
-
 ---
 
 ### Finalize
 
-#### 10. Done
+#### 9. Done
 
 All file changes are committed automatically when the consolidation cycle ends.
 No manual action needed — just finish writing and the system persists everything.
+Log rotation runs automatically after you finish — do not archive logs yourself.

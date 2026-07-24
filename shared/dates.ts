@@ -7,6 +7,14 @@ export function toIsoDay(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
+/** Add calendar days to an ISO day string (YYYY-MM-DD). */
+export function addDays(isoDay: string, days: number): string {
+  const [y, m, d] = isoDay.split("-").map(Number);
+  const date = new Date(y, m - 1, d);
+  date.setDate(date.getDate() + days);
+  return toIsoDay(date);
+}
+
 /** Extract HH:MM from an ISO timestamp string. */
 export function formatLocalTime(isoTimestamp: string): string {
   return isoTimestamp.slice(11, 16);

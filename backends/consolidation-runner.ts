@@ -21,6 +21,14 @@ import {
   type ConsolidationState,
 } from "../shared/consolidation-state";
 import { isoWeekLabel, toIsoDay } from "../shared/dates";
+import {
+  computeHebbianReport,
+  findUpcomingReminders,
+  formatHebbianReportBlock,
+  formatUpcomingRemindersBlock,
+  resolveSubjectiveDate,
+  rotateLogs,
+} from "./consolidation-mechanics";
 import { logEvent } from "./app-logger";
 import { commitAll } from "./git";
 import { acquireLock, releaseLock } from "./maintenance";
@@ -29,6 +37,8 @@ import { appendDailyLog, updateLogsIndexEntry } from "./reflect";
 import { defaultConfigDir } from "./allowed-paths";
 import { globalConfigDir } from "./schema-migration";
 import { recordUsageToFile, sumUsageFromEvents } from "./usage-tracker";
+
+export { resolveSubjectiveDate } from "./consolidation-mechanics";
 
 export interface MaintenanceSessionLike {
   prompt(text: string): Promise<void>;
@@ -56,9 +66,20 @@ function readConsolidationSkill(rootDir: string): string {
   }
 }
 
-export function buildConsolidationPrompt(rootDir: string, depth: number): string {
+export function buildConsolidationPrompt(
+  rootDir: string,
+  depth: number,
+  now: Date = new Date(),
+): string {
   const skill = readConsolidationSkill(rootDir);
+  const targetDate = resolveSubjectiveDate(now);
+  const hebbianBlock = formatHebbianReportBlock(computeHebbianReport(rootDir, now));
+  const remindersBlock = formatUpcomingRemindersBlock(findUpcomingReminders(rootDir, targetDate));
+
   return (
+    `Target log date (for file paths only): ${targetDate}\n\n` +
+    `${remindersBlock}\n\n` +
+    `${hebbianBlock}\n\n` +
     `Run consolidation at depth ${depth}.\n\n` +
     `Follow the procedure below. Do not run git commands — the runner commits after you finish.\n\n` +
     skill
@@ -158,12 +179,26 @@ export async function runConsolidation(options: RunConsolidationOptions): Promis
 
   try {
     maintenanceSession = await createSession({ rootDir, modelRuntime });
+    const targetDate = resolveSubjectiveDate(now);
 
     for (const depth of cascadeDepths(targetDepth)) {
       const start = Date.now();
       try {
         logEvent(rootDir, { event: "consolidation_start", depth });
-        await maintenanceSession.prompt(buildConsolidationPrompt(rootDir, depth));
+        await maintenanceSession.prompt(buildConsolidationPrompt(rootDir, depth, now));
+        const { archived } = rotateLogs(rootDir, targetDate);
+        if (archived.length > 0) {
+          appendDailyLog(
+            rootDir,
+            {
+              date: targetDate,
+              sessionHeader: "log rotation",
+              sections: `Archived ${archived.length} log files to logs/archive/: ${archived.join(", ")}.`,
+              status: "maintenance",
+            },
+            now,
+          );
+        }
         await commitAll(rootDir, commitMessageForDepth(depth, now));
         appendConsolidationLogEntry(rootDir, {
           timestamp: now.toISOString(),
@@ -192,7 +227,7 @@ export async function runConsolidation(options: RunConsolidationOptions): Promis
 
     if (completedDepths.length > 0) {
       const depthLabel = completedDepths.map((d) => `depth-${d}`).join(", ");
-      const maintenanceDate = toIsoDay(now);
+      const maintenanceDate = targetDate;
       appendDailyLog(rootDir, {
         date: maintenanceDate,
         sessionHeader: `${now.toISOString().slice(11, 16)} consolidation`,

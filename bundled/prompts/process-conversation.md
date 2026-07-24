@@ -111,6 +111,11 @@ Do **not** patch during reflect:
 
 If you patch, note it briefly in the log under a **Patches** line in the relevant section (Decisions or Context).
 
+**Note:** The automatic session reflect (on every shutdown) handles
+session-level context patching. This manual step complements it for
+mid-session corrections or when the user explicitly invokes
+`process-conversation` before session end.
+
 ### 5. Detect observations
 
 Review the conversation looking for signals that the system itself should
