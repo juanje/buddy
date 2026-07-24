@@ -16,8 +16,6 @@ import { addDays, toIsoDay } from "../shared/dates";
 import { LOG_ROTATION_THRESHOLD } from "../shared/defaults";
 import { parseFrontmatter } from "./reflect";
 
-export { LOG_ROTATION_THRESHOLD } from "../shared/defaults";
-
 const DATE_MARKER_RE = /\b(\d{4}-\d{2}-\d{2})\b/;
 const LOG_INDEX_ACTIVE_RE = /^-\s+(\d{4}-\d{2}-\d{2}):\s+active\b/;
 

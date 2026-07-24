@@ -224,14 +224,13 @@ export async function runConsolidation(options: RunConsolidationOptions): Promis
 
     if (completedDepths.length > 0) {
       const depthLabel = completedDepths.map((d) => `depth-${d}`).join(", ");
-      const maintenanceDate = date;
       appendDailyLog(rootDir, {
-        date: maintenanceDate,
+        date,
         sessionHeader: `${now.toISOString().slice(11, 16)} consolidation`,
         sections: `Maintenance cycle completed: ${depthLabel}.`,
         status: "maintenance",
       }, now);
-      updateLogsIndexEntry(rootDir, maintenanceDate, "maintenance");
+      updateLogsIndexEntry(rootDir, date, "maintenance");
       await commitAll(rootDir, `maintenance: log entry for ${depthLabel}`);
     }
 
