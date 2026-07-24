@@ -40,11 +40,15 @@ import { defaultConfigPath, detectFirstRun, updateAppConfig } from "./setup";
 import { writePiSettings } from "../shared/pi-settings";
 import { createWorkerCore } from "./worker-core";
 import { startHeartbeat, type HeartbeatHandle } from "./heartbeat";
-import { ensureSchema } from "./schema-migration";
+import { ensureSchema, globalConfigDir } from "./schema-migration";
+import { refreshPromptsIfNeeded } from "./prompt-refresh";
+import { pruneSessionLogs } from "./session-log-prune";
 import { createUsageTracker, resolveMonthlyBudget, type UsageTracker } from "./usage-tracker";
 
 async function main(): Promise<void> {
-  ensureSchema();
+  const configDir = globalConfigDir();
+  ensureSchema(configDir);
+  refreshPromptsIfNeeded(configDir);
   await alignHttpDispatcherWithPi();
 
   const authPath = defaultAuthPath();
@@ -132,6 +136,7 @@ async function main(): Promise<void> {
     if (core) return;
 
     recoverStaleSession(rootDir, spawnReflectChild);
+    pruneSessionLogs(rootDir);
 
     const booted = await bootSession(
       rootDir,

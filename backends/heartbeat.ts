@@ -15,6 +15,7 @@ import { logEvent } from "./app-logger";
 import { hasNewContentSinceConsolidation } from "./consolidation-content";
 import { runConsolidation } from "./consolidation-runner";
 import { getDueDeferred, toDeferredItemViews } from "./deferred";
+import { pruneSessionLogs } from "./session-log-prune";
 import { toIsoDay } from "../shared/dates";
 
 export interface HeartbeatDeps {
@@ -46,6 +47,7 @@ export function startHeartbeat(deps: HeartbeatDeps): HeartbeatHandle {
   let consolidationInFlight = false;
   let timer: ReturnType<typeof setInterval> | undefined;
   let lastTickAt = 0;
+  let prunedThisBoot = false;
 
   async function evaluateConsolidation(): Promise<void> {
     if (consolidationInFlight) return;
@@ -81,6 +83,10 @@ export function startHeartbeat(deps: HeartbeatDeps): HeartbeatHandle {
   }
 
   async function tickInner(): Promise<void> {
+    if (!prunedThisBoot) {
+      pruneSessionLogs(deps.rootDir);
+      prunedThisBoot = true;
+    }
 
     if (!consolidationInFlight) {
       state = loadConsolidationState(deps.rootDir);

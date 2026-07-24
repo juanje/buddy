@@ -1,10 +1,29 @@
 // shared/defaults.ts — Centralized operational defaults and security constants (NFR-CONFIG-01/03).
 
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
 /** Global ~/.buddy/ schema version (NFR-MIGRATE). Increment when migrations are added. */
 export const APP_SCHEMA_VERSION = 1;
 
+/** App semver from package.json (NFR-MIGRATE-06 prompt refresh). */
+function readAppVersion(): string {
+  try {
+    const pkgPath = join(dirname(fileURLToPath(import.meta.url)), "..", "package.json");
+    const pkg = JSON.parse(readFileSync(pkgPath, "utf8")) as { version?: string };
+    return pkg.version ?? "0.0.0";
+  } catch {
+    return "0.0.0";
+  }
+}
+
+export const APP_VERSION = readAppVersion();
+
 // --- Operational defaults (NFR-CONFIG-01) ---
 export const LOCK_STALE_MS = 60 * 60 * 1000;
+/** Retention period for .buddy/logs/*.jsonl session event logs (NFR-MAINT-01). */
+export const SESSION_LOG_RETENTION_DAYS = 7;
 
 /** Forked Pi sessions for background reflect (internal). */
 export const REFLECT_SESSIONS_DIR = ".buddy/reflect-sessions";
