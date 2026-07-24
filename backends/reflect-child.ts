@@ -37,7 +37,7 @@ import {
   updateLogsIndexEntry,
 } from "./reflect";
 import { clearSessionPersistence } from "./crash-recovery";
-import { CHECKPOINT_USER_PROMPT, REFLECT_USER_PROMPT } from "./reflect-prompts";
+import { buildReflectUserPrompt } from "./reflect-prompts";
 import { defaultConfigDir } from "./allowed-paths";
 import { recordUsageToFile, sumUsageFromEvents } from "./usage-tracker";
 
@@ -67,10 +67,6 @@ async function acquireLockWithRetry(rootDir: string): Promise<boolean> {
     await new Promise((r) => setTimeout(r, LOCK_RETRY_MS));
   }
   return false;
-}
-
-function buildUserPrompt(mode: string): string {
-  return mode === "checkpoint" ? CHECKPOINT_USER_PROMPT : REFLECT_USER_PROMPT;
 }
 
 async function runReflect(
@@ -125,7 +121,7 @@ async function runReflect(
   const unsub = session.subscribe((event) => events.push(event));
 
   try {
-    await session.prompt(buildUserPrompt(mode));
+    await session.prompt(buildReflectUserPrompt(mode));
 
     const usage = sumUsageFromEvents(events);
     if (usage.cost > 0 || usage.tokens > 0) {
