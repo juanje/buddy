@@ -4,7 +4,7 @@ import { Given, When, Then } from "@cucumber/cucumber";
 import assert from "node:assert/strict";
 import { get } from "svelte/store";
 
-import type { SetupConfig } from "../../shared/api";
+import type { SetupConfig, UsageReport } from "../../shared/api";
 import { getLocale } from "../../src/lib/i18n";
 import {
   createSettingsController,
@@ -20,16 +20,23 @@ import type { AbWorld } from "../support/world";
 interface SettingsWorld extends AbWorld {
   appConfig: SetupConfig;
   settings?: SettingsController;
-  updateConfigCalls: Array<Partial<Pick<SetupConfig, "language">>>;
+  updateConfigCalls: Array<Partial<Pick<SetupConfig, "language" | "monthlyBudget">>>;
   changeModelCalls: Array<{ provider: SetupConfig["provider"]; model: string }>;
   oauthLoginCalls: SetupConfig["provider"][];
   authedProviders: Set<SetupConfig["provider"]>;
+  usageReport?: UsageReport;
 }
 
 const defaultConfig: SetupConfig = DEFAULT_TEST_CONFIG;
 
 function buildWorker(this: SettingsWorld): SettingsWorkerAPI {
   return buildMockWorker({
+    getUsage: async () =>
+      this.usageReport ?? {
+        session: { totalCost: 0, totalTokens: 0, messageCount: 0 },
+        monthly: { totalCost: 0, totalTokens: 0, messageCount: 0 },
+        budget: { level: "ok", percent: 0, remaining: 10, budget: 10, monthlyCost: 0 },
+      },
     updateConfig: async (patch) => {
       this.updateConfigCalls.push(patch);
       this.appConfig = { ...this.appConfig, ...patch };
@@ -66,6 +73,13 @@ function buildWorker(this: SettingsWorld): SettingsWorkerAPI {
 }
 
 function ensureSettings(this: SettingsWorld): SettingsController {
+  if (!this.appConfig) {
+    this.appConfig = { ...defaultConfig };
+    this.updateConfigCalls = [];
+    this.changeModelCalls = [];
+    this.oauthLoginCalls = [];
+    this.authedProviders = new Set(["anthropic"]);
+  }
   if (!this.settings) {
     this.settings = createSettingsController({
       worker: buildWorker.call(this),
@@ -181,4 +195,47 @@ Then("the settings model list includes {string}", async function (this: Settings
 
 Then("provider {string} was authenticated in settings", function (this: SettingsWorld, provider: string) {
   assert.ok(this.oauthLoginCalls.includes(provider as SetupConfig["provider"]));
+});
+
+Given(
+  "usage summary session cost {float} and monthly cost {float} with budget {float}",
+  function (this: SettingsWorld, sessionCost: number, monthlyCost: number, budget: number) {
+    this.usageReport = {
+      session: { totalCost: sessionCost, totalTokens: 0, messageCount: 0 },
+      monthly: { totalCost: monthlyCost, totalTokens: 0, messageCount: 1 },
+      budget: {
+        level: monthlyCost >= budget ? "exceeded" : monthlyCost >= budget * 0.8 ? "warning" : "ok",
+        percent: (monthlyCost / budget) * 100,
+        remaining: Math.max(0, budget - monthlyCost),
+        budget,
+        monthlyCost,
+      },
+    };
+    this.appConfig = { ...this.appConfig, monthlyBudget: budget };
+  },
+);
+
+Then("the settings show session cost {string}", function (this: SettingsWorld, amount: string) {
+  const usage = get(ensureSettings.call(this).usage);
+  assert.ok(usage);
+  assert.equal(usage.session.totalCost.toFixed(2), amount);
+});
+
+Then("the settings show monthly cost {string}", function (this: SettingsWorld, amount: string) {
+  const usage = get(ensureSettings.call(this).usage);
+  assert.ok(usage);
+  assert.equal(usage.monthly.totalCost.toFixed(2), amount);
+});
+
+Then("the settings show monthly budget {string}", function (this: SettingsWorld, amount: string) {
+  const config = get(ensureSettings.call(this).config);
+  assert.equal(config.monthlyBudget?.toFixed(2), amount);
+});
+
+When("I set the monthly budget to {string}", async function (this: SettingsWorld, amount: string) {
+  await ensureSettings.call(this).setMonthlyBudget(Number.parseFloat(amount));
+});
+
+Then("the saved config monthly budget is {int}", function (this: SettingsWorld, amount: number) {
+  assert.equal(this.appConfig.monthlyBudget, amount);
 });

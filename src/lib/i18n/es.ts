@@ -100,6 +100,19 @@ export type LocaleStrings = {
   locationBrowse: string;
   locationBrowseTitle: string;
   settingsAuthRequired: string;
+  settingsUsage: string;
+  settingsUsageLoading: string;
+  settingsUsageUnavailable: string;
+  settingsSessionCost: string;
+  settingsMonthlyCost: string;
+  settingsMonthlyBudget: string;
+  settingsBudgetDisabled: string;
+  settingsDisableBudget: string;
+  budgetBlockedMessage: string;
+  budgetWarningTitle: string;
+  budgetWarningBody: string;
+  budgetExceededTitle: string;
+  budgetExceededBody: string;
   notificationTitle: string;
   notificationBody: string;
 };
@@ -211,6 +224,19 @@ export const es: LocaleStrings = {
   settingsProviderAdded: "Proveedor añadido — sus modelos ya están disponibles",
   settingsGearTooltip: "Ajustes",
   settingsAuthRequired: "Inicia sesión en {provider} para gestionar modelos",
+  settingsUsage: "Uso",
+  settingsUsageLoading: "Cargando uso…",
+  settingsUsageUnavailable: "Datos de uso no disponibles",
+  settingsSessionCost: "Esta sesión: ${amount}",
+  settingsMonthlyCost: "Este mes: ${spent} / ${budget}",
+  settingsMonthlyBudget: "Presupuesto mensual (USD)",
+  settingsBudgetDisabled: "Sin límite",
+  settingsDisableBudget: "Quitar límite de presupuesto",
+  budgetBlockedMessage: "Presupuesto mensual alcanzado. Ajústalo en Ajustes para continuar.",
+  budgetWarningTitle: "Buddy — aviso de presupuesto",
+  budgetWarningBody: "Has usado ${spent} de tu presupuesto mensual de ${budget} (80%).",
+  budgetExceededTitle: "Buddy — presupuesto alcanzado",
+  budgetExceededBody: "Presupuesto mensual alcanzado (${spent} de ${budget}). El chat está pausado hasta que ajustes el presupuesto o empiece el mes.",
   notificationTitle: "Buddy",
   notificationBody: "{count} recordatorios pendientes",
 };

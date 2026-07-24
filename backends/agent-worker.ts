@@ -38,6 +38,7 @@ import { writePiSettings } from "../shared/pi-settings";
 import { createWorkerCore } from "./worker-core";
 import { startHeartbeat, type HeartbeatHandle } from "./heartbeat";
 import { ensureSchema } from "./schema-migration";
+import { createUsageTracker, resolveMonthlyBudget, type UsageTracker } from "./usage-tracker";
 
 async function main(): Promise<void> {
   ensureSchema();
@@ -66,6 +67,28 @@ async function main(): Promise<void> {
   let persistentAllowedPaths: AllowedEntry[] = loadAllowedPaths(configDir);
 
   let oauthService: OAuthService | undefined;
+  let usageTracker: UsageTracker | undefined;
+
+  function getBudgetLimit(): number | null {
+    if (setupState.firstRun) return null;
+    return resolveMonthlyBudget(setupState.config);
+  }
+
+  function ensureUsageTracker(): UsageTracker {
+    if (!usageTracker) {
+      usageTracker = createUsageTracker(configDir, {
+        getBudget: getBudgetLimit,
+        onBudgetAlert: (status) => {
+          try {
+            frontend.onBudgetAlert(status);
+          } catch (err) {
+            console.error("[usage] onBudgetAlert RPC failed:", err);
+          }
+        },
+      });
+    }
+    return usageTracker;
+  }
 
   function ensureOAuthService(): OAuthService {
     if (!oauthService) {
@@ -111,6 +134,7 @@ async function main(): Promise<void> {
         modelRuntime,
         sessionAllowedPaths,
         persistentAllowedPaths,
+        usageTracker: ensureUsageTracker(),
         requestPermission: (request) => {
           const id = nextPermissionId++;
           return new Promise<boolean>((resolveAnswer) => {
@@ -127,12 +151,16 @@ async function main(): Promise<void> {
     if (!booted) return;
     core = booted.core;
     startHeartbeatForAb(rootDir);
+    ensureUsageTracker().checkAndFireAlerts();
   }
 
   const transport = nodeStdioTransport();
   const channel = new RPCChannel<WorkerAPI, FrontendAPI>(transport, {
     expose: {
       async prompt(text: string, options?: PromptOptions) {
+        if (!setupState.firstRun && ensureUsageTracker().isBudgetExceeded()) {
+          throw new Error("Monthly budget reached");
+        }
         const augmented = await augmentPromptWithAttachments(text, sessionAllowedPaths, options);
         await core?.api.prompt(augmented.text, augmented.images ? { images: augmented.images } : undefined);
       },
@@ -220,6 +248,10 @@ async function main(): Promise<void> {
         }
         const updated = updateAppConfig(patch, defaultConfigPath());
         setupState = { firstRun: false, config: updated };
+        if (patch.monthlyBudget !== undefined) {
+          usageTracker?.resetSessionAlertDedup();
+          usageTracker?.checkAndFireAlerts();
+        }
       },
       async changeModel(provider, model) {
         if (setupState.firstRun) {
@@ -233,6 +265,12 @@ async function main(): Promise<void> {
         writePiSettings(setupState.config.rootDir, { provider, model });
         const updated = updateAppConfig({ provider, model }, defaultConfigPath());
         setupState = { firstRun: false, config: updated };
+      },
+      async getUsage() {
+        if (setupState.firstRun) {
+          throw new Error("App is not configured");
+        }
+        return ensureUsageTracker().getUsageReport();
       },
       async shutdown() {
         await core?.api.shutdown();

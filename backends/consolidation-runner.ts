@@ -11,6 +11,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { AGENT_TOOLS, EXCLUDED_TOOLS } from "../shared/defaults";
+import type { AgentEvent } from "../shared/api";
 import {
   advanceCounters,
   appendConsolidationLogEntry,
@@ -25,7 +26,9 @@ import { commitAll } from "./git";
 import { acquireLock, releaseLock } from "./maintenance";
 import { assembleSystemPrompt } from "./prompt";
 import { appendDailyLog, updateLogsIndexEntry } from "./reflect";
+import { defaultConfigDir } from "./allowed-paths";
 import { globalConfigDir } from "./schema-migration";
+import { recordUsageToFile, sumUsageFromEvents } from "./usage-tracker";
 
 export interface MaintenanceSessionLike {
   prompt(text: string): Promise<void>;
@@ -98,9 +101,22 @@ export async function createMaintenanceSession(options: {
     modelRuntime,
   });
 
+  const events: AgentEvent[] = [];
+  const unsub = session.subscribe((event) => events.push(event));
+
   return {
-    prompt: (text) => session.prompt(text),
-    dispose: () => session.dispose(),
+    async prompt(text) {
+      await session.prompt(text);
+      const usage = sumUsageFromEvents(events);
+      if (usage.cost > 0 || usage.tokens > 0) {
+        recordUsageToFile(defaultConfigDir(), usage);
+      }
+      events.length = 0;
+    },
+    dispose: () => {
+      unsub();
+      session.dispose();
+    },
   };
 }
 

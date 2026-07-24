@@ -6,9 +6,15 @@
 
   let {
     controller,
+    budgetBlocked = false,
     onAbort,
     onSent,
-  }: { controller: ChatController; onAbort: () => void; onSent?: () => void } = $props();
+  }: {
+    controller: ChatController;
+    budgetBlocked?: boolean;
+    onAbort: () => void;
+    onSent?: () => void;
+  } = $props();
 
   const input = $derived(controller.input);
   const attachments = $derived(controller.attachments);
@@ -16,6 +22,8 @@
   const inputDisabled = $derived(controller.inputDisabled);
   const canSend = $derived(controller.canSend);
   const showAbort = $derived(controller.showAbort);
+  const canSendNow = $derived($canSend && !budgetBlocked);
+  const inputLocked = $derived($inputDisabled || budgetBlocked);
 
   let textarea: HTMLTextAreaElement | undefined = $state();
 
@@ -50,6 +58,9 @@
 </script>
 
 <div class="input-bar">
+  {#if budgetBlocked}
+    <p class="budget-blocked" role="status">{$t.budgetBlockedMessage}</p>
+  {/if}
   <div class="input-capsule">
     {#if $attachmentErrors.length > 0}
       <div class="attachment-errors" role="alert">
@@ -83,7 +94,7 @@
       bind:value={$input}
       onkeydown={handleKeydown}
       oninput={autoResize}
-      disabled={$inputDisabled}
+      disabled={inputLocked}
       placeholder={$t.inputPlaceholder}
       rows="1"
     ></textarea>
@@ -92,7 +103,7 @@
         type="button"
         class="attach"
         onclick={pickFiles}
-        disabled={$inputDisabled}
+        disabled={inputLocked}
         title={$t.attachTitle}
       >
         📎
@@ -100,7 +111,7 @@
       {#if $showAbort}
         <button class="abort" onclick={onAbort} title={$t.abortTitle}>◼</button>
       {:else}
-        <button class="send" onclick={sendNow} disabled={!$canSend} title={$t.sendTitle}>↑</button>
+        <button class="send" onclick={sendNow} disabled={!canSendNow} title={$t.sendTitle}>↑</button>
       {/if}
     </div>
   </div>
@@ -110,6 +121,14 @@
   .input-bar {
     padding: 12px;
     background: var(--bg);
+  }
+  .budget-blocked {
+    margin: 0 0 8px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    background: var(--error-bg);
+    color: var(--error-fg);
+    font-size: 13px;
   }
   .input-capsule {
     display: flex;

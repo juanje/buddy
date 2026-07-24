@@ -20,6 +20,12 @@ export const LOCK_RETRY_MS = 500;
 export const LOCK_MAX_RETRIES = 20;
 export const AUTH_FILE_MODE = 0o600;
 export const DEFAULT_LANGUAGE = "es";
+/** Default monthly spend cap for new installs (FR-COST-03). 0/null disables. */
+export const DEFAULT_MONTHLY_BUDGET = 10;
+/** Warn when monthly usage reaches this fraction of budget (FR-COST-03). */
+export const BUDGET_WARNING_THRESHOLD = 0.8;
+/** Global usage persistence file name under ~/.buddy/ (FR-COST-02). */
+export const USAGE_FILE_NAME = "usage.json";
 export const SHUTDOWN_TIMEOUT_MS = 2000;
 export const GIT_USER_NAME = "Buddy";
 export const GIT_USER_EMAIL = "buddy@localhost";

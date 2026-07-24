@@ -87,6 +87,11 @@ export function createWorkerProxy(getConnection: () => WorkerConnection | undefi
       if (!connection) throw new Error("worker not connected");
       return connection.api.changeModel(provider, model);
     },
+    async getUsage() {
+      const connection = getConnection();
+      if (!connection) throw new Error("worker not connected");
+      return connection.api.getUsage();
+    },
     async shutdown() {
       await getConnection()?.api.shutdown();
     },

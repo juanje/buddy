@@ -8,12 +8,14 @@ import type {
   ModelInfo,
   OAuthLoginResult,
   SetupConfig,
+  UsageReport,
 } from "../../shared/api";
+import { DEFAULT_MONTHLY_BUDGET } from "../../shared/defaults";
 import { getLocale, setLocale, type AppLocale } from "./i18n";
 import { isApiKeyOnlyProvider } from "./provider-setup";
 
 export interface SettingsWorkerAPI {
-  updateConfig(patch: Partial<Pick<SetupConfig, "language">>): Promise<void>;
+  updateConfig(patch: Partial<Pick<SetupConfig, "language" | "monthlyBudget">>): Promise<void>;
   changeModel(provider: SetupConfig["provider"], model: string): Promise<void>;
   listModels(provider: SetupConfig["provider"]): Promise<ModelInfo[]>;
   getAuthStatus(): Promise<AuthStatusResult>;
@@ -23,6 +25,7 @@ export interface SettingsWorkerAPI {
     apiKey: string,
     baseUrl?: string,
   ): Promise<KeyCheck>;
+  getUsage(): Promise<UsageReport>;
 }
 
 export interface SettingsDisplayConfig {
@@ -31,6 +34,11 @@ export interface SettingsDisplayConfig {
   model: string;
   rootDir: string;
   version: string;
+  monthlyBudget: number | null;
+}
+
+function formatUsd(amount: number): string {
+  return amount.toFixed(2);
 }
 
 export type SettingsProviderId = SetupConfig["provider"];
@@ -49,6 +57,8 @@ export interface SettingsController {
   authShowApiKey: Readable<boolean>;
   unauthenticatedProviders: Readable<SettingsProviderId[]>;
   providerAddedNotice: Readable<boolean>;
+  usage: Readable<UsageReport | undefined>;
+  usageLoading: Readable<boolean>;
   openSettings(): void;
   closeSettings(): void;
   setLanguage(language: AppLocale): Promise<void>;
@@ -60,6 +70,8 @@ export interface SettingsController {
   submitAuthOAuth(): Promise<void>;
   submitAuthApiKey(apiKey: string, baseUrl?: string): Promise<void>;
   setAuthShowApiKey(show: boolean): void;
+  setMonthlyBudget(amount: number | null): Promise<void>;
+  formatCost(amount: number): string;
 }
 
 export function providerLabel(
@@ -84,12 +96,18 @@ export function providerLabel(
 }
 
 function toDisplay(config: SetupConfig, version: string): SettingsDisplayConfig {
+  const rawBudget = config.monthlyBudget;
+  const monthlyBudget =
+    rawBudget === 0 || rawBudget === null
+      ? null
+      : rawBudget ?? DEFAULT_MONTHLY_BUDGET;
   return {
     language: config.language ?? getLocale(),
     provider: config.provider,
     model: config.model,
     rootDir: config.rootDir,
     version,
+    monthlyBudget,
   };
 }
 
@@ -123,7 +141,20 @@ export function createSettingsController(options: {
   const authShowApiKey = writable(false);
   const unauthenticatedProviders = writable<SettingsProviderId[]>([]);
   const providerAddedNotice = writable(false);
+  const usage = writable<UsageReport | undefined>(undefined);
+  const usageLoading = writable(false);
   const lastModelByProvider = new Map<SettingsProviderId, string>();
+
+  async function refreshUsage(): Promise<void> {
+    usageLoading.set(true);
+    try {
+      usage.set(await options.worker.getUsage());
+    } catch {
+      usage.set(undefined);
+    } finally {
+      usageLoading.set(false);
+    }
+  }
 
   async function refreshModels(): Promise<void> {
     loadingModels.set(true);
@@ -157,6 +188,8 @@ export function createSettingsController(options: {
     authShowApiKey,
     unauthenticatedProviders,
     providerAddedNotice,
+    usage,
+    usageLoading,
     openSettings() {
       const current = options.getConfig();
       config.set(toDisplay(current, options.version));
@@ -169,6 +202,7 @@ export function createSettingsController(options: {
       providerAddedNotice.set(false);
       open.set(true);
       void refreshModels();
+      void refreshUsage();
     },
     closeSettings() {
       open.set(false);
@@ -266,6 +300,14 @@ export function createSettingsController(options: {
       authShowApiKey.set(show);
       authError.set(undefined);
     },
+    async setMonthlyBudget(amount) {
+      await options.worker.updateConfig({ monthlyBudget: amount });
+      const updated: SetupConfig = { ...options.getConfig(), monthlyBudget: amount };
+      options.onConfigChange(updated);
+      config.update((current) => ({ ...current, monthlyBudget: amount }));
+      await refreshUsage();
+    },
+    formatCost: formatUsd,
   };
 }
 

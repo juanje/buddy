@@ -20,6 +20,8 @@
   const authShowApiKey = $derived(controller.authShowApiKey);
   const unauthenticatedProviders = $derived(controller.unauthenticatedProviders);
   const providerAddedNotice = $derived(controller.providerAddedNotice);
+  const usage = $derived(controller.usage);
+  const usageLoading = $derived(controller.usageLoading);
 
   let apiKeyInput = $state("");
   let baseUrlInput = $state("");
@@ -72,6 +74,36 @@
       apiKeyInput = "";
       baseUrlInput = "";
     }
+  }
+
+  const budgetPercent = $derived(
+    $usage && $usage.budget.budget
+      ? Math.min(100, $usage.budget.percent)
+      : 0,
+  );
+  const budgetBarClass = $derived(
+    $usage?.budget.level === "exceeded"
+      ? "danger"
+      : $usage?.budget.level === "warning"
+        ? "warning"
+        : "ok",
+  );
+
+  async function onBudgetChange(event: Event) {
+    const input = event.currentTarget as HTMLInputElement;
+    const raw = input.value.trim();
+    if (raw === "") {
+      await controller.setMonthlyBudget(null);
+      return;
+    }
+    const parsed = Number.parseFloat(raw);
+    if (Number.isFinite(parsed) && parsed >= 0) {
+      await controller.setMonthlyBudget(parsed === 0 ? null : parsed);
+    }
+  }
+
+  async function disableBudget() {
+    await controller.setMonthlyBudget(null);
   }
 </script>
 
@@ -183,6 +215,49 @@
           </dd>
         </div>
         <div class="field">
+          <dt>{$t.settingsUsage}</dt>
+          <dd class="usage-panel">
+            {#if $usageLoading}
+              <span class="muted">{$t.settingsUsageLoading}</span>
+            {:else if $usage}
+              <p>{$t.settingsSessionCost.replace("{amount}", controller.formatCost($usage.session.totalCost))}</p>
+              <p>
+                {$t.settingsMonthlyCost
+                  .replace("{spent}", controller.formatCost($usage.monthly.totalCost))
+                  .replace(
+                    "{budget}",
+                    $config.monthlyBudget == null
+                      ? $t.settingsBudgetDisabled
+                      : controller.formatCost($config.monthlyBudget),
+                  )}
+              </p>
+              {#if $config.monthlyBudget != null}
+                <div class="budget-bar" aria-hidden="true">
+                  <div class="budget-fill {budgetBarClass}" style:width="{budgetPercent}%"></div>
+                </div>
+              {/if}
+              <label class="budget-field">
+                <span>{$t.settingsMonthlyBudget}</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={$config.monthlyBudget ?? ""}
+                  placeholder={$t.settingsBudgetDisabled}
+                  onchange={onBudgetChange}
+                />
+              </label>
+              {#if $config.monthlyBudget != null}
+                <button type="button" class="link" onclick={disableBudget}>
+                  {$t.settingsDisableBudget}
+                </button>
+              {/if}
+            {:else}
+              <span class="muted">{$t.settingsUsageUnavailable}</span>
+            {/if}
+          </dd>
+        </div>
+        <div class="field">
           <dt>{$t.settingsDirectory}</dt>
           <dd class="path">{$config.rootDir}</dd>
         </div>
@@ -281,6 +356,47 @@
     word-break: break-all;
     font-family: ui-monospace, monospace;
     font-size: 13px;
+  }
+  .usage-panel {
+    display: grid;
+    gap: 8px;
+  }
+  .usage-panel p {
+    margin: 0;
+  }
+  .budget-bar {
+    height: 8px;
+    border-radius: 999px;
+    background: var(--border);
+    overflow: hidden;
+  }
+  .budget-fill {
+    height: 100%;
+    border-radius: 999px;
+    transition: width 0.2s ease;
+  }
+  .budget-fill.ok {
+    background: #22c55e;
+  }
+  .budget-fill.warning {
+    background: #eab308;
+  }
+  .budget-fill.danger {
+    background: #ef4444;
+  }
+  .budget-field {
+    display: grid;
+    gap: 4px;
+    font-size: 13px;
+  }
+  .budget-field input {
+    font: inherit;
+    padding: 6px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg-secondary);
+    color: var(--fg);
+    max-width: 140px;
   }
   .hint {
     margin: 16px 0 0;

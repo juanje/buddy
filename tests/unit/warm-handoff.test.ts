@@ -25,6 +25,7 @@ describe("warm handoff", () => {
       onPermissionRequest: vi.fn(),
       onOAuthEvent: vi.fn(),
       onDeferredDue: vi.fn(),
+      onBudgetAlert: vi.fn(),
     };
 
     const run = runWarmHandoff(session, frontend, { name: "Alex" });

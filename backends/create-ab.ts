@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 import { simpleGit } from "simple-git";
 
 import type { SetupConfig } from "../shared/api";
-import { DEFAULT_LANGUAGE, GIT_USER_EMAIL, GIT_USER_NAME } from "../shared/defaults";
+import { DEFAULT_LANGUAGE, DEFAULT_MONTHLY_BUDGET, GIT_USER_EMAIL, GIT_USER_NAME } from "../shared/defaults";
 import { getEmbeddedAssets } from "./embedded-assets";
 import { writePiSettings } from "../shared/pi-settings";
 
@@ -119,6 +119,10 @@ export function adoptAbInstance(options: Pick<CreateAbOptions, "config" | "confi
 }
 
 function markConfigured(config: SetupConfig, configPath: string): void {
+  const payload: SetupConfig = {
+    ...config,
+    monthlyBudget: config.monthlyBudget ?? DEFAULT_MONTHLY_BUDGET,
+  };
   mkdirSync(dirname(configPath), { recursive: true });
-  writeFileSync(configPath, JSON.stringify(config, null, 2) + "\n");
+  writeFileSync(configPath, JSON.stringify(payload, null, 2) + "\n");
 }

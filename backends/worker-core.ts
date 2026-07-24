@@ -6,6 +6,7 @@
 
 import type { AgentEvent, ChatWorkerAPI, FrontendAPI, PromptOptions } from "../shared/api";
 import type { SessionLifecycle } from "./session-lifecycle";
+import type { UsageTracker } from "./usage-tracker";
 
 /**
  * What the session core itself implements. Permission resolution lives in
@@ -33,6 +34,7 @@ export interface PiSessionLike {
 
 export interface WorkerCoreOptions {
   lifecycle?: SessionLifecycle;
+  usageTracker?: UsageTracker;
 }
 
 export interface WorkerCore {
@@ -47,7 +49,9 @@ export function createWorkerCore(
   options?: WorkerCoreOptions,
 ): WorkerCore {
   const lifecycle = options?.lifecycle;
+  const usageTracker = options?.usageTracker;
   const unsubscribe = session.subscribe((event) => {
+    usageTracker?.recordFromEvent(event);
     void lifecycle?.handleEvent(event);
     frontend.onAgentEvent(event);
   });

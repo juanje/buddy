@@ -23,6 +23,7 @@ import { assembleSystemPrompt } from "./prompt";
 import { SessionLifecycle } from "./session-lifecycle";
 import { runWarmHandoff } from "./warm-handoff";
 import { createWorkerCore, type PiSessionLike, type WorkerCore } from "./worker-core";
+import type { UsageTracker } from "./usage-tracker";
 
 export interface SessionBootContext {
   frontend: FrontendAPI;
@@ -30,6 +31,7 @@ export interface SessionBootContext {
   requestPermission: (request: Omit<PermissionRequest, "id">) => Promise<boolean>;
   sessionAllowedPaths: Set<string>;
   persistentAllowedPaths: AllowedEntry[];
+  usageTracker?: UsageTracker;
 }
 
 export interface BootSessionOptions {
@@ -163,7 +165,10 @@ export async function bootSession(
   };
 
   const sessionLike = asPiSessionLike(session);
-  const core = createWorkerCore(sessionLike, context.frontend, { lifecycle });
+  const core = createWorkerCore(sessionLike, context.frontend, {
+    lifecycle,
+    usageTracker: context.usageTracker,
+  });
 
   if (options?.firstSession && options.name) {
     await runWarmHandoff(sessionLike, context.frontend, {

@@ -100,6 +100,8 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 | FR-CONSOL-04 | Lock management | done | 7b53829 |
 | FR-CONSOL-05 | Idle-aware scheduling | done | 7b53829 |
 | FR-CONSOL-06 | Run journal | done | 7b53829 |
+| FR-COST-02 | Usage panel in Settings | done | (see E15) |
+| FR-COST-03 | Budget warning + hard limit | done | (see E15) |
 
 ## Post-MVP — Fable review fixes (2026-07-21)
 
@@ -183,10 +185,19 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 
 **Remaining:** none — skeleton cleanup complete.
 
+## E15 — Cost visibility + budget limits (2026-07-24)
+
+| FR-ID | Feature | Status | Commit |
+|-------|---------|--------|--------|
+| FR-COST-02 | Usage panel in Settings (session + monthly) | done | 8ee1992 |
+| FR-COST-03 | Budget warning (80%) + hard limit (100%) with OS notifications | done | 8ee1992 |
+
+**Tests at E15 close:** 205 unit + 109 BDD green.
+
 ## Current focus
 
-> **E14 skeleton cleanup complete (2026-07-24)** — Pending files, crash-catchup, and skeleton metadata coupling removed. Reflect is fork-only; session metadata passed via spawn args.
-> Next: FR-WIKI, FR-COST, FR-CHAT-10.
+> **FR-COST-02/03 shipped (2026-07-24)** — Usage panel in Settings; default $10/month budget; 80% warning notification; 100% hard block on send. Reflect + consolidation costs tracked in `~/.buddy/usage.json`.
+> Next: FR-WIKI, FR-CHAT-10.
 
 ### Sprint: Settings access UI — DONE (2026-07-22)
 

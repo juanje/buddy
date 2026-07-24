@@ -37,6 +37,8 @@ import {
   updateLogsIndexEntry,
 } from "./reflect";
 import { CHECKPOINT_USER_PROMPT, REFLECT_USER_PROMPT } from "./reflect-prompts";
+import { defaultConfigDir } from "./allowed-paths";
+import { recordUsageToFile, sumUsageFromEvents } from "./usage-tracker";
 
 async function resolveFastModelOptions(rootDir: string): Promise<{
   model?: Awaited<ReturnType<ModelRuntime["getModel"]>>;
@@ -123,6 +125,11 @@ async function runReflect(
 
   try {
     await session.prompt(buildUserPrompt(mode));
+
+    const usage = sumUsageFromEvents(events);
+    if (usage.cost > 0 || usage.tokens > 0) {
+      recordUsageToFile(defaultConfigDir(), usage);
+    }
 
     // Commit agent writes immediately — before lock, before finalization.
     await commitAll(rootDir, `ab: reflect ${mode} (agent writes)`);

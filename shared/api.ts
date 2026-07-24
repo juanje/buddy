@@ -28,6 +28,31 @@ export interface SetupConfig {
   language?: "es" | "en";
   name?: string;
   about?: string;
+  /** Monthly spend cap in USD. 0 or null disables (FR-COST-03). */
+  monthlyBudget?: number | null;
+}
+
+/** Aggregated token/cost totals (FR-COST-02). */
+export interface UsageSummary {
+  totalCost: number;
+  totalTokens: number;
+  messageCount: number;
+}
+
+/** Budget evaluation for the current month (FR-COST-03). */
+export interface BudgetStatus {
+  level: "ok" | "warning" | "exceeded" | "disabled";
+  percent: number;
+  remaining: number;
+  budget: number | null;
+  monthlyCost: number;
+}
+
+/** Full usage snapshot returned to Settings (FR-COST-02/03). */
+export interface UsageReport {
+  session: UsageSummary;
+  monthly: UsageSummary;
+  budget: BudgetStatus;
 }
 
 /** Result of first-run detection against ~/.buddy/config.json (FR-SETUP-01). */
@@ -160,9 +185,11 @@ export interface WorkerAPI {
   /** Answer a pending permission request (FR-PERM-07). */
   resolvePermission(id: number, allow: boolean, persist?: AllowedPathPersist): Promise<void>;
   /** Merge settings into ~/.buddy/config.json (FR-SETTINGS-02). */
-  updateConfig(patch: Partial<Pick<SetupConfig, "language">>): Promise<void>;
+  updateConfig(patch: Partial<Pick<SetupConfig, "language" | "monthlyBudget">>): Promise<void>;
   /** Switch model mid-session and persist (FR-SETTINGS-03). */
   changeModel(provider: SetupConfig["provider"], model: string): Promise<void>;
+  /** Session + monthly usage and budget status (FR-COST-02/03). */
+  getUsage(): Promise<UsageReport>;
   shutdown(): Promise<void>;
 }
 
@@ -201,4 +228,6 @@ export interface FrontendAPI {
   onOAuthEvent(event: OAuthUIEvent): void;
   /** Deferred items surfaced by heartbeat (FR-DEFERRED-02). */
   onDeferredDue(items: DeferredItemView[]): void;
+  /** Budget threshold crossed (80% warning or 100% exceeded) (FR-COST-03). */
+  onBudgetAlert(status: BudgetStatus): void;
 }

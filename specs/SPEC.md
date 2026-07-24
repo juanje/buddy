@@ -722,27 +722,35 @@ Fork bomb defense:
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-COST-01 | Per-message cost | 2 |
-| FR-COST-02 | Session total | 2 |
-| FR-COST-03 | Monthly total | 3 |
+| ~~FR-COST-01~~ | ~~Per-message cost~~ | — removed |
+| FR-COST-02 | Usage panel in Settings (session + monthly) | 2 |
+| FR-COST-03 | Budget alert | 3 |
 
-**FR-COST-01 — Per-message cost**
+**FR-COST-01 — removed**
 
-- **Given** the agent completes a response
-- **When** the `message_end` event includes `usage` data
-- **Then** token count and cost are available on hover or in message details
+Per-message cost granularity is not actionable for end users. Knowing that one
+message cost 0.003€ vs 0.005€ doesn't inform any decision. Removed in favor of
+aggregate visibility (FR-COST-02) and budget safety nets (FR-COST-03).
 
-**FR-COST-02 — Session total**
+**FR-COST-02 — Usage panel in Settings**
 
-- **Given** cost data accumulates during a session
-- **When** the user checks the status bar
-- **Then** the accumulated session cost is displayed
+- **Given** the user opens Settings
+- **When** usage data has been collected during sessions
+- **Then** a "Usage" section shows: current session cost, and monthly accumulated cost
+- **And** costs are calculated from `usage` data in `message_end` events (tokens × model pricing)
+- **And** monthly data persists across sessions (stored in `~/.buddy/usage.json` or equivalent)
+- **Note:** This is the primary cost visibility mechanism — users check it when they want to, it never intrudes in the chat flow.
 
-**FR-COST-03 — Monthly total**
+**FR-COST-03 — Budget alert and hard limit**
 
-- **Given** the user opens settings
-- **When** cost history is available
-- **Then** a monthly total is displayed
+- **Given** a monthly budget is configured (default $10 for new installs; 0/null disables)
+- **When** accumulated monthly usage reaches 80% of the budget
+- **Then** a one-time OS notification warns the user (same mechanism as deferred notifications)
+- **When** accumulated monthly usage reaches 100% of the budget
+- **Then** a one-time OS notification informs the user that chat is paused
+- **And** the send button is disabled with an inline explanation until the budget is raised or the month rolls over
+- **And** the Settings usage panel shows spend vs budget with a progress bar (green / yellow / red)
+- **Note:** Reflect and consolidation LLM costs count toward the monthly total. Each threshold fires once per app session.
 
 ### 3.14 AB Brain Template (FR-BRAIN)
 

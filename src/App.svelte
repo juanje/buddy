@@ -22,8 +22,9 @@
     type SettingsController,
   } from "./lib/settings-controller";
   import { ensureNotificationPermission, notifyDeferredDue } from "./utils/deferred-notify";
+  import { formatBudgetNotificationBody, notifyBudgetAlert } from "./utils/budget-notify";
   import { t } from "./lib/i18n";
-  import type { AgentEvent, DeferredItemView, OAuthUIEvent, SetupConfig } from "../shared/api";
+  import type { AgentEvent, BudgetStatus, DeferredItemView, OAuthUIEvent, SetupConfig } from "../shared/api";
   import { SHUTDOWN_TIMEOUT_MS } from "../shared/defaults";
 
   const APP_VERSION = "0.1.0";
@@ -38,6 +39,7 @@
   let setupOAuthHandler: ((event: OAuthUIEvent) => void) | undefined = $state();
   let appConfig = $state<SetupConfig | undefined>();
   let settingsController = $state<SettingsController | undefined>();
+  let budgetBlocked = $state(false);
 
   // The controller is created before the worker connects so the UI renders
   // immediately; prompts are proxied to whatever connection exists.
@@ -135,6 +137,23 @@
               body,
             });
           },
+          onBudgetAlert(status: BudgetStatus) {
+            devLog(`budget alert: ${status.level}`);
+            budgetBlocked = status.level === "exceeded";
+            const strings = get(t);
+            void notifyBudgetAlert(status, {
+              warningTitle: strings.budgetWarningTitle,
+              warningBody: formatBudgetNotificationBody(status, {
+                warning: strings.budgetWarningBody,
+                exceeded: strings.budgetExceededBody,
+              }),
+              exceededTitle: strings.budgetExceededTitle,
+              exceededBody: formatBudgetNotificationBody(status, {
+                warning: strings.budgetWarningBody,
+                exceeded: strings.budgetExceededBody,
+              }),
+            });
+          },
         },
         (code) => {
           connectionError = `Worker exited (code ${code ?? "unknown"})`;
@@ -150,6 +169,12 @@
       }
       if (view === "chat") {
         deferredItems = await connection.api.getDeferredItems();
+        try {
+          const usage = await connection.api.getUsage();
+          budgetBlocked = usage.budget.level === "exceeded";
+        } catch {
+          budgetBlocked = false;
+        }
       }
       devLog(`view: ${view}`);
     } catch (err) {
@@ -292,6 +317,7 @@
       {/if}
       <InputBar
         {controller}
+        {budgetBlocked}
         onAbort={() => controller?.abort()}
         onSent={() => scroll.onUserMessageSent()}
       />

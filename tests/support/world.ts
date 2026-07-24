@@ -94,6 +94,7 @@ export class AbWorld extends World {
         onPermissionRequest: (request) => controllerRef?.handlePermissionRequest(request),
         onOAuthEvent: () => {},
         onDeferredDue: () => {},
+        onBudgetAlert: () => {},
       },
       { lifecycle: this.lifecycle },
     );
