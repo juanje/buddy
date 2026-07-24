@@ -36,6 +36,7 @@ import {
   sanitizeReflectOutput,
   updateLogsIndexEntry,
 } from "./reflect";
+import { clearSessionPersistence } from "./crash-recovery";
 import { CHECKPOINT_USER_PROMPT, REFLECT_USER_PROMPT } from "./reflect-prompts";
 import { defaultConfigDir } from "./allowed-paths";
 import { recordUsageToFile, sumUsageFromEvents } from "./usage-tracker";
@@ -184,6 +185,7 @@ async function runReflect(
             mode,
             logPath: dailyPath,
           });
+          clearSessionPersistence(rootDir);
         }
         await commitAll(rootDir, "ab: session reflect");
       } finally {

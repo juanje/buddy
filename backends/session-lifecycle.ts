@@ -4,6 +4,7 @@ import type { AgentEvent } from "../shared/api";
 import { formatLocalTime, toIsoDay } from "../shared/dates";
 import { extractToolInfo } from "../shared/pi-events";
 import { logEvent } from "./app-logger";
+import { markReflectPending } from "./crash-recovery";
 import { commitAll } from "./git";
 import { createHebbianTracker, type HebbianTracker } from "./hebbian";
 import { spawnReflectChild, type SpawnReflectFn, type SpawnReflectOptions } from "./reflect-spawn";
@@ -90,6 +91,8 @@ export class SessionLifecycle {
       session: this.tracker.sessionId,
       turns: snapshot.turnCount,
     });
+
+    markReflectPending(this.rootDir);
 
     this.requestReflect({
       mode: "session-end",

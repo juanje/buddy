@@ -34,6 +34,8 @@ import { getDueDeferred, removeDueDeferredItems, toDeferredItemViews } from "./d
 import { toIsoDay } from "../shared/dates";
 import { commitAll } from "./git";
 import { bootSession, augmentPromptWithAttachments } from "./session-boot";
+import { recoverStaleSession } from "./crash-recovery";
+import { spawnReflectChild } from "./reflect-spawn";
 import { defaultConfigPath, detectFirstRun, updateAppConfig } from "./setup";
 import { writePiSettings } from "../shared/pi-settings";
 import { createWorkerCore } from "./worker-core";
@@ -128,6 +130,8 @@ async function main(): Promise<void> {
     options?: { firstSession?: boolean; name?: string; about?: string },
   ): Promise<void> {
     if (core) return;
+
+    recoverStaleSession(rootDir, spawnReflectChild);
 
     const booted = await bootSession(
       rootDir,

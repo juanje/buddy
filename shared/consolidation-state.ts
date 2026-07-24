@@ -15,6 +15,10 @@ export interface ConsolidationState {
   lastDepth1: string | null;
   lastDepth2: string | null;
   lastDepth3: string | null;
+  /** Path to the live Pi session file (FR-REFLECT-05). */
+  liveSessionFile?: string | null;
+  /** True when session-end reflect was requested but may not have completed. */
+  reflectPending?: boolean;
 }
 
 export interface ConsolidationLogEntry {
@@ -39,6 +43,8 @@ export function defaultConsolidationState(): ConsolidationState {
     lastDepth1: null,
     lastDepth2: null,
     lastDepth3: null,
+    liveSessionFile: null,
+    reflectPending: false,
   };
 }
 

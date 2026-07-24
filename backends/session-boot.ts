@@ -21,7 +21,7 @@ import type { AllowedEntry } from "./allowed-paths";
 import { extractPdfText } from "./pdf-extract";
 import { assembleSystemPrompt } from "./prompt";
 import { SessionLifecycle } from "./session-lifecycle";
-import { runWarmHandoff } from "./warm-handoff";
+import { persistLiveSession, markReflectPending } from "./crash-recovery";
 import { createWorkerCore, type PiSessionLike, type WorkerCore } from "./worker-core";
 import type { UsageTracker } from "./usage-tracker";
 
@@ -146,7 +146,9 @@ export async function bootSession(
     modelRuntime: context.modelRuntime,
   });
 
-  lifecycle.setSessionFile((session as unknown as { sessionFile?: string }).sessionFile ?? "");
+  const sessionFilePath = (session as unknown as { sessionFile?: string }).sessionFile ?? "";
+  lifecycle.setSessionFile(sessionFilePath);
+  persistLiveSession(rootDir, sessionFilePath);
 
   const gate = createPermissionGate(
     rootDir,
