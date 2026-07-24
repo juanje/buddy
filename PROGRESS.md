@@ -189,8 +189,8 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 
 | FR-ID | Feature | Status | Commit |
 |-------|---------|--------|--------|
-| FR-COST-02 | Usage panel in Settings (session + monthly) | done | 8ee1992 |
-| FR-COST-03 | Budget warning (80%) + hard limit (100%) with OS notifications | done | 8ee1992 |
+| FR-COST-02 | Usage panel in Settings (session + monthly) | done | a68d228 |
+| FR-COST-03 | Budget warning (80%) + hard limit (100%) with OS notifications | done | a68d228 |
 
 **Tests at E15 close:** 205 unit + 109 BDD green.
 
