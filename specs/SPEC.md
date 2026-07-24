@@ -1140,7 +1140,7 @@ AB remembers the conversation, knows their name, surfaces any pending reminders.
 | Frontmatter parser/writer | Parse valid frontmatter, handle missing fields, handle corruption, preserve body content, update single fields |
 | Deferred parser | Date extraction from markdown, due-date comparison, overdue detection, malformed entry handling |
 | Scheduler counters | Threshold evaluation, cascade depth determination, counter advancement, `hasNewContent` via git diff |
-| Date resolution | Night-owl date logic (`resolveSubjectiveDate`), relative date mapping, timezone handling |
+| Date formatting | ISO day strings, relative date helpers (`addDays`) |
 | Hebbian tracker | Access counting, session dedup, exclusion list, queue/flush cycle, frontmatter field update |
 | Git sync logic | Conflict detection, retry on non-fast-forward, stale lock detection |
 | Consolidation cascade | Ordering of depths, counter reset on success, no advancement on failure |

@@ -26,7 +26,6 @@ import {
   findUpcomingReminders,
   formatHebbianReportBlock,
   formatUpcomingRemindersBlock,
-  resolveSubjectiveDate,
   rotateLogs,
 } from "./consolidation-mechanics";
 import { logEvent } from "./app-logger";
@@ -70,12 +69,12 @@ export function buildConsolidationPrompt(
   now: Date = new Date(),
 ): string {
   const skill = readConsolidationSkill(rootDir);
-  const targetDate = resolveSubjectiveDate(now);
+  const date = toIsoDay(now);
   const hebbianBlock = formatHebbianReportBlock(computeHebbianReport(rootDir, now));
-  const remindersBlock = formatUpcomingRemindersBlock(findUpcomingReminders(rootDir, targetDate));
+  const remindersBlock = formatUpcomingRemindersBlock(findUpcomingReminders(rootDir, date));
 
   return (
-    `Target log date (for file paths only): ${targetDate}\n\n` +
+    `Date: ${date}\n\n` +
     `${remindersBlock}\n\n` +
     `${hebbianBlock}\n\n` +
     `Run consolidation at depth ${depth}.\n\n` +
@@ -177,19 +176,19 @@ export async function runConsolidation(options: RunConsolidationOptions): Promis
 
   try {
     maintenanceSession = await createSession({ rootDir, modelRuntime });
-    const targetDate = resolveSubjectiveDate(now);
+    const date = toIsoDay(now);
 
     for (const depth of cascadeDepths(targetDepth)) {
       const start = Date.now();
       try {
         logEvent(rootDir, { event: "consolidation_start", depth });
         await maintenanceSession.prompt(buildConsolidationPrompt(rootDir, depth, now));
-        const { archived } = rotateLogs(rootDir, targetDate);
+        const { archived } = rotateLogs(rootDir, date);
         if (archived.length > 0) {
           appendDailyLog(
             rootDir,
             {
-              date: targetDate,
+              date,
               sessionHeader: "log rotation",
               sections: `Archived ${archived.length} log files to logs/archive/: ${archived.join(", ")}.`,
               status: "maintenance",
@@ -225,7 +224,7 @@ export async function runConsolidation(options: RunConsolidationOptions): Promis
 
     if (completedDepths.length > 0) {
       const depthLabel = completedDepths.map((d) => `depth-${d}`).join(", ");
-      const maintenanceDate = targetDate;
+      const maintenanceDate = date;
       appendDailyLog(rootDir, {
         date: maintenanceDate,
         sessionHeader: `${now.toISOString().slice(11, 16)} consolidation`,

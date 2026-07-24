@@ -16,7 +16,6 @@ import {
   computeHebbianReport,
   findDatedInboxItems,
   findUpcomingReminders,
-  resolveSubjectiveDate,
   rotateLogs,
 } from "../../backends/consolidation-mechanics";
 
@@ -30,19 +29,6 @@ describe("consolidation mechanics", () => {
   function setupRoot(): void {
     dir = mkdtempSync(join(tmpdir(), "ab-consol-mech-"));
   }
-
-  describe("resolveSubjectiveDate", () => {
-    it("uses yesterday between 00:00 and 04:59", () => {
-      expect(resolveSubjectiveDate(new Date(2026, 6, 24, 0, 0, 0))).toBe("2026-07-23");
-      expect(resolveSubjectiveDate(new Date(2026, 6, 24, 3, 0, 0))).toBe("2026-07-23");
-      expect(resolveSubjectiveDate(new Date(2026, 6, 24, 4, 59, 0))).toBe("2026-07-23");
-    });
-
-    it("uses today from 05:00 onward", () => {
-      expect(resolveSubjectiveDate(new Date(2026, 6, 24, 5, 0, 0))).toBe("2026-07-24");
-      expect(resolveSubjectiveDate(new Date(2026, 6, 24, 6, 0, 0))).toBe("2026-07-24");
-    });
-  });
 
   describe("rotateLogs", () => {
     it("does nothing when at or below threshold", () => {

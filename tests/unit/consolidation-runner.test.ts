@@ -40,12 +40,12 @@ describe("consolidation runner", () => {
   it("builds consolidation prompt from the global skill file", () => {
     setupAb();
     const prompt = buildConsolidationPrompt(dir, 1, new Date("2026-07-22T12:00:00Z"));
-    expect(prompt).toContain("Target log date (for file paths only):");
+    expect(prompt).toContain("Date:");
     expect(prompt).toContain("Run consolidation at depth 1");
     expect(prompt).toContain("Do consolidation.");
     expect(prompt).toContain("Do not run git commands");
     expect(prompt).toContain("Hebbian promotion data (pre-computed):");
-    expect(prompt).toContain("Upcoming items (within 24h of target date):");
+    expect(prompt).toContain("Upcoming items (within 24h of run date):");
   });
 
   it("falls back to legacy rootDir skill file", () => {

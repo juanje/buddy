@@ -13,7 +13,7 @@ import {
 import { join, relative } from "node:path";
 
 import { addDays, toIsoDay } from "../shared/dates";
-import { LOG_ROTATION_THRESHOLD, NIGHT_OWL_HOUR_BOUNDARY } from "../shared/defaults";
+import { LOG_ROTATION_THRESHOLD } from "../shared/defaults";
 import { parseFrontmatter } from "./reflect";
 
 export { LOG_ROTATION_THRESHOLD } from "../shared/defaults";
@@ -43,17 +43,6 @@ export interface HebbianReport {
 export interface UpcomingReminder {
   source: "inbox" | "active-context";
   line: string;
-}
-
-/** Night-owl subjective day for log/journal file paths (00:00–04:59 → previous calendar day). */
-export function resolveSubjectiveDate(now: Date = new Date()): string {
-  const hour = now.getHours();
-  if (hour >= 0 && hour < NIGHT_OWL_HOUR_BOUNDARY) {
-    const yesterday = new Date(now);
-    yesterday.setDate(yesterday.getDate() - 1);
-    return toIsoDay(yesterday);
-  }
-  return toIsoDay(now);
 }
 
 function listLogFiles(logsDir: string): string[] {
@@ -290,10 +279,10 @@ export function findUpcomingReminders(rootDir: string, targetDate: string): Upco
 
 export function formatUpcomingRemindersBlock(reminders: UpcomingReminder[]): string {
   if (reminders.length === 0) {
-    return "Upcoming items (within 24h of target date):\nNo dated items due within 24h.";
+    return "Upcoming items (within 24h of run date):\nNo dated items due within 24h.";
   }
 
-  const lines = ["Upcoming items (within 24h of target date):"];
+  const lines = ["Upcoming items (within 24h of run date):"];
   for (const item of reminders) {
     const label = item.source === "inbox" ? "From inbox" : "From Active context";
     lines.push(`- ${label}: ${item.line}`);

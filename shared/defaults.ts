@@ -40,8 +40,6 @@ export const HEARTBEAT_MIN_TICK_MS = 5_000;
 export const REFLECT_ARGV_FLAG = "--reflect";
 /** Maximum active log files before rotation archives older ones (FR-CONSOL-04). */
 export const LOG_ROTATION_THRESHOLD = 28;
-/** Night-owl subjective-day boundary: hours [0, N) → "still yesterday" for log paths. */
-export const NIGHT_OWL_HOUR_BOUNDARY = 5;
 /** Env var set on spawned reflect children to prevent nested recursion. */
 export const REFLECT_CHILD_ENV_KEY = "AB_REFLECT_CHILD";
 export const REFLECT_CHILD_ENV_VALUE = "1";

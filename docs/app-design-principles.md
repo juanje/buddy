@@ -257,7 +257,6 @@ sometimes forgets or misapplies. In the app, they become **enforced behavior**:
 |---|---|---|
 | Track file access (Hebbian) | Rule: "increment access_count when you consult" | Worker intercepts read tool calls, updates frontmatter |
 | Commit after captures | Rule: "commit regularly" | Worker auto-commits after agent write operations |
-| Resolve night-owl dates | Rule: paragraph explaining the logic | `resolveSubjectiveDate(timestamp, userPrefs)` |
 | Don't read files preemptively | Rule: "access on demand when trigger matches" | Context budget managed by code; agent gets summary, drills on request |
 | Route captures correctly | Rule: "user acts → user/, agent learns → agent_brain/" | Routing validated by permission layer; agent proposes, code verifies path |
 | Session indexing | Rule: "update logs/index.md" | Worker writes index entry automatically on session end and reflect complete |

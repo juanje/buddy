@@ -25,21 +25,6 @@ reflect before consolidating — read what's already in the log.
 
 ---
 
-### Step -1: Confirm the target log date
-
-The consolidation runner has already resolved the user's subjective "today"
-(adjusting for night-owl hours). Look for the line
-"Target log date (for file paths only): YYYY-MM-DD" in the prompt header.
-
-Use that date for all log files, index entries, and journal paths created
-during this run. Do not attempt to resolve the date yourself.
-
-The real calendar date/time is in your system context — use that when
-communicating with the user or reasoning about time. The target log date
-is ONLY for file paths.
-
----
-
 The daily consolidation has two parts: first consolidate (summarize and
 organize the day), then learn (create knowledge, form connections, act on
 mature observations).
@@ -122,7 +107,7 @@ interaction — act or defer.
 #### 4b. Surface reminders
 
 The prompt header includes an "Upcoming items" block listing inbox items
-and Active context deadlines within 24h of the target log date. If items
+and Active context deadlines within 24h of the date in the prompt header. If items
 are listed:
 
 1. For each item, write to `agent_brain/deferred.md`:
