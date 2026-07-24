@@ -49,7 +49,8 @@ Node.js Worker (TypeScript)
     │                └── prompts/ (app-managed, updatable)
     │                     ├── agents-base.md (universal behavior)
     │                     ├── consolidation.md
-    │                     └── process-conversation.md
+    │                     ├── process-conversation.md
+    │                     └── triage-inbox.md
     │
     ▼
 rootDir (git repo — user/agent content only)
@@ -69,6 +70,7 @@ rootDir (git repo — user/agent content only)
 - `excludeTools: ["bash"]` — file operations only, no shell
 - Hook chaining on `beforeToolCall` for permissions; Hebbian tracking via `tool_execution_end` in `session.subscribe()`
 - `DefaultResourceLoader` with assembled system prompt at session start
+- **Skill tools** (FR-SKILL): procedural prompts from `~/.buddy/prompts/` registered as custom tools — the LLM invokes them when needed, worker returns prompt text
 - Separate Pi session for maintenance (consolidation never touches live session)
 - **Global/local split:** Core app assets (`~/.buddy/prompts/`) are app-managed and updatable; `rootDir` contains only instance-specific content owned by user/agent (NFR-PORT-05)
 
@@ -300,8 +302,9 @@ platform-specific install instructions is shown and setup cannot continue.
 |----|-------------|-------|
 | FR-REFLECT-01 | Session-end reflect finalization (daily log append) | 1 ✓ |
 | FR-REFLECT-02 | Forked reflect on session end (primary) | 1 ✓ |
-| FR-REFLECT-03 | Checkpoint mid-session reflect (forked, background) | 1 ✓ |
+| FR-REFLECT-03 | Compaction-triggered checkpoint reflect (fork before Pi compacts) | 2 |
 | FR-REFLECT-04 | Log output sanitizer (strip tool-call artifacts) | 2 ✓ |
+| FR-REFLECT-05 | Session path persistence and crash recovery | 2 |
 
 **FR-REFLECT-01 — Session-end reflect finalization**
 
@@ -322,17 +325,29 @@ platform-specific install instructions is shown and setup cannot continue.
 - **And** the background process: opens the forked session → sends a single user prompt asking for the reflect (Decisions, Lessons, Context, Open threads, Tasks captured, Ideas, System observations) → commits agent file writes immediately → appends a `## Session HH:MM–HH:MM` block to `logs/YYYY-MM-DD.md` (session start date, local calendar day) → rebuilds `logs/index.md` → commits → exits
 - **Design principle — fork-only context:** The forked session already contains the full conversation (all user/assistant turns, tool calls, tool results). The reflect child does NOT load a system prompt, AGENTS.md, identity files, or resource loader — those weren't part of the session and would pollute the context. The only input is a user prompt requesting the structured reflect. Session metadata (date, header) comes from spawn args, not from any intermediate file.
 
-**FR-REFLECT-03 — Checkpoint mid-session reflect (forked, background)**
+**FR-REFLECT-03 — Compaction-triggered checkpoint reflect (fork before Pi compacts)**
 
-- **Given** a session has been running for N messages (configurable, default 15)
-- **Or given** Pi emits a `compaction_start` event (context window about to be compressed)
-- **When** the worker detects the threshold or the compaction event (and there has been activity since the last checkpoint)
-- **Then** the worker forks the current session file and spawns a background child process with mode `checkpoint`
+- **Given** Pi emits a `compaction_start` event (context window about to be compressed)
+- **When** the worker receives the event (and there has been activity since the last checkpoint)
+- **Then** the worker forks the current session file **before** Pi runs compaction and spawns a background child process with mode `checkpoint`
+- **And** Pi's compaction proceeds normally afterward (2 LLM calls per compaction: reflect fork + Pi summary)
 - **And** the child opens the forked session and sends a single user prompt requesting a lightweight encode (Context + Notes sections only) — no system prompt override, no resource loader
 - **And** the child appends a `## Checkpoint HH:MM` block to `logs/YYYY-MM-DD.md` (session start date) using a fast-tier model
 - **And** the user's conversation is never interrupted
-- **And** the session-end reflect (FR-REFLECT-02) produces the comprehensive `## Session HH:MM–HH:MM` entry covering the full session, emphasizing activity since the last checkpoint when checkpoints exist
-- **Note:** Checkpoints are best-effort. The compaction trigger is critical — Pi discards context during compaction. The fork happens BEFORE compaction so the reflect has access to what's about to be lost.
+- **And** the session-end reflect (FR-REFLECT-02) produces the comprehensive `## Session HH:MM–HH:MM` entry covering the final segment since the last checkpoint
+- **Note:** This is the **sole** mid-session reflect trigger. Turn-count checkpoints (`INCREMENTAL_REFLECT_EVERY`) are removed — fork capability makes periodic encoding unnecessary except when context is at risk of loss. The fork happens BEFORE compaction so the reflect has access to full conversation detail that Pi's summary may omit. Mid-session checkpoint output is committed to the daily log and queryable by the agent during the same session.
+
+**FR-REFLECT-05 — Session path persistence and crash recovery**
+
+- **Given** a new Pi session is created on app launch
+- **When** `SessionManager.create(cwd)` succeeds
+- **Then** the worker writes the session file path to `.buddy/consolidation-state.json` immediately (zero LLM cost)
+- **And** the heartbeat may update a last-known timestamp for diagnostics (optional)
+- **Given** the app starts and a stale session is detected (persisted path exists but no reflect completed for that session)
+- **When** boot recovery runs before creating a new live session
+- **Then** the worker forks from the persisted session path and spawns a reflect child (same fork-only pattern as FR-REFLECT-02)
+- **And** after reflect completes (or is skipped if fork unavailable), normal session creation proceeds
+- **Note:** Effective loss window is crash before first disk write (~milliseconds), not 30 minutes. Pre-consolidation: when consolidation is due, reflect the pending session first so the daily log is current, then run the consolidation cascade.
 
 **Reflect architecture summary:**
 
@@ -341,8 +356,14 @@ Normal shutdown:
   app (sync, <100ms): fork session file → spawn child with metadata args → close
   child (async):      open fork → user prompt only (no sys prompt/resources) → LLM reflect → commit agent writes → append ## Session to daily log → commit → exit
 
-Mid-session (every N turns / pre-compaction):
-  worker (sync):      fork session file → spawn child (checkpoint) → continue serving user
+Crash recovery (boot):
+  worker:             detect stale session in consolidation-state.json → fork → reflect child → then create new session
+
+Pre-consolidation:
+  worker:             if session has unreflected activity → fork reflect → wait → then cascade consolidation
+
+Mid-session (compaction_start only):
+  worker (sync):      fork session file → spawn child (checkpoint) → Pi compacts in parallel
   child (async):      open fork → user prompt only → lightweight LLM → append ## Checkpoint to daily log → commit → exit
 
 Spawn mechanism:
@@ -544,6 +565,7 @@ Fork bomb defense:
 - **When** the heartbeat evaluates counters (sessions since last depth-1, depth-1 runs since last depth-2, etc.)
 - **And** thresholds are met and new content exists (verified via `git diff`)
 - **Then** consolidation is triggered at the appropriate depth
+- **And** if the current session has unreflected activity, a reflect runs first (FR-REFLECT-05) so the daily log is current before the maintenance session starts
 
 **FR-CONSOL-02 — Cascade ordering**
 
@@ -642,6 +664,7 @@ Fork bomb defense:
 - **And** it defines: available tools, what's automatic (git, directory creation, session logging), agent limits (no bash, no shell)
 - **And** the instance-specific file (`rootDir/AGENTS.md` or `rootDir/CLAUDE.md`) is appended after it as an overlay
 - **And** if `agents-base.md` and the instance file contradict, the base takes precedence for capability constraints (the model follows the most specific/earliest instruction)
+- **And** skill tools (FR-SKILL-01) are registered on the session so the LLM can invoke procedural prompts without reading files
 - **Note:** This enables updating universal app behavior without modifying user instances. Old AB instances with `CLAUDE.md` containing git/bash references work safely — the base explicitly forbids those capabilities.
 
 ### 3.11 Git Operations (FR-GIT)
@@ -778,8 +801,10 @@ detailed specification: [specs/BRAIN-SPEC.md](BRAIN-SPEC.md).
 | FR-BRAIN-01 | AGENTS.md provides behavioral rules that produce AB behavior | 1 ✓ |
 | FR-BRAIN-02 | SOUL.md defines character and first-session personalization flow | 1 ✓ |
 | FR-BRAIN-03 | USER.md placeholder is correctly populated by agent in first conversation | 1 ✓ |
-| FR-BRAIN-04 | Consolidation skills produce meaningful summaries when invoked | 2 |
+| FR-BRAIN-04 | Consolidation skill produces meaningful summaries when invoked | 2 |
 | FR-BRAIN-05 | Observation pipeline captures and promotes patterns | 2 |
+| FR-BRAIN-06 | AGENTS.md does not declare skills — procedural prompts are skill tools (FR-SKILL) | 2 |
+| FR-BRAIN-07 | Brain health linter (structural checks, worker code) | 2 |
 
 **FR-BRAIN-01 — AGENTS.md behavioral rules**
 
@@ -806,6 +831,27 @@ detailed specification: [specs/BRAIN-SPEC.md](BRAIN-SPEC.md).
 - **Then** the agent addresses the user by name
 - **And** uses their preferred language
 - **And** references context from the first conversation
+
+**FR-BRAIN-06 — AGENTS.md skill-free**
+
+- **Given** skill tools are registered on every session (FR-SKILL-01)
+- **When** the AGENTS.md template is authored
+- **Then** it does NOT declare a "Skills" section pointing to files in `agent_brain/skills/`
+- **And** the LLM discovers procedural capabilities via the tool list descriptions
+- **And** AGENTS.md focuses on: instance rules, active context, "where to find things", behavioral constraints
+- **Note:** Agent-*learned* skills (created from mature observations) may still exist in `agent_brain/skills/` but are invoked naturally from the conversation, not declared as a menu in AGENTS.md.
+
+**FR-BRAIN-07 — Brain health linter (structural checks)**
+
+- **Given** consolidation is about to run (or the check is invoked manually)
+- **When** the worker runs `computeBrainHealthReport()`
+- **Then** it deterministically checks (no LLM):
+  - All `agent_brain/` files have required frontmatter (including `summary` per NFR-FORMAT-01)
+  - Core files exist with correct format (SOUL.md, USER.md, AGENTS.md or CLAUDE.md, deferred.md)
+  - Every directory with more than one file has an `index.md` (documented exceptions: USER.md parent pattern)
+  - Files exceeding size threshold are flagged for potential split
+- **And** the report is injected into the consolidation prompt (same pattern as Hebbian report) or returned to the user if invoked on demand
+- **Note:** Principle 3.2 — list/count/compare is worker code, not LLM judgment. Index generation can be fully programmatic when `summary` fields are present (NFR-FORMAT-01).
 
 **Note:** FR-BRAIN-01 through 03 are Phase 1 prerequisites — the app cannot
 ship without templates that produce correct behavior. These are developed in
@@ -967,6 +1013,71 @@ The native window close (X) already triggers the full shutdown sequence (fork, s
 - **And** synthesizes an answer from stored pages, citing sources
 - **And** the user's knowledge base grows more useful over time
 
+### 3.19 Skills as Tools (FR-SKILL)
+
+Skills are procedural prompts that the agent can invoke. Instead of declaring
+them in `AGENTS.md` and expecting the LLM to read a file from disk, each
+skill is exposed as a **custom tool** via the Pi SDK. When the LLM calls the
+tool, the worker loads the prompt from the bundle and returns it as the tool
+result — the LLM then follows the procedure.
+
+| ID | Description | Phase |
+|----|-------------|-------|
+| FR-SKILL-01 | Skill tools registered at session creation | 2 |
+| FR-SKILL-02 | process_conversation tool for manual reflect | 2 |
+| FR-SKILL-03 | triage_inbox tool for inbox processing | 2 |
+| FR-SKILL-04 | Reflect child uses bundled process-conversation prompt | 2 |
+| FR-SKILL-05 | Consolidation invokes triage via tool call | 3 |
+
+**FR-SKILL-01 — Skill tools registered at session creation**
+
+- **Given** a chat session is being created
+- **When** the worker registers tools with the Pi session
+- **Then** each skill in `~/.buddy/prompts/` that has a tool descriptor (name, description, when to use) is registered as a custom tool
+- **And** the tool has no input parameters — it's an invocation, not a function
+- **And** the tool result is the full text of the skill prompt
+- **And** after receiving the prompt, the LLM follows it as a procedure within the current session context
+
+**FR-SKILL-02 — process_conversation tool (manual reflect)**
+
+- **Given** the user says "reflect", "save the conversation", or similar
+- **When** the LLM decides to invoke the `process_conversation` tool
+- **Then** the worker returns the content of `process-conversation.md` from the bundle
+- **And** the LLM executes it: reviews the conversation, writes to the daily log, verifies captures, detects observations
+- **Note:** This replaces the old pattern where AGENTS.md pointed to `agent_brain/skills/process-conversation.md` and the LLM had to read it with a file tool call.
+
+**FR-SKILL-03 — triage_inbox tool (inbox processing)**
+
+- **Given** the user says "triage", "process inbox", "what should I work on?"
+- **Or given** the consolidation LLM reaches Step 4 of the consolidation procedure
+- **When** the LLM decides to invoke the `triage_inbox` tool
+- **Then** the worker returns the content of `triage-inbox.md` from the bundle
+- **And** the LLM executes it: processes Capture, reviews Next Actions, does hygiene, reports back
+
+**FR-SKILL-04 — Reflect child uses bundled process-conversation prompt**
+
+- **Given** a session ends and the reflect child is spawned
+- **When** the child builds its user prompt for the forked session
+- **Then** it loads `process-conversation.md` from the bundle (same prompt as FR-SKILL-02)
+- **And** sends it as the user message instead of the current hardcoded `reflect-prompts.ts`
+- **Note:** This ensures automatic reflect and manual reflect use the same procedure. The forked session already carries full conversation context, so the prompt works identically.
+
+**FR-SKILL-05 — Consolidation invokes triage via tool call (future)**
+
+- **Given** the consolidation skill (Step 4) tells the LLM to triage the inbox
+- **When** the consolidation maintenance session has skill tools registered
+- **Then** the LLM calls the `triage_inbox` tool instead of reading a file from disk
+- **And** the triage prompt is always the latest bundled version
+- **Note:** Phase 3 — currently the consolidation skill says "Read agent_brain/skills/triage-inbox.md" which works because the file exists in the instance. Converting this to a tool call removes the file dependency.
+
+**Design principles:**
+
+- **Single source of truth:** Every skill prompt lives in `bundled/prompts/` only. No copies in the instance.
+- **Always up to date:** App updates bring new prompt versions; no migration needed for instance files.
+- **No read-then-execute overhead:** One tool call vs. two (read file + follow it).
+- **Discoverable by the LLM:** Tools have a description field; the LLM knows when to use them from the tool list, not from reading a section of AGENTS.md.
+- **User-created skills stay in the instance:** `agent_brain/skills/` continues to exist for skills the agent creates from mature observations during consolidation. Those are agent-authored, not app-managed.
+
 ---
 
 ## 4. Non-Functional Requirements
@@ -1010,7 +1121,13 @@ The native window close (X) already triggers the full shutdown sequence (fork, s
 | NFR-PORT-02 | The AB repo works in Cursor or Claude Code with basic functionality via AGENTS.md as fallback |
 | NFR-PORT-03 | The app never overwrites AGENTS.md — user customizations are preserved |
 | NFR-PORT-04 | Platform artifacts (`.cursor/`, `.codex/`, `.claude/`) in imported instances are ignored |
-| NFR-PORT-05 | Core app prompts live in `~/.buddy/prompts/`, not inside rootDir. App updates refresh these files without touching user content. Instances never need migration for prompt changes. |
+| NFR-PORT-05 | Core app prompts live in `~/.buddy/prompts/`, not inside rootDir. On any app semver change (major, minor, or patch), bundled prompts overwrite `~/.buddy/prompts/` (see NFR-MIGRATE-06). User content in rootDir is never touched. |
+
+### 4.4.1 File Format (NFR-FORMAT)
+
+| ID | Requirement |
+|----|-------------|
+| NFR-FORMAT-01 | All `agent_brain/` files include a `summary` field in YAML frontmatter — one line describing what the file contains and when the agent should read it (progressive disclosure). New files are created with `summary`; existing files are updated incrementally during consolidation. Directory indexes can be rebuilt programmatically from `summary` + filename without LLM calls. Index entries must not expose raw metadata (access_count, last_accessed) — only semantic descriptions useful for read-or-skip decisions. |
 
 ### 4.5 Privacy
 
@@ -1055,6 +1172,7 @@ The native window close (X) already triggers the full shutdown sequence (fork, s
 | NFR-MIGRATE-03 | Each migration is an idempotent function `migrate_N_to_N+1()` that transforms `~/.buddy/` state from schema N to schema N+1. Migrations run in order and never skip intermediate versions. |
 | NFR-MIGRATE-04 | After all migrations succeed, `~/.buddy/version` is updated atomically to the new schema version. If a migration fails, the version file is NOT updated — the migration retries on next boot. |
 | NFR-MIGRATE-05 | Migrations must not require user interaction — they run silently during boot before the UI is shown. If a migration cannot complete silently (future: breaking config format change), it writes a marker and the UI surfaces a one-time explanation. |
+| NFR-MIGRATE-06 | On boot, compare app semver (from Tauri/Cargo package version) with `last_app_version` in `~/.buddy/config.json`. If different, copy all files from `bundled/prompts/` to `~/.buddy/prompts/` and update `last_app_version`. Orthogonal to schema integer migrations (NFR-MIGRATE-01..05): prompt refresh triggers on any semver bump; schema migrations trigger only on structural `~/.buddy/` changes. |
 
 **Schema version history (maintained as migrations are added):**
 
@@ -1069,6 +1187,13 @@ The native window close (X) already triggers the full shutdown sequence (fork, s
 - **Sequential, not declarative:** Migrations run in strict order (0→1→2→…). This guarantees that each migration can assume the exact state left by the previous one, preventing combinatorial complexity.
 - **Idempotent:** If interrupted, re-running the same migration produces the correct end state (e.g., file writes use create-or-overwrite, not append).
 - **Scope:** Migrations apply to `~/.buddy/` (global config directory). Per-instance (`rootDir`) changes are handled differently — the app adapts to what it finds (backward compat), not by migrating user repos.
+- **Prompt refresh vs schema migration:** Schema integer (`~/.buddy/version`) handles structural changes only. Prompt content updates use app semver comparison (`last_app_version` in `config.json`) — any version bump refreshes `~/.buddy/prompts/` from bundled files (NFR-MIGRATE-06). Many app releases may share the same schema version but still ship prompt fixes.
+
+### 4.10 Housekeeping (NFR-MAINT)
+
+| ID | Requirement |
+|----|-------------|
+| NFR-MAINT-01 | Delete `.buddy/logs/*.jsonl` session event logs older than 7 days (configurable via `SESSION_LOG_RETENTION_DAYS` in `shared/defaults.ts`). Run on app boot or heartbeat housekeeping. Episodic value is already in daily logs after reflect/consolidation; raw JSONL is debug-only. |
 
 ---
 

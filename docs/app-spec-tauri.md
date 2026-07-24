@@ -123,6 +123,11 @@ import { RPCChannel, NodeIo } from "kkrpc";
 // Shared API type (used by both frontend and worker)
 import type { WorkerAPI, FrontendAPI } from "../shared/api";
 
+// --- Boot (before session) ---
+// 1. ensureSchema() — NFR-MIGRATE-01..05 (integer ~/.buddy/version)
+// 2. refreshPromptsIfVersionChanged() — NFR-MIGRATE-06 (semver → ~/.buddy/prompts/)
+// 3. pruneSessionLogs() — NFR-MAINT-01 (delete .buddy/logs/*.jsonl older than 7 days)
+
 // --- Pi Session Setup ---
 
 const AB_DIR = process.env.AB_DIR || "~/buddy";
@@ -146,6 +151,7 @@ const { session } = await createAgentSession({
     resourceLoader,
     excludeTools: ["bash"],  // file-only tool set (security decision)
     tools: ["read", "write", "edit", "grep", "find", "ls"],  // explicit activation (SDK default is only read/write/edit)
+    customTools: buildSkillTools(promptsDir),  // FR-SKILL: procedural prompts as callable tools
     cwd: AB_DIR,
 });
 
@@ -288,6 +294,60 @@ const { session } = await createAgentSession({
     cwd: AB_DIR,
 });
 ```
+
+### Skill Tools (FR-SKILL)
+
+Procedural prompts (process-conversation, triage-inbox) are registered as
+custom tools on the Pi session. When the LLM invokes a skill tool, the worker
+reads the corresponding file from `~/.buddy/prompts/` and returns its content
+as the tool result. The LLM then follows the procedure in-context.
+
+```typescript
+// backends/skill-tools.ts
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
+
+interface SkillDescriptor {
+    name: string;
+    description: string;
+    promptFile: string;
+}
+
+const SKILL_REGISTRY: SkillDescriptor[] = [
+    {
+        name: "process_conversation",
+        description: "Reflect on the current conversation: extract decisions, lessons, context, tasks, ideas, and observations. Use when the user asks to save/reflect/capture the session.",
+        promptFile: "process-conversation.md",
+    },
+    {
+        name: "triage_inbox",
+        description: "Process the GTD inbox: handle captures, review next actions, clean up stale items. Use when the user says 'triage', 'process inbox', or 'what should I work on?'",
+        promptFile: "triage-inbox.md",
+    },
+];
+
+export function buildSkillTools(promptsDir: string) {
+    return SKILL_REGISTRY.map((skill) => ({
+        name: skill.name,
+        description: skill.description,
+        inputSchema: { type: "object", properties: {} },
+        handler: async () => {
+            const content = await readFile(join(promptsDir, skill.promptFile), "utf-8");
+            return { result: content };
+        },
+    }));
+}
+```
+
+**Why tools instead of file reads:**
+
+- **Single source of truth:** Prompt lives in bundle only — no instance copy to synchronize.
+- **Always current:** App update ships new prompts; the LLM always gets the latest version.
+- **One call vs two:** LLM calls the tool → gets prompt. No need to first read a file.
+- **Discoverable:** The tool description tells the LLM *when* to use it; no need for
+  an AGENTS.md "Skills" section listing files.
+- **Same prompt for auto and manual:** `reflect-child` loads the same `process-conversation.md`
+  that the manual tool returns (FR-SKILL-04).
 
 ### 3. Shared API Types (TypeScript)
 
@@ -468,6 +528,10 @@ to consolidate, not at a calendar slot.
 - Track usage counters: sessions completed, new content (git diff)
 - Evaluate whether consolidation is due on every heartbeat tick + app start
 - Trigger consolidation via separate Pi session (depth >= 1)
+- Persist live session file path in `.buddy/consolidation-state.json` at session
+  create; heartbeat may refresh last-known timestamp for diagnostics
+- Prune `.buddy/logs/*.jsonl` older than 7 days on boot and heartbeat
+  (`pruneSessionLogs()`, NFR-MAINT-01)
 
 **Counter model:**
 
@@ -508,6 +572,9 @@ setInterval(async () => {
     const due = parseDeferredItems(content).filter(isDue);
     if (due.length) frontendApi.onDeferredDue(due);
 
+    // Session log housekeeping — delete .buddy/logs/*.jsonl older than 7 days (NFR-MAINT-01)
+    await pruneSessionLogs(AB_DIR);
+
     // Consolidation check — evaluate counters
     await evaluateConsolidation();
 }, HEARTBEAT_INTERVAL);
@@ -545,10 +612,15 @@ async function runConsolidation(targetDepth: number, state: ConsolidationState) 
     if (!lock) return;
 
     try {
+        // Pre-compute reports for consolidation prompt (worker code, no LLM)
+        const hebbianReport = await computeHebbianReport(AB_DIR);
+        const brainHealthReport = await computeBrainHealthReport(AB_DIR);
+        const upcomingReminders = await findUpcomingReminders(AB_DIR);
+
         // Cascade: run lower depths first if needed
         for (let d = 1; d <= targetDepth; d++) {
             if (isDepthDue(d, state)) {
-                await runSingleDepth(d);
+                await runSingleDepth(d, { hebbianReport, brainHealthReport, upcomingReminders });
                 logRun(d, "success");
                 advanceCounters(state, d);
             }
@@ -601,6 +673,21 @@ Reflects run in separate processes and do not block the user session.
 
 **Run journal:** Each consolidation run is logged to
 `AB_DIR/.buddy/consolidation-log.json`:
+
+**Brain health report** (`backends/brain-health.ts`, FR-BRAIN-07):
+
+```typescript
+interface BrainHealthReport {
+    missingHeaders: string[];   // files without required frontmatter (incl. summary)
+    missingIndexes: string[];   // dirs with >1 file and no index.md
+    coreMissing: string[];      // SOUL.md, USER.md, AGENTS.md, deferred.md
+    oversizedFiles: string[];   // files exceeding line threshold — split candidates
+}
+```
+
+Computed deterministically before consolidation (same injection pattern as
+`computeHebbianReport()`). Index rebuild can use `summary` frontmatter fields
+without LLM calls (NFR-FORMAT-01).
 
 ```json
 [
@@ -724,14 +811,32 @@ Spawn mechanism:
   prod: spawn(process.execPath, ["--reflect", ...]) — same binary, argv dispatch
 ```
 
-**Checkpoint reflect (mid-session):** Every N messages (configurable, default 15)
-or on `compaction_start`, the worker forks the current session and spawns a
-background child process with mode `checkpoint`. The child opens the fork and
-sends a single user prompt (Context + Notes only) — no system prompt, no
+**Crash recovery (boot):** If `.buddy/consolidation-state.json` contains a
+session path with no completed reflect, the worker forks and spawns a reflect
+child before creating the new live session. Session path is persisted at session
+create (not only on heartbeat).
+
+**Checkpoint reflect (mid-session):** On `compaction_start` only — the worker
+forks the current session **before** Pi compacts and spawns a background child
+process with mode `checkpoint`. Pi's compaction proceeds in parallel (reflect
+fork + Pi summary = 2 LLM calls per compaction event). The child opens the fork
+and sends a single user prompt (Context + Notes only) — no system prompt, no
 resource loader. Uses a fast-tier model. Appends a `## Checkpoint HH:MM` block
 to `logs/YYYY-MM-DD.md`. The user's conversation is never interrupted.
+Turn-count checkpoints (`INCREMENTAL_REFLECT_EVERY`) are removed — compaction
+is the signal that context detail is at risk.
+
+**Pre-consolidation reflect:** When consolidation is due and the live session
+has unreflected activity, reflect runs first so the daily log is current, then
+the consolidation cascade proceeds.
+
 Session-end reflect produces the comprehensive `## Session HH:MM–HH:MM` entry
-(emphasizing activity since the last checkpoint when checkpoints exist).
+covering the final segment since the last checkpoint (if any).
+
+**Mid-session visibility:** Checkpoint and session-end reflects commit to the
+daily log immediately. During long sessions the agent can read files created or
+updated by reflect output (decisions captured, tasks written) without waiting
+for session end.
 
 **Key design principle:** The fork IS the context. The forked session file
 contains the full conversation (all user/assistant turns, tool calls, tool
@@ -1011,6 +1116,16 @@ the file has YAML frontmatter with `access_count`. If so:
 2. Update `last_accessed` to today's date
 3. Queue the frontmatter update (don't write immediately — see race handling)
 4. Pass the file content through to the LLM unchanged
+
+**Frontmatter fields:**
+
+| Field | Updated by | Purpose |
+|-------|------------|---------|
+| `summary` | Agent at create / consolidation | Progressive disclosure; programmatic indexes (NFR-FORMAT-01) |
+| `access_count`, `last_accessed` | Hebbian read hook | Promotion/demotion signal |
+| `created` | Agent at create | Provenance |
+
+The Hebbian hook never writes `summary` — only `access_count` and `last_accessed`.
 
 ```typescript
 // backends/hebbian.ts

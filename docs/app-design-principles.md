@@ -91,6 +91,11 @@ decision:
 capability — not arbitrary execution. The user sees "AB can read your calendar"
 as a clear, authorized capability they can enable/disable.
 
+**Procedural skills** (process-conversation, triage-inbox) are also custom
+tools — zero-input tools whose result is a prompt the LLM follows. Same
+mechanism, same registration, but the "capability" is cognitive rather than
+external (FR-SKILL).
+
 ### Security: persistent injection threat model
 
 The distinctive risk for a memory-writing agent is **persistence**: a document
@@ -218,6 +223,7 @@ maintained by code, not by the LLM).
 | Observations | Markdown (structured sections) | The user should see what patterns AB is tracking |
 | Deferred items | Markdown (with parseable date markers) | User can edit/add items in any editor |
 | Hebbian metadata | YAML frontmatter in each file | Visible in every file; code updates it silently |
+| Brain file summaries | YAML `summary` in frontmatter | Progressive disclosure; indexes built programmatically |
 | App config | JSON (`~/.buddy/config.json`) | Standard, readable, editable |
 | Scheduler state | JSON | Operational; user rarely needs to inspect |
 
@@ -226,6 +232,7 @@ maintained by code, not by the LLM).
 - No binary formats for memory state
 - Frontmatter-with-markdown is the universal format: machine-parseable header + human-readable body
 - Code reads/writes the frontmatter; the LLM reads/writes the body
+- **Canonical brain file frontmatter:** `summary` (one-line progressive-disclosure hint), `created`, `last_accessed`, `access_count` — see NFR-FORMAT-01. `summary` is structural metadata for indexes and search, not a Hebbian field.
 - The system remains fully functional if you move it to another tool that reads markdown files
 
 **Portability test:** "Can I take this directory, open it in Cursor with the
@@ -276,6 +283,10 @@ These cannot become code — they need the LLM's reasoning:
 - How to interact with the user (tone, depth, pushback)
 - Whether something is a task vs context vs idea
 - When to ask vs when to act
+
+These capabilities are delivered as **procedural prompts** via skill tools
+(FR-SKILL). The *when* is code (tool registration + description); the *how*
+is the prompt content the LLM receives when it invokes the tool.
 
 ---
 
@@ -343,6 +354,8 @@ checks if daily ran and does it first" — that's worker logic now.
 - Session state (in-progress, completed, failed)
 - Auto-commit after consolidation
 - Log the run in the session index
+- Prune `.buddy/logs/*.jsonl` older than retention threshold (NFR-MAINT-01)
+- Brain health scan (`computeBrainHealthReport()`, FR-BRAIN-07) before consolidation
 
 ### What the LLM handles (judgment, uses tokens)
 
@@ -386,6 +399,22 @@ The worker intercepts every `read` tool call. If the file has frontmatter with
 **The frontmatter stays human-visible.** Anyone can open a file and see
 `access_count: 12, last_accessed: 2026-07-18` right at the top.
 
+**`summary` is not Hebbian metadata.** The `summary` field (NFR-FORMAT-01)
+describes file content for progressive disclosure and programmatic index
+generation. It is written at file creation or updated during consolidation —
+not by read hooks. Hebbian hooks only touch `access_count` and `last_accessed`.
+
+### Brain health linter
+
+Deterministic structural checks before consolidation (FR-BRAIN-07):
+- Missing required frontmatter (including `summary`)
+- Missing core files or malformed structure
+- Directories with >1 file lacking `index.md`
+- Oversized files flagged for split consideration
+
+Worker produces a `BrainHealthReport` injected into the consolidation prompt
+(like the Hebbian access report). No LLM tokens for the scan itself.
+
 ---
 
 ## Rethinking the file structure
@@ -415,17 +444,18 @@ app-managed). Instance content lives in `rootDir` (user/agent-owned).
   prompts/                 ← core prompts (updated with the app)
     agents-base.md         ← universal behavior (tools, limits, automatic ops)
     consolidation.md       ← consolidation procedure
-    process-conversation.md← reflect format
+    process-conversation.md← reflect/manual session capture
+    triage-inbox.md        ← GTD inbox triage procedure
 
 rootDir/                   ← git repo, user/agent content
-  AGENTS.md                ← instance-specific: skills, routing, conventions
+  AGENTS.md                ← instance-specific: routing, active context, rules
   agent_brain/             ← agent's space
     identity/
       SOUL.md              ← character, never auto-modified
       USER.md              ← user profile, updated by agent silently (Zone 1)
     concepts/
     projects/
-    skills/                ← user/agent-created skills (not core prompts)
+    skills/                ← agent-learned skills (from mature observations)
     ideas/
     observations.md        ← structured sections
     deferred.md            ← parseable date markers
@@ -452,9 +482,15 @@ rootDir/                   ← git repo, user/agent content
 
 **System prompt layering:**
 1. `~/.buddy/prompts/agents-base.md` — tools, limits, automatic behaviors
-2. `rootDir/AGENTS.md` (or `CLAUDE.md`) — instance skills, routing, active context
+2. `rootDir/AGENTS.md` (or `CLAUDE.md`) — instance rules, routing, active context
 3. Identity files (SOUL.md, USER.md)
 4. Dynamic context (date, logs/index, last session, deferred items)
+
+**Skill tools:** Core procedural skills (process-conversation, triage-inbox)
+are registered as custom tools on the Pi session. When the LLM calls them, the
+worker returns the prompt text from `~/.buddy/prompts/`. The LLM follows it as
+a procedure within the current context. This replaces the old pattern of
+declaring skills in AGENTS.md and having the LLM read files with tool calls.
 
 The base takes precedence for capability constraints. Old `CLAUDE.md` files
 that mention git commands or bash are overridden by the base's explicit "No
@@ -509,11 +545,29 @@ again would double-inject, and loading a *different* system prompt (e.g. a
 "reflect agent" persona) would pollute the context the model is summarizing.
 The reflect prompt goes as a user message — simple continuation.
 
-**Incremental reflect** during long sessions (every N messages, configurable
-via `INCREMENTAL_REFLECT_EVERY` in `shared/defaults.ts`):
-- Worker forks the session and spawns a checkpoint child (same fork-only pattern)
-- Uses a **cheaper model** (or lower thinking level) — checkpoints are encoding, not deep analysis
+**Incremental reflect** on `compaction_start` only (Jul 24 redesign — no turn-count
+trigger):
+- Pi emits `compaction_start` when context exceeds threshold — the signal that
+  detail is about to be lost to summarization
+- Worker forks the session and spawns a checkpoint child **before** Pi compacts
+  (same fork-only pattern); Pi's compaction runs normally afterward
+- Uses a **cheaper model** (or lower thinking level) — checkpoints are encoding,
+  not deep analysis
 - Session-end reflect uses the configured model at full depth
+- **Cost:** zero mid-session LLM calls unless compaction actually triggers
+  (typically 0–2 per long session). Replaces editor-AB turn-count checkpoints
+  that existed because cold-transcript reflect had no fork capability.
+- **Mid-session visibility:** checkpoint output is committed to the daily log;
+  the agent can read files created or modified during the session after reflect.
+
+**Session path persistence:** On session create, the worker writes the Pi session
+file path to `.buddy/consolidation-state.json` (one disk write, no LLM). Crash
+recovery on next boot forks from the persisted path. Pre-consolidation reflect
+runs before the consolidation cascade when the session has unreflected activity.
+
+**Why not custom compaction (Option C)?** Pi's compaction summary is optimized
+for agent continuity post-compaction. Replacing it risks degrading in-session
+behavior; fork-before-compact captures episodic detail without touching Pi's flow.
 
 ---
 
@@ -623,13 +677,19 @@ marker enables safe, automatic migration without user interaction.
 1. Read ~/.buddy/version (default 0 if missing)
 2. Compare with APP_SCHEMA_VERSION (compile-time constant)
 3. If behind: run migrations sequentially (0→1, 1→2, …)
-4. Write new version (only after all migrations succeed)
-5. Continue normal startup (session creation, prompt assembly, etc.)
+4. Write new schema version (only after all migrations succeed)
+5. Compare app semver with last_app_version in ~/.buddy/config.json
+6. If different: overwrite ~/.buddy/prompts/ from bundled/prompts/; update last_app_version
+7. Continue normal startup (session creation, prompt assembly, etc.)
 ```
 
-Migrations run **before any session starts** — the worker can assume `~/.buddy/`
-is in the expected state by the time it assembles a system prompt or spawns a
-consolidation session.
+Steps 1–4 handle **structural** migrations (integer schema). Steps 5–6 handle
+**prompt content** refresh on any app version change — orthogonal to schema
+version. A release can bump semver with prompt fixes but no schema migration.
+
+Migrations and prompt refresh run **before any session starts** — the worker
+can assume `~/.buddy/` is in the expected state by the time it assembles a
+system prompt or spawns a consolidation session.
 
 ### Migration contract
 
@@ -662,7 +722,7 @@ This preserves the principle that rootDir belongs to the user/agent.
 
 | Schema | Migration | What it does |
 |--------|-----------|--------------|
-| 0→1 | `migrate_0_to_1` | Create `~/.buddy/prompts/`; write `agents-base.md`, `consolidation.md`, `process-conversation.md` from embedded content. |
+| 0→1 | `migrate_0_to_1` | Create `~/.buddy/prompts/`; write `agents-base.md`, `consolidation.md`, `process-conversation.md`, `triage-inbox.md` from embedded content. |
 
 ### Why this matters for the future
 
