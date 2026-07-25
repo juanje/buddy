@@ -126,8 +126,8 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 |-------|---------|--------|--------|
 | FR-PROMPT-03 | Global base prompt (agents-base.md from ~/.buddy/prompts/) | done | 7a4f405 |
 | NFR-PORT-05 | Core prompts in ~/.buddy/ (not rootDir) | done | 7a4f405 |
-| NFR-CONFIG-04 | Core prompts populated via schema migration | done | 7a4f405 |
-| NFR-MIGRATE-01..05 | Schema versioning + migration system | done | 7a4f405 |
+| NFR-CONFIG-04 | Core prompts and docs populated via boot refresh | done | (unify) |
+| NFR-MIGRATE-01..05 | *Superseded* — integer schema migrations removed | — | (unify) |
 | FR-SETUP-04 | Native directory picker in wizard (Browse button) | done | 72ba219 |
 | FR-SETUP-10 | Import auth verification (re-auth if credentials missing) | done | 72ba219 |
 | — | Settings re-auth prompt when configured provider lacks auth | done | 72ba219 |
@@ -283,7 +283,7 @@ Issue #8 (physical brain file grouping) resolved in E16 via FR-CONSOL-07.
 |-------|---------|--------|--------|
 | FR-REFLECT-03 | Compaction-only checkpoint trigger (turn count removed) | done | fd5ee21 |
 | FR-REFLECT-05 | Session persistence + crash recovery | done | bfa505a |
-| NFR-MIGRATE-06 | Prompt refresh on app version change | done | 7845c28 |
+| NFR-MIGRATE-06 | Boot refresh on app version change (prompts + docs deploy) | done | (unify) |
 | NFR-MAINT-01 | Session log retention (7-day prune) | done | 7845c28 |
 
 ### Sprint: Settings access UI — DONE (2026-07-22)

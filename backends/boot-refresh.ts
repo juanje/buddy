@@ -1,10 +1,10 @@
-// backends/prompt-refresh.ts — Prompt refresh on app semver change (NFR-MIGRATE-06).
+// backends/boot-refresh.ts — Boot refresh on app semver change (NFR-MIGRATE-06).
 
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { APP_VERSION } from "./app-version";
-import { migrate_0_to_1 } from "./migrations/migrate-0-to-1";
+import { deployBundledGlobalContent } from "./deploy-bundled-content";
 
 interface BuddyConfigRecord {
   last_app_version?: string;
@@ -21,10 +21,10 @@ function readConfig(configPath: string): BuddyConfigRecord {
 }
 
 /**
- * Overwrite ~/.buddy/prompts/ from bundled prompts when app semver changes.
- * Orthogonal to integer schema migrations (NFR-MIGRATE-01..05).
+ * Deploy bundled ~/.buddy/ content when app semver changes (or on fresh install).
+ * Single boot-time gate for prompts, docs, and future one-shot migrations.
  */
-export function refreshPromptsIfNeeded(
+export function bootRefreshIfNeeded(
   configDir: string,
   appVersion: string = APP_VERSION,
 ): boolean {
@@ -32,8 +32,11 @@ export function refreshPromptsIfNeeded(
   const config = readConfig(configPath);
   if (config.last_app_version === appVersion) return false;
 
-  migrate_0_to_1(configDir);
+  deployBundledGlobalContent(configDir);
   config.last_app_version = appVersion;
-  writeFileSync(configPath, JSON.stringify(config, null, 2) + "\n");
+  writeFileSync(configPath, JSON.stringify(config, null, 2) + "\n", "utf8");
   return true;
 }
+
+/** @deprecated Use bootRefreshIfNeeded — kept for incremental test migration. */
+export const refreshPromptsIfNeeded = bootRefreshIfNeeded;

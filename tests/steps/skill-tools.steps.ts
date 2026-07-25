@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import { join } from "node:path";
 import type { ToolDefinition } from "@earendil-works/pi-coding-agent";
 
-import { ensureSchema } from "../../backends/schema-migration";
+import { bootRefreshIfNeeded } from "../../backends/boot-refresh";
 import { buildSkillTools, executeSkillTool } from "../../backends/skill-tools";
 import { setupGlobalConfigDir, teardownGlobalConfigDir } from "../support/global-config";
 import type { AbWorld } from "../support/world";
@@ -22,7 +22,7 @@ After(function (this: SkillToolsWorld) {
 
 Given("the app is running with skill tools", function (this: SkillToolsWorld) {
   ({ configDir: this.globalConfigDir } = setupGlobalConfigDir());
-  ensureSchema(this.globalConfigDir);
+  bootRefreshIfNeeded(this.globalConfigDir, "0.0.0-test");
 
   const promptsDir = join(this.globalConfigDir, "prompts");
   this.skillTools = buildSkillTools(promptsDir);

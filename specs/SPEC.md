@@ -992,7 +992,7 @@ The native window close (X) already triggers the full shutdown sequence (fork, s
 
 **FR-DOCS-01 — Self-documentation KB**
 
-- **Given** the app is installed and `~/.buddy/docs/` is populated (via schema migration / prompt refresh)
+- **Given** the app is installed and `~/.buddy/docs/` is populated (via boot refresh on version change)
 - **When** the agent needs to explain what it is, how it works, or what it can do
 - **Then** it consults `~/.buddy/docs/index.md` first (progressive disclosure), then reads specific pages as needed
 - **And** `~/.buddy/docs/` is Zone 1 for reads (silent allow — product documentation, not user data)
@@ -1271,7 +1271,7 @@ result — the LLM then follows the procedure.
 | NFR-PORT-02 | The buddy repo works in Cursor or Claude Code with basic functionality via AGENTS.md as fallback |
 | NFR-PORT-03 | The app never overwrites AGENTS.md — user customizations are preserved |
 | NFR-PORT-04 | Platform artifacts (`.cursor/`, `.codex/`, `.claude/`) in imported instances are ignored |
-| NFR-PORT-05 | Core app prompts live in `~/.buddy/prompts/`, not inside rootDir. On any app semver change (major, minor, or patch), bundled prompts overwrite `~/.buddy/prompts/` (see NFR-MIGRATE-06). User content in rootDir is never touched. |
+| NFR-PORT-05 | Core app prompts live in `~/.buddy/prompts/`, not inside rootDir. On any app semver change (major, minor, or patch), bundled content overwrites `~/.buddy/prompts/` and `~/.buddy/docs/` (see NFR-MIGRATE-06). User content in rootDir is never touched. |
 
 ### 4.4.1 File Format (NFR-FORMAT)
 
@@ -1311,33 +1311,37 @@ result — the LLM then follows the procedure.
 | NFR-CONFIG-01 | All operational defaults (thresholds, timeouts, intervals) centralized in a single `shared/defaults.ts` — no magic numbers scattered across the codebase |
 | NFR-CONFIG-02 | User-tunable settings (reflect interval, model, language) persisted in `.buddy/settings.json` and editable from the settings UI |
 | NFR-CONFIG-03 | Security-critical constants (denylist paths, excluded tools) centralized in `shared/defaults.ts` alongside operational defaults — not configurable by user or agent, but readable in one place for maintenance |
-| NFR-CONFIG-04 | Core prompts (`~/.buddy/prompts/`) are populated via the schema migration system (NFR-MIGRATE). The app ensures this directory exists before any session starts. |
+| NFR-CONFIG-04 | Core prompts (`~/.buddy/prompts/`) and self-docs (`~/.buddy/docs/`) are populated via boot refresh (NFR-MIGRATE-06). The app ensures these directories exist before any session starts. |
 
-### 4.9 Schema Migration (NFR-MIGRATE)
+### 4.9 Boot Refresh and Migration (NFR-MIGRATE)
 
 | ID | Requirement |
 |----|-------------|
-| NFR-MIGRATE-01 | `~/.buddy/version` contains a single integer representing the installed schema version. Default: `0` when the file is absent (fresh install). |
-| NFR-MIGRATE-02 | The app embeds a compile-time constant `APP_SCHEMA_VERSION` (monotonically increasing integer). On boot, if the file version is lower than the embedded version, sequential migrations run before any session starts. |
-| NFR-MIGRATE-03 | Each migration is an idempotent function `migrate_N_to_N+1()` that transforms `~/.buddy/` state from schema N to schema N+1. Migrations run in order and never skip intermediate versions. |
-| NFR-MIGRATE-04 | After all migrations succeed, `~/.buddy/version` is updated atomically to the new schema version. If a migration fails, the version file is NOT updated — the migration retries on next boot. |
-| NFR-MIGRATE-05 | Migrations must not require user interaction — they run silently during boot before the UI is shown. If a migration cannot complete silently (future: breaking config format change), it writes a marker and the UI surfaces a one-time explanation. |
-| NFR-MIGRATE-06 | On boot, compare app semver (from Tauri/Cargo package version) with `last_app_version` in `~/.buddy/config.json`. If different, copy all files from `bundled/prompts/` to `~/.buddy/prompts/` and update `last_app_version`. Orthogonal to schema integer migrations (NFR-MIGRATE-01..05): prompt refresh triggers on any semver bump; schema migrations trigger only on structural `~/.buddy/` changes. |
+| NFR-MIGRATE-01..05 | *Superseded* — integer `~/.buddy/version` schema migrations removed. Single semver mechanism (NFR-MIGRATE-06) handles all boot-time updates. |
+| NFR-MIGRATE-06 | On boot, compare app semver (from `package.json` / Tauri version) with `last_app_version` in `~/.buddy/config.json`. If `config.json` is absent, `last_app_version` is absent, or semver differs: deploy all bundled global content to `~/.buddy/` (overwrite `prompts/` and `docs/` from embedded/bundled sources), then set `last_app_version` to the current semver. Runs silently before any session starts. No separate version file. |
 
-**Schema version history (maintained as migrations are added):**
+**What gets deployed on refresh:**
 
-| Version | Migration | Description |
-|---------|-----------|-------------|
-| 1 | `migrate_0_to_1` | Create `~/.buddy/prompts/`; populate `agents-base.md`, `consolidation.md`, `process-conversation.md` from embedded templates. |
+- `~/.buddy/prompts/` — `agents-base.md`, `consolidation.md`, `process-conversation.md`, `triage-inbox.md`
+- `~/.buddy/docs/` — self-documentation KB (`index.md`, topic pages)
+
+**Future structural migrations:**
+
+If a release needs a one-shot transform (e.g. rename a field in `config.json`), compare `last_app_version` against a semver threshold inside the same boot refresh function and run the migration before updating `last_app_version`. No integer counter required.
 
 **Design rationale:**
 
-- **File, not field:** The version lives in its own file (`~/.buddy/version`), not inside `config.json`. This allows reading the version before parsing potentially-incompatible config formats during a config schema migration.
-- **Integer, not semver:** This is an internal schema counter, not a public API version. It increments only when a migration is needed — many app releases may share the same schema version.
-- **Sequential, not declarative:** Migrations run in strict order (0→1→2→…). This guarantees that each migration can assume the exact state left by the previous one, preventing combinatorial complexity.
-- **Idempotent:** If interrupted, re-running the same migration produces the correct end state (e.g., file writes use create-or-overwrite, not append).
-- **Scope:** Migrations apply to `~/.buddy/` (global config directory). Per-instance (`rootDir`) changes are handled differently — the app adapts to what it finds (backward compat), not by migrating user repos.
-- **Prompt refresh vs schema migration:** Schema integer (`~/.buddy/version`) handles structural changes only. Prompt content updates use app semver comparison (`last_app_version` in `config.json`) — any version bump refreshes `~/.buddy/prompts/` from bundled files (NFR-MIGRATE-06). Many app releases may share the same schema version but still ship prompt fixes.
+- **Single gate:** One comparison (`last_app_version` vs app semver) covers fresh install, patch/minor/major content updates, and future one-shot migrations.
+- **Idempotent deploy:** Re-running the deploy function produces the correct end state (create-or-overwrite).
+- **Scope:** Applies to `~/.buddy/` (global config). Per-instance (`rootDir`) changes use runtime backward compat — the app never migrates user repos.
+- **Silent:** No user interaction. Runs before UI/session start.
+
+**Acceptance criteria:**
+
+- [x] Fresh install (no `config.json`) deploys bundled content and writes `last_app_version`
+- [x] Semver bump redeploys `prompts/` and `docs/` and updates `last_app_version`
+- [x] Matching semver is a no-op (user-customized prompt edits in `~/.buddy/prompts/` preserved until next bump)
+- [x] No `~/.buddy/version` integer file written or read
 
 ### 4.10 Housekeeping (NFR-MAINT)
 

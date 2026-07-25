@@ -17,7 +17,7 @@ import type { AllowedEntry } from "./allowed-paths";
 import { isPathPersistentlyAllowed } from "./allowed-paths";
 import { DENYLIST_BASENAMES, DENYLIST_HOME_DIRS, READ_TOOLS, WRITE_TOOLS } from "../shared/defaults";
 import { isWithin } from "../shared/path-utils";
-import { globalConfigDir } from "./schema-migration";
+import { globalConfigDir } from "./global-config";
 
 export type PermissionOp = "read" | "write";
 

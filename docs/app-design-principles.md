@@ -648,92 +648,67 @@ behavior. The app adds the full experience (scheduler, notifications,
    behavior stays in `rootDir/AGENTS.md`. Old instances with `CLAUDE.md` work
    without migration — the base layer overrides stale capability claims.
 
-9. **Schema versioning (E11):** `~/.buddy/version` (integer) tracks what
-   format the global config directory is in. Sequential migrations run on boot
-   when the app's embedded version is higher. See below for full design.
+9. **Boot refresh (E11):** On app version change, bundled global content
+   (`~/.buddy/prompts/`, `~/.buddy/docs/`) is redeployed from embedded sources.
+   Tracked via `last_app_version` in `config.json`. See below.
 
 ---
 
-## Schema versioning and migration
+## Boot refresh and migration
 
-The global config directory (`~/.buddy/`) evolves across app releases. A version
-marker enables safe, automatic migration without user interaction.
+The global config directory (`~/.buddy/`) evolves across app releases. A single
+semver comparison on boot keeps bundled content current without user interaction.
 
 ### Design
 
 ```
-~/.buddy/version    ← single integer (e.g. "1")
+~/.buddy/config.json  →  last_app_version: "0.4.2"  (app semver last deployed)
 ```
 
-- **File, not field:** Stored separately from `config.json` so the version can
-  be read even when the config format has changed and can't be parsed yet.
-- **Integer, not semver:** Internal schema counter. Increments only when a
-  structural migration is needed. Many app releases may share the same schema
-  version if nothing in `~/.buddy/` changes.
-- **Absent = 0:** A fresh install or a pre-versioning install both read as
-  schema 0. The first migration (0→1) bootstraps the directory to the current
-  state.
+- **Semver, not integer:** One field tracks what version of bundled content is
+  installed. Any app version bump (patch, minor, major) triggers redeploy.
+- **Absent = fresh:** No `config.json` or missing `last_app_version` triggers
+  deploy on first boot.
+- **Future migrations:** One-shot structural changes (e.g. config format rename)
+  run inside the same boot refresh by comparing `last_app_version` to a threshold.
 
 ### Boot sequence
 
 ```
-1. Read ~/.buddy/version (default 0 if missing)
-2. Compare with APP_SCHEMA_VERSION (compile-time constant)
-3. If behind: run migrations sequentially (0→1, 1→2, …)
-4. Write new schema version (only after all migrations succeed)
-5. Compare app semver with last_app_version in ~/.buddy/config.json
-6. If different: overwrite ~/.buddy/prompts/ from bundled/prompts/; update last_app_version
-7. Continue normal startup (session creation, prompt assembly, etc.)
+1. Compare app semver with last_app_version in ~/.buddy/config.json
+2. If absent or different: deploy bundled prompts/ and docs/; update last_app_version
+3. pruneSessionLogs() — NFR-MAINT-01
+4. Continue normal startup (session creation, prompt assembly, etc.)
 ```
 
-Steps 1–4 handle **structural** migrations (integer schema). Steps 5–6 handle
-**prompt content** refresh on any app version change — orthogonal to schema
-version. A release can bump semver with prompt fixes but no schema migration.
+Boot refresh runs **before any session starts** — the worker can assume
+`~/.buddy/prompts/` and `~/.buddy/docs/` are current before assembling a system
+prompt or spawning a consolidation session.
 
-Migrations and prompt refresh run **before any session starts** — the worker
-can assume `~/.buddy/` is in the expected state by the time it assembles a
-system prompt or spawns a consolidation session.
+### Deploy contract
 
-### Migration contract
+The deploy function must be:
 
-Each migration function must be:
-
-- **Sequential:** runs only after all previous migrations have completed.
-  Can assume the exact state left by the prior version.
-- **Idempotent:** if interrupted (crash, power loss), re-running produces the
-  correct end state. Use create-or-overwrite, not append.
-- **Silent:** no user interaction required. If a future migration needs user
-  input (e.g., breaking change in config format), it writes a marker and the
-  UI surfaces a one-time explanation after boot completes.
-- **Fast:** migrations should complete in <100ms under normal conditions.
-  They write files and transform JSON — no network, no LLM calls.
+- **Idempotent:** re-running produces the correct end state (create-or-overwrite).
+- **Silent:** no user interaction required.
+- **Fast:** file writes only — no network, no LLM calls.
 
 ### Scope boundary
 
 | `~/.buddy/` (global) | `rootDir` (per-instance) |
 |---|---|
-| Migrated via schema versions | Adapted at runtime (backward compat) |
-| App overwrites freely | App never modifies existing content |
-| Examples: prompts, config format, auth format | Examples: AGENTS.md, agent_brain/, logs/ |
+| Redeployed on semver bump | Adapted at runtime (backward compat) |
+| App overwrites bundled content freely | App never modifies existing content |
+| Examples: prompts, docs, config format | Examples: AGENTS.md, agent_brain/, logs/ |
 
 The app **never migrates rootDir** — it adapts to what it finds. Old instances
 missing newer files (e.g., no `AGENTS.md`, only `CLAUDE.md`) are handled by
 fallback logic in the worker, not by writing new files into the user's repo.
 This preserves the principle that rootDir belongs to the user/agent.
 
-### Version history (grows with each migration)
-
-| Schema | Migration | What it does |
-|--------|-----------|--------------|
-| 0→1 | `migrate_0_to_1` | Create `~/.buddy/prompts/`; write `agents-base.md`, `consolidation.md`, `process-conversation.md`, `triage-inbox.md` from embedded content. |
-
 ### Why this matters for the future
 
-- **Config format changes:** If `config.json` adds required fields or changes
-  structure, a migration transforms the old format before the parser runs.
-- **Auth format changes:** If the token structure in `auth.json` changes, a
-  migration can re-key or restructure it.
-- **New global files:** Any new file the app expects in `~/.buddy/` gets created
-  by a migration — existing users get it on next boot without reinstalling.
-- **Deprecation:** Old files or fields can be cleaned up by a migration, keeping
-  the directory tidy over years of use.
+- **Config format changes:** Compare `last_app_version` and transform old
+  `config.json` before the parser runs.
+- **New global files:** Any new bundled directory gets created on next version bump.
+- **Deprecation:** Old files can be removed by the deploy step on a major bump.

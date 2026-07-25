@@ -124,9 +124,8 @@ import { RPCChannel, NodeIo } from "kkrpc";
 import type { WorkerAPI, FrontendAPI } from "../shared/api";
 
 // --- Boot (before session) ---
-// 1. ensureSchema() — NFR-MIGRATE-01..05 (integer ~/.buddy/version)
-// 2. refreshPromptsIfVersionChanged() — NFR-MIGRATE-06 (semver → ~/.buddy/prompts/)
-// 3. pruneSessionLogs() — NFR-MAINT-01 (delete .buddy/logs/*.jsonl older than 7 days)
+// 1. bootRefreshIfNeeded() — NFR-MIGRATE-06 (semver → ~/.buddy/prompts/ + docs/)
+// 2. pruneSessionLogs() — NFR-MAINT-01 (delete .buddy/logs/*.jsonl older than 7 days)
 
 // --- Pi Session Setup ---
 

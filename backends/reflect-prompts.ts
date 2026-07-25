@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { getEmbeddedAssets } from "./embedded-assets";
-import { bundledPromptsDir } from "./migrations/migrate-0-to-1";
+import { bundledPromptsDir } from "./deploy-bundled-content";
 
 export const OUTPUT_ONLY_SUFFIX = `\n\n---\nOUTPUT-ONLY MODE: You have no tools. Produce structured markdown output only — do not attempt file operations. The worker persists your output to the daily log.`;
 

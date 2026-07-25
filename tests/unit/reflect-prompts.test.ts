@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { registerEmbeddedAssets } from "../../backends/embedded-assets";
-import { bundledPromptsDir } from "../../backends/migrations/migrate-0-to-1";
+import { bundledPromptsDir } from "../../backends/deploy-bundled-content";
 import {
   buildReflectUserPrompt,
   CHECKPOINT_USER_PROMPT,

@@ -1,9 +1,6 @@
 // shared/defaults.ts — Centralized operational defaults and security constants (NFR-CONFIG-01/03).
 // Browser-safe: no Node.js imports. Backend-only helpers live in backends/.
 
-/** Global ~/.buddy/ schema version (NFR-MIGRATE). Increment when migrations are added. */
-export const APP_SCHEMA_VERSION = 1;
-
 // --- Operational defaults (NFR-CONFIG-01) ---
 export const LOCK_STALE_MS = 60 * 60 * 1000;
 /** Retention period for .buddy/logs/*.jsonl session event logs (NFR-MAINT-01). */

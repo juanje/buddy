@@ -30,7 +30,7 @@ import { lockPath } from "../backends/maintenance";
 import { alignHttpDispatcherWithPi } from "../backends/pi-http-dispatcher";
 import { assembleMaintenancePrompt } from "../backends/prompt";
 import { defaultAuthPath } from "../backends/provider-auth";
-import { ensureSchema } from "../backends/schema-migration";
+import { bootRefreshIfNeeded } from "../backends/boot-refresh";
 import { AGENT_TOOLS, EXCLUDED_TOOLS } from "../shared/defaults";
 
 const VALID_DEPTHS = new Set([1, 2, 3]);
@@ -196,7 +196,7 @@ async function main(): Promise<void> {
     return;
   }
 
-  ensureSchema();
+  bootRefreshIfNeeded();
   await alignHttpDispatcherWithPi();
 
   const authPath = defaultAuthPath();

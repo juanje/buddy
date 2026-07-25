@@ -20,7 +20,7 @@ import { createPermissionGate, isDenylistedPath, type PermissionRequest } from "
 import type { AllowedEntry } from "./allowed-paths";
 import { extractPdfText } from "./pdf-extract";
 import { assembleSystemPrompt } from "./prompt";
-import { globalConfigDir } from "./schema-migration";
+import { globalConfigDir } from "./global-config";
 import { buildSkillTools, skillToolNames } from "./skill-tools";
 import { buildFetchTools, fetchToolNames } from "./fetch-url";
 import { SessionLifecycle } from "./session-lifecycle";

@@ -39,7 +39,7 @@ import { acquireLock, releaseLock } from "./maintenance";
 import { assembleMaintenancePrompt } from "./prompt";
 import { appendDailyLog, updateLogsIndexEntry } from "./reflect";
 import { defaultConfigDir } from "./allowed-paths";
-import { globalConfigDir } from "./schema-migration";
+import { globalConfigDir } from "./global-config";
 import { recordUsageToFile, sumUsageFromEvents } from "./usage-tracker";
 import { buildConsolidationTools, consolidationToolNames } from "./consolidation-tools";
 import { buildSkillTools, skillToolNames } from "./skill-tools";

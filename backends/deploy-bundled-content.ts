@@ -1,19 +1,19 @@
-// backends/migrations/migrate-0-to-1.ts — Schema v0→v1: populate ~/.buddy/prompts/ and docs/ (NFR-MIGRATE).
+// backends/deploy-bundled-content.ts — deploy bundled prompts and docs to ~/.buddy/ (NFR-MIGRATE-06).
 
 import { cpSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { getEmbeddedAssets } from "../embedded-assets";
+import { getEmbeddedAssets } from "./embedded-assets";
 
 /** Bundled prompt sources shipped with the app (not copied into rootDir). */
 export function bundledPromptsDir(): string {
-  return join(dirname(fileURLToPath(import.meta.url)), "..", "..", "bundled", "prompts");
+  return join(dirname(fileURLToPath(import.meta.url)), "..", "bundled", "prompts");
 }
 
 /** Bundled self-documentation pages shipped with the app (FR-DOCS-01). */
 export function bundledDocsDir(): string {
-  return join(dirname(fileURLToPath(import.meta.url)), "..", "..", "bundled", "docs");
+  return join(dirname(fileURLToPath(import.meta.url)), "..", "bundled", "docs");
 }
 
 function deployMarkdownFiles(
@@ -37,8 +37,8 @@ function deployMarkdownFiles(
   }
 }
 
-/** Create ~/.buddy/prompts/ and ~/.buddy/docs/. Copy all bundled files. Idempotent. */
-export function migrate_0_to_1(configDir: string): void {
+/** Overwrite ~/.buddy/prompts/ and ~/.buddy/docs/ from bundled/embedded sources. Idempotent. */
+export function deployBundledGlobalContent(configDir: string): void {
   const embedded = getEmbeddedAssets();
 
   deployMarkdownFiles(

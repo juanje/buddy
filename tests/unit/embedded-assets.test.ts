@@ -9,7 +9,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { registerEmbeddedAssets } from "../../backends/embedded-assets";
 import { copyTemplates } from "../../backends/create-buddy";
-import { ensureSchema } from "../../backends/schema-migration";
+import { bootRefreshIfNeeded } from "../../backends/boot-refresh";
 
 describe("embedded assets (compiled sidecar)", () => {
   let dir: string;
@@ -19,7 +19,7 @@ describe("embedded assets (compiled sidecar)", () => {
     if (dir) rmSync(dir, { recursive: true, force: true });
   });
 
-  it("migrate 0→1 writes prompts from embedded assets, not disk", () => {
+  it("boot refresh writes prompts and docs from embedded assets, not disk", () => {
     dir = mkdtempSync(join(tmpdir(), "ab-embedded-"));
     registerEmbeddedAssets({
       templates: {},
@@ -27,7 +27,7 @@ describe("embedded assets (compiled sidecar)", () => {
       docs: { "index.md": "# embedded index\n", "capabilities.md": "# embedded caps\n" },
     });
 
-    ensureSchema(dir);
+    bootRefreshIfNeeded(dir, "0.0.0-test");
 
     expect(readFileSync(join(dir, "prompts", "agents-base.md"), "utf8")).toBe("# embedded base\n");
     expect(readFileSync(join(dir, "prompts", "consolidation.md"), "utf8")).toBe("# embedded consol\n");

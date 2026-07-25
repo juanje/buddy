@@ -7,7 +7,7 @@ import { join } from "node:path";
 
 import { dueDeferredItems, parseDeferredItems, type ParsedDeferredItem } from "./deferred";
 import { toIsoDay } from "../shared/dates";
-import { globalConfigDir } from "./schema-migration";
+import { globalConfigDir } from "./global-config";
 
 export interface AssembledPrompt {
   prompt: string;
