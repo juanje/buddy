@@ -47,7 +47,7 @@ created: YYYY-MM-DD
 ---
 ```
 
-Update `last_accessed` and increment `access_count` when you **read a file for its content** (consulting it for context or decisions). Do not increment when you open a file only to modify it. Metadata tracking happens automatically — do not update frontmatter fields manually.
+Metadata tracking happens automatically — **do not update frontmatter fields manually**. The system tracks `last_accessed` and `access_count` when you read files. Your job is to include the frontmatter block when creating new files (with `created: YYYY-MM-DD` and initial values), but never edit these fields on existing files.
 
 Exception: `identity/SOUL.md` and `identity/USER.md` don't use this frontmatter. Directory `index.md` files, `observations.md`, `deferred.md`, and core skills are also exempt (read mechanically, not as interest signal).
 
@@ -76,19 +76,12 @@ Directories with an `index.md` have a content map — read it first to decide wh
 
 New directories inside `agent_brain/` or `user/` are created as needed. Add them to this list. Format: **what the directory contains** (content description) + **when to read it** (trigger). Don't describe how it's built or maintained — that belongs in the skill, not here.
 
-## Skills
-
-Read the full skill file ONLY when the trigger matches. Don't read skills preemptively.
-
-- [process-conversation](agent_brain/skills/process-conversation.md) — Logs the conversation and detects learning observations. Use **only** when the user explicitly asks ("reflect", "save the conversation"). Never run it autonomously — session logging happens automatically on shutdown.
-- [triage-inbox](agent_brain/skills/triage-inbox.md) — Daily inbox triage following GTD. Use on "triage", "process inbox", "triage my inbox", "what should I work on?", or during consolidation.
-
 ## Rules
 
 1. **Language:** Reply in the user's language. Repository content (`agent_brain/`, `logs/`) always in English for cross-tool portability. `user/` workspace in the user's chosen language.
 2. Don't read files preemptively — access on demand when a trigger matches. When you need context from a directory, read its `index.md` first to understand what's available, then open specific files as needed. Progressive disclosure keeps the context window lean and attention focused on what's relevant now.
 3. **Memory first.** Check logs and brain files before querying external tools. Use memory directly for stable data (decisions, context). For volatile data, verify externally and update if stale. Scope resourcefulness to your own system: if something the user mentions isn't recognizable from loaded context and has no clear path to it, ask — don't launch speculative searches. When you do ask, show what you already checked and what's still missing.
-4. **Retention by memory type.** Never delete from `agent_brain/` outright — git history is the last resort. What moves to `archive/` depends on type: **Semantic memory** (concepts, ideas, learnings, requests) is **never archived** — depth in the hierarchy and low index prominence are the cooling mechanism. **Procedural memory** (learned skills unused >3 months, not seasonal) → `agent_brain/archive/`. **Operational state** (completed/abandoned projects after knowledge extracted to concepts) → `agent_brain/archive/`. **Episodic memory** (logs) → `logs/archive/YYYY-MM/` as the deep temporal layer — never delete raw daily logs. Archived files remain searchable — a search can still surface them (passive recognition). Deletion removes them entirely; only git history preserves them, and that requires knowing the file existed (active recall).
+4. **Retention by memory type.** Never delete from `agent_brain/` — all semantic memory is permanent. Cooling mechanism is hierarchical depth and reduced index prominence, not removal. **Semantic memory** (concepts, ideas, learnings) — depth in the hierarchy and low index prominence are the cooling mechanism. **Procedural memory** (learned skills) — stays in `agent_brain/skills/`; if unused long-term, removed from the Skills section of AGENTS.md but file remains. **Operational state** (completed projects) — knowledge extracted to concepts, project file stays at lower index prominence. **Episodic memory** (logs) → `logs/archive/YYYY-MM/` when rotation threshold is met (handled automatically by the system). Never delete raw daily logs.
 5. `USER.md` can be updated with observed facts. Mark inferences as `[inferred — verify]` and flag to the user. Always inform the user of changes made.
 6. **Write it or don't say it.** If you say "I'll note that", "I'll remember", "I'll capture that", or similar — you must immediately write it to the appropriate memory file (`agent_brain/`, `logs/`, `user/`). Saying it without writing it is a memory failure.
 7. **No unsourced content.** When capturing facts about the user (who said what, decisions, people's roles), only write what was explicitly stated or directly observed — never infer. If inference is necessary, mark it as `[inferred — verify]` and flag it to the user. This does **not** apply to generalizations created during consolidation: those are reasoned conclusions from verified facts in memory. Resolve relative dates ("tomorrow", "next week") against the current date in your context and write the absolute date next to the relative phrase.
