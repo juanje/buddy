@@ -20,6 +20,10 @@
       "identifier": "opener:allow-open-url",
       "allow": [{ "url": "https://**" }, { "url": "http://**" }]
     },
-    "notification:default"
+    "notification:default",
+    {
+      "identifier": "fs:allow-read-text-file",
+      "allow": [{ "path": "**" }]
+    }
   ]
 }

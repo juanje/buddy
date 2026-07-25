@@ -196,8 +196,16 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 
 ## Current focus
 
-> **Sprint 3 shipped (2026-07-25)** — Brain format + health linter (NFR-FORMAT-01, FR-BRAIN-07): `summary` frontmatter in templates; `computeBrainHealthReport()` + injection into consolidation prompt; consolidation §8c for fixing flagged issues.
-> **Implementation next:** FR-BRAIN-04/05 (consolidation + observation evals via fixture repo), FR-WIKI, FR-CHAT-10.
+> **Sprint 3.5 shipped (2026-07-25)** — Inline file viewer (FR-CHAT-10): `.md`/`.txt` links open in a read-only panel inside Buddy; other local files still use `openPath()`.
+> **Implementation next:** FR-BRAIN-04/05 (consolidation + observation evals via fixture repo), FR-WIKI.
+
+### Sprint 3.5: Inline file viewer — DONE (2026-07-25)
+
+| FR-ID | Feature | Status | Commit |
+|-------|---------|--------|--------|
+| FR-CHAT-10 | Inline file viewer for markdown/text links | done | pending |
+
+**Tests at sprint close:** 262 unit + 136 BDD green.
 
 ### Sprint 3: Brain format + health linter — DONE (2026-07-25)
 

@@ -415,6 +415,7 @@ App.svelte
 │   │   ├── MarkdownRenderer (for assistant messages)
 │   │   ├── ThinkingBlock.svelte (collapsible, italic)
 │   │   └── ToolCallBlock.svelte (collapsible, shows tool + result)
+│   ├── FileViewer.svelte (FR-CHAT-10: inline .md/.txt panel; openPath fallback)
 │   ├── StreamingIndicator.svelte (typing dots while streaming)
 │   └── CompactionNotice.svelte (brief inline notice)
 ├── InputBar.svelte

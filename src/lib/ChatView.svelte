@@ -6,8 +6,10 @@
   import PermissionCard from "./PermissionCard.svelte";
   import ToolActivity from "./ToolActivity.svelte";
   import WelcomeBanner from "./WelcomeBanner.svelte";
+  import FileViewer from "./FileViewer.svelte";
   import { openPath } from "@tauri-apps/plugin-opener";
-  import { resolveLocalPathForOpen } from "./local-path";
+  import { routeLocalLinkClick } from "./local-link-handler";
+  import type { FileViewerController } from "./file-viewer-controller";
   import { t } from "./i18n";
 
   let {
@@ -15,11 +17,13 @@
     scroll,
     deferredItems = [],
     rootDir = "",
+    fileViewer,
   }: {
     controller: ChatController;
     scroll: ScrollController;
     deferredItems?: DeferredItemView[];
     rootDir?: string;
+    fileViewer?: FileViewerController;
   } = $props();
 
   // $derived (not plain destructuring) so the stores track prop reassignment;
@@ -58,12 +62,22 @@
     event.preventDefault();
     const rel = anchor.getAttribute("data-local-path");
     if (!rel) return;
-    const abs = resolveLocalPathForOpen(rootDir, rel);
-    if (!abs) return;
+    const action = routeLocalLinkClick(rootDir, rel);
+    if (!action) return;
+
+    if (action.type === "view") {
+      if (!fileViewer) {
+        console.error("[local-link] file viewer unavailable");
+        return;
+      }
+      await fileViewer.openFile(action.absPath);
+      return;
+    }
+
     try {
-      await openPath(abs);
+      await openPath(action.absPath);
     } catch (err) {
-      console.error("[local-link] openPath failed:", abs, err);
+      console.error("[local-link] openPath failed:", action.absPath, err);
     }
   }
 </script>
@@ -102,6 +116,9 @@
     </button>
   {/if}
 </div>
+{#if fileViewer}
+  <FileViewer controller={fileViewer} />
+{/if}
 
 <style>
   .chat-wrap {

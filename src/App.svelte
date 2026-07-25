@@ -21,6 +21,8 @@
     isSettingsShortcut,
     type SettingsController,
   } from "./lib/settings-controller";
+  import { createDefaultFileViewerController } from "./lib/file-viewer-factory";
+  import type { FileViewerController } from "./lib/file-viewer-controller";
   import { ensureNotificationPermission, notifyDeferredDue } from "./utils/deferred-notify";
   import { formatBudgetNotificationBody, notifyBudgetAlert } from "./utils/budget-notify";
   import { t } from "./lib/i18n";
@@ -39,6 +41,7 @@
   let setupOAuthHandler: ((event: OAuthUIEvent) => void) | undefined = $state();
   let appConfig = $state<SetupConfig | undefined>();
   let settingsController = $state<SettingsController | undefined>();
+  let fileViewerController = $state<FileViewerController | undefined>(createDefaultFileViewerController());
   let budgetBlocked = $state(false);
 
   // The controller is created before the worker connects so the UI renders
@@ -260,6 +263,10 @@
       settingsController.closeSettings();
       return;
     }
+    if (event.key === "Escape" && fileViewerController && get(fileViewerController.open)) {
+      fileViewerController.close();
+      return;
+    }
     if (event.key === "Escape") {
       controller?.onEscape();
     }
@@ -300,6 +307,7 @@
         {scroll}
         {deferredItems}
         rootDir={appConfig?.rootDir ?? ""}
+        fileViewer={fileViewerController}
       />
       {#if settingsController}
         <button

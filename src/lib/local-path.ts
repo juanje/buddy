@@ -27,3 +27,8 @@ export function resolveLocalPathForOpen(rootDir: string, rawHref: string): strin
   }
   return null;
 }
+
+/** True when the file extension should render in the inline viewer (FR-CHAT-10). */
+export function isViewableFile(path: string): boolean {
+  return /\.(md|txt)$/i.test(path);
+}

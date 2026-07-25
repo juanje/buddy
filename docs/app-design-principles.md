@@ -199,10 +199,11 @@ The user doesn't need to know the file structure to use AB — they talk,
 and the agent handles the rest. (But they CAN read the files if they want.)
 
 When the agent links to a local file in chat (e.g. a log or note), the app
-opens it with the system default app via `tauri-plugin-opener` `openPath()` —
+opens `.md` and `.txt` files in an inline read-only viewer (FR-CHAT-10); other
+file types use the system default app via `tauri-plugin-opener` `openPath()` —
 not the browser and not the deprecated shell plugin `open()`, which only
 accepts http/mailto/tel URLs. External links still open in the browser via
-`openUrl()`.
+`openUrl()`. The viewer includes an optional "Open externally" action.
 
 ---
 

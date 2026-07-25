@@ -2,7 +2,7 @@
 
 import { describe, expect, it } from "vitest";
 
-import { isExternalHref, resolveLocalPathForOpen } from "../../src/lib/local-path";
+import { isExternalHref, isViewableFile, resolveLocalPathForOpen } from "../../src/lib/local-path";
 
 describe("local-path", () => {
   it("detects external hrefs", () => {
@@ -20,5 +20,11 @@ describe("local-path", () => {
 
   it("rejects paths outside rootDir", () => {
     expect(resolveLocalPathForOpen("/home/buddy", "/etc/passwd")).toBeNull();
+  });
+
+  it("detects viewable markdown and text files", () => {
+    expect(isViewableFile("/home/buddy/agent_brain/foo.md")).toBe(true);
+    expect(isViewableFile("/home/buddy/notes/readme.txt")).toBe(true);
+    expect(isViewableFile("/home/buddy/docs/guide.pdf")).toBe(false);
   });
 });

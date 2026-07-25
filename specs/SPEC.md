@@ -91,7 +91,7 @@ rootDir (git repo — user/agent content only)
 | FR-CHAT-07 | Auto-scroll with manual override | 0 ✓ |
 | FR-CHAT-08 | Input textarea resets height after send | 2 ✓ |
 | FR-CHAT-09 | Local file links open in system default app | 2 ✓ |
-| FR-CHAT-10 | Inline file viewer for markdown/text links | 3 |
+| FR-CHAT-10 | Inline file viewer for markdown/text links | 2 ✓ |
 
 **FR-CHAT-01 — Streaming message display**
 
