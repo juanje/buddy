@@ -143,7 +143,7 @@ async function main(): Promise<void> {
         frontend,
         modelRuntime,
         sessionAllowedPaths,
-        persistentAllowedPaths,
+        persistentAllowedPaths: () => persistentAllowedPaths,
         usageTracker: ensureUsageTracker(),
         requestPermission: (request) => {
           const id = nextPermissionId++;

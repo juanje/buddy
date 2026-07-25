@@ -100,7 +100,7 @@
     {#each $permissions as card (card.request.id)}
       <PermissionCard
         {card}
-        onRespond={(id, allow) => controller.respondPermission(id, allow)}
+        onRespond={(id, allow, persist) => controller.respondPermission(id, allow, persist)}
         onDismiss={(id) => controller.dismissPermission(id)}
       />
     {/each}

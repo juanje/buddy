@@ -10,6 +10,7 @@ import {
   allowedPathsFile,
   isPathPersistentlyAllowed,
   loadAllowedPaths,
+  type AllowedEntry,
 } from "../../backends/allowed-paths";
 import { createPermissionGate } from "../../backends/permissions";
 
@@ -55,7 +56,7 @@ describe("createPermissionGate persistentAllowedPaths", () => {
       },
       HOME,
       {
-        persistentAllowedPaths: [{ path: "/home/u/Documents", type: "directory" }],
+        getPersistentAllowedPaths: () => [{ path: "/home/u/Documents", type: "directory" }],
       },
     );
 
@@ -74,7 +75,7 @@ describe("createPermissionGate persistentAllowedPaths", () => {
       },
       HOME,
       {
-        persistentAllowedPaths: [{ path: "/home/u/Documents/report.pdf", type: "file" }],
+        getPersistentAllowedPaths: () => [{ path: "/home/u/Documents/report.pdf", type: "file" }],
       },
     );
 
@@ -82,5 +83,29 @@ describe("createPermissionGate persistentAllowedPaths", () => {
       gate.check("write", { path: "/home/u/Documents/report.pdf" }),
     ).resolves.toBeUndefined();
     expect(asked).toBe(true);
+  });
+
+  it("picks up newly-added paths without session restart", async () => {
+    const entries: AllowedEntry[] = [];
+    let askCount = 0;
+    const gate = createPermissionGate(
+      AB,
+      async () => {
+        askCount++;
+        return true;
+      },
+      HOME,
+      {
+        getPersistentAllowedPaths: () => entries,
+      },
+    );
+
+    await gate.check("read", { path: "/home/u/Projects/foo.md" });
+    expect(askCount).toBe(1);
+
+    entries.push({ path: "/home/u/Projects", type: "directory" });
+
+    await gate.check("read", { path: "/home/u/Projects/foo.md" });
+    expect(askCount).toBe(1);
   });
 });

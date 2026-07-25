@@ -34,7 +34,7 @@ export interface SessionBootContext {
   modelRuntime: ModelRuntime;
   requestPermission: (request: Omit<PermissionRequest, "id">) => Promise<boolean>;
   sessionAllowedPaths: Set<string>;
-  persistentAllowedPaths: AllowedEntry[];
+  persistentAllowedPaths: () => AllowedEntry[];
   usageTracker?: UsageTracker;
 }
 
@@ -166,7 +166,7 @@ export async function bootSession(
     {
       skipIdentityPrompt: options?.firstSession === true,
       sessionAllowedPaths: context.sessionAllowedPaths,
-      persistentAllowedPaths: context.persistentAllowedPaths,
+      getPersistentAllowedPaths: context.persistentAllowedPaths,
     },
   );
   const originalBeforeToolCall = session.agent.beforeToolCall;

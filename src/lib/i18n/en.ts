@@ -69,7 +69,6 @@ export const en: LocaleStrings = {
   dropOverlay: "Drop file here",
   unsupportedFormat: "Unsupported format — export to text (.md or .txt)",
   thinkingShow: "Thinking…",
-  thinkingHide: "Hide thinking",
   toolReading: "Reading…",
   toolReadingFile: "Reading {file}",
   toolWriting: "Writing…",
