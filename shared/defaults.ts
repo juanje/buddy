@@ -72,6 +72,13 @@ export const BRAIN_INDEX_EXEMPT_ROOT = "agent_brain";
 /** Directories exempt from index.md requirement (USER.md parent pattern). */
 export const BRAIN_INDEX_EXEMPT_DIRS = ["agent_brain/identity", "agent_brain/skills"] as const;
 
+/** User-visible download directory under rootDir (FR-NET-01). */
+export const DOWNLOADS_DIR = "downloads";
+/** Maximum response size for fetch_url (FR-NET-01). */
+export const FETCH_MAX_BYTES = 10 * 1024 * 1024;
+/** HTTP timeout for fetch_url in milliseconds (FR-NET-01). */
+export const FETCH_TIMEOUT_MS = 15_000;
+
 // --- Security constants (NFR-CONFIG-03) ---
 export const DENYLIST_HOME_DIRS = [".ssh", ".gnupg", ".aws"];
 export const DENYLIST_BASENAMES = [".env", "auth.json"];

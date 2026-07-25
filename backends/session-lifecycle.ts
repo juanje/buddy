@@ -61,7 +61,7 @@ export class SessionLifecycle {
     if (event.type === "tool_execution_end") {
       const info = extractToolInfo(event);
       const name = info?.name;
-      if (name === "write" || name === "edit") this.turnDirty = true;
+      if (name === "write" || name === "edit" || name === "fetch_url") this.turnDirty = true;
       if (name === "read" && info?.path && event.isError !== true) {
         this.hebbianTracker.trackAccess(info.path);
       }

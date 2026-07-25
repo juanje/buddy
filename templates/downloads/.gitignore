@@ -1,0 +1,9 @@
+# Binary downloads (images, PDFs) — not tracked
+*.pdf
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+# Markdown downloads ARE tracked (converted web pages)
+!*.md

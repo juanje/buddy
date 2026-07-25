@@ -1114,7 +1114,7 @@ result — the LLM then follows the procedure.
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-NET-01 | Fetch URL content (web→markdown, PDF, image) | 2 |
+| FR-NET-01 | Fetch URL content (web→markdown, PDF, image) | 2 ✓ |
 | FR-NET-02 | Web search (opt-in toggle) | 3+ |
 
 **FR-NET-01 — Fetch URL content**

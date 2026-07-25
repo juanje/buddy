@@ -197,8 +197,16 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 
 ## Current focus
 
-> **Eval sprint shipped (2026-07-25)** — FR-BRAIN-04/05 consolidation evals completed (5 runs, depth 1–3). Ripe observation injection, programmatic logs index, depth extensions, and index-preserve fix all shipped. **273 unit + 139 BDD** green.
+> **FR-NET-01 shipped (2026-07-25)** — `fetch_url` tool: web→markdown, PDF text extraction, image download. **286 unit + 146 BDD** green.
 > **Implementation next:** FR-WIKI.
+
+### FR-NET-01: URL content fetch — DONE (2026-07-25)
+
+| FR-ID | Feature | Status | Commit |
+|-------|---------|--------|--------|
+| FR-NET-01 | `fetch_url` tool (HTML→markdown, PDF, image) | done | 2e71190 |
+
+**Tests at FR-NET-01 close:** 286 unit + 146 BDD green.
 
 ### E16 — Consolidation relocate tool (2026-07-25)
 

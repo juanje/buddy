@@ -22,6 +22,7 @@ import { extractPdfText } from "./pdf-extract";
 import { assembleSystemPrompt } from "./prompt";
 import { globalConfigDir } from "./schema-migration";
 import { buildSkillTools, skillToolNames } from "./skill-tools";
+import { buildFetchTools, fetchToolNames } from "./fetch-url";
 import { SessionLifecycle } from "./session-lifecycle";
 import { persistLiveSession, markReflectPending } from "./crash-recovery";
 import { createWorkerCore, type PiSessionLike, type WorkerCore } from "./worker-core";
@@ -142,14 +143,15 @@ export async function bootSession(
 
   const promptsDir = join(globalConfigDir(), "prompts");
   const skillTools = buildSkillTools(promptsDir);
+  const fetchTools = buildFetchTools(rootDir);
 
   const { session } = await createAgentSession({
     cwd: rootDir,
     resourceLoader,
     sessionManager: SessionManager.create(rootDir),
     excludeTools: [...EXCLUDED_TOOLS],
-    tools: [...AGENT_TOOLS, ...skillToolNames(skillTools)],
-    customTools: skillTools,
+    tools: [...AGENT_TOOLS, ...skillToolNames(skillTools), ...fetchToolNames(fetchTools)],
+    customTools: [...skillTools, ...fetchTools],
     modelRuntime: context.modelRuntime,
   });
 
