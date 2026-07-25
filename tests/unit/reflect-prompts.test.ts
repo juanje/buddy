@@ -53,6 +53,6 @@ describe("buildReflectUserPrompt", () => {
     const prompt = buildReflectUserPrompt("session-end");
     expect(prompt).toContain("# Skill: Process conversation");
     expect(prompt.endsWith(OUTPUT_ONLY_SUFFIX.trim())).toBe(true);
-    expect(prompt).toContain("OUTPUT-ONLY MODE");
+    expect(prompt).toContain("You have no tools in this context");
   });
 });

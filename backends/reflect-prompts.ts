@@ -7,7 +7,7 @@ import { join } from "node:path";
 import { getEmbeddedAssets } from "./embedded-assets";
 import { bundledPromptsDir } from "./deploy-bundled-content";
 
-export const OUTPUT_ONLY_SUFFIX = `\n\n---\nOUTPUT-ONLY MODE: You have no tools. Produce structured markdown output only — do not attempt file operations. The worker persists your output to the daily log.`;
+export const OUTPUT_ONLY_SUFFIX = `\n\n---\nYou have no tools in this context. Produce ONLY the \`## Session HH:MM–HH:MM\` markdown block — nothing else. No preamble, no headers above it, no explanation. The worker appends your output directly to the daily log file.`;
 
 export const CHECKPOINT_USER_PROMPT = `Briefly encode the recent segment of this session before context compaction:
 
