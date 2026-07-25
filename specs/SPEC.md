@@ -1175,6 +1175,52 @@ result — the LLM then follows the procedure.
 
 **Design intent:** Buddy's core value is local, persistent, private memory. Search is a conscious opt-in that extends capabilities when the user explicitly needs external information — not a default that dilutes the "it remembers you" promise.
 
+### 3.21 File Deletion (FR-DELETE)
+
+| ID | Description | Phase |
+|----|-------------|-------|
+| FR-DELETE-01 | Restricted file deletion tool for user workspace | 2 |
+
+**FR-DELETE-01 — Restricted file deletion**
+
+- **Given** the user asks the agent to remove a file (or the agent proposes removal)
+- **When** the LLM invokes the `delete_file` tool with a path
+- **Then** the worker validates the path against the allowed scope:
+  - `rootDir/user/` — allowed
+  - `rootDir/downloads/` — allowed
+  - Everything else — denied (hard block, no override)
+- **And** a confirmation prompt appears in chat before execution (same pattern as FR-PERM-07): shows the file path, asks "Allow" / "Deny"
+- **And** on confirmation:
+  - If the file is tracked by git: `git rm` (stages deletion for next auto-commit)
+  - If the file is untracked or ignored: `fs.unlink`
+- **And** the auto-commit (FR-GIT-01) includes the deletion with a descriptive message
+- **And** if the file does not exist, a clear error is returned (no crash)
+
+**Denied paths (hardcoded, no override):**
+
+- `agent_brain/` — memory is never deleted; depth and archiving are the cooling mechanism
+- `logs/` — episodic memory; archived by consolidation, never removed
+- `AGENTS.md`, `SOUL.md`, `USER.md` — identity/behavioral files
+- Any path outside `rootDir` — Zone 2/3 deletion is never permitted
+
+**Acceptance criteria:**
+
+- [ ] Tool `delete_file` registered as Pi custom tool (single string parameter: `path`)
+- [ ] Paths inside `user/` and `downloads/` are accepted
+- [ ] Paths inside `agent_brain/`, `logs/`, or identity files are rejected with error message
+- [ ] Paths outside `rootDir` are rejected with error message
+- [ ] User confirmation prompt shown before any deletion executes
+- [ ] Tracked files removed via `git rm`; untracked via `fs.unlink`
+- [ ] Deletion included in next auto-commit cleanly
+- [ ] Non-existent file returns error (no crash)
+- [ ] BDD feature file covers: valid deletion, denied paths (brain, logs, identity, external), user denial, missing file
+
+**Technical notes:**
+
+- Path validation reuses Zone 1 logic from the permission layer — extends with a subdirectory allowlist (`USER_DELETABLE_DIRS` in `defaults.ts`)
+- Confirmation reuses the existing FR-PERM-07 prompt mechanism (no new UI component)
+- The tool solves the "Finder delete breaks invisible git" problem: manual filesystem deletion leaves unstaged changes; this tool keeps the repo consistent
+
 ---
 
 ## 4. Non-Functional Requirements
