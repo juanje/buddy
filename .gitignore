@@ -6,3 +6,4 @@ src-tauri/binaries/
 .worker-build/
 *.log
 .DS_Store
+fixtures/consolidation-test/
