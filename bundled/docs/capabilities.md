@@ -26,10 +26,15 @@ Buddy is a personal assistant that remembers. It captures what you tell it, orga
 - When the day comes, Buddy surfaces the reminder — visually when you open the app and as an OS notification.
 - Dismiss a reminder when you've seen it and it won't come back.
 
-### Manages your inbox (GTD)
+### Manages your inbox (GTD — Getting Things Done)
 
-- Buddy can triage your inbox: process captured items, surface what to work on next, organize by context and priority.
-- Ask "what should I work on?" or "triage my inbox" and it runs the full GTD process.
+GTD is a productivity method by David Allen. The core idea: get everything out of your head into a trusted system, then decide what each item means and what to do with it. Buddy acts as that trusted system — it captures, organizes, and surfaces your tasks so you don't have to hold them in memory.
+
+How it works in practice:
+
+- You dump anything into Buddy ("I need to call the dentist", "look into flights for September") — it captures everything in your inbox.
+- When you say "triage my inbox" or "what should I work on?", Buddy processes each item: is it actionable? Single step or a project? Can it be done in 2 minutes? It routes items to the right place (next actions, projects, someday/maybe) and surfaces your priorities by context.
+- You always have a clear "next action" — no vague to-dos, just concrete steps you can act on right now.
 
 ### Tracks projects
 

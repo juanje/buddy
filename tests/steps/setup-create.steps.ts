@@ -61,7 +61,7 @@ Then("the buddy directory contains the base templates", function (this: CreateWo
     "AGENTS.md",
     "agent_brain/identity/SOUL.md",
     "agent_brain/identity/USER.md",
-    "agent_brain/skills/triage-inbox.md",
+    "agent_brain/skills/.gitkeep",
   ]) {
     assert.ok(existsSync(join(this.abDir!, file)), `${file} should exist`);
   }
