@@ -73,7 +73,7 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 | FR-ID | Feature | Status | Commit |
 |-------|---------|--------|--------|
 | FR-CHAT-04 | Markdown rendering in assistant messages | done | 19eef12 |
-| FR-CHAT-05 | Thinking block display (collapsible) | done | 5e89120 |
+| FR-CHAT-05 | Thinking block display (transient indicator) | done | 5e89120 |
 | FR-CHAT-06 | Tool call display (expandable activity block) | done | 5e89120 |
 | FR-CHAT-08 | Input textarea resets height after send | done | 491b6e9 |
 | FR-SETTINGS-02 | Settings UI (language + read-only config) | done | 6ea7f89 |
@@ -197,8 +197,19 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 
 ## Current focus
 
-> **FR-NET-01 shipped (2026-07-25)** — `fetch_url` tool: web→markdown, PDF text extraction, image download. **286 unit + 146 BDD** green.
-> **Implementation next:** FR-WIKI.
+> **FR-NET-01 shipped (2026-07-25)** — `fetch_url` tool: web→markdown, PDF text extraction, image download.
+> **Bug fixes (2026-07-25):** FR-CHAT-05 thinking indicator stale after turn; FR-PERM-06 "Allow always" never persisted.
+> **287 unit + 146 BDD** green. **Implementation next:** FR-WIKI.
+
+### Bug fixes + self-awareness prompt (2026-07-25)
+
+| Fix | Description | Files |
+|-----|-------------|-------|
+| FR-CHAT-05 | Stale "Pensando..." after turn: removed toggle, indicator transient-only | MessageBubble.svelte, i18n |
+| FR-PERM-06 | "Allow always" never persisted: dropped `persist` arg in ChatView + stale in-memory ref in gate | ChatView.svelte, permissions.ts, session-boot.ts, agent-worker.ts |
+| FR-DOCS-01 (partial) | Self-awareness block in `agents-base.md`: tools list, capabilities, limitations, pointer to `~/.buddy/docs/` | bundled/prompts/agents-base.md |
+
+**Tests after fixes:** 287 unit + 146 BDD green.
 
 ### FR-NET-01: URL content fetch — DONE (2026-07-25)
 
@@ -312,7 +323,7 @@ Also: `ProviderStep` / `ModelStep` wizard components; `OAuthService` worker wrap
 
 | FR-ID | Feature | Status | Commit |
 |-------|---------|--------|--------|
-| FR-CHAT-05 | Thinking block display (collapsible) | done | 5e89120 |
+| FR-CHAT-05 | Thinking block display (transient indicator) | done | 5e89120 |
 | FR-CHAT-06 | Tool call display (expandable activity block) | done | 5e89120 |
 | FR-DEFERRED-01 visual | Welcome banner with deferred cards or greeting | done | 5e89120 |
 

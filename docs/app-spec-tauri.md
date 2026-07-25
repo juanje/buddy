@@ -413,7 +413,7 @@ App.svelte
 ├── ChatView.svelte
 │   ├── MessageBubble.svelte (user | assistant | system)
 │   │   ├── MarkdownRenderer (for assistant messages)
-│   │   ├── ThinkingBlock.svelte (collapsible, italic)
+│   │   ├── (thinking indicator — inline in MessageBubble, transient)
 │   │   └── ToolCallBlock.svelte (collapsible, shows tool + result)
 │   ├── FileViewer.svelte (FR-CHAT-10: inline .md/.txt panel; openPath fallback)
 │   ├── StreamingIndicator.svelte (typing dots while streaming)
@@ -506,7 +506,7 @@ function handleEvent(event: AgentEvent) {
 
 - Text appears token-by-token as `message_update` events arrive
 - Smooth scroll-to-bottom on new content (with "scroll to bottom" button if user scrolled up)
-- Thinking blocks appear in a collapsible section above the response
+- Thinking blocks show a transient "Pensando…" indicator during streaming; hidden after the turn ends
 - Tool calls show as expandable cards between text blocks
 
 **Keyboard shortcuts:**

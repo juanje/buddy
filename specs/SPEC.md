@@ -125,7 +125,7 @@ rootDir (git repo — user/agent content only)
 - **When** the message renders
 - **Then** during streaming: thinking-only bubbles show a transient "Pensando…" indicator
 - **And** after the turn completes: thinking-only bubbles (no text content) are hidden entirely
-- **And** messages with both thinking and text show a collapsible toggle (collapsed by default)
+- **And** thinking text is never shown to the user after the turn ends (no stale indicators)
 
 **FR-CHAT-06 — Tool call display**
 
@@ -978,7 +978,7 @@ The native window close (X) already triggers the full shutdown sequence (fork, s
 | ID | Description | Phase |
 |----|-------------|-------|
 | FR-DOCS-00 | Agent identity (name + self-awareness) in SOUL.md template | 1 ✓ |
-| FR-DOCS-01 | Self-documentation KB available for agent consultation | 3 |
+| FR-DOCS-01 | Self-documentation KB available for agent consultation | 3 (partial: agents-base.md self-awareness block shipped) |
 | FR-DOCS-02 | "Help me" / "How do you work?" triggers agent self-explanation | 3 |
 
 **FR-DOCS-00 — Agent identity in SOUL.md**
@@ -988,22 +988,29 @@ The native window close (X) already triggers the full shutdown sequence (fork, s
 - **Then** the agent knows its name is "Buddy" and can identify itself
 - **And** SOUL.md includes a brief self-description: what it is (personal assistant with persistent memory), how it persists (files, not continuous experience)
 - **And** a user-facing definition: "If the user asks who you are, tell them you are Buddy, their personal assistant — you remember conversations, organize their tasks and ideas, and learn their preferences over time."
-- **Note:** The name "Buddy" comes from the SOUL.md template, not from the system prompt or AGENTS.md. AGENTS.md defines behavior; SOUL.md defines identity. No link to `agent_brain/docs/` yet — that's added by FR-DOCS-01 when the KB exists.
+- **Note:** The name "Buddy" comes from the SOUL.md template, not from the system prompt or AGENTS.md. AGENTS.md defines behavior; SOUL.md defines identity. No link to `~/.buddy/docs/` yet — that's added by FR-DOCS-01 when the extended KB exists.
 
 **FR-DOCS-01 — Self-documentation KB**
 
-- **Given** the buddy directory is set up
+- **Given** the app is installed and `~/.buddy/docs/` is populated (via schema migration / prompt refresh)
 - **When** the agent needs to explain what it is, how it works, or what it can do
-- **Then** it consults `agent_brain/docs/` — a small set of markdown files covering capabilities, usage tips, and how the memory system works
-- **And** these files are NOT loaded at session start (they are referenced in SOUL.md as "for detailed capabilities and how I work, consult `agent_brain/docs/`")
-- **And** the KB is part of the template, shipped with new instances
-- **And** SOUL.md is updated to include the pointer to `agent_brain/docs/` in "Where to find things" (extends FR-DOCS-00)
+- **Then** it consults `~/.buddy/docs/index.md` first (progressive disclosure), then reads specific pages as needed
+- **And** `~/.buddy/docs/` is Zone 1 for reads (silent allow — product documentation, not user data)
+- **And** the session-start system prompt includes a brief self-awareness block (15–25 lines in `agents-base.md`: tools available, key limitations, pointer to `~/.buddy/docs/index.md` for extended reference)
+- **And** docs are refreshed on app version change (same mechanism as NFR-MIGRATE-06 prompt refresh)
+- **And** SOUL.md includes a pointer: "for what I can do and how I work, read `~/.buddy/docs/index.md`"
+
+Design decisions:
+- Lives in `~/.buddy/docs/` (not `agent_brain/docs/`) because it's product documentation, not user knowledge — it updates with the app, not with the user's memory.
+- Only `~/.buddy/docs/` gets Zone 1 read access, not all of `~/.buddy/` (auth.json is sensitive).
+- `index.md` follows the same progressive discovery pattern as `agent_brain/` directories.
+- No dedicated tool — the agent reads files naturally via its existing `read` tool; the prompt tells it where to look.
 
 **FR-DOCS-02 — Self-explanation trigger**
 
 - **Given** the user asks "what can you do?", "how do you work?", "help", or similar
 - **When** the agent processes the request
-- **Then** it reads relevant docs from `agent_brain/docs/` and synthesizes a natural, context-appropriate answer
+- **Then** it reads `~/.buddy/docs/index.md`, identifies the relevant page(s), and synthesizes a natural, context-appropriate answer
 - **And** it does not dump the entire KB — it answers what was asked
 
 ### 3.18 User Personal Knowledge Base (FR-WIKI)
@@ -1132,15 +1139,15 @@ result — the LLM then follows the procedure.
 
 **Acceptance criteria:**
 
-- [ ] Tool `fetch_url` registered as Pi custom tool (single string parameter: `url`)
-- [ ] HTML pages return clean markdown (no nav, scripts, ads, style blocks)
-- [ ] PDFs download and return extracted text
-- [ ] Images download and attach as vision content
-- [ ] All fetched content saved to `rootDir/downloads/` with date-prefixed filename
-- [ ] HTTP errors return clear error string (no crash, no retry loop)
-- [ ] Tool respects budget enforcement (token usage counts toward session cost)
-- [ ] Size cap configurable in `defaults.ts` (`FETCH_MAX_BYTES`, default 10 MB)
-- [ ] BDD feature file covers: HTML fetch, PDF fetch, image fetch, 404 handling, timeout, oversize rejection
+- [x] Tool `fetch_url` registered as Pi custom tool (single string parameter: `url`)
+- [x] HTML pages return clean markdown (no nav, scripts, ads, style blocks)
+- [x] PDFs download and return extracted text
+- [x] Images download and attach as vision content
+- [x] All fetched content saved to `rootDir/downloads/` with date-prefixed filename
+- [x] HTTP errors return clear error string (no crash, no retry loop)
+- [x] Tool respects budget enforcement (token usage counts toward session cost)
+- [x] Size cap configurable in `defaults.ts` (`FETCH_MAX_BYTES`, default 10 MB)
+- [x] BDD feature file covers: HTML fetch, PDF fetch, image fetch, 404 handling, timeout, oversize rejection
 
 **Technical notes:**
 
