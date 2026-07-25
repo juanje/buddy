@@ -27,12 +27,22 @@ export async function injectHiddenPrompt(
   }
 }
 
-/** Inject assembled session context before the user's first turn. */
+/**
+ * Inject session context silently — adds the message to conversation history
+ * but suppresses the model's response from reaching the frontend.
+ * The context is available when the user sends their first real message.
+ * Must be called BEFORE the worker core subscriber is active.
+ */
 export async function injectSessionContext(
   session: PiSessionLike,
-  frontend: FrontendAPI,
+  _frontend: FrontendAPI,
   contextMessage: string,
 ): Promise<void> {
   if (!contextMessage.trim()) return;
-  await injectHiddenPrompt(session, frontend, contextMessage);
+  const unsub = session.subscribe(() => {});
+  try {
+    await session.prompt(contextMessage);
+  } finally {
+    unsub();
+  }
 }

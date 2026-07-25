@@ -180,14 +180,17 @@ export async function bootSession(
   };
 
   const sessionLike = asPiSessionLike(session);
+
+  // Context injection runs BEFORE worker core subscribes — response is
+  // suppressed; context sits in history for the user's first real turn.
+  if (sessionContext.message) {
+    await injectSessionContext(sessionLike, context.frontend, sessionContext.message);
+  }
+
   const core = createWorkerCore(sessionLike, context.frontend, {
     lifecycle,
     usageTracker: context.usageTracker,
   });
-
-  if (sessionContext.message) {
-    await injectSessionContext(sessionLike, context.frontend, sessionContext.message);
-  }
 
   if (options?.firstSession && options.name) {
     await runWarmHandoff(sessionLike, context.frontend, {
