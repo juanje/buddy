@@ -46,6 +46,7 @@ describe("consolidation runner", () => {
     expect(prompt).toContain("Do not run git commands");
     expect(prompt).toContain("Hebbian promotion data (pre-computed):");
     expect(prompt).toContain("Upcoming items (within 24h of run date):");
+    expect(prompt).toContain("Ripe observations (Step 7 — act on each):");
   });
 
   it("includes brain health block when issues exist", () => {

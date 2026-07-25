@@ -118,15 +118,20 @@ const INDEX_HEADER = "# Sessions index\n\nLog files: `logs/YYYY-MM-DD.md` (deriv
  * preserving all other lines (archived entries, date ranges, curated summaries).
  * Creates the index with standard header if it doesn't exist.
  */
-export function updateLogsIndexEntry(rootDir: string, date: string, status: LogStatus = "active"): void {
+export function updateLogsIndexEntry(
+  rootDir: string,
+  date: string,
+  status: LogStatus = "active",
+  description?: string,
+): void {
   const logsDir = join(rootDir, "logs");
   mkdirSync(logsDir, { recursive: true });
   const indexPath = join(logsDir, "index.md");
 
   const logPath = join(logsDir, `${date}.md`);
-  const summary = existsSync(logPath)
-    ? extractOneLinerSummary(readFileSync(logPath, "utf8"))
-    : "(no summary)";
+  const summary =
+    description ??
+    (existsSync(logPath) ? extractOneLinerSummary(readFileSync(logPath, "utf8")) : "(no summary)");
 
   const newLine = `- ${date}: ${status} — ${summary}`;
   const entryPattern = new RegExp(`^- ${date}:.*$`, "m");

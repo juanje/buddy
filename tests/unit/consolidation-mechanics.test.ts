@@ -14,9 +14,13 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import {
   computeHebbianReport,
+  extractDaySummaryKeyThemes,
+  extractRipeObservations,
   findDatedInboxItems,
   findUpcomingReminders,
+  formatRipeObservationsBlock,
   rotateLogs,
+  updateLogsIndexFromDaySummary,
 } from "../../backends/consolidation-mechanics";
 
 describe("consolidation mechanics", () => {
@@ -144,6 +148,89 @@ describe("consolidation mechanics", () => {
       expect(reminders).toHaveLength(2);
       expect(reminders.some((r) => r.source === "inbox")).toBe(true);
       expect(reminders.some((r) => r.source === "active-context")).toBe(true);
+    });
+  });
+
+  describe("extractRipeObservations", () => {
+    it("returns unresolved entries at seen 2+", () => {
+      setupRoot();
+      mkdirSync(join(dir, "agent_brain"), { recursive: true });
+      writeFileSync(
+        join(dir, "agent_brain", "observations.md"),
+        `---
+summary: Observations
+created: 2026-07-01
+---
+
+# Observations
+
+## Concept candidates
+
+- **2026-07-01:** Fresh pattern (seen: 1)
+
+- **2026-07-02:** Ripe concept candidate — should promote (seen: 1)
+  - 2026-07-03: seen again in eval (seen: 2)
+
+- **2026-07-04:** Already resolved (seen: 3) → **resolved 2026-07-05:** concept [foo](concepts/foo.md)
+
+## Rule candidates
+
+- **2026-07-05:** Ripe rule (seen: 2)
+`,
+      );
+
+      const ripe = extractRipeObservations(dir);
+      expect(ripe).toHaveLength(2);
+      const concept = ripe.find((r) => r.category === "concept");
+      const rule = ripe.find((r) => r.category === "rule");
+      expect(concept?.seenCount).toBe(2);
+      expect(concept?.text).toContain("Ripe concept candidate");
+      expect(rule?.seenCount).toBe(2);
+    });
+
+    it("formats empty and non-empty ripe blocks", () => {
+      expect(formatRipeObservationsBlock([])).toContain("None at seen 2+");
+      expect(
+        formatRipeObservationsBlock([
+          { category: "concept", text: "- **2026-07-02:** Example", seenCount: 2 },
+        ]),
+      ).toContain("[concept] (seen: 2)");
+    });
+  });
+
+  describe("updateLogsIndexFromDaySummary", () => {
+    it("updates index line from Day summary Key themes", () => {
+      setupRoot();
+      mkdirSync(join(dir, "logs"), { recursive: true });
+      writeFileSync(
+        join(dir, "logs", "index.md"),
+        "# Sessions index\n\n- 2026-07-23: active — old description\n",
+      );
+      writeFileSync(
+        join(dir, "logs", "2026-07-23.md"),
+        `---
+date: 2026-07-23
+---
+
+## Day summary
+- **Key themes:** Buddy eval fixes, observation promotion, grouping
+- **Moved forward:** worker mechanics
+`,
+      );
+
+      updateLogsIndexFromDaySummary(dir, "2026-07-23");
+      const index = readFileSync(join(dir, "logs", "index.md"), "utf8");
+      expect(index).toContain(
+        "- 2026-07-23: active — Buddy eval fixes, observation promotion, grouping",
+      );
+      expect(index).not.toContain("old description");
+    });
+
+    it("extractDaySummaryKeyThemes parses Key themes line", () => {
+      const themes = extractDaySummaryKeyThemes(
+        "## Day summary\n- **Key themes:** One, two, three\n",
+      );
+      expect(themes).toBe("One, two, three");
     });
   });
 });

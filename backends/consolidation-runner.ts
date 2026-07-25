@@ -24,11 +24,14 @@ import { isoWeekLabel, toIsoDay } from "../shared/dates";
 import {
   computeBrainHealthReport,
   computeHebbianReport,
+  extractRipeObservations,
   findUpcomingReminders,
   formatBrainHealthReportBlock,
   formatHebbianReportBlock,
+  formatRipeObservationsBlock,
   formatUpcomingRemindersBlock,
   rotateLogs,
+  updateLogsIndexFromDaySummary,
 } from "./consolidation-mechanics";
 import { logEvent } from "./app-logger";
 import { commitAll } from "./git";
@@ -75,12 +78,14 @@ export function buildConsolidationPrompt(
   const hebbianBlock = formatHebbianReportBlock(computeHebbianReport(rootDir, now));
   const remindersBlock = formatUpcomingRemindersBlock(findUpcomingReminders(rootDir, date));
   const healthBlock = formatBrainHealthReportBlock(computeBrainHealthReport(rootDir));
+  const ripeBlock = formatRipeObservationsBlock(extractRipeObservations(rootDir));
 
   return (
     `Date: ${date}\n\n` +
     `${remindersBlock}\n\n` +
     `${hebbianBlock}\n\n` +
     (healthBlock ? `${healthBlock}\n\n` : "") +
+    `${ripeBlock}\n\n` +
     `Run consolidation at depth ${depth}.\n\n` +
     `Follow the procedure below. Do not run git commands — the runner commits after you finish.\n\n` +
     skill
@@ -187,6 +192,9 @@ export async function runConsolidation(options: RunConsolidationOptions): Promis
       try {
         logEvent(rootDir, { event: "consolidation_start", depth });
         await maintenanceSession.prompt(buildConsolidationPrompt(rootDir, depth, now));
+        if (depth === 1) {
+          updateLogsIndexFromDaySummary(rootDir, date);
+        }
         const { archived } = rotateLogs(rootDir, date);
         if (archived.length > 0) {
           appendDailyLog(

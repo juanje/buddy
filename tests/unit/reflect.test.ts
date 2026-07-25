@@ -192,6 +192,22 @@ describe("updateLogsIndexEntry", () => {
     expect(index).toContain("archived (monthly)");
   });
 
+  it("uses explicit description when provided", () => {
+    dir = mkdtempSync(join(tmpdir(), "ab-index-"));
+    mkdirSync(join(dir, "logs"), { recursive: true });
+    writeFileSync(
+      join(dir, "logs", "index.md"),
+      "# Sessions index\n\n- 2026-07-23: active — stale one-liner\n",
+      "utf8",
+    );
+    writeFileSync(join(dir, "logs", "2026-07-23.md"), "### Context\nDifferent context line.\n");
+
+    updateLogsIndexEntry(dir, "2026-07-23", "active", "Key themes from Day summary");
+    const index = readFileSync(join(dir, "logs", "index.md"), "utf8");
+    expect(index).toContain("- 2026-07-23: active — Key themes from Day summary");
+    expect(index).not.toContain("stale one-liner");
+  });
+
   it("inserts new entry in sorted position", () => {
     dir = mkdtempSync(join(tmpdir(), "ab-index-"));
     mkdirSync(join(dir, "logs"), { recursive: true });

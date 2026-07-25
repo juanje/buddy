@@ -20,6 +20,7 @@ reflect before consolidating — read what's already in the log.
 
 **Automatic (handled by the runner — do not do these yourself):**
 - Log rotation — when `logs/` exceeds 28 files, older logs are archived automatically after consolidation.
+- Today's `logs/index.md` entry — after you write the Day summary, the runner updates today's index line from **Key themes** (do not edit `logs/index.md` yourself).
 
 ## Procedure
 
@@ -57,10 +58,6 @@ or update it if one already exists:
 ```
 
 Keep it brief — this makes the weekly review's job easier.
-
-After writing the Day summary, update today's line in `logs/index.md` with
-the Key themes if an entry for today exists. If no line exists yet, append:
-`- YYYY-MM-DD: active — [Key themes]`.
 
 #### 3. Write journal entry
 
@@ -201,8 +198,13 @@ connects naturally today, skip this step.
 
 #### 7. Act on mature observations
 
-Read `agent_brain/observations.md`. For each observation with **2 or more
-occurrences** (seen across different conversations or days):
+The prompt header may include a "Ripe observations" block listing items at
+**seen 2+** that need action. If present, act on **each** item listed — do not
+skip because the full `observations.md` file is long.
+
+If no ripe block is present, read `agent_brain/observations.md` and act on
+each observation with **2 or more occurrences** (seen across different
+conversations or days):
 
 **Skill candidates (seen 2+):**
 1. Create the skill in `agent_brain/skills/verb-object.md`.
@@ -329,6 +331,47 @@ issues:
   splitting.
 
 If no health block is present, the brain structure is healthy — skip this step.
+
+---
+
+### Depth extensions
+
+The steps above run at every depth. The following steps run ONLY at the
+specified depth.
+
+#### Depth 2 — Weekly calibration (run after all daily steps)
+
+1. **Write weekly journal** — `user/journal/YYYY/weekly/WNN.md`. Cover the full
+   week: what happened (day-by-day summary), patterns/evolution, personal note,
+   looking ahead (3-6 forward items). Tone: agent's synthesis of the week's arc.
+
+2. **Review ideas lifecycle** — scan `agent_brain/ideas/` for files with
+   `status: developing`. If enough material has accumulated (from logs, concepts,
+   or sessions), advance to `ready`. If stale (no new input in 2+ weeks), note
+   it but don't force advancement.
+
+#### Depth 3 — Monthly review (run after weekly steps)
+
+1. **Review concept directory for grouping** — scan `agent_brain/concepts/` and
+   other flat directories. If 3+ files at the same level share a clear thematic
+   cluster (cross-references, shared domain, complementary aspects of one topic):
+   - Create a subdirectory named after the cluster theme
+   - Move the related files into it
+   - Create an `index.md` hub linking them with brief descriptions
+   - Update `concepts/index.md` to reflect the new structure
+   - Update any incoming links from other files
+
+   This is essential for progressive disclosure — flat accumulation degrades
+   discoverability. The user will not ask for this; it must happen proactively.
+
+2. **Observation hygiene** — remove resolved observations older than 60 days
+   from the active section (they're already tracked in the Resolved section or
+   in the artifacts they produced). Compress stale single-occurrence entries
+   older than 90 days into a count note.
+
+3. **Unused skills review** — identify skills in `agent_brain/skills/` not
+   accessed in 3+ months (use Hebbian data). Propose archival to
+   `agent_brain/archive/` — don't archive without noting.
 
 ---
 
