@@ -100,6 +100,7 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 | FR-CONSOL-04 | Lock management | done | 7b53829 |
 | FR-CONSOL-05 | Idle-aware scheduling | done | 7b53829 |
 | FR-CONSOL-06 | Run journal | done | 7b53829 |
+| FR-CONSOL-07 | Consolidation relocate tool for brain file grouping | done | (see E16) |
 | FR-COST-02 | Usage panel in Settings | done | (see E15) |
 | FR-COST-03 | Budget warning + hard limit | done | (see E15) |
 
@@ -196,8 +197,19 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 
 ## Current focus
 
-> **Eval sprint shipped (2026-07-25)** — FR-BRAIN-04/05 consolidation evals completed (5 runs, depth 1–3). Ripe observation injection, programmatic logs index, depth extensions, and index-preserve fix all shipped. **268 unit + 136 BDD** green.
-> **Implementation next:** FR-WIKI, physical brain file grouping tooling (issue #8 from evals).
+> **Eval sprint shipped (2026-07-25)** — FR-BRAIN-04/05 consolidation evals completed (5 runs, depth 1–3). Ripe observation injection, programmatic logs index, depth extensions, and index-preserve fix all shipped. **273 unit + 139 BDD** green.
+> **Implementation next:** FR-WIKI.
+
+### E16 — Consolidation relocate tool (2026-07-25)
+
+| FR-ID | Feature | Status | Notes |
+|-------|---------|--------|-------|
+| FR-CONSOL-07 | `relocate_brain_file` tool (git mv + link rewrite) | done | Consolidation sessions only |
+| FR-SKILL-05 | Skill tools wired into maintenance session | done | `triage_inbox` via tool, not file read |
+
+**Tests at E16 close:** 273 unit + 139 BDD green.
+
+Resolves eval issue #8 — depth-3 grouping can now physically move files into subdirectories.
 
 ### Eval sprint: FR-BRAIN-04/05 consolidation quality — DONE (2026-07-25)
 
@@ -214,7 +226,7 @@ Eval results in `my-ab/agent_brain/projects/agentic-buddy/eval-results.md`. 5 ru
 
 **Tests at sprint close:** 268 unit + 136 BDD green.
 
-Open from evals: physical brain file grouping blocked (file-only agent has no move/delete tool) — tracked as issue #8 for future tooling sprint.
+Issue #8 (physical brain file grouping) resolved in E16 via FR-CONSOL-07.
 
 ### Sprint 3.5: Inline file viewer — DONE (2026-07-25)
 
@@ -241,6 +253,7 @@ Open from evals: physical brain file grouping blocked (file-only agent has no mo
 | FR-SKILL-02 | process_conversation tool for manual reflect | done | 7a40949 |
 | FR-SKILL-03 | triage_inbox tool for inbox processing | done | 7a40949 |
 | FR-SKILL-04 | Reflect child uses bundled process-conversation prompt | done | 0588329 |
+| FR-SKILL-05 | Consolidation invokes triage via tool call | done | (see E16) |
 | FR-BRAIN-06 | AGENTS.md skill-free (skills via tool descriptions) | done | a835d09 |
 
 **Tests at sprint close:** 237 unit + 122 BDD green.

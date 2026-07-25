@@ -356,7 +356,8 @@ specified depth.
    other flat directories. If 3+ files at the same level share a clear thematic
    cluster (cross-references, shared domain, complementary aspects of one topic):
    - Create a subdirectory named after the cluster theme
-   - Move the related files into it
+   - Use the `relocate_brain_file` tool to move each file (it handles git mv +
+     link rewrites automatically). Call it once per file.
    - Create an `index.md` hub linking them with brief descriptions
    - Update `concepts/index.md` to reflect the new structure
    - Update any incoming links from other files

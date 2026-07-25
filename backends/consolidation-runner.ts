@@ -41,6 +41,8 @@ import { appendDailyLog, updateLogsIndexEntry } from "./reflect";
 import { defaultConfigDir } from "./allowed-paths";
 import { globalConfigDir } from "./schema-migration";
 import { recordUsageToFile, sumUsageFromEvents } from "./usage-tracker";
+import { buildConsolidationTools, consolidationToolNames } from "./consolidation-tools";
+import { buildSkillTools, skillToolNames } from "./skill-tools";
 
 export interface MaintenanceSessionLike {
   prompt(text: string): Promise<void>;
@@ -119,12 +121,18 @@ export async function createMaintenanceSession(options: {
   });
   await resourceLoader.reload();
 
+  const promptsDir = join(globalConfigDir(), "prompts");
+  const skillTools = buildSkillTools(promptsDir);
+  const consolTools = buildConsolidationTools(rootDir);
+  const allCustomTools = [...skillTools, ...consolTools];
+
   const { session } = await createAgentSession({
     cwd: rootDir,
     resourceLoader,
     sessionManager: SessionManager.create(rootDir),
     excludeTools: [...EXCLUDED_TOOLS],
-    tools: [...AGENT_TOOLS],
+    tools: [...AGENT_TOOLS, ...skillToolNames(skillTools), ...consolidationToolNames(consolTools)],
+    customTools: allCustomTools,
     modelRuntime,
   });
 

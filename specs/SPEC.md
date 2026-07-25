@@ -548,6 +548,7 @@ Fork bomb defense:
 | FR-CONSOL-04 | Lock management | 2 ✓ |
 | FR-CONSOL-05 | Idle-aware scheduling | 2 ✓ |
 | FR-CONSOL-06 | Run journal | 2 ✓ |
+| FR-CONSOL-07 | Consolidation relocate tool for brain file grouping | 2 |
 
 **Consolidation depths:**
 
@@ -599,6 +600,15 @@ Fork bomb defense:
 - **Given** a consolidation run completes (success or failure)
 - **When** the result is recorded
 - **Then** an entry is appended to `.buddy/consolidation-log.json` with timestamp, depth, duration, and status
+
+**FR-CONSOL-07 — Consolidation relocate tool**
+
+- **Given** a consolidation session is running at depth 3
+- **When** the LLM calls `relocate_brain_file` with source `agent_brain/concepts/foo.md` and destination `agent_brain/concepts/cluster/foo.md`
+- **Then** the file is moved via `git mv` (preserving history)
+- **And** the destination directory is created if absent
+- **And** all markdown files referencing the old relative path are updated
+- **And** the operation fails gracefully if source is outside `agent_brain/`
 
 ### 3.9 Hebbian Tracking (FR-HEBB)
 
@@ -1050,7 +1060,7 @@ result — the LLM then follows the procedure.
 | FR-SKILL-02 | process_conversation tool for manual reflect | 2 ✓ |
 | FR-SKILL-03 | triage_inbox tool for inbox processing | 2 ✓ |
 | FR-SKILL-04 | Reflect child uses bundled process-conversation prompt | 2 ✓ |
-| FR-SKILL-05 | Consolidation invokes triage via tool call | 3 |
+| FR-SKILL-05 | Consolidation invokes triage via tool call | 2 ✓ |
 
 **FR-SKILL-01 — Skill tools registered at session creation**
 
@@ -1085,13 +1095,12 @@ result — the LLM then follows the procedure.
 - **And** appends an output-only suffix instructing the LLM to produce structured text without tool calls
 - **Note:** The reflect child has `noTools: "all"`, so the suffix prevents the LLM from attempting file operations. The worker persists the output to the daily log. Manual tool usage (FR-SKILL-02) returns the prompt without the suffix since the LLM has tools.
 
-**FR-SKILL-05 — Consolidation invokes triage via tool call (future)**
+**FR-SKILL-05 — Consolidation invokes triage via tool call**
 
 - **Given** the consolidation skill (Step 4) tells the LLM to triage the inbox
 - **When** the consolidation maintenance session has skill tools registered
 - **Then** the LLM calls the `triage_inbox` tool instead of reading a file from disk
 - **And** the triage prompt is always the latest bundled version
-- **Note:** Phase 3 — currently the consolidation skill says "Read agent_brain/skills/triage-inbox.md" which works because the file exists in the instance. Converting this to a tool call removes the file dependency.
 
 **Design principles:**
 

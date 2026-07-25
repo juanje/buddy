@@ -19,9 +19,12 @@ import {
   findDatedInboxItems,
   findUpcomingReminders,
   formatRipeObservationsBlock,
+  relocateBrainFile,
+  rewriteBrokenLinks,
   rotateLogs,
   updateLogsIndexFromDaySummary,
 } from "../../backends/consolidation-mechanics";
+import { initTestGitRepo } from "../support/test-git";
 
 describe("consolidation mechanics", () => {
   let dir: string;
@@ -231,6 +234,95 @@ date: 2026-07-23
         "## Day summary\n- **Key themes:** One, two, three\n",
       );
       expect(themes).toBe("One, two, three");
+    });
+  });
+
+  describe("rewriteBrokenLinks", () => {
+    it("updates relative markdown links after a move", () => {
+      setupRoot();
+      mkdirSync(join(dir, "agent_brain", "concepts"), { recursive: true });
+      writeFileSync(join(dir, "agent_brain", "concepts", "foo.md"), "# Foo\n");
+      writeFileSync(
+        join(dir, "agent_brain", "concepts", "bar.md"),
+        "# Bar\n\nSee [foo](../concepts/foo.md).\n",
+      );
+
+      const rewritten = rewriteBrokenLinks(
+        dir,
+        "agent_brain/concepts/foo.md",
+        "agent_brain/concepts/cluster/foo.md",
+      );
+
+      expect(rewritten).toEqual(["agent_brain/concepts/bar.md"]);
+      const bar = readFileSync(join(dir, "agent_brain", "concepts", "bar.md"), "utf8");
+      expect(bar).toContain("](cluster/foo.md)");
+    });
+  });
+
+  describe("relocateBrainFile", () => {
+    async function setupGitRoot(): Promise<void> {
+      setupRoot();
+      writeFileSync(join(dir, "AGENTS.md"), "# Rules\n");
+      mkdirSync(join(dir, "agent_brain", "concepts"), { recursive: true });
+      writeFileSync(join(dir, "agent_brain", "concepts", "foo.md"), "# Foo\n");
+      await initTestGitRepo(dir);
+      const { simpleGit } = await import("simple-git");
+      await simpleGit(dir).add("-A").commit("seed");
+    }
+
+    it("moves a file with git mv and rewrites links", async () => {
+      await setupGitRoot();
+      writeFileSync(
+        join(dir, "agent_brain", "concepts", "bar.md"),
+        "# Bar\n\nSee [foo](foo.md).\n",
+      );
+      const { simpleGit } = await import("simple-git");
+      await simpleGit(dir).add("-A").commit("bar");
+
+      const result = await relocateBrainFile(
+        dir,
+        "agent_brain/concepts/foo.md",
+        "agent_brain/concepts/cluster/foo.md",
+      );
+
+      expect(existsSync(join(dir, "agent_brain", "concepts", "cluster", "foo.md"))).toBe(true);
+      expect(existsSync(join(dir, "agent_brain", "concepts", "foo.md"))).toBe(false);
+      expect(result.rewrittenLinks).toContain("agent_brain/concepts/bar.md");
+      const bar = readFileSync(join(dir, "agent_brain", "concepts", "bar.md"), "utf8");
+      expect(bar).toContain("](cluster/foo.md)");
+    });
+
+    it("creates destination parent directories", async () => {
+      await setupGitRoot();
+
+      await relocateBrainFile(
+        dir,
+        "agent_brain/concepts/foo.md",
+        "agent_brain/concepts/nested/cluster/foo.md",
+      );
+
+      expect(
+        existsSync(join(dir, "agent_brain", "concepts", "nested", "cluster", "foo.md")),
+      ).toBe(true);
+    });
+
+    it("rejects paths outside agent_brain", async () => {
+      await setupGitRoot();
+      mkdirSync(join(dir, "user"), { recursive: true });
+      writeFileSync(join(dir, "user", "inbox.md"), "# Inbox\n");
+      await import("simple-git").then(({ simpleGit }) => simpleGit(dir).add("-A").commit("inbox"));
+
+      await expect(
+        relocateBrainFile(dir, "user/inbox.md", "agent_brain/inbox.md"),
+      ).rejects.toThrow("source must be within agent_brain/");
+    });
+
+    it("rejects missing source files", async () => {
+      await setupGitRoot();
+
+      await expect(
+        relocateBrainFile(dir, "agent_brain/missing.md", "agent_brain/x/y.md"),
+      ).rejects.toThrow(/does not exist/);
     });
   });
 });
