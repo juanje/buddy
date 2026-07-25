@@ -203,8 +203,8 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 
 | FR-ID | Feature | Status | Commit |
 |-------|---------|--------|--------|
-| NFR-FORMAT-01 | `summary` frontmatter in agent_brain templates | done | (pending) |
-| FR-BRAIN-07 | Brain health linter (structural checks, worker code) | done | (pending) |
+| NFR-FORMAT-01 | `summary` frontmatter in agent_brain templates | done | d948936 |
+| FR-BRAIN-07 | Brain health linter (structural checks, worker code) | done | d948936 |
 
 **Tests at sprint close:** 250 unit + 128 BDD green.
 
