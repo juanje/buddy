@@ -192,12 +192,29 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 | FR-COST-02 | Usage panel in Settings (session + monthly) | done | a68d228 |
 | FR-COST-03 | Budget warning (80%) + hard limit (100%) with OS notifications | done | a68d228 |
 
-**Tests at E15 close:** 205 unit + 109 BDD green.
+**Tests at E15 close:** 268 unit + 136 BDD green.
 
 ## Current focus
 
-> **Sprint 3.5 shipped (2026-07-25)** — Inline file viewer (FR-CHAT-10): `.md`/`.txt` links open in a read-only panel inside Buddy; other local files still use `openPath()`.
-> **Implementation next:** FR-BRAIN-04/05 (consolidation + observation evals via fixture repo), FR-WIKI.
+> **Eval sprint shipped (2026-07-25)** — FR-BRAIN-04/05 consolidation evals completed (5 runs, depth 1–3). Ripe observation injection, programmatic logs index, depth extensions, and index-preserve fix all shipped. **268 unit + 136 BDD** green.
+> **Implementation next:** FR-WIKI, physical brain file grouping tooling (issue #8 from evals).
+
+### Eval sprint: FR-BRAIN-04/05 consolidation quality — DONE (2026-07-25)
+
+| FR-ID | Feature | Status | Commit |
+|-------|---------|--------|--------|
+| FR-BRAIN-04 | Consolidation skill produces meaningful summaries | done | b9c5ee3 |
+| FR-BRAIN-05 | Observation pipeline captures and promotes patterns | done | b9c5ee3 |
+
+Eval results in `my-ab/agent_brain/projects/agentic-buddy/eval-results.md`. 5 runs (depth 1–3). Fixes shipped:
+- Ripe observation extraction + injection into consolidation prompt header
+- Programmatic `logs/index.md` update from Day summary Key themes (worker code, not LLM)
+- Depth 2/3 explicit steps in `consolidation.md` (weekly journal, idea review, grouping, hygiene)
+- Maintenance index upsert preserves curated active descriptions (`10d39dc`)
+
+**Tests at sprint close:** 268 unit + 136 BDD green.
+
+Open from evals: physical brain file grouping blocked (file-only agent has no move/delete tool) — tracked as issue #8 for future tooling sprint.
 
 ### Sprint 3.5: Inline file viewer — DONE (2026-07-25)
 

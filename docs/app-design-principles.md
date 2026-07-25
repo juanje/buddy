@@ -357,6 +357,8 @@ checks if daily ran and does it first" — that's worker logic now.
 - Log the run in the session index
 - Prune `.buddy/logs/*.jsonl` older than retention threshold (NFR-MAINT-01)
 - Brain health scan (`computeBrainHealthReport()`, FR-BRAIN-07) before consolidation
+- Extract ripe observations (seen 2+) from `observations.md` and inject into prompt header
+- Update `logs/index.md` entry from Day summary Key themes after depth-1 consolidation
 
 ### What the LLM handles (judgment, uses tokens)
 

@@ -302,9 +302,9 @@ platform-specific install instructions is shown and setup cannot continue.
 |----|-------------|-------|
 | FR-REFLECT-01 | Session-end reflect finalization (daily log append) | 1 ✓ |
 | FR-REFLECT-02 | Forked reflect on session end (primary) | 1 ✓ |
-| FR-REFLECT-03 | Compaction-triggered checkpoint reflect (fork before Pi compacts) | 2 |
+| FR-REFLECT-03 | Compaction-triggered checkpoint reflect (fork before Pi compacts) | 2 ✓ |
 | FR-REFLECT-04 | Log output sanitizer (strip tool-call artifacts) | 2 ✓ |
-| FR-REFLECT-05 | Session path persistence and crash recovery | 2 |
+| FR-REFLECT-05 | Session path persistence and crash recovery | 2 ✓ |
 
 **FR-REFLECT-01 — Session-end reflect finalization**
 
@@ -801,10 +801,10 @@ detailed specification: [specs/BRAIN-SPEC.md](BRAIN-SPEC.md).
 | FR-BRAIN-01 | AGENTS.md provides behavioral rules that produce AB behavior | 1 ✓ |
 | FR-BRAIN-02 | SOUL.md defines character and first-session personalization flow | 1 ✓ |
 | FR-BRAIN-03 | USER.md placeholder is correctly populated by agent in first conversation | 1 ✓ |
-| FR-BRAIN-04 | Consolidation skill produces meaningful summaries when invoked | 2 |
-| FR-BRAIN-05 | Observation pipeline captures and promotes patterns | 2 |
-| FR-BRAIN-06 | AGENTS.md does not declare skills — procedural prompts are skill tools (FR-SKILL) | 2 |
-| FR-BRAIN-07 | Brain health linter (structural checks, worker code) | 2 |
+| FR-BRAIN-04 | Consolidation skill produces meaningful summaries when invoked | 2 ✓ |
+| FR-BRAIN-05 | Observation pipeline captures and promotes patterns | 2 ✓ |
+| FR-BRAIN-06 | AGENTS.md does not declare skills — procedural prompts are skill tools (FR-SKILL) | 2 ✓ |
+| FR-BRAIN-07 | Brain health linter (structural checks, worker code) | 2 ✓ |
 
 **FR-BRAIN-01 — AGENTS.md behavioral rules**
 
@@ -831,6 +831,29 @@ detailed specification: [specs/BRAIN-SPEC.md](BRAIN-SPEC.md).
 - **Then** the agent addresses the user by name
 - **And** uses their preferred language
 - **And** references context from the first conversation
+
+**FR-BRAIN-04 — Consolidation skill produces meaningful summaries**
+
+- **Given** consolidation runs at depth 1 on an AB instance with session reflect logs
+- **When** the worker builds the consolidation prompt via `buildConsolidationPrompt()`
+- **Then** it pre-injects: date, upcoming reminders, Hebbian report, brain health block, ripe observations
+- **And** the LLM synthesizes a Day summary (Key themes, Moved forward, Learned, Open)
+- **And** the worker updates `logs/index.md` from Day summary Key themes programmatically (`updateLogsIndexFromDaySummary()`)
+- **And** the journal entry covers the day's arc in third person, not a changelog
+- **And** inbox triage empties the Capture section
+- **And** at depth 2, a weekly journal is written covering the full week
+- **And** at depth 3, concept directory is reviewed for grouping + observation hygiene runs
+- **Validated:** 5 eval runs (depth 1–3) against fixture repo — `eval-results.md`
+
+**FR-BRAIN-05 — Observation pipeline captures and promotes patterns**
+
+- **Given** `agent_brain/observations.md` contains entries with `(seen: N)` counts
+- **When** consolidation runs and `extractRipeObservations()` finds entries at seen 2+
+- **Then** the worker injects a "Ripe observations" block into the consolidation prompt header
+- **And** the LLM creates concept/skill/rule files from ripe observations (Step 7)
+- **And** marks them resolved in `observations.md`
+- **And** maintenance index upsert preserves curated active descriptions (does not overwrite with auto-summary)
+- **Validated:** Runs 4–5 confirmed observation→concept promotion pipeline works end-to-end
 
 **FR-BRAIN-06 — AGENTS.md skill-free**
 
@@ -1023,10 +1046,10 @@ result — the LLM then follows the procedure.
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-SKILL-01 | Skill tools registered at session creation | 2 |
-| FR-SKILL-02 | process_conversation tool for manual reflect | 2 |
-| FR-SKILL-03 | triage_inbox tool for inbox processing | 2 |
-| FR-SKILL-04 | Reflect child uses bundled process-conversation prompt | 2 |
+| FR-SKILL-01 | Skill tools registered at session creation | 2 ✓ |
+| FR-SKILL-02 | process_conversation tool for manual reflect | 2 ✓ |
+| FR-SKILL-03 | triage_inbox tool for inbox processing | 2 ✓ |
+| FR-SKILL-04 | Reflect child uses bundled process-conversation prompt | 2 ✓ |
 | FR-SKILL-05 | Consolidation invokes triage via tool call | 3 |
 
 **FR-SKILL-01 — Skill tools registered at session creation**

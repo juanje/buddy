@@ -617,11 +617,12 @@ async function runConsolidation(targetDepth: number, state: ConsolidationState) 
         const hebbianReport = await computeHebbianReport(AB_DIR);
         const brainHealthReport = await computeBrainHealthReport(AB_DIR);
         const upcomingReminders = await findUpcomingReminders(AB_DIR);
+        const ripeObservations = extractRipeObservations(AB_DIR);
 
         // Cascade: run lower depths first if needed
         for (let d = 1; d <= targetDepth; d++) {
             if (isDepthDue(d, state)) {
-                await runSingleDepth(d, { hebbianReport, brainHealthReport, upcomingReminders });
+                await runSingleDepth(d, { hebbianReport, brainHealthReport, upcomingReminders, ripeObservations });
                 logRun(d, "success");
                 advanceCounters(state, d);
             }
@@ -783,8 +784,9 @@ JSON command needed. The SDK handles the callback directly.
 6. Worker: determine target depth, cascade lower depths first
 7. Worker: spawn separate Pi maintenance session
 8. Maintenance session: runs consolidation at target depth
-9. Worker: dispose maintenance session, log run, advance counters
-10. Worker: release lock, auto-commit results
+9. Worker: after depth-1, update logs/index.md from Day summary Key themes
+10. Worker: dispose maintenance session, log run, advance counters
+11. Worker: release lock, auto-commit results
 ```
 
 ## Data Flow — App Close (fork-only reflect)
@@ -806,7 +808,7 @@ Session end (normal close):
      Lessons, Context, Open threads, Tasks captured, Ideas, System observations
    - Commits agent file writes immediately after LLM call
    - Appends ## Session HH:MM–HH:MM to logs/YYYY-MM-DD.md (metadata from spawn args)
-   - Rebuilds logs/index.md, commits, exits
+   - Updates logs/index.md entry for the session date, commits, exits
 
 Spawn mechanism:
   dev:  child_process.fork(reflect-child.ts) with tsx
