@@ -1,4 +1,4 @@
-<img src="brand/buddy-logo-on-dark.png" width="320" alt="Buddy">
+![Buddy](brand/buddy-logo-on-dark.png)
 
 A native desktop app that gives non-technical users a personal assistant with
 persistent, learning memory. You talk; it captures, organizes, remembers, and
