@@ -276,6 +276,22 @@ describe("updateLogsIndexEntry", () => {
     expect(index).toContain("2026-07-21: active —");
     expect(index).not.toContain("2026-07-21: maintenance —");
   });
+
+  it("preserves curated description when blocking maintenance downgrade", () => {
+    dir = mkdtempSync(join(tmpdir(), "ab-index-"));
+    mkdirSync(join(dir, "logs"), { recursive: true });
+    writeFileSync(
+      join(dir, "logs", "index.md"),
+      "- 2026-07-23: active — Key themes from Day summary\n",
+      "utf8",
+    );
+    writeFileSync(join(dir, "logs", "2026-07-23.md"), "### Context\nDifferent maintenance context.\n");
+
+    updateLogsIndexEntry(dir, "2026-07-23", "maintenance");
+    const index = readFileSync(join(dir, "logs", "index.md"), "utf8");
+    expect(index).toContain("- 2026-07-23: active — Key themes from Day summary");
+    expect(index).not.toContain("Different maintenance context");
+  });
 });
 
 describe("parseFrontmatter", () => {

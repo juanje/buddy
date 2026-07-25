@@ -146,8 +146,7 @@ export function updateLogsIndexEntry(
   if (entryPattern.test(existing)) {
     const currentLine = existing.match(entryPattern)![0];
     if (currentLine.includes(": active") && status === "maintenance") {
-      const preservedLine = `- ${date}: active — ${summary}`;
-      writeFileSync(indexPath, existing.replace(entryPattern, preservedLine), "utf8");
+      // Same-day maintenance must not replace an active entry's curated description.
       return;
     }
     writeFileSync(indexPath, existing.replace(entryPattern, newLine), "utf8");
