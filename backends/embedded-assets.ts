@@ -9,6 +9,8 @@ export interface EmbeddedAssets {
   templates: Record<string, string>;
   /** Prompt filenames relative to bundled/prompts/ (e.g. "agents-base.md") → content. */
   prompts: Record<string, string>;
+  /** Self-doc pages relative to bundled/docs/ (e.g. "index.md") → content. */
+  docs: Record<string, string>;
 }
 
 let assets: EmbeddedAssets | undefined;

@@ -24,12 +24,15 @@ describe("embedded assets (compiled sidecar)", () => {
     registerEmbeddedAssets({
       templates: {},
       prompts: { "agents-base.md": "# embedded base\n", "consolidation.md": "# embedded consol\n" },
+      docs: { "index.md": "# embedded index\n", "capabilities.md": "# embedded caps\n" },
     });
 
     ensureSchema(dir);
 
     expect(readFileSync(join(dir, "prompts", "agents-base.md"), "utf8")).toBe("# embedded base\n");
     expect(readFileSync(join(dir, "prompts", "consolidation.md"), "utf8")).toBe("# embedded consol\n");
+    expect(readFileSync(join(dir, "docs", "index.md"), "utf8")).toBe("# embedded index\n");
+    expect(readFileSync(join(dir, "docs", "capabilities.md"), "utf8")).toBe("# embedded caps\n");
     // Only embedded prompts, not the repo's bundled/prompts content.
     expect(existsSync(join(dir, "prompts", "process-conversation.md"))).toBe(false);
   });
@@ -44,6 +47,7 @@ describe("embedded assets (compiled sidecar)", () => {
         "logs/archive/.gitkeep": "",
       },
       prompts: {},
+      docs: {},
     });
 
     const target = join(dir, "ab");
@@ -57,7 +61,7 @@ describe("embedded assets (compiled sidecar)", () => {
 
   it("an explicit templatesDir wins over embedded assets", () => {
     dir = mkdtempSync(join(tmpdir(), "ab-embedded-"));
-    registerEmbeddedAssets({ templates: { "AGENTS.md": "# embedded\n" }, prompts: {} });
+    registerEmbeddedAssets({ templates: { "AGENTS.md": "# embedded\n" }, prompts: {}, docs: {} });
 
     const source = join(dir, "source");
     mkdirSync(source, { recursive: true });

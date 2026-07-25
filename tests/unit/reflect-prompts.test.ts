@@ -34,6 +34,7 @@ describe("loadProcessConversationPrompt", () => {
       prompts: {
         "process-conversation.md": "# Embedded process conversation",
       },
+      docs: {},
     });
     expect(loadProcessConversationPrompt()).toBe("# Embedded process conversation");
   });

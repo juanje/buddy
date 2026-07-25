@@ -17,6 +17,7 @@ import type { AllowedEntry } from "./allowed-paths";
 import { isPathPersistentlyAllowed } from "./allowed-paths";
 import { DENYLIST_BASENAMES, DENYLIST_HOME_DIRS, READ_TOOLS, WRITE_TOOLS } from "../shared/defaults";
 import { isWithin } from "../shared/path-utils";
+import { globalConfigDir } from "./schema-migration";
 
 export type PermissionOp = "read" | "write";
 
@@ -61,6 +62,7 @@ export function evaluateToolCall(
   args: unknown,
   rootDir: string,
   home: string = homedir(),
+  configDir: string = globalConfigDir(),
 ): PermissionDecision {
   const op: PermissionOp | undefined = WRITE_TOOLS.has(toolName)
     ? "write"
@@ -89,6 +91,9 @@ export function evaluateToolCall(
   if (isWithin(absPath, rootDir)) {
     return { action: "allow" };
   }
+  if (op === "read" && isWithin(absPath, join(configDir, "docs"))) {
+    return { action: "allow" };
+  }
   return { action: "ask", kind: "outside", op, path: absPath };
 }
 
@@ -113,11 +118,11 @@ export function createPermissionGate(
   options?: {
     skipIdentityPrompt?: boolean;
     sessionAllowedPaths?: Set<string>;
-    persistentAllowedPaths?: AllowedEntry[];
+    getPersistentAllowedPaths?: () => AllowedEntry[];
   },
 ): PermissionGate {
   const sessionAllowedPaths = options?.sessionAllowedPaths;
-  const persistentAllowedPaths = options?.persistentAllowedPaths ?? [];
+  const getPersistentAllowedPaths = options?.getPersistentAllowedPaths ?? (() => []);
 
   return {
     async check(toolName, args) {
@@ -154,7 +159,7 @@ export function createPermissionGate(
           if (
             decision.op === "read" &&
             decision.kind === "outside" &&
-            isPathPersistentlyAllowed(decision.path, persistentAllowedPaths)
+            isPathPersistentlyAllowed(decision.path, getPersistentAllowedPaths())
           ) {
             return undefined;
           }

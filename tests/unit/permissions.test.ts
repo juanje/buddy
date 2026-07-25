@@ -1,14 +1,16 @@
 // tests/unit/permissions.test.ts — FR-PERM zone classification edge cases.
 
 import { describe, expect, it } from "vitest";
+import { join } from "node:path";
 
 import { evaluateToolCall, createPermissionGate } from "../../backends/permissions";
 import { DENYLIST_BASENAMES, DENYLIST_HOME_DIRS } from "../../shared/defaults";
 
 const HOME = "/home/u";
 const AB = "/home/u/buddy";
+const CONFIG = join(HOME, ".buddy");
 
-const evaluate = (tool: string, args: unknown) => evaluateToolCall(tool, args, AB, HOME);
+const evaluate = (tool: string, args: unknown) => evaluateToolCall(tool, args, AB, HOME, CONFIG);
 
 describe("evaluateToolCall", () => {
   it("allows non-file tools", () => {
@@ -40,6 +42,16 @@ describe("evaluateToolCall", () => {
     expect(evaluate("read", { path: `${AB}/agent_brain/identity/SOUL.md` })).toEqual({
       action: "allow",
     });
+  });
+
+  it("allows reads under ~/.buddy/docs/ without asking (FR-DOCS-01)", () => {
+    expect(evaluate("read", { path: `${CONFIG}/docs/index.md` })).toEqual({ action: "allow" });
+    expect(evaluate("read", { path: "~/.buddy/docs/capabilities.md" })).toEqual({ action: "allow" });
+  });
+
+  it("still asks for writes under ~/.buddy/docs/", () => {
+    const decision = evaluate("write", { path: `${CONFIG}/docs/index.md` });
+    expect(decision).toMatchObject({ action: "ask", kind: "outside", op: "write" });
   });
 
   it("asks for outside paths with the operation kind", () => {
