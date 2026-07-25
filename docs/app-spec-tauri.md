@@ -798,7 +798,8 @@ Session end (normal close):
 6. Background child (async, independent of app):
    - SessionManager.forkFrom(sessionFile, rootDir, forkDir) — full conversation context
    - createAgentSession({ sessionManager: forkedSM }) on the forked JSONL
-   - Single user prompt ("reflect on this session") — NO system prompt override,
+   - Single user prompt: loads `process-conversation.md` from bundled prompts
+     with output-only suffix (FR-SKILL-04) — NO system prompt override,
      NO ResourceLoader, NO AGENTS.md
    - LLM already sees the full conversation in the fork → writes Decisions,
      Lessons, Context, Open threads, Tasks captured, Ideas, System observations
@@ -1820,7 +1821,7 @@ All critical APIs verified against Pi source code. Summary:
 - System prompt: `DefaultResourceLoader({ systemPromptOverride: () => assembled })` → `createAgentSession({ resourceLoader })`
 - Bash disabled: `createAgentSession({ excludeTools: ["bash"] })`
 - Fresh session: `SessionManager.create(cwd)` every launch (E5 decision)
-- Forked reflect: `SessionManager.forkFrom(sessionFile, rootDir, forkDir)` in background child → separate JSONL, no live session pollution. The reflect child does NOT use a ResourceLoader — the fork carries all context; the only input is a user prompt requesting the reflect format.
+- Forked reflect: `SessionManager.forkFrom(sessionFile, rootDir, forkDir)` in background child → separate JSONL, no live session pollution. The reflect child does NOT use a ResourceLoader — the fork carries all context; the only input is the bundled `process-conversation.md` prompt with an output-only suffix (FR-SKILL-04).
 - Hook chaining: save `session.agent.beforeToolCall`, install ours, delegate to original
 - Hebbian tracking: `tool_execution_end` via `session.subscribe()` — tracks file accesses
 - Event names: `compaction_start/end` (not `session_compact`); no `model_select` in subscribe events

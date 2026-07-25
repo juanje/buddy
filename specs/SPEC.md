@@ -1059,8 +1059,8 @@ result — the LLM then follows the procedure.
 - **Given** a session ends and the reflect child is spawned
 - **When** the child builds its user prompt for the forked session
 - **Then** it loads `process-conversation.md` from the bundle (same prompt as FR-SKILL-02)
-- **And** sends it as the user message instead of the current hardcoded `reflect-prompts.ts`
-- **Note:** This ensures automatic reflect and manual reflect use the same procedure. The forked session already carries full conversation context, so the prompt works identically.
+- **And** appends an output-only suffix instructing the LLM to produce structured text without tool calls
+- **Note:** The reflect child has `noTools: "all"`, so the suffix prevents the LLM from attempting file operations. The worker persists the output to the daily log. Manual tool usage (FR-SKILL-02) returns the prompt without the suffix since the LLM has tools.
 
 **FR-SKILL-05 — Consolidation invokes triage via tool call (future)**
 

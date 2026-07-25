@@ -196,8 +196,29 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 
 ## Current focus
 
-> **Jul 24 design decisions spec'd (2026-07-24)** — Reflect redesign: FR-REFLECT-03/05 (compaction-only checkpoint, session persistence, crash recovery). Housekeeping: NFR-MAINT-01 (7-day session log retention). Prompt refresh: NFR-MIGRATE-06 (semver-triggered). Brain format: NFR-FORMAT-01 (`summary` frontmatter), FR-BRAIN-07 (health linter). See `my-ab/agent_brain/projects/agentic-buddy/design-decisions-jul24.md`.
-> **Implementation next:** FR-REFLECT-03/05 realignment, NFR-MIGRATE-06, NFR-MAINT-01, NFR-FORMAT-01, FR-BRAIN-07 — then FR-SKILL, FR-BRAIN-04/05/06 (evals), FR-WIKI, FR-CHAT-10.
+> **Sprint 2 shipped (2026-07-25)** — Skills as tools (FR-SKILL-01..04, FR-BRAIN-06): process_conversation and triage_inbox registered as Pi custom tools; reflect child uses bundled process-conversation.md + output-only suffix; Skills section removed from AGENTS.md template; consolidation Step 4 invokes triage_inbox tool.
+> **Implementation next:** FR-BRAIN-04/05 (consolidation + observation evals via fixture repo), FR-WIKI, FR-CHAT-10.
+
+### Sprint 2: Skills as Tools — DONE (2026-07-25)
+
+| FR-ID | Feature | Status | Commit |
+|-------|---------|--------|--------|
+| FR-SKILL-01 | Skill tools registered at session creation | done | 7a40949 |
+| FR-SKILL-02 | process_conversation tool for manual reflect | done | 7a40949 |
+| FR-SKILL-03 | triage_inbox tool for inbox processing | done | 7a40949 |
+| FR-SKILL-04 | Reflect child uses bundled process-conversation prompt | done | 0588329 |
+| FR-BRAIN-06 | AGENTS.md skill-free (skills via tool descriptions) | done | a835d09 |
+
+**Tests at sprint close:** 237 unit + 122 BDD green.
+
+### Sprint 1: Reflect realignment + housekeeping — DONE (2026-07-25)
+
+| FR-ID | Feature | Status | Commit |
+|-------|---------|--------|--------|
+| FR-REFLECT-03 | Compaction-only checkpoint trigger (turn count removed) | done | fd5ee21 |
+| FR-REFLECT-05 | Session persistence + crash recovery | done | bfa505a |
+| NFR-MIGRATE-06 | Prompt refresh on app version change | done | 7845c28 |
+| NFR-MAINT-01 | Session log retention (7-day prune) | done | 7845c28 |
 
 ### Sprint: Settings access UI — DONE (2026-07-22)
 
