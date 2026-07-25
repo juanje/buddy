@@ -1,4 +1,4 @@
-# Buddy
+<img src="brand/buddy-logo-on-dark.png" width="320" alt="Buddy">
 
 A native desktop app that gives non-technical users a personal assistant with
 persistent, learning memory. You talk; it captures, organizes, remembers, and
@@ -73,7 +73,7 @@ npm run test:bdd        # BDD scenarios only (cucumber-js)
 npm run typecheck       # TypeScript type checking (tsc --noEmit)
 ```
 
-**Current status:** 28 unit test files (118 tests), 93 BDD scenarios passing.
+**Current status:** 268 unit tests, 136 BDD scenarios passing.
 
 ## Project structure
 

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="7 12 82 82" role="img" aria-label="Buddy">
+  <g fill="none" stroke="#6366F1" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M28,16 H62 L84,38 V64 A16,16 0 0 1 68,80 H40 L24,94 L34,80 H28 A16,16 0 0 1 12,64 V32 A16,16 0 0 1 28,16 Z"></path>
+    <path d="M62,16 V32 A6,6 0 0 0 68,38 H84" stroke-width="6"></path>
+    <path d="M30,44 H56" stroke="#F3F4F6" stroke-width="7"></path>
+    <path d="M30,58 H48" stroke="#F3F4F6" stroke-width="7"></path>
+  </g>
+</svg>
