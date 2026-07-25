@@ -1110,6 +1110,71 @@ result — the LLM then follows the procedure.
 - **Discoverable by the LLM:** Tools have a description field; the LLM knows when to use them from the tool list, not from reading a section of AGENTS.md.
 - **User-created skills stay in the instance:** `agent_brain/skills/` continues to exist for skills the agent creates from mature observations during consolidation. Those are agent-authored, not app-managed.
 
+### 3.20 Network / URL Tools (FR-NET)
+
+| ID | Description | Phase |
+|----|-------------|-------|
+| FR-NET-01 | Fetch URL content (web→markdown, PDF, image) | 2 |
+| FR-NET-02 | Web search (opt-in toggle) | 3+ |
+
+**FR-NET-01 — Fetch URL content**
+
+- **Given** the user shares a URL in conversation or asks the agent to read a web page
+- **When** the LLM invokes the `fetch_url` tool with the URL
+- **Then** the worker performs an HTTP GET and branches on content type:
+  - `text/html`: extract main content (readability algorithm), convert to markdown, save to `rootDir/downloads/YYYY-MM-DD_slug.md`, return markdown to agent context
+  - `application/pdf`: save binary to `rootDir/downloads/YYYY-MM-DD_slug.pdf`, extract text via `pdf-parse`, return text to agent context
+  - `image/*`: save binary to `rootDir/downloads/YYYY-MM-DD_slug.ext`, attach as vision input to current message
+- **And** the `downloads/` directory is created on first use (not at setup)
+- **And** HTTP errors (4xx, 5xx, timeout >15s) return a clear error message to the agent (no crash, no retry)
+- **And** responses exceeding 10 MB are rejected with an error message
+- **And** the tool is always available (no toggle) — it extends the agent's ability to read content the user references
+
+**Acceptance criteria:**
+
+- [ ] Tool `fetch_url` registered as Pi custom tool (single string parameter: `url`)
+- [ ] HTML pages return clean markdown (no nav, scripts, ads, style blocks)
+- [ ] PDFs download and return extracted text
+- [ ] Images download and attach as vision content
+- [ ] All fetched content saved to `rootDir/downloads/` with date-prefixed filename
+- [ ] HTTP errors return clear error string (no crash, no retry loop)
+- [ ] Tool respects budget enforcement (token usage counts toward session cost)
+- [ ] Size cap configurable in `defaults.ts` (`FETCH_MAX_BYTES`, default 10 MB)
+- [ ] BDD feature file covers: HTML fetch, PDF fetch, image fetch, 404 handling, timeout, oversize rejection
+
+**Technical notes:**
+
+- Dependencies: `@mozilla/readability` + `linkedom` (content extraction), `turndown` (HTML→markdown), `pdf-parse` (already in project)
+- No JavaScript rendering (SPAs won't extract — graceful degradation)
+- No authentication/cookies (paywalled content fails gracefully)
+- No recursive crawling (one URL = one fetch)
+- Permission model: network fetch is not gated by Zone 1/2/3 (those are filesystem). The user explicitly triggers the fetch by sharing a URL.
+- Git: markdown downloads committed normally; binary files `.gitignore`d via `downloads/*.pdf`, `downloads/*.png`, etc.
+- `rootDir/downloads/` is user-visible (Finder/Nautilus accessible) — transparency principle
+
+---
+
+**FR-NET-02 — Web search (opt-in toggle)**
+
+- **Status:** Future — requires product decisions before implementation.
+- **Given** the user enables the search toggle in the bottom bar (or settings)
+- **When** the agent needs external information beyond local memory
+- **Then** a `web_search` tool is available that queries an external search API and returns structured results (title, snippet, URL)
+- **And** when the toggle is disabled, the `web_search` tool is not registered on the session (not just instructed to skip — actually absent)
+- **And** the default state is disabled (privacy-first, local-memory-first)
+- **And** the user's preference persists across sessions (`~/.buddy/config.json`)
+
+**Open product decisions (resolve before implementation):**
+
+1. Search API source (Brave Search, Tavily, SearXNG, other)
+2. API key ownership (user provides vs app-bundled key)
+3. Cost integration with FR-COST budget tracking (search API cost is outside LLM tokens)
+4. Result persistence (ephemeral context-only vs saved/queryable)
+5. Toggle UX (bottom bar checkbox vs settings toggle vs per-session)
+6. Auto-fetch interaction (search result → auto-fetch full page, or snippets only unless asked?)
+
+**Design intent:** Buddy's core value is local, persistent, private memory. Search is a conscious opt-in that extends capabilities when the user explicitly needs external information — not a default that dilutes the "it remembers you" promise.
+
 ---
 
 ## 4. Non-Functional Requirements
