@@ -90,7 +90,7 @@ I progressed with exercise this month?".
 
 #### 4. Triage inbox
 
-Read `agent_brain/skills/triage-inbox.md` and execute it. Process
+Invoke the `triage_inbox` tool and follow its procedure. Process
 `user/inbox.md` — the goal is to empty the Capture section every day.
 
 After the inbox triage, do a quick scan of the rest of `user/`:
@@ -237,18 +237,14 @@ occurrences** (seen across different conversations or days):
 Observations with only 1 occurrence stay in the journal — they need more
 data before acting.
 
-#### 8. Update Active context
+#### 8a. Update "Right now"
 
-The prompt header includes a "Hebbian promotion data" block with pre-computed
-access counts and active session counts. Use this data directly — do not read
-frontmatter yourself. Your job is to apply judgment on which files to promote
-or demote based on the data provided.
+Update the `### Right now` section of Active context in AGENTS.md. This
+step always runs — it derives from today's logs, not from Hebbian data.
 
-Active context has two subsections: **Right now** (ephemeral state) and
-**Files** (pointers to semantic memory).
-
-**### Right now** — current state the agent should know at every session
-start, without opening any file. Volatile facts that change every few days:
+Read the day's log and extract the current state the agent should know at
+the next session start, without opening any file. Volatile facts that
+change every few days:
 
 - Current situation (vacation, sick, deadline week, travel)
 - Most immediate next actions (1-3 items, with dates if known)
@@ -256,11 +252,19 @@ start, without opening any file. Volatile facts that change every few days:
 - Constraints or blockers
 
 Keep it to 3-5 bullet points. This is the scratchpad of working memory —
-not a task list, not a log. Replace the full contents each time; don't
-append.
+not a task list, not a log. **Replace the full contents each time; don't
+append.**
 
-**### Files** — pointers to brain files worth keeping in the agent's
-peripheral awareness. Updated based on today's activity:
+#### 8b. Hebbian file promotions
+
+Update the `### Files` section of Active context in AGENTS.md based on
+Hebbian data. If the prompt header says "No tracked brain files with
+access metadata", skip this step entirely.
+
+The prompt header includes a "Hebbian promotion data" block with
+pre-computed access counts and active session counts. Use this data
+directly — do not read frontmatter yourself. Your job is to apply judgment
+on which files to promote or demote based on the data provided.
 
 Promotion and demotion are **gradual** — one level at a time, not jumps.
 The visibility levels are:

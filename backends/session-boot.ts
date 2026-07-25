@@ -9,7 +9,7 @@ import {
 } from "@earendil-works/pi-coding-agent";
 import { existsSync, readFileSync } from "node:fs";
 import { randomUUID } from "node:crypto";
-import { basename, resolve } from "node:path";
+import { basename, join, resolve } from "node:path";
 
 import { AGENT_TOOLS, EXCLUDED_TOOLS } from "../shared/defaults";
 import type { AgentEvent, FrontendAPI, PromptOptions } from "../shared/api";
@@ -20,10 +20,13 @@ import { createPermissionGate, isDenylistedPath, type PermissionRequest } from "
 import type { AllowedEntry } from "./allowed-paths";
 import { extractPdfText } from "./pdf-extract";
 import { assembleSystemPrompt } from "./prompt";
+import { globalConfigDir } from "./schema-migration";
+import { buildSkillTools, skillToolNames } from "./skill-tools";
 import { SessionLifecycle } from "./session-lifecycle";
 import { persistLiveSession, markReflectPending } from "./crash-recovery";
 import { createWorkerCore, type PiSessionLike, type WorkerCore } from "./worker-core";
 import type { UsageTracker } from "./usage-tracker";
+import { runWarmHandoff } from "./warm-handoff";
 
 export interface SessionBootContext {
   frontend: FrontendAPI;
@@ -137,12 +140,16 @@ export async function bootSession(
   });
   await resourceLoader.reload();
 
+  const promptsDir = join(globalConfigDir(), "prompts");
+  const skillTools = buildSkillTools(promptsDir);
+
   const { session } = await createAgentSession({
     cwd: rootDir,
     resourceLoader,
     sessionManager: SessionManager.create(rootDir),
     excludeTools: [...EXCLUDED_TOOLS],
-    tools: [...AGENT_TOOLS],
+    tools: [...AGENT_TOOLS, ...skillToolNames(skillTools)],
+    customTools: skillTools,
     modelRuntime: context.modelRuntime,
   });
 

@@ -28,7 +28,8 @@
     "pdf-parse": "^2.4.5",
     "simple-git": "^3.36.0",
     "svelte": "^5.0.0",
-    "tauri-plugin-js-api": "^0.2.0"
+    "tauri-plugin-js-api": "^0.2.0",
+    "typebox": "^1.1.38"
   },
   "devDependencies": {
     "@cucumber/cucumber": "^13.2.0",
