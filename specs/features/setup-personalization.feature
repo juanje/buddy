@@ -6,7 +6,7 @@ Feature: Agent-driven personalization (FR-SETUP-07)
   So that USER.md fills up conversationally instead of via forms
 
   Background:
-    Given an AB directory with identity files
+    Given a buddy directory with identity files
 
   Scenario: A placeholder profile triggers the personalization instructions
     Given USER.md is still the placeholder template
@@ -21,6 +21,6 @@ Feature: Agent-driven personalization (FR-SETUP-07)
     Then the prompt has no personalization instructions
 
   Scenario: A missing profile also triggers personalization
-    Given the AB directory has no USER.md
+    Given the buddy directory has no USER.md
     When the system prompt is assembled
     Then the prompt instructs the agent to introduce itself

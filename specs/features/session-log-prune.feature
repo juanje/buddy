@@ -6,7 +6,7 @@ Feature: Session log retention
   So that debug-only JSONL files don't accumulate indefinitely
 
   Background:
-    Given an initialized AB git repository with session logs directory
+    Given an initialized buddy git repository with session logs directory
 
   Scenario: Logs older than 7 days are deleted
     Given a session log "2026-07-10.jsonl" from 10 days ago

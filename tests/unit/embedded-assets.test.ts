@@ -8,7 +8,7 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { registerEmbeddedAssets } from "../../backends/embedded-assets";
-import { copyTemplates } from "../../backends/create-ab";
+import { copyTemplates } from "../../backends/create-buddy";
 import { ensureSchema } from "../../backends/schema-migration";
 
 describe("embedded assets (compiled sidecar)", () => {

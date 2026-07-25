@@ -34,7 +34,7 @@ After(function (this: ConsolidationWorld) {
   if (this.consolTmpDir) rmSync(this.consolTmpDir, { recursive: true, force: true });
 });
 
-Given("an AB directory prepared for consolidation", async function (this: ConsolidationWorld) {
+Given("a buddy directory prepared for consolidation", async function (this: ConsolidationWorld) {
   ({ configDir: this.globalConfigDir } = setupGlobalConfigDir({
     consolidationSkill: "# Skill\n\nConsolidate.\n",
   }));

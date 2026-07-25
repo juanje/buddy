@@ -1,4 +1,4 @@
-// scripts/test-consolidation.ts — Manual consolidation validation against a copied AB instance.
+// scripts/test-consolidation.ts — Manual consolidation validation against a copied buddy instance.
 //
 // Usage:
 //   npx tsx scripts/test-consolidation.ts [depth] [source-dir]
@@ -40,7 +40,7 @@ function printUsage(): void {
   npx tsx scripts/test-consolidation.ts [--dry-run] [--date YYYY-MM-DD] [depth] [source-dir]
 
   depth       1 (daily), 2 (weekly), or 3 (monthly). Default: 1
-  source-dir  AB instance to copy. Default: fixtures/consolidation-test
+  source-dir  buddy instance to copy. Default: fixtures/consolidation-test
   --date      Simulate a specific date (default: last log date in the fixture)
   --dry-run   Copy fixture and print prompt preview only (no LLM call)`);
 }

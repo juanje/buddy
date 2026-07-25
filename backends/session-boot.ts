@@ -115,7 +115,7 @@ export async function bootSession(
   options?: BootSessionOptions,
 ): Promise<{ core: WorkerCore; lifecycle: SessionLifecycle } | undefined> {
   if (!existsSync(rootDir)) {
-    context.frontend.onWorkerError(`AB directory not found: ${rootDir}`);
+    context.frontend.onWorkerError(`buddy directory not found: ${rootDir}`);
     return undefined;
   }
 

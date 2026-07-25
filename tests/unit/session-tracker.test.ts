@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { SessionTracker } from "../../backends/session-tracker";
 
 describe("SessionTracker relPath", () => {
-  it("does not treat sibling directories as inside the AB home", () => {
+  it("does not treat sibling directories as inside the buddy home", () => {
     const tracker = new SessionTracker("s1");
     tracker.recordEvent(
       {
@@ -29,7 +29,7 @@ describe("SessionTracker relPath", () => {
     expect(tracker.filesRead).toEqual(["/home/u/buddy2/notes.md"]);
   });
 
-  it("stores paths relative to the AB home when under the prefix", () => {
+  it("stores paths relative to the buddy home when under the prefix", () => {
     const tracker = new SessionTracker("s1");
     tracker.recordEvent(
       {

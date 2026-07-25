@@ -11,7 +11,7 @@ function normalizeSlashes(path: string): string {
 
 /**
  * Resolve a local markdown link against rootDir for shell.open().
- * Returns null for external URLs or paths outside the AB home.
+ * Returns null for external URLs or paths outside the buddy home.
  */
 export function resolveLocalPathForOpen(rootDir: string, rawHref: string): string | null {
   if (isExternalHref(rawHref)) return null;

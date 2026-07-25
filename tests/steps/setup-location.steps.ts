@@ -54,7 +54,7 @@ Given("a directory that already contains files", function (this: LocationWorld) 
   writeFileSync(join(this.candidate, "notes.txt"), "existing content");
 });
 
-Given("a directory containing an existing AB instance", function (this: LocationWorld) {
+Given("a directory containing an existing buddy instance", function (this: LocationWorld) {
   this.candidate = join(this.locTmpDir!, "old-ab");
   mkdirSync(join(this.candidate, "agent_brain"), { recursive: true });
 });

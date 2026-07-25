@@ -6,7 +6,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { createAbInstance, defaultTemplatesDir } from "../../backends/create-ab";
+import { createAbInstance, defaultTemplatesDir } from "../../backends/create-buddy";
 import {
   clearSessionPersistence,
   persistLiveSession,
@@ -32,7 +32,7 @@ After(function (this: SessionPersistenceWorld) {
   if (this.persistTmpDir) rmSync(this.persistTmpDir, { recursive: true, force: true });
 });
 
-Given("an initialized AB git repository for session persistence", async function (this: SessionPersistenceWorld) {
+Given("an initialized buddy git repository for session persistence", async function (this: SessionPersistenceWorld) {
   this.persistTmpDir = mkdtempSync(join(tmpdir(), "ab-persist-"));
   this.abDir = join(this.persistTmpDir, "buddy");
   const config: SetupConfig = {

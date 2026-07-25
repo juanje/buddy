@@ -22,7 +22,7 @@ function readStore<T>(store: { subscribe: (fn: (value: T) => void) => () => void
   return value;
 }
 
-Given("the AB root directory is {string}", function (this: InlineFileViewerWorld, rootDir: string) {
+Given("the buddy root directory is {string}", function (this: InlineFileViewerWorld, rootDir: string) {
   this.rootDir = rootDir;
   this.fileContents = new Map();
   this.openedExternally = [];
@@ -48,7 +48,7 @@ Given(
 );
 
 When("I click the local link {string}", function (this: InlineFileViewerWorld, href: string) {
-  if (!this.rootDir) throw new Error("AB root not initialized");
+  if (!this.rootDir) throw new Error("buddy root not initialized");
   this.linkAction = routeLocalLinkClick(this.rootDir, href);
 });
 

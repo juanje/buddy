@@ -3,12 +3,12 @@
 Feature: Permission zones (FR-PERM-01, FR-PERM-02, FR-PERM-03, FR-PERM-04)
   As the user of a file-capable assistant
   I want file access controlled by zones
-  So that my AB is free, my identity is protected, and my system is safe
+  So that my buddy directory is free, my identity is protected, and my system is safe
 
   Background:
-    Given a permission layer for an AB directory
+    Given a permission layer for a buddy directory
 
-  Scenario: Zone 1 — reads and writes inside the AB are allowed silently
+  Scenario: Zone 1 — reads and writes inside the buddy directory are allowed silently
     When the agent reads "agent_brain/observations.md"
     And the agent writes "user/inbox.md"
     Then both operations proceed without asking the user
@@ -33,7 +33,7 @@ Feature: Permission zones (FR-PERM-01, FR-PERM-02, FR-PERM-03, FR-PERM-04)
     When the agent reads "agent_brain/identity/SOUL.md"
     Then the operation proceeds without asking the user
 
-  Scenario: Zone 3 — paths outside the AB prompt the user
+  Scenario: Zone 3 — paths outside the buddy directory prompt the user
     When the agent reads the outside path "~/Documents/notes.txt"
     Then the user is asked for outside access
     When the user declines
@@ -49,11 +49,11 @@ Feature: Permission zones (FR-PERM-01, FR-PERM-02, FR-PERM-03, FR-PERM-04)
     Then the operation is blocked
     And the user is never asked
 
-  Scenario: Denylist applies inside the AB too
+  Scenario: Denylist applies inside the buddy directory too
     When the agent reads "secrets/auth.json"
     Then the operation is blocked
     And the user is never asked
 
-  Scenario: Tools without a path argument stay in the AB and are allowed
+  Scenario: Tools without a path argument stay in the buddy directory and are allowed
     When the agent lists files without a path
     Then the operation proceeds without asking the user

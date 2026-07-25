@@ -8,7 +8,7 @@ export function isWithin(child: string, parent: string): boolean {
   return rel === "" || (!rel.startsWith(`..${sep}`) && rel !== ".." && !isAbsolute(rel));
 }
 
-/** Resolve `rawPath` against `rootDir` when relative; null if outside AB home. */
+/** Resolve `rawPath` against `rootDir` when relative; null if outside buddy home. */
 export function normalizeAbPath(rootDir: string, rawPath: string): string | null {
   const abs = isAbsolute(rawPath) ? resolve(rawPath) : resolve(rootDir, rawPath);
   if (!isWithin(abs, rootDir)) return null;

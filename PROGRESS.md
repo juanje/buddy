@@ -35,12 +35,12 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 | FR-SETUP-05 | Provider authentication (OAuth primary) | done | da071a6 |
 | FR-SETUP-06 | Model selection | done | ada10c4 |
 | FR-SETUP-07 | Personalization form (name + about) | done | rework-sprint |
-| FR-SETUP-08 | Deterministic AB setup (populate USER.md from form) | done | rework-sprint |
+| FR-SETUP-08 | Deterministic buddy setup (populate USER.md from form) | done | rework-sprint |
 | FR-SETUP-09 | First conversation warm handoff | done | rework-sprint |
 | FR-SETUP-10 | Import existing instance | done | 7733b0e |
 | FR-PROMPT-01 | System prompt assembly | done | d7a3c12 |
 | FR-PROMPT-02 | Session-start enrichment | done | d7a3c12 |
-| FR-PERM-01 | Zone 1: AB home silent allow | done | d3e57f3 |
+| FR-PERM-01 | Zone 1: buddy home silent allow | done | d3e57f3 |
 | FR-PERM-02 | SOUL.md write confirmation (USER.md silent) | done | rework-sprint |
 | FR-PERM-03 | Zone 3: outside access prompt | done | d3e57f3 |
 | FR-PERM-04 | Hardcoded denylist | done | d3e57f3 |
@@ -66,7 +66,7 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 | FR-GIT-02 | Git invisible to user | done | 842635e |
 | FR-GIT-03 | Index rebuild on session end | done | 842635e |
 | NFR-I18N | Locale module (es + en) | done | rework-sprint |
-| NFR-AUTH-ISO | Auth isolation (AB ≠ Pi CLI) | done | (this commit) |
+| NFR-AUTH-ISO | Auth isolation (buddy ≠ Pi CLI) | done | (this commit) |
 
 ## Phase 3 — Chat polish (early)
 

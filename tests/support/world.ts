@@ -1,4 +1,4 @@
-// tests/support/world.ts — Cucumber World for AB App BDD tests.
+// tests/support/world.ts — Cucumber World for buddy BDD tests.
 // Wires: FakeSession (Pi-shaped events) → worker core → chat controller.
 // This is the same wiring the real app uses, minus kkrpc transport and DOM.
 
@@ -51,7 +51,7 @@ export class AbWorld extends World {
     super(options);
   }
 
-  /** Optional AB directory for memory-loop scenarios (FR-GIT-01+). */
+  /** Optional buddy directory for memory-loop scenarios (FR-GIT-01+). */
   rootDir?: string;
   lifecycle?: SessionLifecycle;
   spawnCalls?: SpawnReflectOptions[];

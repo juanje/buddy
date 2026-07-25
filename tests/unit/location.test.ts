@@ -43,7 +43,7 @@ describe("validateLocation", () => {
     expect(validateLocation(file)).toEqual({ status: "not-a-directory" });
   });
 
-  it("recognizes an existing AB instance by its agent_brain dir", () => {
+  it("recognizes an existing buddy instance by its agent_brain dir", () => {
     const dir = join(scratch(), "old-ab");
     mkdirSync(join(dir, "agent_brain"), { recursive: true });
     expect(validateLocation(dir)).toEqual({ status: "existing-ab" });

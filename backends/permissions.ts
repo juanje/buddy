@@ -5,7 +5,7 @@
 //              blocked silently, no prompt, no override (FR-PERM-04).
 //   identity — writes to SOUL.md ask for confirmation (FR-PERM-02).
 //              USER.md writes are Zone 1 (silent allow).
-//   ab-home  — anything else inside the AB directory: silent allow (FR-PERM-01).
+//   ab-home  — anything else inside the buddy directory: silent allow (FR-PERM-01).
 //   outside  — anything else: ask the user, allow-once or deny (FR-PERM-03).
 //
 // The layer installs as a chained `beforeToolCall` hook: an earlier hook's
@@ -54,7 +54,7 @@ function isIdentityFile(absPath: string, rootDir: string): boolean {
 
 /**
  * Decide what to do with a tool call. Non-file tools and pathless calls
- * (ls/grep default to the session cwd, which IS the AB) are allowed.
+ * (ls/grep default to the session cwd, which IS the buddy directory) are allowed.
  */
 export function evaluateToolCall(
   toolName: string,
@@ -71,10 +71,10 @@ export function evaluateToolCall(
 
   const rawPath = (args as { path?: unknown } | undefined)?.path;
   if (typeof rawPath !== "string" || rawPath.trim() === "") {
-    return { action: "allow" }; // pathless: operates on the session cwd (AB)
+    return { action: "allow" }; // pathless: operates on the session cwd (buddy directory)
   }
 
-  // Relative paths resolve against the session cwd, which is the AB home.
+  // Relative paths resolve against the session cwd, which is the buddy home.
   const absPath = resolve(rootDir, expandHome(rawPath, home));
 
   if (isDenylistedPath(absPath, home)) {

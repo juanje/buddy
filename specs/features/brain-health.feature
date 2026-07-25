@@ -6,7 +6,7 @@ Feature: Brain health linter
   So that consolidation receives pre-computed health issues to fix
 
   Background:
-    Given a temporary AB root directory
+    Given a temporary buddy root directory
 
   Scenario: Missing frontmatter is detected
     Given a brain file "agent_brain/concepts/stale.md" without required frontmatter

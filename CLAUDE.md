@@ -1,4 +1,4 @@
-# AB App
+# buddy
 
 ## What this is
 
@@ -28,7 +28,7 @@ using BDD + TDD.
 4. FR-CHAT-07 (auto-scroll) — UI polish
 
 **Phase 1 — MVP (after Phase 0 is green):**
-1. FR-SETUP-01/02/03 (wizard + AB creation)
+1. FR-SETUP-01/02/03 (wizard + directory creation)
 2. FR-PROMPT-01 (system prompt assembly)
 3. FR-PERM-01/02 (permission zones)
 4. FR-SESSION-01/02 (resume + new session)
@@ -90,7 +90,7 @@ Node.js Worker (TypeScript)
     └── Setup, Reflect, Sync modules
     │
     ▼
-AB File System (git repo): agent_brain/ + user/ + logs/
+buddy directory (git repo): agent_brain/ + user/ + logs/
 ```
 
 **Key technical patterns:**
@@ -104,7 +104,7 @@ AB File System (git repo): agent_brain/ + user/ + logs/
 ## Project structure
 
 ```
-ab-app/
+buddy/
 ├── specs/
 │   ├── SPEC.md              # Requirements (the WHAT)
 │   └── features/            # .feature files (Gherkin)
@@ -117,7 +117,7 @@ ab-app/
 │   ├── steps/               # BDD step definitions
 │   ├── unit/                # Unit tests (vitest)
 │   └── fixtures/            # Test data
-├── templates/               # AB directory templates (initial instance content)
+├── templates/               # buddy directory templates (initial instance content)
 ├── bundled/prompts/         # Core prompts (skill tools + consolidation)
 └── package.json
 ```

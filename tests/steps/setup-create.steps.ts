@@ -1,4 +1,4 @@
-// tests/steps/setup-create.steps.ts — FR-SETUP-06 deterministic AB creation.
+// tests/steps/setup-create.steps.ts — FR-SETUP-06 deterministic buddy creation.
 // Real filesystem + real git on temp dirs; the repo's own templates/ are the
 // fixture. No mocks, no network, no LLM.
 
@@ -9,7 +9,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { simpleGit } from "simple-git";
 
-import { createAbInstance, defaultTemplatesDir } from "../../backends/create-ab";
+import { createAbInstance, defaultTemplatesDir } from "../../backends/create-buddy";
 import { detectFirstRun } from "../../backends/setup";
 import type { SetupConfig } from "../../shared/api";
 import type { AbWorld } from "../support/world";
@@ -48,7 +48,7 @@ When("setup runs", async function (this: CreateWorld) {
 });
 
 Then(
-  "the AB directory contains {string}, {string} and {string}",
+  "the buddy directory contains {string}, {string} and {string}",
   function (this: CreateWorld, a: string, b: string, c: string) {
     for (const dir of [a, b, c]) {
       assert.ok(statSync(join(this.abDir!, dir)).isDirectory(), `${dir} should be a directory`);
@@ -56,7 +56,7 @@ Then(
   },
 );
 
-Then("the AB directory contains the base templates", function (this: CreateWorld) {
+Then("the buddy directory contains the base templates", function (this: CreateWorld) {
   for (const file of [
     "AGENTS.md",
     "agent_brain/identity/SOUL.md",
@@ -87,7 +87,7 @@ Then(
 );
 
 Then(
-  "the AB directory is a git repository with exactly one commit",
+  "the buddy directory is a git repository with exactly one commit",
   async function (this: CreateWorld) {
     const git = simpleGit(this.abDir!);
     const log = await git.log();
@@ -97,13 +97,13 @@ Then(
   },
 );
 
-Then("first-run detection reports the AB as configured", function (this: CreateWorld) {
+Then("first-run detection reports the buddy as configured", function (this: CreateWorld) {
   const state = detectFirstRun(this.createConfigPath!);
   assert.equal(state.firstRun, false);
   if (!state.firstRun) assert.equal(state.config.rootDir, this.abDir);
 });
 
-Then("the AB directory contains file {string}", function (this: CreateWorld, relPath: string) {
+Then("the buddy directory contains file {string}", function (this: CreateWorld, relPath: string) {
   assert.ok(existsSync(join(this.abDir!, relPath)), `${relPath} should exist`);
 });
 

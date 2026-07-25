@@ -6,7 +6,7 @@ import { existsSync, mkdirSync, mkdtempSync, rmSync, utimesSync, writeFileSync }
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { createAbInstance, defaultTemplatesDir } from "../../backends/create-ab";
+import { createAbInstance, defaultTemplatesDir } from "../../backends/create-buddy";
 import { pruneSessionLogs } from "../../backends/session-log-prune";
 import { APP_LOGS_DIR } from "../../shared/defaults";
 import type { SetupConfig } from "../../shared/api";
@@ -23,7 +23,7 @@ After(function (this: SessionLogPruneWorld) {
   if (this.pruneTmpDir) rmSync(this.pruneTmpDir, { recursive: true, force: true });
 });
 
-Given("an initialized AB git repository with session logs directory", async function (this: SessionLogPruneWorld) {
+Given("an initialized buddy git repository with session logs directory", async function (this: SessionLogPruneWorld) {
   this.pruneTmpDir = mkdtempSync(join(tmpdir(), "ab-prune-"));
   this.abDir = join(this.pruneTmpDir, "buddy");
   const config: SetupConfig = {

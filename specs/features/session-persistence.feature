@@ -6,7 +6,7 @@ Feature: Session path persistence and crash recovery
   So that conversations are never lost
 
   Background:
-    Given an initialized AB git repository for session persistence
+    Given an initialized buddy git repository for session persistence
 
   Scenario: Session path is persisted at session start
     When a new session starts with file "/tmp/session-abc.jsonl"

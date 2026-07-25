@@ -26,7 +26,7 @@ Feature: Location picker (FR-SETUP-03)
     Then the location is rejected with a reason
     And the wizard does not allow proceeding
 
-  Scenario: Existing AB directory is recognized for import
-    Given a directory containing an existing AB instance
+  Scenario: Existing buddy directory is recognized for import
+    Given a directory containing an existing buddy instance
     When the user picks that directory as the location
     Then the wizard offers to import the existing instance

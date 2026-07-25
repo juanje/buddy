@@ -2,7 +2,7 @@
 created: 2026-07-19
 ---
 
-# AB App — Functional & Non-Functional Specification
+# buddy — Functional & Non-Functional Specification
 
 Source specification for BDD features and acceptance criteria.
 References [design principles](app-design-principles.md) for WHY,
@@ -154,7 +154,7 @@ rootDir (git repo — user/agent content only)
 - **Given** the agent response contains a markdown link to a local file (relative path without `://` protocol, e.g. `[name](agent_brain/skills/foo.md)`)
 - **When** the link renders in the chat
 - **Then** it is marked with a `data-local-path` attribute (no `target="_blank"`)
-- **And** clicking it resolves the path against the AB directory and opens it via `tauri-plugin-opener` `openPath()` in the system default app
+- **And** clicking it resolves the path against the buddy directory and opens it via `tauri-plugin-opener` `openPath()` in the system default app
 - **And** external URLs (`http://`, `https://`) continue to open in the browser as before
 - **Note:** The renderer in `src/lib/markdown.ts` must distinguish local paths from external URLs. A path is local if it has no protocol prefix or uses `file://`.
 
@@ -179,14 +179,14 @@ rootDir (git repo — user/agent content only)
 | FR-SETUP-05 | Provider authentication | 1 ✓ |
 | FR-SETUP-06 | Model selection | 1 ✓ |
 | FR-SETUP-07 | Personalization form (name + about) | 1 ✓ |
-| FR-SETUP-08 | Deterministic AB directory setup | 1 ✓ |
+| FR-SETUP-08 | Deterministic buddy directory setup | 1 ✓ |
 | FR-SETUP-09 | First conversation with warm handoff | 1 ✓ |
 | FR-SETUP-10 | Import existing instance | 1 ✓ |
 
 **FR-SETUP-01 — First-run detection**
 
 - **Given** the app launches
-- **When** no AB directory is configured in `~/.buddy/config.json`
+- **When** no buddy directory is configured in `~/.buddy/config.json`
 - **Then** the setup wizard is shown instead of the chat view
 
 **FR-SETUP-02 — Language selection**
@@ -200,7 +200,7 @@ rootDir (git repo — user/agent content only)
 
 - **Given** the user has selected a language
 - **When** the welcome step loads (in the user's language)
-- **Then** a brief explanation of what AB is and what it does is shown
+- **Then** a brief explanation of what buddy is and what it does is shown
 - **And** a "Continue" button proceeds to the next step
 
 **FR-SETUP-04 — Location picker**
@@ -237,7 +237,7 @@ rootDir (git repo — user/agent content only)
 - **And** two fields are shown: Name (required, "How should I address you?") and About (optional, "Tell me about yourself — the more, the better")
 - **And** the user can continue with only a name, or add as much context as they want
 
-**FR-SETUP-08 — Deterministic AB directory setup**
+**FR-SETUP-08 — Deterministic buddy directory setup**
 
 - **Given** the user completes the wizard form
 - **When** setup runs
@@ -249,7 +249,7 @@ rootDir (git repo — user/agent content only)
 
 **FR-SETUP-09 — First conversation with warm handoff**
 
-- **Given** the AB directory is created and configured
+- **Given** the buddy directory is created and configured
 - **When** the first session starts
 - **Then** the user's personalization data (name, about) is injected as an initial user message to the agent (not shown in the UI) so the agent already knows who they are
 - **And** the agent's first visible response is a warm welcome by name, with brief tips on how to use it
@@ -258,7 +258,7 @@ rootDir (git repo — user/agent content only)
 
 **FR-SETUP-10 — Import existing instance**
 
-- **Given** the location picker step shows an existing AB directory (one with `agent_brain/`)
+- **Given** the location picker step shows an existing buddy directory (one with `agent_brain/`)
 - **When** the user confirms import
 - **Then** the app verifies auth credentials exist for the detected provider (`getAuthStatus()`)
 - **And** if auth is valid, the directory is adopted without modifying its content
@@ -280,7 +280,7 @@ platform-specific install instructions is shown and setup cannot continue.
 
 **FR-SESSION-01 — Fresh session on every launch**
 
-- **Given** the app starts and a configured AB directory exists
+- **Given** the app starts and a configured buddy directory exists
 - **When** the worker initializes
 - **Then** a new Pi session is created via `SessionManager.create()`
 - **And** the system prompt provides all continuity (assembled from identity files, logs, deferred)
@@ -386,7 +386,7 @@ Fork bomb defense:
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-PERM-01 | Zone 1: AB home full access | 1 ✓ |
+| FR-PERM-01 | Zone 1: buddy home full access | 1 ✓ |
 | FR-PERM-02 | Identity file write confirmation | 1 ✓ |
 | FR-PERM-03 | Zone 3: confirm all outside access | 1 ✓ |
 | FR-PERM-04 | Hardcoded denylist | 1 ✓ |
@@ -394,9 +394,9 @@ Fork bomb defense:
 | FR-PERM-06 | Zone 2: user-designated paths | 1 ✓ |
 | FR-PERM-07 | Permission prompt in chat | 1 ✓ |
 
-**FR-PERM-01 — Zone 1: AB home**
+**FR-PERM-01 — Zone 1: buddy home**
 
-- **Given** the agent calls a file tool on a path inside the AB directory
+- **Given** the agent calls a file tool on a path inside the buddy directory
 - **When** the path is not an identity file or blocked write target
 - **Then** the operation is allowed silently (no user prompt)
 
@@ -412,7 +412,7 @@ Fork bomb defense:
 
 **FR-PERM-03 — Zone 3: outside access**
 
-- **Given** the agent calls a file tool on a path outside the AB directory
+- **Given** the agent calls a file tool on a path outside the buddy directory
 - **When** the path is not on the denylist
 - **Then** the user is shown a permission prompt with options (allow once, deny)
 - **And** the agent pauses on that tool call until the user responds
@@ -611,7 +611,7 @@ Fork bomb defense:
 
 **FR-HEBB-01 — Intercept reads**
 
-- **Given** the agent calls the `read` tool on a file inside the AB directory
+- **Given** the agent calls the `read` tool on a file inside the buddy directory
 - **When** the `tool_execution_end` event fires and `isError` is false
 - **Then** the access is recorded by the Hebbian tracker
 
@@ -665,7 +665,7 @@ Fork bomb defense:
 - **And** the instance-specific file (`rootDir/AGENTS.md` or `rootDir/CLAUDE.md`) is appended after it as an overlay
 - **And** if `agents-base.md` and the instance file contradict, the base takes precedence for capability constraints (the model follows the most specific/earliest instruction)
 - **And** skill tools (FR-SKILL-01) are registered on the session so the LLM can invoke procedural prompts without reading files
-- **Note:** This enables updating universal app behavior without modifying user instances. Old AB instances with `CLAUDE.md` containing git/bash references work safely — the base explicitly forbids those capabilities.
+- **Note:** This enables updating universal app behavior without modifying user instances. Old buddy instances with `CLAUDE.md` containing git/bash references work safely — the base explicitly forbids those capabilities.
 
 ### 3.11 Git Operations (FR-GIT)
 
@@ -716,7 +716,7 @@ Fork bomb defense:
 
 - **Given** the user opens settings (Cmd/Ctrl+, or menu/header button)
 - **When** the settings modal appears
-- **Then** they can view/edit: language, provider, model, AB directory path
+- **Then** they can view/edit: language, provider, model, buddy directory path
 - **And** changes persist to `.pi/settings.json` and app config
 
 **FR-SETTINGS-03 — Model switching**
@@ -790,15 +790,15 @@ aggregate visibility (FR-COST-02) and budget safety nets (FR-COST-03).
 - **And** the UI explains the trade-off for each preset in plain language
 - **Note:** This is a cost optimization lever for users who've hit budget limits repeatedly. It should not be prominent in the UI — advanced section within Usage, not a top-level setting. Raw numeric configuration remains available in `.buddy/consolidation-state.json` for power users but is not exposed in the app UI.
 
-### 3.14 AB Brain Template (FR-BRAIN)
+### 3.14 buddy Brain Template (FR-BRAIN)
 
-The template is the **core content** that makes AB behave as AB. Without correct
+The template is the **core content** that makes buddy behave as buddy. Without correct
 templates, the app is a generic chatbot with a git repo. This area has its own
 detailed specification: [specs/BRAIN-SPEC.md](BRAIN-SPEC.md).
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-BRAIN-01 | AGENTS.md provides behavioral rules that produce AB behavior | 1 ✓ |
+| FR-BRAIN-01 | AGENTS.md provides behavioral rules that produce buddy behavior | 1 ✓ |
 | FR-BRAIN-02 | SOUL.md defines character and first-session personalization flow | 1 ✓ |
 | FR-BRAIN-03 | USER.md placeholder is correctly populated by agent in first conversation | 1 ✓ |
 | FR-BRAIN-04 | Consolidation skill produces meaningful summaries when invoked | 2 ✓ |
@@ -808,7 +808,7 @@ detailed specification: [specs/BRAIN-SPEC.md](BRAIN-SPEC.md).
 
 **FR-BRAIN-01 — AGENTS.md behavioral rules**
 
-- **Given** a fresh AB instance with only the template content
+- **Given** a fresh buddy instance with only the template content
 - **When** the user talks to the agent about tasks, ideas, decisions
 - **Then** the agent routes captures correctly (user/ vs agent_brain/)
 - **And** the agent writes to files and commits without being reminded
@@ -834,7 +834,7 @@ detailed specification: [specs/BRAIN-SPEC.md](BRAIN-SPEC.md).
 
 **FR-BRAIN-04 — Consolidation skill produces meaningful summaries**
 
-- **Given** consolidation runs at depth 1 on an AB instance with session reflect logs
+- **Given** consolidation runs at depth 1 on a buddy instance with session reflect logs
 - **When** the worker builds the consolidation prompt via `buildConsolidationPrompt()`
 - **Then** it pre-injects: date, upcoming reminders, Hebbian report, brain health block, ripe observations
 - **And** the LLM synthesizes a Day summary (Key themes, Moved forward, Learned, Open)
@@ -963,7 +963,7 @@ The native window close (X) already triggers the full shutdown sequence (fork, s
 - **Then** an OS notification fires and conflicted files are shown in the chat
 - **And** the agent can help resolve conflicts (it understands the file formats)
 
-### 3.17 AB Self-Documentation (FR-DOCS)
+### 3.17 buddy Self-Documentation (FR-DOCS)
 
 | ID | Description | Phase |
 |----|-------------|-------|
@@ -973,7 +973,7 @@ The native window close (X) already triggers the full shutdown sequence (fork, s
 
 **FR-DOCS-00 — Agent identity in SOUL.md**
 
-- **Given** the AB instance is set up (FR-SETUP-08)
+- **Given** the buddy instance is set up (FR-SETUP-08)
 - **When** the user refers to the agent by name, asks who it is, or shares information about the agent itself
 - **Then** the agent knows its name is "Buddy" and can identify itself
 - **And** SOUL.md includes a brief self-description: what it is (personal assistant with persistent memory), how it persists (files, not continuous experience)
@@ -982,7 +982,7 @@ The native window close (X) already triggers the full shutdown sequence (fork, s
 
 **FR-DOCS-01 — Self-documentation KB**
 
-- **Given** the AB directory is set up
+- **Given** the buddy directory is set up
 - **When** the agent needs to explain what it is, how it works, or what it can do
 - **Then** it consults `agent_brain/docs/` — a small set of markdown files covering capabilities, usage tips, and how the memory system works
 - **And** these files are NOT loaded at session start (they are referenced in SOUL.md as "for detailed capabilities and how I work, consult `agent_brain/docs/`")
@@ -1007,7 +1007,7 @@ The native window close (X) already triggers the full shutdown sequence (fork, s
 
 **FR-WIKI-01 — User personal KB**
 
-- **Given** the AB instance is configured
+- **Given** the buddy instance is configured
 - **When** the user shares knowledge worth preserving long-term (notes, ideas, concepts, document summaries)
 - **Then** the agent files it into `user/wiki/` as interconnected markdown pages
 - **And** pages have frontmatter (tags, created, related) and backlinks
@@ -1122,9 +1122,9 @@ result — the LLM then follows the procedure.
 | NFR-SEC-02 | Zone model enforced in `beforeToolCall` hook — no file access bypasses the permission layer |
 | NFR-SEC-03 | SOUL.md writes require user confirmation; USER.md writes are silent (agent manages profile freely) |
 | NFR-SEC-04 | Hardcoded denylist paths are never accessible, regardless of user confirmation |
-| NFR-SEC-05 | API keys stored with restrictive file permissions (mode 600); no credentials inside the AB repo |
+| NFR-SEC-05 | API keys stored with restrictive file permissions (mode 600); no credentials inside the buddy repo |
 | NFR-SEC-06 | The agent cannot modify its own model configuration (`.pi/settings.json` writes blocked) |
-| NFR-SEC-07 | AB uses its own credential store (`~/.buddy/auth.json`), completely isolated from Pi CLI's `~/.pi/agent/auth.json`. Changing provider/model in one tool never affects the other. |
+| NFR-SEC-07 | buddy uses its own credential store (`~/.buddy/auth.json`), completely isolated from Pi CLI's `~/.pi/agent/auth.json`. Changing provider/model in one tool never affects the other. |
 
 ### 4.3 Reliability
 
@@ -1141,7 +1141,7 @@ result — the LLM then follows the procedure.
 | ID | Requirement |
 |----|-------------|
 | NFR-PORT-01 | All memory state is in human-readable files (markdown + YAML frontmatter) — no SQLite, no binary formats |
-| NFR-PORT-02 | The AB repo works in Cursor or Claude Code with basic functionality via AGENTS.md as fallback |
+| NFR-PORT-02 | The buddy repo works in Cursor or Claude Code with basic functionality via AGENTS.md as fallback |
 | NFR-PORT-03 | The app never overwrites AGENTS.md — user customizations are preserved |
 | NFR-PORT-04 | Platform artifacts (`.cursor/`, `.codex/`, `.claude/`) in imported instances are ignored |
 | NFR-PORT-05 | Core app prompts live in `~/.buddy/prompts/`, not inside rootDir. On any app semver change (major, minor, or patch), bundled prompts overwrite `~/.buddy/prompts/` (see NFR-MIGRATE-06). User content in rootDir is never touched. |
@@ -1156,7 +1156,7 @@ result — the LLM then follows the procedure.
 
 | ID | Requirement |
 |----|-------------|
-| NFR-PRIV-01 | Raw Pi sessions stored outside the AB repo (Pi's default `~/.pi/agent/sessions/`) — not synced or pushed |
+| NFR-PRIV-01 | Raw Pi sessions stored outside the buddy repo (Pi's default `~/.pi/agent/sessions/`) — not synced or pushed |
 | NFR-PRIV-02 | No telemetry, analytics, or usage data sent anywhere |
 | NFR-PRIV-03 | All data stored locally; cloud only for LLM API calls |
 
@@ -1253,7 +1253,7 @@ git operations, tool call rendering, thinking blocks, markdown rendering.
 
 **Exact scope (building on Phase 0):**
 - First-run wizard (location, provider, API key, model)
-- Deterministic AB setup (directories, templates, git init, Pi config)
+- Deterministic buddy setup (directories, templates, git init, Pi config)
 - Agent-driven personalization (first conversation)
 - Import existing instance (point to repo with `agent_brain/`)
 - Reflect: forked session + background child process (full context LLM reflect)
@@ -1267,8 +1267,8 @@ git operations, tool call rendering, thinking blocks, markdown rendering.
 - `logs/index.md` rebuild on reflect complete
 
 **Success criteria:**
-User installs → completes wizard → talks to AB → closes app → reopens →
-AB remembers the conversation, knows their name, surfaces any pending reminders.
+User installs → completes wizard → talks to buddy → closes app → reopens →
+buddy remembers the conversation, knows their name, surfaces any pending reminders.
 
 **Explicitly excluded from Phase 1 and why:**
 - System tray (window close = quit; daemon is Phase 4)
@@ -1329,8 +1329,8 @@ AB remembers the conversation, knows their name, surfaces any pending reminders.
 
 | Term | Definition |
 |------|-----------|
-| **AB** | Buddy — the personal assistant system |
-| **AB directory** | The git-backed folder containing the agent's memory (`agent_brain/`, `user/`, `logs/`) |
+| **buddy** | The personal assistant system |
+| **buddy directory** | The git-backed folder containing the agent's memory (`agent_brain/`, `user/`, `logs/`) |
 | **Pi** | The coding agent framework (by Anthropic) used as a library via its SDK |
 | **Worker** | The Node.js process (managed by `tauri-plugin-js`) that runs Pi and all backend logic |
 | **kkrpc** | Type-safe bidirectional RPC library used for frontend↔worker communication |
@@ -1340,7 +1340,7 @@ AB remembers the conversation, knows their name, surfaces any pending reminders.
 | **Hebbian tracking** | Code-enforced file access counting (`access_count` / `last_accessed` in frontmatter) — drives promotion/demotion of knowledge |
 | **Reflect** | The encoding step: capturing what happened in a session into the daily log via a forked LLM call with full conversation context |
 | **Heartbeat** | Worker-side `setInterval` that checks deferred items and evaluates consolidation triggers |
-| **Zone 1** | Trust zone: the AB directory — full access, no prompts (except identity files) |
+| **Zone 1** | Trust zone: the buddy directory — full access, no prompts (except identity files) |
 | **Zone 2** | Trust zone: user-designated external paths — silent reads, confirmed writes |
 | **Zone 3** | Trust zone: everything else — all access requires user confirmation |
 | **Denylist** | Hardcoded paths never accessible by the agent (`~/.ssh/`, `~/.gnupg/`, etc.) |

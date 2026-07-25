@@ -6,13 +6,13 @@ Feature: Skill tools registered at session creation
   So that I invoke them naturally without reading files
 
   Scenario: process_conversation tool returns bundled prompt
-    Given an initialized AB git repository
+    Given an initialized buddy git repository
     And the app is running with skill tools
     When the LLM invokes the "process_conversation" tool
     Then the tool result contains "# Skill: Process conversation"
 
   Scenario: triage_inbox tool returns bundled prompt
-    Given an initialized AB git repository
+    Given an initialized buddy git repository
     And the app is running with skill tools
     When the LLM invokes the "triage_inbox" tool
     Then the tool result contains "# Skill: Triage inbox"

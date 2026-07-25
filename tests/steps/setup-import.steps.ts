@@ -18,7 +18,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { get } from "svelte/store";
 
-import { adoptAbInstance } from "../../backends/create-ab";
+import { adoptAbInstance } from "../../backends/create-buddy";
 import { validateLocation } from "../../backends/location";
 import { detectFirstRun } from "../../backends/setup";
 import { createSetupController, type SetupController } from "../../src/lib/setup-controller";
@@ -88,7 +88,7 @@ function makeWizard(world: ImportWorld, authHasAnthropic = true): SetupControlle
         };
       },
       async runSetup(config, mode) {
-        assert.equal(mode, "import", "adopting an existing AB must use import mode");
+        assert.equal(mode, "import", "adopting an existing buddy instance must use import mode");
         adoptAbInstance({ config, configPath: world.importConfigPath! });
       },
     }),
@@ -126,15 +126,15 @@ After(function (this: ImportWorld) {
   if (this.importTmpDir) rmSync(this.importTmpDir, { recursive: true, force: true });
 });
 
-Given("an existing AB directory with Pi settings", function (this: ImportWorld) {
+Given("an existing buddy directory with Pi settings", function (this: ImportWorld) {
   seedAb(this, { piSettings: true });
 });
 
-Given("an existing AB directory containing platform artifacts", function (this: ImportWorld) {
+Given("an existing buddy directory containing platform artifacts", function (this: ImportWorld) {
   seedAb(this, { piSettings: true, artifacts: true });
 });
 
-Given("an existing AB directory without Pi settings", function (this: ImportWorld) {
+Given("an existing buddy directory without Pi settings", function (this: ImportWorld) {
   seedAb(this, { piSettings: false });
 });
 
@@ -161,7 +161,7 @@ Then("the app is configured to use that directory", function (this: ImportWorld)
   assert.equal(get(this.wizard!.completed), true);
 });
 
-Then("no file inside the AB directory is modified", function (this: ImportWorld) {
+Then("no file inside the buddy directory is modified", function (this: ImportWorld) {
   assert.deepEqual(snapshotAb(this), this.snapshot);
 });
 
@@ -191,7 +191,7 @@ Then(
     await wizard.finishSetup();
 
     assert.equal(get(wizard.completed), true);
-    // Adoption, not creation: the fresh-AB templates were not copied in…
+    // Adoption, not creation: the fresh-buddy templates were not copied in…
     assert.equal(existsSync(join(this.abDir!, "user")), false);
     assert.equal(existsSync(join(this.abDir!, "logs")), false);
     // …but the collected provider/model were written (settings were missing).

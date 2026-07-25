@@ -1,6 +1,6 @@
 // backends/agent-worker.ts — Worker entry point.
 // Spawned by tauri-plugin-js inside the Tauri app. Detects first run
-// (FR-SETUP-01), creates a real Pi SDK session in the configured AB directory
+// (FR-SETUP-01), creates a real Pi SDK session in the configured buddy directory
 // (excludeTools: ["bash"]) and exposes WorkerAPI to the frontend over kkrpc
 // stdio transport. Includes permission layer, system prompt assembly,
 // auto-commit lifecycle, forked reflect on shutdown, and heartbeat scheduler.
@@ -17,7 +17,7 @@ import type {
 } from "../shared/api";
 import type { AllowedEntry } from "./allowed-paths";
 import { addAllowedPath, loadAllowedPaths } from "./allowed-paths";
-import { adoptAbInstance, createAbInstance } from "./create-ab";
+import { adoptAbInstance, createAbInstance } from "./create-buddy";
 import { defaultAbLocation, validateLocation } from "./location";
 import { listModelsForProvider } from "./model-listing";
 import { resolveSessionModel } from "./model-switch";
@@ -54,9 +54,9 @@ async function main(): Promise<void> {
   const authPath = defaultAuthPath();
   const modelRuntime = await ModelRuntime.create({ authPath });
 
-  // FR-SETUP-01: on first run there is no AB directory to open a session in.
+  // FR-SETUP-01: on first run there is no buddy directory to open a session in.
   // The channel is created either way (the wizard talks to the worker later);
-  // the Pi session only exists when an AB is configured, rooted at its dir.
+  // the Pi session only exists when a buddy instance is configured, rooted at its dir.
   let setupState = detectFirstRun(defaultConfigPath());
 
   let core: ReturnType<typeof createWorkerCore> | undefined;

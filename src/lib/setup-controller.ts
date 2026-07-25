@@ -315,7 +315,7 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
     const rootDir = get(location);
     const check = get(locationCheck);
     if (!rootDir || check?.status !== "existing-ab") {
-      throw new Error("importExisting called without an existing AB at the chosen location");
+      throw new Error("importExisting called without an existing buddy instance at the chosen location");
     }
     importMode.set(true);
 

@@ -58,7 +58,7 @@ function writeHealthyCore(abDir: string): void {
   );
 }
 
-Given("a temporary AB root directory", function (this: BrainHealthWorld) {
+Given("a temporary buddy root directory", function (this: BrainHealthWorld) {
   ({ configDir: this.globalConfigDir } = setupGlobalConfigDir({
     consolidationSkill: "# Skill\n\nDo consolidation.\n",
   }));
@@ -71,14 +71,14 @@ Given("a temporary AB root directory", function (this: BrainHealthWorld) {
 Given(
   "a brain file {string} without required frontmatter",
   function (this: BrainHealthWorld, relPath: string) {
-    if (!this.abDir) throw new Error("AB root not initialized");
+    if (!this.abDir) throw new Error("buddy root not initialized");
     writeHealthyCore(this.abDir);
     writeBrainFile(this.abDir, relPath, "# Missing frontmatter\n");
   },
 );
 
 Given("the brain is missing {string}", function (this: BrainHealthWorld, relPath: string) {
-  if (!this.abDir) throw new Error("AB root not initialized");
+  if (!this.abDir) throw new Error("buddy root not initialized");
   writeHealthyCore(this.abDir);
   const abs = join(this.abDir, relPath);
   if (existsSync(abs)) unlinkSync(abs);
@@ -87,7 +87,7 @@ Given("the brain is missing {string}", function (this: BrainHealthWorld, relPath
 Given(
   "a brain directory {string} with files {string} and {string} and no index",
   function (this: BrainHealthWorld, dirPath: string, fileA: string, fileB: string) {
-    if (!this.abDir) throw new Error("AB root not initialized");
+    if (!this.abDir) throw new Error("buddy root not initialized");
     writeHealthyCore(this.abDir);
     writeBrainFile(
       this.abDir,
@@ -105,7 +105,7 @@ Given(
 Given(
   "a brain file {string} exceeding the size threshold",
   function (this: BrainHealthWorld, relPath: string) {
-    if (!this.abDir) throw new Error("AB root not initialized");
+    if (!this.abDir) throw new Error("buddy root not initialized");
     writeHealthyCore(this.abDir);
     const lines = Array.from(
       { length: BRAIN_FILE_SIZE_THRESHOLD_LINES + 1 },
@@ -120,7 +120,7 @@ Given(
 );
 
 Given("a healthy brain structure", function (this: BrainHealthWorld) {
-  if (!this.abDir) throw new Error("AB root not initialized");
+  if (!this.abDir) throw new Error("buddy root not initialized");
   writeHealthyCore(this.abDir);
   writeBrainFile(
     this.abDir,
@@ -143,13 +143,13 @@ Given("the global consolidation skill is available", function (this: BrainHealth
 });
 
 When("the brain health report is computed", function (this: BrainHealthWorld) {
-  if (!this.abDir) throw new Error("AB root not initialized");
+  if (!this.abDir) throw new Error("buddy root not initialized");
   this.report = computeBrainHealthReport(this.abDir);
   this.healthBlock = formatBrainHealthReportBlock(this.report);
 });
 
 When("the consolidation prompt is built for depth {int}", function (this: BrainHealthWorld, depth: number) {
-  if (!this.abDir) throw new Error("AB root not initialized");
+  if (!this.abDir) throw new Error("buddy root not initialized");
   this.prompt = buildConsolidationPrompt(this.abDir, depth, new Date("2026-07-22T12:00:00Z"));
 });
 

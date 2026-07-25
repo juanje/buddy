@@ -28,11 +28,11 @@ After(function (this: SetupWorld) {
   if (this.setupTmpDir) rmSync(this.setupTmpDir, { recursive: true, force: true });
 });
 
-Given("no AB configuration file exists", function (this: SetupWorld) {
+Given("no buddy configuration file exists", function (this: SetupWorld) {
   freshConfigPath(this); // path allocated but never written
 });
 
-Given("a configuration file pointing to an AB directory", function (this: SetupWorld) {
+Given("a configuration file pointing to a buddy directory", function (this: SetupWorld) {
   const path = freshConfigPath(this);
   writeFileSync(
     path,
@@ -40,7 +40,7 @@ Given("a configuration file pointing to an AB directory", function (this: SetupW
   );
 });
 
-Given("a configuration file without an AB directory", function (this: SetupWorld) {
+Given("a configuration file without a buddy directory", function (this: SetupWorld) {
   const path = freshConfigPath(this);
   writeFileSync(path, JSON.stringify({ provider: "anthropic", model: "claude-haiku" }));
 });

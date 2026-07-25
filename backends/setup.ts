@@ -1,6 +1,6 @@
 // backends/setup.ts — First-run detection (FR-SETUP-01).
 // The app is "configured" when ~/.buddy/config.json exists, parses, and
-// names a non-empty AB directory. Anything else (missing file, corrupted
+// names a non-empty buddy directory. Anything else (missing file, corrupted
 // JSON, missing key) is a first run: the wizard owns recovery, so detection
 // never throws.
 

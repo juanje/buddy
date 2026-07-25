@@ -4,7 +4,7 @@
 // model-listing endpoint: it authenticates the key without spending any
 // tokens (a chat call would). Tests always inject a fake probe — no network.
 //
-// Storage writes ~/.buddy/auth.json (AB's own auth store, isolated from
+// Storage writes ~/.buddy/auth.json (buddy's own auth store, isolated from
 // Pi CLI's ~/.pi/agent/auth.json — NFR-AUTH-ISO). Entry shape matches
 // pi-ai's ApiKeyCredential so the SDK reads it natively when ModelRuntime
 // is pointed at this path. The path is injectable; tests only touch temp files.
@@ -61,7 +61,7 @@ const httpKeyProbe: KeyProbe = async (provider, apiKey, baseUrl) => {
   }
 };
 
-/** AB's own auth store — separate from Pi CLI's ~/.pi/agent/auth.json (NFR-AUTH-ISO). */
+/** Buddy's own auth store — separate from Pi CLI's ~/.pi/agent/auth.json (NFR-AUTH-ISO). */
 export function defaultAuthPath(): string {
   return process.env.BUDDY_AUTH_PATH ?? process.env.AB_AUTH_PATH ?? join(homedir(), ".buddy", "auth.json");
 }
@@ -90,7 +90,7 @@ export async function configureProviderKey(
 }
 
 /**
- * Merge the key into AB's auth.json. Entry shape matches pi-ai's
+ * Merge the key into buddy's auth.json. Entry shape matches pi-ai's
  * ApiKeyCredential ({ type: "api_key", key }) so the SDK reads it natively.
  */
 function storeApiKey(authPath: string, piProvider: string, apiKey: string): void {

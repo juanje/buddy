@@ -15,17 +15,17 @@ describe("evaluateToolCall", () => {
     expect(evaluate("think", { note: "x" })).toEqual({ action: "allow" });
   });
 
-  it("allows pathless ls/grep (session cwd is the AB)", () => {
+  it("allows pathless ls/grep (session cwd is the buddy directory)", () => {
     expect(evaluate("ls", {})).toEqual({ action: "allow" });
     expect(evaluate("grep", { pattern: "foo" })).toEqual({ action: "allow" });
   });
 
-  it("allows reads and writes inside the AB", () => {
+  it("allows reads and writes inside the buddy directory", () => {
     expect(evaluate("read", { path: `${AB}/agent_brain/notes.md` })).toEqual({ action: "allow" });
     expect(evaluate("write", { path: `${AB}/user/inbox.md` })).toEqual({ action: "allow" });
   });
 
-  it("resolves relative paths against the AB", () => {
+  it("resolves relative paths against the buddy directory", () => {
     expect(evaluate("read", { path: "user/inbox.md" })).toEqual({ action: "allow" });
     const escape = evaluate("read", { path: "../other/file.txt" });
     expect(escape.action).toBe("ask");
@@ -49,7 +49,7 @@ describe("evaluateToolCall", () => {
     expect(write).toMatchObject({ action: "ask", kind: "outside", op: "write" });
   });
 
-  it("denies writes to .pi/settings.json inside the AB (NFR-SEC-06)", () => {
+  it("denies writes to .pi/settings.json inside the buddy directory (NFR-SEC-06)", () => {
     const decision = evaluate("write", { path: `${AB}/.pi/settings.json` });
     expect(decision).toEqual({
       action: "deny",

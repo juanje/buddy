@@ -6,7 +6,7 @@ Feature: Hebbian access tracking
   So that consolidation can promote frequently used knowledge
 
   Background:
-    Given an initialized AB git repository
+    Given an initialized buddy git repository
     And the app is running with memory lifecycle enabled
 
   Scenario: Agent read updates brain file frontmatter after turn end
@@ -39,5 +39,5 @@ Feature: Hebbian access tracking
     Given a tracked brain file "agent_brain/concepts/commit-me.md" with access_count 0
     When the agent reads file "agent_brain/concepts/commit-me.md"
     And the agent turn ends
-    Then the AB repository has a new commit
+    Then the buddy repository has a new commit
     And "agent_brain/concepts/commit-me.md" has access_count 1

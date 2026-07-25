@@ -4,9 +4,9 @@ access_count: 1
 created: 2026-07-18
 ---
 
-# AB App — Design Principles
+# buddy — Design Principles
 
-What survives from the current AB system, what changes with the app as harness,
+What survives from the current buddy system, what changes with the app as harness,
 and how we rethink the design with new constraints and months of validated use.
 
 This document precedes and governs the technical spec. Decisions here determine
@@ -14,7 +14,7 @@ what the spec implements.
 
 ## Core identity
 
-AB is a **personal assistant with persistent memory** that learns through use.
+buddy is a **personal assistant with persistent memory** that learns through use.
 It is conversational — the files are infrastructure, not interface. The user
 talks; the agent captures, organizes, remembers, and grows.
 
@@ -34,18 +34,18 @@ developer tool.
 - Capture includes handing files over: drag & drop onto the chat window or
   an attach button is the natural gesture (not typing file paths)
 
-Power users (developers) may continue with AB in Cursor/Claude Code for their
+Power users (developers) may continue with buddy in Cursor/Claude Code for their
 code-centric workflows. The app serves the personal-assistant use case
 independently of coding.
 
-### AB IS
+### buddy IS
 
 - A second brain you talk to
 - A system that learns and adapts with use (not with configuration)
 - A personal knowledge and task management companion
 - Transparent: the user can read every file, understand the structure, move it
 
-### AB IS NOT
+### buddy IS NOT
 
 - An IDE or code editor (Cursor/VS Code handle that)
 - A project management tool (doesn't replace Jira/Linear)
@@ -54,7 +54,7 @@ independently of coding.
 - A locked-in service (no proprietary formats, no cloud dependency)
 - A code execution environment (no terminal, no shell, no scripts)
 
-### AB CAN
+### buddy CAN
 
 - Capture, organize, and prioritize tasks and ideas
 - Maintain context across sessions (projects, people, decisions, history)
@@ -65,7 +65,7 @@ independently of coding.
 - Read files the user drops or attaches in the chat (drag & drop as the
   primary ingest gesture for non-technical users)
 
-### AB CANNOT / MUST NOT
+### buddy CANNOT / MUST NOT
 
 - Execute arbitrary code or shell commands (file operations only)
 - Access data outside its scope without permission
@@ -83,12 +83,12 @@ decision:
 - **Security:** no arbitrary code execution = no prompt injection can run code
 - **Simplicity:** the permission model reduces to "which files can it access?"
 - **User trust:** the user understands "it reads and writes my notes" intuitively
-- **Sufficiency:** all AB operations (capture, organize, remember, consolidate)
+- **Sufficiency:** all buddy operations (capture, organize, remember, consolidate)
   are file operations
 
 **Future integrations** (Gmail, Calendar, web search, etc.) are implemented as
 **custom tools** registered via the Pi SDK. Each is a named, typed, scoped
-capability — not arbitrary execution. The user sees "AB can read your calendar"
+capability — not arbitrary execution. The user sees "buddy can read your calendar"
 as a clear, authorized capability they can enable/disable.
 
 **Procedural skills** (process-conversation, triage-inbox) are also custom
@@ -163,7 +163,7 @@ reorganizes `user/` without being asked.
 
 ### 6. Observation → pattern → concept → rule → character
 
-The promotion pipeline that makes AB learn:
+The promotion pipeline that makes buddy learn:
 1. Something happens once → noted in session log
 2. It happens again → observation (tracked with count)
 3. Pattern confirmed (2+ occurrences) → concept or skill created
@@ -195,7 +195,7 @@ organized through the consolidation cycles.
 ### 10. The agent is conversational
 
 The real interface is chat. Files are infrastructure the agent manages.
-The user doesn't need to know the file structure to use AB — they talk,
+The user doesn't need to know the file structure to use buddy — they talk,
 and the agent handles the rest. (But they CAN read the files if they want.)
 
 When the agent links to a local file in chat (e.g. a log or note), the app
@@ -211,7 +211,7 @@ accepts http/mailto/tel URLs. External links still open in the browser via
 
 A key tension in the new app: we want to move more logic to code (deterministic,
 token-efficient, reliable) without losing the transparency and portability that
-make AB trustworthy.
+make buddy trustworthy.
 
 **The rule:** every piece of state must be **human-readable** (inspectable in a
 text editor or file browser) even if it's **machine-managed** (written and
@@ -221,7 +221,7 @@ maintained by code, not by the LLM).
 |-------|--------|-----|
 | Session logs | Markdown | Humans read these; they're the narrative record |
 | Session index | Markdown (with structured frontmatter) | Navigable by human; parsed by code via frontmatter |
-| Observations | Markdown (structured sections) | The user should see what patterns AB is tracking |
+| Observations | Markdown (structured sections) | The user should see what patterns buddy is tracking |
 | Deferred items | Markdown (with parseable date markers) | User can edit/add items in any editor |
 | Hebbian metadata | YAML frontmatter in each file | Visible in every file; code updates it silently |
 | Brain file summaries | YAML `summary` in frontmatter | Progressive disclosure; indexes built programmatically |
@@ -253,7 +253,7 @@ convenience (scheduler, notifications, UI) but is never required.
 | Spawning separate CLI processes for maintenance | No in-process access to agent | SDK gives direct session control |
 | "Remember to run /daily" (manual triggers) | No scheduler | Heartbeat handles it |
 | 18 behavioral rules in natural language | LLM needs instructions | Many become code enforcement |
-| Trust file for project directory | Pi/Cursor security model | App always trusts its own AB dir |
+| Trust file for project directory | Pi/Cursor security model | App always trusts its own buddy dir |
 | Platform-specific hook configs (.cursor vs .claude vs .codex) | Multi-editor support | One platform: the app |
 
 ### What moves from "instructions" to "code"
@@ -431,9 +431,9 @@ browsing the filesystem. Users (even non-technical ones) can understand
 
 ### Global vs instance: the separation principle
 
-**Pain point from AB:** Core prompts, skills, and structural rules lived inside
+**Pain point from buddy:** Core prompts, skills, and structural rules lived inside
 the instance repo mixed with user/agent content. Updating them required
-migrating every instance. Adopting an existing AB directory missed new prompts.
+migrating every instance. Adopting an existing buddy directory missed new prompts.
 The ownership boundary was ambiguous.
 
 **Design decision (E11):** Core app assets live in `~/.buddy/` (global,
@@ -476,7 +476,7 @@ rootDir/                   ← git repo, user/agent content
 **Why global prompts:**
 - **Updates are safe:** app updates overwrite `~/.buddy/prompts/` — no user
   content at risk
-- **Backward compat is free:** adopting an old AB instance doesn't require
+- **Backward compat is free:** adopting an old buddy instance doesn't require
   copying prompts into it; they're always in `~/.buddy/`
 - **Multi-instance works:** all instances share the same core behavior; only
   instance-specific content varies per rootDir
@@ -558,7 +558,7 @@ trigger):
   not deep analysis
 - Session-end reflect uses the configured model at full depth
 - **Cost:** zero mid-session LLM calls unless compaction actually triggers
-  (typically 0–2 per long session). Replaces editor-AB turn-count checkpoints
+  (typically 0–2 per long session). Replaces editor-buddy turn-count checkpoints
   that existed because cold-transcript reflect had no fork capability.
 - **Mid-session visibility:** checkpoint output is committed to the daily log;
   the agent can read files created or modified during the session after reflect.
@@ -598,7 +598,7 @@ user need on day one to get value?
 
 9. **Adapted behavior** — the agent is measurably different from week 1
 10. **Knowledge base** — accumulated wisdom that saves time
-11. **Trusted memory** — the user stops keeping mental notes because AB has them
+11. **Trusted memory** — the user stops keeping mental notes because buddy has them
 
 ### Explicitly NOT in v1
 
@@ -624,8 +624,8 @@ user need on day one to get value?
    disposes it. If the user is streaming, consolidation defers until idle.
 
 3. **Backward compatibility:** AGENTS.md stays in the repo. Minimal but
-   functional — a user who opens the repo in Cursor/Claude Code gets basic AB
-   behavior. The app adds the full experience (scheduler, notifications,
+   functional — a user who opens the repo in Cursor/Claude Code gets basic buddy
+behavior. The app adds the full experience (scheduler, notifications,
    Hebbian tracking, etc.) but the repo is self-contained.
 
 4. **Observations format:** Keep as one flat file with structured markdown
@@ -637,7 +637,7 @@ user need on day one to get value?
    (updates as the agent learns, Zone 1 silent allow).
 
 6. **LLM providers (v1):** Anthropic, Google Gemini, OpenAI only. No local
-   models until we verify which ones reliably follow AB's memory procedures.
+   models until we verify which ones reliably follow buddy's memory procedures.
 
 7. **Tool set:** File tools only (read, write, edit, ls, find, grep). No bash.
    Future capabilities added as custom Pi SDK tools — typed, scoped, auditable.

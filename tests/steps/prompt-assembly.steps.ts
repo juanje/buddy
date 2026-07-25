@@ -26,7 +26,7 @@ After(function (this: PromptWorld) {
   if (this.promptTmpDir) rmSync(this.promptTmpDir, { recursive: true, force: true });
 });
 
-Given("an AB directory with identity files", function (this: PromptWorld) {
+Given("a buddy directory with identity files", function (this: PromptWorld) {
   ({ configDir: this.globalConfigDir } = setupGlobalConfigDir());
   this.promptTmpDir = mkdtempSync(join(tmpdir(), "ab-prompt-"));
   this.abDir = join(this.promptTmpDir, "buddy");
@@ -64,18 +64,18 @@ Given("the deferred queue has only an item due next month", function (this: Prom
   );
 });
 
-Given("the AB directory has no USER.md", function (this: PromptWorld) {
+Given("the buddy directory has no USER.md", function (this: PromptWorld) {
   unlinkSync(join(this.abDir!, "agent_brain", "identity", "USER.md"));
 });
 
-Given("the AB directory has CLAUDE.md instead of AGENTS.md", function (this: PromptWorld) {
+Given("the buddy directory has CLAUDE.md instead of AGENTS.md", function (this: PromptWorld) {
   const agentsPath = join(this.abDir!, "AGENTS.md");
   const claudePath = join(this.abDir!, "CLAUDE.md");
   writeFileSync(claudePath, "# Cursor rules\n\nFrom Claude file.\n");
   unlinkSync(agentsPath);
 });
 
-Given("the AB directory has neither AGENTS.md nor CLAUDE.md", function (this: PromptWorld) {
+Given("the buddy directory has neither AGENTS.md nor CLAUDE.md", function (this: PromptWorld) {
   const agentsPath = join(this.abDir!, "AGENTS.md");
   const claudePath = join(this.abDir!, "CLAUDE.md");
   try {

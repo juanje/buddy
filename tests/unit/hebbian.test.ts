@@ -129,7 +129,7 @@ describe("createHebbianTracker", () => {
     expect(updated).toContain("Edited by LLM");
   });
 
-  it("accepts absolute paths under the AB directory", () => {
+  it("accepts absolute paths under the buddy directory", () => {
     const ab = setupAb();
     const rel = "agent_brain/concepts/abs.md";
     writeFileSync(join(ab, rel), "---\naccess_count: 0\n---\n\nBody\n", "utf8");

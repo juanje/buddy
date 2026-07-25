@@ -7,7 +7,7 @@ improves over time.
 Built with **Tauri v2** (native shell) + **Pi SDK** (LLM agent runtime) +
 **git-backed markdown** (portable, transparent memory).
 
-## What AB does
+## What buddy does
 
 - **Remembers across sessions.** Decisions, tasks, ideas, context — nothing is
   lost between conversations.
@@ -31,7 +31,7 @@ Node.js Worker (TypeScript)
     └── App logger (.buddy/logs/ JSONL instrumentation)
     │
     ▼
-AB Directory (git repo, user's data)
+buddy directory (git repo, user's data)
     ├── AGENTS.md          — portable behavioral rules
     ├── agent_brain/       — agent's learned knowledge
     ├── user/              — user's tasks, drafts, journal
@@ -44,15 +44,15 @@ Key design choices:
 - **Toolless reflect** — the background LLM that summarizes sessions has no
   tools; it distills the forked conversation context into text. Deterministic
   code handles all file I/O.
-- **Dual-use compatible** — the same AB directory works in the app, Cursor, or
-  Claude Code. Formats are identical; `AGENTS.md` provides fallback rules for
-  any AI editor.
+- **Dual-use compatible** — the same buddy directory works in the app, Cursor,
+  or Claude Code. Formats are identical; `AGENTS.md` provides fallback rules
+  for any AI editor.
 
 ## Prerequisites
 
 - **Node.js** >= 22
 - **Rust** (for Tauri native shell)
-- **Git** (manages the user's AB repository)
+- **Git** (manages the user's buddy repository)
 
 ## Getting started
 
@@ -82,7 +82,7 @@ backends/       — Node.js worker: session lifecycle, reflect, git, permissions
 shared/         — Types and utilities shared between frontend and worker
 src/            — Svelte 5 frontend: chat UI, setup wizard, i18n
 src-tauri/      — Tauri v2 native shell (Rust)
-templates/      — Default files for new AB instances (AGENTS.md, skills, identity)
+templates/      — Default files for new buddy instances (AGENTS.md, skills, identity)
 specs/          — SPEC.md (requirements) + Gherkin feature files
 tests/          — Unit tests (tests/unit/) and BDD step definitions (tests/steps/)
 docs/           — Design principles, technical architecture, decisions

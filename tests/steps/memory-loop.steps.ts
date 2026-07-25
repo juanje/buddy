@@ -7,7 +7,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { simpleGit } from "simple-git";
 
-import { createAbInstance, defaultTemplatesDir } from "../../backends/create-ab";
+import { createAbInstance, defaultTemplatesDir } from "../../backends/create-buddy";
 import { SessionLifecycle } from "../../backends/session-lifecycle";
 import type { SetupConfig } from "../../shared/api";
 import { MOCK_SPAWN_PID } from "../support/test-constants";
@@ -22,7 +22,7 @@ After(function (this: MemoryWorld) {
   if (this.memoryTmpDir) rmSync(this.memoryTmpDir, { recursive: true, force: true });
 });
 
-Given("an initialized AB git repository", async function (this: MemoryWorld) {
+Given("an initialized buddy git repository", async function (this: MemoryWorld) {
   this.memoryTmpDir = mkdtempSync(join(tmpdir(), "ab-memory-"));
   this.abDir = join(this.memoryTmpDir, "buddy");
   const config: SetupConfig = {
@@ -75,7 +75,7 @@ When("the app shuts down", async function (this: MemoryWorld) {
   await this.core.api.shutdown();
 });
 
-Then("the AB repository has a new commit", async function (this: MemoryWorld) {
+Then("the buddy repository has a new commit", async function (this: MemoryWorld) {
   const log = await simpleGit(this.abDir!).log();
   assert.ok(log.total > 1, "expected more than the initial setup commit");
 });

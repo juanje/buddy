@@ -1,8 +1,8 @@
-// tests/unit/create-ab.test.ts — FR-SETUP-08 USER.md population.
+// tests/unit/create-buddy.test.ts — FR-SETUP-08 USER.md population.
 
 import { describe, expect, it } from "vitest";
 
-import { buildUserProfile } from "../../backends/create-ab";
+import { buildUserProfile } from "../../backends/create-buddy";
 
 describe("buildUserProfile", () => {
   it("writes real content with no template prose", () => {

@@ -1,6 +1,6 @@
-// backends/location.ts — AB location validation (FR-SETUP-03, FR-SETUP-08
+// backends/location.ts — Buddy location validation (FR-SETUP-03, FR-SETUP-08
 // detection). A candidate path is usable when it does not exist yet or is an
-// empty directory; a directory with agent_brain/ is an existing AB instance
+// empty directory; a directory with agent_brain/ is an existing buddy instance
 // offered for import.
 
 import { readdirSync, statSync } from "node:fs";
@@ -10,7 +10,7 @@ import { join } from "node:path";
 import type { LocationCheck } from "../shared/api";
 import { readPiSettings } from "../shared/pi-settings";
 
-/** Proposed default AB location (FR-SETUP-03). */
+/** Proposed default buddy location (FR-SETUP-03). */
 export function defaultAbLocation(): string {
   return join(homedir(), "buddy");
 }

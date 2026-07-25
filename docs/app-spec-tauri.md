@@ -4,12 +4,12 @@ access_count: 1
 created: 2026-07-18
 ---
 
-# AB App — Tauri + Pi SDK Technical Specification
+# buddy — Tauri + Pi SDK Technical Specification
 
 Detailed specification for a native cross-platform app that uses Pi's SDK
 directly (as a library) within a managed Node.js worker. The app is a thin
 UX layer — all agent logic, tools, sessions, and memory management live in
-Pi + extensions + AB file system.
+Pi + extensions + buddy file system.
 
 ## Architecture Overview
 
@@ -55,7 +55,7 @@ notifications. All logic lives in TypeScript.
 └──────────────────────────────────────────────────────────────┘
                     │
         ┌───────────▼───────────┐
-        │  AB File System       │
+        │  buddy file system    │
         │  AGENTS.md / agent_brain / │
         │  user / logs          │
         └───────────────────────┘
@@ -237,7 +237,7 @@ The worker builds the system prompt once at session start (not per turn).
 
 **Source layers:**
 
-1. **AGENTS.md** — loaded from the AB repo root. Contains base behavioral rules
+1. **AGENTS.md** — loaded from the buddy repo root. Contains base behavioral rules
    that also serve as fallback for Cursor/Claude Code. The user can edit this
    file directly for customization; the app never overwrites it.
 2. **SOUL.md** — character definition, injected verbatim
@@ -426,7 +426,7 @@ App.svelte
     ├── Provider dropdown (cascading: filters model list)
     ├── Model dropdown (per-provider)
     ├── Language selector
-    ├── AB directory path (read-only)
+    ├── buddy directory path (read-only)
     └── Add provider inline auth (OAuth + API key fallback)
 ```
 
@@ -854,8 +854,8 @@ before daily log finalization.
 
 ## Permission Model
 
-AB is more dynamic than purpose-built agents (pipelines-debugger, author-kb)
-that have fixed scopes. The user can ask AB to read articles, ingest external
+buddy is more dynamic than purpose-built agents (pipelines-debugger, author-kb)
+that have fixed scopes. The user can ask buddy to read articles, ingest external
 files, or interact with arbitrary paths. The permission model
 must balance **flexibility** (the user can do anything) with **safety** (a
 prompt injection in an ingested document can't exfiltrate data).
@@ -869,7 +869,7 @@ for interactive confirmation — strictly superior to silent blocking.
 Three zones with escalating friction:
 
 ```
-Zone 1 — AB Home (full access, never ask):
+Zone 1 — buddy home (full access, never ask):
   AB_DIR/**              → read, write, edit, delete
   Exceptions (require user confirmation even inside Zone 1):
     - agent_brain/identity/SOUL.md  → write confirms
@@ -990,7 +990,7 @@ Permission requests appear as a special bubble in the chat:
 
 ```
 ┌─────────────────────────────────────────────┐
-│  🔒 AB wants to read                        │
+│  🔒 buddy wants to read                        │
 │  ~/Documents/articles/draft-emergencia.md   │
 │                                             │
 │  [Allow once] [Allow folder] [Deny]         │
@@ -1294,7 +1294,7 @@ ab-app/
 
 ## First-Run / Onboarding
 
-The app must be usable from zero — no pre-existing AB directory, no Pi config,
+The app must be usable from zero — no pre-existing buddy directory, no Pi config,
 no terminal knowledge. The onboarding splits into two clear phases:
 **deterministic setup** (code, no LLM) and **personalization** (the agent itself).
 
@@ -1365,7 +1365,7 @@ Before Phase A runs, the frontend shows a minimal wizard (Svelte screens):
 **Screen 1 — Welcome:**
 "Bienvenido a Buddy. Vamos a configurar tu asistente personal."
 
-**Screen 2 — AB location:**
+**Screen 2 — buddy location:**
 - File picker / path input
 - Default: `~/buddy`
 - Validation: directory doesn't exist or is empty
@@ -1406,7 +1406,7 @@ spread questions naturally across the first few exchanges.
 ```
 
 This is elegant: the onboarding IS the product. The user's first experience
-of AB is already AB working — listening, capturing, organizing. No separate
+of buddy is already buddy working — listening, capturing, organizing. No separate
 "setup mode" that feels different from normal use.
 
 ### Data Flow — First Run
@@ -1420,7 +1420,7 @@ of AB is already AB working — listening, capturing, organizing. No separate
 6. Worker: session.prompt("This is a new user. Begin first-session personalization.", { source: "internal" })
    // source: "internal" flag lets the frontend filter this from display
 7. Agent: greets user, starts conversational onboarding
-8. Frontend: shows chat — user is already interacting with their AB
+8. Frontend: shows chat — user is already interacting with their buddy
 9. Agent: writes USER.md as it learns about the user
 ```
 
@@ -1432,7 +1432,7 @@ All configuration lives in standard Pi locations:
 |------|-------|-----------|
 | Provider + model | `AB_DIR/.pi/settings.json` | Wizard → later Settings UI |
 | API keys | `~/.buddy/auth.json` | Wizard → later Settings UI |
-| AB directory path | `~/.buddy/config.json` | App (Tauri) |
+| buddy directory path | `~/.buddy/config.json` | App (Tauri) |
 | Scheduler settings | `~/.buddy/scheduler.json` | App (future Phase 3) |
 
 No custom config format — Pi's native settings are the source of truth.
@@ -1464,11 +1464,11 @@ no personalization, no persistence.
 
 ## MVP Scope (Phase 1)
 
-The true MVP validates "it remembers" — the core promise of AB. Includes
+The true MVP validates "it remembers" — the core promise of buddy. Includes
 everything in Phase 0 plus the features needed for day-one value:
 
 1. **First-run wizard** (location, provider, API key, model — no Ollama)
-2. **Deterministic AB setup** (dirs, templates, git init, Pi config)
+2. **Deterministic buddy setup** (dirs, templates, git init, Pi config)
 3. **Agent-driven personalization** (first conversation writes USER.md)
 4. **Forked reflect on close** (background child with full session context)
 5. **Fresh session every launch** (continuity via file memory, not session resume)
@@ -1584,18 +1584,18 @@ Decision deferred to Phase 6 scoping.
 2. **Markdown library:** `marked` is lightweight but basic. Alternative: `markdown-it` (more extensions). For code blocks: `highlight.js` vs `shiki` (better but heavier).
 3. **Quick capture UX (Phase 6):** Global hotkey → floating window, or system tray → input field? Global hotkey is faster but has cross-platform quirks on Linux.
 4. **Session persistence across restarts:** **Decided (E5):** Fresh session every launch. Continuity comes from file memory (logs, identity files), not Pi session resume. `SessionManager.continueRecent()` reserved for future multi-session UI (Phase 5).
-5. **Multiple AB directories:** Support switching between instances (my-ab, wab) or one instance per app? Could use a workspace switcher in settings.
+5. **Multiple buddy directories:** Support switching between instances (my-ab, wab) or one instance per app? Could use a workspace switcher in settings.
 6. **Extension UI in chat vs native dialogs:** Render confirm/select/input as chat bubbles with buttons (more cohesive) or as native OS dialogs (more noticeable)?
 
 ## Git Sync (multi-device)
 
 Multi-device sync is a planned direction — not if, but when. For users who
-keep their AB in a remote repository (GitHub, GitLab, etc.), the app will
+keep their buddy directory in a remote repository (GitHub, GitLab, etc.), the app will
 support a "connected mode" that syncs automatically.
 
 ### Concept
 
-AB is already a git repo. Multi-device sync is just `git pull` + `git push`
+The buddy directory is already a git repo. Multi-device sync is just `git pull` + `git push`
 at the right moments. No custom sync protocol needed — git handles conflicts,
 history, and merging.
 
@@ -1614,7 +1614,7 @@ interface SyncConfig {
 }
 ```
 
-Stored in `~/.buddy/config.json` (app-level, not inside the AB repo).
+Stored in `~/.buddy/config.json` (app-level, not inside the buddy repo).
 
 ### Sync behavior
 
@@ -1628,7 +1628,7 @@ Stored in `~/.buddy/config.json` (app-level, not inside the AB repo).
 
 **After agent commits** (auto-push):
 ```
-1. Agent writes files + commits (normal AB behavior)
+1. Agent writes files + commits (normal buddy behavior)
 2. Worker detects new commit (fs.watch on .git/refs/heads or post-commit)
 3. git push origin main
 4. If push fails (remote ahead): pull --rebase, retry push
@@ -1645,7 +1645,7 @@ Stored in `~/.buddy/config.json` (app-level, not inside the AB repo).
 
 ### Conflict handling
 
-Most AB files are single-owner (one device writes at a time), so conflicts
+Most buddy files are single-owner (one device writes at a time), so conflicts
 should be rare. However, **append-only files** are conflict magnets:
 `logs/index.md`, `agent_brain/observations.md`, `agent_brain/deferred.md`.
 Multiple sessions on different devices append to the same file.
@@ -1672,7 +1672,7 @@ for push conflicts.
 
 When conflicts do happen:
 
-- **Notification:** "Sync conflict in 2 files. Open AB to resolve?"
+- **Notification:** "Sync conflict in 2 files. Open buddy to resolve?"
 - **In chat:** Show conflicted files, let the agent help resolve
   (it understands the file formats)
 - **Fallback:** `git mergetool` or manual resolution instructions
@@ -1777,7 +1777,7 @@ export interface SyncResult {
 
 ### Notes
 
-- Uses rebase (not merge) to keep history linear — simpler for AB's append-only patterns
+- Uses rebase (not merge) to keep history linear — simpler for buddy's append-only patterns
 - SSH keys or credential helpers configured by the user (standard git setup)
 - The app never stores git credentials — delegates to git's credential system
 - For work instances behind corporate auth (GitLab + SSO), user configures git normally; app just runs `git push/pull`

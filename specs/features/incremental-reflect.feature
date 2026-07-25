@@ -6,7 +6,7 @@ Feature: Compaction-triggered checkpoint reflect
   So that detail is not lost when the context window compresses
 
   Background:
-    Given an initialized AB git repository
+    Given an initialized buddy git repository
     And memory lifecycle is tracking reflect spawns
 
   Scenario: Compaction trigger spawns a checkpoint reflect

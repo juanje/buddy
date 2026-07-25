@@ -1,4 +1,4 @@
-// backends/create-ab.ts — Deterministic AB instance creation (FR-SETUP-06/08).
+// backends/create-buddy.ts — Deterministic buddy instance creation (FR-SETUP-06/08).
 // Pure file operations + git: NO LLM call happens here by design. The wizard
 // collects personalization in a form; USER.md is populated from that data.
 
@@ -18,7 +18,7 @@ export function defaultTemplatesDir(): string {
 }
 
 /**
- * Materialize the AB template tree at targetDir. Precedence: an explicit
+ * Materialize the buddy template tree at targetDir. Precedence: an explicit
  * templatesDir (tests) > assets embedded in the compiled sidecar > repo
  * templates/ on disk (dev).
  */
@@ -70,7 +70,7 @@ ${about}
 }
 
 /**
- * Create the AB home: copy templates (agent_brain/, user/, logs/, AGENTS.md),
+ * Create the buddy home: copy templates (agent_brain/, user/, logs/, AGENTS.md),
  * write project Pi settings, init git with a single initial commit, and mark
  * the app as configured. Deterministic and offline.
  */
@@ -97,14 +97,14 @@ export async function createAbInstance(options: CreateAbOptions): Promise<void> 
   await git.add(".");
   await git.commit("chore: initial Buddy setup");
 
-  // Written last: only a fully created AB counts as configured (FR-SETUP-01).
+  // Written last: only a fully created buddy instance counts as configured (FR-SETUP-01).
   markConfigured(config, configPath);
 }
 
 /**
- * Adopt an existing AB directory without overwriting anything (FR-SETUP-10).
+ * Adopt an existing buddy directory without overwriting anything (FR-SETUP-10).
  * Platform artifacts (.cursor/, .codex/) are simply left alone. The only
- * write inside the AB is .pi/settings.json, and only when it doesn't exist
+ * write inside the buddy directory is .pi/settings.json, and only when it doesn't exist
  * (the wizard collected provider/model precisely because it was missing).
  */
 export function adoptAbInstance(options: Pick<CreateAbOptions, "config" | "configPath">): void {

@@ -30,7 +30,7 @@ After(function (this: PermWorld) {
   if (this.permTmpDir) rmSync(this.permTmpDir, { recursive: true, force: true });
 });
 
-Given("a permission layer for an AB directory", function (this: PermWorld) {
+Given("a permission layer for a buddy directory", function (this: PermWorld) {
   this.permTmpDir = mkdtempSync(join(tmpdir(), "ab-perm-"));
   this.home = join(this.permTmpDir, "home");
   this.abDir = join(this.home, "buddy");

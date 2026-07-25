@@ -63,7 +63,7 @@ describe("createSetupController back()", () => {
     expect(get(wizard.location)).toBe("/tmp/buddy");
   });
 
-  it("requires re-authentication when importing an AB with settings but no auth", async () => {
+  it("requires re-authentication when importing a buddy instance with settings but no auth", async () => {
     const wizard = createSetupController(
       makeSetupWorkerFake({
         validateLocation: async () => ({
@@ -89,7 +89,7 @@ describe("createSetupController back()", () => {
     expect(get(wizard.completed)).toBe(false);
   });
 
-  it("adopts directly when importing an AB with settings and valid auth", async () => {
+  it("adopts directly when importing a buddy instance with settings and valid auth", async () => {
     let setupCalled = false;
     const wizard = createSetupController(
       makeSetupWorkerFake({

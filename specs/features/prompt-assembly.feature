@@ -2,11 +2,11 @@
 
 Feature: System prompt assembly (FR-PROMPT-01, FR-PROMPT-02)
   As the assistant's runtime
-  I want the system prompt built from the AB's own files
+  I want the system prompt built from the buddy directory's own files
   So that the agent knows its rules, character, user and pending items
 
   Background:
-    Given an AB directory with identity files
+    Given a buddy directory with identity files
 
   Scenario: The prompt includes rules, character, user and current date
     When the system prompt is assembled
@@ -26,7 +26,7 @@ Feature: System prompt assembly (FR-PROMPT-01, FR-PROMPT-02)
     Then the prompt has no pending items section
 
   Scenario: Missing identity files do not break assembly
-    Given the AB directory has no USER.md
+    Given the buddy directory has no USER.md
     When the system prompt is assembled
     Then it contains the AGENTS.md rules
     And the prompt has no user profile section

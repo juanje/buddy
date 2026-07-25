@@ -8,7 +8,7 @@ import assert from "node:assert/strict";
 import { copyFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { defaultTemplatesDir } from "../../backends/create-ab";
+import { defaultTemplatesDir } from "../../backends/create-buddy";
 import type { AssembledPrompt } from "../../backends/prompt";
 import type { AbWorld } from "../support/world";
 

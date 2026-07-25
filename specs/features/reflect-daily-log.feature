@@ -6,7 +6,7 @@ Feature: Reflect writes daily agent log
   So that my assistant's memory accumulates in a portable format
 
   Background:
-    Given an initialized AB git repository
+    Given an initialized buddy git repository
 
   Scenario: Session-end reflect appends to daily log
     Given a reflect finalization with date "2026-07-23" and header "14:30–15:45"

@@ -1,6 +1,6 @@
 // backends/prompt.ts — system prompt assembly (FR-PROMPT-01, FR-PROMPT-02).
-// Deterministic composition from the AB's own files. Missing files skip
-// their section instead of failing: a half-personalized AB must still boot.
+// Deterministic composition from the buddy's own files. Missing files skip
+// their section instead of failing: a half-personalized buddy instance must still boot.
 
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
@@ -23,7 +23,7 @@ export interface AssembledPrompt {
  * the name during the first conversation, which ends the interview mode.
  */
 export function isUserProfilePlaceholder(userMd: string | undefined): boolean {
-  if (userMd === undefined) return true; // no profile at all: fresh AB
+  if (userMd === undefined) return true; // no profile at all: fresh buddy instance
   const nameLine = userMd.split("\n").find((line) => line.includes("**Name:**"));
   if (!nameLine) return true;
   const value = nameLine.slice(nameLine.indexOf("**Name:**") + "**Name:**".length).trim();

@@ -6,7 +6,7 @@ Feature: Inline file viewer (FR-CHAT-10)
   So that I can read referenced files without leaving the app
 
   Background:
-    Given the AB root directory is "/home/buddy"
+    Given the buddy root directory is "/home/buddy"
 
   Scenario: Clicking a markdown link routes to the inline viewer
     When I click the local link "agent_brain/concepts/foo.md"

@@ -59,8 +59,8 @@ export interface UsageReport {
 export type SetupState = { firstRun: true } | { firstRun: false; config: SetupConfig };
 
 /**
- * AB location validation result (FR-SETUP-03). "existing-ab" marks a
- * directory holding an AB instance, offered for import (FR-SETUP-08).
+ * Buddy location validation result (FR-SETUP-03). "existing-ab" marks a
+ * directory holding a buddy instance, offered for import (FR-SETUP-08).
  */
 export interface LocationCheck {
   status: "ok-new" | "ok-empty" | "existing-ab" | "not-empty" | "not-a-directory";
@@ -177,7 +177,7 @@ export interface WorkerAPI {
   /** Which providers have configured credentials. */
   getAuthStatus(): Promise<AuthStatusResult>;
   /**
-   * Finish setup and boot the session. "create" builds a fresh AB from
+   * Finish setup and boot the session. "create" builds a fresh buddy instance from
    * templates (FR-SETUP-06); "import" adopts an existing one without
    * overwriting anything (FR-SETUP-08). Default: "create".
    */
@@ -194,7 +194,7 @@ export interface WorkerAPI {
 }
 
 /**
- * Session-scoped subset of WorkerAPI: what the chat needs once an AB is
+ * Session-scoped subset of WorkerAPI: what the chat needs once a buddy instance is
  * configured. Setup concerns (detection, prerequisites) live in the worker
  * entry point because they must answer before any session exists.
  */

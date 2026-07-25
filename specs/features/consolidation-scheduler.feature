@@ -6,7 +6,7 @@ Feature: Consolidation scheduler (FR-CONSOL-01/02/04/05/06, FR-DEFERRED-02)
   So that maintenance runs autonomously without interrupting the user
 
   Background:
-    Given an AB directory prepared for consolidation
+    Given a buddy directory prepared for consolidation
 
   Scenario: Heartbeat surfaces due deferred items
     Given the deferred queue has an item due today
