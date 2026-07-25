@@ -41,9 +41,9 @@ describe("notifyDeferredDue", () => {
   });
 
   it("sends a notification when permission is granted", async () => {
-    await notifyDeferredDue(2, { title: "Buddy", body: "2 pending" });
+    await notifyDeferredDue(2, { title: "buddy", body: "2 pending" });
     expect(sendNotification).toHaveBeenCalledWith({
-      title: "Buddy",
+      title: "buddy",
       body: "2 pending",
       autoCancel: true,
     });
@@ -51,14 +51,14 @@ describe("notifyDeferredDue", () => {
 
   it("deduplicates notifications within the cooldown window", async () => {
     vi.useFakeTimers();
-    await notifyDeferredDue(1, { title: "Buddy", body: "one" });
+    await notifyDeferredDue(1, { title: "buddy", body: "one" });
     vi.advanceTimersByTime(DEFERRED_NOTIFY_DEDUP_MS - 1000);
-    await notifyDeferredDue(1, { title: "Buddy", body: "one again" });
+    await notifyDeferredDue(1, { title: "buddy", body: "one again" });
     expect(sendNotification).toHaveBeenCalledTimes(1);
   });
 
   it("skips when count is zero", async () => {
-    await notifyDeferredDue(0, { title: "Buddy", body: "none" });
+    await notifyDeferredDue(0, { title: "buddy", body: "none" });
     expect(sendNotification).not.toHaveBeenCalled();
   });
 });

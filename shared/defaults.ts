@@ -31,7 +31,7 @@ export const BUDGET_BACKGROUND_THRESHOLD = 0.95;
 /** Global usage persistence file name under ~/.buddy/ (FR-COST-02). */
 export const USAGE_FILE_NAME = "usage.json";
 export const SHUTDOWN_TIMEOUT_MS = 2000;
-export const GIT_USER_NAME = "Buddy";
+export const GIT_USER_NAME = "buddy";
 export const GIT_USER_EMAIL = "buddy@localhost";
 
 /** Heartbeat interval for deferred checks and consolidation evaluation (FR-DEFERRED-02, FR-CONSOL-01). */

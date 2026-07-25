@@ -16,7 +16,7 @@ fn main() {
         .plugin(tauri_plugin_notification::init())
         .setup(|app| {
             let about = AboutMetadata {
-                name: Some("Buddy".to_string()),
+                name: Some("buddy".to_string()),
                 version: Some("0.1.0".to_string()),
                 comments: Some(
                     "Personal assistant with persistent memory.\nEverything lives in a local folder — nothing leaves your computer."
@@ -33,7 +33,7 @@ fn main() {
                 .accelerator("CmdOrCtrl+,")
                 .build(app)?;
 
-            let app_submenu = SubmenuBuilder::new(app, "Buddy")
+            let app_submenu = SubmenuBuilder::new(app, "buddy")
                 .about(Some(about))
                 .item(&settings_item)
                 .separator()
