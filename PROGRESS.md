@@ -203,7 +203,7 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 
 | FR-ID | Feature | Status | Commit |
 |-------|---------|--------|--------|
-| FR-CHAT-10 | Inline file viewer for markdown/text links | done | pending |
+| FR-CHAT-10 | Inline file viewer for markdown/text links | done | 5299c10 |
 
 **Tests at sprint close:** 262 unit + 136 BDD green.
 
