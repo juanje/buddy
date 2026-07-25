@@ -96,7 +96,7 @@ docs/           — Design principles, technical architecture, decisions
 | [docs/app-design-principles.md](docs/app-design-principles.md) | Design principles and rationale (the WHY) |
 | [docs/app-spec-tauri.md](docs/app-spec-tauri.md) | Technical architecture and Pi SDK usage (the HOW) |
 | [CLAUDE.md](CLAUDE.md) | Agent workflow: BDD+TDD process, phase order, rules |
-| [PROGRESS.md](PROGRESS.md) | Implementation status and next focus |
+| [PROGRESS.md](specs/PROGRESS.md) | Implementation status and next focus |
 
 ## License
 

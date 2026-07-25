@@ -10,7 +10,7 @@ using BDD + TDD.
 
 ### Process (strict, every feature)
 
-1. Read `PROGRESS.md` — find the current focus (next feature to implement)
+1. Read `specs/PROGRESS.md` — find the current focus (next feature to implement)
 2. Read the FR's acceptance criteria in `specs/SPEC.md`
 3. Write/verify the `.feature` file in `specs/features/` (Gherkin)
 4. Write step definitions in `tests/steps/` that make the feature executable
@@ -74,7 +74,7 @@ chore: tooling, deps, config
 | `specs/features/*.feature` | Before implementing — the test you must make pass |
 | `docs/app-spec-tauri.md` | Need technical details (architecture, API patterns, data flows) |
 | `docs/app-design-principles.md` | Need to understand WHY a decision was made |
-| `PROGRESS.md` | Check current state: what's done, what's next |
+| `specs/PROGRESS.md` | Check current state: what's done, what's next |
 
 ## Architecture (brief)
 
