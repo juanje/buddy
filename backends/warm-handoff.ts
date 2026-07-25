@@ -2,7 +2,8 @@
 // Injects a hidden system-framed user message and forwards only assistant
 // events so the greeting streams into the chat without showing the prompt.
 
-import type { AgentEvent, FrontendAPI } from "../shared/api";
+import type { FrontendAPI } from "../shared/api";
+import { injectHiddenPrompt } from "./context-injection";
 import type { PiSessionLike } from "./worker-core";
 
 export interface WarmHandoffData {
@@ -20,26 +21,11 @@ export function buildWarmHandoffPrompt(data: WarmHandoffData): string {
   );
 }
 
-function isUserMessageEvent(event: AgentEvent): boolean {
-  if (event.type !== "message_start" && event.type !== "message_end") return false;
-  const message = event.message as { role?: string } | undefined;
-  return message?.role === "user";
-}
-
 /** Run the warm handoff turn; assistant events reach the frontend, user prompt does not. */
 export async function runWarmHandoff(
   session: PiSessionLike,
   frontend: FrontendAPI,
   data: WarmHandoffData,
 ): Promise<void> {
-  const forward = (event: AgentEvent) => {
-    if (isUserMessageEvent(event)) return;
-    frontend.onAgentEvent(event);
-  };
-  const unsub = session.subscribe(forward);
-  try {
-    await session.prompt(buildWarmHandoffPrompt(data));
-  } finally {
-    unsub();
-  }
+  await injectHiddenPrompt(session, frontend, buildWarmHandoffPrompt(data));
 }

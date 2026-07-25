@@ -10,17 +10,18 @@ Feature: Agent-driven personalization (FR-SETUP-07)
 
   Scenario: A placeholder profile triggers the personalization instructions
     Given USER.md is still the placeholder template
-    When the system prompt is assembled
-    Then the prompt instructs the agent to introduce itself
-    And the prompt instructs the agent to ask for name, language, interests and preferences
-    And the prompt instructs the agent to write the answers to USER.md as it learns them
+    When the session context is assembled
+    Then the session context instructs the agent to introduce itself
+    And the session context instructs the agent to ask for name, language, interests and preferences
+    And the session context instructs the agent to write the answers to USER.md as it learns them
+    And the system prompt has no personalization instructions
 
   Scenario: A personalized profile does not trigger the interview
     Given USER.md already has the user's name filled in
-    When the system prompt is assembled
-    Then the prompt has no personalization instructions
+    When the session context is assembled
+    Then the session context has no personalization instructions
 
   Scenario: A missing profile also triggers personalization
     Given the buddy directory has no USER.md
-    When the system prompt is assembled
-    Then the prompt instructs the agent to introduce itself
+    When the session context is assembled
+    Then the session context instructs the agent to introduce itself

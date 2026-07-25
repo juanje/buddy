@@ -678,8 +678,32 @@ semver comparison on boot keeps bundled content current without user interaction
 1. Compare app semver with last_app_version in ~/.buddy/config.json
 2. If absent or different: deploy bundled prompts/ and docs/; update last_app_version
 3. pruneSessionLogs() — NFR-MAINT-01
-4. Continue normal startup (session creation, prompt assembly, etc.)
+4. Continue normal startup (session creation, two-phase prompt assembly, etc.)
 ```
+
+### Session prompt assembly (two layers)
+
+At session start the worker builds **two separate layers** — not one monolithic system prompt:
+
+```
+System prompt (identity + rules — stable for the session):
+  1. ~/.buddy/prompts/agents-base.md
+  2. rootDir/AGENTS.md (or CLAUDE.md fallback)
+  3. rootDir/agent_brain/identity/SOUL.md
+  4. rootDir/agent_brain/identity/USER.md
+  5. Current date/time
+
+Session context (episodic — hidden first user message, FR-PROMPT-02/04):
+  6. logs/index.md
+  7. Last session log
+  8. Due/overdue deferred items
+  9. First-run interview (when USER.md is placeholder)
+```
+
+The system prompt defines *who the agent is and how it behaves*. Session context
+is *what is happening now* — injected invisibly before the user's first turn so
+it does not compete with identity for model attention. Same delivery pattern as
+FR-SETUP-09 warm handoff: `session.prompt()` with UI filtering on user role.
 
 Boot refresh runs **before any session starts** — the worker can assume
 `~/.buddy/prompts/` and `~/.buddy/docs/` are current before assembling a system

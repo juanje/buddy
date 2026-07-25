@@ -1,4 +1,4 @@
-// tests/steps/prompt-assembly.steps.ts — FR-PROMPT-01/02 prompt assembly.
+// tests/steps/prompt-assembly.steps.ts — FR-PROMPT-01 prompt assembly.
 // Real files on temp dirs; deterministic clock. No mocks, no LLM.
 
 import { Given, When, Then, After } from "@cucumber/cucumber";
@@ -18,7 +18,6 @@ interface PromptWorld extends AbWorld {
   assembled?: AssembledPrompt;
 }
 
-// Fixed "now" so due/overdue/future are deterministic.
 const NOW = new Date("2026-07-19T10:00:00");
 
 After(function (this: PromptWorld) {
@@ -57,10 +56,20 @@ Given(
   },
 );
 
-Given("the deferred queue has only an item due next month", function (this: PromptWorld) {
+Given("the buddy directory has session logs", function (this: PromptWorld) {
+  mkdirSync(join(this.abDir!, "logs"), { recursive: true });
   writeFileSync(
-    join(this.abDir!, "agent_brain", "deferred.md"),
-    "- **reminder** (2026-08-15, user): Felicitar a mamá.\n",
+    join(this.abDir!, "logs", "index.md"),
+    [
+      "# Sessions index",
+      "",
+      "- 2026-07-18: active — Prior day.",
+      "- 2026-07-19: active — Today work.",
+    ].join("\n"),
+  );
+  writeFileSync(
+    join(this.abDir!, "logs", "2026-07-19.md"),
+    "## Session 09:00–10:00\n\n### Context\n\nShipped FR-PROMPT split.\n",
   );
 });
 
@@ -120,19 +129,23 @@ Then("it contains the current date and time", function (this: PromptWorld) {
   assert.ok(this.assembled!.prompt.includes(NOW.toISOString()));
 });
 
-Then("both deferred items are included as pending items to surface", function (this: PromptWorld) {
-  const { prompt, dueItems } = this.assembled!;
-  assert.equal(dueItems.length, 2);
-  assert.match(prompt, /# Pending items to surface/);
-  assert.match(prompt, /Llamar al dentista\./);
-  assert.match(prompt, /Revisar notas de la semana\./);
+Then("the prompt has no pending items section", function (this: PromptWorld) {
+  assert.doesNotMatch(this.assembled!.prompt, /# Pending items to surface/);
 });
 
-Then("the prompt has no pending items section", function (this: PromptWorld) {
-  assert.equal(this.assembled!.dueItems.length, 0);
-  assert.doesNotMatch(this.assembled!.prompt, /# Pending items to surface/);
+Then("the prompt has no sessions index section", function (this: PromptWorld) {
+  assert.doesNotMatch(this.assembled!.prompt, /# Sessions index/);
+});
+
+Then("the prompt has no last session log section", function (this: PromptWorld) {
+  assert.doesNotMatch(this.assembled!.prompt, /# Last session log/);
 });
 
 Then("the prompt has no user profile section", function (this: PromptWorld) {
   assert.doesNotMatch(this.assembled!.prompt, /# About your user/);
+});
+
+Then("the system prompt has no personalization instructions", function (this: PromptWorld) {
+  const { prompt } = this.assembled ?? assembleSystemPrompt(this.abDir!, NOW);
+  assert.doesNotMatch(prompt, /# First conversation/);
 });

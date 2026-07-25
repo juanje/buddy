@@ -1,9 +1,9 @@
 # specs/features/prompt-assembly.feature
 
-Feature: System prompt assembly (FR-PROMPT-01, FR-PROMPT-02)
+Feature: System prompt assembly (FR-PROMPT-01)
   As the assistant's runtime
-  I want the system prompt built from the buddy directory's own files
-  So that the agent knows its rules, character, user and pending items
+  I want the system prompt built from identity and rules only
+  So that stable behavior is not diluted by episodic session context
 
   Background:
     Given a buddy directory with identity files
@@ -15,15 +15,13 @@ Feature: System prompt assembly (FR-PROMPT-01, FR-PROMPT-02)
     And it contains the USER.md profile
     And it contains the current date and time
 
-  Scenario: Due deferred items enrich the prompt
+  Scenario: The system prompt excludes episodic context
     Given the deferred queue has an item due today and an overdue item
-    When the system prompt is assembled
-    Then both deferred items are included as pending items to surface
-
-  Scenario: Future deferred items are not included
-    Given the deferred queue has only an item due next month
+    And the buddy directory has session logs
     When the system prompt is assembled
     Then the prompt has no pending items section
+    And the prompt has no sessions index section
+    And the prompt has no last session log section
 
   Scenario: Missing identity files do not break assembly
     Given the buddy directory has no USER.md

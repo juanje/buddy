@@ -19,7 +19,8 @@ import { createHebbianTracker } from "./hebbian";
 import { createPermissionGate, isDenylistedPath, type PermissionRequest } from "./permissions";
 import type { AllowedEntry } from "./allowed-paths";
 import { extractPdfText } from "./pdf-extract";
-import { assembleSystemPrompt } from "./prompt";
+import { assembleSessionContext, assembleSystemPrompt } from "./prompt";
+import { injectSessionContext } from "./context-injection";
 import { globalConfigDir } from "./global-config";
 import { buildSkillTools, skillToolNames } from "./skill-tools";
 import { buildFetchTools, fetchToolNames } from "./fetch-url";
@@ -134,6 +135,7 @@ export async function bootSession(
   context.sessionAllowedPaths.clear();
 
   const { prompt } = assembleSystemPrompt(rootDir);
+  const sessionContext = assembleSessionContext(rootDir);
   const resourceLoader = new DefaultResourceLoader({
     cwd: rootDir,
     agentDir: getAgentDir(),
@@ -182,6 +184,10 @@ export async function bootSession(
     lifecycle,
     usageTracker: context.usageTracker,
   });
+
+  if (sessionContext.message) {
+    await injectSessionContext(sessionLike, context.frontend, sessionContext.message);
+  }
 
   if (options?.firstSession && options.name) {
     await runWarmHandoff(sessionLike, context.frontend, {

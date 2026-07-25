@@ -283,7 +283,7 @@ platform-specific install instructions is shown and setup cannot continue.
 - **Given** the app starts and a configured buddy directory exists
 - **When** the worker initializes
 - **Then** a new Pi session is created via `SessionManager.create()`
-- **And** the system prompt provides all continuity (assembled from identity files, logs, deferred)
+- **And** continuity comes from the system prompt (identity and rules) plus a session-start context message (logs, deferred) — not from prior chat history
 - **And** no prior conversation history is carried over (memory is in files, not chat context)
 
 **FR-SESSION-02** — *(removed: with fresh sessions on every launch, there is no
@@ -514,7 +514,7 @@ Fork bomb defense:
 
 - **Given** `agent_brain/deferred.md` contains items with dates
 - **When** the app starts
-- **Then** due and overdue items are parsed and injected into the system prompt
+- **Then** due and overdue items are parsed and included in the session-start context message (FR-PROMPT-02)
 - **And** the agent is aware of them from the first message
 - **And** a welcome banner card shows the items visually (type, due/overdue badge, text)
 - **And** the card is dismissed on the first user message or manually via close button
@@ -649,33 +649,47 @@ Fork bomb defense:
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-PROMPT-01 | Assembly from files | 1 ✓ |
-| FR-PROMPT-02 | Session-start enrichment | 1 ✓ |
+| FR-PROMPT-01 | System prompt assembly (identity and rules) | 1 ✓ |
+| FR-PROMPT-02 | Session-start context message | 1 ✓ |
 | FR-PROMPT-03 | Global base prompt (agents-base.md) | 2 ✓ |
+| FR-PROMPT-04 | Hidden context injection at session boot | 2 |
 
-**FR-PROMPT-01 — Assembly**
+**FR-PROMPT-01 — System prompt assembly**
 
 - **Given** a session is starting
 - **When** the system prompt is built
-- **Then** it includes: agents-base.md, AGENTS.md/CLAUDE.md, SOUL.md, USER.md, due deferred items, current date/time
+- **Then** it includes only stable identity and rules layers: `agents-base.md`, `AGENTS.md`/`CLAUDE.md`, `SOUL.md`, `USER.md`, current date/time
+- **And** it does **not** include logs, deferred items, or first-run interview instructions
 - **And** it is passed to Pi via `DefaultResourceLoader({ systemPromptOverride: () => prompt })`
 
-**FR-PROMPT-02 — Session-start enrichment**
+**FR-PROMPT-02 — Session-start context message**
 
-- **Given** the system prompt is assembled
-- **When** deferred items are due or overdue
-- **Then** they are formatted and included in the prompt so the agent surfaces them proactively
+- **Given** a session is starting
+- **When** session context is assembled
+- **Then** episodic and transient content is built as a separate message body: `logs/index.md`, last session log, due/overdue deferred items, first-run interview (when USER.md is a placeholder)
+- **And** due deferred items are formatted so the agent surfaces them proactively in its first reply
+- **And** when no context sections apply, the message is empty (no injection)
 
 **FR-PROMPT-03 — Global base prompt**
 
 - **Given** a session is starting
 - **When** the system prompt is assembled
 - **Then** `~/.buddy/prompts/agents-base.md` is read first and forms the base behavioral layer
-- **And** it defines: available tools, what's automatic (git, directory creation, session logging), agent limits (no bash, no shell)
+- **And** it defines: available tools, what's automatic (git, directory creation, session logging), agent limits (no bash, no shell), and Buddy identity anchor
 - **And** the instance-specific file (`rootDir/AGENTS.md` or `rootDir/CLAUDE.md`) is appended after it as an overlay
 - **And** if `agents-base.md` and the instance file contradict, the base takes precedence for capability constraints (the model follows the most specific/earliest instruction)
 - **And** skill tools (FR-SKILL-01) are registered on the session so the LLM can invoke procedural prompts without reading files
 - **Note:** This enables updating universal app behavior without modifying user instances. Old buddy instances with `CLAUDE.md` containing git/bash references work safely — the base explicitly forbids those capabilities.
+
+**FR-PROMPT-04 — Hidden context injection**
+
+- **Given** session context message is non-empty
+- **When** the Pi session is created (returning session, not first-run warm handoff only)
+- **Then** the context is sent as a hidden user message via `session.prompt()` before the user's first turn
+- **And** the injection is invisible in the chat UI (same pattern as FR-SETUP-09 warm handoff)
+- **And** assistant events from the model's response are forwarded to the frontend (brief greeting or deferred surfacing)
+- **And** when context is empty, no hidden message is sent
+- **Note:** First-run setup after the wizard uses warm handoff (FR-SETUP-09) for the greeting; personalization context may still be injected when USER.md is a placeholder
 
 ### 3.11 Git Operations (FR-GIT)
 
@@ -1389,7 +1403,7 @@ git operations, tool call rendering, thinking blocks, markdown rendering.
 - Import existing instance (point to repo with `agent_brain/`)
 - Reflect: forked session + background child process (full context LLM reflect)
 - Fresh session every launch (`SessionManager.create`; continuity via file memory)
-- Deferred item surfacing on app start (in system prompt)
+- Deferred item surfacing on app start (session-start context message, FR-PROMPT-02)
 - System prompt assembly (AGENTS.md + SOUL.md + USER.md + deferred + date)
 - Permission layer: Zone 1 always allow (with identity confirmation), everything else confirms in chat
 - Drag & drop / attach for file ingest (markdown/plain text/images)

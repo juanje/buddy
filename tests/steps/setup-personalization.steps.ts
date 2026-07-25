@@ -1,5 +1,5 @@
 // tests/steps/setup-personalization.steps.ts — FR-SETUP-07 personalization.
-// Deterministic layer: the interview instructions enter the prompt only
+// Deterministic layer: the interview instructions enter session context only
 // while USER.md is a placeholder. The conversational behavior itself is
 // LLM-driven and deliberately not tested here (no-token policy).
 
@@ -9,12 +9,12 @@ import { copyFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { defaultTemplatesDir } from "../../backends/create-buddy";
-import type { AssembledPrompt } from "../../backends/prompt";
+import type { SessionContext } from "../../backends/prompt";
 import type { AbWorld } from "../support/world";
 
 interface PersonalizationWorld extends AbWorld {
   abDir?: string;
-  assembled?: AssembledPrompt;
+  sessionContext?: SessionContext;
 }
 
 Given("USER.md is still the placeholder template", function (this: PersonalizationWorld) {
@@ -31,32 +31,38 @@ Given("USER.md already has the user's name filled in", function (this: Personali
   );
 });
 
-Then("the prompt instructs the agent to introduce itself", function (this: PersonalizationWorld) {
-  assert.equal(this.assembled!.personalizationPending, true);
-  assert.match(this.assembled!.prompt, /# First conversation: initial setup/);
-  assert.match(this.assembled!.prompt, /Greet them warmly/);
-});
-
 Then(
-  "the prompt instructs the agent to ask for name, language, interests and preferences",
+  "the session context instructs the agent to introduce itself",
   function (this: PersonalizationWorld) {
-    const prompt = this.assembled!.prompt;
-    assert.match(prompt, /Their name/);
-    assert.match(prompt, /language they prefer/);
-    assert.match(prompt, /What they want to use you for/);
-    assert.match(prompt, /How they like you to communicate/);
+    assert.equal(this.sessionContext!.personalizationPending, true);
+    assert.match(this.sessionContext!.message, /# First conversation: initial setup/);
+    assert.match(this.sessionContext!.message, /Greet them warmly/);
   },
 );
 
 Then(
-  "the prompt instructs the agent to write the answers to USER.md as it learns them",
+  "the session context instructs the agent to ask for name, language, interests and preferences",
   function (this: PersonalizationWorld) {
-    assert.match(this.assembled!.prompt, /agent_brain\/identity\/USER\.md/);
-    assert.match(this.assembled!.prompt, /rewrite.*USER\.md completely/);
+    const message = this.sessionContext!.message;
+    assert.match(message, /Their name/);
+    assert.match(message, /language they prefer/);
+    assert.match(message, /What they want to use you for/);
+    assert.match(message, /How they like you to communicate/);
   },
 );
 
-Then("the prompt has no personalization instructions", function (this: PersonalizationWorld) {
-  assert.equal(this.assembled!.personalizationPending, false);
-  assert.doesNotMatch(this.assembled!.prompt, /# First conversation/);
-});
+Then(
+  "the session context instructs the agent to write the answers to USER.md as it learns them",
+  function (this: PersonalizationWorld) {
+    assert.match(this.sessionContext!.message, /agent_brain\/identity\/USER\.md/);
+    assert.match(this.sessionContext!.message, /rewrite.*USER\.md completely/);
+  },
+);
+
+Then(
+  "the session context has no personalization instructions",
+  function (this: PersonalizationWorld) {
+    assert.equal(this.sessionContext!.personalizationPending, false);
+    assert.doesNotMatch(this.sessionContext!.message, /# First conversation/);
+  },
+);

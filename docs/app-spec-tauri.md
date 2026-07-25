@@ -137,7 +137,7 @@ const modelRuntime = await ModelRuntime.create();
 const resourceLoader = new DefaultResourceLoader({
     cwd: AB_DIR,
     agentDir: `${homedir()}/.pi/agent`,
-    systemPromptOverride: () => assembledSystemPrompt,  // built from AGENTS.md + SOUL + USER + context
+    systemPromptOverride: () => assembledSystemPrompt,  // identity + rules only (FR-PROMPT-01)
 });
 await resourceLoader.reload();
 
@@ -232,56 +232,42 @@ const { channel, api: frontendApi } = await RPCChannel.create<WorkerAPI, Fronten
 
 ### System Prompt Assembly
 
-The worker builds the system prompt once at session start (not per turn).
+The worker builds prompts in two phases at session start (not per turn).
 
-**Source layers:**
+**Phase 1 — System prompt (identity and rules):**
 
-1. **AGENTS.md** — loaded from the buddy repo root. Contains base behavioral rules
-   that also serve as fallback for Cursor/Claude Code. The user can edit this
-   file directly for customization; the app never overwrites it.
-2. **SOUL.md** — character definition, injected verbatim
-3. **USER.md** — user profile, injected verbatim
-4. **Active context summary** — extracted from CLAUDE.md "Right now" section
-   (or equivalent structured file the app maintains)
-5. **Deferred items** — due/overdue items from `agent_brain/deferred.md`
-6. **Date/time** — current date, day of week, timezone
+1. **agents-base.md** — from `~/.buddy/prompts/` (app-managed, boot refresh)
+2. **AGENTS.md** — instance rules from buddy repo root (CLAUDE.md fallback)
+3. **SOUL.md** — character definition
+4. **USER.md** — user profile
+5. **Date/time** — current timestamp
 
-```typescript
-// backends/system-prompt.ts
-import { readFile } from "node:fs/promises";
+Passed to Pi via `DefaultResourceLoader({ systemPromptOverride })`.
 
-export async function assembleSystemPrompt(abDir: string): Promise<string> {
-    const [agentsMd, soul, user, deferred] = await Promise.all([
-        readFile(`${abDir}/AGENTS.md`, "utf-8"),
-        readFile(`${abDir}/agent_brain/identity/SOUL.md`, "utf-8"),
-        readFile(`${abDir}/agent_brain/identity/USER.md`, "utf-8"),
-        readFile(`${abDir}/agent_brain/deferred.md`, "utf-8").catch(() => ""),
-    ]);
+**Phase 2 — Session context (episodic, FR-PROMPT-02/04):**
 
-    const dueItems = parseDeferredItems(deferred).filter(isDue);
-    const now = new Date();
+6. **logs/index.md** — session history index
+7. **Last session log** — most recent `logs/YYYY-MM-DD.md` entry
+8. **Deferred items** — due/overdue from `agent_brain/deferred.md`
+9. **First-run interview** — when USER.md is still a placeholder
 
-    return [
-        agentsMd,
-        "\n## Identity\n",
-        soul,
-        "\n## User Profile\n",
-        user,
-        dueItems.length ? `\n## Due reminders\n${formatDueItems(dueItems)}` : "",
-        `\n## Session context\nDate: ${now.toLocaleDateString()} (${now.toLocaleDateString("en", { weekday: "long" })})`,
-    ].join("\n");
-}
-```
-
-Passed to Pi at session creation via `DefaultResourceLoader`:
+Assembled as a separate message and injected invisibly via `session.prompt()`
+before the user's first turn (same pattern as warm handoff). Empty context skips
+injection.
 
 ```typescript
-const systemPrompt = await assembleSystemPrompt(AB_DIR);
+// backends/prompt.ts
+const { prompt } = assembleSystemPrompt(rootDir);
+const ctx = assembleSessionContext(rootDir);
+
 const resourceLoader = new DefaultResourceLoader({
-    cwd: AB_DIR,
-    agentDir: `${homedir()}/.pi/agent`,
-    systemPromptOverride: () => systemPrompt,
+    cwd: rootDir,
+    systemPromptOverride: () => prompt,
 });
+
+// After createAgentSession:
+if (ctx.message) await injectSessionContext(session, frontend, ctx.message);
+```
 await resourceLoader.reload();
 
 const { session } = await createAgentSession({
