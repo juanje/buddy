@@ -1,11 +1,18 @@
-// backends/app-version.ts — Runtime app semver from package.json (NFR-MIGRATE-06).
-// Lives in backends/ because it uses Node.js fs — not importable from the frontend.
+// backends/app-version.ts — Runtime app semver (NFR-MIGRATE-06).
+// In the compiled sidecar, package.json doesn't exist on disk — the
+// build-time embedded version (registered via sidecar-entry.ts) is used.
+// In dev mode, falls back to reading package.json from the repo tree.
 
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { getEmbeddedAssets } from "./embedded-assets";
+
 function readAppVersion(): string {
+  const embedded = getEmbeddedAssets();
+  if (embedded?.appVersion) return embedded.appVersion;
+
   try {
     const pkgPath = join(dirname(fileURLToPath(import.meta.url)), "..", "package.json");
     const pkg = JSON.parse(readFileSync(pkgPath, "utf8")) as { version?: string };

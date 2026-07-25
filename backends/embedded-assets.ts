@@ -11,6 +11,8 @@ export interface EmbeddedAssets {
   prompts: Record<string, string>;
   /** Self-doc pages relative to bundled/docs/ (e.g. "index.md") → content. */
   docs: Record<string, string>;
+  /** App semver from package.json at build time. */
+  appVersion?: string;
 }
 
 let assets: EmbeddedAssets | undefined;

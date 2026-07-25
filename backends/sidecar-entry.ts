@@ -18,7 +18,7 @@
 import { registerBunOAuthFlows } from "../node_modules/@earendil-works/pi-coding-agent/node_modules/@earendil-works/pi-ai/dist/bun-oauth.js";
 import { configureHttpDispatcher } from "../node_modules/@earendil-works/pi-coding-agent/dist/core/http-dispatcher.js";
 import { registerEmbeddedAssets } from "./embedded-assets";
-import { EMBEDDED_DOCS, EMBEDDED_PROMPTS, EMBEDDED_TEMPLATES } from "./embedded-assets.generated";
+import { EMBEDDED_APP_VERSION, EMBEDDED_DOCS, EMBEDDED_PROMPTS, EMBEDDED_TEMPLATES } from "./embedded-assets.generated";
 import { sidecarBootTarget } from "./sidecar-dispatch";
 
 (globalThis as any).DOMMatrix = class DOMMatrix {
@@ -54,7 +54,7 @@ configureHttpDispatcher();
 
 // Templates and bundled prompts live in the repo tree, which doesn't exist
 // inside the compiled binary — register the build-time snapshot instead.
-registerEmbeddedAssets({ templates: EMBEDDED_TEMPLATES, prompts: EMBEDDED_PROMPTS, docs: EMBEDDED_DOCS });
+registerEmbeddedAssets({ templates: EMBEDDED_TEMPLATES, prompts: EMBEDDED_PROMPTS, docs: EMBEDDED_DOCS, appVersion: EMBEDDED_APP_VERSION });
 
 // E13b: same binary, two modes — worker RPC vs one-shot reflect child.
 if (sidecarBootTarget() === "reflect-child") {

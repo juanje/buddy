@@ -23,6 +23,7 @@ function snapshotDir(dir: string): Record<string, string> {
   return Object.fromEntries(Object.entries(files).sort(([a], [b]) => a.localeCompare(b)));
 }
 
+const pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8")) as { version: string };
 const templates = snapshotDir(join(ROOT, "templates"));
 const prompts = snapshotDir(join(ROOT, "bundled", "prompts"));
 const docs = snapshotDir(join(ROOT, "bundled", "docs"));
@@ -34,6 +35,7 @@ const banner =
 writeFileSync(
   OUT,
   banner +
+    `export const EMBEDDED_APP_VERSION = ${JSON.stringify(pkg.version)};\n\n` +
     `export const EMBEDDED_TEMPLATES: Record<string, string> = ${JSON.stringify(templates, null, 2)};\n\n` +
     `export const EMBEDDED_PROMPTS: Record<string, string> = ${JSON.stringify(prompts, null, 2)};\n\n` +
     `export const EMBEDDED_DOCS: Record<string, string> = ${JSON.stringify(docs, null, 2)};\n`,
@@ -41,5 +43,5 @@ writeFileSync(
 );
 
 console.log(
-  `Embedded assets generated: ${Object.keys(templates).length} template files, ${Object.keys(prompts).length} prompts, ${Object.keys(docs).length} docs`,
+  `Embedded assets generated: v${pkg.version}, ${Object.keys(templates).length} template files, ${Object.keys(prompts).length} prompts, ${Object.keys(docs).length} docs`,
 );
