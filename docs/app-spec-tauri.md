@@ -679,7 +679,7 @@ Reflects run in separate processes and do not block the user session.
 
 ```typescript
 interface BrainHealthReport {
-    missingHeaders: string[];   // files without required frontmatter (incl. summary)
+    missingHeaders: string[];   // files without required frontmatter (excl. SOUL.md/USER.md — always-injected)
     missingIndexes: string[];   // dirs with >1 file and no index.md
     coreMissing: string[];      // SOUL.md, USER.md, AGENTS.md, deferred.md
     oversizedFiles: string[];   // files exceeding line threshold — split candidates

@@ -19,6 +19,7 @@ import {
   BRAIN_INDEX_EXEMPT_ROOT,
   CORE_BRAIN_FILES,
   CORE_ROOT_FILES,
+  FRONTMATTER_EXEMPT_FILES,
   LOG_ROTATION_THRESHOLD,
   REQUIRED_BRAIN_FRONTMATTER,
 } from "../shared/defaults";
@@ -387,7 +388,10 @@ export function computeBrainHealthReport(rootDir: string): BrainHealthReport {
 
   for (const relPath of walkAllBrainMarkdown(rootDir)) {
     const content = readFileSync(join(rootDir, relPath), "utf8");
-    if (!hasRequiredFrontmatter(content)) {
+    if (
+      !(FRONTMATTER_EXEMPT_FILES as readonly string[]).includes(relPath) &&
+      !hasRequiredFrontmatter(content)
+    ) {
       missingFrontmatter.push(relPath);
     }
     if (content.split("\n").length > BRAIN_FILE_SIZE_THRESHOLD_LINES) {

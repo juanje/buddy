@@ -41,15 +41,18 @@ Every file in `agent_brain/` must have frontmatter:
 
 ```yaml
 ---
+summary: "One-line description of what this file contains"
 last_accessed: YYYY-MM-DD
 access_count: 1
 created: YYYY-MM-DD
 ---
 ```
 
-Metadata tracking happens automatically — **do not update frontmatter fields manually**. The system tracks `last_accessed` and `access_count` when you read files. Your job is to include the frontmatter block when creating new files (with `created: YYYY-MM-DD` and initial values), but never edit these fields on existing files.
+Metadata tracking happens automatically — **do not update frontmatter fields manually**. The system tracks `last_accessed` and `access_count` when you read files. Your job is to include the frontmatter block when creating new files (with `summary`, `created: YYYY-MM-DD` and initial values), but never edit these fields on existing files.
 
-Exception: `identity/SOUL.md` and `identity/USER.md` don't use this frontmatter. Directory `index.md` files, `observations.md`, `deferred.md`, and core skills are also exempt (read mechanically, not as interest signal).
+Exceptions:
+- `identity/SOUL.md` and `identity/USER.md` — **no frontmatter at all**. They are always injected at session start; progressive disclosure and Hebbian tracking don't apply.
+- Directory `index.md` files, `observations.md`, `deferred.md`, and core skills — have `summary` + `created` but no `last_accessed`/`access_count` (read mechanically, not as interest signal).
 
 ## Active context
 

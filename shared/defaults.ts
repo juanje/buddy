@@ -1,24 +1,8 @@
 // shared/defaults.ts — Centralized operational defaults and security constants (NFR-CONFIG-01/03).
-
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+// Browser-safe: no Node.js imports. Backend-only helpers live in backends/.
 
 /** Global ~/.buddy/ schema version (NFR-MIGRATE). Increment when migrations are added. */
 export const APP_SCHEMA_VERSION = 1;
-
-/** App semver from package.json (NFR-MIGRATE-06 prompt refresh). */
-function readAppVersion(): string {
-  try {
-    const pkgPath = join(dirname(fileURLToPath(import.meta.url)), "..", "package.json");
-    const pkg = JSON.parse(readFileSync(pkgPath, "utf8")) as { version?: string };
-    return pkg.version ?? "0.0.0";
-  } catch {
-    return "0.0.0";
-  }
-}
-
-export const APP_VERSION = readAppVersion();
 
 // --- Operational defaults (NFR-CONFIG-01) ---
 export const LOCK_STALE_MS = 60 * 60 * 1000;
@@ -68,6 +52,11 @@ export const CONSOLIDATION_LOG_PATH = ".buddy/consolidation-log.json";
 
 /** Required YAML frontmatter keys on agent_brain/ files (NFR-FORMAT-01). */
 export const REQUIRED_BRAIN_FRONTMATTER = ["summary", "created"] as const;
+/** Files exempt from frontmatter requirement (always-injected at session start). */
+export const FRONTMATTER_EXEMPT_FILES = [
+  "agent_brain/identity/SOUL.md",
+  "agent_brain/identity/USER.md",
+] as const;
 /** Line count above which a brain file is flagged for potential split (FR-BRAIN-07). */
 export const BRAIN_FILE_SIZE_THRESHOLD_LINES = 300;
 /** Core agent_brain files that must exist (FR-BRAIN-07). */

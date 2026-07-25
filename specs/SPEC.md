@@ -846,7 +846,7 @@ detailed specification: [specs/BRAIN-SPEC.md](BRAIN-SPEC.md).
 - **Given** consolidation is about to run (or the check is invoked manually)
 - **When** the worker runs `computeBrainHealthReport()`
 - **Then** it deterministically checks (no LLM):
-  - All `agent_brain/` files have required frontmatter (including `summary` per NFR-FORMAT-01)
+  - All `agent_brain/` files have required frontmatter (including `summary` per NFR-FORMAT-01) — exception: `identity/SOUL.md` and `identity/USER.md` (always-injected at session start, no progressive disclosure needed)
   - Core files exist with correct format (SOUL.md, USER.md, AGENTS.md or CLAUDE.md, deferred.md)
   - Every directory with more than one file has an `index.md` (documented exceptions: USER.md parent pattern)
   - Files exceeding size threshold are flagged for potential split
@@ -1127,7 +1127,7 @@ result — the LLM then follows the procedure.
 
 | ID | Requirement |
 |----|-------------|
-| NFR-FORMAT-01 | All `agent_brain/` files include a `summary` field in YAML frontmatter — one line describing what the file contains and when the agent should read it (progressive disclosure). New files are created with `summary`; existing files are updated incrementally during consolidation. Directory indexes can be rebuilt programmatically from `summary` + filename without LLM calls. Index entries must not expose raw metadata (access_count, last_accessed) — only semantic descriptions useful for read-or-skip decisions. |
+| NFR-FORMAT-01 | All `agent_brain/` files include a `summary` field in YAML frontmatter — one line describing what the file contains and when the agent should read it (progressive disclosure). **Exception:** `identity/SOUL.md` and `identity/USER.md` have no frontmatter — they are always-injected at session start, never discovered through indexes. New files are created with `summary`; existing files are updated incrementally during consolidation. Directory indexes can be rebuilt programmatically from `summary` + filename without LLM calls. Index entries must not expose raw metadata (access_count, last_accessed) — only semantic descriptions useful for read-or-skip decisions. |
 
 ### 4.5 Privacy
 

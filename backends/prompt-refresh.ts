@@ -3,7 +3,7 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { APP_VERSION } from "../shared/defaults";
+import { APP_VERSION } from "./app-version";
 import { migrate_0_to_1 } from "./migrations/migrate-0-to-1";
 
 interface BuddyConfigRecord {

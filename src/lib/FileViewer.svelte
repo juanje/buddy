@@ -7,13 +7,13 @@
 
   let { controller }: { controller: FileViewerController } = $props();
 
-  const open = controller.open;
-  const filePath = controller.filePath;
-  const fileName = controller.fileName;
-  const content = controller.content;
-  const error = controller.error;
-  const isMarkdown = controller.isMarkdown;
-  const loading = controller.loading;
+  const open = $derived(controller.open);
+  const filePath = $derived(controller.filePath);
+  const fileName = $derived(controller.fileName);
+  const content = $derived(controller.content);
+  const error = $derived(controller.error);
+  const isMarkdown = $derived(controller.isMarkdown);
+  const loading = $derived(controller.loading);
 
   function onBackdropClick(event: MouseEvent) {
     if (event.target === event.currentTarget) {

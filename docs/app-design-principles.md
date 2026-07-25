@@ -233,7 +233,7 @@ maintained by code, not by the LLM).
 - No binary formats for memory state
 - Frontmatter-with-markdown is the universal format: machine-parseable header + human-readable body
 - Code reads/writes the frontmatter; the LLM reads/writes the body
-- **Canonical brain file frontmatter:** `summary` (one-line progressive-disclosure hint), `created`, `last_accessed`, `access_count` — see NFR-FORMAT-01. `summary` is structural metadata for indexes and search, not a Hebbian field.
+- **Canonical brain file frontmatter:** `summary` (one-line progressive-disclosure hint), `created`, `last_accessed`, `access_count` — see NFR-FORMAT-01. `summary` is structural metadata for indexes and search, not a Hebbian field. **Exception:** `identity/SOUL.md` and `identity/USER.md` carry no frontmatter — they are always-injected at session start and never discovered through indexes or search.
 - The system remains fully functional if you move it to another tool that reads markdown files
 
 **Portability test:** "Can I take this directory, open it in Cursor with the
@@ -408,7 +408,7 @@ not by read hooks. Hebbian hooks only touch `access_count` and `last_accessed`.
 ### Brain health linter
 
 Deterministic structural checks before consolidation (FR-BRAIN-07):
-- Missing required frontmatter (including `summary`)
+- Missing required frontmatter (including `summary`) — exempts `identity/SOUL.md` and `identity/USER.md` (always-injected, no progressive disclosure)
 - Missing core files or malformed structure
 - Directories with >1 file lacking `index.md`
 - Oversized files flagged for split consideration

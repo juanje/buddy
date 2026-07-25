@@ -1,8 +1,3 @@
----
-summary: "User profile, preferences, and permanent context injected at session start"
-created:
----
-
 # User profile
 
 ## About

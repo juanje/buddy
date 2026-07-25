@@ -1,8 +1,3 @@
----
-summary: "Agent character, behavioral constraints, and interaction style"
-created:
----
-
 # Agent identity
 
 ## Who you are
