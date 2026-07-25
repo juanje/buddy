@@ -1,4 +1,4 @@
-// backends/consolidation-mechanics.ts — Deterministic consolidation helpers (Part 1 brain fixes).
+// backends/consolidation-mechanics.ts — Deterministic consolidation helpers (FR-CONSOL, FR-BRAIN-07).
 
 import {
   appendFileSync,
@@ -383,10 +383,15 @@ function findMissingIndexes(rootDir: string): string[] {
 
 export function computeBrainHealthReport(rootDir: string): BrainHealthReport {
   const missingFrontmatter: string[] = [];
+  const oversizedFiles: string[] = [];
+
   for (const relPath of walkAllBrainMarkdown(rootDir)) {
     const content = readFileSync(join(rootDir, relPath), "utf8");
     if (!hasRequiredFrontmatter(content)) {
       missingFrontmatter.push(relPath);
+    }
+    if (content.split("\n").length > BRAIN_FILE_SIZE_THRESHOLD_LINES) {
+      oversizedFiles.push(relPath);
     }
   }
 
@@ -402,15 +407,6 @@ export function computeBrainHealthReport(rootDir: string): BrainHealthReport {
   }
 
   const missingIndexes = findMissingIndexes(rootDir);
-
-  const oversizedFiles: string[] = [];
-  for (const relPath of walkAllBrainMarkdown(rootDir)) {
-    const content = readFileSync(join(rootDir, relPath), "utf8");
-    const lineCount = content.split("\n").length;
-    if (lineCount > BRAIN_FILE_SIZE_THRESHOLD_LINES) {
-      oversizedFiles.push(relPath);
-    }
-  }
 
   return {
     missingFrontmatter,

@@ -117,7 +117,8 @@ ab-app/
 │   ├── steps/               # BDD step definitions
 │   ├── unit/                # Unit tests (vitest)
 │   └── fixtures/            # Test data
-├── templates/               # AB directory templates (bundled with app)
+├── templates/               # AB directory templates (initial instance content)
+├── bundled/prompts/         # Core prompts (skill tools + consolidation)
 └── package.json
 ```
 

@@ -16,7 +16,7 @@ import type {
   WorkerAPI,
 } from "../shared/api";
 import type { AllowedEntry } from "./allowed-paths";
-import { addAllowedPath, defaultConfigDir, loadAllowedPaths } from "./allowed-paths";
+import { addAllowedPath, loadAllowedPaths } from "./allowed-paths";
 import { adoptAbInstance, createAbInstance } from "./create-ab";
 import { defaultAbLocation, validateLocation } from "./location";
 import { listModelsForProvider } from "./model-listing";
@@ -70,7 +70,6 @@ async function main(): Promise<void> {
   const pendingPermissions = new Map<number, (allow: boolean) => void>();
   let nextPermissionId = 1;
   const sessionAllowedPaths = new Set<string>();
-  const configDir = defaultConfigDir();
   let persistentAllowedPaths: AllowedEntry[] = loadAllowedPaths(configDir);
 
   let oauthService: OAuthService | undefined;

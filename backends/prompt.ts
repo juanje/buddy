@@ -38,6 +38,24 @@ function readIfExists(path: string): string | undefined {
   }
 }
 
+/**
+ * Lightweight system prompt for background maintenance sessions (consolidation,
+ * reflect). Excludes AGENTS.md (chat-oriented rules conflict with autonomous
+ * maintenance behavior) and session-start injections (deferred items, last log).
+ * Keeps SOUL.md + USER.md for personality and user context.
+ */
+export function assembleMaintenancePrompt(rootDir: string, now: Date = new Date()): string {
+  const soul = readIfExists(join(rootDir, "agent_brain", "identity", "SOUL.md"));
+  const user = readIfExists(join(rootDir, "agent_brain", "identity", "USER.md"));
+
+  const sections: string[] = [];
+  if (soul) sections.push(`# Your character\n\n${soul.trim()}`);
+  if (user) sections.push(`# About your user\n\n${user.trim()}`);
+  sections.push(`# Current date and time\n\n${now.toISOString()} (local: ${now.toString()})`);
+
+  return sections.join("\n\n---\n\n");
+}
+
 export function assembleSystemPrompt(rootDir: string, now: Date = new Date()): AssembledPrompt {
   const agentsBase = readIfExists(join(globalConfigDir(), "prompts", "agents-base.md"));
   const instanceRules =
