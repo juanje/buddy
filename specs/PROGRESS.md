@@ -204,7 +204,7 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 
 | FR-ID | Feature | Status | Commit |
 |-------|---------|--------|--------|
-| FR-NET-01 | `fetch_url` tool (HTML→markdown, PDF, image) | done | 2e71190 |
+| FR-NET-01 | `fetch_url` tool (HTML→markdown, PDF, image) | done | e2750d1 |
 
 **Tests at FR-NET-01 close:** 286 unit + 146 BDD green.
 
