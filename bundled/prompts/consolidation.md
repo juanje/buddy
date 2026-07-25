@@ -317,6 +317,19 @@ Each file entry has two layers — **hot data** inline and a **read trigger**:
 Avoid: accumulated history, internal scores, operational detail that only
 matters during maintenance.
 
+#### 8c. Brain health issues
+
+If the prompt header includes a "Brain health" block, address the reported
+issues:
+- **Missing frontmatter:** Add `summary` (and `created` if missing) to flagged
+  files during this consolidation pass.
+- **Missing indexes:** Create `index.md` for flagged directories using file
+  summaries.
+- **Oversized files:** Add an observation noting the file may benefit from
+  splitting.
+
+If no health block is present, the brain structure is healthy — skip this step.
+
 ---
 
 ### Finalize

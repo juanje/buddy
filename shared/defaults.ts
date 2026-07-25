@@ -66,6 +66,23 @@ export const CONSOLIDATION_STATE_PATH = ".buddy/consolidation-state.json";
 /** Consolidation run journal (FR-CONSOL-06). */
 export const CONSOLIDATION_LOG_PATH = ".buddy/consolidation-log.json";
 
+/** Required YAML frontmatter keys on agent_brain/ files (NFR-FORMAT-01). */
+export const REQUIRED_BRAIN_FRONTMATTER = ["summary", "created"] as const;
+/** Line count above which a brain file is flagged for potential split (FR-BRAIN-07). */
+export const BRAIN_FILE_SIZE_THRESHOLD_LINES = 300;
+/** Core agent_brain files that must exist (FR-BRAIN-07). */
+export const CORE_BRAIN_FILES = [
+  "agent_brain/identity/SOUL.md",
+  "agent_brain/identity/USER.md",
+  "agent_brain/deferred.md",
+] as const;
+/** Root overlay files — at least one must exist (FR-BRAIN-07). */
+export const CORE_ROOT_FILES = ["AGENTS.md", "CLAUDE.md"] as const;
+/** Root brain directory — structural files only, no index required. */
+export const BRAIN_INDEX_EXEMPT_ROOT = "agent_brain";
+/** Directories exempt from index.md requirement (USER.md parent pattern). */
+export const BRAIN_INDEX_EXEMPT_DIRS = ["agent_brain/identity", "agent_brain/skills"] as const;
+
 // --- Security constants (NFR-CONFIG-03) ---
 export const DENYLIST_HOME_DIRS = [".ssh", ".gnupg", ".aws"];
 export const DENYLIST_BASENAMES = [".env", "auth.json"];

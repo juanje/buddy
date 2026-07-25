@@ -1,3 +1,8 @@
+---
+summary: "Procedure for encoding session decisions and context into daily logs"
+created:
+---
+
 # Skill: Process conversation
 
 ## Procedure

@@ -1,4 +1,5 @@
 ---
+summary: "Deferred queue for autonomous reminders and decisions surfaced at session start"
 created:
 ---
 

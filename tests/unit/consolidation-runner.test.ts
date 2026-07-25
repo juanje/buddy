@@ -48,6 +48,40 @@ describe("consolidation runner", () => {
     expect(prompt).toContain("Upcoming items (within 24h of run date):");
   });
 
+  it("includes brain health block when issues exist", () => {
+    setupAb();
+    mkdirSync(join(dir, "agent_brain", "concepts"), { recursive: true });
+    writeFileSync(join(dir, "agent_brain", "concepts", "stale.md"), "# Missing frontmatter\n");
+
+    const prompt = buildConsolidationPrompt(dir, 1, new Date("2026-07-22T12:00:00Z"));
+    expect(prompt).toContain("Brain health (pre-computed):");
+    expect(prompt).toContain("agent_brain/concepts/stale.md");
+  });
+
+  it("omits brain health block when brain is healthy", () => {
+    setupAb();
+    mkdirSync(join(dir, "agent_brain", "identity"), { recursive: true });
+    writeFileSync(
+      join(dir, "agent_brain", "identity", "SOUL.md"),
+      "---\nsummary: Agent character\ncreated: 2026-07-01\n---\n\n# Soul\n",
+    );
+    writeFileSync(
+      join(dir, "agent_brain", "identity", "USER.md"),
+      "---\nsummary: User profile\ncreated: 2026-07-01\n---\n\n# User\n",
+    );
+    writeFileSync(
+      join(dir, "agent_brain", "deferred.md"),
+      "---\nsummary: Deferred queue\ncreated: 2026-07-01\n---\n\n# Deferred\n",
+    );
+    writeFileSync(
+      join(dir, "agent_brain", "observations.md"),
+      "---\nsummary: Observations\ncreated: 2026-07-01\n---\n\n# Observations\n",
+    );
+
+    const prompt = buildConsolidationPrompt(dir, 1, new Date("2026-07-22T12:00:00Z"));
+    expect(prompt).not.toContain("Brain health (pre-computed):");
+  });
+
   it("falls back to legacy rootDir skill file", () => {
     ({ configDir: globalConfigDir } = setupGlobalConfigDir(undefined, vi));
     dir = mkdtempSync(join(tmpdir(), "ab-consol-run-"));

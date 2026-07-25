@@ -1,3 +1,8 @@
+---
+summary: "GTD inbox triage procedure for captures, next actions, and hygiene"
+created:
+---
+
 # Skill: Triage inbox
 
 ## Procedure

@@ -22,8 +22,10 @@ import {
 } from "../shared/consolidation-state";
 import { isoWeekLabel, toIsoDay } from "../shared/dates";
 import {
+  computeBrainHealthReport,
   computeHebbianReport,
   findUpcomingReminders,
+  formatBrainHealthReportBlock,
   formatHebbianReportBlock,
   formatUpcomingRemindersBlock,
   rotateLogs,
@@ -31,7 +33,7 @@ import {
 import { logEvent } from "./app-logger";
 import { commitAll } from "./git";
 import { acquireLock, releaseLock } from "./maintenance";
-import { assembleSystemPrompt } from "./prompt";
+import { assembleMaintenancePrompt } from "./prompt";
 import { appendDailyLog, updateLogsIndexEntry } from "./reflect";
 import { defaultConfigDir } from "./allowed-paths";
 import { globalConfigDir } from "./schema-migration";
@@ -72,11 +74,13 @@ export function buildConsolidationPrompt(
   const date = toIsoDay(now);
   const hebbianBlock = formatHebbianReportBlock(computeHebbianReport(rootDir, now));
   const remindersBlock = formatUpcomingRemindersBlock(findUpcomingReminders(rootDir, date));
+  const healthBlock = formatBrainHealthReportBlock(computeBrainHealthReport(rootDir));
 
   return (
     `Date: ${date}\n\n` +
     `${remindersBlock}\n\n` +
     `${hebbianBlock}\n\n` +
+    (healthBlock ? `${healthBlock}\n\n` : "") +
     `Run consolidation at depth ${depth}.\n\n` +
     `Follow the procedure below. Do not run git commands — the runner commits after you finish.\n\n` +
     skill
@@ -102,7 +106,7 @@ export async function createMaintenanceSession(options: {
   modelRuntime: ModelRuntime;
 }): Promise<MaintenanceSessionLike> {
   const { rootDir, modelRuntime } = options;
-  const { prompt: systemPrompt } = assembleSystemPrompt(rootDir);
+  const systemPrompt = assembleMaintenancePrompt(rootDir);
   const resourceLoader = new DefaultResourceLoader({
     cwd: rootDir,
     agentDir: getAgentDir(),

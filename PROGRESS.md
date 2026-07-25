@@ -196,8 +196,17 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 
 ## Current focus
 
-> **Sprint 2 shipped (2026-07-25)** — Skills as tools (FR-SKILL-01..04, FR-BRAIN-06): process_conversation and triage_inbox registered as Pi custom tools; reflect child uses bundled process-conversation.md + output-only suffix; Skills section removed from AGENTS.md template; consolidation Step 4 invokes triage_inbox tool.
+> **Sprint 3 shipped (2026-07-25)** — Brain format + health linter (NFR-FORMAT-01, FR-BRAIN-07): `summary` frontmatter in templates; `computeBrainHealthReport()` + injection into consolidation prompt; consolidation §8c for fixing flagged issues.
 > **Implementation next:** FR-BRAIN-04/05 (consolidation + observation evals via fixture repo), FR-WIKI, FR-CHAT-10.
+
+### Sprint 3: Brain format + health linter — DONE (2026-07-25)
+
+| FR-ID | Feature | Status | Commit |
+|-------|---------|--------|--------|
+| NFR-FORMAT-01 | `summary` frontmatter in agent_brain templates | done | (pending) |
+| FR-BRAIN-07 | Brain health linter (structural checks, worker code) | done | (pending) |
+
+**Tests at sprint close:** 250 unit + 128 BDD green.
 
 ### Sprint 2: Skills as Tools — DONE (2026-07-25)
 

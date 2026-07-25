@@ -1,4 +1,5 @@
 ---
+summary: "System observations staging file reviewed and promoted during consolidation"
 created:
 ---
 
