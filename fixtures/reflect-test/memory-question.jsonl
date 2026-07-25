@@ -1,0 +1,6 @@
+{"role": "user", "content": "¿Cómo funciona tu memoria?"}
+{"role": "assistant", "content": "Mi memoria funciona en archivos que persisten entre sesiones. Cuando hablamos, capturo decisiones, tareas e ideas en archivos organizados. Al final de cada sesión se genera un resumen del día. Periódicamente hay ciclos de consolidación que sintetizan patrones y limpian lo que ya no es relevante. Todo lo que escribo queda en git — nada se pierde."}
+{"role": "user", "content": "¿Y si te pregunto algo de hace un mes, lo recuerdas?"}
+{"role": "assistant", "content": "Depende. Al inicio de cada sesión cargo el último log y un índice de sesiones anteriores. Si lo que pasó hace un mes quedó capturado en un concepto, proyecto o tu perfil, lo tengo presente. Si fue un detalle puntual de una conversación, necesitaría buscar en los logs históricos — puedo hacerlo si me lo pides, pero no lo tengo automáticamente."}
+{"role": "user", "content": "OK, entendido. Gracias."}
+{"role": "assistant", "content": "De nada. Si tienes más preguntas sobre cómo funciono, pregunta cuando quieras."}

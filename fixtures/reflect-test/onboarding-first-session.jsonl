@@ -1,0 +1,8 @@
+{"role": "user", "content": "Hola"}
+{"role": "assistant", "content": "¡Hola! Soy Buddy, tu asistente personal con memoria persistente. Para poder ayudarte mejor desde el principio, me gustaría conocerte un poco. ¿Cómo te llamas y cómo prefieres que te llame?"}
+{"role": "user", "content": "Me llamo María. Puedes llamarme así."}
+{"role": "assistant", "content": "Encantado, María. Un par de cosas más que me ayudarán a adaptarme a ti:\n- ¿En qué idioma prefieres que hablemos? (puedo en español, inglés, o lo que prefieras)\n- ¿Para qué piensas usarme principalmente? (tareas personales, organización del trabajo, ideas, un poco de todo...)\n- ¿Cómo te gusta que me comunique? (directo y breve, detallado, formal, casual...)"}
+{"role": "user", "content": "Español está bien. Quiero usarte para organizar mis tareas y capturar ideas. Prefiero que seas directo y breve."}
+{"role": "assistant", "content": "Perfecto. He actualizado tu perfil:\n- Nombre: María\n- Idioma: español\n- Uso principal: organización de tareas e ideas\n- Estilo: directo y breve\n\nEstoy lista. Cuando quieras capturar algo, simplemente dímelo. Si necesitas ver qué tienes pendiente, pregúntame qué hay en la bandeja de entrada. ¿Empezamos con algo?"}
+{"role": "user", "content": "No, por ahora solo quería configurarte. Hasta luego."}
+{"role": "assistant", "content": "Listo, María. Aquí estaré cuando me necesites. ¡Hasta luego!"}

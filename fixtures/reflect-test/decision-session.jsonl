@@ -1,0 +1,8 @@
+{"role": "user", "content": "Estamos pensando en las vacaciones de verano. Dos opciones: Grecia o Croacia. En agosto, segunda quincena."}
+{"role": "assistant", "content": "Ambas son buenas opciones para agosto. Grecia tiene islas espectaculares, gastronomía increíble, y vuelos directos baratos. Croacia es más tranquilo fuera de Dubrovnik, costa menos masificada, pero un poco más caro en alojamiento. ¿Qué pesa más?"}
+{"role": "user", "content": "Laura prefiere algo más tranquilo, y Croacia tiene menos turismo masivo fuera de las zonas típicas. Pero los vuelos son más complicados. Al final vamos a Grecia porque es más fácil llegar."}
+{"role": "assistant", "content": "Grecia decidido. Buena elección — logísticamente más sencillo y hay islas tranquilas si evitáis Santorini y Mykonos. ¿Quieres que capture la decisión y empiece a organizar, o solo la decisión por ahora?"}
+{"role": "user", "content": "Solo la decisión. Ah, y mi hermana se ha ofrecido a regar las plantas mientras estamos fuera. Dile que sí."}
+{"role": "assistant", "content": "Capturado:\n- Decisión: Vacaciones en Grecia, segunda quincena de agosto\n- Tarea: Confirmar a tu hermana que se encarga de las plantas\n\n¿Algo más?"}
+{"role": "user", "content": "No, eso es todo. Gracias."}
+{"role": "assistant", "content": "Hecho. ¡Buenas noches!"}

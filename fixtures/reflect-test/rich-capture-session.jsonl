@@ -1,0 +1,10 @@
+{"role": "user", "content": "Acabo de volver de una reunión con mi jefe. Quiere que lidere el nuevo proyecto de migración a Kubernetes. El deadline es finales de Q1."}
+{"role": "assistant", "content": "Capturado. ¿Hay más contexto de la reunión que quieras guardar? Equipo, stack actual, restricciones..."}
+{"role": "user", "content": "Sí. El equipo somos 4: yo, Carlos (backend), Ana (infra) y un contractor que se incorpora en enero. El stack actual es Docker Compose en VMs on-prem. La restricción principal es que no podemos tener downtime mayor a 2h en la migración — el servicio es 24/7."}
+{"role": "assistant", "content": "Capturado como proyecto:\n- **Migración a Kubernetes** — deadline Q1\n- Equipo: tú (lead), Carlos (backend), Ana (infra), contractor (enero)\n- Stack actual: Docker Compose en VMs on-prem\n- Restricción: max 2h downtime (servicio 24/7)\n\n¿Hay decisiones que ya se tomaron o próximos pasos definidos?"}
+{"role": "user", "content": "Decisión: vamos con EKS en AWS (no on-prem K8s) porque no tenemos equipo de plataforma para mantenerlo. Próximo paso: yo hago un spike de 2 semanas para evaluar la complejidad de migrar los 3 servicios principales."}
+{"role": "assistant", "content": "Actualizado:\n- Decisión: EKS (AWS) — razón: sin equipo de plataforma para mantener K8s on-prem\n- Next action: Spike 2 semanas — evaluar complejidad migración de los 3 servicios principales\n\n¿Algo más de la reunión?"}
+{"role": "user", "content": "Una idea que se me ocurrió durante la reunión: podríamos aprovechar la migración para implementar GitOps con ArgoCD. No se lo dije al jefe aún pero creo que tiene sentido."}
+{"role": "assistant", "content": "Capturado como idea: GitOps con ArgoCD durante la migración a EKS. No compartida aún con el equipo.\n\n¿Algo más?"}
+{"role": "user", "content": "No, eso es todo."}
+{"role": "assistant", "content": "Todo capturado. Tienes el spike como próxima acción. ¡Buena suerte con el proyecto!"}

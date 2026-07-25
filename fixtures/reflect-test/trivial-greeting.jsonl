@@ -1,0 +1,4 @@
+{"role": "user", "content": "Hola, ¿cómo estás?"}
+{"role": "assistant", "content": "¡Hola! Bien por aquí. ¿En qué puedo ayudarte?"}
+{"role": "user", "content": "Nada, solo quería probar que funciona. Hasta luego."}
+{"role": "assistant", "content": "Perfecto, todo funcionando. ¡Hasta luego!"}

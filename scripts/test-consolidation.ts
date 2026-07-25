@@ -31,6 +31,7 @@ import { alignHttpDispatcherWithPi } from "../backends/pi-http-dispatcher";
 import { assembleMaintenancePrompt } from "../backends/prompt";
 import { defaultAuthPath } from "../backends/provider-auth";
 import { bootRefreshIfNeeded } from "../backends/boot-refresh";
+import { globalConfigDir } from "../backends/global-config";
 import { AGENT_TOOLS, EXCLUDED_TOOLS } from "../shared/defaults";
 
 const VALID_DEPTHS = new Set([1, 2, 3]);
@@ -196,7 +197,7 @@ async function main(): Promise<void> {
     return;
   }
 
-  bootRefreshIfNeeded();
+  bootRefreshIfNeeded(globalConfigDir());
   await alignHttpDispatcherWithPi();
 
   const authPath = defaultAuthPath();
