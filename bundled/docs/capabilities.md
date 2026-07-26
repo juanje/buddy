@@ -83,10 +83,15 @@ How it works in practice:
 - Change your language, AI provider, or model anytime from Settings (gear icon or Cmd/Ctrl+,).
 - Add additional AI providers without going through setup again.
 
+### Organize files
+
+- **Copy** external files into your workspace with `copy_file` — byte-for-byte, without reading them into the conversation (saves time and tokens). Useful for PDFs, images, and reference documents.
+- **Move or rename** files within `user/` or `downloads/` to keep things organized.
+- **Delete** files in `user/` or `downloads/` — Buddy asks for confirmation before deleting anything. Brain memory (`agent_brain/`), logs, and identity files are never deleted.
+
 ## What Buddy can't do
 
 - **No web search.** Buddy can fetch a specific URL you share, but it can't search the internet on its own or browse freely.
 - **No code execution.** It can't run scripts, commands, or programs. It works with files only.
 - **No access to sensitive files.** SSH keys, credentials, and environment files are always off-limits.
-- **No changes without you knowing.** If Buddy wants to access files outside your data folder, it asks first. You can grant permanent access to a folder ("Allow always for this folder") and it won't ask again for files inside it. Changes to its own identity require your explicit approval.
-- **No file deletion tool yet.** Buddy cannot delete files for you. Remove files yourself from your workspace if needed.
+- **No changes without you knowing.** If Buddy wants to access files outside your data folder, it asks first. You can grant permanent access to a folder ("Allow always for this folder") and it won't ask again for files inside it. Changes to its own identity require your explicit approval. File deletion always requires confirmation.
