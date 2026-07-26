@@ -13,6 +13,8 @@ export interface EmbeddedAssets {
   docs: Record<string, string>;
   /** App semver from package.json at build time. */
   appVersion?: string;
+  /** pdfjs-dist worker source (minified) for PDF extraction in compiled binary. */
+  pdfWorker?: string;
 }
 
 let assets: EmbeddedAssets | undefined;
