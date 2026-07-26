@@ -156,7 +156,7 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 | Fix | Description | Commit |
 |-----|-------------|--------|
 | Heartbeat rate limit | Guard against runaway timer in Bun binary (5s min gap) | 2b56f20 |
-| Fork bomb defense | argv.includes dispatch + AB_REFLECT_CHILD env guard + markPendingInProgress | c548911 |
+| Fork bomb defense | argv.includes dispatch + BUDDY_REFLECT_CHILD env guard + markPendingInProgress | c548911 |
 | Deferred notify guard | Concurrency lock prevents notification plugin flood | f2a5c56 |
 | Deferred parser | Tolerate optional HH:MM in entry dates | 2e2ae95 |
 | Heartbeat observability | heartbeat_tick JSONL event for debugging | 4b4be94 |
@@ -200,7 +200,7 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 > **Jul 26 file ops sprint shipped** — delete_file, copy_file, move_file tools.
 > **PDF extraction fix** — embedded pdfjs worker for compiled binary.
 > **FR-PERM-05 rejected** — no ambient path parsing from chat messages; session-allowed paths = attachments only.
-> **308 unit + 163 BDD** green. **Implementation next:** FR-WIKI.
+> **313 unit + 163 BDD** green. **Implementation next:** FR-WIKI.
 
 ### Jul 26 — PDF extraction compiled-binary fix (2026-07-26)
 

@@ -1101,9 +1101,9 @@ provides the native event, permission layer already supports
 
 ## Hebbian Tracking Layer
 
-Code-enforced file access tracking. Uses `session.agent.afterToolCall` to
-record successful reads (only when `!ctx.isError`). The chained
-`afterToolCall` pattern is shown in the worker setup section.
+Code-enforced file access tracking. Uses **`tool_execution_end`** events via
+`session.subscribe()` to record successful reads (only when `!event.isError` and
+`toolName === "Read"`). See the worker setup section for the subscribe handler.
 
 **Mechanism:** When the agent calls `read` on a file, the worker checks if
 the file has YAML frontmatter with `access_count`. If so:
@@ -1200,50 +1200,55 @@ session.subscribe((event) => {
 ## File Structure (Tauri project)
 
 ```
-ab-app/
+buddy/
 ├── src-tauri/
 │   ├── Cargo.toml               # Minimal: tauri + plugins only
 │   ├── tauri.conf.json          # Window config, plugin permissions
 │   ├── capabilities/
 │   │   └── default.json         # Permissions for plugin-js, notification, etc.
 │   └── src/
-│       └── main.rs              # Plugin registration + menu + tray setup
+│       └── main.rs              # Plugin registration + menu setup
 ├── backends/
-│   ├── agent-worker.ts          # Pi SDK session + kkrpc API + scheduler
+│   ├── agent-worker.ts          # Pi SDK session + kkrpc WorkerAPI
+│   ├── session-boot.ts          # Session creation, tools, lifecycle wiring
+│   ├── create-buddy.ts          # Deterministic buddy directory setup
+│   ├── consolidation-runner.ts  # Maintenance / consolidation sessions
+│   ├── fetch-url.ts             # FR-NET-01 URL fetch tool
 │   ├── permissions.ts           # Trust zones, file-path permission layer
-│   ├── setup.ts                 # Deterministic AB directory setup
-│   ├── sync.ts                  # Git sync (multi-device)
-│   ├── scheduler.ts             # Simple interval/cron scheduler utility
-│   └── deferred-parser.ts       # Parse deferred.md date entries
+│   ├── git.ts                   # Auto-commit helpers
+│   ├── hebbian.ts               # Code-enforced access tracking
+│   ├── boot-refresh.ts          # Semver-gated ~/.buddy/ content deploy
+│   └── reflect-child.ts         # Background reflect subprocess
 ├── shared/
-│   └── api.ts                   # WorkerAPI + FrontendAPI type definitions
-├── templates/                   # Bundled AB structure templates
+│   ├── api.ts                   # WorkerAPI + FrontendAPI types
+│   └── defaults.ts              # Shared constants
+├── bundled/
+│   ├── prompts/                 # Core prompts (consolidation, skills)
+│   └── docs/                    # Product docs deployed to ~/.buddy/docs/
+├── templates/                   # Bundled buddy instance templates
 │   ├── AGENTS.md
 │   ├── agent_brain/
 │   │   ├── identity/SOUL.md
-│   │   ├── identity/USER.md     # Placeholder for agent personalization
-│   │   └── skills/              # Core skills (daily, weekly, etc.)
+│   │   ├── identity/USER.md
+│   │   └── skills/              # Instance skills (not consolidation.md)
 │   └── user/
 │       └── inbox.md
-├── src/                         # Frontend (Svelte)
+├── src/                         # Frontend (Svelte 5)
 │   ├── App.svelte
 │   ├── lib/
 │   │   ├── ChatView.svelte
 │   │   ├── MessageBubble.svelte
 │   │   ├── InputBar.svelte
-│   │   ├── StatusBar.svelte
-│   │   ├── ToolCallBlock.svelte
-│   │   ├── ThinkingBlock.svelte
-│   │   └── SettingsModal.svelte
-│   ├── stores/
-│   │   ├── messages.ts          # Message list store
-│   │   ├── connection.ts        # Worker connection state
-│   │   └── settings.ts          # User preferences
+│   │   ├── FileViewer.svelte
+│   │   ├── SetupWizard.svelte
+│   │   ├── SettingsModal.svelte
+│   │   └── *-controller.ts      # Chat, settings, file viewer controllers
 │   └── utils/
 │       ├── markdown.ts          # Markdown → HTML renderer
-│       └── agent.ts             # kkrpc channel setup + event routing
-├── package.json                 # All TS deps (svelte, pi, kkrpc, tauri-api)
-└── README.md
+│       └── agent.ts             # Worker spawn + kkrpc channel
+├── specs/                       # SPEC.md + Gherkin features
+├── tests/                       # unit/ + steps/
+└── package.json
 ```
 
 ## Technology Choices

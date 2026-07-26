@@ -49,7 +49,7 @@
     return unregister;
   });
 
-async function createAb() {
+async function createBuddy() {
   try {
     wizard.beginCreating();
     await wizard.finishSetup();
@@ -59,7 +59,7 @@ async function createAb() {
   }
 }
 
-  async function importExistingAb() {
+  async function importExistingBuddy() {
     try {
       const result = await wizard.importExisting();
       if (result === "adopted") onComplete?.();
@@ -152,7 +152,7 @@ async function createAb() {
     <div class="actions">
       <button type="button" class="ghost" onclick={goBack}>{$t.wizardBack}</button>
       {#if $locationCheck?.status === "existing-ab"}
-        <button class="primary" onclick={importExistingAb}>{$t.locationImport}</button>
+        <button class="primary" onclick={importExistingBuddy}>{$t.locationImport}</button>
       {:else}
         <button class="primary" onclick={validateAndMaybeContinue}>
           {$t.wizardContinue}
@@ -167,13 +167,13 @@ async function createAb() {
       onBack={goBack}
     />
   {:else if $step === "model"}
-    <ModelStep controller={wizard} onContinue={createAb} onBack={goBack} />
+    <ModelStep controller={wizard} onContinue={createBuddy} onBack={goBack} />
   {:else if $step === "creating"}
     {#if $setupError}
       <p class="error">{$t.creatingError}: {$setupError}</p>
       <div class="actions">
         <button type="button" class="ghost" onclick={goBack}>{$t.wizardBack}</button>
-        <button class="primary" onclick={createAb}>{$t.creatingRetry}</button>
+        <button class="primary" onclick={createBuddy}>{$t.creatingRetry}</button>
       </div>
     {:else}
       <h2>{$t.creatingTitle}</h2>

@@ -1,6 +1,6 @@
 # specs/features/setup-import.feature
 
-Feature: Import existing buddy instance (FR-SETUP-08)
+Feature: Import existing buddy instance (FR-SETUP-10)
   As a user who already has a buddy directory
   I want the app to adopt it as-is
   So that my assistant's memory survives a reinstall or a new machine

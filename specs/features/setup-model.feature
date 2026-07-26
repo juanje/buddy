@@ -1,6 +1,6 @@
 # specs/features/setup-model.feature
 
-Feature: Model selection (FR-SETUP-05)
+Feature: Model selection (FR-SETUP-06)
   As a new user who connected a provider
   I want to pick a model with clear guidance
   So that I get a sensible default without understanding model names

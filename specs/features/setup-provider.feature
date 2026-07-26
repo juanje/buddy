@@ -1,6 +1,6 @@
 # specs/features/setup-provider.feature
 
-Feature: Provider and API key configuration (FR-SETUP-04)
+Feature: Provider and API key configuration (FR-SETUP-05)
   As a new user on the setup wizard
   I want to connect my AI provider with an API key
   So that my assistant can think

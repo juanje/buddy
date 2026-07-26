@@ -73,7 +73,7 @@ npm run test:bdd        # BDD scenarios only (cucumber-js)
 npm run typecheck       # TypeScript type checking (tsc --noEmit)
 ```
 
-**Current status:** 268 unit tests, 136 BDD scenarios passing.
+**Current status:** 313 unit tests, 163 BDD scenarios passing.
 
 ## Project structure
 

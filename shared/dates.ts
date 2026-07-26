@@ -18,9 +18,13 @@ export function addDays(isoDay: string, days: number): string {
   return toIsoDay(date);
 }
 
-/** Extract HH:MM from an ISO timestamp string. */
+/** Extract local HH:MM from an ISO timestamp string. */
 export function formatLocalTime(isoTimestamp: string): string {
-  return isoTimestamp.slice(11, 16);
+  const date = new Date(isoTimestamp);
+  if (Number.isNaN(date.getTime())) return "00:00";
+  const h = String(date.getHours()).padStart(2, "0");
+  const m = String(date.getMinutes()).padStart(2, "0");
+  return `${h}:${m}`;
 }
 
 /** ISO week number (Monday-based) for weekly consolidation commit messages. */

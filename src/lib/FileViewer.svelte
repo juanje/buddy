@@ -53,7 +53,7 @@
         {:else if $error}
           <p class="error">{$t.fileViewerError.replace("{message}", $error)}</p>
         {:else if $isMarkdown}
-          <div class="markdown">{@html renderMarkdown($content)}</div>
+          <div class="markdown prose">{@html renderMarkdown($content)}</div>
         {:else}
           <pre class="plain">{$content}</pre>
         {/if}

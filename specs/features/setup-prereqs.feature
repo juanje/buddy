@@ -1,6 +1,6 @@
 # specs/features/setup-prereqs.feature
 
-Feature: Prerequisites check (FR-SETUP-02)
+Feature: Prerequisites check (setup wizard)
   As a new user on the setup wizard
   I want the app to verify my system has what it needs
   So that setup does not fail halfway through

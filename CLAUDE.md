@@ -28,10 +28,10 @@ using BDD + TDD.
 4. FR-CHAT-07 (auto-scroll) — UI polish
 
 **Phase 1 — MVP (after Phase 0 is green):**
-1. FR-SETUP-01/02/03 (wizard + directory creation)
+1. FR-SETUP-01..10 (wizard: language, welcome, location, provider, model, personalization, create/import)
 2. FR-PROMPT-01 (system prompt assembly)
 3. FR-PERM-01/02 (permission zones)
-4. FR-SESSION-01/02 (resume + new session)
+4. FR-SESSION-01 (fresh session each launch)
 5. FR-REFLECT-01/02 (fork-only reflect + daily log finalization)
 6. FR-DEFERRED-01 (surface on start)
 7. FR-INGEST-01/02 (drag & drop)
@@ -94,7 +94,7 @@ buddy directory (git repo): agent_brain/ + user/ + logs/
 ```
 
 **Key technical patterns:**
-- System prompt: `DefaultResourceLoader({ systemPrompt })` → `createAgentSession({ resourceLoader })`
+- System prompt: `DefaultResourceLoader({ systemPromptOverride })` → `createAgentSession({ resourceLoader })`
 - Bash disabled: `excludeTools: ["bash"]` — file tools only (read, write, edit, ls, find, grep)
 - Hook chaining: save original `beforeToolCall`, install ours, delegate to original (permissions only)
 - Session resume: `SessionManager.create(cwd)` — fresh session every launch; continuity via file memory
@@ -115,8 +115,7 @@ buddy/
 ├── src/                     # Frontend (Svelte)
 ├── tests/
 │   ├── steps/               # BDD step definitions
-│   ├── unit/                # Unit tests (vitest)
-│   └── fixtures/            # Test data
+│   └── unit/                # Unit tests (vitest)
 ├── templates/               # buddy directory templates (initial instance content)
 ├── bundled/prompts/         # Core prompts (skill tools + consolidation)
 └── package.json

@@ -1,6 +1,6 @@
 # specs/features/setup-create.feature
 
-Feature: Deterministic buddy directory setup (FR-SETUP-06)
+Feature: Deterministic buddy directory setup (FR-SETUP-08)
   As a new user who completed the wizard
   I want my assistant's home created automatically
   So that everything is ready without me touching files

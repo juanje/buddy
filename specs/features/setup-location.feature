@@ -1,6 +1,6 @@
 # specs/features/setup-location.feature
 
-Feature: Location picker (FR-SETUP-03)
+Feature: Location picker (FR-SETUP-04)
   As a new user on the setup wizard
   I want to choose where my assistant will live
   So that its memory is stored where I expect

@@ -53,13 +53,13 @@ Based on exploration of the upstream template (`~/git/agentic-buddy/`).
 |---|---|---|
 | `AGENTS.md` | upstream `templates/CLAUDE.md` (104 lines, 16 rules) | Major rewrite — see section below |
 | `agent_brain/skills/process-conversation.md` | upstream (207 lines, 6 steps) | Remove git commit step (worker handles). Remove Step 4 interactive/autonomous branching (worker decides mode). Keep Steps 1-3, 5-6 logic intact |
-| `agent_brain/skills/consolidation.md` | Merge of daily (355 lines), weekly (294 lines), monthly (330 lines) | Merge into single depth-parameterized skill. Remove all git/scheduling/threshold logic (worker handles). Keep the judgment procedures at each depth |
 | `agent_brain/skills/triage-inbox.md` | upstream `.packs/personal/triage-inbox.md` (141 lines) | As-is (pure GTD procedure, no platform deps) |
 
 ### Files that DON'T ship (replaced by app code)
 
 | Current file | Replaced by |
 |---|---|
+| `agent_brain/skills/consolidation.md` | `bundled/prompts/consolidation.md` deployed to `~/.buddy/prompts/` (semver refresh); worker runs consolidation via `consolidation-runner.ts` |
 | `.cursor/hooks/session-start.py` | Worker initialization (loads identity + context + deferred programmatically) |
 | `.cursor/hooks/auto-reflect.py` | Worker post-session handler (runs reflect internally) |
 | `.cursor/hooks/auto-consolidate.py` | Worker scheduler (usage-based counters, cascade logic) |

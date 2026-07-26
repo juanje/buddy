@@ -86,7 +86,7 @@ rootDir (git repo — user/agent content only)
 | FR-CHAT-02 | User input with send | 0 ✓ |
 | FR-CHAT-03 | Abort generation | 0 ✓ |
 | FR-CHAT-04 | Markdown rendering in assistant messages | 3 ✓ |
-| FR-CHAT-05 | Thinking block display (collapsible) | 3 ✓ |
+| FR-CHAT-05 | Thinking block display (transient indicator) | 3 ✓ |
 | FR-CHAT-06 | Tool call display (expandable cards) | 3 ✓ |
 | FR-CHAT-07 | Auto-scroll with manual override | 0 ✓ |
 | FR-CHAT-08 | Input textarea resets height after send | 2 ✓ |
@@ -313,7 +313,7 @@ platform-specific install instructions is shown and setup cannot continue.
 - **When** the child finalizes output
 - **Then** a `## Session HH:MM–HH:MM` block is appended to `logs/YYYY-MM-DD.md` using session metadata passed via spawn args (sessionDate, sessionStart, sessionEnd)
 - **And** `logs/index.md` is rebuilt from daily log frontmatter
-- **And** the app commits all changes (`ab: session reflect`)
+- **And** the app commits all changes (`buddy: session reflect`)
 - **Note:** Session metadata (date, header times, sessionId) is passed as spawn args — no intermediate pending file.
 
 **FR-REFLECT-02 — Forked reflect on session end (primary path)**
@@ -373,7 +373,7 @@ Spawn mechanism:
 
 Fork bomb defense:
   1. argv.includes("--reflect") — robust parsing regardless of Bun argv structure
-  2. AB_REFLECT_CHILD=1 env var — child env marker for recursion guard
+  2. BUDDY_REFLECT_CHILD=1 env var — child env marker for recursion guard (legacy: AB_REFLECT_CHILD)
 ```
 
 **FR-REFLECT-04 — Log output sanitizer (strip tool-call artifacts)**
