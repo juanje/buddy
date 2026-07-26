@@ -8,9 +8,7 @@ import { dirname, join } from "node:path";
 import { simpleGit } from "simple-git";
 
 import { createAbInstance, defaultTemplatesDir } from "../../backends/create-buddy";
-import { SessionLifecycle } from "../../backends/session-lifecycle";
 import type { SetupConfig } from "../../shared/api";
-import { MOCK_SPAWN_PID } from "../support/test-constants";
 import type { AbWorld } from "../support/world";
 
 interface MemoryWorld extends AbWorld {
@@ -71,10 +69,6 @@ When("the agent completes {int} turns with activity", async function (this: Memo
   }
 });
 
-When("the app shuts down", async function (this: MemoryWorld) {
-  await this.core.api.shutdown();
-});
-
 Then("the buddy repository has a new commit", async function (this: MemoryWorld) {
   const log = await simpleGit(this.abDir!).log();
   assert.ok(log.total > 1, "expected more than the initial setup commit");
@@ -98,14 +92,4 @@ Then("a checkpoint reflect spawn was requested", function (this: MemoryWorld) {
 Then("no checkpoint reflect was spawned", function (this: MemoryWorld) {
   const calls = (this.spawnCalls ?? []).filter((call) => call.mode === "checkpoint");
   assert.equal(calls.length, 0, "expected no checkpoint reflect spawn");
-});
-
-Then("a session-end reflect spawn was requested", function (this: MemoryWorld) {
-  const calls = (this.spawnCalls ?? []).filter((call) => call.mode === "session-end");
-  assert.ok(calls.length > 0, "expected a session-end reflect spawn");
-  const call = calls[0];
-  assert.ok(call.sessionId);
-  assert.ok(call.sessionDate);
-  assert.ok(call.sessionStart);
-  assert.ok(call.sessionEnd);
 });

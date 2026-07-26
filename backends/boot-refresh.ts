@@ -37,6 +37,3 @@ export function bootRefreshIfNeeded(
   writeFileSync(configPath, JSON.stringify(config, null, 2) + "\n", "utf8");
   return true;
 }
-
-/** @deprecated Use bootRefreshIfNeeded — kept for incremental test migration. */
-export const refreshPromptsIfNeeded = bootRefreshIfNeeded;

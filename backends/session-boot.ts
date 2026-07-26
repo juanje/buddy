@@ -26,7 +26,7 @@ import { buildSkillTools, skillToolNames } from "./skill-tools";
 import { buildFetchTools, fetchToolNames } from "./fetch-url";
 import { buildFileTools, fileToolNames } from "./file-tools";
 import { SessionLifecycle } from "./session-lifecycle";
-import { persistLiveSession, markReflectPending } from "./crash-recovery";
+import { persistLiveSession } from "./crash-recovery";
 import { createWorkerCore, type PiSessionLike, type WorkerCore } from "./worker-core";
 import type { UsageTracker } from "./usage-tracker";
 import { runWarmHandoff } from "./warm-handoff";

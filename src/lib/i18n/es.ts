@@ -115,7 +115,6 @@ export type LocaleStrings = {
   budgetExceededTitle: string;
   budgetExceededBody: string;
   notificationTitle: string;
-  notificationBody: string;
   fileViewerClose: string;
   fileViewerOpenExternal: string;
   fileViewerLoading: string;
@@ -244,7 +243,6 @@ export const es: LocaleStrings = {
   budgetExceededTitle: "Buddy — presupuesto alcanzado",
   budgetExceededBody: "Presupuesto mensual alcanzado (${spent} de ${budget}). El chat está pausado hasta que ajustes el presupuesto o empiece el mes.",
   notificationTitle: "buddy",
-  notificationBody: "{count} recordatorios pendientes",
   fileViewerClose: "Cerrar",
   fileViewerOpenExternal: "Abrir externamente",
   fileViewerLoading: "Cargando archivo…",

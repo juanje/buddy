@@ -27,7 +27,6 @@ import { checkPrerequisites } from "./prereqs";
 import { configureProviderKey, defaultAuthPath } from "./provider-auth";
 import {
   fromPiProviderId,
-  toPiProviderId,
   WIZARD_PI_PROVIDERS,
 } from "./provider-mapping";
 import { getDueDeferred, removeDueDeferredItems, toDeferredItemViews } from "./deferred";
