@@ -1,4 +1,4 @@
-// tests/unit/chat-display-controller.test.ts — FR-CHAT-05/06 controller behavior.
+// tests/unit/chat-display-controller.test.ts — FR-CHAT-06 controller behavior.
 
 import { describe, expect, it } from "vitest";
 import { get } from "svelte/store";
@@ -42,23 +42,6 @@ describe("chat controller display polish", () => {
     expect(block?.toolCalls?.length).toBe(2);
     expect(block?.toolCalls?.[0].status).toBe("done");
     expect(block?.toolCalls?.[1].status).toBe("running");
-  });
-
-  it("attaches thinking to the assistant bubble on first text delta", () => {
-    const controller = createChatController(fakeWorker());
-    emit(controller, { type: "agent_start" });
-    emit(controller, {
-      type: "message_update",
-      assistantMessageEvent: { type: "thinking_delta", delta: "Hmm…" },
-    });
-    emit(controller, {
-      type: "message_update",
-      assistantMessageEvent: { type: "text_delta", delta: "Answer" },
-    });
-
-    const assistant = get(controller.messages).find((m) => m.role === "assistant");
-    expect(assistant?.thinking).toBe("Hmm…");
-    expect(assistant?.text).toBe("Answer");
   });
 
   it("hides welcome banner after send", async () => {

@@ -5,7 +5,6 @@
 //   FR-CHAT-01 streaming display (token-by-token + typing indicator)
 //   FR-CHAT-03 abort generation (button + Escape, partial text kept)
 //   FR-INGEST-01..04 file attachments
-//   FR-CHAT-05 thinking blocks (collapsible)
 //   FR-CHAT-06 tool call indicators (collapsed)
 
 import { derived, get, writable, type Readable, type Writable } from "svelte/store";
@@ -32,7 +31,6 @@ export interface ChatMessage {
   role: "user" | "assistant" | "tool-activity";
   text: string;
   toolCalls?: ToolCallEntry[];
-  thinking?: string;
 }
 
 /** Pending file attachment chip (FR-INGEST-01/02). */
@@ -66,7 +64,7 @@ export interface ChatController {
   showAbort: Readable<boolean>;
   /** Typing indicator: visible from agent_start until agent_end (FR-CHAT-01). */
   typingIndicator: Readable<boolean>;
-  /** Id of the bubble currently receiving streaming deltas (FR-CHAT-05). */
+  /** Id of the bubble currently receiving streaming deltas. */
   streamingBubbleId: Readable<number | null>;
   /** Permission questions shown inline in the chat (FR-PERM-07). */
   permissions: Readable<PermissionCard[]>;
@@ -130,9 +128,6 @@ export function createChatController(worker: ChatWorkerAPI): ChatController {
 
   // Id of the in-flight tool-activity block for the current turn (FR-CHAT-06).
   let streamingToolActivityId: number | null = null;
-
-  // Thinking content buffered until the first text_delta (FR-CHAT-05).
-  let pendingThinking = "";
 
   function ensureToolActivityBlock(info: { name: string; path?: string }): number {
     if (streamingToolActivityId !== null) {
@@ -269,11 +264,9 @@ export function createChatController(worker: ChatWorkerAPI): ChatController {
     if (streamingBubbleId === null) {
       const id = nextId++;
       setStreamingBubbleId(id);
-      const thinking = pendingThinking || undefined;
-      pendingThinking = "";
       messages.update((list) => [
         ...list,
-        { id, role: "assistant", text: delta, thinking },
+        { id, role: "assistant", text: delta },
       ]);
       return;
     }
@@ -282,30 +275,10 @@ export function createChatController(worker: ChatWorkerAPI): ChatController {
     );
   }
 
-  function attachPendingThinkingToAssistant(): void {
-    if (!pendingThinking) return;
-    if (streamingBubbleId === null) {
-      const id = nextId++;
-      setStreamingBubbleId(id);
-      messages.update((list) => [
-        ...list,
-        { id, role: "assistant", text: "", thinking: pendingThinking },
-      ]);
-    } else {
-      messages.update((list) =>
-        list.map((m) =>
-          m.id === streamingBubbleId ? { ...m, thinking: pendingThinking } : m,
-        ),
-      );
-    }
-    pendingThinking = "";
-  }
-
   function handleEvent(event: AgentEvent): void {
     switch (event.type) {
       case "agent_start":
         streaming.set(true);
-        pendingThinking = "";
         break;
       case "tool_execution_start": {
         const info = extractToolInfo(event);
@@ -317,23 +290,18 @@ export function createChatController(worker: ChatWorkerAPI): ChatController {
         break;
       case "message_update": {
         const sub = event.assistantMessageEvent as AssistantMessageEventLike | undefined;
-        if (sub?.type === "thinking_delta" && typeof sub.delta === "string") {
-          pendingThinking += sub.delta;
-        } else if (sub?.type === "text_delta" && typeof sub.delta === "string") {
+        if (sub?.type === "text_delta" && typeof sub.delta === "string") {
           appendAssistantText(sub.delta);
         }
         break;
       }
       case "message_end":
-        attachPendingThinkingToAssistant();
         setStreamingBubbleId(null);
         finalizeToolActivityBlock();
         break;
       case "agent_end":
-        attachPendingThinkingToAssistant();
         setStreamingBubbleId(null);
         finalizeToolActivityBlock();
-        pendingThinking = "";
         streaming.set(false);
         messages.update((list) => list.filter((m) => m.role !== "tool-activity"));
         break;

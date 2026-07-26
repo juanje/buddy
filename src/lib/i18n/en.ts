@@ -70,7 +70,6 @@ export const en: LocaleStrings = {
   attachTitle: "Attach file",
   dropOverlay: "Drop file here",
   unsupportedFormat: "Unsupported format — export to text (.md or .txt)",
-  thinkingShow: "Thinking…",
   toolReading: "Reading…",
   toolReadingFile: "Reading {file}",
   toolWriting: "Writing…",

@@ -1,10 +1,10 @@
-// tests/steps/chat-display.steps.ts — FR-CHAT-05/06 + FR-DEFERRED-01 visual.
+// tests/steps/chat-display.steps.ts — FR-CHAT-06 + FR-DEFERRED-01 visual.
 
 import { Given, When, Then } from "@cucumber/cucumber";
 import assert from "node:assert/strict";
 
 import type { AbWorld } from "../support/world";
-import { assistantBubbles, toolActivityBlocks } from "../support/chat-helpers";
+import { toolActivityBlocks } from "../support/chat-helpers";
 
 When("the assistant reads files {string} and {string}", function (this: AbWorld, a: string, b: string) {
   this.session.emitToolExecutionStart("read", a);
@@ -25,29 +25,6 @@ Then("the tool activity block is collapsed by default", function (this: AbWorld)
   const block = toolActivityBlocks(this)[0];
   assert.ok(block);
   assert.equal(block.text, "");
-});
-
-When(
-  "the assistant thinks then replies {string}",
-  function (this: AbWorld, reply: string) {
-    this.session.emitAssistantMessageStart();
-    this.session.emitThinkingDelta("Let me consider the options.");
-    this.session.emitTextDelta(reply);
-    this.session.emitAssistantMessageEnd();
-    this.session.endStreaming();
-  },
-);
-
-Then("the assistant message includes thinking content", function (this: AbWorld) {
-  const bubbles = assistantBubbles(this);
-  assert.equal(bubbles.length, 1);
-  assert.match(bubbles[0].thinking ?? "", /consider the options/);
-});
-
-Then("the thinking content is not shown in the message text", function (this: AbWorld) {
-  const bubble = assistantBubbles(this)[0];
-  assert.ok(bubble.thinking);
-  assert.doesNotMatch(bubble.text, /consider the options/);
 });
 
 Given("the welcome banner is visible", function (this: AbWorld) {

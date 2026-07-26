@@ -61,7 +61,6 @@ export type LocaleStrings = {
   attachTitle: string;
   dropOverlay: string;
   unsupportedFormat: string;
-  thinkingShow: string;
   toolReading: string;
   toolReadingFile: string;
   toolWriting: string;
@@ -190,7 +189,6 @@ export const es: LocaleStrings = {
   attachTitle: "Adjuntar archivo",
   dropOverlay: "Suelta el archivo aquí",
   unsupportedFormat: "Formato no compatible — exporta a texto (.md o .txt)",
-  thinkingShow: "Pensando…",
   toolReading: "Leyendo…",
   toolReadingFile: "Leyendo {file}",
   toolWriting: "Escribiendo…",
