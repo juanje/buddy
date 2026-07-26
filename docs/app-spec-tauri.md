@@ -144,13 +144,17 @@ await resourceLoader.reload();
 // Fresh session every launch (E5 decision: continuity via file memory, not session resume)
 const sessionManager = SessionManager.create(AB_DIR);
 
+const skillTools = buildSkillTools(promptsDir);
+const fetchTools = buildFetchTools(rootDir);
+const fileTools = buildFileTools(rootDir, { confirmDelete, askReadPermission });
+
 const { session } = await createAgentSession({
     sessionManager,
     modelRuntime,
     resourceLoader,
-    excludeTools: ["bash"],  // file-only tool set (security decision)
-    tools: ["read", "write", "edit", "grep", "find", "ls"],  // explicit activation (SDK default is only read/write/edit)
-    customTools: buildSkillTools(promptsDir),  // FR-SKILL: procedural prompts as callable tools
+    excludeTools: [...EXCLUDED_TOOLS],
+    tools: [...AGENT_TOOLS, ...skillToolNames(skillTools), ...fetchToolNames(fetchTools), ...fileToolNames(fileTools)],
+    customTools: [...skillTools, ...fetchTools, ...fileTools],
     cwd: AB_DIR,
 });
 
@@ -887,20 +891,19 @@ classification as `read`. The `extractPath()` helper normalizes their
 argument shape (directory for `ls`/`find`, path for `grep`) into a single
 path for zone lookup.
 
-### Implicit permission from user messages
+### Implicit permission from attachments (FR-INGEST-03)
 
-When the user mentions a path in their chat message, read access is implicitly
-granted for that session:
+When the user attaches or drops a file, read access is implicitly granted for
+that session. **FR-PERM-05 (implicit permission from user messages) was rejected**
+— parsing arbitrary chat messages for paths is unreliable for non-technical users
+and could lead to unintended file access. Session-allowed paths come exclusively
+from drag-and-drop / attach actions.
 
 ```typescript
-// "Ingesta el artículo en ~/Documents/draft.md"
-// → path ~/Documents/draft.md extracted from message
+// User drops ~/Documents/draft.md onto the chat
+// → path added to sessionAllowedPaths
 // → read allowed without confirmation for this session
 ```
-
-This is the key UX insight: **if the user told you to read it, you don't need
-to ask again**. The confirmation flow only triggers when the *agent* discovers
-a path on its own (e.g., following a link in a document, or inferring a path).
 
 ### Implementation
 
@@ -1085,8 +1088,9 @@ discusses the file. Structured wiki ingest is NOT v1.
   and discusses it in the current session. Structured wiki ingest
   (`wiki-ingest` skill) is a separate flow, not triggered by drag & drop.
 - **Formats:** v1 supports markdown, plain text, images (via Pi vision API),
-  and PDF (local text extraction via `pdf-parse`). Unsupported formats
-  (.docx, etc.) show a message suggesting export to text.
+  and PDF (local text extraction via `pdf-parse` / `pdfjs-dist`; compiled
+  binary uses embedded worker — see E12 Worker Packaging above). Unsupported
+  formats (.docx, etc.) show a message suggesting export to text.
 
 ### Phase
 
@@ -1494,7 +1498,7 @@ everything in Phase 0 plus the features needed for day-one value:
 | 3 — Polish        | Tool cards, thinking blocks, markdown, model selector, settings UI | "Does richer rendering improve the experience?"        |
 | 4 — Daemon        | System tray, launch at login, quick capture hotkey                 | "Does always-on + proactive reminders change usage?"   |
 | 5 — Multi-session | Session list, resume, fork (Pi SDK supports natively)              | "Do users want session history?"                       |
-| 6 — Distribution  | Compile worker to standalone binary (Bun/SEA), bundle as sidecar   | "Can non-developers install and use this?"             |
+| 6 — Distribution  | ✓ Sidecar compiled (E12); remaining: portable git, installer UX    | "Can non-developers install and use this?"             |
 
 
 ## Platform Notes
@@ -1519,30 +1523,27 @@ Windows support is architecturally possible (Tauri supports it) but not
 tested or distributed in v1. The first users are on macOS and Linux.
 Revisit when distribution (Phase 6) is reached.
 
-## Worker Packaging for Distribution
+## Worker Packaging (E12 — Shipped)
 
-For development: the worker runs on system-installed Node.js (or Bun).
+**Development:** `node --import tsx backends/sidecar-entry.ts` (or via `npm run dev:worker`).
 
-For distribution (Phase 6): compile the worker into a standalone binary:
-
-**Option A — Bun compile:**
+**Production:** Bun-compiled standalone binary via `scripts/build-worker.sh`:
 
 ```bash
-bun build backends/agent-worker.ts --compile --outfile agent-worker
+# 1. Snapshot embedded assets (templates, prompts, docs, app version, pdfjs worker)
+bun scripts/generate-embedded-assets.ts
+
+# 2. Compile sidecar entry point → single binary
+bun build --compile backends/sidecar-entry.ts \
+  --outfile src-tauri/binaries/agent-worker-${SIDECAR_TARGET}
 ```
 
-Produces a single executable. Bun's compile bundles the runtime + all deps.
+**Key architecture:**
 
-**Option B — Node.js SEA (Single Executable Application):**
-
-```bash
-# Bundle with esbuild, then inject into Node binary
-esbuild backends/agent-worker.ts --bundle --platform=node --outfile=worker.js
-# Create SEA blob and inject into node copy
-```
-
-Both preserve stdin/stdout behavior, so kkrpc works unchanged. The compiled
-binary ships inside the Tauri app bundle via `externalBin` in `tauri.conf.json`.
+- `sidecar-entry.ts` installs DOMMatrix/ImageData/Path2D polyfills (pdfjs needs them), registers OAuth flows + HTTP dispatcher, registers embedded assets, then dynamically imports `agent-worker.ts` or `reflect-child.ts` based on argv.
+- `embedded-assets.generated.ts` contains: templates, prompts, docs, app version, and **pdfjs worker source** (for PDF extraction in compiled binary where `node_modules/` doesn't exist).
+- The binary ships inside the Tauri app bundle via `externalBin` in `tauri.conf.json`.
+- Same binary, two modes: worker RPC (default) or one-shot reflect child (`--reflect`).
 
 ### Distribution Considerations — Git Dependency
 

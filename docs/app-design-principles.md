@@ -86,6 +86,15 @@ decision:
 - **Sufficiency:** all buddy operations (capture, organize, remember, consolidate)
   are file operations
 
+**Shipped custom tools** extend the base set without adding shell access:
+
+- `fetch_url` — web→markdown, PDF→text, image→file (FR-NET-01)
+- `copy_file` — byte-for-byte copy from external paths into workspace (FR-FILE-01)
+- `move_file` — rename/move within workspace, uses git mv for tracked files (FR-FILE-02)
+- `delete_file` — restricted to `user/`/`downloads/`, user confirmation required (FR-DELETE-01)
+- `process_conversation`, `triage_inbox` — procedural skills loaded from `~/.buddy/prompts/` (FR-SKILL)
+- `relocate_brain_file` — consolidation-only, moves files with link rewriting (FR-CONSOL-07)
+
 **Future integrations** (Gmail, Calendar, web search, etc.) are implemented as
 **custom tools** registered via the Pi SDK. Each is a named, typed, scoped
 capability — not arbitrary execution. The user sees "buddy can read your calendar"
@@ -640,8 +649,9 @@ behavior. The app adds the full experience (scheduler, notifications,
 6. **LLM providers (v1):** Anthropic, Google Gemini, OpenAI only. No local
    models until we verify which ones reliably follow buddy's memory procedures.
 
-7. **Tool set:** File tools only (read, write, edit, ls, find, grep). No bash.
-   Future capabilities added as custom Pi SDK tools — typed, scoped, auditable.
+7. **Tool set:** File tools (read, write, edit, ls, find, grep) + shipped custom
+   tools (fetch_url, copy_file, move_file, delete_file, skill tools). No bash.
+   All capabilities are Pi SDK custom tools — typed, scoped, auditable.
 
 8. **Global/local split (E11):** Core prompts and the universal system prompt
    base (`agents-base.md`) live in `~/.buddy/prompts/`, not inside rootDir.
@@ -659,6 +669,21 @@ behavior. The app adds the full experience (scheduler, notifications,
 
 The global config directory (`~/.buddy/`) evolves across app releases. A single
 semver comparison on boot keeps bundled content current without user interaction.
+
+### Sidecar embedded assets (E12)
+
+At build time, `scripts/generate-embedded-assets.ts` snapshots into a single
+TypeScript module (`backends/embedded-assets.generated.ts`):
+
+- `templates/` — initial brain/identity file templates
+- `bundled/prompts/` — core skill prompts (agents-base, process-conversation, triage-inbox, consolidation)
+- `bundled/docs/` — self-documentation pages (capabilities, privacy, etc.)
+- `package.json` version — app semver for boot refresh
+- `pdfjs-dist` worker source — `pdf.worker.min.mjs` for PDF extraction in compiled binary
+
+`sidecar-entry.ts` calls `registerEmbeddedAssets()` before booting. At runtime:
+- Prompts, docs, and templates deploy to `~/.buddy/` via boot refresh (written to disk).
+- The pdfjs worker stays in-process and is materialized to `$TMPDIR/buddy-pdf-worker.mjs` on first PDF extraction (not deployed to user-visible paths).
 
 ### Design
 

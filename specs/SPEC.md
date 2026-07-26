@@ -501,7 +501,8 @@ Fork bomb defense:
 - **When** the message is sent
 - **Then** the PDF text is extracted locally and injected into the prompt as text content
 - **And** the agent can read and discuss the document contents
-- **Implementation:** Local text extraction via `pdf-parse`. Read PDF → extract text → inject as `<document name="filename.pdf">\n{text}\n</document>` in the prompt text. Format gate in `isSupportedIngestFormat` accepts `.pdf`; the file is never sent as `ImageContent`. Works with any provider/model. If extraction fails, falls back to `User attached: /path.pdf` so the agent can try its read tool.
+- **Implementation:** Local text extraction via `pdf-parse` (`pdfjs-dist` backend). Read PDF → extract text → inject as `<document name="filename.pdf">\n{text}\n</document>` in the prompt text. Format gate in `isSupportedIngestFormat` accepts `.pdf`; the file is never sent as `ImageContent`. Works with any provider/model. If extraction fails, falls back to `User attached: /path.pdf` so the agent can try its read tool.
+- **Compiled binary:** `pdfjs-dist` requires `pdf.worker.mjs` on the real filesystem at runtime. In dev, Node.js resolves it from `node_modules/`. In the bun-compiled sidecar, the worker is embedded at build time via `generate-embedded-assets.ts` → `EMBEDDED_PDF_WORKER`. `backends/pdf-extract.ts` writes it to `$TMPDIR/buddy-pdf-worker.mjs` on first use and sets `GlobalWorkerOptions.workerSrc`. DOMMatrix/ImageData/Path2D polyfills in `sidecar-entry.ts` prevent pdfjs module-load crashes.
 - **Background (Jul 2026):** Pi SDK has no native PDF support — passing PDFs as `ImageContent` fails silently on OpenAI and would fail on other providers. Native provider PDF APIs are not used; extraction happens in the worker before `session.prompt()`.
 
 ### 3.7 Deferred Queue (FR-DEFERRED)

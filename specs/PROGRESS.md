@@ -198,7 +198,17 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 ## Current focus
 
 > **Jul 26 file ops sprint shipped** — delete_file, copy_file, move_file tools.
+> **PDF extraction fix** — embedded pdfjs worker for compiled binary.
+> **FR-PERM-05 rejected** — no ambient path parsing from chat messages; session-allowed paths = attachments only.
 > **308 unit + 163 BDD** green. **Implementation next:** FR-WIKI.
+
+### Jul 26 — PDF extraction compiled-binary fix (2026-07-26)
+
+| Item | Description | Commit |
+|------|-------------|--------|
+| Embedded pdfjs worker | `generate-embedded-assets.ts` embeds `pdf.worker.min.mjs`; `pdf-extract.ts` writes to temp on first use | 5200f6e |
+| EmbeddedAssets interface | Added `pdfWorker?: string` field | 5200f6e |
+| Sidecar registration | `sidecar-entry.ts` passes `EMBEDDED_PDF_WORKER` to `registerEmbeddedAssets()` | 5200f6e |
 
 ### Jul 26 — File operations tools — DONE (2026-07-26)
 
@@ -226,7 +236,7 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 | Reflect eval harness | `scripts/test-reflect.ts` + 5 conversation fixtures | a1bff51 |
 | FR-PROMPT-04 | Marked done in SPEC | (doc sync) |
 
-**Tests at Jul 26 close:** 287 unit + 149 BDD green.
+**Tests at session-boot sprint close:** 287 unit + 149 BDD green.
 
 ### Bug fixes + self-awareness prompt (2026-07-25)
 
