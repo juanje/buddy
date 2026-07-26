@@ -106,8 +106,8 @@
     font-size: 14px;
   }
   .providers button.selected {
-    border-color: var(--accent, #4f46e5);
-    outline: 2px solid var(--accent, #4f46e5);
+    border-color: var(--accent);
+    outline: 2px solid var(--accent);
   }
   .actions {
     margin-top: 12px;

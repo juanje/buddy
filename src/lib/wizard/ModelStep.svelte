@@ -100,8 +100,8 @@
     cursor: pointer;
   }
   .model-card.selected {
-    border-color: var(--accent, #4f46e5);
-    outline: 2px solid var(--accent, #4f46e5);
+    border-color: var(--accent);
+    outline: 2px solid var(--accent);
   }
   .model-card .tier {
     font-size: 12px;

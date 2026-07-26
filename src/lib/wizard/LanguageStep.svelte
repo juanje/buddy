@@ -42,6 +42,6 @@
     cursor: pointer;
   }
   .lang-card:hover {
-    border-color: var(--accent, #4f46e5);
+    border-color: var(--accent);
   }
 </style>

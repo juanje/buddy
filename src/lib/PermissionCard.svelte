@@ -106,7 +106,7 @@
     margin: 8px 16px;
     padding: 12px 16px;
     border: 1px solid var(--border);
-    border-left: 3px solid var(--accent, #4f46e5);
+    border-left: 3px solid var(--accent);
     border-radius: 10px;
     background: var(--bg-secondary);
     font-size: 14px;
@@ -149,11 +149,11 @@
     vertical-align: middle;
   }
   .badge-allowed {
-    background: #059669;
+    background: var(--success);
     color: #fff;
   }
   .badge-denied {
-    background: var(--abort, #ef4444);
+    background: var(--abort);
     color: #fff;
   }
   .expand-btn,
@@ -195,9 +195,9 @@
     color: var(--fg);
   }
   .actions button.allow {
-    background: var(--accent, #4f46e5);
+    background: var(--accent);
     border-color: transparent;
-    color: #fff;
+    color: var(--accent-fg);
   }
   .actions button.secondary {
     color: var(--muted);

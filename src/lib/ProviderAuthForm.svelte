@@ -98,8 +98,8 @@
   }
   button.primary {
     border: none;
-    background: var(--accent, #4f46e5);
-    color: #fff;
+    background: var(--accent);
+    color: var(--accent-fg);
     border-radius: 8px;
     padding: 8px 16px;
     cursor: pointer;

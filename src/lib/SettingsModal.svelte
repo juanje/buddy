@@ -376,13 +376,13 @@
     transition: width 0.2s ease;
   }
   .budget-fill.ok {
-    background: #22c55e;
+    background: var(--status-ok);
   }
   .budget-fill.warning {
-    background: #eab308;
+    background: var(--status-warn);
   }
   .budget-fill.danger {
-    background: #ef4444;
+    background: var(--status-error);
   }
   .budget-field {
     display: grid;
@@ -410,7 +410,7 @@
   .notice {
     margin: 0;
     font-size: 13px;
-    color: var(--accent, #4f46e5);
+    color: var(--accent);
   }
   .auth-required {
     margin: 6px 0 0;
@@ -450,8 +450,8 @@
     font-size: 13px;
   }
   .provider-buttons button.selected {
-    border-color: var(--accent, #4f46e5);
-    outline: 2px solid var(--accent, #4f46e5);
+    border-color: var(--accent);
+    outline: 2px solid var(--accent);
   }
   button:disabled {
     opacity: 0.5;

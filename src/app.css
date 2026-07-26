@@ -16,6 +16,10 @@
   --error-bg: #7f1d1d;
   --error-fg: #fecaca;
   --abort: #dc2626;
+  --status-ok: #22c55e;
+  --status-warn: #eab308;
+  --status-error: #ef4444;
+  --success: #059669;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -35,6 +39,10 @@
     --error-bg: #450a0a;
     --error-fg: #fecaca;
     --abort: #dc2626;
+    --status-ok: #4ade80;
+    --status-warn: #facc15;
+    --status-error: #f87171;
+    --success: #34d399;
   }
 }
 

@@ -116,8 +116,8 @@
     color: var(--accent);
   }
   .badge.overdue {
-    background: color-mix(in srgb, var(--error-fg, #c44) 15%, transparent);
-    color: var(--error-fg, #c44);
+    background: color-mix(in srgb, var(--status-error) 15%, transparent);
+    color: var(--status-error);
   }
   .dismiss-row {
     display: flex;
