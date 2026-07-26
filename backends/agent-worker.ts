@@ -17,8 +17,8 @@ import type {
 } from "../shared/api";
 import type { AllowedEntry } from "./allowed-paths";
 import { addAllowedPath, loadAllowedPaths } from "./allowed-paths";
-import { adoptAbInstance, createAbInstance } from "./create-buddy";
-import { defaultAbLocation, validateLocation } from "./location";
+import { adoptBuddyInstance, createBuddyInstance } from "./create-buddy";
+import { defaultBuddyLocation, validateLocation } from "./location";
 import { listModelsForProvider } from "./model-listing";
 import { resolveSessionModel } from "./model-switch";
 import { OAuthService } from "./oauth-service";
@@ -194,7 +194,7 @@ async function main(): Promise<void> {
         return checkPrerequisites();
       },
       async getDefaultLocation() {
-        return defaultAbLocation();
+        return defaultBuddyLocation();
       },
       async validateLocation(path: string) {
         return validateLocation(path);
@@ -216,11 +216,11 @@ async function main(): Promise<void> {
       },
       async getAuthStatus() {
         const providers = WIZARD_PI_PROVIDERS.map((piProviderId) => {
-          const abProvider = fromPiProviderId(piProviderId);
+          const buddyProvider = fromPiProviderId(piProviderId);
           const status = modelRuntime.getProviderAuthStatus(piProviderId);
           return {
             piProviderId,
-            abProvider: abProvider ?? ("openai" as SetupConfig["provider"]),
+            buddyProvider: buddyProvider ?? ("openai" as SetupConfig["provider"]),
             hasAuth: status.configured,
             authType: status.configured
               ? modelRuntime.isUsingOAuth(piProviderId)
@@ -228,14 +228,14 @@ async function main(): Promise<void> {
                 : ("api_key" as const)
               : undefined,
           };
-        }).filter((p) => p.abProvider);
+        }).filter((p) => p.buddyProvider);
         return { providers };
       },
       async runSetup(config, mode = "create") {
         if (mode === "import") {
-          adoptAbInstance({ config, configPath: defaultConfigPath() });
+          adoptBuddyInstance({ config, configPath: defaultConfigPath() });
         } else {
-          await createAbInstance({ config, configPath: defaultConfigPath() });
+          await createBuddyInstance({ config, configPath: defaultConfigPath() });
         }
         setupState = { firstRun: false, config };
         await startSession(config.rootDir, {

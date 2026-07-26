@@ -41,7 +41,7 @@ export function copyTemplates(targetDir: string, templatesDir?: string): void {
   cpSync(defaultTemplatesDir(), targetDir, { recursive: true });
 }
 
-export interface CreateAbOptions {
+export interface CreateBuddyOptions {
   config: SetupConfig;
   /** Where ~/.buddy/config.json lives (injectable for tests). */
   configPath: string;
@@ -74,23 +74,23 @@ ${about}
  * write project Pi settings, init git with a single initial commit, and mark
  * the app as configured. Deterministic and offline.
  */
-export async function createAbInstance(options: CreateAbOptions): Promise<void> {
+export async function createBuddyInstance(options: CreateBuddyOptions): Promise<void> {
   const { config, configPath } = options;
-  const ab = config.rootDir;
+  const root = config.rootDir;
 
-  copyTemplates(ab, options.templatesDir);
+  copyTemplates(root, options.templatesDir);
 
   if (config.name?.trim()) {
-    writeFileSync(join(ab, "agent_brain", "identity", "USER.md"), buildUserProfile(config));
+    writeFileSync(join(root, "agent_brain", "identity", "USER.md"), buildUserProfile(config));
   }
 
   // Project-scoped Pi settings: the session created in this cwd uses the
   // provider/model chosen in the wizard (FR-SETTINGS-01).
-  writePiSettings(ab, config);
+  writePiSettings(root, config);
 
   // Git identity is repo-local: the target user may have no global git
   // config, and setup must never fail on that (NFR: git invisible).
-  const git = simpleGit(ab);
+  const git = simpleGit(root);
   await git.init();
   await git.addConfig("user.name", GIT_USER_NAME);
   await git.addConfig("user.email", GIT_USER_EMAIL);
@@ -107,7 +107,7 @@ export async function createAbInstance(options: CreateAbOptions): Promise<void> 
  * write inside the buddy directory is .pi/settings.json, and only when it doesn't exist
  * (the wizard collected provider/model precisely because it was missing).
  */
-export function adoptAbInstance(options: Pick<CreateAbOptions, "config" | "configPath">): void {
+export function adoptBuddyInstance(options: Pick<CreateBuddyOptions, "config" | "configPath">): void {
   const { config, configPath } = options;
   const settingsPath = join(config.rootDir, ".pi", "settings.json");
 

@@ -88,8 +88,8 @@ async function createBuddy() {
         return $t.locationNotEmpty;
       case "not-a-directory":
         return $t.locationNotADirectory;
-      case "existing-ab":
-        return $t.locationExistingAb;
+      case "existing-buddy":
+        return $t.locationExistingBuddy;
       default:
         return undefined;
     }
@@ -151,7 +151,7 @@ async function createBuddy() {
     {/if}
     <div class="actions">
       <button type="button" class="ghost" onclick={goBack}>{$t.wizardBack}</button>
-      {#if $locationCheck?.status === "existing-ab"}
+      {#if $locationCheck?.status === "existing-buddy"}
         <button class="primary" onclick={importExistingBuddy}>{$t.locationImport}</button>
       {:else}
         <button class="primary" onclick={validateAndMaybeContinue}>

@@ -11,7 +11,7 @@ import type { LocationCheck } from "../shared/api";
 import { readPiSettings } from "../shared/pi-settings";
 
 /** Proposed default buddy location (FR-SETUP-03). */
-export function defaultAbLocation(): string {
+export function defaultBuddyLocation(): string {
   return join(homedir(), "buddy");
 }
 
@@ -36,7 +36,7 @@ export function validateLocation(path: string): LocationCheck {
     if (statSync(join(path, "agent_brain")).isDirectory()) {
       // FR-SETUP-08: offer import; surface the instance's own Pi settings so
       // the wizard can skip provider/model when they are already known.
-      return { status: "existing-ab", abSettings: readAbSettings(path) };
+      return { status: "existing-buddy", buddySettings: readBuddySettings(path) };
     }
   } catch {
     // no agent_brain/ — fall through
@@ -45,7 +45,7 @@ export function validateLocation(path: string): LocationCheck {
   return { status: "not-empty" };
 }
 
-function readAbSettings(abPath: string): LocationCheck["abSettings"] {
+function readBuddySettings(abPath: string): LocationCheck["buddySettings"] {
   const raw = readPiSettings(abPath);
   if (!raw) return undefined;
   return { provider: raw.defaultProvider, model: raw.defaultModel };

@@ -31,7 +31,7 @@ export const en: LocaleStrings = {
     "It's a normal folder on your computer. It will store its memory, your notes, and everything it learns.",
   locationNotEmpty: "That folder already has files. Choose an empty folder or one that doesn't exist yet.",
   locationNotADirectory: "That path is not a folder.",
-  locationExistingAb: "That folder already contains a Buddy assistant.",
+  locationExistingBuddy: "That folder already contains a Buddy assistant.",
   locationImport: "Import this assistant",
   locationBrowse: "Browse…",
   locationBrowseTitle: "Choose a folder",

@@ -314,19 +314,19 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
   async function importExisting(): Promise<"adopted" | "needs-provider"> {
     const rootDir = get(location);
     const check = get(locationCheck);
-    if (!rootDir || check?.status !== "existing-ab") {
+    if (!rootDir || check?.status !== "existing-buddy") {
       throw new Error("importExisting called without an existing buddy instance at the chosen location");
     }
     importMode.set(true);
 
-    const settings = check.abSettings;
+    const settings = check.buddySettings;
     const knownProvider = resolveImportProvider(settings?.provider);
     if (knownProvider && settings?.model) {
       provider.set(knownProvider);
       model.set(settings.model);
 
       const authStatus = await worker.getAuthStatus();
-      const providerAuth = authStatus.providers.find((p) => p.abProvider === knownProvider);
+      const providerAuth = authStatus.providers.find((p) => p.buddyProvider === knownProvider);
       if (providerAuth?.hasAuth) {
         await runSetupWith({
           rootDir,

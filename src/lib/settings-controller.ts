@@ -116,7 +116,7 @@ async function loadAuthenticatedModels(
 ): Promise<{ models: ModelInfo[]; unauthenticated: SettingsProviderId[] }> {
   const status = await worker.getAuthStatus();
   const authed = new Set(
-    status.providers.filter((p) => p.hasAuth).map((p) => p.abProvider),
+    status.providers.filter((p) => p.hasAuth).map((p) => p.buddyProvider),
   );
   const unauthenticated = ADD_PROVIDER_CANDIDATES.filter((p) => !authed.has(p));
   const providers = [...authed].filter((p): p is SettingsProviderId => p !== "custom");

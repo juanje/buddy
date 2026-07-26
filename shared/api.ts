@@ -59,17 +59,17 @@ export interface UsageReport {
 export type SetupState = { firstRun: true } | { firstRun: false; config: SetupConfig };
 
 /**
- * Buddy location validation result (FR-SETUP-03). "existing-ab" marks a
+ * Buddy location validation result (FR-SETUP-03). "existing-buddy" marks a
  * directory holding a buddy instance, offered for import (FR-SETUP-08).
  */
 export interface LocationCheck {
-  status: "ok-new" | "ok-empty" | "existing-ab" | "not-empty" | "not-a-directory";
+  status: "ok-new" | "ok-empty" | "existing-buddy" | "not-empty" | "not-a-directory";
   /**
-   * For "existing-ab": provider/model read from the instance's own
+   * For "existing-buddy": provider/model read from the instance's own
    * .pi/settings.json, when present. A complete pair allows direct adoption
    * without re-running the provider and model steps (FR-SETUP-08).
    */
-  abSettings?: { provider?: string; model?: string };
+  buddySettings?: { provider?: string; model?: string };
 }
 
 /** API key validation verdict (FR-SETUP-04). */
@@ -92,7 +92,7 @@ export interface ModelInfo {
 /** Auth status for a Pi provider. */
 export interface AuthProviderStatus {
   piProviderId: string;
-  abProvider: SetupProviderId;
+  buddyProvider: SetupProviderId;
   hasAuth: boolean;
   authType?: "api_key" | "oauth";
 }
