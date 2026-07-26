@@ -187,17 +187,19 @@ export async function bootSession(
     await injectSessionContext(sessionLike, context.frontend, sessionContext.message);
   }
 
-  const core = createWorkerCore(sessionLike, context.frontend, {
-    lifecycle,
-    usageTracker: context.usageTracker,
-  });
-
+  // Warm handoff (first session greeting) also runs BEFORE worker core —
+  // injectHiddenPrompt manages its own subscriber to show the response.
   if (options?.firstSession && options.name) {
     await runWarmHandoff(sessionLike, context.frontend, {
       name: options.name,
       about: options.about,
     });
   }
+
+  const core = createWorkerCore(sessionLike, context.frontend, {
+    lifecycle,
+    usageTracker: context.usageTracker,
+  });
 
   return { core, lifecycle };
 }
