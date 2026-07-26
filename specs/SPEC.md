@@ -381,6 +381,8 @@ Fork bomb defense:
 - **Given** the reflect process writes a session block to the daily log
 - **When** the output contains raw tool-call syntax leaked from the model (e.g. `to=functions.read code:` followed by JSON)
 - **Then** those lines are stripped before writing to the log file
+- **When** the LLM output includes a leading `## Session` or `## Checkpoint` header (worker adds the correct header from spawn args)
+- **Then** that header is stripped before append — the daily log contains exactly one session heading per reflect finalization
 - **Note:** This is a cosmetic guard against LLM output corruption — the model occasionally emits tool invocation syntax as plain text instead of executing it. The sanitizer runs on the final text before file write.
 
 ### 3.5 Permission Layer (FR-PERM)
@@ -718,8 +720,10 @@ Fork bomb defense:
 
 - **Given** a reflect completes (session-end)
 - **When** the daily log is appended
-- **Then** `logs/index.md` is rebuilt from daily log frontmatter
-- **And** the rebuild is deterministic (code, no LLM)
+- **Then** `logs/index.md` is updated incrementally for that date (deterministic code, no LLM)
+- **When** no index entry exists for the date, reflect creates one from the daily log content
+- **When** an index entry already exists (e.g. curated Key themes from consolidation), reflect does **not** overwrite it — only explicit description updates (consolidation) replace an existing entry
+- **And** maintenance entries never downgrade an existing active entry
 
 ### 3.12 Settings / Configuration (FR-SETTINGS)
 

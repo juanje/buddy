@@ -144,6 +144,7 @@ export function updateLogsIndexEntry(
   const existing = readFileSync(indexPath, "utf8");
 
   if (entryPattern.test(existing)) {
+    if (!description) return;
     const currentLine = existing.match(entryPattern)![0];
     if (currentLine.includes(": active") && status === "maintenance") {
       // Same-day maintenance must not replace an active entry's curated description.
@@ -194,10 +195,14 @@ const TOOL_LEAK_PATTERNS: RegExp[] = [
   /^\{"name":"(read|write|edit|ls|find|grep)".*\}$/gm,
 ];
 
+/** Strip LLM-generated session/checkpoint headers — worker adds the correct one. */
+const SESSION_HEADER_RE = /^##\s+(Session|Checkpoint)\s+\S.*\r?\n\r?\n?/;
+
 export function sanitizeReflectOutput(text: string): string {
   let result = text;
   for (const pattern of TOOL_LEAK_PATTERNS) {
     result = result.replace(pattern, "");
   }
+  result = result.replace(SESSION_HEADER_RE, "");
   return result.replace(/\n{3,}/g, "\n\n").trim();
 }

@@ -35,6 +35,21 @@ describe("sanitizeReflectOutput", () => {
     const out = sanitizeReflectOutput(input);
     expect(out).toBe("### Context\n\nLine one.\n\n### Lessons\nLine two.");
   });
+
+  it("strips a leading ## Session header from LLM output", () => {
+    const input = "## Session 00:00–00:00\n\n### Context\nWorked on feature X.";
+    const out = sanitizeReflectOutput(input);
+    expect(out).not.toContain("## Session 00:00");
+    expect(out).toContain("### Context");
+    expect(out).toContain("Worked on feature X.");
+  });
+
+  it("strips a leading ## Checkpoint header from LLM output", () => {
+    const input = "## Checkpoint 10:30\n\n### Context\nMid-session encode.";
+    const out = sanitizeReflectOutput(input);
+    expect(out).not.toContain("## Checkpoint");
+    expect(out).toContain("Mid-session encode.");
+  });
 });
 
 describe("finalizeReflectToDailyLog", () => {
@@ -163,7 +178,7 @@ describe("updateLogsIndexEntry", () => {
     expect(index).toContain("2026-07-19: active — Reflect pipeline redesign.");
   });
 
-  it("updates existing entry without touching others", () => {
+  it("preserves existing entry on reflect without explicit description", () => {
     dir = mkdtempSync(join(tmpdir(), "ab-index-"));
     mkdirSync(join(dir, "logs"), { recursive: true });
     writeFileSync(
@@ -187,7 +202,8 @@ describe("updateLogsIndexEntry", () => {
     });
     updateLogsIndexEntry(dir, "2026-07-19");
     const index = readFileSync(join(dir, "logs", "index.md"), "utf8");
-    expect(index).toContain("2026-07-19: active — Updated reflect.");
+    expect(index).toContain("2026-07-19: active — Old summary.");
+    expect(index).not.toContain("Updated reflect.");
     expect(index).toContain("2026-07-18: active — Prior day work.");
     expect(index).toContain("archived (monthly)");
   });
@@ -291,6 +307,26 @@ describe("updateLogsIndexEntry", () => {
     const index = readFileSync(join(dir, "logs", "index.md"), "utf8");
     expect(index).toContain("- 2026-07-23: active — Key themes from Day summary");
     expect(index).not.toContain("Different maintenance context");
+  });
+
+  it("does not overwrite existing entry when called without explicit description", () => {
+    dir = mkdtempSync(join(tmpdir(), "ab-index-"));
+    mkdirSync(join(dir, "logs"), { recursive: true });
+    writeFileSync(
+      join(dir, "logs", "index.md"),
+      "- 2026-07-23: active — Key themes from Day summary\n",
+      "utf8",
+    );
+    appendDailyLog(dir, {
+      date: "2026-07-23",
+      sessionHeader: "14:30–15:45",
+      sections: "### Context\nDifferent context line.",
+    });
+
+    updateLogsIndexEntry(dir, "2026-07-23");
+    const index = readFileSync(join(dir, "logs", "index.md"), "utf8");
+    expect(index).toContain("- 2026-07-23: active — Key themes from Day summary");
+    expect(index).not.toContain("Different context line");
   });
 });
 
