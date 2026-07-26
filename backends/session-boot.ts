@@ -181,9 +181,10 @@ export async function bootSession(
 
   const sessionLike = asPiSessionLike(session);
 
-  // Context injection runs BEFORE worker core subscribes — response is
-  // suppressed; context sits in history for the user's first real turn.
-  if (sessionContext.message) {
+  // Skip context injection for first sessions — personalization is handled
+  // by the warm handoff, and there are no logs/deferred to inject.
+  const skipInjection = options?.firstSession && sessionContext.personalizationPending;
+  if (sessionContext.message && !skipInjection) {
     await injectSessionContext(sessionLike, context.frontend, sessionContext.message);
   }
 
