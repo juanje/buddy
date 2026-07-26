@@ -25,7 +25,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["app"],
+    "targets": ["dmg", "app", "deb", "rpm", "appimage"],
     "externalBin": ["binaries/agent-worker"],
     "icon": [
       "icons/icon.png",
@@ -33,6 +33,14 @@
     ],
     "macOS": {
       "minimumSystemVersion": "10.15"
+    },
+    "linux": {
+      "deb": {
+        "depends": ["git"]
+      },
+      "rpm": {
+        "depends": ["git"]
+      }
     }
   }
 }
