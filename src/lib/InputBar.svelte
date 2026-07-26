@@ -67,9 +67,6 @@
         {#each $attachmentErrors as name (name)}
           <span>{$t.unsupportedFormat}: {name}</span>
         {/each}
-        <button type="button" class="dismiss-errors" onclick={() => controller.clearAttachmentErrors()}>
-          ×
-        </button>
       </div>
     {/if}
     {#if $attachments.length > 0}
@@ -182,16 +179,6 @@
     background: var(--error-bg);
     color: var(--error-fg);
     font-size: 13px;
-  }
-  .dismiss-errors {
-    margin-left: auto;
-    border: none;
-    background: transparent;
-    color: inherit;
-    cursor: pointer;
-    width: auto;
-    height: auto;
-    padding: 0 4px;
   }
   textarea {
     width: 100%;

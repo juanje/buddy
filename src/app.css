@@ -68,71 +68,71 @@ body {
   height: 100%;
 }
 
-/* FR-CHAT-04: markdown prose inside assistant bubbles */
-.bubble.assistant.prose,
+/* FR-CHAT-04: markdown prose inside assistant bubbles + FileViewer */
+.bubble.assistant.prose p,
 .markdown.prose p {
   margin: 0 0 0.6em;
 }
-.bubble.assistant.prose,
+.bubble.assistant.prose p:last-child,
 .markdown.prose p:last-child {
   margin-bottom: 0;
 }
-.bubble.assistant.prose,
+.bubble.assistant.prose h1,
 .markdown.prose h1,
-.bubble.assistant.prose,
+.bubble.assistant.prose h2,
 .markdown.prose h2,
-.bubble.assistant.prose,
+.bubble.assistant.prose h3,
 .markdown.prose h3,
-.bubble.assistant.prose,
+.bubble.assistant.prose h4,
 .markdown.prose h4 {
   margin: 0.8em 0 0.4em;
   font-weight: 600;
   line-height: 1.3;
 }
-.bubble.assistant.prose,
+.bubble.assistant.prose h1:first-child,
 .markdown.prose h1:first-child,
-.bubble.assistant.prose,
+.bubble.assistant.prose h2:first-child,
 .markdown.prose h2:first-child,
-.bubble.assistant.prose,
+.bubble.assistant.prose h3:first-child,
 .markdown.prose h3:first-child {
   margin-top: 0;
 }
-.bubble.assistant.prose,
+.bubble.assistant.prose h1,
 .markdown.prose h1 {
   font-size: 1.15em;
 }
-.bubble.assistant.prose,
+.bubble.assistant.prose h2,
 .markdown.prose h2 {
   font-size: 1.08em;
 }
-.bubble.assistant.prose,
+.bubble.assistant.prose h3,
 .markdown.prose h3 {
   font-size: 1.02em;
 }
-.bubble.assistant.prose,
+.bubble.assistant.prose ul,
 .markdown.prose ul,
-.bubble.assistant.prose,
+.bubble.assistant.prose ol,
 .markdown.prose ol {
   margin: 0.4em 0 0.6em;
   padding-left: 1.4em;
 }
-.bubble.assistant.prose,
+.bubble.assistant.prose li,
 .markdown.prose li {
   margin: 0.2em 0;
 }
-.bubble.assistant.prose,
+.bubble.assistant.prose a,
 .markdown.prose a {
   color: var(--accent);
   text-decoration: underline;
 }
-.bubble.assistant.prose,
+.bubble.assistant.prose blockquote,
 .markdown.prose blockquote {
   margin: 0.5em 0;
   padding-left: 0.8em;
   border-left: 3px solid var(--border);
   color: var(--muted);
 }
-.bubble.assistant.prose,
+.bubble.assistant.prose code:not(pre code),
 .markdown.prose code:not(pre code) {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 0.9em;
@@ -140,7 +140,7 @@ body {
   padding: 0.15em 0.35em;
   border-radius: 4px;
 }
-.bubble.assistant.prose,
+.bubble.assistant.prose pre,
 .markdown.prose pre {
   margin: 0.6em 0;
   padding: 10px 12px;
@@ -148,7 +148,7 @@ body {
   background: var(--code-bg);
   overflow-x: auto;
 }
-.bubble.assistant.prose,
+.bubble.assistant.prose pre code,
 .markdown.prose pre code {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 0.85em;
@@ -178,31 +178,31 @@ body {
     --hljs-attr: #fde047;
   }
 }
-.bubble.assistant.prose,
+.bubble.assistant.prose .hljs-keyword,
 .markdown.prose .hljs-keyword {
   color: var(--hljs-keyword);
 }
-.bubble.assistant.prose,
+.bubble.assistant.prose .hljs-string,
 .markdown.prose .hljs-string {
   color: var(--hljs-string);
 }
-.bubble.assistant.prose,
+.bubble.assistant.prose .hljs-number,
 .markdown.prose .hljs-number {
   color: var(--hljs-number);
 }
-.bubble.assistant.prose,
+.bubble.assistant.prose .hljs-comment,
 .markdown.prose .hljs-comment {
   color: var(--hljs-comment);
 }
-.bubble.assistant.prose,
+.bubble.assistant.prose .hljs-title,
 .markdown.prose .hljs-title,
-.bubble.assistant.prose,
+.bubble.assistant.prose .hljs-title.function_,
 .markdown.prose .hljs-title.function_ {
   color: var(--hljs-title);
 }
-.bubble.assistant.prose,
+.bubble.assistant.prose .hljs-attr,
 .markdown.prose .hljs-attr,
-.bubble.assistant.prose,
+.bubble.assistant.prose .hljs-name,
 .markdown.prose .hljs-name {
   color: var(--hljs-attr);
 }

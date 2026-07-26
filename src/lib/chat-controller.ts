@@ -204,14 +204,19 @@ export function createChatController(worker: ChatWorkerAPI): ChatController {
     }
     if (rejected.length > 0) {
       attachmentErrors.update((list) => [...list, ...rejected]);
+      clearTimeout(errorDismissTimer);
+      errorDismissTimer = setTimeout(clearAttachmentErrors, 4000);
     }
   }
+
+  let errorDismissTimer: ReturnType<typeof setTimeout> | undefined;
 
   function removeAttachment(path: string): void {
     attachments.update((list) => list.filter((a) => a.path !== path));
   }
 
   function clearAttachmentErrors(): void {
+    clearTimeout(errorDismissTimer);
     attachmentErrors.set([]);
   }
 

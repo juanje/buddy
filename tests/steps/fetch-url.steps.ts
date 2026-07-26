@@ -42,20 +42,20 @@ function mockFetchClient(): FetchHttpClient {
       });
     }
     if (url.includes("huge")) {
-      const body = Buffer.alloc(FETCH_MAX_BYTES + 1, 0x61);
+      const body = new Uint8Array(FETCH_MAX_BYTES + 1).fill(0x61);
       return new Response(body, {
         status: 200,
         headers: { "content-type": "text/html", "content-length": String(body.length) },
       });
     }
     if (url.includes(".pdf") || url.endsWith("report.pdf")) {
-      return new Response(createMinimalPdf("Hello from PDF"), {
+      return new Response(new Uint8Array(createMinimalPdf("Hello from PDF")), {
         status: 200,
         headers: { "content-type": "application/pdf" },
       });
     }
     if (url.includes(".png") || url.endsWith("photo.png")) {
-      return new Response(MINIMAL_PNG, {
+      return new Response(new Uint8Array(MINIMAL_PNG), {
         status: 200,
         headers: { "content-type": "image/png" },
       });

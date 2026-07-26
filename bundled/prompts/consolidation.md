@@ -385,3 +385,8 @@ specified depth.
 All file changes are committed automatically when the consolidation cycle ends.
 No manual action needed — just finish writing and the system persists everything.
 Log rotation runs automatically after you finish — do not archive logs yourself.
+
+**Do not write a consolidation report or summary block to the daily log.** The
+artifacts you created (Day summary, journal entry, concepts, index updates) are
+self-documenting. A "Consolidation complete" block adds tokens to every future
+log read without decision-making value.
