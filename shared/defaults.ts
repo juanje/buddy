@@ -81,3 +81,10 @@ export const DENYLIST_HOME_DIRS = [".ssh", ".gnupg", ".aws"];
 export const DENYLIST_BASENAMES = [".env", "auth.json"];
 export const WRITE_TOOLS = new Set(["write", "edit"]);
 export const READ_TOOLS = new Set(["read", "ls", "find", "grep"]);
+
+/** Directories where delete/move/copy-dest are allowed (FR-DELETE-01, FR-FILE). */
+export const USER_MUTABLE_DIRS = ["user", "downloads"] as const;
+/** Directories never touched by user file ops (FR-DELETE-01, FR-FILE-02). */
+export const PROTECTED_DIRS = ["agent_brain", "logs"] as const;
+/** Root identity files that must never be deleted or moved (FR-DELETE-01). */
+export const IDENTITY_ROOT_FILES = ["AGENTS.md", "SOUL.md", "USER.md", "CLAUDE.md"] as const;

@@ -197,8 +197,18 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 
 ## Current focus
 
-> **Jul 26 session boot + reflect polish shipped** — silent context injection, first-session skip, warm handoff ordering fix, reflect prompt rewrite, reflect eval harness.
-> **287 unit + 149 BDD** green. **Implementation next:** FR-WIKI.
+> **Jul 26 file ops sprint shipped** — delete_file, copy_file, move_file tools.
+> **308 unit + 163 BDD** green. **Implementation next:** FR-WIKI.
+
+### Jul 26 — File operations tools — DONE (2026-07-26)
+
+| FR-ID | Feature | Status | Commit |
+|-------|---------|--------|--------|
+| FR-DELETE-01 | Restricted file deletion (user confirmation) | done | (this sprint) |
+| FR-FILE-01 | copy_file (external → user/downloads) | done | (this sprint) |
+| FR-FILE-02 | move_file (within workspace, git mv) | done | (this sprint) |
+
+**Tests at file ops close:** 308 unit + 163 BDD green.
 
 ### Jul 26 — Session boot, reflect quality, docs sync — DONE (2026-07-26)
 

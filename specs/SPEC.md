@@ -1210,7 +1210,7 @@ result — the LLM then follows the procedure.
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-DELETE-01 | Restricted file deletion tool for user workspace | 2 |
+| FR-DELETE-01 | Restricted file deletion tool for user workspace | 2 ✓ |
 
 **FR-DELETE-01 — Restricted file deletion**
 
@@ -1236,15 +1236,15 @@ result — the LLM then follows the procedure.
 
 **Acceptance criteria:**
 
-- [ ] Tool `delete_file` registered as Pi custom tool (single string parameter: `path`)
-- [ ] Paths inside `user/` and `downloads/` are accepted
-- [ ] Paths inside `agent_brain/`, `logs/`, or identity files are rejected with error message
-- [ ] Paths outside `rootDir` are rejected with error message
-- [ ] User confirmation prompt shown before any deletion executes
-- [ ] Tracked files removed via `git rm`; untracked via `fs.unlink`
-- [ ] Deletion included in next auto-commit cleanly
-- [ ] Non-existent file returns error (no crash)
-- [ ] BDD feature file covers: valid deletion, denied paths (brain, logs, identity, external), user denial, missing file
+- [x] Tool `delete_file` registered as Pi custom tool (single string parameter: `path`)
+- [x] Paths inside `user/` and `downloads/` are accepted
+- [x] Paths inside `agent_brain/`, `logs/`, or identity files are rejected with error message
+- [x] Paths outside `rootDir` are rejected with error message
+- [x] User confirmation prompt shown before any deletion executes
+- [x] Tracked files removed via `git rm`; untracked via `fs.unlink`
+- [x] Deletion included in next auto-commit cleanly
+- [x] Non-existent file returns error (no crash)
+- [x] BDD feature file covers: valid deletion, denied paths (brain, logs, identity, external), user denial, missing file
 
 **Technical notes:**
 
@@ -1256,8 +1256,8 @@ result — the LLM then follows the procedure.
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-FILE-01 | Copy file from external path into user workspace | 2 |
-| FR-FILE-02 | Move/rename file within rootDir | 2 |
+| FR-FILE-01 | Copy file from external path into user workspace | 2 ✓ |
+| FR-FILE-02 | Move/rename file within rootDir | 2 ✓ |
 
 **FR-FILE-01 — Copy file into workspace**
 
@@ -1286,13 +1286,13 @@ result — the LLM then follows the procedure.
 
 **Acceptance criteria (both):**
 
-- [ ] Tools `copy_file` and `move_file` registered as Pi custom tools
-- [ ] `copy_file`: source permission validated via existing Zone 2/3 gate; destination must be inside `rootDir`
-- [ ] `move_file`: both paths must be inside `rootDir`; denied sources rejected with error
-- [ ] No tokenization or LLM context cost — operations are filesystem-level
-- [ ] Tracked files moved via `git mv`; new files from copy staged for auto-commit
-- [ ] Non-existent source returns error (no crash)
-- [ ] BDD feature file covers: valid copy, valid move, denied paths, missing source, external destination rejected
+- [x] Tools `copy_file` and `move_file` registered as Pi custom tools
+- [x] `copy_file`: source permission validated via existing Zone 2/3 gate; destination must be inside `rootDir`
+- [x] `move_file`: both paths must be inside `rootDir`; denied sources rejected with error
+- [x] No tokenization or LLM context cost — operations are filesystem-level
+- [x] Tracked files moved via `git mv`; new files from copy staged for auto-commit
+- [x] Non-existent source returns error (no crash)
+- [x] BDD feature file covers: valid copy, valid move, denied paths, missing source, external destination rejected
 
 ---
 

@@ -23,7 +23,7 @@ export type PermissionOp = "read" | "write";
 
 export interface PermissionRequest {
   id: number;
-  kind: "identity-write" | "outside";
+  kind: "identity-write" | "outside" | "delete-file";
   op: PermissionOp;
   path: string;
 }

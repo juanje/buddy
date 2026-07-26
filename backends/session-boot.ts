@@ -24,6 +24,7 @@ import { injectSessionContext } from "./context-injection";
 import { globalConfigDir } from "./global-config";
 import { buildSkillTools, skillToolNames } from "./skill-tools";
 import { buildFetchTools, fetchToolNames } from "./fetch-url";
+import { buildFileTools, fileToolNames } from "./file-tools";
 import { SessionLifecycle } from "./session-lifecycle";
 import { persistLiveSession, markReflectPending } from "./crash-recovery";
 import { createWorkerCore, type PiSessionLike, type WorkerCore } from "./worker-core";
@@ -146,14 +147,25 @@ export async function bootSession(
   const promptsDir = join(globalConfigDir(), "prompts");
   const skillTools = buildSkillTools(promptsDir);
   const fetchTools = buildFetchTools(rootDir);
+  const fileTools = buildFileTools(rootDir, {
+    confirmDelete: (absPath) =>
+      context.requestPermission({ kind: "delete-file", op: "write", path: absPath }),
+    askReadPermission: (absPath) =>
+      context.requestPermission({ kind: "outside", op: "read", path: absPath }),
+  });
 
   const { session } = await createAgentSession({
     cwd: rootDir,
     resourceLoader,
     sessionManager: SessionManager.create(rootDir),
     excludeTools: [...EXCLUDED_TOOLS],
-    tools: [...AGENT_TOOLS, ...skillToolNames(skillTools), ...fetchToolNames(fetchTools)],
-    customTools: [...skillTools, ...fetchTools],
+    tools: [
+      ...AGENT_TOOLS,
+      ...skillToolNames(skillTools),
+      ...fetchToolNames(fetchTools),
+      ...fileToolNames(fileTools),
+    ],
+    customTools: [...skillTools, ...fetchTools, ...fileTools],
     modelRuntime: context.modelRuntime,
   });
 

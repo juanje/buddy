@@ -44,8 +44,10 @@ export type LocaleStrings = {
   modelCustomHint: string;
   permissionTitleOutside: string;
   permissionTitleIdentity: string;
+  permissionTitleDelete: string;
   permissionOpRead: string;
   permissionOpWrite: string;
+  permissionOpDelete: string;
   permissionAllowOnce: string;
   permissionAllowAlwaysFile: string;
   permissionAllowAlwaysFolder: string;
@@ -173,8 +175,10 @@ export const es: LocaleStrings = {
   modelCustomHint: "Escribe el nombre del modelo tal y como lo expone tu servicio.",
   permissionTitleOutside: "El asistente quiere acceder a un archivo fuera de su carpeta",
   permissionTitleIdentity: "El asistente quiere actualizar su personalidad",
+  permissionTitleDelete: "El asistente quiere eliminar un archivo",
   permissionOpRead: "Leer",
   permissionOpWrite: "Escribir",
+  permissionOpDelete: "Eliminar",
   permissionAllowOnce: "Permitir una vez",
   permissionAllowAlwaysFile: "Permitir este archivo siempre",
   permissionAllowAlwaysFolder: "Permitir esta carpeta siempre",

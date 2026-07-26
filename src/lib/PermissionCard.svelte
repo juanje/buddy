@@ -23,10 +23,16 @@
   const title = $derived(
     card.request.kind === "identity-write"
       ? strings.permissionTitleIdentity
-      : strings.permissionTitleOutside,
+      : card.request.kind === "delete-file"
+        ? strings.permissionTitleDelete
+        : strings.permissionTitleOutside,
   );
   const opLabel = $derived(
-    card.request.op === "write" ? strings.permissionOpWrite : strings.permissionOpRead,
+    card.request.kind === "delete-file"
+      ? strings.permissionOpDelete
+      : card.request.op === "write"
+        ? strings.permissionOpWrite
+        : strings.permissionOpRead,
   );
   const showPath = $derived(card.request.kind !== "identity-write");
   const showPersistentOptions = $derived(card.request.kind === "outside");
