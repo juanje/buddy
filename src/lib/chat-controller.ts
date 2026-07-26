@@ -66,6 +66,8 @@ export interface ChatController {
   showAbort: Readable<boolean>;
   /** Typing indicator: visible from agent_start until agent_end (FR-CHAT-01). */
   typingIndicator: Readable<boolean>;
+  /** Id of the bubble currently receiving streaming deltas (FR-CHAT-05). */
+  streamingBubbleId: Readable<number | null>;
   /** Permission questions shown inline in the chat (FR-PERM-07). */
   permissions: Readable<PermissionCard[]>;
   /** Welcome banner visible until the first user message (FR-DEFERRED-01 visual). */
@@ -119,7 +121,12 @@ export function createChatController(worker: ChatWorkerAPI): ChatController {
   // Id of the assistant bubble currently receiving deltas. The bubble is
   // created lazily on the FIRST text_delta so empty responses never produce
   // an empty bubble (FR-CHAT-01).
+  const streamingBubbleIdStore = writable<number | null>(null);
   let streamingBubbleId: number | null = null;
+  function setStreamingBubbleId(id: number | null) {
+    streamingBubbleId = id;
+    streamingBubbleIdStore.set(id);
+  }
 
   // Id of the in-flight tool-activity block for the current turn (FR-CHAT-06).
   let streamingToolActivityId: number | null = null;
@@ -261,7 +268,7 @@ export function createChatController(worker: ChatWorkerAPI): ChatController {
 
     if (streamingBubbleId === null) {
       const id = nextId++;
-      streamingBubbleId = id;
+      setStreamingBubbleId(id);
       const thinking = pendingThinking || undefined;
       pendingThinking = "";
       messages.update((list) => [
@@ -279,7 +286,7 @@ export function createChatController(worker: ChatWorkerAPI): ChatController {
     if (!pendingThinking) return;
     if (streamingBubbleId === null) {
       const id = nextId++;
-      streamingBubbleId = id;
+      setStreamingBubbleId(id);
       messages.update((list) => [
         ...list,
         { id, role: "assistant", text: "", thinking: pendingThinking },
@@ -319,12 +326,12 @@ export function createChatController(worker: ChatWorkerAPI): ChatController {
       }
       case "message_end":
         attachPendingThinkingToAssistant();
-        streamingBubbleId = null;
+        setStreamingBubbleId(null);
         finalizeToolActivityBlock();
         break;
       case "agent_end":
         attachPendingThinkingToAssistant();
-        streamingBubbleId = null;
+        setStreamingBubbleId(null);
         finalizeToolActivityBlock();
         pendingThinking = "";
         streaming.set(false);
@@ -366,6 +373,7 @@ export function createChatController(worker: ChatWorkerAPI): ChatController {
     canSend,
     showAbort,
     typingIndicator,
+    streamingBubbleId: { subscribe: streamingBubbleIdStore.subscribe } as Readable<number | null>,
     permissions,
     welcomeVisible,
     send,

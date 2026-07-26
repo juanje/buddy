@@ -30,6 +30,7 @@
   // `$controller.messages` is invalid — the controller itself is not a store.
   const messages = $derived(controller.messages);
   const typingIndicator = $derived(controller.typingIndicator);
+  const streamingBubbleId = $derived(controller.streamingBubbleId);
   const permissions = $derived(controller.permissions);
   const welcomeVisible = $derived(controller.welcomeVisible);
   const showScrollButton = $derived(scroll.showScrollButton);
@@ -94,7 +95,7 @@
       {#if message.role === "tool-activity"}
         <ToolActivity {message} streaming={$typingIndicator} />
       {:else}
-        <MessageBubble {message} streaming={$typingIndicator} />
+        <MessageBubble {message} streaming={message.id === $streamingBubbleId} />
       {/if}
     {/each}
     {#each $permissions as card (card.request.id)}
