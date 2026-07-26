@@ -1,5 +1,7 @@
 // shared/consolidation-state.ts — Consolidation counters and run journal (FR-CONSOL-01/06).
 
+/** @backend-only — imports node:fs, node:path; not browser-safe. */
+
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 

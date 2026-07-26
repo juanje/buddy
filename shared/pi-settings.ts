@@ -1,5 +1,7 @@
 // shared/pi-settings.ts — Read/write project-scoped Pi settings (.pi/settings.json).
 
+/** @backend-only — imports node:fs, node:path; not browser-safe. */
+
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 

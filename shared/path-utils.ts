@@ -1,5 +1,7 @@
 // shared/path-utils.ts — Path containment helpers.
 
+/** @backend-only — imports node:path; not browser-safe. */
+
 import { isAbsolute, join, relative, resolve, sep } from "node:path";
 
 /** Expand `~` and `~/…` using the given home directory. */
