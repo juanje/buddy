@@ -25,7 +25,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["dmg", "app", "deb", "rpm", "appimage"],
+    "targets": ["dmg", "app", "deb", "rpm"],
     "externalBin": ["binaries/agent-worker"],
     "icon": [
       "icons/icon.png",
