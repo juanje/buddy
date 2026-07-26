@@ -1282,6 +1282,7 @@ result — the LLM then follows the procedure.
 - **And** the file is moved via `git mv` (preserving history) if tracked, or `fs.rename` if untracked
 - **And** the auto-commit (FR-GIT-01) includes the move
 - **Denied paths (source):** `agent_brain/`, `logs/`, `AGENTS.md`, `SOUL.md`, `USER.md` — same as FR-DELETE-01.
+- **Note:** This tool does NOT rewrite markdown links. For `agent_brain/` moves with link rewriting, use `relocate_brain_file` (FR-CONSOL-07, consolidation-only).
 
 **Acceptance criteria (both):**
 
