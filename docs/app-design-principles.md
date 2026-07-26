@@ -484,10 +484,12 @@ rootDir/                   ← git repo, user/agent content
   it's in rootDir, the user/agent owns it
 
 **System prompt layering:**
-1. `~/.buddy/prompts/agents-base.md` — tools, limits, automatic behaviors
+1. `~/.buddy/prompts/agents-base.md` — tools, limits, automatic behaviors, docs self-reference
 2. `rootDir/AGENTS.md` (or `CLAUDE.md`) — instance rules, routing, active context
 3. Identity files (SOUL.md, USER.md)
-4. Dynamic context (date, logs/index, last session, deferred items)
+4. Current date/time
+
+Episodic content (logs index, last session, deferred items, first-run interview) is **not** in the system prompt — it is assembled separately as a session context message (FR-PROMPT-02/04).
 
 **Skill tools:** Core procedural skills (process-conversation, triage-inbox)
 are registered as custom tools on the Pi session. When the LLM calls them, the
@@ -531,11 +533,10 @@ Worker (code, no LLM, <100ms):
 
 Background child (LLM, async):
   - Open the forked session (full conversation history: all turns, tool calls, results)
-  - Send a single user prompt: "Reflect on this session — Decisions, Lessons,
-    Context, Open threads, Tasks captured, Ideas, System observations"
+  - Load bundled process-conversation.md + OUTPUT_ONLY_SUFFIX
+  - Produce ONLY the ## Session HH:MM–HH:MM block (omit empty sections; synthesize, don't transcribe)
   - NO system prompt override, NO ResourceLoader, NO AGENTS.md
-  - Commit agent file writes immediately after LLM call
-  - Append ## Session HH:MM–HH:MM to logs/YYYY-MM-DD.md using spawn metadata
+  - Worker persists output to logs/YYYY-MM-DD.md; commit agent file writes if any
   - Rebuild logs/index.md → commit → exit
 ```
 
@@ -678,8 +679,14 @@ semver comparison on boot keeps bundled content current without user interaction
 1. Compare app semver with last_app_version in ~/.buddy/config.json
 2. If absent or different: deploy bundled prompts/ and docs/; update last_app_version
 3. pruneSessionLogs() — NFR-MAINT-01
-4. Continue normal startup (session creation, two-phase prompt assembly, etc.)
+4. createAgentSession + permission hooks
+5. Silent context injection (if message && !skipInjection) — before worker core
+6. Warm handoff (first session only) — before worker core
+7. createWorkerCore — subscribes for user turns
 ```
+
+Steps 5–6 must run **before** step 7 to prevent duplicate event forwarding.
+First sessions skip step 5 when `personalizationPending` (warm handoff owns greeting).
 
 ### Session prompt assembly (two layers)
 
@@ -701,9 +708,14 @@ Session context (episodic — hidden first user message, FR-PROMPT-02/04):
 ```
 
 The system prompt defines *who the agent is and how it behaves*. Session context
-is *what is happening now* — injected invisibly before the user's first turn so
-it does not compete with identity for model attention. Same delivery pattern as
-FR-SETUP-09 warm handoff: `session.prompt()` with UI filtering on user role.
+is *what is happening now* — injected silently before the user's first turn so
+it does not compete with identity for model attention.
+
+**Two injection modes (distinct):**
+- **`injectSessionContext`:** Fully silent — no-op subscriber, nothing reaches UI. Model response discarded; context sits in history.
+- **`injectHiddenPrompt`:** Used for warm handoff — user prompt hidden, assistant events forwarded to UI.
+
+First session with `personalizationPending`: skip context injection; warm handoff only.
 
 Boot refresh runs **before any session starts** — the worker can assume
 `~/.buddy/prompts/` and `~/.buddy/docs/` are current before assembling a system

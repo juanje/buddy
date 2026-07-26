@@ -243,6 +243,7 @@ rootDir (git repo — user/agent content only)
 - **When** setup runs
 - **Then** the full directory structure is created (`agent_brain/`, `user/`, `logs/`)
 - **And** templates are copied and USER.md is populated with the name (and About if provided) — no placeholders remain
+- **And** `agent_brain/skills/` is created with `.gitkeep` only — core procedural skills are **not** copied into the instance; they live in `~/.buddy/prompts/` (FR-SKILL-01)
 - **And** Pi settings are written (`.pi/settings.json`) with the selected provider/model
 - **And** git is initialized with an initial commit
 - **And** no LLM call is made during this phase
@@ -652,7 +653,7 @@ Fork bomb defense:
 | FR-PROMPT-01 | System prompt assembly (identity and rules) | 1 ✓ |
 | FR-PROMPT-02 | Session-start context message | 1 ✓ |
 | FR-PROMPT-03 | Global base prompt (agents-base.md) | 2 ✓ |
-| FR-PROMPT-04 | Hidden context injection at session boot | 2 |
+| FR-PROMPT-04 | Hidden context injection at session boot | 2 ✓ |
 
 **FR-PROMPT-01 — System prompt assembly**
 
@@ -675,7 +676,7 @@ Fork bomb defense:
 - **Given** a session is starting
 - **When** the system prompt is assembled
 - **Then** `~/.buddy/prompts/agents-base.md` is read first and forms the base behavioral layer
-- **And** it defines: available tools, what's automatic (git, directory creation, session logging), agent limits (no bash, no shell), and Buddy identity anchor
+- **And** it defines: available tools, what's automatic (git, directory creation, session logging), agent limits (no bash, no shell), Buddy identity anchor, and **`~/.buddy/docs/` as authoritative self-reference** — for questions about capabilities, memory, or how Buddy works, read docs before answering (do not infer from instance files like `AGENTS.md`)
 - **And** the instance-specific file (`rootDir/AGENTS.md` or `rootDir/CLAUDE.md`) is appended after it as an overlay
 - **And** if `agents-base.md` and the instance file contradict, the base takes precedence for capability constraints (the model follows the most specific/earliest instruction)
 - **And** skill tools (FR-SKILL-01) are registered on the session so the LLM can invoke procedural prompts without reading files
@@ -684,12 +685,12 @@ Fork bomb defense:
 **FR-PROMPT-04 — Hidden context injection**
 
 - **Given** session context message is non-empty
-- **When** the Pi session is created (returning session, not first-run warm handoff only)
-- **Then** the context is sent as a hidden user message via `session.prompt()` before the user's first turn
-- **And** the injection is invisible in the chat UI (same pattern as FR-SETUP-09 warm handoff)
-- **And** assistant events from the model's response are forwarded to the frontend (brief greeting or deferred surfacing)
+- **When** the Pi session is created and before `createWorkerCore` subscribes
+- **Then** the context is sent via `session.prompt()` with a **fully silent** subscriber (no events forwarded to the UI)
+- **And** the model may generate a response that is discarded — context remains in conversation history for the user's first real turn
 - **And** when context is empty, no hidden message is sent
-- **Note:** First-run setup after the wizard uses warm handoff (FR-SETUP-09) for the greeting; personalization context may still be injected when USER.md is a placeholder
+- **And** on **first session** when `personalizationPending` is true, injection is **skipped** — warm handoff (FR-SETUP-09) owns the greeting; no logs or deferred exist yet
+- **Note:** Warm handoff uses `injectHiddenPrompt` (assistant events visible, user prompt hidden). Session context uses `injectSessionContext` (fully silent). These are distinct mechanisms.
 
 ### 3.11 Git Operations (FR-GIT)
 
@@ -992,7 +993,7 @@ The native window close (X) already triggers the full shutdown sequence (fork, s
 | ID | Description | Phase |
 |----|-------------|-------|
 | FR-DOCS-00 | Agent identity (name + self-awareness) in SOUL.md template | 1 ✓ |
-| FR-DOCS-01 | Self-documentation KB available for agent consultation | 3 (partial: agents-base.md self-awareness block shipped) |
+| FR-DOCS-01 | Self-documentation KB available for agent consultation | 2 (partial ✓) |
 | FR-DOCS-02 | "Help me" / "How do you work?" triggers agent self-explanation | 3 |
 
 **FR-DOCS-00 — Agent identity in SOUL.md**
@@ -1002,7 +1003,7 @@ The native window close (X) already triggers the full shutdown sequence (fork, s
 - **Then** the agent knows its name is "Buddy" and can identify itself
 - **And** SOUL.md includes a brief self-description: what it is (personal assistant with persistent memory), how it persists (files, not continuous experience)
 - **And** a user-facing definition: "If the user asks who you are, tell them you are Buddy, their personal assistant — you remember conversations, organize their tasks and ideas, and learn their preferences over time."
-- **Note:** The name "Buddy" comes from the SOUL.md template, not from the system prompt or AGENTS.md. AGENTS.md defines behavior; SOUL.md defines identity. No link to `~/.buddy/docs/` yet — that's added by FR-DOCS-01 when the extended KB exists.
+- **Note:** The name "Buddy" comes from the SOUL.md template, not from the system prompt or AGENTS.md. AGENTS.md defines behavior; SOUL.md defines identity. **`agents-base.md`** mandates reading `~/.buddy/docs/` before answering self-referential questions (Jul 26).
 
 **FR-DOCS-01 — Self-documentation KB**
 
@@ -1113,8 +1114,8 @@ result — the LLM then follows the procedure.
 - **Given** a session ends and the reflect child is spawned
 - **When** the child builds its user prompt for the forked session
 - **Then** it loads `process-conversation.md` from the bundle (same prompt as FR-SKILL-02)
-- **And** appends an output-only suffix instructing the LLM to produce structured text without tool calls
-- **Note:** The reflect child has `noTools: "all"`, so the suffix prevents the LLM from attempting file operations. The worker persists the output to the daily log. Manual tool usage (FR-SKILL-02) returns the prompt without the suffix since the LLM has tools.
+- **And** appends an output-only suffix: **"Produce ONLY the `## Session HH:MM–HH:MM` markdown block — nothing else."** No preamble, wrapper headers, or empty sections
+- **Note:** The reflect child has `noTools: "all"`, so the suffix prevents file operations. The worker persists the Session block to the daily log. Manual tool usage (FR-SKILL-02) returns the prompt without the suffix since the LLM has tools. Quality rules: synthesize don't transcribe; omit sections with no content.
 
 **FR-SKILL-05 — Consolidation invokes triage via tool call**
 
@@ -1125,7 +1126,7 @@ result — the LLM then follows the procedure.
 
 **Design principles:**
 
-- **Single source of truth:** Every skill prompt lives in `bundled/prompts/` only. No copies in the instance.
+- **Single source of truth:** Every skill prompt lives in `bundled/prompts/` (deploy source). Runtime reads from **`~/.buddy/prompts/`** after boot refresh (NFR-MIGRATE-06). No copies in the instance brain.
 - **Always up to date:** App updates bring new prompt versions; no migration needed for instance files.
 - **No read-then-execute overhead:** One tool call vs. two (read file + follow it).
 - **Discoverable by the LLM:** Tools have a description field; the LLM knows when to use them from the tool list, not from reading a section of AGENTS.md.
@@ -1404,7 +1405,7 @@ git operations, tool call rendering, thinking blocks, markdown rendering.
 - Reflect: forked session + background child process (full context LLM reflect)
 - Fresh session every launch (`SessionManager.create`; continuity via file memory)
 - Deferred item surfacing on app start (session-start context message, FR-PROMPT-02)
-- System prompt assembly (AGENTS.md + SOUL.md + USER.md + deferred + date)
+- System prompt assembly (agents-base + AGENTS.md + SOUL.md + USER.md + date — episodic content via FR-PROMPT-02/04)
 - Permission layer: Zone 1 always allow (with identity confirmation), everything else confirms in chat
 - Drag & drop / attach for file ingest (markdown/plain text/images)
 - Auto-commit after agent writes

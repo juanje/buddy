@@ -197,9 +197,26 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 
 ## Current focus
 
-> **FR-NET-01 shipped (2026-07-25)** — `fetch_url` tool: web→markdown, PDF text extraction, image download.
-> **Bug fixes (2026-07-25):** FR-CHAT-05 thinking indicator stale after turn; FR-PERM-06 "Allow always" never persisted.
-> **287 unit + 146 BDD** green. **Implementation next:** FR-WIKI.
+> **Jul 26 session boot + reflect polish shipped** — silent context injection, first-session skip, warm handoff ordering fix, reflect prompt rewrite, reflect eval harness.
+> **287 unit + 149 BDD** green. **Implementation next:** FR-WIKI.
+
+### Jul 26 — Session boot, reflect quality, docs sync — DONE (2026-07-26)
+
+| Item | Description | Commit |
+|------|-------------|--------|
+| Context injection fix | Silent injection before worker core; no visible boot response | 8690d7f |
+| Warm handoff fix | Moved before worker core; prevents duplicate greeting events | 72f6ce0 |
+| First-session skip | Skip context injection when `firstSession && personalizationPending` | 28f88c0 |
+| Reflect prompt rewrite | Lean process-conversation.md; synthesize don't transcribe; omit empty sections | 558761f |
+| OUTPUT_ONLY_SUFFIX | Produce ONLY `## Session HH:MM–HH:MM` block | 558761f |
+| Core skills removed from templates | `agent_brain/skills/.gitkeep` only; core prompts in `~/.buddy/prompts/` | e10560c |
+| AGENTS.md identity | "Buddy, a personal assistant" (not "context processor") | 3bb1409 |
+| agents-base self-reference | Docs authoritative for capability/memory questions | c25ea88 |
+| GTD explainer | Added to `bundled/docs/capabilities.md` | 4962adf |
+| Reflect eval harness | `scripts/test-reflect.ts` + 5 conversation fixtures | a1bff51 |
+| FR-PROMPT-04 | Marked done in SPEC | (doc sync) |
+
+**Tests at Jul 26 close:** 287 unit + 149 BDD green.
 
 ### Bug fixes + self-awareness prompt (2026-07-25)
 

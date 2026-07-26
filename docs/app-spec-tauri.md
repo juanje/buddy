@@ -251,33 +251,36 @@ Passed to Pi via `DefaultResourceLoader({ systemPromptOverride })`.
 8. **Deferred items** — due/overdue from `agent_brain/deferred.md`
 9. **First-run interview** — when USER.md is still a placeholder
 
-Assembled as a separate message and injected invisibly via `session.prompt()`
-before the user's first turn (same pattern as warm handoff). Empty context skips
-injection.
+Assembled as a separate message and injected via `injectSessionContext()` **before**
+`createWorkerCore` — fully silent (no UI output). Empty context skips injection.
+First session with `personalizationPending`: skip injection; warm handoff only.
 
 ```typescript
-// backends/prompt.ts
+// backends/session-boot.ts (simplified)
 const { prompt } = assembleSystemPrompt(rootDir);
-const ctx = assembleSessionContext(rootDir);
+const sessionContext = assembleSessionContext(rootDir);
 
 const resourceLoader = new DefaultResourceLoader({
     cwd: rootDir,
     systemPromptOverride: () => prompt,
 });
-
-// After createAgentSession:
-if (ctx.message) await injectSessionContext(session, frontend, ctx.message);
-```
 await resourceLoader.reload();
 
-const { session } = await createAgentSession({
-    sessionManager: SessionManager.create(AB_DIR),
-    modelRuntime,
-    resourceLoader,
-    excludeTools: ["bash"],
-    tools: ["read", "write", "edit", "grep", "find", "ls"],
-    cwd: AB_DIR,
-});
+const { session } = await createAgentSession({ /* ... */ });
+const sessionLike = asPiSessionLike(session);
+
+// Permission hooks installed here...
+
+const skipInjection = options?.firstSession && sessionContext.personalizationPending;
+if (sessionContext.message && !skipInjection) {
+    await injectSessionContext(sessionLike, frontend, sessionContext.message);
+}
+
+if (options?.firstSession && options.name) {
+    await runWarmHandoff(sessionLike, frontend, { name, about }); // assistant visible
+}
+
+const core = createWorkerCore(sessionLike, frontend, { lifecycle, usageTracker });
 ```
 
 ### Skill Tools (FR-SKILL)
@@ -1318,7 +1321,7 @@ async function setupAB(abDir: string, llmConfig: LLMConfig) {
     await copyTemplate("AGENTS.md", abDir);
     await copyTemplate("agent_brain/identity/SOUL.md", abDir);
     await copyTemplate("agent_brain/identity/USER.md", abDir);  // placeholder
-    await copyTemplate("agent_brain/skills/...", abDir);         // core skills
+    // agent_brain/skills/ gets .gitkeep only — core skills live in ~/.buddy/prompts/
 
     // 3. Write Pi settings (from wizard choices)
     await mkdir(`${abDir}/.pi`, { recursive: true });
@@ -1370,43 +1373,36 @@ Before Phase A runs, the frontend shows a minimal wizard (Svelte screens):
 
 **After wizard:** run Phase A (deterministic setup), then launch the session.
 
-### Phase C — Agent-driven personalization (first conversation)
+### Phase C — First conversation (wizard + warm handoff)
 
-Once the session starts, the **agent itself** handles personalization. The
-base `SOUL.md` template includes instructions for the first interaction:
+Personalization is **deterministic from the wizard** (FR-SETUP-08): name and about
+are written to USER.md before the first session. The agent does not run a structured
+interview on first launch.
 
-```markdown
-<!-- In SOUL.md template -->
-## First session behavior
+When the first session starts, **`runWarmHandoff`** injects a hidden user message
+with the wizard data; the assistant greeting is visible in chat. Identity file
+writes skip permission prompts on first session (FR-SETUP-09).
 
-If USER.md contains only placeholder content, this is a new user.
-Introduce yourself briefly and ask:
-- What name they go by
-- What language they prefer for chat
-- What they mainly do (work, interests)
-- Any preferences for how you should behave
-
-Write their answers to USER.md. Be conversational, not interrogative —
-spread questions naturally across the first few exchanges.
+```typescript
+// backends/warm-handoff.ts
+buildWarmHandoffPrompt({ name, about }) // "[System: user just completed setup...]"
+await injectHiddenPrompt(session, frontend, prompt); // assistant events → UI
 ```
 
-This is elegant: the onboarding IS the product. The user's first experience
-of buddy is already buddy working — listening, capturing, organizing. No separate
-"setup mode" that feels different from normal use.
+No separate "begin personalization" prompt — warm handoff replaces the old
+agent-driven interview flow.
 
 ### Data Flow — First Run
 
 ```
 1. App launches, no AB_DIR found
-2. Frontend: show wizard screens (location, provider, model)
+2. Frontend: show wizard screens (language, welcome, name/about, location, provider, model)
 3. User completes wizard → frontendApi.setup(config)
-4. Worker: run deterministic setup (dirs, templates, git init, Pi config)
-5. Worker: create Pi session with new config
-6. Worker: session.prompt("This is a new user. Begin first-session personalization.", { source: "internal" })
-   // source: "internal" flag lets the frontend filter this from display
-7. Agent: greets user, starts conversational onboarding
-8. Frontend: shows chat — user is already interacting with their buddy
-9. Agent: writes USER.md as it learns about the user
+4. Worker: deterministic setup (dirs, templates, USER.md from form, git init, Pi config)
+5. Worker: createAgentSession; skip context injection (personalizationPending)
+6. Worker: runWarmHandoff(name, about) — greeting visible in chat
+7. Worker: createWorkerCore — user can chat
+8. Agent may enrich USER.md over time; normal permission rules from session 2 onward
 ```
 
 ### Configuration persistence
