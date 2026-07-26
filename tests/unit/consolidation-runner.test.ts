@@ -83,19 +83,6 @@ describe("consolidation runner", () => {
     expect(prompt).not.toContain("Brain health (pre-computed):");
   });
 
-  it("falls back to legacy rootDir skill file", () => {
-    ({ configDir: globalConfigDir } = setupGlobalConfigDir(undefined, vi));
-    dir = mkdtempSync(join(tmpdir(), "ab-consol-run-"));
-    mkdirSync(join(dir, ".buddy", "prompts"), { recursive: true });
-    writeFileSync(
-      join(dir, ".buddy", "prompts", "consolidation.md"),
-      "# Legacy\n\nLegacy consolidation.\n",
-    );
-
-    const prompt = buildConsolidationPrompt(dir, 1);
-    expect(prompt).toContain("Legacy consolidation.");
-  });
-
   it("runs cascade depths, commits, and advances counters", async () => {
     setupAb();
     await initTestGitRepo(dir);

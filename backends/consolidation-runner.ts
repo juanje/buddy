@@ -56,17 +56,12 @@ export interface CreateMaintenanceSessionFn {
   }): Promise<MaintenanceSessionLike>;
 }
 
-function readConsolidationSkill(rootDir: string): string {
+function readConsolidationSkill(): string {
   const globalPath = join(globalConfigDir(), "prompts", "consolidation.md");
-  const legacyPath = join(rootDir, ".buddy", "prompts", "consolidation.md");
   try {
     return readFileSync(globalPath, "utf8");
   } catch {
-    try {
-      return readFileSync(legacyPath, "utf8");
-    } catch {
-      return "# Consolidation\n\nRun the consolidation procedure for the requested depth.";
-    }
+    return "# Consolidation\n\nRun the consolidation procedure for the requested depth.";
   }
 }
 
@@ -75,7 +70,7 @@ export function buildConsolidationPrompt(
   depth: number,
   now: Date = new Date(),
 ): string {
-  const skill = readConsolidationSkill(rootDir);
+  const skill = readConsolidationSkill();
   const date = toIsoDay(now);
   const hebbianBlock = formatHebbianReportBlock(computeHebbianReport(rootDir, now));
   const remindersBlock = formatUpcomingRemindersBlock(findUpcomingReminders(rootDir, date));
