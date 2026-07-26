@@ -395,7 +395,7 @@ Fork bomb defense:
 | FR-PERM-02 | Identity file write confirmation | 1 ✓ |
 | FR-PERM-03 | Zone 3: confirm all outside access | 1 ✓ |
 | FR-PERM-04 | Hardcoded denylist | 1 ✓ |
-| FR-PERM-05 | Implicit permission from user messages | reconsider |
+| FR-PERM-05 | Implicit permission from user messages | rejected |
 | FR-PERM-06 | Zone 2: user-designated paths | 1 ✓ |
 | FR-PERM-07 | Permission prompt in chat | 1 ✓ |
 
@@ -428,12 +428,9 @@ Fork bomb defense:
 - **When** the permission layer evaluates the path
 - **Then** access is denied silently — no user prompt, no override possible
 
-**FR-PERM-05 — Implicit permission from messages** *(reconsider)*
+**FR-PERM-05 — Implicit permission from messages** *(rejected)*
 
-- **Given** the user mentions a file path in their chat message
-- **When** the agent subsequently reads that path
-- **Then** read access is granted silently for the current session
-- **Note (2026-07-21):** Deprioritized. Drag & drop (FR-INGEST-03) already covers the primary ingest flow. Parsing paths from free text is ambiguous and error-prone. The Zone 3 confirmation prompt provides valuable trust signal for non-technical users — removing it saves one click but loses transparency. Revisit only if real-world usage shows the permission prompt causes friction.
+- **Rejected (2026-07-26):** Not a realistic use case for non-technical users. The permission prompt serves as a double-check if the user writes a wrong path — removing it loses valuable safety signal. Drag & drop (FR-INGEST-03) and Zone 2 "Allow always" (FR-PERM-06) cover the legitimate use cases without ambient parsing.
 
 **FR-PERM-06 — Zone 2: user-designated paths**
 
@@ -554,7 +551,7 @@ Fork bomb defense:
 | FR-CONSOL-04 | Lock management | 2 ✓ |
 | FR-CONSOL-05 | Idle-aware scheduling | 2 ✓ |
 | FR-CONSOL-06 | Run journal | 2 ✓ |
-| FR-CONSOL-07 | Consolidation relocate tool for brain file grouping | 2 |
+| FR-CONSOL-07 | Consolidation relocate tool for brain file grouping | 2 ✓ |
 
 **Consolidation depths:**
 
@@ -1004,8 +1001,8 @@ The native window close (X) already triggers the full shutdown sequence (fork, s
 | ID | Description | Phase |
 |----|-------------|-------|
 | FR-DOCS-00 | Agent identity (name + self-awareness) in SOUL.md template | 1 ✓ |
-| FR-DOCS-01 | Self-documentation KB available for agent consultation | 2 (partial ✓) |
-| FR-DOCS-02 | "Help me" / "How do you work?" triggers agent self-explanation | 3 |
+| FR-DOCS-01 | Self-documentation KB available for agent consultation | 2 ✓ |
+| FR-DOCS-02 | "Help me" / "How do you work?" triggers agent self-explanation | 2 ✓ |
 
 **FR-DOCS-00 — Agent identity in SOUL.md**
 
@@ -1032,12 +1029,13 @@ Design decisions:
 - `index.md` follows the same progressive discovery pattern as `agent_brain/` directories.
 - No dedicated tool — the agent reads files naturally via its existing `read` tool; the prompt tells it where to look.
 
-**FR-DOCS-02 — Self-explanation trigger**
+**FR-DOCS-02 — Self-explanation trigger** ✓
 
 - **Given** the user asks "what can you do?", "how do you work?", "help", or similar
 - **When** the agent processes the request
 - **Then** it reads `~/.buddy/docs/index.md`, identifies the relevant page(s), and synthesizes a natural, context-appropriate answer
 - **And** it does not dump the entire KB — it answers what was asked
+- **Implementation:** `agents-base.md` contains an explicit instruction to consult `~/.buddy/docs/` before answering self-referential questions. No dedicated code trigger needed — the prompt instruction is sufficient and the docs are always available via Zone 1 silent read.
 
 ### 3.18 User Personal Knowledge Base (FR-WIKI)
 
@@ -1253,6 +1251,47 @@ result — the LLM then follows the procedure.
 - Path validation reuses Zone 1 logic from the permission layer — extends with a subdirectory allowlist (`USER_DELETABLE_DIRS` in `defaults.ts`)
 - Confirmation reuses the existing FR-PERM-07 prompt mechanism (no new UI component)
 - The tool solves the "Finder delete breaks invisible git" problem: manual filesystem deletion leaves unstaged changes; this tool keeps the repo consistent
+
+### 3.22 File Operations (FR-FILE)
+
+| ID | Description | Phase |
+|----|-------------|-------|
+| FR-FILE-01 | Copy file from external path into user workspace | 2 |
+| FR-FILE-02 | Move/rename file within rootDir | 2 |
+
+**FR-FILE-01 — Copy file into workspace**
+
+- **Given** the user asks the agent to bring in an external file (or the agent needs to ingest a file the user mentioned)
+- **When** the LLM invokes the `copy_file` tool with a source path (external) and destination (inside `rootDir`)
+- **Then** the worker validates:
+  - Source must exist and be readable (Zone 2/3 permission applies — user is prompted if not already allowed)
+  - Destination must be inside `rootDir` (typically `user/` or `downloads/`)
+  - Destination directory is created if absent
+- **And** the file is copied byte-for-byte (no tokenization, no reading into context)
+- **And** the auto-commit (FR-GIT-01) includes the new file
+- **Rationale:** Avoids wasteful read→write cycle through the LLM for files that just need to be stored (PDFs, images, reference docs). Saves tokens and time.
+
+**FR-FILE-02 — Move/rename within rootDir**
+
+- **Given** the user asks the agent to reorganize files (move to a different directory, rename)
+- **When** the LLM invokes the `move_file` tool with source and destination paths
+- **Then** the worker validates:
+  - Both source and destination are inside `rootDir`
+  - Source is NOT in `agent_brain/`, `logs/`, or an identity file (those use `relocate_brain_file` in consolidation only)
+  - Destination directory is created if absent
+- **And** the file is moved via `git mv` (preserving history) if tracked, or `fs.rename` if untracked
+- **And** the auto-commit (FR-GIT-01) includes the move
+- **Denied paths (source):** `agent_brain/`, `logs/`, `AGENTS.md`, `SOUL.md`, `USER.md` — same as FR-DELETE-01.
+
+**Acceptance criteria (both):**
+
+- [ ] Tools `copy_file` and `move_file` registered as Pi custom tools
+- [ ] `copy_file`: source permission validated via existing Zone 2/3 gate; destination must be inside `rootDir`
+- [ ] `move_file`: both paths must be inside `rootDir`; denied sources rejected with error
+- [ ] No tokenization or LLM context cost — operations are filesystem-level
+- [ ] Tracked files moved via `git mv`; new files from copy staged for auto-commit
+- [ ] Non-existent source returns error (no crash)
+- [ ] BDD feature file covers: valid copy, valid move, denied paths, missing source, external destination rejected
 
 ---
 
