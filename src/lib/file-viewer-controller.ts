@@ -2,6 +2,7 @@
 
 import { get, writable, type Readable } from "svelte/store";
 
+import { basename } from "../utils/path";
 import { isViewableFile } from "./local-path";
 
 export interface FileViewerDeps {
@@ -20,12 +21,6 @@ export interface FileViewerController {
   openFile(absPath: string): Promise<void>;
   close(): void;
   openExternally(): Promise<void>;
-}
-
-function basename(path: string): string {
-  const normalized = path.replace(/\\/g, "/");
-  const slash = normalized.lastIndexOf("/");
-  return slash >= 0 ? normalized.slice(slash + 1) : normalized;
 }
 
 export function createFileViewerController(deps: FileViewerDeps): FileViewerController {

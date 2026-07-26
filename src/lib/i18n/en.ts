@@ -103,7 +103,6 @@ export const en: LocaleStrings = {
   settingsVersion: "Version",
   settingsClose: "Close",
   settingsReadOnlyHint: "The memory folder is configured during initial setup.",
-  settingsModelLoading: "Loading models…",
   settingsAddProvider: "Add provider",
   settingsProviderAdded: "Provider added — its models are now available",
   settingsGearTooltip: "Settings",

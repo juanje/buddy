@@ -94,7 +94,6 @@ export type LocaleStrings = {
   settingsVersion: string;
   settingsClose: string;
   settingsReadOnlyHint: string;
-  settingsModelLoading: string;
   settingsAddProvider: string;
   settingsProviderAdded: string;
   settingsGearTooltip: string;
@@ -224,7 +223,6 @@ export const es: LocaleStrings = {
   settingsVersion: "Versión",
   settingsClose: "Cerrar",
   settingsReadOnlyHint: "La carpeta de memoria se configura durante la instalación inicial.",
-  settingsModelLoading: "Cargando modelos…",
   settingsAddProvider: "Añadir proveedor",
   settingsProviderAdded: "Proveedor añadido — sus modelos ya están disponibles",
   settingsGearTooltip: "Ajustes",

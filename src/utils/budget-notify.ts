@@ -1,6 +1,5 @@
 // src/utils/budget-notify.ts — OS notifications for budget thresholds (FR-COST-03).
 
-import { getCurrentWindow } from "@tauri-apps/api/window";
 import {
   isPermissionGranted,
   sendNotification,
@@ -8,6 +7,7 @@ import {
 
 import type { BudgetStatus } from "../../shared/api";
 import { ensureDeferredNotificationClickHandler } from "./deferred-notify";
+import { focusAppWindow } from "./window-focus";
 
 let lastNotifiedLevel: BudgetStatus["level"] | null = null;
 let notifyInFlight = false;
@@ -15,17 +15,6 @@ let notifyInFlight = false;
 export function resetBudgetNotifyStateForTests(): void {
   lastNotifiedLevel = null;
   notifyInFlight = false;
-}
-
-async function focusAppWindow(): Promise<void> {
-  try {
-    const win = getCurrentWindow();
-    await win.unminimize();
-    await win.show();
-    await win.setFocus();
-  } catch {
-    // Browser dev without Tauri window API.
-  }
 }
 
 export async function notifyBudgetAlert(

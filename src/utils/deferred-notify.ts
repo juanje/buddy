@@ -1,12 +1,13 @@
 // src/utils/deferred-notify.ts — OS notifications for due deferred items (FR-DEFERRED-03).
 
-import { getCurrentWindow } from "@tauri-apps/api/window";
 import {
   isPermissionGranted,
   onAction,
   requestPermission,
   sendNotification,
 } from "@tauri-apps/plugin-notification";
+
+import { focusAppWindow } from "./window-focus";
 
 /** Don't re-fire within 25 min (heartbeat default is 30). */
 export const DEFERRED_NOTIFY_DEDUP_MS = 25 * 60 * 1000;
@@ -19,17 +20,6 @@ export function resetDeferredNotifyStateForTests(): void {
   lastNotifiedAt = 0;
   clickHandlerRegistered = false;
   notifyInFlight = false;
-}
-
-async function focusAppWindow(): Promise<void> {
-  try {
-    const win = getCurrentWindow();
-    await win.unminimize();
-    await win.show();
-    await win.setFocus();
-  } catch {
-    // Browser dev without Tauri window API.
-  }
 }
 
 /** Register once: clicking a notification focuses the Buddy window. */

@@ -131,7 +131,7 @@
           <dt>{$t.settingsProvider}</dt>
           <dd>
             {#if $loadingModels}
-              <span class="muted">{$t.settingsModelLoading}</span>
+              <span class="muted">{$t.modelLoading}</span>
             {:else if authenticatedProviders.length > 0}
               <select onchange={onProviderChange}>
                 {#each authenticatedProviders as p (p)}
@@ -202,7 +202,7 @@
           <dt>{$t.settingsModel}</dt>
           <dd>
             {#if $loadingModels}
-              <span class="muted">{$t.settingsModelLoading}</span>
+              <span class="muted">{$t.modelLoading}</span>
             {:else if modelsForCurrentProvider.length > 0}
               <select onchange={onModelChange}>
                 {#each modelsForCurrentProvider as m (m.id)}

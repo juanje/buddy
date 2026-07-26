@@ -27,14 +27,23 @@ export function isPdfFormat(filePath: string): boolean {
   return PDF_EXTENSIONS.has(extname(filePath).toLowerCase());
 }
 
+/** True when `ext` is a supported image extension (include leading dot). */
+export function isImageExtension(ext: string): boolean {
+  return IMAGE_EXTENSIONS.has(ext.toLowerCase());
+}
+
 /** Map file extension to MIME type for images. */
-export function imageMimeType(filePath: string): string {
-  const ext = extname(filePath).toLowerCase();
-  switch (ext) {
+export function imageMimeTypeFromExt(ext: string): string {
+  switch (ext.toLowerCase()) {
     case ".png": return "image/png";
     case ".jpg": case ".jpeg": return "image/jpeg";
     case ".gif": return "image/gif";
     case ".webp": return "image/webp";
     default: return "application/octet-stream";
   }
+}
+
+/** Map file path extension to MIME type for images. */
+export function imageMimeType(filePath: string): string {
+  return imageMimeTypeFromExt(extname(filePath));
 }

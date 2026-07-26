@@ -16,7 +16,7 @@ import { homedir } from "node:os";
 import type { AllowedEntry } from "./allowed-paths";
 import { isPathPersistentlyAllowed } from "./allowed-paths";
 import { DENYLIST_BASENAMES, DENYLIST_HOME_DIRS, READ_TOOLS, WRITE_TOOLS } from "../shared/defaults";
-import { isWithin } from "../shared/path-utils";
+import { isWithin, expandHome } from "../shared/path-utils";
 import { globalConfigDir } from "./global-config";
 
 export type PermissionOp = "read" | "write";
@@ -95,10 +95,6 @@ export function evaluateToolCall(
     return { action: "allow" };
   }
   return { action: "ask", kind: "outside", op, path: absPath };
-}
-
-function expandHome(path: string, home: string): string {
-  return path === "~" ? home : path.startsWith("~/") ? join(home, path.slice(2)) : path;
 }
 
 // ---------------------------------------------------------------------------

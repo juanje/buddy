@@ -2,7 +2,7 @@
 
 import { describe, expect, it } from "vitest";
 
-import { isSupportedIngestFormat, isImageFormat, isPdfFormat, imageMimeType } from "../../shared/ingest-formats";
+import { isSupportedIngestFormat, isImageFormat, isPdfFormat, imageMimeType, isImageExtension, imageMimeTypeFromExt } from "../../shared/ingest-formats";
 
 describe("isSupportedIngestFormat", () => {
   it("accepts markdown and plain text", () => {
@@ -52,5 +52,21 @@ describe("imageMimeType", () => {
     expect(imageMimeType("photo.jpeg")).toBe("image/jpeg");
     expect(imageMimeType("anim.gif")).toBe("image/gif");
     expect(imageMimeType("modern.webp")).toBe("image/webp");
+  });
+});
+
+describe("isImageExtension", () => {
+  it("identifies image extensions with leading dot", () => {
+    expect(isImageExtension(".png")).toBe(true);
+    expect(isImageExtension(".PNG")).toBe(true);
+    expect(isImageExtension(".md")).toBe(false);
+  });
+});
+
+describe("imageMimeTypeFromExt", () => {
+  it("returns correct MIME types from extension", () => {
+    expect(imageMimeTypeFromExt(".png")).toBe("image/png");
+    expect(imageMimeTypeFromExt(".jpg")).toBe("image/jpeg");
+    expect(imageMimeTypeFromExt(".unknown")).toBe("application/octet-stream");
   });
 });

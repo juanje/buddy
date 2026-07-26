@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { SetupController } from "../setup-controller";
+  import { providerLabel } from "../settings-controller";
   import ProviderAuthForm from "../ProviderAuthForm.svelte";
   import { t } from "../i18n";
   import "./wizard-shared.css";
@@ -32,19 +33,6 @@
       { id: "custom" },
     ];
 
-  function providerLabel(id: (typeof PROVIDERS)[number]["id"]): string {
-    switch (id) {
-      case "anthropic":
-        return $t.providerAnthropic;
-      case "openai":
-        return $t.providerOpenai;
-      case "google":
-        return $t.providerGoogle;
-      default:
-        return $t.providerCustom;
-    }
-  }
-
   async function signInOAuth() {
     await controller.loginOAuth();
     if (controller.read(controller.authReady)) {
@@ -68,7 +56,7 @@
       class:selected={$provider === p.id}
       onclick={() => controller.selectProvider(p.id)}
     >
-      {providerLabel(p.id)}
+      {providerLabel(p.id, $t)}
       {#if p.recommended}
         <span class="badge">{$t.modelRecommended}</span>
       {/if}

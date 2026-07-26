@@ -10,6 +10,7 @@ import { defineTool, type ToolDefinition } from "@earendil-works/pi-coding-agent
 
 import { toIsoDay } from "../shared/dates";
 import { DOWNLOADS_DIR, FETCH_MAX_BYTES, FETCH_TIMEOUT_MS } from "../shared/defaults";
+import { imageMimeTypeFromExt, isImageExtension } from "../shared/ingest-formats";
 import { extractPdfText } from "./pdf-extract";
 
 export type FetchContentKind = "html" | "pdf" | "image";
@@ -33,8 +34,6 @@ export interface FetchToolDetails {
   imageMimeType?: string;
 }
 
-const IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".gif", ".webp"]);
-
 export function resolveFetchContentKind(
   contentType: string | null,
   url: string,
@@ -46,7 +45,7 @@ export function resolveFetchContentKind(
 
   const ext = extname(new URL(url).pathname).toLowerCase();
   if (ext === ".pdf") return "pdf";
-  if (IMAGE_EXTENSIONS.has(ext)) return "image";
+  if (isImageExtension(ext)) return "image";
   return "html";
 }
 
@@ -118,23 +117,13 @@ function extensionForKind(kind: FetchContentKind, contentType: string | null, ur
   if (normalized === "image/gif") return ".gif";
   if (normalized === "image/webp") return ".webp";
   const ext = extname(new URL(url).pathname).toLowerCase();
-  return IMAGE_EXTENSIONS.has(ext) ? ext : ".png";
+  return isImageExtension(ext) ? ext : ".png";
 }
 
-function imageMimeType(ext: string, contentType: string | null): string {
+function resolveImageMimeType(ext: string, contentType: string | null): string {
   const normalized = contentType?.split(";")[0]?.trim().toLowerCase();
   if (normalized?.startsWith("image/")) return normalized;
-  switch (ext) {
-    case ".jpg":
-    case ".jpeg":
-      return "image/jpeg";
-    case ".gif":
-      return "image/gif";
-    case ".webp":
-      return "image/webp";
-    default:
-      return "image/png";
-  }
+  return imageMimeTypeFromExt(ext);
 }
 
 async function readResponseBody(response: Response, maxBytes: number): Promise<Buffer> {
@@ -229,7 +218,7 @@ export async function fetchUrlContent(
   const savedPath = join(downloadsDir, filename);
   writeFileSync(savedPath, buffer);
   const relPath = join(DOWNLOADS_DIR, filename);
-  const mimeType = imageMimeType(ext, contentType);
+  const mimeType = resolveImageMimeType(ext, contentType);
   return {
     text: `Downloaded image saved to ${relPath}.`,
     details: {

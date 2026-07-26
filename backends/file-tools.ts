@@ -18,7 +18,7 @@ import {
   PROTECTED_DIRS,
   USER_MUTABLE_DIRS,
 } from "../shared/defaults";
-import { isWithin } from "../shared/path-utils";
+import { isWithin, expandHome } from "../shared/path-utils";
 import { gitClient } from "./git";
 import { evaluateToolCall } from "./permissions";
 
@@ -33,10 +33,6 @@ export interface FileToolOptions {
   home?: string;
   confirmDelete?: (absPath: string) => Promise<boolean>;
   askReadPermission?: (absPath: string) => Promise<boolean>;
-}
-
-function expandHome(path: string, home: string): string {
-  return path === "~" ? home : path.startsWith("~/") ? join(home, path.slice(2)) : path;
 }
 
 function normalizeRelPath(rootDir: string, absPath: string): string {

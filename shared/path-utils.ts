@@ -1,6 +1,11 @@
 // shared/path-utils.ts — Path containment helpers.
 
-import { isAbsolute, relative, resolve, sep } from "node:path";
+import { isAbsolute, join, relative, resolve, sep } from "node:path";
+
+/** Expand `~` and `~/…` using the given home directory. */
+export function expandHome(path: string, home: string): string {
+  return path === "~" ? home : path.startsWith("~/") ? join(home, path.slice(2)) : path;
+}
 
 /** True when `child` is `parent` or a descendant path. */
 export function isWithin(child: string, parent: string): boolean {
