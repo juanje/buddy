@@ -11,7 +11,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { randomUUID } from "node:crypto";
 import { basename, join, resolve } from "node:path";
 
-import { AGENT_TOOLS, EXCLUDED_TOOLS } from "../shared/defaults";
+import { AGENT_TOOLS, EXCLUDED_TOOLS, SESSION_ID_DISPLAY_LENGTH } from "../shared/defaults";
 import type { AgentEvent, FrontendAPI, PromptOptions } from "../shared/api";
 import { imageMimeType, isImageFormat, isPdfFormat } from "../shared/ingest-formats";
 import { logEvent } from "./app-logger";
@@ -122,7 +122,7 @@ export async function bootSession(
     return undefined;
   }
 
-  const sessionId = randomUUID().slice(0, 8);
+  const sessionId = randomUUID().slice(0, SESSION_ID_DISPLAY_LENGTH);
   logEvent(rootDir, { event: "session_start", session: sessionId });
   const hebbianTracker = createHebbianTracker(rootDir);
   const lifecycle = new SessionLifecycle({

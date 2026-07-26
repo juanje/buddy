@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { pruneSessionLogs } from "../../backends/session-log-prune";
 import { APP_LOGS_DIR } from "../../shared/defaults";
+import { MS_PER_DAY } from "../../shared/dates";
 
 describe("session log prune", () => {
   let rootDir: string;
@@ -20,7 +21,7 @@ describe("session log prune", () => {
   function touch(name: string, daysAgo: number): void {
     const filePath = join(logsDir, name);
     writeFileSync(filePath, "{}", "utf8");
-    const mtime = new Date(nowMs - daysAgo * 86_400_000);
+    const mtime = new Date(nowMs - daysAgo * MS_PER_DAY);
     utimesSync(filePath, mtime, mtime);
   }
 

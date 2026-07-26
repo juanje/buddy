@@ -21,7 +21,7 @@ import { execSync } from "node:child_process";
 import { existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import type { AgentEvent } from "../shared/api";
-import { LOCK_MAX_RETRIES, LOCK_RETRY_MS, REFLECT_ARGV_FLAG, REFLECT_SESSIONS_DIR } from "../shared/defaults";
+import { LOCK_MAX_RETRIES, LOCK_RETRY_MS, REFLECT_ARGV_FLAG, REFLECT_SESSIONS_DIR, GIT_COMMIT_PREFIX } from "../shared/defaults";
 import { fastModelForProvider } from "../shared/model-catalog";
 import { readPiProvider } from "../shared/pi-settings";
 import { logEvent } from "./app-logger";
@@ -129,7 +129,7 @@ async function runReflect(
     }
 
     // Commit agent writes immediately — before lock, before finalization.
-    await commitAll(rootDir, `ab: reflect ${mode} (agent writes)`);
+    await commitAll(rootDir, `${GIT_COMMIT_PREFIX} reflect ${mode} (agent writes)`);
 
     const raw = collectAssistantText(events);
     const result = raw ? sanitizeReflectOutput(raw) : "";
@@ -183,7 +183,7 @@ async function runReflect(
           });
           clearSessionPersistence(rootDir);
         }
-        await commitAll(rootDir, "ab: session reflect");
+        await commitAll(rootDir, `${GIT_COMMIT_PREFIX} session reflect`);
       } finally {
         releaseLock(rootDir);
       }
@@ -234,7 +234,7 @@ async function main(): Promise<void> {
 
   process.on("SIGTERM", () => {
     try {
-      execSync("git add -A && git commit -m 'ab: reflect interrupted (SIGTERM)' --allow-empty-message", {
+      execSync(`git add -A && git commit -m '${GIT_COMMIT_PREFIX} reflect interrupted (SIGTERM)' --allow-empty-message`, {
         cwd: rootDir,
         stdio: "ignore",
         timeout: 5000,

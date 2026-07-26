@@ -30,6 +30,20 @@ export const USAGE_FILE_NAME = "usage.json";
 export const SHUTDOWN_TIMEOUT_MS = 2000;
 export const GIT_USER_NAME = "buddy";
 export const GIT_USER_EMAIL = "buddy@localhost";
+/** Prefix for auto-generated git commit messages (FR-GIT-01). */
+export const GIT_COMMIT_PREFIX = "buddy:";
+
+/** Global config directory name under homedir (~/.buddy/). */
+export const GLOBAL_CONFIG_DIR_NAME = ".buddy";
+export const CONFIG_FILE_NAME = "config.json";
+export const AUTH_FILE_NAME = "auth.json";
+export const ALLOWED_PATHS_FILE_NAME = "allowed-paths.json";
+
+/** Legacy env var names (backward compat during AB→buddy rename). */
+export const LEGACY_CONFIG_PATH_ENV = "AB_CONFIG_PATH";
+export const LEGACY_AUTH_PATH_ENV = "AB_AUTH_PATH";
+export const LEGACY_REFLECT_CHILD_ENV = "AB_REFLECT_CHILD";
+export const LEGACY_DEBUG_ENV = "AB_DEBUG";
 
 /** Heartbeat interval for deferred checks and consolidation evaluation (FR-DEFERRED-02, FR-CONSOL-01). */
 export const HEARTBEAT_INTERVAL_MS = 30 * 60 * 1000;
@@ -40,12 +54,23 @@ export const REFLECT_ARGV_FLAG = "--reflect";
 /** Maximum active log files before rotation archives older ones (FR-CONSOL-04). */
 export const LOG_ROTATION_THRESHOLD = 28;
 /** Env var set on spawned reflect children to prevent nested recursion. */
-export const REFLECT_CHILD_ENV_KEY = "AB_REFLECT_CHILD";
+export const REFLECT_CHILD_ENV_KEY = "BUDDY_REFLECT_CHILD";
 export const REFLECT_CHILD_ENV_VALUE = "1";
 /** Usage-based consolidation counters (FR-CONSOL-01). */
 export const CONSOLIDATION_STATE_PATH = ".buddy/consolidation-state.json";
 /** Consolidation run journal (FR-CONSOL-06). */
 export const CONSOLIDATION_LOG_PATH = ".buddy/consolidation-log.json";
+
+/** Max slug length for fetch_url download filenames (FR-NET-01). */
+export const DOWNLOAD_SLUG_MAX_LEN = 80;
+export const DOWNLOAD_DEFAULT_SLUG = "download";
+/** Truncated session ID shown in logs and UI. */
+export const SESSION_ID_DISPLAY_LENGTH = 8;
+
+/** Hebbian report thresholds (consolidation-mechanics). */
+export const HEBBIAN_RECENT_DAYS = 7;
+export const HEBBIAN_DEMOTION_MIN_SESSIONS = 3;
+export const RIPE_OBSERVATION_MIN_SEEN = 2;
 
 /** Required YAML frontmatter keys on agent_brain/ files (NFR-FORMAT-01). */
 export const REQUIRED_BRAIN_FRONTMATTER = ["summary", "created"] as const;

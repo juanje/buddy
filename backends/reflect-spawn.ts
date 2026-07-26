@@ -8,6 +8,7 @@ import {
   REFLECT_ARGV_FLAG,
   REFLECT_CHILD_ENV_KEY,
   REFLECT_CHILD_ENV_VALUE,
+  LEGACY_REFLECT_CHILD_ENV,
 } from "../shared/defaults";
 
 export interface SpawnReflectOptions {
@@ -62,7 +63,7 @@ function buildReflectArgs(options: SpawnReflectOptions): string[] {
  * Prod: spawn(process.execPath, ["--reflect", ...]) — same binary, argv dispatch (E13b).
  */
 export function spawnReflectChild(options: SpawnReflectOptions): number | undefined {
-  if (process.env[REFLECT_CHILD_ENV_KEY]) {
+  if (process.env[REFLECT_CHILD_ENV_KEY] || process.env[LEGACY_REFLECT_CHILD_ENV]) {
     console.error(
       `[reflect-spawn] refusing nested reflect spawn (${REFLECT_CHILD_ENV_KEY} already set)`,
     );

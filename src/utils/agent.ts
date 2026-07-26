@@ -33,7 +33,7 @@ export async function connectWorker(
       await spawn(WORKER_NAME, {
         runtime: "node",
         script: "backends/agent-worker.ts",
-        cwd: __AB_PROJECT_ROOT__,
+        cwd: __BUDDY_PROJECT_ROOT__,
         env: { NODE_OPTIONS: "--import tsx" },
       });
     }

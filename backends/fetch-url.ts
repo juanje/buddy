@@ -9,7 +9,13 @@ import { Type } from "typebox";
 import { defineTool, type ToolDefinition } from "@earendil-works/pi-coding-agent";
 
 import { toIsoDay } from "../shared/dates";
-import { DOWNLOADS_DIR, FETCH_MAX_BYTES, FETCH_TIMEOUT_MS } from "../shared/defaults";
+import {
+  DOWNLOADS_DIR,
+  DOWNLOAD_DEFAULT_SLUG,
+  DOWNLOAD_SLUG_MAX_LEN,
+  FETCH_MAX_BYTES,
+  FETCH_TIMEOUT_MS,
+} from "../shared/defaults";
 import { imageMimeTypeFromExt, isImageExtension } from "../shared/ingest-formats";
 import { extractPdfText } from "./pdf-extract";
 
@@ -55,7 +61,7 @@ export function slugifyDownloadName(titleOrPath: string, url?: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
-  if (fromTitle) return fromTitle.slice(0, 80);
+  if (fromTitle) return fromTitle.slice(0, DOWNLOAD_SLUG_MAX_LEN);
 
   if (url) {
     try {
@@ -64,12 +70,12 @@ export function slugifyDownloadName(titleOrPath: string, url?: string): string {
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-+|-+$/g, "");
-      if (base) return base.slice(0, 80);
+      if (base) return base.slice(0, DOWNLOAD_SLUG_MAX_LEN);
     } catch {
       // fall through
     }
   }
-  return "download";
+  return DOWNLOAD_DEFAULT_SLUG;
 }
 
 export function buildDownloadFilename(isoDay: string, slug: string, ext: string): string {

@@ -14,7 +14,12 @@ import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 
 import type { KeyCheck, SetupConfig } from "../shared/api";
-import { AUTH_FILE_MODE } from "../shared/defaults";
+import {
+  AUTH_FILE_MODE,
+  AUTH_FILE_NAME,
+  GLOBAL_CONFIG_DIR_NAME,
+  LEGACY_AUTH_PATH_ENV,
+} from "../shared/defaults";
 import { toPiProviderId } from "./provider-mapping";
 
 export type ProviderId = SetupConfig["provider"];
@@ -63,7 +68,11 @@ const httpKeyProbe: KeyProbe = async (provider, apiKey, baseUrl) => {
 
 /** Buddy's own auth store — separate from Pi CLI's ~/.pi/agent/auth.json (NFR-AUTH-ISO). */
 export function defaultAuthPath(): string {
-  return process.env.BUDDY_AUTH_PATH ?? process.env.AB_AUTH_PATH ?? join(homedir(), ".buddy", "auth.json");
+  return (
+    process.env.BUDDY_AUTH_PATH ??
+    process.env[LEGACY_AUTH_PATH_ENV] ??
+    join(homedir(), GLOBAL_CONFIG_DIR_NAME, AUTH_FILE_NAME)
+  );
 }
 
 /**

@@ -2,12 +2,14 @@
 
 import { simpleGit, type SimpleGit } from "simple-git";
 
+import { GIT_COMMIT_PREFIX } from "../shared/defaults";
+
 /** Build a descriptive commit message from changed file paths. */
 export function buildCommitMessage(filePaths: string[]): string {
-  if (filePaths.length === 0) return "ab: update files";
-  if (filePaths.length === 1) return `ab: update ${filePaths[0]}`;
-  if (filePaths.length <= 3) return `ab: update ${filePaths.join(", ")}`;
-  return `ab: update ${filePaths.slice(0, 3).join(", ")} (+${filePaths.length - 3} more)`;
+  if (filePaths.length === 0) return `${GIT_COMMIT_PREFIX} update files`;
+  if (filePaths.length === 1) return `${GIT_COMMIT_PREFIX} update ${filePaths[0]}`;
+  if (filePaths.length <= 3) return `${GIT_COMMIT_PREFIX} update ${filePaths.join(", ")}`;
+  return `${GIT_COMMIT_PREFIX} update ${filePaths.slice(0, 3).join(", ")} (+${filePaths.length - 3} more)`;
 }
 
 export function gitClient(rootDir: string): SimpleGit {

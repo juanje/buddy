@@ -32,6 +32,7 @@ import {
 import { getDueDeferred, removeDueDeferredItems, toDeferredItemViews } from "./deferred";
 import { toIsoDay } from "../shared/dates";
 import { commitAll } from "./git";
+import { GIT_COMMIT_PREFIX } from "../shared/defaults";
 import { bootSession, augmentPromptWithAttachments } from "./session-boot";
 import { recoverStaleSession } from "./crash-recovery";
 import { spawnReflectChild } from "./reflect-spawn";
@@ -184,7 +185,7 @@ async function main(): Promise<void> {
       async dismissDeferredItems() {
         if (setupState.firstRun) return;
         removeDueDeferredItems(setupState.config.rootDir);
-        await commitAll(setupState.config.rootDir, "ab: dismiss deferred reminders");
+        await commitAll(setupState.config.rootDir, `${GIT_COMMIT_PREFIX} dismiss deferred reminders`);
       },
       async getSetupState() {
         return setupState;

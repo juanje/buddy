@@ -1,5 +1,6 @@
 import { defineConfig } from "vite";
 import { svelte } from "@sveltejs/vite-plugin-svelte";
+import pkg from "./package.json";
 
 export default defineConfig({
   plugins: [
@@ -35,7 +36,8 @@ export default defineConfig({
     // Absolute project root, baked in at build time. The Tauri process runs
     // with cwd src-tauri/, so the worker spawn needs an absolute cwd to find
     // backends/ and node_modules (dev mode; production will bundle the worker).
-    __AB_PROJECT_ROOT__: JSON.stringify(process.cwd()),
+    __BUDDY_PROJECT_ROOT__: JSON.stringify(process.cwd()),
+    __APP_VERSION__: JSON.stringify(pkg.version),
   },
   clearScreen: false,
   server: {

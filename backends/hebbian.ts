@@ -15,7 +15,6 @@ export interface HebbianTracker {
 
 const CORE_SKILL_NAMES = new Set([
   "process-conversation.md",
-  "consolidation.md",
   "daily-consolidation.md",
   "weekly-review.md",
   "monthly-maintenance.md",

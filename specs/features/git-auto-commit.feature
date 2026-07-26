@@ -13,4 +13,4 @@ Feature: Auto-commit after agent writes
     When the agent writes file "user/inbox.md"
     And the agent turn ends
     Then the buddy repository has a new commit
-    And the latest commit message starts with "ab:"
+    And the latest commit message starts with "buddy:"

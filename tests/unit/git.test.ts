@@ -11,12 +11,12 @@ import { initTestGitRepo } from "../support/test-git";
 
 describe("buildCommitMessage", () => {
   it("summarizes one file", () => {
-    expect(buildCommitMessage(["user/inbox.md"])).toBe("ab: update user/inbox.md");
+    expect(buildCommitMessage(["user/inbox.md"])).toBe("buddy: update user/inbox.md");
   });
 
   it("summarizes many files", () => {
     const msg = buildCommitMessage(["a.md", "b.md", "c.md", "d.md"]);
-    expect(msg).toBe("ab: update a.md, b.md, c.md (+1 more)");
+    expect(msg).toBe("buddy: update a.md, b.md, c.md (+1 more)");
   });
 });
 
@@ -33,7 +33,7 @@ describe("commitAll", () => {
     writeFileSync(join(dir, "note.md"), "hello");
     expect(await hasUncommittedChanges(dir)).toBe(true);
     const message = await commitAll(dir);
-    expect(message).toBe("ab: update note.md");
+    expect(message).toBe("buddy: update note.md");
     expect(await hasUncommittedChanges(dir)).toBe(false);
   });
 

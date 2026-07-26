@@ -29,7 +29,7 @@
   import type { AgentEvent, BudgetStatus, DeferredItemView, OAuthUIEvent, SetupConfig } from "../shared/api";
   import { SHUTDOWN_TIMEOUT_MS } from "../shared/defaults";
 
-  const APP_VERSION = "0.1.0";
+  const APP_VERSION = __APP_VERSION__;
 
   let connection: WorkerConnection | undefined = $state();
   let connectionError: string | undefined = $state();

@@ -3,7 +3,7 @@
 import type { ModelRuntime } from "@earendil-works/pi-coding-agent";
 
 import type { DeferredItemView } from "../shared/api";
-import { HEARTBEAT_INTERVAL_MS, HEARTBEAT_MIN_TICK_MS } from "../shared/defaults";
+import { HEARTBEAT_INTERVAL_MS, HEARTBEAT_MIN_TICK_MS, LEGACY_DEBUG_ENV } from "../shared/defaults";
 import {
   determineTargetDepth,
   incrementSessionCounter,
@@ -116,7 +116,7 @@ export function startHeartbeat(deps: HeartbeatDeps): HeartbeatHandle {
     void tickInner();
   }
 
-  if (typeof process !== "undefined" && process.env.AB_DEBUG) {
+  if (typeof process !== "undefined" && (process.env.BUDDY_DEBUG || process.env[LEGACY_DEBUG_ENV])) {
     console.error(`[heartbeat] starting with interval=${intervalMs}ms`);
   }
   timer = setInterval(guardedTick, intervalMs);

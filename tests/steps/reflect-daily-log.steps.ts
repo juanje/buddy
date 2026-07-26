@@ -6,6 +6,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { commitAll } from "../../backends/git";
+import { GIT_COMMIT_PREFIX } from "../../shared/defaults";
 import {
   finalizeReflectToDailyLog,
   sanitizeReflectOutput,
@@ -44,7 +45,7 @@ When(
       sections: this.finalizationSections,
     });
     updateLogsIndexEntry(this.abDir, this.finalizationDate);
-    await commitAll(this.abDir, "ab: session reflect");
+    await commitAll(this.abDir, `${GIT_COMMIT_PREFIX} session reflect`);
   },
 );
 
@@ -63,7 +64,7 @@ When(
       sections: this.finalizationSections,
     });
     updateLogsIndexEntry(this.abDir, this.finalizationDate);
-    await commitAll(this.abDir, "ab: session reflect");
+    await commitAll(this.abDir, `${GIT_COMMIT_PREFIX} session reflect`);
   },
 );
 

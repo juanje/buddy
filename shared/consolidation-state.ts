@@ -7,6 +7,7 @@ import {
   CONSOLIDATION_LOG_PATH,
   CONSOLIDATION_STATE_PATH,
 } from "./defaults";
+import { MS_PER_HOUR } from "./dates";
 
 export interface ConsolidationState {
   sessionsSinceLastDepth1: number;
@@ -98,7 +99,7 @@ export function appendConsolidationLogEntry(
 function hoursSince(isoTimestamp: string | null, now: Date): number {
   if (!isoTimestamp) return Infinity;
   try {
-    return (now.getTime() - new Date(isoTimestamp).getTime()) / 3_600_000;
+    return (now.getTime() - new Date(isoTimestamp).getTime()) / MS_PER_HOUR;
   } catch {
     return Infinity;
   }

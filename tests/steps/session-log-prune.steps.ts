@@ -9,6 +9,7 @@ import { join } from "node:path";
 import { createAbInstance, defaultTemplatesDir } from "../../backends/create-buddy";
 import { pruneSessionLogs } from "../../backends/session-log-prune";
 import { APP_LOGS_DIR } from "../../shared/defaults";
+import { MS_PER_DAY } from "../../shared/dates";
 import type { SetupConfig } from "../../shared/api";
 import type { AbWorld } from "../support/world";
 
@@ -45,7 +46,7 @@ Given("an initialized buddy git repository with session logs directory", async f
 function touchFileWithAge(dir: string, name: string, daysAgo: number): void {
   const filePath = join(dir, name);
   writeFileSync(filePath, "{}", "utf8");
-  const mtime = new Date(Date.now() - daysAgo * 86_400_000);
+  const mtime = new Date(Date.now() - daysAgo * MS_PER_DAY);
   utimesSync(filePath, mtime, mtime);
 }
 

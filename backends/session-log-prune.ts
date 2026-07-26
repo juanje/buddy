@@ -4,6 +4,7 @@ import { existsSync, readdirSync, statSync, unlinkSync } from "node:fs";
 import { join } from "node:path";
 
 import { APP_LOGS_DIR, SESSION_LOG_RETENTION_DAYS } from "../shared/defaults";
+import { MS_PER_DAY } from "../shared/dates";
 
 /** Delete .buddy/logs/*.jsonl files older than retentionDays. Returns count removed. */
 export function pruneSessionLogs(
@@ -14,7 +15,7 @@ export function pruneSessionLogs(
   const logsDir = join(rootDir, APP_LOGS_DIR);
   if (!existsSync(logsDir)) return 0;
 
-  const cutoff = nowMs - retentionDays * 86_400_000;
+  const cutoff = nowMs - retentionDays * MS_PER_DAY;
   let removed = 0;
 
   for (const name of readdirSync(logsDir)) {

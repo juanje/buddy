@@ -4,6 +4,7 @@
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 
+import { ALLOWED_PATHS_FILE_NAME } from "../shared/defaults";
 import { defaultConfigPath } from "./setup";
 import { isWithin } from "../shared/path-utils";
 
@@ -22,7 +23,7 @@ export function defaultConfigDir(): string {
 }
 
 export function allowedPathsFile(configDir: string = defaultConfigDir()): string {
-  return join(configDir, "allowed-paths.json");
+  return join(configDir, ALLOWED_PATHS_FILE_NAME);
 }
 
 export function loadAllowedPaths(configDir: string = defaultConfigDir()): AllowedEntry[] {

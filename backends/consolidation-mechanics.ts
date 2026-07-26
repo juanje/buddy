@@ -20,8 +20,11 @@ import {
   CORE_BRAIN_FILES,
   CORE_ROOT_FILES,
   FRONTMATTER_EXEMPT_FILES,
+  HEBBIAN_DEMOTION_MIN_SESSIONS,
+  HEBBIAN_RECENT_DAYS,
   LOG_ROTATION_THRESHOLD,
   REQUIRED_BRAIN_FRONTMATTER,
+  RIPE_OBSERVATION_MIN_SEEN,
 } from "../shared/defaults";
 import { parseFrontmatter, updateLogsIndexEntry } from "./reflect";
 import { gitClient } from "./git";
@@ -165,7 +168,7 @@ export function computeHebbianReport(rootDir: string, now: Date = new Date()): H
   const indexContent = readLogsIndex(rootDir);
   const activeDates = parseActiveSessionDates(indexContent);
   const today = toIsoDay(now);
-  const weekAgo = addDays(today, -7);
+  const weekAgo = addDays(today, -HEBBIAN_RECENT_DAYS);
 
   const recentActiveSessions = activeDates.filter((date) => date >= weekAgo).length;
 
@@ -204,7 +207,7 @@ export function computeHebbianReport(rootDir: string, now: Date = new Date()): H
 export function formatHebbianReportBlock(report: HebbianReport): string {
   const lines = [
     "Hebbian promotion data (pre-computed):",
-    `Active sessions total: ${report.activeSessions} | Recent (7d): ${report.recentActiveSessions}`,
+    `Active sessions total: ${report.activeSessions} | Recent (${HEBBIAN_RECENT_DAYS}d): ${report.recentActiveSessions}`,
   ];
 
   if (report.files.length === 0) {
@@ -224,7 +227,7 @@ export function formatHebbianReportBlock(report: HebbianReport): string {
   }
 
   const demotionCandidates = report.files.filter(
-    (file) => file.lastAccessed && file.activeSessionsSince >= 3,
+    (file) => file.lastAccessed && file.activeSessionsSince >= HEBBIAN_DEMOTION_MIN_SESSIONS,
   );
   if (demotionCandidates.length > 0) {
     lines.push("Files without recent access (candidates for demotion):");
@@ -523,7 +526,7 @@ function parseRipeObservationsFromSection(
     if (RESOLVED_MARKER_RE.test(entry)) continue;
 
     const seenCount = maxSeenCount(entry);
-    if (seenCount < 2) continue;
+    if (seenCount < RIPE_OBSERVATION_MIN_SEEN) continue;
 
     const firstLine = entry.split("\n")[0]?.trim() ?? entry;
     ripe.push({ category, text: firstLine, seenCount });

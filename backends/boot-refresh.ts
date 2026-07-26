@@ -5,6 +5,7 @@ import { join } from "node:path";
 
 import { APP_VERSION } from "./app-version";
 import { deployBundledGlobalContent } from "./deploy-bundled-content";
+import { CONFIG_FILE_NAME } from "../shared/defaults";
 
 interface BuddyConfigRecord {
   last_app_version?: string;
@@ -28,7 +29,7 @@ export function bootRefreshIfNeeded(
   configDir: string,
   appVersion: string = APP_VERSION,
 ): boolean {
-  const configPath = join(configDir, "config.json");
+  const configPath = join(configDir, CONFIG_FILE_NAME);
   const config = readConfig(configPath);
   if (config.last_app_version === appVersion) return false;
 
