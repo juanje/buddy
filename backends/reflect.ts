@@ -198,11 +198,16 @@ const TOOL_LEAK_PATTERNS: RegExp[] = [
 /** Strip LLM-generated session/checkpoint headers — worker adds the correct one. */
 const SESSION_HEADER_RE = /^##\s+(Session|Checkpoint)\s+\S.*\r?\n\r?\n?/;
 
+/** Normalize ## section headings to ### — session heading comes from worker metadata. */
+const SECTION_HEADING_RE =
+  /^## (Context|Decisions|Tasks captured|Lessons|Open threads|Ideas|System observations)\b/gm;
+
 export function sanitizeReflectOutput(text: string): string {
   let result = text;
   for (const pattern of TOOL_LEAK_PATTERNS) {
     result = result.replace(pattern, "");
   }
   result = result.replace(SESSION_HEADER_RE, "");
+  result = result.replace(SECTION_HEADING_RE, "### $1");
   return result.replace(/\n{3,}/g, "\n\n").trim();
 }

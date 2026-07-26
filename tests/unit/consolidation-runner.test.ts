@@ -1,6 +1,6 @@
 // tests/unit/consolidation-runner.test.ts — FR-CONSOL-03/04/06 runner behavior.
 
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -132,6 +132,43 @@ describe("consolidation runner", () => {
     const log = loadConsolidationLog(dir);
     expect(log).toHaveLength(2);
     expect(log.every((entry) => entry.status === "success")).toBe(true);
+  });
+
+  it("commits once per consolidation cycle including maintenance log entry", async () => {
+    setupAb();
+    await initTestGitRepo(dir);
+    writeFileSync(join(dir, "tracked.txt"), "v1\n");
+    const { simpleGit } = await import("simple-git");
+    const git = simpleGit(dir);
+    await git.add("-A").commit("seed");
+    const commitsBefore = (await git.log()).total;
+
+    const createSession = vi.fn(async (): Promise<MaintenanceSessionLike> => ({
+      prompt: async () => {},
+      dispose: () => {},
+    }));
+
+    const state = loadConsolidationState(dir);
+    state.sessionsSinceLastDepth1 = 3;
+
+    const result = await runConsolidation({
+      rootDir: dir,
+      targetDepth: 1,
+      modelRuntime: {} as never,
+      state,
+      createSession,
+      now: new Date("2026-07-22T12:00:00Z"),
+    });
+
+    expect(result.ran).toBe(true);
+    const commitsAfter = (await git.log()).total;
+    expect(commitsAfter - commitsBefore).toBe(1);
+
+    const latest = (await git.log({ maxCount: 1 })).latest;
+    expect(latest?.message).toBe("daily: 2026-07-22");
+
+    const logContent = readFileSync(join(dir, "logs", "2026-07-22.md"), "utf8");
+    expect(logContent).toContain("Maintenance cycle completed: depth-1.");
   });
 
   it("defers when maintenance lock is held", async () => {

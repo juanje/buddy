@@ -115,6 +115,7 @@ export function isDepthDue(depth: 1 | 2 | 3, state: ConsolidationState, now?: Da
     case 1: {
       const sessionsDue = state.sessionsSinceLastDepth1 >= CONSOLIDATION_THRESHOLDS.depth1.sessions;
       const timeDue =
+        state.lastDepth1 !== null &&
         state.sessionsSinceLastDepth1 > 0 &&
         hoursSince(state.lastDepth1, now ?? new Date()) >= CONSOLIDATION_THRESHOLDS.depth1.maxHours;
       return sessionsDue || timeDue;

@@ -46,3 +46,11 @@ Feature: Consolidation scheduler (FR-CONSOL-01/02/04/05/06, FR-DEFERRED-02)
     And there is new content since the last consolidation
     When consolidation is triggered at depth 1
     Then a success entry is appended to the consolidation log
+
+  Scenario: Fresh instance does not consolidate before 3 sessions
+    Given 1 session has completed since the last consolidation
+    And consolidation has never run before
+    And there is new content since the last consolidation
+    And the user is not streaming
+    When the heartbeat ticks
+    Then consolidation does not run

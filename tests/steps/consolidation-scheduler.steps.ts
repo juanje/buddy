@@ -90,6 +90,17 @@ Given("3 sessions have completed since the last consolidation", function (this: 
   this.heartbeat!.incrementSessionCounter();
 });
 
+Given("1 session has completed since the last consolidation", function (this: ConsolidationWorld) {
+  this.heartbeat!.incrementSessionCounter();
+});
+
+Given("consolidation has never run before", function (this: ConsolidationWorld) {
+  const state = defaultConsolidationState();
+  state.lastDepth1 = null;
+  state.sessionsSinceLastDepth1 = 1;
+  saveConsolidationState(this.abDir!, state);
+});
+
 Given("there is new content since the last consolidation", function (this: ConsolidationWorld) {
   writeFileSync(join(this.abDir!, "new-content.txt"), "updated\n");
 });

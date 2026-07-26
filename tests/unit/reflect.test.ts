@@ -50,6 +50,14 @@ describe("sanitizeReflectOutput", () => {
     expect(out).not.toContain("## Checkpoint");
     expect(out).toContain("Mid-session encode.");
   });
+
+  it("normalizes ## section headings to ###", () => {
+    const input = "## Context\n\nWorked on feature X.\n\n## Open threads\n\nReview draft.";
+    const out = sanitizeReflectOutput(input);
+    expect(out).toContain("### Context");
+    expect(out).toContain("### Open threads");
+    expect(out).not.toMatch(/^## Context/m);
+  });
 });
 
 describe("finalizeReflectToDailyLog", () => {

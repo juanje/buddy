@@ -383,6 +383,8 @@ Fork bomb defense:
 - **Then** those lines are stripped before writing to the log file
 - **When** the LLM output includes a leading `## Session` or `## Checkpoint` header (worker adds the correct header from spawn args)
 - **Then** that header is stripped before append — the daily log contains exactly one session heading per reflect finalization
+- **When** the LLM output uses `##` for content sections (Context, Decisions, Lessons, etc.)
+- **Then** those headings are normalized to `###` (h3) before append — session blocks use `## Session` only from worker metadata
 - **Note:** This is a cosmetic guard against LLM output corruption — the model occasionally emits tool invocation syntax as plain text instead of executing it. The sanitizer runs on the final text before file write.
 
 ### 3.5 Permission Layer (FR-PERM)
@@ -522,6 +524,7 @@ Fork bomb defense:
 - **And** a welcome banner card shows the items visually (type, due/overdue badge, text)
 - **And** the card is dismissed on the first user message or manually via close button
 - **And** when no deferred items are due, a simple greeting is shown instead
+- **Language exception:** Deferred item text is written in the **user's language** (from `USER.md` → Preferences), not English. These are messages *to* the user (banner, OS notification), not agent knowledge. All other `agent_brain/` content stays English for cross-tool portability.
 
 **FR-DEFERRED-02 — Heartbeat check**
 
@@ -570,6 +573,9 @@ Fork bomb defense:
 - **And** thresholds are met and new content exists (verified via `git diff`)
 - **Then** consolidation is triggered at the appropriate depth
 - **And** if the current session has unreflected activity, a reflect runs first (FR-REFLECT-05) so the daily log is current before the maintenance session starts
+- **Depth-1 session threshold:** fires when `sessionsSinceLastDepth1 >= 3` (default)
+- **Depth-1 time threshold:** fires when `sessionsSinceLastDepth1 > 0`, `lastDepth1` is set (at least one prior consolidation), and ≥24h have elapsed since `lastDepth1`
+- **Fresh instance guard:** when `lastDepth1` is null (never consolidated), the time threshold does **not** apply — first consolidation requires the session-count threshold only
 
 **FR-CONSOL-02 — Cascade ordering**
 
@@ -584,6 +590,7 @@ Fork bomb defense:
 - **When** the runner executes
 - **Then** a separate Pi session is created (never the user's live session)
 - **And** the maintenance session is disposed after completion
+- **And** all LLM file writes, log rotation, maintenance log entry, and state updates are committed in **one** git commit per consolidation cycle (message from highest completed depth: `daily:`, `weekly:`, or `monthly:`)
 
 **FR-CONSOL-04 — Lock management**
 

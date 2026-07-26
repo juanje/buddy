@@ -108,10 +108,18 @@ describe("consolidation state", () => {
     expect(isDepthDue(1, state, now)).toBe(false);
   });
 
-  it("depth-1 fires on time when never consolidated", () => {
+  it("depth-1 does not fire on time when never consolidated", () => {
     const state = defaultConsolidationState();
     state.sessionsSinceLastDepth1 = 1;
-    expect(isDepthDue(1, state, new Date())).toBe(true);
+    expect(isDepthDue(1, state, new Date())).toBe(false);
+  });
+
+  it("depth-1 requires 3 sessions on fresh instance", () => {
+    const state = defaultConsolidationState();
+    state.sessionsSinceLastDepth1 = 2;
+    expect(isDepthDue(1, state)).toBe(false);
+    state.sessionsSinceLastDepth1 = 3;
+    expect(isDepthDue(1, state)).toBe(true);
   });
 
   it("appends consolidation log entries", () => {

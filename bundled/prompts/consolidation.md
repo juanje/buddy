@@ -97,7 +97,8 @@ After the inbox triage, do a quick scan of the rest of `user/`:
 
 If anything needs user attention (stale items, ambiguous classifications,
 items that can't be routed without input), write to `agent_brain/deferred.md`:
-`- **decision** (YYYY-MM-DD, daily): [description].` If purely informational
+`- **decision** (YYYY-MM-DD, daily): [description].` Write deferred items in the
+user's language (from `USER.md` → Preferences). If purely informational
 findings, note them in today's log under Decisions. Don't wait for user
 interaction — act or defer.
 
@@ -108,7 +109,8 @@ and Active context deadlines within 24h of the date in the prompt header. If ite
 are listed:
 
 1. For each item, write to `agent_brain/deferred.md`:
-   `- **reminder** (YYYY-MM-DD, daily): [description].`
+   `- **reminder** (YYYY-MM-DD, daily): [description].` Use the user's language
+   (from `USER.md` → Preferences).
 2. Remove the date-triggered item from inbox — inbox was storage; deferred
    is the surfacing mechanism for session start.
 

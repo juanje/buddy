@@ -216,7 +216,6 @@ export async function runConsolidation(options: RunConsolidationOptions): Promis
             now,
           );
         }
-        await commitAll(rootDir, commitMessageForDepth(depth, now));
         appendConsolidationLogEntry(rootDir, {
           timestamp: now.toISOString(),
           depth,
@@ -251,7 +250,7 @@ export async function runConsolidation(options: RunConsolidationOptions): Promis
         status: "maintenance",
       }, now);
       updateLogsIndexEntry(rootDir, date, "maintenance");
-      await commitAll(rootDir, `maintenance: log entry for ${depthLabel}`);
+      await commitAll(rootDir, commitMessageForDepth(targetDepth, now));
     }
 
     return { ran: completedDepths.length > 0, completedDepths, state };
