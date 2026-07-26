@@ -11,9 +11,9 @@ import {
   recordUsageToFile,
   type UsageTracker,
 } from "../../backends/usage-tracker";
-import type { AbWorld } from "../support/world";
+import type { BuddyWorld } from "../support/world";
 
-interface CostWorld extends AbWorld {
+interface CostWorld extends BuddyWorld {
   configDir?: string;
   tracker?: UsageTracker;
   monthlyBudget?: number | null;

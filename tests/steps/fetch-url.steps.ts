@@ -12,7 +12,7 @@ import {
 } from "../../backends/fetch-url";
 import { FETCH_MAX_BYTES } from "../../shared/defaults";
 import { createMinimalPdf } from "../support/minimal-pdf";
-import type { AbWorld } from "../support/world";
+import type { BuddyWorld } from "../support/world";
 
 /** 1×1 PNG (valid image bytes for vision tests). */
 const MINIMAL_PNG = Buffer.from(
@@ -20,8 +20,8 @@ const MINIMAL_PNG = Buffer.from(
   "base64",
 );
 
-interface FetchWorld extends AbWorld {
-  abDir?: string;
+interface FetchWorld extends BuddyWorld {
+  buddyDir?: string;
   fetchTools?: ReturnType<typeof buildFetchTools>;
   lastToolResult?: string;
   lastToolDetails?: Record<string, unknown>;
@@ -69,16 +69,16 @@ function mockFetchClient(): FetchHttpClient {
 }
 
 Given("fetch_url is available with a mock HTTP client", function (this: FetchWorld) {
-  if (!this.abDir) throw new Error("buddy repository not initialized");
-  this.fetchTools = buildFetchTools(this.abDir, {
+  if (!this.buddyDir) throw new Error("buddy repository not initialized");
+  this.fetchTools = buildFetchTools(this.buddyDir, {
     fetchImpl: mockFetchClient(),
     fetchTimeoutMs: 50,
   });
 });
 
 Given("the buddy downloads directory does not exist", function (this: FetchWorld) {
-  if (!this.abDir) throw new Error("buddy repository not initialized");
-  const downloadsDir = join(this.abDir, "downloads");
+  if (!this.buddyDir) throw new Error("buddy repository not initialized");
+  const downloadsDir = join(this.buddyDir, "downloads");
   if (existsSync(downloadsDir)) rmSync(downloadsDir, { recursive: true, force: true });
 });
 
@@ -99,8 +99,8 @@ Then("the fetch tool result contains {string}", function (this: FetchWorld, expe
 Then(
   'the file "downloads" contains a markdown download for {string}',
   function (this: FetchWorld, slug: string) {
-    if (!this.abDir) throw new Error("buddy repository not initialized");
-    const downloadsDir = join(this.abDir, "downloads");
+    if (!this.buddyDir) throw new Error("buddy repository not initialized");
+    const downloadsDir = join(this.buddyDir, "downloads");
     assert.ok(existsSync(downloadsDir), "downloads directory missing");
     const files = readdirSync(downloadsDir).filter((name) => name.endsWith(".md"));
     assert.ok(files.length > 0, "expected at least one markdown download");
@@ -112,8 +112,8 @@ Then(
 );
 
 Then('the file "downloads" contains a pdf download', function (this: FetchWorld) {
-  if (!this.abDir) throw new Error("buddy repository not initialized");
-  const downloadsDir = join(this.abDir, "downloads");
+  if (!this.buddyDir) throw new Error("buddy repository not initialized");
+  const downloadsDir = join(this.buddyDir, "downloads");
   assert.ok(existsSync(downloadsDir), "downloads directory missing");
   const files = readdirSync(downloadsDir).filter((name) => name.endsWith(".pdf"));
   assert.ok(files.length > 0, "expected at least one pdf download");
@@ -126,6 +126,6 @@ Then("the fetch details include image data", function (this: FetchWorld) {
 });
 
 Then('the directory "downloads" exists', function (this: FetchWorld) {
-  if (!this.abDir) throw new Error("buddy repository not initialized");
-  assert.ok(existsSync(join(this.abDir, "downloads")), "expected downloads directory");
+  if (!this.buddyDir) throw new Error("buddy repository not initialized");
+  assert.ok(existsSync(join(this.buddyDir, "downloads")), "expected downloads directory");
 });

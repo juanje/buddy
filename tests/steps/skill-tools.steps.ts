@@ -8,9 +8,9 @@ import type { ToolDefinition } from "@earendil-works/pi-coding-agent";
 import { bootRefreshIfNeeded } from "../../backends/boot-refresh";
 import { buildSkillTools, executeSkillTool } from "../../backends/skill-tools";
 import { setupGlobalConfigDir, teardownGlobalConfigDir } from "../support/global-config";
-import type { AbWorld } from "../support/world";
+import type { BuddyWorld } from "../support/world";
 
-interface SkillToolsWorld extends AbWorld {
+interface SkillToolsWorld extends BuddyWorld {
   globalConfigDir?: string;
   skillTools?: ToolDefinition[];
   lastToolResult?: string;

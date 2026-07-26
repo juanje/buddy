@@ -3,27 +3,27 @@
 import { Given, When, Then } from "@cucumber/cucumber";
 import assert from "node:assert/strict";
 
-import type { AbWorld } from "../support/world";
+import type { BuddyWorld } from "../support/world";
 import type { ChatMessage } from "../../src/lib/chat-controller";
 import { assistantBubbles } from "../support/chat-helpers";
 
-Given("the chat is idle", function (this: AbWorld) {
+Given("the chat is idle", function (this: BuddyWorld) {
   this.connect();
   assert.equal(this.read(this.controller.streaming), false);
 });
 
-When("I send the message {string}", async function (this: AbWorld, text: string) {
+When("I send the message {string}", async function (this: BuddyWorld, text: string) {
   this.controller.input.set(text);
   await this.controller.send();
 });
 
-Then("a typing indicator appears", function (this: AbWorld) {
+Then("a typing indicator appears", function (this: BuddyWorld) {
   assert.equal(this.read(this.controller.typingIndicator), true);
 });
 
 Then(
   "text begins appearing token-by-token in an assistant bubble",
-  function (this: AbWorld) {
+  function (this: BuddyWorld) {
     this.session.emitAssistantMessageStart();
 
     this.session.emitTextDelta("Hello");
@@ -37,17 +37,17 @@ Then(
   },
 );
 
-Then("the typing indicator disappears when the response completes", function (this: AbWorld) {
+Then("the typing indicator disappears when the response completes", function (this: BuddyWorld) {
   this.session.emitAssistantMessageEnd();
   this.session.endStreaming();
   assert.equal(this.read(this.controller.typingIndicator), false);
 });
 
-Then("the input bar is re-enabled", function (this: AbWorld) {
+Then("the input bar is re-enabled", function (this: BuddyWorld) {
   assert.equal(this.read(this.controller.inputDisabled), false);
 });
 
-Given("the assistant has finished a response", async function (this: AbWorld) {
+Given("the assistant has finished a response", async function (this: BuddyWorld) {
   this.connect();
   this.controller.input.set("First question");
   await this.controller.send(); // fake begins streaming on prompt
@@ -57,12 +57,12 @@ Given("the assistant has finished a response", async function (this: AbWorld) {
   this.session.endStreaming();
 });
 
-When("I send another message {string}", async function (this: AbWorld, text: string) {
+When("I send another message {string}", async function (this: BuddyWorld, text: string) {
   this.controller.input.set(text);
   await this.controller.send();
 });
 
-Then("a new assistant bubble appears below the previous one", function (this: AbWorld) {
+Then("a new assistant bubble appears below the previous one", function (this: BuddyWorld) {
   this.session.emitAssistantMessageStart();
   this.session.emitTextDelta("More info");
   const bubbles = assistantBubbles(this);
@@ -72,24 +72,24 @@ Then("a new assistant bubble appears below the previous one", function (this: Ab
   assert.equal(all[all.length - 1].text, "More info");
 });
 
-Then("text streams into the new bubble", function (this: AbWorld) {
+Then("text streams into the new bubble", function (this: BuddyWorld) {
   this.session.emitTextDelta(" arriving now");
   const bubbles = assistantBubbles(this);
   assert.equal(bubbles[bubbles.length - 1].text, "More info arriving now");
 });
 
-Then("the previous bubble remains unchanged", function (this: AbWorld) {
+Then("the previous bubble remains unchanged", function (this: BuddyWorld) {
   const bubbles = assistantBubbles(this);
   assert.equal(bubbles[0].text, "Earlier response");
 });
 
-When("the assistant produces an empty response", function (this: AbWorld) {
+When("the assistant produces an empty response", function (this: BuddyWorld) {
   this.session.beginStreaming();
   this.session.emitAssistantMessageStart();
   this.session.emitAssistantMessageEnd(); // no text deltas at all
   this.session.endStreaming();
 });
 
-Then("no empty bubble is shown", function (this: AbWorld) {
+Then("no empty bubble is shown", function (this: BuddyWorld) {
   assert.equal(assistantBubbles(this).length, 0);
 });

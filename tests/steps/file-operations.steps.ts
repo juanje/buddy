@@ -12,9 +12,10 @@ import {
   executeFileTool,
   type FileToolOptions,
 } from "../../backends/file-tools";
-import type { AbWorld } from "../support/world";
+import type { BuddyWorld } from "../support/world";
 
-interface FileOpsWorld extends AbWorld {
+interface FileOpsWorld extends BuddyWorld {
+  buddyDir?: string;
   fileOpsTmpDir?: string;
   externalTmpDir?: string;
   externalFilePath?: string;
@@ -29,29 +30,29 @@ After(function (this: FileOpsWorld) {
   if (this.externalTmpDir) rmSync(this.externalTmpDir, { recursive: true, force: true });
 });
 
-function writeRepoFile(abDir: string, relPath: string, content: string): void {
-  const abs = join(abDir, relPath);
+function writeRepoFile(buddyDir: string, relPath: string, content: string): void {
+  const abs = join(buddyDir, relPath);
   mkdirSync(join(abs, ".."), { recursive: true });
   writeFileSync(abs, content);
 }
 
 Given("file tools are available", function (this: FileOpsWorld) {
-  if (!this.abDir) throw new Error("buddy repository not initialized");
+  if (!this.buddyDir) throw new Error("buddy repository not initialized");
 
   const world = this;
   const options: FileToolOptions = {
     confirmDelete: async () => world.deleteConfirmed ?? true,
     askReadPermission: async () => world.readAllowed ?? true,
   };
-  this.fileTools = buildFileTools(this.abDir, options);
+  this.fileTools = buildFileTools(this.buddyDir, options);
 });
 
 Given(
   "a file {string} with content {string}",
   async function (this: FileOpsWorld, relPath: string, content: string) {
-    if (!this.abDir) throw new Error("buddy repository not initialized");
-    writeRepoFile(this.abDir, relPath, content);
-    await simpleGit(this.abDir).add(relPath).commit(`add ${relPath}`);
+    if (!this.buddyDir) throw new Error("buddy repository not initialized");
+    writeRepoFile(this.buddyDir, relPath, content);
+    await simpleGit(this.buddyDir).add(relPath).commit(`add ${relPath}`);
   },
 );
 
@@ -167,8 +168,8 @@ Then("the file tool returns an error containing {string}", function (this: FileO
 Then(
   "the file {string} contains {string}",
   function (this: FileOpsWorld, relPath: string, expected: string) {
-    if (!this.abDir) throw new Error("buddy repository not initialized");
-    const content = readFileSync(join(this.abDir, relPath), "utf8");
+    if (!this.buddyDir) throw new Error("buddy repository not initialized");
+    const content = readFileSync(join(this.buddyDir, relPath), "utf8");
     assert.ok(content.includes(expected), `expected ${relPath} to contain "${expected}"`);
   },
 );

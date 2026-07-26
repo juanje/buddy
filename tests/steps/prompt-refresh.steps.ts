@@ -8,9 +8,9 @@ import { join } from "node:path";
 import { bootRefreshIfNeeded } from "../../backends/boot-refresh";
 import { bundledDocsDir, bundledPromptsDir } from "../../backends/deploy-bundled-content";
 import { setupGlobalConfigDir, teardownGlobalConfigDir } from "../support/global-config";
-import type { AbWorld } from "../support/world";
+import type { BuddyWorld } from "../support/world";
 
-interface PromptRefreshWorld extends AbWorld {
+interface PromptRefreshWorld extends BuddyWorld {
   globalConfigDir?: string;
   appVersion?: string;
   promptsBeforeRefresh?: string;

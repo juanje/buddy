@@ -10,9 +10,9 @@ import { join } from "node:path";
 
 import { detectFirstRun } from "../../backends/setup";
 import { resolveInitialView, type AppView } from "../../src/lib/app-view";
-import type { AbWorld } from "../support/world";
+import type { BuddyWorld } from "../support/world";
 
-interface SetupWorld extends AbWorld {
+interface SetupWorld extends BuddyWorld {
   setupTmpDir?: string;
   configPath?: string;
   view?: AppView;

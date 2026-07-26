@@ -8,13 +8,13 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { assembleSystemPrompt, type AssembledPrompt } from "../../backends/prompt";
-import type { AbWorld } from "../support/world";
+import type { BuddyWorld } from "../support/world";
 import { setupGlobalConfigDir, teardownGlobalConfigDir } from "../support/global-config";
 
-interface PromptWorld extends AbWorld {
+interface PromptWorld extends BuddyWorld {
   promptTmpDir?: string;
   globalConfigDir?: string;
-  abDir?: string;
+  buddyDir?: string;
   assembled?: AssembledPrompt;
 }
 
@@ -28,15 +28,15 @@ After(function (this: PromptWorld) {
 Given("a buddy directory with identity files", function (this: PromptWorld) {
   ({ configDir: this.globalConfigDir } = setupGlobalConfigDir());
   this.promptTmpDir = mkdtempSync(join(tmpdir(), "ab-prompt-"));
-  this.abDir = join(this.promptTmpDir, "buddy");
-  mkdirSync(join(this.abDir, "agent_brain", "identity"), { recursive: true });
-  writeFileSync(join(this.abDir, "AGENTS.md"), "# Behavioral rules\n\nAlways be kind.\n");
+  this.buddyDir = join(this.promptTmpDir, "buddy");
+  mkdirSync(join(this.buddyDir, "agent_brain", "identity"), { recursive: true });
+  writeFileSync(join(this.buddyDir, "AGENTS.md"), "# Behavioral rules\n\nAlways be kind.\n");
   writeFileSync(
-    join(this.abDir, "agent_brain", "identity", "SOUL.md"),
+    join(this.buddyDir, "agent_brain", "identity", "SOUL.md"),
     "# Soul\n\nCurious and warm.\n",
   );
   writeFileSync(
-    join(this.abDir, "agent_brain", "identity", "USER.md"),
+    join(this.buddyDir, "agent_brain", "identity", "USER.md"),
     "# User profile\n\n## About\n\n- **Name:** Juanje\n",
   );
 });
@@ -45,7 +45,7 @@ Given(
   "the deferred queue has an item due today and an overdue item",
   function (this: PromptWorld) {
     writeFileSync(
-      join(this.abDir!, "agent_brain", "deferred.md"),
+      join(this.buddyDir!, "agent_brain", "deferred.md"),
       [
         "# Deferred queue",
         "",
@@ -57,9 +57,9 @@ Given(
 );
 
 Given("the buddy directory has session logs", function (this: PromptWorld) {
-  mkdirSync(join(this.abDir!, "logs"), { recursive: true });
+  mkdirSync(join(this.buddyDir!, "logs"), { recursive: true });
   writeFileSync(
-    join(this.abDir!, "logs", "index.md"),
+    join(this.buddyDir!, "logs", "index.md"),
     [
       "# Sessions index",
       "",
@@ -68,25 +68,25 @@ Given("the buddy directory has session logs", function (this: PromptWorld) {
     ].join("\n"),
   );
   writeFileSync(
-    join(this.abDir!, "logs", "2026-07-19.md"),
+    join(this.buddyDir!, "logs", "2026-07-19.md"),
     "## Session 09:00–10:00\n\n### Context\n\nShipped FR-PROMPT split.\n",
   );
 });
 
 Given("the buddy directory has no USER.md", function (this: PromptWorld) {
-  unlinkSync(join(this.abDir!, "agent_brain", "identity", "USER.md"));
+  unlinkSync(join(this.buddyDir!, "agent_brain", "identity", "USER.md"));
 });
 
 Given("the buddy directory has CLAUDE.md instead of AGENTS.md", function (this: PromptWorld) {
-  const agentsPath = join(this.abDir!, "AGENTS.md");
-  const claudePath = join(this.abDir!, "CLAUDE.md");
+  const agentsPath = join(this.buddyDir!, "AGENTS.md");
+  const claudePath = join(this.buddyDir!, "CLAUDE.md");
   writeFileSync(claudePath, "# Cursor rules\n\nFrom Claude file.\n");
   unlinkSync(agentsPath);
 });
 
 Given("the buddy directory has neither AGENTS.md nor CLAUDE.md", function (this: PromptWorld) {
-  const agentsPath = join(this.abDir!, "AGENTS.md");
-  const claudePath = join(this.abDir!, "CLAUDE.md");
+  const agentsPath = join(this.buddyDir!, "AGENTS.md");
+  const claudePath = join(this.buddyDir!, "CLAUDE.md");
   try {
     unlinkSync(agentsPath);
   } catch {
@@ -100,7 +100,7 @@ Given("the buddy directory has neither AGENTS.md nor CLAUDE.md", function (this:
 });
 
 When("the system prompt is assembled", function (this: PromptWorld) {
-  this.assembled = assembleSystemPrompt(this.abDir!, NOW);
+  this.assembled = assembleSystemPrompt(this.buddyDir!, NOW);
 });
 
 Then("it contains the AGENTS.md rules", function (this: PromptWorld) {
@@ -146,6 +146,6 @@ Then("the prompt has no user profile section", function (this: PromptWorld) {
 });
 
 Then("the system prompt has no personalization instructions", function (this: PromptWorld) {
-  const { prompt } = this.assembled ?? assembleSystemPrompt(this.abDir!, NOW);
+  const { prompt } = this.assembled ?? assembleSystemPrompt(this.buddyDir!, NOW);
   assert.doesNotMatch(prompt, /# First conversation/);
 });

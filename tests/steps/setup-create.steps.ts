@@ -9,14 +9,14 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { simpleGit } from "simple-git";
 
-import { createAbInstance, defaultTemplatesDir } from "../../backends/create-buddy";
+import { createBuddyInstance, defaultTemplatesDir } from "../../backends/create-buddy";
 import { detectFirstRun } from "../../backends/setup";
 import type { SetupConfig } from "../../shared/api";
-import type { AbWorld } from "../support/world";
+import type { BuddyWorld } from "../support/world";
 
-interface CreateWorld extends AbWorld {
+interface CreateWorld extends BuddyWorld {
   createTmpDir?: string;
-  abDir?: string;
+  buddyDir?: string;
   createConfigPath?: string;
   setupConfig?: SetupConfig;
 }
@@ -27,10 +27,10 @@ After(function (this: CreateWorld) {
 
 Given("a completed wizard configuration", function (this: CreateWorld) {
   this.createTmpDir = mkdtempSync(join(tmpdir(), "ab-create-"));
-  this.abDir = join(this.createTmpDir, "buddy");
+  this.buddyDir = join(this.createTmpDir, "buddy");
   this.createConfigPath = join(this.createTmpDir, "config.json");
   this.setupConfig = {
-    rootDir: this.abDir,
+    rootDir: this.buddyDir,
     provider: "anthropic",
     model: "claude-haiku-4-5",
     language: "es",
@@ -40,7 +40,7 @@ Given("a completed wizard configuration", function (this: CreateWorld) {
 });
 
 When("setup runs", async function (this: CreateWorld) {
-  await createAbInstance({
+  await createBuddyInstance({
     config: this.setupConfig!,
     configPath: this.createConfigPath!,
     templatesDir: defaultTemplatesDir(),
@@ -51,7 +51,7 @@ Then(
   "the buddy directory contains {string}, {string} and {string}",
   function (this: CreateWorld, a: string, b: string, c: string) {
     for (const dir of [a, b, c]) {
-      assert.ok(statSync(join(this.abDir!, dir)).isDirectory(), `${dir} should be a directory`);
+      assert.ok(statSync(join(this.buddyDir!, dir)).isDirectory(), `${dir} should be a directory`);
     }
   },
 );
@@ -63,12 +63,12 @@ Then("the buddy directory contains the base templates", function (this: CreateWo
     "agent_brain/identity/USER.md",
     "agent_brain/skills/.gitkeep",
   ]) {
-    assert.ok(existsSync(join(this.abDir!, file)), `${file} should exist`);
+    assert.ok(existsSync(join(this.buddyDir!, file)), `${file} should exist`);
   }
 });
 
 Then("USER.md contains the user's name and language", function (this: CreateWorld) {
-  const copied = readFileSync(join(this.abDir!, "agent_brain/identity/USER.md"), "utf8");
+  const copied = readFileSync(join(this.buddyDir!, "agent_brain/identity/USER.md"), "utf8");
   assert.match(copied, /\*\*Name:\*\* María/);
   assert.match(copied, /Software engineer in Madrid/);
   assert.match(copied, /Language: es/);
@@ -78,7 +78,7 @@ Then("USER.md contains the user's name and language", function (this: CreateWorl
 Then(
   "{string} holds the configured provider and model",
   function (this: CreateWorld, relPath: string) {
-    const settings = JSON.parse(readFileSync(join(this.abDir!, relPath), "utf8"));
+    const settings = JSON.parse(readFileSync(join(this.buddyDir!, relPath), "utf8"));
     assert.deepEqual(settings, {
       defaultProvider: "anthropic",
       defaultModel: "claude-haiku-4-5",
@@ -89,7 +89,7 @@ Then(
 Then(
   "the buddy directory is a git repository with exactly one commit",
   async function (this: CreateWorld) {
-    const git = simpleGit(this.abDir!);
+    const git = simpleGit(this.buddyDir!);
     const log = await git.log();
     assert.equal(log.total, 1);
     const status = await git.status();
@@ -100,14 +100,14 @@ Then(
 Then("first-run detection reports the buddy as configured", function (this: CreateWorld) {
   const state = detectFirstRun(this.createConfigPath!);
   assert.equal(state.firstRun, false);
-  if (!state.firstRun) assert.equal(state.config.rootDir, this.abDir);
+  if (!state.firstRun) assert.equal(state.config.rootDir, this.buddyDir);
 });
 
 Then("the buddy directory contains file {string}", function (this: CreateWorld, relPath: string) {
-  assert.ok(existsSync(join(this.abDir!, relPath)), `${relPath} should exist`);
+  assert.ok(existsSync(join(this.buddyDir!, relPath)), `${relPath} should exist`);
 });
 
 Then("{string} excludes {string}", function (this: CreateWorld, relPath: string, pattern: string) {
-  const content = readFileSync(join(this.abDir!, relPath), "utf8");
+  const content = readFileSync(join(this.buddyDir!, relPath), "utf8");
   assert.match(content, new RegExp(`^${pattern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`, "m"));
 });

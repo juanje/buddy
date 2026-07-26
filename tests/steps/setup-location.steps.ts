@@ -13,9 +13,9 @@ import { validateLocation } from "../../backends/location";
 import type { SetupController } from "../../src/lib/setup-controller";
 import { advanceToLocationStep } from "../support/setup-wizard-helpers";
 import { wizardOf } from "../support/setup-wizard-factory";
-import type { AbWorld } from "../support/world";
+import type { BuddyWorld } from "../support/world";
 
-interface LocationWorld extends AbWorld {
+interface LocationWorld extends BuddyWorld {
   locTmpDir?: string;
   candidate?: string;
   wizard?: SetupController;
@@ -78,5 +78,5 @@ Then("the location is rejected with a reason", function (this: LocationWorld) {
 
 Then("the wizard offers to import the existing instance", function (this: LocationWorld) {
   const check = get(wizardOf(this, locationOverrides).locationCheck);
-  assert.equal(check?.status, "existing-ab");
+  assert.equal(check?.status, "existing-buddy");
 });

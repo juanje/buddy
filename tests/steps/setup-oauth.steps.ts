@@ -11,9 +11,9 @@ import type { SetupController } from "../../src/lib/setup-controller";
 import { advanceToProviderStep } from "../support/setup-wizard-helpers";
 import { catalogModelsFor } from "../support/setup-worker-fake";
 import { wizardOf } from "../support/setup-wizard-factory";
-import type { AbWorld } from "../support/world";
+import type { BuddyWorld } from "../support/world";
 
-interface OAuthWorld extends AbWorld {
+interface OAuthWorld extends BuddyWorld {
   authTmpDir?: string;
   wizard?: SetupController;
   lastAuthUrl?: string;

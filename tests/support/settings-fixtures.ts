@@ -24,9 +24,9 @@ export function buildMockWorker(overrides: Partial<SettingsWorkerAPI> = {}): Set
     getUsage: async () => DEFAULT_USAGE,
     getAuthStatus: async () => ({
       providers: [
-        { piProviderId: "anthropic", abProvider: "anthropic", hasAuth: true, authType: "oauth" },
-        { piProviderId: "openai-codex", abProvider: "openai", hasAuth: false },
-        { piProviderId: "google", abProvider: "google", hasAuth: false },
+        { piProviderId: "anthropic", buddyProvider: "anthropic", hasAuth: true, authType: "oauth" },
+        { piProviderId: "openai-codex", buddyProvider: "openai", hasAuth: false },
+        { piProviderId: "google", buddyProvider: "google", hasAuth: false },
       ],
     }),
     loginOAuth: async () => ({ success: true }),

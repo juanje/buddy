@@ -12,10 +12,10 @@ import {
   sanitizeReflectOutput,
   updateLogsIndexEntry,
 } from "../../backends/reflect";
-import type { AbWorld } from "../support/world";
+import type { BuddyWorld } from "../support/world";
 
-interface ReflectDailyWorld extends AbWorld {
-  abDir?: string;
+interface ReflectDailyWorld extends BuddyWorld {
+  buddyDir?: string;
   finalizationDate?: string;
   finalizationHeader?: string;
   finalizationSections?: string;
@@ -33,38 +33,38 @@ Given(
 When(
   "finalization runs with sections {string}",
   async function (this: ReflectDailyWorld, sections: string) {
-    assert.ok(this.abDir, "abDir should be set");
+    assert.ok(this.buddyDir, "buddyDir should be set");
     assert.ok(this.finalizationDate, "finalization date should be set");
     assert.ok(this.finalizationHeader, "finalization header should be set");
 
     this.finalizationSections = sections.replace(/\\n/g, "\n");
     this.lastDailyLogPath = finalizeReflectToDailyLog({
-      rootDir: this.abDir,
+      rootDir: this.buddyDir,
       sessionDate: this.finalizationDate,
       sessionHeader: this.finalizationHeader,
       sections: this.finalizationSections,
     });
-    updateLogsIndexEntry(this.abDir, this.finalizationDate);
-    await commitAll(this.abDir, `${GIT_COMMIT_PREFIX} session reflect`);
+    updateLogsIndexEntry(this.buddyDir, this.finalizationDate);
+    await commitAll(this.buddyDir, `${GIT_COMMIT_PREFIX} session reflect`);
   },
 );
 
 When(
   "finalization runs with sanitized LLM output {string}",
   async function (this: ReflectDailyWorld, rawOutput: string) {
-    assert.ok(this.abDir, "abDir should be set");
+    assert.ok(this.buddyDir, "buddyDir should be set");
     assert.ok(this.finalizationDate, "finalization date should be set");
     assert.ok(this.finalizationHeader, "finalization header should be set");
 
     this.finalizationSections = sanitizeReflectOutput(rawOutput.replace(/\\n/g, "\n"));
     this.lastDailyLogPath = finalizeReflectToDailyLog({
-      rootDir: this.abDir,
+      rootDir: this.buddyDir,
       sessionDate: this.finalizationDate,
       sessionHeader: this.finalizationHeader,
       sections: this.finalizationSections,
     });
-    updateLogsIndexEntry(this.abDir, this.finalizationDate);
-    await commitAll(this.abDir, `${GIT_COMMIT_PREFIX} session reflect`);
+    updateLogsIndexEntry(this.buddyDir, this.finalizationDate);
+    await commitAll(this.buddyDir, `${GIT_COMMIT_PREFIX} session reflect`);
   },
 );
 
@@ -78,21 +78,21 @@ Then(
 );
 
 Then("a daily log exists for {string}", function (this: ReflectDailyWorld, date: string) {
-  const path = join(this.abDir!, "logs", `${date}.md`);
+  const path = join(this.buddyDir!, "logs", `${date}.md`);
   assert.ok(existsSync(path), `expected daily log at ${path}`);
   this.lastDailyLogPath = path;
 });
 
 Then("no daily log exists for {string}", function (this: ReflectDailyWorld, date: string) {
-  const path = join(this.abDir!, "logs", `${date}.md`);
+  const path = join(this.buddyDir!, "logs", `${date}.md`);
   assert.equal(existsSync(path), false, `expected no daily log at ${path}`);
 });
 
 Given(
   "the logs index for {string} has curated summary {string}",
   function (this: ReflectDailyWorld, date: string, summary: string) {
-    assert.ok(this.abDir, "abDir should be set");
-    updateLogsIndexEntry(this.abDir, date, "active", summary);
+    assert.ok(this.buddyDir, "buddyDir should be set");
+    updateLogsIndexEntry(this.buddyDir, date, "active", summary);
   },
 );
 
@@ -113,7 +113,7 @@ Then(
 Then(
   "the logs index for {string} still has summary {string}",
   function (this: ReflectDailyWorld, date: string, summary: string) {
-    const indexPath = join(this.abDir!, "logs", "index.md");
+    const indexPath = join(this.buddyDir!, "logs", "index.md");
     assert.ok(existsSync(indexPath), `expected logs index at ${indexPath}`);
     const index = readFileSync(indexPath, "utf8");
     assert.ok(

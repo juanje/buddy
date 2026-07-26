@@ -10,23 +10,23 @@ import { join } from "node:path";
 
 import { defaultTemplatesDir } from "../../backends/create-buddy";
 import type { SessionContext } from "../../backends/prompt";
-import type { AbWorld } from "../support/world";
+import type { BuddyWorld } from "../support/world";
 
-interface PersonalizationWorld extends AbWorld {
-  abDir?: string;
+interface PersonalizationWorld extends BuddyWorld {
+  buddyDir?: string;
   sessionContext?: SessionContext;
 }
 
 Given("USER.md is still the placeholder template", function (this: PersonalizationWorld) {
   copyFileSync(
     join(defaultTemplatesDir(), "agent_brain", "identity", "USER.md"),
-    join(this.abDir!, "agent_brain", "identity", "USER.md"),
+    join(this.buddyDir!, "agent_brain", "identity", "USER.md"),
   );
 });
 
 Given("USER.md already has the user's name filled in", function (this: PersonalizationWorld) {
   writeFileSync(
-    join(this.abDir!, "agent_brain", "identity", "USER.md"),
+    join(this.buddyDir!, "agent_brain", "identity", "USER.md"),
     "# User profile\n\n## About\n\n- **Name:** Juanje\n- **What you do:** Engineering\n",
   );
 });

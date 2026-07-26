@@ -3,14 +3,14 @@
 import { Given, When, Then } from "@cucumber/cucumber";
 import assert from "node:assert/strict";
 
-import type { AbWorld } from "../support/world";
+import type { BuddyWorld } from "../support/world";
 
-function atBottom(world: AbWorld): boolean {
+function atBottom(world: BuddyWorld): boolean {
   const v = world.viewport;
   return v.scrollTop >= v.scrollHeight - v.clientHeight;
 }
 
-Given("there are several messages in the chat history", async function (this: AbWorld) {
+Given("there are several messages in the chat history", async function (this: BuddyWorld) {
   this.connect();
   for (let i = 1; i <= 3; i++) {
     this.controller.input.set(`Message ${i}`);
@@ -19,14 +19,14 @@ Given("there are several messages in the chat history", async function (this: Ab
   }
 });
 
-Given("the chat is scrolled to the bottom", function (this: AbWorld) {
+Given("the chat is scrolled to the bottom", function (this: BuddyWorld) {
   this.viewport.scrollTop = Math.max(0, this.viewport.scrollHeight - this.viewport.clientHeight);
   this.scroll.onUserScrolled(true);
 });
 
 When(
   "the assistant generates a response longer than the viewport",
-  async function (this: AbWorld) {
+  async function (this: BuddyWorld) {
     this.controller.input.set("Tell me a long story");
     await this.controller.send();
     this.session.emitAssistantMessageStart();
@@ -38,7 +38,7 @@ When(
   },
 );
 
-Then("the chat scrolls to keep the latest text visible", function (this: AbWorld) {
+Then("the chat scrolls to keep the latest text visible", function (this: BuddyWorld) {
   assert.ok(
     this.viewport.scrollHeight > this.viewport.clientHeight,
     "content should be longer than the viewport",
@@ -46,12 +46,12 @@ Then("the chat scrolls to keep the latest text visible", function (this: AbWorld
   assert.ok(atBottom(this), "expected viewport to be scrolled to the bottom");
 });
 
-When("I scroll up to review earlier messages", function (this: AbWorld) {
+When("I scroll up to review earlier messages", function (this: BuddyWorld) {
   this.viewport.scrollTop = Math.max(0, this.viewport.scrollTop - 200);
   this.scroll.onUserScrolled(false);
 });
 
-Then("auto-scroll stops", function (this: AbWorld) {
+Then("auto-scroll stops", function (this: BuddyWorld) {
   assert.equal(this.read(this.scroll.autoScroll), false);
   // New content must NOT pull the view down anymore:
   const before = this.viewport.scrollTop;
@@ -59,11 +59,11 @@ Then("auto-scroll stops", function (this: AbWorld) {
   assert.equal(this.viewport.scrollTop, before, "viewport moved despite manual scroll");
 });
 
-Then("a {string} button appears", function (this: AbWorld, _label: string) {
+Then("a {string} button appears", function (this: BuddyWorld, _label: string) {
   assert.equal(this.read(this.scroll.showScrollButton), true);
 });
 
-Given("I have scrolled up during a streaming response", function (this: AbWorld) {
+Given("I have scrolled up during a streaming response", function (this: BuddyWorld) {
   this.connect();
   this.session.beginStreaming();
   this.session.emitAssistantMessageStart();
@@ -72,40 +72,40 @@ Given("I have scrolled up during a streaming response", function (this: AbWorld)
   this.scroll.onUserScrolled(false);
 });
 
-Given("the {string} button is visible", function (this: AbWorld, _label: string) {
+Given("the {string} button is visible", function (this: BuddyWorld, _label: string) {
   assert.equal(this.read(this.scroll.showScrollButton), true);
 });
 
-When("I click the {string} button", function (this: AbWorld, _label: string) {
+When("I click the {string} button", function (this: BuddyWorld, _label: string) {
   this.scroll.scrollToBottomClicked();
 });
 
-Then("the chat scrolls to the latest content", function (this: AbWorld) {
+Then("the chat scrolls to the latest content", function (this: BuddyWorld) {
   assert.ok(atBottom(this), "expected viewport at the bottom");
 });
 
-Then("auto-scroll resumes for the current response", function (this: AbWorld) {
+Then("auto-scroll resumes for the current response", function (this: BuddyWorld) {
   assert.equal(this.read(this.scroll.autoScroll), true);
   this.session.emitTextDelta("even more text ");
   assert.ok(atBottom(this), "expected auto-scroll to follow new content again");
 });
 
-Given("I have scrolled up in the chat history", function (this: AbWorld) {
+Given("I have scrolled up in the chat history", function (this: BuddyWorld) {
   this.viewport.scrollTop = 0;
   this.scroll.onUserScrolled(false);
 });
 
-When("I send a new message", async function (this: AbWorld) {
+When("I send a new message", async function (this: BuddyWorld) {
   this.controller.input.set("Another question");
   await this.controller.send();
   // View wiring: InputBar notifies the scroll controller after sending.
   this.scroll.onUserMessageSent();
 });
 
-Then("the chat scrolls to the bottom to show my message", function (this: AbWorld) {
+Then("the chat scrolls to the bottom to show my message", function (this: BuddyWorld) {
   assert.ok(atBottom(this), "expected viewport at the bottom after sending");
 });
 
-Then("auto-scroll is re-enabled", function (this: AbWorld) {
+Then("auto-scroll is re-enabled", function (this: BuddyWorld) {
   assert.equal(this.read(this.scroll.autoScroll), true);
 });

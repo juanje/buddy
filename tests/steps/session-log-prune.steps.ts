@@ -6,16 +6,16 @@ import { existsSync, mkdirSync, mkdtempSync, rmSync, utimesSync, writeFileSync }
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { createAbInstance, defaultTemplatesDir } from "../../backends/create-buddy";
+import { createBuddyInstance, defaultTemplatesDir } from "../../backends/create-buddy";
 import { pruneSessionLogs } from "../../backends/session-log-prune";
 import { APP_LOGS_DIR } from "../../shared/defaults";
 import { MS_PER_DAY } from "../../shared/dates";
 import type { SetupConfig } from "../../shared/api";
-import type { AbWorld } from "../support/world";
+import type { BuddyWorld } from "../support/world";
 
-interface SessionLogPruneWorld extends AbWorld {
+interface SessionLogPruneWorld extends BuddyWorld {
   pruneTmpDir?: string;
-  abDir?: string;
+  buddyDir?: string;
   logsDir?: string;
   pruneError?: Error;
 }
@@ -26,20 +26,20 @@ After(function (this: SessionLogPruneWorld) {
 
 Given("an initialized buddy git repository with session logs directory", async function (this: SessionLogPruneWorld) {
   this.pruneTmpDir = mkdtempSync(join(tmpdir(), "ab-prune-"));
-  this.abDir = join(this.pruneTmpDir, "buddy");
+  this.buddyDir = join(this.pruneTmpDir, "buddy");
   const config: SetupConfig = {
-    rootDir: this.abDir,
+    rootDir: this.buddyDir,
     provider: "anthropic",
     model: "claude-haiku-4-5",
     language: "en",
     name: "Test",
   };
-  await createAbInstance({
+  await createBuddyInstance({
     config,
     configPath: join(this.pruneTmpDir, "config.json"),
     templatesDir: defaultTemplatesDir(),
   });
-  this.logsDir = join(this.abDir, APP_LOGS_DIR);
+  this.logsDir = join(this.buddyDir, APP_LOGS_DIR);
   mkdirSync(this.logsDir, { recursive: true });
 });
 
@@ -70,7 +70,7 @@ Given(
 
 When("session log pruning runs", function (this: SessionLogPruneWorld) {
   try {
-    pruneSessionLogs(this.abDir!);
+    pruneSessionLogs(this.buddyDir!);
     this.pruneError = undefined;
   } catch (err) {
     this.pruneError = err instanceof Error ? err : new Error(String(err));

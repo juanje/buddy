@@ -6,7 +6,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { createAbInstance, defaultTemplatesDir } from "../../backends/create-buddy";
+import { createBuddyInstance, defaultTemplatesDir } from "../../backends/create-buddy";
 import {
   clearSessionPersistence,
   persistLiveSession,
@@ -19,11 +19,11 @@ import {
   loadConsolidationState,
   saveConsolidationState,
 } from "../../shared/consolidation-state";
-import type { AbWorld } from "../support/world";
+import type { BuddyWorld } from "../support/world";
 
-interface SessionPersistenceWorld extends AbWorld {
+interface SessionPersistenceWorld extends BuddyWorld {
   persistTmpDir?: string;
-  abDir?: string;
+  buddyDir?: string;
   lifecycle?: SessionLifecycle;
   recoverySpawns?: SpawnReflectOptions[];
 }
@@ -34,15 +34,15 @@ After(function (this: SessionPersistenceWorld) {
 
 Given("an initialized buddy git repository for session persistence", async function (this: SessionPersistenceWorld) {
   this.persistTmpDir = mkdtempSync(join(tmpdir(), "ab-persist-"));
-  this.abDir = join(this.persistTmpDir, "buddy");
+  this.buddyDir = join(this.persistTmpDir, "buddy");
   const config: SetupConfig = {
-    rootDir: this.abDir,
+    rootDir: this.buddyDir,
     provider: "anthropic",
     model: "claude-haiku-4-5",
     language: "en",
     name: "Test",
   };
-  await createAbInstance({
+  await createBuddyInstance({
     config,
     configPath: join(this.persistTmpDir, "config.json"),
     templatesDir: defaultTemplatesDir(),
@@ -51,15 +51,15 @@ Given("an initialized buddy git repository for session persistence", async funct
 });
 
 When("a new session starts with file {string}", function (this: SessionPersistenceWorld, sessionFile: string) {
-  persistLiveSession(this.abDir!, sessionFile);
+  persistLiveSession(this.buddyDir!, sessionFile);
 });
 
 Given(
   "a session is running with persisted path {string}",
   function (this: SessionPersistenceWorld, sessionFile: string) {
-    persistLiveSession(this.abDir!, sessionFile);
+    persistLiveSession(this.buddyDir!, sessionFile);
     this.lifecycle = new SessionLifecycle({
-      rootDir: this.abDir!,
+      rootDir: this.buddyDir!,
       sessionId: "test-session",
       sessionFile,
     });
@@ -73,16 +73,16 @@ When("the app shuts down gracefully", async function (this: SessionPersistenceWo
 Given(
   "consolidation-state.json has liveSessionFile {string} and reflectPending {word}",
   function (this: SessionPersistenceWorld, sessionFile: string, pending: string) {
-    const state = loadConsolidationState(this.abDir!);
+    const state = loadConsolidationState(this.buddyDir!);
     state.liveSessionFile = sessionFile;
     state.reflectPending = pending === "true";
-    saveConsolidationState(this.abDir!, state);
+    saveConsolidationState(this.buddyDir!, state);
   },
 );
 
 When("the app boots", function (this: SessionPersistenceWorld) {
   this.recoverySpawns = [];
-  recoverStaleSession(this.abDir!, (options) => {
+  recoverStaleSession(this.buddyDir!, (options) => {
     this.recoverySpawns!.push(options);
     return 1;
   });
@@ -91,7 +91,7 @@ When("the app boots", function (this: SessionPersistenceWorld) {
 Then(
   "consolidation-state.json contains liveSessionFile {string}",
   function (this: SessionPersistenceWorld, expected: string) {
-    const state = loadConsolidationState(this.abDir!);
+    const state = loadConsolidationState(this.buddyDir!);
     assert.equal(state.liveSessionFile, expected);
   },
 );
@@ -99,7 +99,7 @@ Then(
 Then(
   "consolidation-state.json has reflectPending {word}",
   function (this: SessionPersistenceWorld, expected: string) {
-    const state = loadConsolidationState(this.abDir!);
+    const state = loadConsolidationState(this.buddyDir!);
     assert.equal(state.reflectPending, expected === "true");
   },
 );
@@ -107,7 +107,7 @@ Then(
 Then(
   "consolidation-state.json has liveSessionFile cleared",
   function (this: SessionPersistenceWorld) {
-    const state = loadConsolidationState(this.abDir!);
+    const state = loadConsolidationState(this.buddyDir!);
     assert.ok(state.liveSessionFile === null || state.liveSessionFile === undefined);
   },
 );

@@ -11,16 +11,16 @@ import { startHeartbeat } from "../../backends/heartbeat";
 import { runConsolidation } from "../../backends/consolidation-runner";
 import { saveConsolidationState, loadConsolidationLog, defaultConsolidationState } from "../../shared/consolidation-state";
 import { initTestGitRepo } from "../support/test-git";
-import type { AbWorld } from "../support/world";
+import type { BuddyWorld } from "../support/world";
 import type { DeferredItemView } from "../../shared/api";
 import type { MaintenanceSessionLike } from "../../backends/consolidation-runner";
 import { setupGlobalConfigDir, teardownGlobalConfigDir } from "../support/global-config";
 import { TEST_FROZEN_NOW, TEST_HEARTBEAT_INTERVAL_MS } from "../support/test-constants";
 
-interface ConsolidationWorld extends AbWorld {
+interface ConsolidationWorld extends BuddyWorld {
   consolTmpDir?: string;
   globalConfigDir?: string;
-  abDir?: string;
+  buddyDir?: string;
   deferredNotifications?: DeferredItemView[][];
   consolidationRuns?: number[];
   streaming?: boolean;
@@ -28,7 +28,7 @@ interface ConsolidationWorld extends AbWorld {
 }
 
 After(function (this: ConsolidationWorld) {
-  if (this.abDir) releaseLock(this.abDir);
+  if (this.buddyDir) releaseLock(this.buddyDir);
   this.heartbeat?.stop();
   teardownGlobalConfigDir(this.globalConfigDir);
   if (this.consolTmpDir) rmSync(this.consolTmpDir, { recursive: true, force: true });
@@ -39,20 +39,20 @@ Given("a buddy directory prepared for consolidation", async function (this: Cons
     consolidationSkill: "# Skill\n\nConsolidate.\n",
   }));
   this.consolTmpDir = mkdtempSync(join(tmpdir(), "ab-consol-bdd-"));
-  this.abDir = join(this.consolTmpDir, "buddy");
-  mkdirSync(join(this.abDir, "agent_brain"), { recursive: true });
-  writeFileSync(join(this.abDir, "AGENTS.md"), "# Rules\n");
-  await initTestGitRepo(this.abDir);
-  writeFileSync(join(this.abDir, "seed.txt"), "seed\n");
+  this.buddyDir = join(this.consolTmpDir, "buddy");
+  mkdirSync(join(this.buddyDir, "agent_brain"), { recursive: true });
+  writeFileSync(join(this.buddyDir, "AGENTS.md"), "# Rules\n");
+  await initTestGitRepo(this.buddyDir);
+  writeFileSync(join(this.buddyDir, "seed.txt"), "seed\n");
   const { simpleGit } = await import("simple-git");
-  await simpleGit(this.abDir).add("-A").commit("seed");
+  await simpleGit(this.buddyDir).add("-A").commit("seed");
 
   this.deferredNotifications = [];
   this.consolidationRuns = [];
   this.streaming = false;
 
   this.heartbeat = startHeartbeat({
-    rootDir: this.abDir,
+    rootDir: this.buddyDir,
     modelRuntime: {} as never,
     isStreaming: () => this.streaming === true,
     onDeferredDue: (items) => {
@@ -79,7 +79,7 @@ Given("a buddy directory prepared for consolidation", async function (this: Cons
 
 Given("the deferred queue has an item due today", function (this: ConsolidationWorld) {
   writeFileSync(
-    join(this.abDir!, "agent_brain", "deferred.md"),
+    join(this.buddyDir!, "agent_brain", "deferred.md"),
     "- **reminder** (2026-07-22, user): Llamar al dentista.\n",
   );
 });
@@ -98,11 +98,11 @@ Given("consolidation has never run before", function (this: ConsolidationWorld) 
   const state = defaultConsolidationState();
   state.lastDepth1 = null;
   state.sessionsSinceLastDepth1 = 1;
-  saveConsolidationState(this.abDir!, state);
+  saveConsolidationState(this.buddyDir!, state);
 });
 
 Given("there is new content since the last consolidation", function (this: ConsolidationWorld) {
-  writeFileSync(join(this.abDir!, "new-content.txt"), "updated\n");
+  writeFileSync(join(this.buddyDir!, "new-content.txt"), "updated\n");
 });
 
 Given("the user is not streaming", function (this: ConsolidationWorld) {
@@ -117,11 +117,11 @@ Given("depth 2 consolidation is due", function (this: ConsolidationWorld) {
   const state = defaultConsolidationState();
   state.sessionsSinceLastDepth1 = 3;
   state.depth1RunsSinceLastDepth2 = 5;
-  saveConsolidationState(this.abDir!, state);
+  saveConsolidationState(this.buddyDir!, state);
 });
 
 Given("the maintenance lock is held", function (this: ConsolidationWorld) {
-  acquireLock(this.abDir!);
+  acquireLock(this.buddyDir!);
 });
 
 When("the heartbeat ticks", async function (this: ConsolidationWorld) {
@@ -131,7 +131,7 @@ When("the heartbeat ticks", async function (this: ConsolidationWorld) {
 When("consolidation is triggered at depth 1", async function (this: ConsolidationWorld) {
   const state = defaultConsolidationState();
   state.sessionsSinceLastDepth1 = 3;
-  saveConsolidationState(this.abDir!, state);
+  saveConsolidationState(this.buddyDir!, state);
   await this.heartbeat!.tick();
 });
 
@@ -153,6 +153,6 @@ Then("consolidation runs depths 1 and 2 in order", function (this: Consolidation
 });
 
 Then("a success entry is appended to the consolidation log", function (this: ConsolidationWorld) {
-  const log = loadConsolidationLog(this.abDir!);
+  const log = loadConsolidationLog(this.buddyDir!);
   assert.ok(log.some((entry) => entry.depth === 1 && entry.status === "success"));
 });

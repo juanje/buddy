@@ -13,12 +13,12 @@ import {
   type PermissionGate,
   type PermissionRequest,
 } from "../../backends/permissions";
-import type { AbWorld } from "../support/world";
+import type { BuddyWorld } from "../support/world";
 
-interface PermWorld extends AbWorld {
+interface PermWorld extends BuddyWorld {
   permTmpDir?: string;
   home?: string;
-  abDir?: string;
+  buddyDir?: string;
   gate?: PermissionGate;
   asked: Array<Omit<PermissionRequest, "id">>;
   nextAnswer?: boolean;
@@ -33,10 +33,10 @@ After(function (this: PermWorld) {
 Given("a permission layer for a buddy directory", function (this: PermWorld) {
   this.permTmpDir = mkdtempSync(join(tmpdir(), "ab-perm-"));
   this.home = join(this.permTmpDir, "home");
-  this.abDir = join(this.home, "buddy");
+  this.buddyDir = join(this.home, "buddy");
   this.asked = [];
   this.gate = createPermissionGate(
-    this.abDir,
+    this.buddyDir,
     async (request) => {
       this.asked.push(request);
       // Wait for the scenario to script the answer (default: undecided).
@@ -56,13 +56,13 @@ function expand(world: PermWorld, path: string): string {
 }
 
 When("the agent reads {string}", async function (this: PermWorld, relPath: string) {
-  this.outcome = await this.gate!.check("read", { path: join(this.abDir!, relPath) });
+  this.outcome = await this.gate!.check("read", { path: join(this.buddyDir!, relPath) });
 });
 
 When("the agent writes {string}", async function (this: PermWorld, relPath: string) {
   // Identity confirmations block until the scenario answers; keep the
   // promise pending so "Then the user is asked" can observe the question.
-  this.pending = this.gate!.check("write", { path: join(this.abDir!, relPath) });
+  this.pending = this.gate!.check("write", { path: join(this.buddyDir!, relPath) });
   // Give an immediate decision (allow/deny without asking) a chance to settle.
   await new Promise((r) => setTimeout(r, 5));
 });

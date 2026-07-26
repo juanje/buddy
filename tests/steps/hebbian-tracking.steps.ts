@@ -7,19 +7,19 @@ import { dirname, join } from "node:path";
 
 import { parseFrontmatter } from "../../backends/reflect";
 import { toIsoDay } from "../../shared/dates";
-import type { AbWorld } from "../support/world";
+import type { BuddyWorld } from "../support/world";
 
-interface HebbWorld extends AbWorld {
-  abDir?: string;
+interface HebbWorld extends BuddyWorld {
+  buddyDir?: string;
 }
 
 function writeTrackedFile(
-  abDir: string,
+  buddyDir: string,
   relPath: string,
   accessCount: number,
   scope: "brain" | "user",
 ): void {
-  const fullPath = join(abDir, relPath);
+  const fullPath = join(buddyDir, relPath);
   mkdirSync(dirname(fullPath), { recursive: true });
   writeFileSync(
     fullPath,
@@ -31,31 +31,31 @@ function writeTrackedFile(
 Given(
   "a tracked brain file {string} with access_count {int}",
   function (this: HebbWorld, relPath: string, accessCount: number) {
-    writeTrackedFile(this.abDir!, relPath, accessCount, "brain");
+    writeTrackedFile(this.buddyDir!, relPath, accessCount, "brain");
   },
 );
 
 Given(
   "a tracked user file {string} with access_count {int}",
   function (this: HebbWorld, relPath: string, accessCount: number) {
-    writeTrackedFile(this.abDir!, relPath, accessCount, "user");
+    writeTrackedFile(this.buddyDir!, relPath, accessCount, "user");
   },
 );
 
 When("the agent reads file {string}", async function (this: HebbWorld, relPath: string) {
-  const fullPath = join(this.abDir!, relPath);
+  const fullPath = join(this.buddyDir!, relPath);
   this.session.emitToolExecutionEnd("read", fullPath);
   await this.lifecycle?.flush();
 });
 
 Then("{string} has access_count {int}", function (this: HebbWorld, relPath: string, expected: number) {
-  const content = readFileSync(join(this.abDir!, relPath), "utf8");
+  const content = readFileSync(join(this.buddyDir!, relPath), "utf8");
   const fields = parseFrontmatter(content);
   assert.equal(Number.parseInt(fields.access_count, 10), expected, content);
 });
 
 Then("{string} was accessed today", function (this: HebbWorld, relPath: string) {
-  const content = readFileSync(join(this.abDir!, relPath), "utf8");
+  const content = readFileSync(join(this.buddyDir!, relPath), "utf8");
   const fields = parseFrontmatter(content);
   assert.equal(fields.last_accessed, toIsoDay(new Date()), content);
 });

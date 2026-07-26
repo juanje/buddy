@@ -67,12 +67,12 @@ describe("createSetupController back()", () => {
     const wizard = createSetupController(
       makeSetupWorkerFake({
         validateLocation: async () => ({
-          status: "existing-ab",
-          abSettings: { provider: "anthropic", model: "claude-haiku-4-5" },
+          status: "existing-buddy",
+          buddySettings: { provider: "anthropic", model: "claude-haiku-4-5" },
         }),
         getAuthStatus: async () => ({
           providers: [
-            { piProviderId: "anthropic", abProvider: "anthropic", hasAuth: false },
+            { piProviderId: "anthropic", buddyProvider: "anthropic", hasAuth: false },
           ],
         }),
         runSetup: async () => {
@@ -94,12 +94,12 @@ describe("createSetupController back()", () => {
     const wizard = createSetupController(
       makeSetupWorkerFake({
         validateLocation: async () => ({
-          status: "existing-ab",
-          abSettings: { provider: "anthropic", model: "claude-haiku-4-5" },
+          status: "existing-buddy",
+          buddySettings: { provider: "anthropic", model: "claude-haiku-4-5" },
         }),
         getAuthStatus: async () => ({
           providers: [
-            { piProviderId: "anthropic", abProvider: "anthropic", hasAuth: true },
+            { piProviderId: "anthropic", buddyProvider: "anthropic", hasAuth: true },
           ],
         }),
         runSetup: async () => {

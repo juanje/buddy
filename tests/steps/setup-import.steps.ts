@@ -1,6 +1,6 @@
 // tests/steps/setup-import.steps.ts — FR-SETUP-08 import existing instance.
 // Real filesystem on temp dirs; adoption goes through the real backend
-// functions (validateLocation, adoptAbInstance). No mocks of fs, no LLM.
+// functions (validateLocation, adoptBuddyInstance). No mocks of fs, no LLM.
 
 import { Given, When, Then, After } from "@cucumber/cucumber";
 import assert from "node:assert/strict";
@@ -18,17 +18,17 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { get } from "svelte/store";
 
-import { adoptAbInstance } from "../../backends/create-buddy";
+import { adoptBuddyInstance } from "../../backends/create-buddy";
 import { validateLocation } from "../../backends/location";
 import { detectFirstRun } from "../../backends/setup";
 import { createSetupController, type SetupController } from "../../src/lib/setup-controller";
 import { advanceToLocationStep } from "../support/setup-wizard-helpers";
 import { makeSetupWorkerFake } from "../support/setup-worker-fake";
-import type { AbWorld } from "../support/world";
+import type { BuddyWorld } from "../support/world";
 
-interface ImportWorld extends AbWorld {
+interface ImportWorld extends BuddyWorld {
   importTmpDir?: string;
-  abDir?: string;
+  buddyDir?: string;
   importConfigPath?: string;
   wizard?: SetupController;
   snapshot?: Map<string, string>;
@@ -45,7 +45,7 @@ function snapshotAb(world: ImportWorld): Map<string, string> {
       else files.set(full, readFileSync(full, "utf8"));
     }
   };
-  walk(world.abDir!);
+  walk(world.buddyDir!);
   return files;
 }
 
@@ -54,18 +54,18 @@ function authedAnthropicStatus() {
     providers: [
       {
         piProviderId: "anthropic",
-        abProvider: "anthropic" as const,
+        buddyProvider: "anthropic" as const,
         hasAuth: true,
         authType: "oauth" as const,
       },
       {
         piProviderId: "openai-codex",
-        abProvider: "openai" as const,
+        buddyProvider: "openai" as const,
         hasAuth: false,
       },
       {
         piProviderId: "google",
-        abProvider: "google" as const,
+        buddyProvider: "google" as const,
         hasAuth: false,
       },
     ],
@@ -89,7 +89,7 @@ function makeWizard(world: ImportWorld, authHasAnthropic = true): SetupControlle
       },
       async runSetup(config, mode) {
         assert.equal(mode, "import", "adopting an existing buddy instance must use import mode");
-        adoptAbInstance({ config, configPath: world.importConfigPath! });
+        adoptBuddyInstance({ config, configPath: world.importConfigPath! });
       },
     }),
   );
@@ -98,25 +98,25 @@ function makeWizard(world: ImportWorld, authHasAnthropic = true): SetupControlle
 
 function seedAb(world: ImportWorld, options: { piSettings?: boolean; artifacts?: boolean }): void {
   world.importTmpDir = mkdtempSync(join(tmpdir(), "ab-import-"));
-  world.abDir = join(world.importTmpDir, "old-ab");
+  world.buddyDir = join(world.importTmpDir, "old-ab");
   world.importConfigPath = join(world.importTmpDir, "config.json");
 
-  mkdirSync(join(world.abDir, "agent_brain", "identity"), { recursive: true });
-  writeFileSync(join(world.abDir, "agent_brain", "identity", "SOUL.md"), "# Custom soul\n");
-  writeFileSync(join(world.abDir, "AGENTS.md"), "# My tuned rules\n");
+  mkdirSync(join(world.buddyDir, "agent_brain", "identity"), { recursive: true });
+  writeFileSync(join(world.buddyDir, "agent_brain", "identity", "SOUL.md"), "# Custom soul\n");
+  writeFileSync(join(world.buddyDir, "AGENTS.md"), "# My tuned rules\n");
 
   if (options.piSettings) {
-    mkdirSync(join(world.abDir, ".pi"), { recursive: true });
+    mkdirSync(join(world.buddyDir, ".pi"), { recursive: true });
     writeFileSync(
-      join(world.abDir, ".pi", "settings.json"),
+      join(world.buddyDir, ".pi", "settings.json"),
       JSON.stringify({ defaultProvider: "anthropic", defaultModel: "claude-haiku-4-5" }),
     );
   }
   if (options.artifacts) {
-    mkdirSync(join(world.abDir, ".cursor"), { recursive: true });
-    writeFileSync(join(world.abDir, ".cursor", "state.json"), "{}");
-    mkdirSync(join(world.abDir, ".codex"), { recursive: true });
-    writeFileSync(join(world.abDir, ".codex", "cache.bin"), "xx");
+    mkdirSync(join(world.buddyDir, ".cursor"), { recursive: true });
+    writeFileSync(join(world.buddyDir, ".cursor", "state.json"), "{}");
+    mkdirSync(join(world.buddyDir, ".codex"), { recursive: true });
+    writeFileSync(join(world.buddyDir, ".codex", "cache.bin"), "xx");
   }
 
   world.snapshot = snapshotAb(world);
@@ -149,15 +149,15 @@ Given("the configured provider has no auth credentials", function (this: ImportW
 When("the user imports it from the location step", async function (this: ImportWorld) {
   const wizard = makeWizard(this, this.authHasAnthropic !== false);
   await advanceToLocationStep(wizard);
-  await wizard.pickLocation(this.abDir!);
-  assert.equal(get(wizard.locationCheck)?.status, "existing-ab");
+  await wizard.pickLocation(this.buddyDir!);
+  assert.equal(get(wizard.locationCheck)?.status, "existing-buddy");
   this.importOutcome = await wizard.importExisting();
 });
 
 Then("the app is configured to use that directory", function (this: ImportWorld) {
   const state = detectFirstRun(this.importConfigPath!);
   assert.equal(state.firstRun, false);
-  if (!state.firstRun) assert.equal(state.config.rootDir, this.abDir);
+  if (!state.firstRun) assert.equal(state.config.rootDir, this.buddyDir);
   assert.equal(get(this.wizard!.completed), true);
 });
 
@@ -166,8 +166,8 @@ Then("no file inside the buddy directory is modified", function (this: ImportWor
 });
 
 Then("the platform artifacts remain untouched", function (this: ImportWorld) {
-  assert.equal(readFileSync(join(this.abDir!, ".cursor", "state.json"), "utf8"), "{}");
-  assert.equal(readFileSync(join(this.abDir!, ".codex", "cache.bin"), "utf8"), "xx");
+  assert.equal(readFileSync(join(this.buddyDir!, ".cursor", "state.json"), "utf8"), "{}");
+  assert.equal(readFileSync(join(this.buddyDir!, ".codex", "cache.bin"), "utf8"), "xx");
 });
 
 Then("the wizard continues to the provider step in import mode", function (this: ImportWorld) {
@@ -192,10 +192,10 @@ Then(
 
     assert.equal(get(wizard.completed), true);
     // Adoption, not creation: the fresh-buddy templates were not copied in…
-    assert.equal(existsSync(join(this.abDir!, "user")), false);
-    assert.equal(existsSync(join(this.abDir!, "logs")), false);
+    assert.equal(existsSync(join(this.buddyDir!, "user")), false);
+    assert.equal(existsSync(join(this.buddyDir!, "logs")), false);
     // …but the collected provider/model were written (settings were missing).
-    const settings = JSON.parse(readFileSync(join(this.abDir!, ".pi", "settings.json"), "utf8"));
+    const settings = JSON.parse(readFileSync(join(this.buddyDir!, ".pi", "settings.json"), "utf8"));
     assert.deepEqual(settings, {
       defaultProvider: "anthropic",
       defaultModel: "claude-sonnet-5",
@@ -204,9 +204,9 @@ Then(
 );
 
 When("the wizard adopts it with provider {string}", function (this: ImportWorld, provider: string) {
-  adoptAbInstance({
+  adoptBuddyInstance({
     config: {
-      rootDir: this.abDir!,
+      rootDir: this.buddyDir!,
       provider: provider as "openai" | "anthropic" | "google" | "custom",
       model: "gpt-5",
     },
@@ -220,7 +220,7 @@ When("the wizard adopts it with provider {string}", function (this: ImportWorld,
 Then(
   "{string} contains defaultProvider {string}",
   function (this: ImportWorld, relPath: string, expectedProvider: string) {
-    const settings = JSON.parse(readFileSync(join(this.abDir!, relPath), "utf8"));
+    const settings = JSON.parse(readFileSync(join(this.buddyDir!, relPath), "utf8"));
     assert.equal(settings.defaultProvider, expectedProvider);
   },
 );

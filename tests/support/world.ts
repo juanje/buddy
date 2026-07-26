@@ -28,7 +28,7 @@ export interface FakeViewport {
   clientHeight: number;
 }
 
-export class AbWorld extends World {
+export class BuddyWorld extends World {
   session!: FakeSession;
   core!: WorkerCore;
   controller!: ChatController;
@@ -146,4 +146,4 @@ export class AbWorld extends World {
   }
 }
 
-setWorldConstructor(AbWorld);
+setWorldConstructor(BuddyWorld);

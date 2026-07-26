@@ -122,8 +122,8 @@ describe("createSettingsController", () => {
       worker: mockWorker({
         getAuthStatus: async () => ({
           providers: [
-            { piProviderId: "anthropic", abProvider: "anthropic", hasAuth: true },
-            { piProviderId: "openai-codex", abProvider: "openai", hasAuth: true },
+            { piProviderId: "anthropic", buddyProvider: "anthropic", hasAuth: true },
+            { piProviderId: "openai-codex", buddyProvider: "openai", hasAuth: true },
           ],
         }),
       }),
@@ -161,13 +161,13 @@ describe("createSettingsController", () => {
       worker: mockWorker({
         getAuthStatus: async () => ({
           providers: [
-            { piProviderId: "anthropic", abProvider: "anthropic", hasAuth: true },
+            { piProviderId: "anthropic", buddyProvider: "anthropic", hasAuth: true },
             {
               piProviderId: "openai-codex",
-              abProvider: "openai",
+              buddyProvider: "openai",
               hasAuth: openAiAuthed,
             },
-            { piProviderId: "google", abProvider: "google", hasAuth: false },
+            { piProviderId: "google", buddyProvider: "google", hasAuth: false },
           ],
         }),
         loginOAuth: async (provider) => {

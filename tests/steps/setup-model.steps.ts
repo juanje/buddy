@@ -17,9 +17,9 @@ import { modelChoicesFor, recommendedModelFor } from "../../shared/model-catalog
 import { tierDescription } from "../../src/lib/i18n";
 import { advanceToModelStep } from "../support/setup-wizard-helpers";
 import { makeSetupWorkerFake } from "../support/setup-worker-fake";
-import type { AbWorld } from "../support/world";
+import type { BuddyWorld } from "../support/world";
 
-interface ModelWorld extends AbWorld {
+interface ModelWorld extends BuddyWorld {
   modelTmpDir?: string;
   wizard?: SetupController;
   modelProvider?: ProviderId;

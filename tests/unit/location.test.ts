@@ -5,7 +5,7 @@ import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { defaultAbLocation, validateLocation } from "../../backends/location";
+import { defaultBuddyLocation, validateLocation } from "../../backends/location";
 
 const tmpDirs: string[] = [];
 
@@ -46,7 +46,7 @@ describe("validateLocation", () => {
   it("recognizes an existing buddy instance by its agent_brain dir", () => {
     const dir = join(scratch(), "old-ab");
     mkdirSync(join(dir, "agent_brain"), { recursive: true });
-    expect(validateLocation(dir)).toEqual({ status: "existing-ab" });
+    expect(validateLocation(dir)).toEqual({ status: "existing-buddy" });
   });
 
   it("treats agent_brain as a plain entry when it is a file", () => {
@@ -57,8 +57,8 @@ describe("validateLocation", () => {
   });
 });
 
-describe("defaultAbLocation", () => {
+describe("defaultBuddyLocation", () => {
   it("proposes buddy under the home directory", () => {
-    expect(defaultAbLocation().endsWith("buddy")).toBe(true);
+    expect(defaultBuddyLocation().endsWith("buddy")).toBe(true);
   });
 });

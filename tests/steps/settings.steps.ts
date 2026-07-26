@@ -15,9 +15,9 @@ import {
   buildMockWorker,
   DEFAULT_TEST_CONFIG,
 } from "../support/settings-fixtures";
-import type { AbWorld } from "../support/world";
+import type { BuddyWorld } from "../support/world";
 
-interface SettingsWorld extends AbWorld {
+interface SettingsWorld extends BuddyWorld {
   appConfig: SetupConfig;
   settings?: SettingsController;
   updateConfigCalls: Array<Partial<Pick<SetupConfig, "language" | "monthlyBudget">>>;
@@ -49,17 +49,17 @@ function buildWorker(this: SettingsWorld): SettingsWorkerAPI {
       providers: [
         {
           piProviderId: "anthropic",
-          abProvider: "anthropic",
+          buddyProvider: "anthropic",
           hasAuth: this.authedProviders.has("anthropic"),
         },
         {
           piProviderId: "openai-codex",
-          abProvider: "openai",
+          buddyProvider: "openai",
           hasAuth: this.authedProviders.has("openai"),
         },
         {
           piProviderId: "google",
-          abProvider: "google",
+          buddyProvider: "google",
           hasAuth: this.authedProviders.has("google"),
         },
       ],

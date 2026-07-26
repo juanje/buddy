@@ -11,9 +11,9 @@ import { advancePastIntroSteps } from "../support/setup-wizard-helpers";
 import { gitInstallInstructions } from "../../src/lib/i18n";
 import type { PrereqStatus } from "../../shared/api";
 import { wizardOf } from "../support/setup-wizard-factory";
-import type { AbWorld } from "../support/world";
+import type { BuddyWorld } from "../support/world";
 
-interface PrereqWorld extends AbWorld {
+interface PrereqWorld extends BuddyWorld {
   gitInstalled?: boolean;
   wizard?: SetupController;
 }

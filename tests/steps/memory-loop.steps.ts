@@ -7,13 +7,13 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { simpleGit } from "simple-git";
 
-import { createAbInstance, defaultTemplatesDir } from "../../backends/create-buddy";
+import { createBuddyInstance, defaultTemplatesDir } from "../../backends/create-buddy";
 import type { SetupConfig } from "../../shared/api";
-import type { AbWorld } from "../support/world";
+import type { BuddyWorld } from "../support/world";
 
-interface MemoryWorld extends AbWorld {
+interface MemoryWorld extends BuddyWorld {
   memoryTmpDir?: string;
-  abDir?: string;
+  buddyDir?: string;
 }
 
 After(function (this: MemoryWorld) {
@@ -22,15 +22,15 @@ After(function (this: MemoryWorld) {
 
 Given("an initialized buddy git repository", async function (this: MemoryWorld) {
   this.memoryTmpDir = mkdtempSync(join(tmpdir(), "ab-memory-"));
-  this.abDir = join(this.memoryTmpDir, "buddy");
+  this.buddyDir = join(this.memoryTmpDir, "buddy");
   const config: SetupConfig = {
-    rootDir: this.abDir,
+    rootDir: this.buddyDir,
     provider: "anthropic",
     model: "claude-haiku-4-5",
     language: "en",
     name: "Test",
   };
-  await createAbInstance({
+  await createBuddyInstance({
     config,
     configPath: join(this.memoryTmpDir, "config.json"),
     templatesDir: defaultTemplatesDir(),
@@ -38,15 +38,15 @@ Given("an initialized buddy git repository", async function (this: MemoryWorld) 
 });
 
 Given("the app is running with memory lifecycle enabled", function (this: MemoryWorld) {
-  this.connect(this.abDir, { force: true, trackSpawn: true });
+  this.connect(this.buddyDir, { force: true, trackSpawn: true });
 });
 
 Given("memory lifecycle is tracking reflect spawns", function (this: MemoryWorld) {
-  this.connect(this.abDir, { force: true, trackSpawn: true });
+  this.connect(this.buddyDir, { force: true, trackSpawn: true });
 });
 
 When("the agent writes file {string}", async function (this: MemoryWorld, relPath: string) {
-  const fullPath = join(this.abDir!, relPath);
+  const fullPath = join(this.buddyDir!, relPath);
   mkdirSync(dirname(fullPath), { recursive: true });
   writeFileSync(fullPath, "# updated by agent\n", "utf8");
   this.session.emitToolExecutionEnd("write", fullPath);
@@ -60,7 +60,7 @@ When("the agent turn ends", async function (this: MemoryWorld) {
 
 When("the agent completes {int} turns with activity", async function (this: MemoryWorld, n: number) {
   for (let i = 0; i < n; i++) {
-    const fullPath = join(this.abDir!, `user/turn-${i}.md`);
+    const fullPath = join(this.buddyDir!, `user/turn-${i}.md`);
     mkdirSync(dirname(fullPath), { recursive: true });
     writeFileSync(fullPath, `# turn ${i}\n`, "utf8");
     this.session.emitToolExecutionEnd("write", fullPath);
@@ -70,12 +70,12 @@ When("the agent completes {int} turns with activity", async function (this: Memo
 });
 
 Then("the buddy repository has a new commit", async function (this: MemoryWorld) {
-  const log = await simpleGit(this.abDir!).log();
+  const log = await simpleGit(this.buddyDir!).log();
   assert.ok(log.total > 1, "expected more than the initial setup commit");
 });
 
 Then("the latest commit message starts with {string}", async function (this: MemoryWorld, prefix: string) {
-  const log = await simpleGit(this.abDir!).log({ maxCount: 1 });
+  const log = await simpleGit(this.buddyDir!).log({ maxCount: 1 });
   assert.ok(log.latest?.message.startsWith(prefix), log.latest?.message ?? "no commit");
 });
 

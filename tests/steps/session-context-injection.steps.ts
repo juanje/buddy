@@ -6,10 +6,10 @@ import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { assembleSessionContext, type SessionContext } from "../../backends/prompt";
-import type { AbWorld } from "../support/world";
+import type { BuddyWorld } from "../support/world";
 
-interface ContextWorld extends AbWorld {
-  abDir?: string;
+interface ContextWorld extends BuddyWorld {
+  buddyDir?: string;
   sessionContext?: SessionContext;
 }
 
@@ -17,13 +17,13 @@ const NOW = new Date("2026-07-19T10:00:00");
 
 Given("the deferred queue has only an item due next month", function (this: ContextWorld) {
   writeFileSync(
-    join(this.abDir!, "agent_brain", "deferred.md"),
+    join(this.buddyDir!, "agent_brain", "deferred.md"),
     "- **reminder** (2026-08-15, user): Felicitar a mamá.\n",
   );
 });
 
 When("the session context is assembled", function (this: ContextWorld) {
-  this.sessionContext = assembleSessionContext(this.abDir!, NOW);
+  this.sessionContext = assembleSessionContext(this.buddyDir!, NOW);
 });
 
 Then("both deferred items are included as pending items to surface", function (this: ContextWorld) {

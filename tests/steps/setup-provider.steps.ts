@@ -15,9 +15,9 @@ import { toPiProviderId } from "../../backends/provider-mapping";
 import type { SetupController } from "../../src/lib/setup-controller";
 import { advanceToProviderStep } from "../support/setup-wizard-helpers";
 import { wizardOf } from "../support/setup-wizard-factory";
-import type { AbWorld } from "../support/world";
+import type { BuddyWorld } from "../support/world";
 
-interface ProviderWorld extends AbWorld {
+interface ProviderWorld extends BuddyWorld {
   authTmpDir?: string;
   authPath?: string;
   wizard?: SetupController;
