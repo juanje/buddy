@@ -114,7 +114,6 @@ export type LocaleStrings = {
   budgetExceededBody: string;
   notificationTitle: string;
   fileViewerClose: string;
-  fileViewerOpenExternal: string;
   fileViewerLoading: string;
   fileViewerError: string;
 };
@@ -240,7 +239,6 @@ export const es: LocaleStrings = {
   budgetExceededBody: "Presupuesto mensual alcanzado (${spent} de ${budget}). El chat está pausado hasta que ajustes el presupuesto o empiece el mes.",
   notificationTitle: "buddy",
   fileViewerClose: "Cerrar",
-  fileViewerOpenExternal: "Abrir externamente",
   fileViewerLoading: "Cargando archivo…",
   fileViewerError: "No se pudo leer el archivo: {message}",
 };

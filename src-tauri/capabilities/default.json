@@ -13,17 +13,9 @@
     "js:default",
     "dialog:default",
     {
-      "identifier": "opener:allow-open-path",
-      "allow": [{ "path": "**" }]
-    },
-    {
       "identifier": "opener:allow-open-url",
-      "allow": [{ "url": "https://**" }, { "url": "http://**" }]
+      "allow": [{ "url": "https://**" }]
     },
-    "notification:default",
-    {
-      "identifier": "fs:allow-read-text-file",
-      "allow": [{ "path": "**" }]
-    }
+    "notification:default"
   ]
 }

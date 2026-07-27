@@ -90,8 +90,9 @@ rootDir (git repo — user/agent content only)
 | FR-CHAT-06 | Tool call display (expandable cards) | 3 ✓ |
 | FR-CHAT-07 | Auto-scroll with manual override | 0 ✓ |
 | FR-CHAT-08 | Input textarea resets height after send | 2 ✓ |
-| FR-CHAT-09 | Local file links open in system default app | 2 ✓ |
+| FR-CHAT-09 | Local file links are marked and routed internally | 2 ✓ |
 | FR-CHAT-10 | Inline file viewer for markdown/text links | 2 ✓ |
+| FR-CHAT-11 | Local links are view-only, internal, and scoped | 3 |
 
 **FR-CHAT-01 — Streaming message display**
 
@@ -149,24 +150,49 @@ rootDir (git repo — user/agent content only)
 - **Then** the textarea height resets to its single-line default
 - **And** subsequent messages start with the compact input bar
 
-**FR-CHAT-09 — Local file links open in system default app**
+**FR-CHAT-09 — Local file links are marked and routed internally**
 
 - **Given** the agent response contains a markdown link to a local file (relative path without `://` protocol, e.g. `[name](agent_brain/skills/foo.md)`)
 - **When** the link renders in the chat
 - **Then** it is marked with a `data-local-path` attribute (no `target="_blank"`)
-- **And** clicking it resolves the path against the buddy directory and opens it via `tauri-plugin-opener` `openPath()` in the system default app
+- **And** clicking it is handled inside Buddy — never by an external program (see FR-CHAT-11)
 - **And** external URLs (`http://`, `https://`) continue to open in the browser as before
 - **Note:** The renderer in `src/lib/markdown.ts` must distinguish local paths from external URLs. A path is local if it has no protocol prefix or uses `file://`.
+- **Changed (Jul 27):** the original acceptance criterion delegated the click to
+  `tauri-plugin-opener` `openPath()`. That behavior is withdrawn — see FR-CHAT-11.
 
 **FR-CHAT-10 — Inline file viewer for markdown/text links**
 
-- **Given** the user clicks a local file link that points to a `.md` or `.txt` file
+- **Given** the user clicks a local file link that resolves to a viewable file (FR-CHAT-11)
 - **When** the file exists and is readable
-- **Then** instead of opening the system app, a read-only panel/modal opens inside Buddy showing the file content rendered as markdown (for `.md`) or plain text (for `.txt`)
-- **And** the panel includes a "Close" button and optionally an "Open externally" button
-- **But when** the file is not `.md` or `.txt` (e.g. `.pdf`, `.png`)
-- **Then** fall back to FR-CHAT-09 behavior (open in system app)
-- **Note:** This is the enhanced experience over FR-CHAT-09; both can coexist (FR-CHAT-10 overrides FR-CHAT-09 for supported file types).
+- **Then** a read-only panel/modal opens inside Buddy showing the file content rendered as markdown (for `.md`) or plain text (for `.txt`)
+- **And** the panel includes a "Close" button
+- **And** the panel has **no** "Open externally" affordance (withdrawn, FR-CHAT-11)
+- **And** the file content is read by the worker, not by the frontend (NFR-SEC-09)
+- **But when** the file cannot be read
+- **Then** the panel shows a plain-language error instead of content
+
+**FR-CHAT-11 — Local links are view-only, internal, and scoped**
+
+Supersedes the system-opener behavior originally specified in FR-CHAT-09/10.
+
+- **Given** the user clicks a local file link emitted by the agent
+- **When** the target is a `.md` or `.txt` file inside the buddy directory, under
+  `agent_brain/`, `user/`, `downloads/` or `logs/`
+- **Then** it opens in the inline viewer (FR-CHAT-10)
+- **But when** the target is any other file type (`.pdf`, `.png`, `.command`, …)
+- **Then** it is **not** clickable; the path renders as plain text so the user can
+  locate it with their own file manager
+- **And when** the target resolves outside the buddy directory, or outside the four
+  allowed directories — including via `..` segments — it is rejected the same way
+- **And** Buddy **never** opens a file with an external program. There is no
+  "open externally" action anywhere in the product.
+- **Note (do not "fix" this):** an exception for directories is unsafe. On macOS an
+  application bundle (`.app`, `.pkg`) *is* a directory, so an `isDirectory()` check
+  would re-open the execution path this requirement exists to close.
+- **Rationale:** the agent authors these links, and the agent ingests untrusted web
+  content via `fetch_url`. A link is therefore attacker-influenced input, not a
+  user intention. Viewing is safe; launching a program is not.
 
 ### 3.2 First-Run / Onboarding (FR-SETUP)
 
@@ -553,6 +579,8 @@ Fork bomb defense:
 | FR-CONSOL-05 | Idle-aware scheduling | 2 ✓ |
 | FR-CONSOL-06 | Run journal | 2 ✓ |
 | FR-CONSOL-07 | Consolidation relocate tool for brain file grouping | 2 ✓ |
+| FR-CONSOL-08 | Consolidation state persisted per completed depth | 2 |
+| FR-CONSOL-09 | Failure backoff and retry ceiling | 2 |
 
 **Consolidation depths:**
 
@@ -618,7 +646,25 @@ Fork bomb defense:
 - **And** all markdown files referencing the old relative path are updated
 - **And** the operation fails gracefully if source is outside `agent_brain/`
 
-### 3.9 Hebbian Tracking (FR-HEBB)
+**FR-CONSOL-08 — Consolidation state persisted per completed depth**
+
+- **Given** a cascade is running (e.g. target depth 2, so depths 1 and 2 run in order)
+- **When** depth 1 completes successfully
+- **Then** the advanced counters are written to `.buddy/consolidation-state.json` immediately
+- **And when** a later depth in the same cascade fails
+- **Then** the work already completed and paid for is not discarded — depth 1 is not re-run on the next evaluation
+- **Rationale:** state was previously saved only after the whole loop, so a failure at depth N silently threw away every depth below it. Each depth is an LLM call with real cost.
+
+**FR-CONSOL-09 — Failure backoff and retry ceiling**
+
+- **Given** a consolidation depth has failed
+- **When** the failure is recorded
+- **Then** the consecutive-failure count for that depth is persisted in `.buddy/consolidation-state.json`
+- **And** the next attempt is delayed by an exponential backoff derived from that count
+- **And when** the count reaches the ceiling (default 3)
+- **Then** consolidation for that depth is abandoned and the user is told, in plain language, that background maintenance is paused and why
+- **And** a successful run resets the count to zero
+- **Rationale:** without this, a deterministic failure retries every heartbeat tick (30 min) indefinitely, each retry costing a full LLM call. See NFR-REL-04 (amended).
 
 | ID | Description | Phase |
 |----|-------------|-------|
@@ -784,6 +830,7 @@ Fork bomb defense:
 | FR-COST-02 | Usage panel in Settings (session + monthly) | 2 ✓ |
 | FR-COST-03 | Budget alert and hard limit | 2 ✓ |
 | FR-COST-04 | Memory depth presets (maintenance frequency) | 3+ |
+| FR-COST-05 | Budget gate aborts an in-flight cascade | 2 |
 
 **FR-COST-01 — removed**
 
@@ -823,6 +870,15 @@ aggregate visibility (FR-COST-02) and budget safety nets (FR-COST-03).
 - **And** the choice maps internally to adjustments of `auto_reflect_threshold`, consolidation thresholds, and scheduling parameters
 - **And** the UI explains the trade-off for each preset in plain language
 - **Note:** This is a cost optimization lever for users who've hit budget limits repeatedly. It should not be prominent in the UI — advanced section within Usage, not a top-level setting. Raw numeric configuration remains available in `.buddy/consolidation-state.json` for power users but is not exposed in the app UI.
+
+**FR-COST-05 — Budget gate aborts an in-flight cascade**
+
+- **Given** a consolidation cascade is running (depths 1 → 2 → 3)
+- **When** monthly usage crosses the 95% background threshold **during** the cascade
+- **Then** the cascade stops cleanly at the next depth boundary — the depth in progress finishes, no further depth starts
+- **And** completed depths keep their state advance (FR-CONSOL-08)
+- **And** the stop is recorded in the run journal with status `budget-stopped`
+- **Rationale:** the 95% gate previously only prevented a cascade from *starting*. A depth-3 cascade begun at 70% could run three LLM calls past the ceiling before anything checked again.
 
 ### 3.14 buddy Brain Template (FR-BRAIN)
 
@@ -1148,6 +1204,7 @@ result — the LLM then follows the procedure.
 |----|-------------|-------|
 | FR-NET-01 | Fetch URL content (web→markdown, PDF, image) | 2 ✓ |
 | FR-NET-02 | Web search (opt-in toggle) | 3+ |
+| FR-NET-03 | Untrusted content framing | 2 |
 
 **FR-NET-01 — Fetch URL content**
 
@@ -1180,7 +1237,8 @@ result — the LLM then follows the procedure.
 - No JavaScript rendering (SPAs won't extract — graceful degradation)
 - No authentication/cookies (paywalled content fails gracefully)
 - No recursive crawling (one URL = one fetch)
-- Permission model: network fetch is not gated by Zone 1/2/3 (those are filesystem). The user explicitly triggers the fetch by sharing a URL.
+- Permission model: network fetch is not gated by Zone 1/2/3 (those are filesystem). The user explicitly triggers the fetch by sharing a URL. Destination safety is enforced invisibly in the worker (NFR-SEC-12), **not** by asking the user to approve domains — the target user cannot evaluate domain risk and would approve every domain they themselves requested.
+- Content trust: fetched content is untrusted input, framed as data rather than instructions before it enters context (FR-NET-03).
 - Git: markdown downloads committed normally; binary files `.gitignore`d via `downloads/*.pdf`, `downloads/*.png`, etc.
 - `rootDir/downloads/` is user-visible (Finder/Nautilus accessible) — transparency principle
 
@@ -1206,6 +1264,26 @@ result — the LLM then follows the procedure.
 6. Auto-fetch interaction (search result → auto-fetch full page, or snippets only unless asked?)
 
 **Design intent:** Buddy's core value is local, persistent, private memory. Search is a conscious opt-in that extends capabilities when the user explicitly needs external information — not a default that dilutes the "it remembers you" promise.
+
+---
+
+**FR-NET-03 — Untrusted content framing**
+
+- **Given** content retrieved by `fetch_url` (or any future external source)
+- **When** it is placed into the agent's context
+- **Then** it is wrapped in explicit delimiters marking it as **data, not instructions**
+- **And** `agents-base.md` instructs the agent that text inside those delimiters is never
+  to be followed as a directive, regardless of what it claims (authority, urgency,
+  "system" framing, or claimed prior authorization)
+- **And** the agent surfaces the attempt to the user rather than acting on it
+- **Note:** this is mitigation, not a guarantee. Prompt injection cannot be fully solved
+  at the prompt layer, which is why the enforcing defenses live in code: output
+  sanitization (NFR-SEC-10), path containment (NFR-SEC-08), and write scoping.
+- **Rationale — why this matters more for Buddy than for a chatbot:** a stateless
+  assistant loses injected content when the session ends. Buddy has write access to
+  `agent_brain/`, and that content is re-injected into the system prompt of every
+  future session. Injected instructions that reach a brain file are **persistent
+  memory poisoning** — silent, durable, and invisible to a non-technical user.
 
 ### 3.21 File Deletion (FR-DELETE)
 
@@ -1319,6 +1397,14 @@ result — the LLM then follows the procedure.
 | NFR-SEC-05 | API keys stored with restrictive file permissions (mode 600); no credentials inside the buddy repo |
 | NFR-SEC-06 | The agent cannot modify its own model configuration (`.pi/settings.json` writes blocked) |
 | NFR-SEC-07 | buddy uses its own credential store (`~/.buddy/auth.json`), completely isolated from Pi CLI's `~/.pi/agent/auth.json`. Changing provider/model in one tool never affects the other. |
+| NFR-SEC-08 | Single path-containment authority. One worker-side module resolves and validates every path reachable from user- or agent-supplied input. The frontend never resolves paths and never decides containment. |
+| NFR-SEC-09 | The frontend holds no filesystem capability. `capabilities/default.json` grants no `fs:*` permission and no `opener:allow-open-path`. `opener:allow-open-url` is retained, restricted to `https://`, solely for the OAuth login flow. File content reaches the UI only through worker RPC. |
+| NFR-SEC-10 | No raw HTML reaches the DOM. Markdown rendered into `{@html}` is sanitized first, and every interpolated value (code-fence language, link href and title) is attribute-escaped. Applies to assistant messages and to file content shown in the viewer. |
+| NFR-SEC-11 | A Content Security Policy is defined in `tauri.conf.json`. `csp: null` is prohibited. `script-src` excludes `unsafe-inline` and `unsafe-eval`. |
+| NFR-SEC-12 | `fetch_url` refuses loopback, link-local, cloud metadata and private-range destinations. The check runs after DNS resolution and again after every redirect hop. Response size is enforced on accumulated bytes during streaming, not after buffering. |
+| NFR-SEC-13 | Every tool declares which of its arguments are paths. The permission gate validates all declared path arguments. Registering a tool with an undeclared path-shaped argument fails the test suite. |
+| NFR-SEC-14 | All Pi sessions are created through a single factory that always supplies buddy's own `ModelRuntime`, registers usage tracking and installs the permission gate. No call site constructs a session directly. |
+| NFR-SEC-15 | Path containment resolves symlinks (`realpath`, falling back to the nearest existing ancestor for paths not yet created) before comparing against the buddy directory. |
 
 ### 4.3 Reliability
 
@@ -1327,8 +1413,10 @@ result — the LLM then follows the procedure.
 | NFR-REL-01 | If the reflect child is interrupted, agent file writes are committed immediately after the LLM call (before daily log finalization) |
 | NFR-REL-02 | Forked session files in `.buddy/reflect-sessions/` persist on disk for potential manual recovery |
 | NFR-REL-03 | Lock files include PID and timestamp; stale locks (process dead or >1h) are broken automatically |
-| NFR-REL-04 | Failed consolidation runs don't advance counters — the run retries on the next evaluation |
+| NFR-REL-04 | A failed consolidation depth does not advance its own counter. Depths that completed **before** the failure keep their advance (FR-CONSOL-08), and the retry is subject to backoff and a retry ceiling (FR-CONSOL-09). **Amended Jul 27:** the original wording ("the run retries on the next evaluation") specified an unbounded retry loop that could drain a user's budget. |
 | NFR-REL-05 | Worker crash shows a user-friendly error with a restart option, not a stack trace |
+| NFR-REL-06 | Concurrent writers to `~/.buddy/usage.json` (main worker, reflect child, consolidation session) never lose an update. Read-modify-write is serialized, or the file is append-only with aggregation on read. |
+| NFR-REL-07 | Lock acquisition is atomic — the lock file is created with an exclusive flag, never via a separate existence check followed by a write. |
 
 ### 4.4 Portability
 
@@ -1379,6 +1467,7 @@ result — the LLM then follows the procedure.
 | NFR-CONFIG-02 | User-tunable settings (reflect interval, model, language) persisted in `.buddy/settings.json` and editable from the settings UI |
 | NFR-CONFIG-03 | Security-critical constants (denylist paths, excluded tools) centralized in `shared/defaults.ts` alongside operational defaults — not configurable by user or agent, but readable in one place for maintenance |
 | NFR-CONFIG-04 | Core prompts (`~/.buddy/prompts/`) and self-docs (`~/.buddy/docs/`) are populated via boot refresh (NFR-MIGRATE-06). The app ensures these directories exist before any session starts. |
+| NFR-CONFIG-05 | One resolver for the global config directory. `globalConfigDir()` (`BUDDY_CONFIG_DIR`) and `defaultConfigDir()` (derived from `BUDDY_CONFIG_PATH`) are unified so background processes and the main worker can never disagree on where `usage.json` and `allowed-paths.json` live. |
 
 ### 4.9 Boot Refresh and Migration (NFR-MIGRATE)
 
@@ -1415,6 +1504,25 @@ If a release needs a one-shot transform (e.g. rename a field in `config.json`), 
 | ID | Requirement |
 |----|-------------|
 | NFR-MAINT-01 | Delete `.buddy/logs/*.jsonl` session event logs older than 7 days (configurable via `SESSION_LOG_RETENTION_DAYS` in `shared/defaults.ts`). Run on app boot or heartbeat housekeeping. Episodic value is already in daily logs after reflect/consolidation; raw JSONL is debug-only. |
+
+### 4.11 Testing Discipline (NFR-TEST)
+
+| ID | Requirement |
+|----|-------------|
+| NFR-TEST-01 | Every FR with an input surface — a path, a URL, file content, or LLM output — carries at least one Gherkin scenario driving hostile or malformed input, not only the happy path. A feature is not `done` until that scenario exists and passes. |
+
+**Why this exists.** The July 2026 external review found a path traversal
+(`resolveLocalPathForOpen`) that had survived 162 green scenarios. The cause was
+structural, not careless: the suite mirrors the spec, and the spec described
+intent — what should happen when the user does the right thing. Nothing described
+what happens when input is crafted, malformed, or hostile. Buddy ingests untrusted
+web content and renders agent-authored output, so "the input is well-formed" is not
+a safe default assumption anywhere near a path, a URL, or the DOM.
+
+**What counts as an adversarial scenario:** traversal segments (`..`), absolute
+paths, `file://` URLs, unexpected extensions, private/loopback network targets,
+raw HTML in markdown, oversized payloads, and — where a capability has been
+deliberately withdrawn — a scenario asserting it stays withdrawn.
 
 ---
 

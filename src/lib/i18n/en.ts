@@ -121,7 +121,6 @@ export const en: LocaleStrings = {
   budgetExceededBody: "Monthly budget reached (${spent} of ${budget}). Chat is paused until you adjust the budget or next month.",
   notificationTitle: "buddy",
   fileViewerClose: "Close",
-  fileViewerOpenExternal: "Open externally",
   fileViewerLoading: "Loading file…",
   fileViewerError: "Could not read file: {message}",
 };

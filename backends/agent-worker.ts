@@ -44,6 +44,7 @@ import { globalConfigDir } from "./global-config";
 import { bootRefreshIfNeeded } from "./boot-refresh";
 import { pruneSessionLogs } from "./session-log-prune";
 import { createUsageTracker, resolveMonthlyBudget, type UsageTracker } from "./usage-tracker";
+import { readViewableFile } from "./viewable-file";
 
 async function main(): Promise<void> {
   const configDir = globalConfigDir();
@@ -281,6 +282,12 @@ async function main(): Promise<void> {
           throw new Error("App is not configured");
         }
         return ensureUsageTracker().getUsageReport();
+      },
+      async readViewableFile(href: string) {
+        if (setupState.firstRun) {
+          throw new Error("App is not configured");
+        }
+        return readViewableFile(setupState.config.rootDir, href);
       },
       async shutdown() {
         await core?.api.shutdown();

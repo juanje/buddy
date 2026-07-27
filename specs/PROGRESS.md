@@ -197,10 +197,186 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 
 ## Current focus
 
-> **Jul 26 file ops sprint shipped** — delete_file, copy_file, move_file tools.
-> **PDF extraction fix** — embedded pdfjs worker for compiled binary.
-> **FR-PERM-05 rejected** — no ambient path parsing from chat messages; session-allowed paths = attachments only.
-> **313 unit + 163 BDD** green. **Implementation next:** FR-WIKI.
+> **SPRINT: Hardening (v0.1.1) — IN PROGRESS.** Triggered by the external code
+> review of 2026-07-26 (Opus 5) and the project response of 2026-07-27.
+> **FR-WIKI is deferred until H1–H3 close.**
+>
+> **H1 done** (link containment). **350 unit + 173 BDD green**, typecheck clean.
+> **Next: H2** (render safety — sanitize markdown, define CSP).
+
+### Sprint: Hardening (v0.1.1) — started 2026-07-27
+
+**Why now:** v0.1.0 "Ana" is publicly released and installed on at least two
+machines. The review found one confirmed path traversal, one confirmed XSS, and
+an unbounded consolidation retry loop that can drain a real user's budget with no
+attacker involved. Feature work pauses until Block A is green.
+
+Sliced into six sprints by unit of change, not by severity. **Every sprint ends
+green** — full suite passing and `tsc --noEmit` clean — so any of them is a
+shippable stopping point.
+
+**Transversal:** NFR-TEST-01 (adversarial scenario required) is a `done`
+criterion for every item below, not a separate work item.
+
+---
+
+#### Sprint H1 — Link containment `[M]` — DONE (2026-07-27)
+
+Goal: the webview can no longer name, read, or launch anything on the filesystem.
+
+| ID | Requirement | Status | Commit |
+|----|-------------|--------|--------|
+| FR-CHAT-11 | Local links view-only, internal, scoped | done | (this sprint) |
+| NFR-SEC-08 | Single path-containment authority | done | (this sprint) |
+| NFR-SEC-09 | Frontend holds no filesystem capability | done | (this sprint) |
+
+**Tests at H1 close:** 350 unit + 173 BDD green, typecheck clean (was 313 + 162).
+
+New modules: `shared/viewable-path.ts` (containment authority, browser-safe) ·
+`backends/viewable-file.ts` (enforcement + read).
+Removed: `resolveLocalPathForOpen`, `LocalLinkAction` type `"open"`,
+`FileViewerController.openExternally`, `openPath` from `ChatView`, the
+external-open button and its i18n key.
+Capabilities dropped: `fs:allow-read-text-file`, `opener:allow-open-path`.
+`opener:allow-open-url` narrowed from `http`+`https` to `https` only.
+
+**Design note — where the authority actually lives.** NFR-SEC-08 is worded as
+"one worker-side module". In practice the *rule* lives in `shared/viewable-path.ts`
+(browser-safe, no `node:path`) and the *enforcement* in `backends/viewable-file.ts`.
+The frontend imports the shared rule only to decide whether to render a link as
+clickable — presentational, non-authoritative. Nothing is read until the worker
+validates again. Writing the rule twice is exactly how S1 happened, so one
+implementation shared by both sides is the point.
+
+Verified against the original review probes: `../../secret.md`, `../.ssh/id_rsa`,
+`downloads/x.command` and `downloads/Evil.app` all resolve to `null`.
+
+Touches: new worker path-authority module · `shared/api.ts` (+`readViewableFile`) ·
+`agent-worker.ts` · `local-path.ts` (drop `resolveLocalPathForOpen`) ·
+`local-link-handler.ts` · `file-viewer-controller.ts` · `file-viewer-factory.ts` ·
+`FileViewer.svelte` (drop external-open button) · `ChatView.svelte` (drop `openPath`) ·
+`capabilities/default.json`
+
+Exit: 173/173 BDD green · typecheck clean · `fs:*` and `opener:allow-open-path`
+absent from capabilities · no `openPath` import anywhere in `src/`
+
+**First by necessity, not by priority:** the suite is already red from this work.
+Nothing else can ship until it closes.
+
+#### Sprint H2 — Render safety `[S]`
+
+Goal: nothing the LLM or a file can say becomes executable markup.
+
+| ID | Requirement | Status | Commit |
+|----|-------------|--------|--------|
+| NFR-SEC-10 | Markdown output sanitized before `{@html}` | todo | |
+| NFR-SEC-11 | CSP defined (`csp: null` prohibited) | todo | |
+
+Touches: `markdown.ts` · `tauri.conf.json` · `package.json` (sanitizer dep) ·
+new `specs/features/markdown-safety.feature`
+
+Exit: raw HTML neutralized · fence `language` escaped · `data-local-path` still
+survives sanitization (FR-CHAT-09/10 must not silently break) · CSP present with
+`script-src` free of `unsafe-inline`/`unsafe-eval` · app visually verified in the
+real window, not only in tests
+
+#### Sprint H3 — Consolidation cost safety `[M]`
+
+Goal: background maintenance can never drain a user's budget unattended.
+
+| ID | Requirement | Status | Commit |
+|----|-------------|--------|--------|
+| FR-CONSOL-08 | State persisted per completed depth | todo | |
+| FR-CONSOL-09 | Failure backoff + retry ceiling | todo | |
+| FR-COST-05 | Budget gate aborts in-flight cascade | todo | |
+
+Touches: `consolidation-runner.ts` · `heartbeat.ts` · `shared/consolidation-state.ts` ·
+`consolidation-scheduler.feature`
+
+Exit: depth-2 failure keeps depth-1's advance · backoff grows across consecutive
+failures · ceiling reached → abandoned + user told in plain language · crossing 95%
+mid-cascade stops at the next depth boundary with journal status `budget-stopped`
+
+**Fully independent of H1/H2** — if budget drain is observed in the wild, branch
+from the last green commit and ship this first.
+
+#### Sprint H4 — Network trust boundary `[M]`
+
+Goal: `fetch_url` cannot reach the local network, and what it returns is data.
+
+| ID | Requirement | Status | Commit |
+|----|-------------|--------|--------|
+| NFR-SEC-12 | SSRF protection in `fetch_url` | todo | |
+| FR-NET-03 | Untrusted content framing | todo | |
+
+Touches: `fetch-url.ts` · `bundled/prompts/agents-base.md` · `fetch-url.feature`
+
+Exit: loopback, link-local, metadata and private ranges refused after DNS
+resolution **and** after each redirect hop · size enforced on accumulated bytes
+during streaming · fetched content delimited as untrusted in context
+
+#### Sprint H5 — Session factory and shared state `[L]`
+
+Goal: one way to create a session; one writer discipline for shared files.
+
+| ID | Requirement | Status | Commit |
+|----|-------------|--------|--------|
+| NFR-SEC-14 | Single authenticated-session factory | todo | |
+| NFR-REL-06 | `usage.json` concurrent-write safety | todo | |
+
+Touches: new `backends/session-factory.ts` · `session-boot.ts` · `reflect-child.ts` ·
+`consolidation-runner.ts` · `warm-handoff.ts` · `usage-tracker.ts`
+
+Exit: no call site constructs a session directly · every path supplies buddy's own
+`ModelRuntime` · concurrent-writer test shows no lost update
+
+**Largest and riskiest.** Touches `reflect-child.ts`, which is unreviewed and
+already produced one auth bug (`231ac31`). Do the second-pass review of that file
+as part of this sprint, not after.
+
+#### Sprint H6 — Containment cleanup `[S–M]`
+
+| ID | Requirement | Status | Commit |
+|----|-------------|--------|--------|
+| NFR-SEC-13 | Path-bearing tool args declared | todo | |
+| NFR-SEC-15 | Symlink resolution in containment | todo | |
+| NFR-REL-07 | Atomic lock acquisition (`wx`) | todo | |
+| NFR-CONFIG-05 | Single config-dir resolver | todo | |
+
+Plus review items M1–M7 (unused `pageUrl`, double `parseHTML`, 2.2 MB generated
+asset committed, `this` in usage-tracker literals, empty catch audit).
+
+---
+
+**Suggested release grouping**
+
+| Release | Sprints | Rationale |
+|---------|---------|-----------|
+| v0.1.1 | H1 + H2 + H3 | The two confirmed-exploitable findings plus the one that spends real money |
+| v0.1.2 | H4 + H5 | Structural; no confirmed exploit, but closes the injection and auth patterns |
+| v0.1.3 | H6 | Cleanup |
+
+**Spec amendments made by this sprint (deliberate divergence, not drift):**
+
+| What | Why |
+|------|-----|
+| FR-CHAT-09 | Withdrew the `openPath()` click behavior. Buddy no longer opens files with external programs. |
+| FR-CHAT-10 | Removed the "Open externally" affordance; content now read by the worker. |
+| NFR-REL-04 | Amended — original wording specified the unbounded retry loop that is R1. |
+| FR-NET-01 | Noted that destination safety is worker-side, not user domain approval. |
+
+**BDD scenarios deliberately deleted:** `Clicking a PDF link falls back to the
+system app` and `Open externally uses the system opener` — both encoded the
+behavior now considered unsafe.
+
+**ID collisions found while planning** (avoid re-using): `NFR-SEC-07` (credential
+isolation), `NFR-CONFIG-04` (boot refresh), `FR-NET-02` (web search) were already
+taken by unrelated requirements.
+
+**Not yet reviewed** (second-pass candidates): `reflect-child.ts`,
+`oauth-service.ts`, `setup-controller.ts` / `SetupWizard.svelte`, `scripts/`.
+Verified clean during planning: dev bridge (`import.meta.env.DEV`-gated),
+`hebbian.ts` (cannot write outside `agent_brain/`).
 
 ### Jul 26 — PDF extraction compiled-binary fix (2026-07-26)
 

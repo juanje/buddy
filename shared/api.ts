@@ -190,6 +190,13 @@ export interface WorkerAPI {
   changeModel(provider: SetupConfig["provider"], model: string): Promise<void>;
   /** Session + monthly usage and budget status (FR-COST-02/03). */
   getUsage(): Promise<UsageReport>;
+  /**
+   * Read a file the agent linked to, for the inline viewer (FR-CHAT-11).
+   * `href` is the raw link target — untrusted, validated worker-side. Rejects
+   * anything outside the viewable directories or file types. The frontend has
+   * no filesystem access of its own (NFR-SEC-09).
+   */
+  readViewableFile(href: string): Promise<string>;
   shutdown(): Promise<void>;
 }
 

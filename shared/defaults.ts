@@ -113,3 +113,16 @@ export const USER_MUTABLE_DIRS = ["user", "downloads"] as const;
 export const PROTECTED_DIRS = ["agent_brain", "logs"] as const;
 /** Root identity files that must never be deleted or moved (FR-DELETE-01). */
 export const IDENTITY_ROOT_FILES = ["AGENTS.md", "SOUL.md", "USER.md", "CLAUDE.md"] as const;
+
+/**
+ * Directories an agent-authored link may point into (FR-CHAT-11). Everything
+ * else — the buddy root itself, `.buddy/`, `.pi/`, `.git/` — is unreachable
+ * from a chat link.
+ */
+export const VIEWABLE_DIRS = ["agent_brain", "user", "downloads", "logs"] as const;
+/**
+ * File types Buddy renders inline. Deliberately minimal: anything not on this
+ * list is not clickable, because Buddy never hands a file to an external
+ * program (FR-CHAT-11).
+ */
+export const VIEWABLE_EXTENSIONS = [".md", ".txt"] as const;

@@ -59,10 +59,9 @@
         {/if}
       </div>
 
+      <!-- No "open externally" action: Buddy never hands a file to another
+           program (FR-CHAT-11). -->
       <footer class="footer">
-        <button type="button" class="secondary" onclick={() => controller.openExternally()}>
-          {$t.fileViewerOpenExternal}
-        </button>
         <button type="button" class="primary" onclick={() => controller.close()}>
           {$t.fileViewerClose}
         </button>
@@ -157,21 +156,13 @@
     padding: 12px 20px 16px;
     border-top: 1px solid var(--border);
   }
-  .primary,
-  .secondary {
+  .primary {
     border-radius: 8px;
     padding: 8px 14px;
     cursor: pointer;
     font-size: 14px;
-  }
-  .primary {
     border: 1px solid var(--accent);
     background: var(--accent);
     color: var(--accent-fg);
-  }
-  .secondary {
-    border: 1px solid var(--border);
-    background: var(--bg-secondary);
-    color: var(--fg);
   }
 </style>

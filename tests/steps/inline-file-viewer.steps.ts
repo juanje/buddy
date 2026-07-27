@@ -1,4 +1,10 @@
-// tests/steps/inline-file-viewer.steps.ts — FR-CHAT-10 inline file viewer BDD steps.
+// tests/steps/inline-file-viewer.steps.ts — FR-CHAT-10/11 inline file viewer BDD steps.
+//
+// Target contract (red until implemented):
+//   routeLocalLinkClick(rootDir, href) → { type: "view"; relPath } | null
+//   createFileViewerController({ readViewableFile }) — openFile(relPath)
+// There is no "open" action and no openExternally: Buddy never hands a file to
+// an external program (FR-CHAT-11).
 
 import { Given, Then, When } from "@cucumber/cucumber";
 import assert from "node:assert/strict";
@@ -11,7 +17,6 @@ interface InlineFileViewerWorld {
   linkAction?: LocalLinkAction | null;
   fileContents?: Map<string, string>;
   fileViewer?: ReturnType<typeof createFileViewerController>;
-  openedExternally?: string[];
 }
 
 function readStore<T>(store: { subscribe: (fn: (value: T) => void) => () => void }): T {
@@ -25,25 +30,23 @@ function readStore<T>(store: { subscribe: (fn: (value: T) => void) => () => void
 Given("the buddy root directory is {string}", function (this: InlineFileViewerWorld, rootDir: string) {
   this.rootDir = rootDir;
   this.fileContents = new Map();
-  this.openedExternally = [];
   this.fileViewer = createFileViewerController({
-    readTextFile: async (path) => {
-      const content = this.fileContents?.get(path);
+    // The frontend has no filesystem capability (NFR-SEC-09): content arrives
+    // over worker RPC, keyed by a path relative to the buddy directory.
+    readViewableFile: async (relPath: string) => {
+      const content = this.fileContents?.get(relPath);
       if (content === undefined) {
-        throw new Error(`ENOENT: no such file ${path}`);
+        throw new Error(`File not found: ${relPath}`);
       }
       return content;
-    },
-    openPath: async (path) => {
-      this.openedExternally?.push(path);
     },
   });
 });
 
 Given(
   "a readable file {string} with content {string}",
-  function (this: InlineFileViewerWorld, path: string, content: string) {
-    this.fileContents?.set(path, content);
+  function (this: InlineFileViewerWorld, relPath: string, content: string) {
+    this.fileContents?.set(relPath, content);
   },
 );
 
@@ -52,25 +55,25 @@ When("I click the local link {string}", function (this: InlineFileViewerWorld, h
   this.linkAction = routeLocalLinkClick(this.rootDir, href);
 });
 
-When("the file viewer opens {string}", async function (this: InlineFileViewerWorld, path: string) {
+When("the file viewer opens {string}", async function (this: InlineFileViewerWorld, relPath: string) {
   if (!this.fileViewer) throw new Error("file viewer not initialized");
-  await this.fileViewer.openFile(path);
+  await this.fileViewer.openFile(relPath);
 });
 
 When("the file viewer is closed", function (this: InlineFileViewerWorld) {
   this.fileViewer?.close();
 });
 
-When("the file viewer opens externally", async function (this: InlineFileViewerWorld) {
-  await this.fileViewer?.openExternally();
-});
+Then(
+  "the link opens in the viewer with relative path {string}",
+  function (this: InlineFileViewerWorld, relPath: string) {
+    assert.equal(this.linkAction?.type, "view");
+    assert.equal(this.linkAction?.relPath, relPath);
+  },
+);
 
-Then("the link action is {string}", function (this: InlineFileViewerWorld, action: string) {
-  assert.equal(this.linkAction?.type, action);
-});
-
-Then("the resolved path is {string}", function (this: InlineFileViewerWorld, path: string) {
-  assert.equal(this.linkAction?.absPath, path);
+Then("the link is rejected", function (this: InlineFileViewerWorld) {
+  assert.equal(this.linkAction, null);
 });
 
 Then("the file viewer is open", function (this: InlineFileViewerWorld) {
@@ -81,8 +84,8 @@ Then("the file viewer is not open", function (this: InlineFileViewerWorld) {
   assert.equal(readStore(this.fileViewer!.open), false);
 });
 
-Then("the file viewer shows path {string}", function (this: InlineFileViewerWorld, path: string) {
-  assert.equal(readStore(this.fileViewer!.filePath), path);
+Then("the file viewer shows path {string}", function (this: InlineFileViewerWorld, relPath: string) {
+  assert.equal(readStore(this.fileViewer!.filePath), relPath);
 });
 
 Then("the file viewer shows file name {string}", function (this: InlineFileViewerWorld, name: string) {
@@ -106,9 +109,9 @@ Then("the file viewer shows an error", function (this: InlineFileViewerWorld) {
   assert.ok(error && error.length > 0);
 });
 
-Then(
-  "the system opener was called for {string}",
-  function (this: InlineFileViewerWorld, path: string) {
-    assert.deepEqual(this.openedExternally, [path]);
-  },
-);
+Then("the file viewer has no external-open action", function (this: InlineFileViewerWorld) {
+  assert.ok(
+    !("openExternally" in this.fileViewer!),
+    "file viewer must not expose an external-open action (FR-CHAT-11)",
+  );
+});

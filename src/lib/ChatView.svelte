@@ -7,7 +7,6 @@
   import ToolActivity from "./ToolActivity.svelte";
   import WelcomeBanner from "./WelcomeBanner.svelte";
   import FileViewer from "./FileViewer.svelte";
-  import { openPath } from "@tauri-apps/plugin-opener";
   import { routeLocalLinkClick } from "./local-link-handler";
   import type { FileViewerController } from "./file-viewer-controller";
   import { t } from "./i18n";
@@ -63,23 +62,15 @@
     event.preventDefault();
     const rel = anchor.getAttribute("data-local-path");
     if (!rel) return;
+    // Refused links (non-viewable type, or outside the four user-facing
+    // directories) simply do nothing — Buddy never opens them elsewhere.
     const action = routeLocalLinkClick(rootDir, rel);
     if (!action) return;
-
-    if (action.type === "view") {
-      if (!fileViewer) {
-        console.error("[local-link] file viewer unavailable");
-        return;
-      }
-      await fileViewer.openFile(action.absPath);
+    if (!fileViewer) {
+      console.error("[local-link] file viewer unavailable");
       return;
     }
-
-    try {
-      await openPath(action.absPath);
-    } catch (err) {
-      console.error("[local-link] openPath failed:", action.absPath, err);
-    }
+    await fileViewer.openFile(action.relPath);
   }
 </script>
 

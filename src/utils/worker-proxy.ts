@@ -92,6 +92,11 @@ export function createWorkerProxy(getConnection: () => WorkerConnection | undefi
       if (!connection) throw new Error("worker not connected");
       return connection.api.getUsage();
     },
+    async readViewableFile(href) {
+      const connection = getConnection();
+      if (!connection) throw new Error("worker not connected");
+      return connection.api.readViewableFile(href);
+    },
     async shutdown() {
       await getConnection()?.api.shutdown();
     },

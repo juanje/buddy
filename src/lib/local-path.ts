@@ -1,34 +1,11 @@
-// src/lib/local-path.ts — resolve local markdown links for FR-CHAT-09 (browser-safe).
+// src/lib/local-path.ts — link classification for the chat renderer (FR-CHAT-09).
+//
+// Path containment lives in shared/viewable-path.ts and is enforced by the
+// worker (NFR-SEC-08). This module only re-exports what the renderer needs, so
+// there is no second implementation to drift.
+//
+// `resolveLocalPathForOpen` was removed in the H1 hardening sprint: it built an
+// absolute path by string concatenation without collapsing `..`, which let an
+// agent-authored link escape the buddy directory (FR-CHAT-11).
 
-/** True when the href should open in the system browser, not via shell.open(). */
-export function isExternalHref(href: string): boolean {
-  return /^https?:\/\//i.test(href);
-}
-
-function normalizeSlashes(path: string): string {
-  return path.replace(/\\/g, "/").replace(/\/+$/, "");
-}
-
-/**
- * Resolve a local markdown link against rootDir for shell.open().
- * Returns null for external URLs or paths outside the buddy home.
- */
-export function resolveLocalPathForOpen(rootDir: string, rawHref: string): string | null {
-  if (isExternalHref(rawHref)) return null;
-
-  const stripped = rawHref.replace(/^file:\/\//, "");
-  const root = normalizeSlashes(rootDir);
-  const abs = stripped.startsWith("/")
-    ? normalizeSlashes(stripped)
-    : normalizeSlashes(`${root}/${stripped.replace(/^\.\//, "")}`);
-
-  if (abs === root || abs.startsWith(`${root}/`)) {
-    return abs;
-  }
-  return null;
-}
-
-/** True when the file extension should render in the inline viewer (FR-CHAT-10). */
-export function isViewableFile(path: string): boolean {
-  return /\.(md|txt)$/i.test(path);
-}
+export { isExternalHref, isViewableFile } from "../../shared/viewable-path";

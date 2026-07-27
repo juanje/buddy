@@ -1,4 +1,4 @@
-// tests/unit/inline-file-viewer.test.ts — FR-CHAT-10 inline file viewer.
+// tests/unit/inline-file-viewer.test.ts — FR-CHAT-10/11 inline file viewer.
 
 import { describe, expect, it, vi } from "vitest";
 
@@ -17,13 +17,13 @@ function readStore<T>(store: { subscribe: (fn: (value: T) => void) => () => void
 describe("isViewableFile", () => {
   it("accepts markdown and text extensions", () => {
     expect(isViewableFile("agent_brain/foo.md")).toBe(true);
-    expect(isViewableFile("notes/readme.txt")).toBe(true);
+    expect(isViewableFile("user/readme.txt")).toBe(true);
     expect(isViewableFile("agent_brain/foo.MD")).toBe(true);
-    expect(isViewableFile("notes/readme.TXT")).toBe(true);
+    expect(isViewableFile("user/readme.TXT")).toBe(true);
   });
 
   it("rejects other extensions", () => {
-    expect(isViewableFile("docs/guide.pdf")).toBe(false);
+    expect(isViewableFile("downloads/guide.pdf")).toBe(false);
     expect(isViewableFile("image.png")).toBe(false);
     expect(isViewableFile("agent_brain/noext")).toBe(false);
   });
@@ -33,39 +33,37 @@ describe("routeLocalLinkClick", () => {
   it("routes markdown links to the inline viewer", () => {
     expect(routeLocalLinkClick("/home/buddy", "agent_brain/foo.md")).toEqual({
       type: "view",
-      absPath: "/home/buddy/agent_brain/foo.md",
+      relPath: "agent_brain/foo.md",
     });
   });
 
   it("routes text links to the inline viewer", () => {
-    expect(routeLocalLinkClick("/home/buddy", "notes/readme.txt")).toEqual({
+    expect(routeLocalLinkClick("/home/buddy", "user/notes/readme.txt")).toEqual({
       type: "view",
-      absPath: "/home/buddy/notes/readme.txt",
+      relPath: "user/notes/readme.txt",
     });
   });
 
-  it("falls back to system open for unsupported types", () => {
-    expect(routeLocalLinkClick("/home/buddy", "docs/guide.pdf")).toEqual({
-      type: "open",
-      absPath: "/home/buddy/docs/guide.pdf",
-    });
+  it("refuses unsupported types instead of delegating to the system", () => {
+    expect(routeLocalLinkClick("/home/buddy", "downloads/guide.pdf")).toBeNull();
+    expect(routeLocalLinkClick("/home/buddy", "downloads/payload.command")).toBeNull();
   });
 
   it("returns null for paths outside rootDir", () => {
     expect(routeLocalLinkClick("/home/buddy", "/etc/passwd")).toBeNull();
+    expect(routeLocalLinkClick("/home/buddy", "../../secret.md")).toBeNull();
   });
 });
 
 describe("FileViewerController", () => {
   it("loads markdown content and metadata", async () => {
-    const readTextFile = vi.fn(async () => "# Title\n\nBody");
-    const openPath = vi.fn(async () => {});
-    const controller = createFileViewerController({ readTextFile, openPath });
+    const readViewableFile = vi.fn(async () => "# Title\n\nBody");
+    const controller = createFileViewerController({ readViewableFile });
 
-    await controller.openFile("/home/buddy/agent_brain/foo.md");
+    await controller.openFile("agent_brain/foo.md");
 
     expect(readStore(controller.open)).toBe(true);
-    expect(readStore(controller.filePath)).toBe("/home/buddy/agent_brain/foo.md");
+    expect(readStore(controller.filePath)).toBe("agent_brain/foo.md");
     expect(readStore(controller.fileName)).toBe("foo.md");
     expect(readStore(controller.isMarkdown)).toBe(true);
     expect(readStore(controller.content)).toBe("# Title\n\nBody");
@@ -74,22 +72,20 @@ describe("FileViewerController", () => {
   });
 
   it("loads plain text content", async () => {
-    const readTextFile = vi.fn(async () => "Plain notes");
-    const openPath = vi.fn(async () => {});
-    const controller = createFileViewerController({ readTextFile, openPath });
+    const readViewableFile = vi.fn(async () => "Plain notes");
+    const controller = createFileViewerController({ readViewableFile });
 
-    await controller.openFile("/home/buddy/notes/readme.txt");
+    await controller.openFile("user/notes/readme.txt");
 
     expect(readStore(controller.isMarkdown)).toBe(false);
     expect(readStore(controller.content)).toBe("Plain notes");
   });
 
   it("closes and clears state", async () => {
-    const readTextFile = vi.fn(async () => "# Title");
-    const openPath = vi.fn(async () => {});
-    const controller = createFileViewerController({ readTextFile, openPath });
+    const readViewableFile = vi.fn(async () => "# Title");
+    const controller = createFileViewerController({ readViewableFile });
 
-    await controller.openFile("/home/buddy/agent_brain/foo.md");
+    await controller.openFile("agent_brain/foo.md");
     controller.close();
 
     expect(readStore(controller.open)).toBe(false);
@@ -97,28 +93,23 @@ describe("FileViewerController", () => {
     expect(readStore(controller.content)).toBe("");
   });
 
-  it("opens externally via system opener", async () => {
-    const readTextFile = vi.fn(async () => "# Title");
-    const openPath = vi.fn(async () => {});
-    const controller = createFileViewerController({ readTextFile, openPath });
+  it("exposes no external-open action (FR-CHAT-11)", () => {
+    const readViewableFile = vi.fn(async () => "# Title");
+    const controller = createFileViewerController({ readViewableFile });
 
-    await controller.openFile("/home/buddy/agent_brain/foo.md");
-    await controller.openExternally();
-
-    expect(openPath).toHaveBeenCalledWith("/home/buddy/agent_brain/foo.md");
+    expect("openExternally" in controller).toBe(false);
   });
 
   it("surfaces read errors without closing", async () => {
-    const readTextFile = vi.fn(async () => {
-      throw new Error("ENOENT: missing file");
+    const readViewableFile = vi.fn(async () => {
+      throw new Error("File not found: agent_brain/missing.md");
     });
-    const openPath = vi.fn(async () => {});
-    const controller = createFileViewerController({ readTextFile, openPath });
+    const controller = createFileViewerController({ readViewableFile });
 
-    await controller.openFile("/home/buddy/missing.md");
+    await controller.openFile("agent_brain/missing.md");
 
     expect(readStore(controller.open)).toBe(true);
-    expect(readStore(controller.error)).toMatch(/ENOENT/);
+    expect(readStore(controller.error)).toMatch(/not found/);
     expect(readStore(controller.content)).toBe("");
   });
 });

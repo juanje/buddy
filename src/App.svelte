@@ -41,7 +41,7 @@
   let setupOAuthHandler: ((event: OAuthUIEvent) => void) | undefined = $state();
   let appConfig = $state<SetupConfig | undefined>();
   let settingsController = $state<SettingsController | undefined>();
-  let fileViewerController = $state<FileViewerController | undefined>(createDefaultFileViewerController());
+  let fileViewerController = $state<FileViewerController | undefined>();
   let budgetBlocked = $state(false);
 
   // The controller is created before the worker connects so the UI renders
@@ -49,6 +49,8 @@
   const workerProxy = createWorkerProxy(() => connection);
 
   controller = createChatController(workerProxy);
+  // File content is read by the worker, not by the webview (NFR-SEC-09).
+  fileViewerController = createDefaultFileViewerController(workerProxy);
 
   let chatView: ChatView | undefined = $state();
   const scroll = createScrollController(() => chatView?.scrollToLatest());

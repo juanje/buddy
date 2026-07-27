@@ -1,13 +1,15 @@
 // src/lib/file-viewer-controller.ts — Inline file viewer state (FR-CHAT-10).
 
-import { get, writable, type Readable } from "svelte/store";
+import { writable, type Readable } from "svelte/store";
 
 import { basename } from "../utils/path";
-import { isViewableFile } from "./local-path";
 
 export interface FileViewerDeps {
-  readTextFile(path: string): Promise<string>;
-  openPath(path: string): Promise<void>;
+  /**
+   * Read a viewable file by its path relative to the buddy directory. Backed by
+   * worker RPC — the frontend has no filesystem capability (NFR-SEC-09).
+   */
+  readViewableFile(relPath: string): Promise<string>;
 }
 
 export interface FileViewerController {
@@ -18,9 +20,9 @@ export interface FileViewerController {
   error: Readable<string | undefined>;
   isMarkdown: Readable<boolean>;
   loading: Readable<boolean>;
-  openFile(absPath: string): Promise<void>;
+  /** Open a file by path relative to the buddy directory. */
+  openFile(relPath: string): Promise<void>;
   close(): void;
-  openExternally(): Promise<void>;
 }
 
 export function createFileViewerController(deps: FileViewerDeps): FileViewerController {
@@ -32,17 +34,17 @@ export function createFileViewerController(deps: FileViewerDeps): FileViewerCont
   const isMarkdownStore = writable(false);
   const loadingStore = writable(false);
 
-  async function openFile(absPath: string): Promise<void> {
+  async function openFile(relPath: string): Promise<void> {
     openStore.set(true);
-    filePathStore.set(absPath);
-    fileNameStore.set(basename(absPath));
-    isMarkdownStore.set(/\.md$/i.test(absPath));
+    filePathStore.set(relPath);
+    fileNameStore.set(basename(relPath));
+    isMarkdownStore.set(/\.md$/i.test(relPath));
     contentStore.set("");
     errorStore.set(undefined);
     loadingStore.set(true);
 
     try {
-      const text = await deps.readTextFile(absPath);
+      const text = await deps.readViewableFile(relPath);
       contentStore.set(text);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -62,12 +64,6 @@ export function createFileViewerController(deps: FileViewerDeps): FileViewerCont
     loadingStore.set(false);
   }
 
-  async function openExternally(): Promise<void> {
-    const path = get(filePathStore);
-    if (!path || !isViewableFile(path)) return;
-    await deps.openPath(path);
-  }
-
   return {
     open: { subscribe: openStore.subscribe },
     filePath: { subscribe: filePathStore.subscribe },
@@ -78,6 +74,5 @@ export function createFileViewerController(deps: FileViewerDeps): FileViewerCont
     loading: { subscribe: loadingStore.subscribe },
     openFile,
     close,
-    openExternally,
   };
 }
