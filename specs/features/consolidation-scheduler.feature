@@ -112,6 +112,38 @@ Feature: Consolidation scheduler (FR-CONSOL-01/02/04/05/06/08/09, FR-COST-05, FR
 
   # --- FR-COST-05: the budget gate stops a cascade already running ---
 
+  # --- FR-CONSOL-10: the unattended session is not above the zone model ---
+  # The maintenance session had the full file tool set and no permission hook,
+  # so the hardcoded denylist did not apply to it (NFR-SEC-02, NFR-SEC-04).
+
+  Scenario: The maintenance session cannot read denylisted paths
+    When the maintenance session tries to read "~/.ssh/id_rsa"
+    Then the maintenance tool call is blocked
+
+  Scenario: The maintenance session cannot read credentials
+    When the maintenance session tries to read "~/.buddy/auth.json"
+    Then the maintenance tool call is blocked
+
+  Scenario: The maintenance session cannot reach outside the workspace
+    # No user is present to answer, so "ask" resolves as denial.
+    When the maintenance session tries to read "/etc/hosts"
+    Then the maintenance tool call is blocked
+    And the refusal is recorded in the run journal
+
+  Scenario: The maintenance session works freely inside the workspace
+    When the maintenance session tries to read "agent_brain/observations.md"
+    Then the maintenance tool call is allowed
+
+  Scenario: The maintenance session may promote a trait into SOUL.md
+    # Designed behaviour: consolidation.md instructs universal traits to be
+    # added to SOUL.md Character. Denying this would break rule promotion.
+    When the maintenance session tries to write "agent_brain/identity/SOUL.md"
+    Then the maintenance tool call is allowed
+
+  Scenario: The maintenance session cannot change its own model configuration
+    When the maintenance session tries to write ".pi/settings.json"
+    Then the maintenance tool call is blocked
+
   Scenario: Crossing the budget threshold mid-cascade stops at the next depth
     # The 95% gate previously only prevented a cascade from starting, so a
     # depth-3 cascade begun at 70% could run three billed calls past the ceiling.

@@ -8,7 +8,11 @@ import { join } from "node:path";
 
 import { acquireLock, releaseLock } from "../../backends/maintenance";
 import { startHeartbeat } from "../../backends/heartbeat";
-import { runConsolidation } from "../../backends/consolidation-runner";
+import {
+  createMaintenancePermissionPolicy,
+  runConsolidation,
+} from "../../backends/consolidation-runner";
+import { createPermissionGate } from "../../backends/permissions";
 import {
   defaultConsolidationState,
   depthFailureCount,
@@ -38,6 +42,8 @@ interface ConsolidationWorld extends BuddyWorld {
   budgetCrossesAfterDepth?: number;
   depthsPrompted?: number[];
   maintenancePausedNotices?: number[];
+  maintenancePolicy?: ReturnType<typeof createMaintenancePermissionPolicy>;
+  maintenanceGateResult?: { block: true; reason: string } | undefined;
 }
 
 After(function (this: ConsolidationWorld) {
@@ -297,5 +303,53 @@ Then("the user is told background maintenance is paused", function (this: Consol
   assert.ok(
     this.maintenancePausedNotices!.length > 0,
     "the user must be notified when maintenance is abandoned",
+  );
+});
+
+// --- FR-CONSOL-10: the unattended session obeys the zone model ---
+// Drives the real gate with the real policy, so the answer to "ask" is the
+// production one, not a test double.
+
+When(
+  "the maintenance session tries to read {string}",
+  async function (this: ConsolidationWorld, path: string) {
+    const policy = createMaintenancePermissionPolicy();
+    const gate = createPermissionGate(this.buddyDir!, policy.askUser, this.consolTmpDir!);
+    this.maintenancePolicy = policy;
+    this.maintenanceGateResult = await gate.check("read", {
+      path: path.startsWith("~") ? path.replace("~", this.consolTmpDir!) : path,
+    });
+  },
+);
+
+When(
+  "the maintenance session tries to write {string}",
+  async function (this: ConsolidationWorld, path: string) {
+    const policy = createMaintenancePermissionPolicy();
+    const gate = createPermissionGate(this.buddyDir!, policy.askUser, this.consolTmpDir!);
+    this.maintenancePolicy = policy;
+    this.maintenanceGateResult = await gate.check("write", { path });
+  },
+);
+
+Then("the maintenance tool call is blocked", function (this: ConsolidationWorld) {
+  assert.ok(
+    this.maintenanceGateResult?.block,
+    `expected the call to be blocked, got: ${JSON.stringify(this.maintenanceGateResult)}`,
+  );
+});
+
+Then("the maintenance tool call is allowed", function (this: ConsolidationWorld) {
+  assert.equal(
+    this.maintenanceGateResult,
+    undefined,
+    `expected the call to be allowed, got: ${JSON.stringify(this.maintenanceGateResult)}`,
+  );
+});
+
+Then("the refusal is recorded in the run journal", function (this: ConsolidationWorld) {
+  assert.ok(
+    (this.maintenancePolicy?.refusedPaths() ?? []).length > 0,
+    "a refused outside-workspace access must be recorded, not silently dropped",
   );
 });

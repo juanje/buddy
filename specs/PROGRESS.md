@@ -201,8 +201,8 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 > review of 2026-07-26 (Opus 5) and the project response of 2026-07-27.
 > **FR-WIKI is deferred until H1–H3 close.**
 >
-> **H1–H4 done.** v0.1.1 (H1+H2) and v0.1.2 (H3) tagged. H4 pending release.
-> **439 unit + 207 BDD green**, typecheck and vite build clean.
+> **H1–H4 plus H4b done.** v0.1.1 (H1+H2) and v0.1.2 (H3) tagged; H4 and H4b
+> pending release. **454 unit + 213 BDD green**, typecheck and vite build clean.
 > **Next: H5** (session factory + `usage.json` concurrency). Largest and
 > riskiest of the sprint — includes the second-pass review of
 > `reflect-child.ts`, which is unreviewed and already produced one auth bug.
@@ -437,6 +437,53 @@ Touches: `fetch-url.ts` · `bundled/prompts/agents-base.md` · `fetch-url.featur
 Exit: loopback, link-local, metadata and private ranges refused after DNS
 resolution **and** after each redirect hop · size enforced on accumulated bytes
 during streaming · fetched content delimited as untrusted in context
+
+#### Sprint H4b — Maintenance session permissions `[S]` — DONE (2026-07-27)
+
+Unplanned. Found while questioning whether H5b had any real benefit: the answer
+was that it fixes something live.
+
+| ID | Requirement | Status | Commit |
+|----|-------------|--------|--------|
+| FR-CONSOL-10 | Maintenance session enforces the zone model | done | (this sprint) |
+| FR-CONSOL-11 | Identity changes by consolidation are surfaced | done | (this sprint) |
+
+**Tests at H4b close:** 454 unit + 213 BDD green, typecheck and vite build clean.
+
+**The finding.** `beforeToolCall` was installed only in `session-boot.ts`. The
+consolidation session was created with the full file tool set (`read`, `write`,
+`edit`, `grep`, `find`, `ls`) and no hook, so an unattended session had
+unrestricted filesystem access — contradicting NFR-SEC-02 ("no file access
+bypasses the permission layer") and NFR-SEC-04 ("denylist paths are never
+accessible"). Reachable via poisoned brain content: consolidation reads
+`agent_brain/`, and brain content predating H4 carries no untrusted-content
+framing.
+
+**Policy for an unattended session:** `outside` → deny and record in the daily
+log; `identity-write` → allow, because promoting a universal trait into SOUL.md
+is what `consolidation.md` instructs. Denylist and `.pi/settings.json` produce
+`deny` without asking, so they needed no policy decision at all — the security
+hole closed independently of the `ask` question.
+
+**Three test attempts before one worked.** Worth recording, because the first two
+looked fine:
+
+1. BDD scenarios driving the gate with the real policy — passed with the bug
+   reintroduced. They tested the policy, not the wiring.
+2. Unit tests of `installMaintenanceGate` — same. 9 tests, 213 scenarios, all
+   green against the bug.
+3. A source scan for gate markers — also passed, because `createPermissionGate`
+   still appeared in the import line after the call was deleted.
+
+What works: `createMaintenanceSession` takes an injectable `openSession`, so a
+test opens a fake session and asserts the hook was attached **to that object**.
+Verified by reintroducing the defect: this one fails, the others do not.
+
+**The generalisable lesson:** a missing call cannot be detected by exercising the
+function that was never called. Testing the component proves the component
+works; only testing the composition proves it was wired. This is the third time
+in the sprint that a test described something other than the requirement (H1 and
+H3 had tests encoding the bug; here the tests missed it entirely).
 
 #### Sprint H5 — Session factory and shared state `[L]`
 

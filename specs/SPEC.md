@@ -581,6 +581,8 @@ Fork bomb defense:
 | FR-CONSOL-07 | Consolidation relocate tool for brain file grouping | 2 ✓ |
 | FR-CONSOL-08 | Consolidation state persisted per completed depth | 2 |
 | FR-CONSOL-09 | Failure backoff and retry ceiling | 2 |
+| FR-CONSOL-10 | Maintenance session enforces the zone model | 2 |
+| FR-CONSOL-11 | Identity changes made by consolidation are surfaced | 2 |
 
 **Consolidation depths:**
 
@@ -665,6 +667,36 @@ Fork bomb defense:
 - **Then** consolidation for that depth is abandoned and the user is told, in plain language, that background maintenance is paused and why
 - **And** a successful run resets the count to zero
 - **Rationale:** without this, a deterministic failure retries every heartbeat tick (30 min) indefinitely, each retry costing a full LLM call. See NFR-REL-04 (amended).
+
+**FR-CONSOL-10 — Maintenance session enforces the zone model**
+
+- **Given** a consolidation session is created
+- **When** it makes a file tool call
+- **Then** the same permission gate used by the chat session evaluates it
+- **And** denylist paths (`~/.ssh/`, `~/.gnupg/`, `~/.aws/`, `**/.env`, `**/auth.json`)
+  and `.pi/settings.json` are blocked, as NFR-SEC-02 and NFR-SEC-04 already require
+- **And** because no user is present to answer, decisions of kind `outside` are
+  resolved as **denial**, recorded in the run journal rather than silently dropped
+- **But** decisions of kind `identity-write` are resolved as **allow**: promoting a
+  universal trait into `SOUL.md` is designed consolidation behavior
+  (`consolidation.md` step "Rule candidates"), not an anomaly
+- **Found (Jul 27):** the maintenance session was created with the full file tool
+  set and no `beforeToolCall` hook — only `session-boot.ts` installed one. An
+  unattended session therefore had unrestricted filesystem access, contradicting
+  NFR-SEC-02 and NFR-SEC-04. Two prior reviews of `consolidation-runner.ts`
+  missed it, which is the argument for NFR-SEC-14: when every call site assembles
+  its own configuration, what is *missing* is invisible.
+
+**FR-CONSOL-11 — Identity changes made by consolidation are surfaced**
+
+- **Given** a consolidation run modified `agent_brain/identity/SOUL.md`
+- **When** the run finishes
+- **Then** the daily log entry for that run names the change explicitly
+- **Rationale:** SOUL.md is re-injected into the system prompt of every future
+  session, so it is the highest-value target for persistent memory poisoning
+  (FR-NET-03). Allowing the write is right — it is designed — but it must not be
+  silent. Git already records the diff; what was missing was the user learning
+  that their assistant's character changed at all.
 
 | ID | Description | Phase |
 |----|-------------|-------|

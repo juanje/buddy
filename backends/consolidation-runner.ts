@@ -42,6 +42,7 @@ import {
 import { logEvent } from "./app-logger";
 import { commitAll } from "./git";
 import { acquireLock, releaseLock } from "./maintenance";
+import { createPermissionGate, type PermissionRequest } from "./permissions";
 import { assembleMaintenancePrompt } from "./prompt";
 import { appendDailyLog, updateLogsIndexEntry } from "./reflect";
 import { defaultConfigDir } from "./allowed-paths";
@@ -53,6 +54,76 @@ import { buildSkillTools, skillToolNames } from "./skill-tools";
 export interface MaintenanceSessionLike {
   prompt(text: string): Promise<void>;
   dispose(): void;
+  /** Paths refused during the run, for the journal (FR-CONSOL-10). */
+  refusedPaths?(): string[];
+  /** True when the run wrote to SOUL.md (FR-CONSOL-11). */
+  changedIdentity?(): boolean;
+}
+
+/**
+ * Permission policy for an unattended session (FR-CONSOL-10).
+ *
+ * The gate is the same one the chat session uses; only the answer to "ask"
+ * differs, because there is nobody to ask. `outside` is refused — nothing
+ * consolidation legitimately touches lives beyond the workspace. `identity-write`
+ * is allowed, because promoting a universal trait into SOUL.md is what
+ * consolidation.md tells the agent to do.
+ */
+/**
+ * Just the part of a Pi session the gate touches. Derived from the SDK's own
+ * return type rather than hand-written, so a signature change upstream fails the
+ * build here instead of silently drifting. (The hook's context type lives in a
+ * nested package and is not re-exported, so it cannot be imported by name.)
+ */
+export type GateInstallable = Pick<
+  Awaited<ReturnType<typeof createAgentSession>>["session"],
+  "agent"
+>;
+
+/**
+ * Install the zone-model gate on a maintenance session (FR-CONSOL-10).
+ *
+ * Extracted from `createMaintenanceSession` so the *wiring* is testable, not
+ * just the policy. The original defect was not a wrong policy — it was that no
+ * hook was installed at all, and a test of the policy alone would not have
+ * caught it.
+ */
+export function installMaintenanceGate(
+  session: GateInstallable,
+  rootDir: string,
+): ReturnType<typeof createMaintenancePermissionPolicy> {
+  const policy = createMaintenancePermissionPolicy();
+  const gate = createPermissionGate(rootDir, policy.askUser);
+  const originalBeforeToolCall = session.agent.beforeToolCall;
+  session.agent.beforeToolCall = async (ctx, signal) => {
+    const prior = await originalBeforeToolCall?.(ctx, signal);
+    if (prior?.block) return prior;
+    const blocked = await gate.check(ctx.toolCall.name, ctx.args);
+    return blocked ?? prior;
+  };
+  return policy;
+}
+
+export function createMaintenancePermissionPolicy(): {
+  askUser: (request: Omit<PermissionRequest, "id">) => Promise<boolean>;
+  refusedPaths: () => string[];
+  changedIdentity: () => boolean;
+} {
+  const refused: string[] = [];
+  let identityChanged = false;
+
+  return {
+    async askUser(request) {
+      if (request.kind === "identity-write") {
+        identityChanged = true;
+        return true;
+      }
+      refused.push(request.path);
+      return false;
+    },
+    refusedPaths: () => [...refused],
+    changedIdentity: () => identityChanged,
+  };
 }
 
 export interface CreateMaintenanceSessionFn {
@@ -109,11 +180,17 @@ function commitMessageForDepth(depth: number, now: Date): string {
   }
 }
 
-export async function createMaintenanceSession(options: {
+/** What `createMaintenanceSession` needs from a Pi session. */
+export type MaintenanceAgentSession = Pick<
+  Awaited<ReturnType<typeof createAgentSession>>["session"],
+  "agent" | "subscribe" | "prompt" | "dispose"
+>;
+
+async function openRealMaintenanceSession(config: {
   rootDir: string;
   modelRuntime: ModelRuntime;
-}): Promise<MaintenanceSessionLike> {
-  const { rootDir, modelRuntime } = options;
+}): Promise<MaintenanceAgentSession> {
+  const { rootDir, modelRuntime } = config;
   const systemPrompt = assembleMaintenancePrompt(rootDir);
   const resourceLoader = new DefaultResourceLoader({
     cwd: rootDir,
@@ -125,7 +202,6 @@ export async function createMaintenanceSession(options: {
   const promptsDir = join(globalConfigDir(), "prompts");
   const skillTools = buildSkillTools(promptsDir);
   const consolTools = buildConsolidationTools(rootDir);
-  const allCustomTools = [...skillTools, ...consolTools];
 
   const { session } = await createAgentSession({
     cwd: rootDir,
@@ -133,9 +209,30 @@ export async function createMaintenanceSession(options: {
     sessionManager: SessionManager.create(rootDir),
     excludeTools: [...EXCLUDED_TOOLS],
     tools: [...AGENT_TOOLS, ...skillToolNames(skillTools), ...consolidationToolNames(consolTools)],
-    customTools: allCustomTools,
+    customTools: [...skillTools, ...consolTools],
     modelRuntime,
   });
+  return session;
+}
+
+export async function createMaintenanceSession(options: {
+  rootDir: string;
+  modelRuntime: ModelRuntime;
+  /**
+   * Injectable session opener. Exists so a test can observe that the permission
+   * gate is actually installed on whatever session comes back — the original
+   * defect was a missing call, and a missing call cannot be detected by
+   * exercising the function that was never called (FR-CONSOL-10).
+   */
+  openSession?: (config: {
+    rootDir: string;
+    modelRuntime: ModelRuntime;
+  }) => Promise<MaintenanceAgentSession>;
+}): Promise<MaintenanceSessionLike> {
+  const { rootDir, modelRuntime } = options;
+  const openSession = options.openSession ?? openRealMaintenanceSession;
+  const session = await openSession({ rootDir, modelRuntime });
+  const policy = installMaintenanceGate(session, rootDir);
 
   const events: AgentEvent[] = [];
   const unsub = session.subscribe((event) => events.push(event));
@@ -153,6 +250,8 @@ export async function createMaintenanceSession(options: {
       unsub();
       session.dispose();
     },
+    refusedPaths: policy.refusedPaths,
+    changedIdentity: policy.changedIdentity,
   };
 }
 
@@ -298,10 +397,26 @@ export async function runConsolidation(options: RunConsolidationOptions): Promis
 
     if (completedDepths.length > 0) {
       const depthLabel = completedDepths.map((d) => `depth-${d}`).join(", ");
+      const notes: string[] = [`Maintenance cycle completed: ${depthLabel}.`];
+
+      // FR-CONSOL-11: SOUL.md is re-injected into every future session, so a
+      // change to it must not be silent. Git holds the diff; this is how the
+      // user learns to go look.
+      if (maintenanceSession.changedIdentity?.()) {
+        notes.push("Updated SOUL.md (character) during this cycle — review the commit if unexpected.");
+      }
+
+      const refused = maintenanceSession.refusedPaths?.() ?? [];
+      if (refused.length > 0) {
+        notes.push(
+          `Refused ${refused.length} access attempt(s) outside the workspace: ${refused.join(", ")}.`,
+        );
+      }
+
       appendDailyLog(rootDir, {
         date,
         sessionHeader: `${now.toISOString().slice(11, 16)} consolidation`,
-        sections: `Maintenance cycle completed: ${depthLabel}.`,
+        sections: notes.join("\n\n"),
         status: "maintenance",
       }, now);
       updateLogsIndexEntry(rootDir, date, "maintenance");
