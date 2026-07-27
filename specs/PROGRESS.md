@@ -203,9 +203,9 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 >
 > **H1–H4 plus H4b done.** v0.1.1 (H1+H2) and v0.1.2 (H3) tagged; H4 and H4b
 > pending release. **454 unit + 213 BDD green**, typecheck and vite build clean.
-> **Next: H5** (session factory + `usage.json` concurrency). Largest and
-> riskiest of the sprint — includes the second-pass review of
-> `reflect-child.ts`, which is unreviewed and already produced one auth bug.
+> **Paused here.** H5 scope is under review — see its section below. Decide the
+> H5a/H5b split before starting, and do the second-pass review of
+> `reflect-child.ts` first.
 
 ### Sprint: Hardening (v0.1.1) — started 2026-07-27
 
@@ -485,7 +485,33 @@ works; only testing the composition proves it was wired. This is the third time
 in the sprint that a test described something other than the requirement (H1 and
 H3 had tests encoding the bug; here the tests missed it entirely).
 
-#### Sprint H5 — Session factory and shared state `[L]`
+#### Sprint H5 — Session factory and shared state `[L]` — SCOPE UNDER REVIEW
+
+**Paused 2026-07-27 with the split undecided.** Recommended before starting:
+
+- **H5a — `usage.json` concurrency (NFR-REL-06).** Self-contained, touches no
+  session code, low risk. Three writers confirmed: main worker
+  (`usage-tracker.ts:213`), reflect child (`reflect-child.ts:130`, a separate
+  process) and consolidation (`consolidation-runner.ts:148`). Read-modify-write
+  is not atomic, so updates are lost — in the file that enforces the spend cap,
+  and in the unsafe direction (under-counting). Likely fix is append-only with
+  aggregation on read, which needs a migration path for existing installs.
+- **H5b — session factory (NFR-SEC-14).** Now has a demonstrated argument rather
+  than a hypothetical one: FR-CONSOL-10 was a live gap that two reviews of
+  `consolidation-runner.ts` missed, and the cause was every call site assembling
+  its own configuration. But the risk stands — it touches `reflect-child.ts`,
+  which is unreviewed, runs in a separate process, already produced one auth bug
+  (`231ac31`), and is what flushes memory at shutdown. A bug there is silent
+  memory loss.
+
+**Do the second-pass review of `reflect-child.ts` before deciding**, and consider
+that the minimal fix may be a shared `createBuddyModelRuntime()` rather than a
+full factory. Also reword NFR-SEC-14 first: as written ("no call site constructs
+a session directly") it pushes toward uniformity, when the three sessions are
+legitimately different and what we want is shared *invariants*. Same failure mode
+as the original NFR-SEC-08 wording.
+
+Remaining scope if it proceeds:
 
 Goal: one way to create a session; one writer discipline for shared files.
 
