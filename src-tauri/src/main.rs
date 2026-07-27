@@ -20,7 +20,7 @@ fn main() {
                 // From Cargo.toml — never hardcode, it silently drifts on release.
                 version: Some(env!("CARGO_PKG_VERSION").to_string()),
                 comments: Some(
-                    "Personal assistant with persistent memory.\nEverything lives in a local folder — nothing leaves your computer."
+                    "Personal assistant with persistent memory.\nYour memory lives in a local folder you control.\nBuddy can fetch web pages when you ask, but never sends your files or conversations to external services beyond your chosen AI provider."
                         .to_string(),
                 ),
                 copyright: Some("© 2026 Juanje Ojeda".to_string()),
