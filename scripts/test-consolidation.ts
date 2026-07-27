@@ -6,6 +6,12 @@
 //
 // Defaults: depth=1, source=fixtures/consolidation-test (clean fixture with 3 days of logs)
 // Uses ~/.buddy/auth.json and ~/.buddy/prompts/ (same as the Buddy app).
+//
+// Simulate mode (H3 — FR-CONSOL-08/09, FR-COST-05) replaces the LLM with a
+// scripted session: no auth, no cost, no network. It exists because the failure
+// paths are the ones that spend a real user's money, and they are otherwise
+// awkward to reproduce by hand — you would have to break the network at the
+// right moment, or calibrate usage.json so one depth crosses the budget line.
 
 import { execSync } from "node:child_process";
 import { cpSync, existsSync, mkdtempSync, readdirSync, unlinkSync, writeFileSync } from "node:fs";
@@ -33,17 +39,54 @@ import { defaultAuthPath } from "../backends/provider-auth";
 import { bootRefreshIfNeeded } from "../backends/boot-refresh";
 import { globalConfigDir } from "../backends/global-config";
 import { AGENT_TOOLS, EXCLUDED_TOOLS } from "../shared/defaults";
+import {
+  loadConsolidationLog,
+  loadConsolidationState,
+  saveConsolidationState,
+} from "../shared/consolidation-state";
 
 const VALID_DEPTHS = new Set([1, 2, 3]);
 
 function printUsage(): void {
   console.log(`Usage:
-  npx tsx scripts/test-consolidation.ts [--dry-run] [--date YYYY-MM-DD] [depth] [source-dir]
+  npx tsx scripts/test-consolidation.ts [options] [depth] [source-dir]
 
   depth       1 (daily), 2 (weekly), or 3 (monthly). Default: 1
   source-dir  buddy instance to copy. Default: fixtures/consolidation-test
-  --date      Simulate a specific date (default: last log date in the fixture)
-  --dry-run   Copy fixture and print prompt preview only (no LLM call)`);
+
+  --date YYYY-MM-DD    Simulate a specific date (default: last log date)
+  --dry-run            Print prompt preview only (no LLM call)
+
+  Simulate mode — no auth, no cost, no network (H3):
+  --fail-at-depth N    Scripted session throws at depth N (FR-CONSOL-08/09)
+  --budget-stop-after N  Report the budget threshold crossed after N depths
+                       have run, mid-cascade (FR-COST-05)
+  --seed-failures N    Pre-seed N consecutive failures at the target depth,
+                       to observe backoff (N<3) or abandonment (N>=3)
+
+Examples:
+  # depth 2 cascade where the weekly step fails: depth 1 must survive
+  npx tsx scripts/test-consolidation.ts --fail-at-depth 2 2
+
+  # depth 3 cascade that crosses the budget line after depth 1
+  npx tsx scripts/test-consolidation.ts --budget-stop-after 1 3
+
+  # target depth already past the retry ceiling: skipped, not attempted
+  npx tsx scripts/test-consolidation.ts --seed-failures 3 1`);
+}
+
+interface SimulateOptions {
+  failAtDepth?: number;
+  budgetStopAfter?: number;
+  seedFailures?: number;
+}
+
+function isSimulating(sim: SimulateOptions): boolean {
+  return (
+    sim.failAtDepth !== undefined ||
+    sim.budgetStopAfter !== undefined ||
+    sim.seedFailures !== undefined
+  );
 }
 
 function parseArgs(argv: string[]): {
@@ -51,15 +94,34 @@ function parseArgs(argv: string[]): {
   depth: 1 | 2 | 3;
   sourceDir: string;
   simulatedDate: Date | undefined;
+  simulate: SimulateOptions;
 } {
   const args = [...argv];
   let dryRun = false;
   let simulatedDate: Date | undefined;
+  const simulate: SimulateOptions = {};
+
+  function takeCount(flag: string): number {
+    args.shift();
+    const raw = args.shift();
+    const value = Number.parseInt(raw ?? "", 10);
+    if (!Number.isFinite(value) || value < 0) {
+      console.error(`${flag} needs a non-negative number, got "${raw}".`);
+      process.exit(1);
+    }
+    return value;
+  }
 
   while (args.length > 0 && args[0]!.startsWith("--")) {
     if (args[0] === "--dry-run") {
       dryRun = true;
       args.shift();
+    } else if (args[0] === "--fail-at-depth") {
+      simulate.failAtDepth = takeCount("--fail-at-depth");
+    } else if (args[0] === "--budget-stop-after") {
+      simulate.budgetStopAfter = takeCount("--budget-stop-after");
+    } else if (args[0] === "--seed-failures") {
+      simulate.seedFailures = takeCount("--seed-failures");
     } else if (args[0] === "--date" && args[1]) {
       args.shift();
       const dateStr = args.shift()!;
@@ -93,7 +155,84 @@ function parseArgs(argv: string[]): {
     process.exit(1);
   }
 
-  return { dryRun, depth: depth as 1 | 2 | 3, sourceDir, simulatedDate };
+  return { dryRun, depth: depth as 1 | 2 | 3, sourceDir, simulatedDate, simulate };
+}
+
+/**
+ * Scripted stand-in for the maintenance session. Reads the depth back out of
+ * the prompt so the fake behaves per-depth without the runner having to expose
+ * one.
+ */
+function createScriptedSession(
+  sim: SimulateOptions,
+  onDepth: (depth: number) => void,
+): MaintenanceSessionLike {
+  return {
+    async prompt(text: string) {
+      const depth = Number(/Run consolidation at depth (\d)/.exec(text)?.[1] ?? 0);
+      onDepth(depth);
+      console.log(`  [simulated] depth ${depth} prompted (${text.length} chars, no LLM call)`);
+      if (sim.failAtDepth === depth) {
+        throw new Error(`simulated failure at depth ${depth}`);
+      }
+    },
+    dispose: () => {},
+  };
+}
+
+async function runSimulated(
+  testDir: string,
+  depth: 1 | 2 | 3,
+  now: Date,
+  sim: SimulateOptions,
+): Promise<void> {
+  if (sim.seedFailures !== undefined) {
+    const state = loadConsolidationState(testDir);
+    state.failures = {
+      [String(depth)]: { count: sim.seedFailures, lastFailureAt: now.toISOString() },
+    };
+    saveConsolidationState(testDir, state);
+    console.log(`Seeded ${sim.seedFailures} consecutive failure(s) at depth ${depth}.`);
+  }
+
+  const promptedDepths: number[] = [];
+  const result = await runConsolidation({
+    rootDir: testDir,
+    targetDepth: depth,
+    modelRuntime: {} as never,
+    now,
+    createSession: async () =>
+      createScriptedSession(sim, (d) => {
+        promptedDepths.push(d);
+      }),
+    isBudgetNearLimit:
+      sim.budgetStopAfter === undefined
+        ? undefined
+        : () => promptedDepths.length >= sim.budgetStopAfter!,
+  });
+
+  console.log("\n--- Result ---");
+  console.log(`  ran:             ${result.ran}`);
+  console.log(`  depths prompted: ${promptedDepths.join(", ") || "(none)"}`);
+  console.log(`  completed:       ${result.completedDepths.join(", ") || "(none)"}`);
+  const outcome =
+    result.stoppedBy ?? (promptedDepths.length === 0 ? "nothing attempted — all depths skipped" : "ran to completion");
+  console.log(`  stopped by:      ${outcome}`);
+  console.log(`  abandoned:       ${result.abandonedDepths.join(", ") || "(none)"}`);
+
+  const persisted = loadConsolidationState(testDir);
+  console.log("\n--- Persisted state (.buddy/consolidation-state.json) ---");
+  console.log(`  lastDepth1: ${persisted.lastDepth1 ?? "null"}`);
+  console.log(`  lastDepth2: ${persisted.lastDepth2 ?? "null"}`);
+  console.log(`  lastDepth3: ${persisted.lastDepth3 ?? "null"}`);
+  console.log(`  failures:   ${JSON.stringify(persisted.failures ?? {})}`);
+
+  console.log("\n--- Journal (.buddy/consolidation-log.json) ---");
+  for (const entry of loadConsolidationLog(testDir)) {
+    console.log(`  depth ${entry.depth}: ${entry.status}${entry.error ? ` — ${entry.error}` : ""}`);
+  }
+
+  console.log(`\nInspect at: ${testDir}`);
 }
 
 function prepareFixture(sourceDir: string): string {
@@ -182,11 +321,17 @@ function showChanges(testDir: string, baselineSha: string): void {
 }
 
 async function main(): Promise<void> {
-  const { dryRun, depth, sourceDir, simulatedDate } = parseArgs(process.argv.slice(2));
+  const { dryRun, depth, sourceDir, simulatedDate, simulate } = parseArgs(process.argv.slice(2));
   const testDir = prepareFixture(sourceDir);
   const now = simulatedDate ?? detectLastLogDate(testDir);
   console.log(`Test directory: ${testDir}`);
   console.log(`Simulated date: ${now.toISOString().slice(0, 10)} (${simulatedDate ? "from --date" : "auto-detected from last log"})`);
+
+  if (isSimulating(simulate)) {
+    console.log("Simulate mode: scripted session, no auth, no cost, no network.\n");
+    await runSimulated(testDir, depth, now, simulate);
+    return;
+  }
 
   if (dryRun) {
     const preview = buildConsolidationPrompt(testDir, depth, now);
