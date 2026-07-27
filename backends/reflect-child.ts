@@ -41,7 +41,7 @@ import { buildReflectUserPrompt } from "./reflect-prompts";
 import { defaultConfigDir } from "./allowed-paths";
 import { recordUsageToFile, sumUsageFromEvents } from "./usage-tracker";
 
-async function resolveFastModelOptions(rootDir: string): Promise<{
+async function resolveFastModelOptions(rootDir: string, modelRuntime: ModelRuntime): Promise<{
   model?: Awaited<ReturnType<ModelRuntime["getModel"]>>;
   thinkingLevel: "minimal";
 }> {
@@ -49,12 +49,9 @@ async function resolveFastModelOptions(rootDir: string): Promise<{
   const fastModelId = fastModelForProvider(provider);
   if (!fastModelId) return { thinkingLevel: "minimal" };
 
-  const runtime = await ModelRuntime.create({
-    authPath: defaultAuthPath(),
-  });
-  let model = runtime.getModel(provider, fastModelId);
+  let model = modelRuntime.getModel(provider, fastModelId);
   if (!model) {
-    const available = await runtime.getAvailable(provider);
+    const available = await modelRuntime.getAvailable(provider);
     model = available.find((entry) => entry.id === fastModelId);
   }
   if (!model) return { thinkingLevel: "minimal" };
@@ -107,13 +104,18 @@ async function runReflect(
   });
   await resourceLoader.reload();
 
-  const fastModelOptions = isCheckpoint ? await resolveFastModelOptions(rootDir) : {};
+  const modelRuntime = await ModelRuntime.create({
+    authPath: defaultAuthPath(),
+  });
+
+  const fastModelOptions = isCheckpoint ? await resolveFastModelOptions(rootDir, modelRuntime) : {};
 
   const { session } = await createAgentSession({
     cwd: rootDir,
     resourceLoader,
     sessionManager: sm,
     noTools: "all",
+    modelRuntime,
     ...fastModelOptions,
   });
 
