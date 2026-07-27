@@ -203,9 +203,11 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 >
 > **H1–H4 plus H4b done.** v0.1.1 (H1+H2) and v0.1.2 (H3) tagged; H4 and H4b
 > pending release. **454 unit + 213 BDD green**, typecheck and vite build clean.
-> **Paused here.** H5 scope is under review — see its section below. Decide the
-> H5a/H5b split before starting, and do the second-pass review of
-> `reflect-child.ts` first.
+> **Review pass complete** (`oauth-service.ts`, `provider-auth.ts`,
+> `reflect-child.ts`, wizard). 15 findings classified into three themes, now
+> sprints H5–H7; H8 absorbs the rest. H5b (session factory) is **cancelled** —
+> replaced by two shared helpers under a reworded NFR-SEC-14.
+> **Next: H5** (safe state writing). FR-WIKI resumes after H8.
 
 ### Sprint: Hardening (v0.1.1) — started 2026-07-27
 
@@ -485,67 +487,108 @@ works; only testing the composition proves it was wired. This is the third time
 in the sprint that a test described something other than the requirement (H1 and
 H3 had tests encoding the bug; here the tests missed it entirely).
 
-#### Sprint H5 — Session factory and shared state `[L]` — SCOPE UNDER REVIEW
+#### Review pass — unreviewed files (2026-07-27)
 
-**Paused 2026-07-27 with the split undecided.** Recommended before starting:
+Done before deciding H5's scope, since the H5b question depended on it. Findings
+were classified, not fixed inline. `scripts/` was skipped deliberately: dev-only,
+outside the app.
 
-- **H5a — `usage.json` concurrency (NFR-REL-06).** Self-contained, touches no
-  session code, low risk. Three writers confirmed: main worker
-  (`usage-tracker.ts:213`), reflect child (`reflect-child.ts:130`, a separate
-  process) and consolidation (`consolidation-runner.ts:148`). Read-modify-write
-  is not atomic, so updates are lost — in the file that enforces the spend cap,
-  and in the unsafe direction (under-counting). Likely fix is append-only with
-  aggregation on read, which needs a migration path for existing installs.
-- **H5b — session factory (NFR-SEC-14).** Now has a demonstrated argument rather
-  than a hypothetical one: FR-CONSOL-10 was a live gap that two reviews of
-  `consolidation-runner.ts` missed, and the cause was every call site assembling
-  its own configuration. But the risk stands — it touches `reflect-child.ts`,
-  which is unreviewed, runs in a separate process, already produced one auth bug
-  (`231ac31`), and is what flushes memory at shutdown. A bug there is silent
-  memory loss.
+| File | Verdict |
+|------|---------|
+| `oauth-service.ts` | Clean. Event-forwarding wrapper; handles no credentials of its own. |
+| `provider-auth.ts` | 6 findings — this is where credentials are actually written. |
+| `reflect-child.ts` | 5 findings. Structurally sound; the auth bug of `231ac31` is genuinely fixed and `noTools: "all"` makes the missing gate correct by construction, not by luck. |
+| Wizard (`create-buddy.ts`, `location.ts`, `setup-controller.ts`) | 4 findings. |
 
-**Do the second-pass review of `reflect-child.ts` before deciding**, and consider
-that the minimal fix may be a shared `createBuddyModelRuntime()` rather than a
-full factory. Also reword NFR-SEC-14 first: as written ("no call site constructs
-a session directly") it pushes toward uniformity, when the three sessions are
-legitimately different and what we want is shared *invariants*. Same failure mode
-as the original NFR-SEC-08 wording.
+**Outcome for H5b: cancelled.** The three session call sites are legitimately
+different, and what was actually duplicated is two three-line fragments. A shared
+`createBuddyModelRuntime()` and `recordSessionUsage()` close the recurrence risk
+of `231ac31` without touching the structure of any session. NFR-SEC-14 was
+reworded from "a single factory" to shared invariants.
 
-Remaining scope if it proceeds:
+**The findings regrouped by cause, not by file.** Three themes, three sprints —
+each ends green and is independently shippable.
 
-Goal: one way to create a session; one writer discipline for shared files.
+#### Sprint H5 — Safe state writing `[S–M]`
+
+Goal: no state file under `~/.buddy/` can be lost or corrupted by a write.
 
 | ID | Requirement | Status | Commit |
 |----|-------------|--------|--------|
-| NFR-SEC-14 | Single authenticated-session factory | todo | |
+| NFR-REL-08 | Atomic, non-destructive writes for all `~/.buddy/` state | todo | |
 | NFR-REL-06 | `usage.json` concurrent-write safety | todo | |
+| NFR-SEC-14 | Shared session invariants (the two helpers) | todo | |
 
-Touches: new `backends/session-factory.ts` · `session-boot.ts` · `reflect-child.ts` ·
-`consolidation-runner.ts` · `warm-handoff.ts` · `usage-tracker.ts`
+Covers A1/A2 (`auth.json` silently replaced when unreadable; written in place),
+NFR-REL-06 (`usage.json`, three writers across two processes) and W4
+(`config.json` written in place). One helper, three call sites.
 
-Exit: no call site constructs a session directly · every path supplies buddy's own
-`ModelRuntime` · concurrent-writer test shows no lost update
+**Worst case this prevents:** losing every configured provider credential. That
+outranks under-counting spend, which is why this goes first.
 
-**Largest and riskiest.** Touches `reflect-child.ts`, which is unreviewed and
-already produced one auth bug (`231ac31`). Do the second-pass review of that file
-as part of this sprint, not after.
+`usage.json` may need a format change (append-only with aggregation on read) —
+that requires reading the existing format too. `auth.json` must keep its shape,
+since the Pi SDK reads it natively.
 
-#### Sprint H6 — Containment cleanup `[S–M]`
+#### Sprint H6 — Reflect reliability `[M]`
+
+Goal: the path that flushes memory at shutdown cannot lose it or leak processes.
 
 | ID | Requirement | Status | Commit |
 |----|-------------|--------|--------|
-| NFR-SEC-13 | Path-bearing tool args declared | todo | |
+| FR-REFLECT-06 | No git index race between child and worker | todo | |
+| FR-REFLECT-07 | Reflect child bounded by a timeout | todo | |
+| NFR-MAINT-02 | Prune `.buddy/reflect-sessions/` | todo | |
+
+FR-REFLECT-06 is the one that matters: a collision on `.git/index.lock` today
+loses the entire session summary, silently. NFR-MAINT-02 is both disk growth and
+privacy — every fork holds a full conversation transcript in plain text, and
+nothing has ever deleted one.
+
+**Ship this before the next public release.** Silent memory loss is the failure
+this product can least afford.
+
+#### Sprint H7 — Setup validation `[S]`
+
+Goal: the worker decides what setup is allowed, not the wizard.
+
+| ID | Requirement | Status | Commit |
+|----|-------------|--------|--------|
+| FR-SETUP-11 | Worker validates location before create or adopt | todo | |
+| FR-SETUP-12 | Incomplete instances detected, not adopted | todo | |
+
+Same shape as H1: validation living only in the UI. Lower probability here
+because the wizard does gate correctly — but the consequences are `cpSync` with
+`force: true` plus `git init` inside a directory of the user's own files, or
+adopting the wreckage of a failed setup and losing auto-commit permanently.
+
+#### Sprint H8 — Containment and hygiene cleanup `[M]`
+
+| ID | Requirement | Status | Commit |
+|----|-------------|--------|--------|
 | NFR-SEC-16 | Containment primitives unified as one set | todo | |
 | NFR-SEC-15 | Symlink resolution in containment | todo | |
+| NFR-SEC-13 | Path-bearing tool args declared | todo | |
+| NFR-SEC-17 | Restrictive permissions at creation | todo | |
+| NFR-SEC-18 | Custom provider `baseUrl` validated | todo | |
 | NFR-REL-07 | Atomic lock acquisition (`wx`) | todo | |
+| NFR-REL-09 | Timeouts on user-facing network calls | todo | |
 | NFR-CONFIG-05 | Single config-dir resolver | todo | |
 
-**Order matters here:** NFR-SEC-16 before NFR-SEC-15. Unify the primitives
-first, then add `realpath` once — otherwise symlink resolution has to be written
-three times and any omission is a silent bypass.
+**Order matters:** NFR-SEC-16 before NFR-SEC-15. Unify the primitives first, then
+add `realpath` once — otherwise symlink resolution has to be written three times
+and any omission is a silent bypass.
 
-Plus review items M1–M7 (unused `pageUrl`, double `parseHTML`, 2.2 MB generated
-asset committed, `this` in usage-tracker literals, empty catch audit).
+Plus M1–M7 (unused `pageUrl`, double `parseHTML`, 2.2 MB generated asset
+committed, `this` in usage-tracker literals, empty catch audit).
+
+---
+
+**Scope note (2026-07-27).** All five findings with a confirmed exploit path are
+closed: traversal, XSS, budget drain, SSRF, and the ungated maintenance session.
+H5–H8 are robustness, hygiene and defense in depth — real, but a different
+category. The decision taken was to finish them before starting FR-WIKI rather
+than interleaving.
 
 ---
 
@@ -555,8 +598,9 @@ asset committed, `this` in usage-tracker literals, empty catch audit).
 |---------|---------|--------|-----------|
 | v0.1.1 | H1 + H2 | **tagged 2026-07-27** | The two confirmed-exploitable findings — shipped as soon as they were green rather than held for H3 |
 | v0.1.2 | H3 | planned | Budget drain. No attacker needed, so it ships on its own rather than waiting for H4/H5 |
-| v0.1.3 | H4 + H5 | planned | Structural; no confirmed exploit, but closes the injection and auth patterns |
-| v0.1.4 | H6 | planned | Cleanup |
+| v0.1.3 | H4 + H4b | **tagged 2026-07-27** | SSRF and the ungated maintenance session |
+| v0.1.4 | H5 + H6 | planned | Losing credentials and losing memory — the two remaining ways state disappears |
+| v0.1.5 | H7 + H8 | planned | Setup validation and cleanup |
 
 **Changed from the original grouping (Jul 27):** v0.1.1 was planned as H1+H2+H3.
 H1 and H2 closed green and fix the two findings an attacker could actually reach,

@@ -208,6 +208,8 @@ Supersedes the system-opener behavior originally specified in FR-CHAT-09/10.
 | FR-SETUP-08 | Deterministic buddy directory setup | 1 ✓ |
 | FR-SETUP-09 | First conversation with warm handoff | 1 ✓ |
 | FR-SETUP-10 | Import existing instance | 1 ✓ |
+| FR-SETUP-11 | Worker validates the location before creating or adopting | 2 |
+| FR-SETUP-12 | Incomplete instances are detected, not adopted | 2 |
 
 **FR-SETUP-01 — First-run detection**
 
@@ -293,6 +295,36 @@ Supersedes the system-opener behavior originally specified in FR-CHAT-09/10.
 - **And** platform artifacts (`.cursor/`, `.codex/`) are ignored
 - **And** the wizard skips personalization (existing instance already has data)
 
+**FR-SETUP-11 — Worker validates the location before creating or adopting**
+
+- **Given** `runSetup` receives a `rootDir`
+- **When** mode is `create`
+- **Then** the worker re-runs `validateLocation` and proceeds only for `ok-new`
+  or `ok-empty`, refusing with a plain-language error otherwise
+- **And when** mode is `import`
+- **Then** the worker proceeds only for `existing-buddy`
+- **Rationale:** the wizard already gates on this (`setup-controller.ts`), but
+  the worker trusts whatever path arrives. That is the shape NFR-SEC-08 exists
+  to prevent — the frontend decides what to *offer*, the worker decides what is
+  *allowed*. The failure if a path slips through is not subtle: `cpSync` runs
+  with `force: true`, then `git init` and `git add .` execute inside a directory
+  full of the user's own files.
+
+**FR-SETUP-12 — Incomplete instances are detected, not adopted**
+
+- **Given** a directory containing `agent_brain/`
+- **When** it is evaluated for import
+- **Then** completeness is checked — the core brain files and a git repository —
+  and an instance missing them is reported as incomplete rather than offered for
+  adoption
+- **Rationale:** `createBuddyInstance` is not atomic. A setup that fails after
+  copying templates but before `markConfigured` leaves `agent_brain/` on disk
+  with no git repo, and `validateLocation` only tests for that one directory. On
+  the next launch the wizard therefore offers to *import* the wreckage of the
+  previous attempt. Adoption succeeds, and every auto-commit fails from then on
+   — surfacing eventually as "maintenance paused" (FR-CONSOL-09), a message with
+  no relation to the actual cause.
+
 **Note:** Prerequisites (git installed) are checked as a gate before the wizard
 proceeds past the language step. If git is missing, a clear message with
 platform-specific install instructions is shown and setup cannot continue.
@@ -332,6 +364,8 @@ platform-specific install instructions is shown and setup cannot continue.
 | FR-REFLECT-03 | Compaction-triggered checkpoint reflect (fork before Pi compacts) | 2 ✓ |
 | FR-REFLECT-04 | Log output sanitizer (strip tool-call artifacts) | 2 ✓ |
 | FR-REFLECT-05 | Session path persistence and crash recovery | 2 ✓ |
+| FR-REFLECT-06 | Reflect child does not race the worker for the git index | 2 |
+| FR-REFLECT-07 | Reflect child is bounded by a timeout | 2 |
 
 **FR-REFLECT-01 — Session-end reflect finalization**
 
@@ -375,6 +409,29 @@ platform-specific install instructions is shown and setup cannot continue.
 - **Then** the worker forks from the persisted session path and spawns a reflect child (same fork-only pattern as FR-REFLECT-02)
 - **And** after reflect completes (or is skipped if fork unavailable), normal session creation proceeds
 - **Note:** Effective loss window is crash before first disk write (~milliseconds), not 30 minutes. Pre-consolidation: when consolidation is due, reflect the pending session first so the daily log is current, then run the consolidation cascade.
+
+**FR-REFLECT-06 — Reflect child does not race the worker for the git index**
+
+- **Given** the reflect child commits the agent's writes
+- **When** the main worker or a consolidation run commits at the same moment
+- **Then** the two do not compete for `.git/index.lock`; git access is serialized
+- **And** a commit that cannot proceed is retried rather than propagating as a fatal error
+- **Found (Jul 27):** the child's first `commitAll` runs *before* it takes the
+  maintenance lock, which only protects finalization. The worker auto-commits
+  after agent writes on its own schedule. When they collide, the loser throws,
+  the child exits non-zero, and **the whole reflect is lost** — the session
+  summary along with it. This is silent memory loss with no attacker involved,
+  the failure this product can least afford.
+
+**FR-REFLECT-07 — Reflect child is bounded by a timeout**
+
+- **Given** a reflect child has been spawned detached and unref'd
+- **When** its LLM call or model lookup does not return
+- **Then** the child aborts after a bounded interval, logs the reason and exits
+- **Rationale:** the child outlives the app by design, so nothing supervises it.
+  A stalled provider leaves a process running indefinitely after the user has
+  closed Buddy, and nothing sends the `SIGTERM` its handler waits for. Combined
+  with unpruned forks (NFR-MAINT-02), both files and processes accumulate.
 
 **Reflect architecture summary:**
 
@@ -1435,9 +1492,11 @@ result — the LLM then follows the procedure.
 | NFR-SEC-11 | A Content Security Policy is defined in `tauri.conf.json`. `csp: null` is prohibited. `script-src` excludes `unsafe-inline` and `unsafe-eval`. |
 | NFR-SEC-12 | `fetch_url` refuses loopback, link-local, cloud metadata and private-range destinations. The check runs after DNS resolution and again after every redirect hop. Response size is enforced on accumulated bytes during streaming, not after buffering. |
 | NFR-SEC-13 | Every tool declares which of its arguments are paths. The permission gate validates all declared path arguments. Registering a tool with an undeclared path-shaped argument fails the test suite. |
-| NFR-SEC-14 | All Pi sessions are created through a single factory that always supplies buddy's own `ModelRuntime`, registers usage tracking and installs the permission gate. No call site constructs a session directly. |
+| NFR-SEC-14 | Every Pi session satisfies three invariants, each enforced by a shared helper rather than repeated per call site: (a) credentials come from buddy's own auth store via `createBuddyModelRuntime()`; (b) token usage is recorded via `recordSessionUsage()`; (c) a session with file tools installs the permission gate, and a session without tools declares `noTools`. **Reworded Jul 27:** the original text ("a single factory … no call site constructs a session directly") demanded uniformity. A review of the three call sites found them legitimately different — full tools with a gate, toolless reflect, maintenance with its own prompt — so a common factory would have become a signature with many optional flags. What was actually duplicated was two three-line fragments. The factory is rejected; the invariants are not. |
 | NFR-SEC-15 | Path containment resolves symlinks (`realpath`, falling back to the nearest existing ancestor for paths not yet created) before comparing against the buddy directory. |
 | NFR-SEC-16 | The containment primitives — `isWithin`, `normalizeAbPath`, `resolveViewablePath` — are audited and maintained as one set. They must never disagree about whether a path is inside the buddy directory, and symlink resolution (NFR-SEC-15) is applied in one place rather than added to each independently. **Why this is not cosmetic:** with containment spread across three functions, NFR-SEC-15 would have to be implemented three times, and missing one leaves a silent bypass. |
+| NFR-SEC-17 | Files and directories under `~/.buddy/` are created with restrictive permissions from the outset, not widened and then narrowed. `auth.json` is created `0600` rather than written at the umask default and `chmod`-ed afterwards, and the directory itself is not world-readable — it also holds `config.json`, `usage.json` and `allowed-paths.json`, the last of which reveals which directories the user has granted access to. |
+| NFR-SEC-18 | A custom provider's `baseUrl` is validated before an API key is sent to it, using the same destination rules as `fetch_url` (NFR-SEC-12). A mistyped or hostile base URL must not receive the user's credentials. |
 
 ### 4.3 Reliability
 
@@ -1448,8 +1507,10 @@ result — the LLM then follows the procedure.
 | NFR-REL-03 | Lock files include PID and timestamp; stale locks (process dead or >1h) are broken automatically |
 | NFR-REL-04 | A failed consolidation depth does not advance its own counter. Depths that completed **before** the failure keep their advance (FR-CONSOL-08), and the retry is subject to backoff and a retry ceiling (FR-CONSOL-09). **Amended Jul 27:** the original wording ("the run retries on the next evaluation") specified an unbounded retry loop that could drain a user's budget. |
 | NFR-REL-05 | Worker crash shows a user-friendly error with a restart option, not a stack trace |
-| NFR-REL-06 | Concurrent writers to `~/.buddy/usage.json` (main worker, reflect child, consolidation session) never lose an update. Read-modify-write is serialized, or the file is append-only with aggregation on read. |
+| NFR-REL-06 | Concurrent writers to `~/.buddy/usage.json` (main worker, reflect child, consolidation session) never lose an update. Read-modify-write is serialized, or the file is append-only with aggregation on read. Usage is recorded even when the LLM call fails partway, since tokens already consumed are still billed. Implemented through the shared writer of NFR-REL-08. |
 | NFR-REL-07 | Lock acquisition is atomic — the lock file is created with an exclusive flag, never via a separate existence check followed by a write. |
+| NFR-REL-08 | Every state file under `~/.buddy/` (`auth.json`, `config.json`, `usage.json`, `allowed-paths.json`) is written through one shared helper that (a) writes atomically — temp file plus rename, never in place — and (b) never discards existing content because it could not be read. A file that exists but does not parse is an error to surface, not an empty object to overwrite. **Why:** `usage.json` was written atomically while `auth.json` was not, so the least important file was the best protected. And an unreadable `auth.json` was silently replaced, losing every configured provider — a transient `EIO` was enough to trigger it. |
+| NFR-REL-09 | Network calls made on a user-facing path are bounded by a timeout and report failure in plain language. Applies to API-key validation during setup and to model listing, both of which currently block with no feedback if the provider stalls. |
 
 ### 4.4 Portability
 
@@ -1537,6 +1598,7 @@ If a release needs a one-shot transform (e.g. rename a field in `config.json`), 
 | ID | Requirement |
 |----|-------------|
 | NFR-MAINT-01 | Delete `.buddy/logs/*.jsonl` session event logs older than 7 days (configurable via `SESSION_LOG_RETENTION_DAYS` in `shared/defaults.ts`). Run on app boot or heartbeat housekeeping. Episodic value is already in daily logs after reflect/consolidation; raw JSONL is debug-only. |
+| NFR-MAINT-02 | Prune forked session files in `.buddy/reflect-sessions/` on the same housekeeping pass, keeping a bounded recent window. Nothing pruned them before: one fork is created per session and per checkpoint, each holding the **full conversation transcript** in plain text, and they accumulated indefinitely (verified on a live instance: 5 files, 168 KB, largest 107 KB, after two days of use). NFR-REL-02 justifies keeping recent forks for manual recovery; it does not justify keeping every conversation forever. The reasoning of NFR-MAINT-01 applies with more force here, because the content is the conversation itself rather than an event log. |
 
 ### 4.11 Testing Discipline (NFR-TEST)
 
