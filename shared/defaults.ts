@@ -60,6 +60,18 @@ export const REFLECT_CHILD_ENV_VALUE = "1";
 export const CONSOLIDATION_STATE_PATH = ".buddy/consolidation-state.json";
 /** Consolidation run journal (FR-CONSOL-06). */
 export const CONSOLIDATION_LOG_PATH = ".buddy/consolidation-log.json";
+/**
+ * Consecutive failures at one depth before it is abandoned and the user is told
+ * (FR-CONSOL-09). Each attempt is a billed LLM call, so this is a spend ceiling
+ * as much as a reliability one.
+ */
+export const CONSOLIDATION_RETRY_CEILING = 3;
+/**
+ * First retry delay after a failure; doubles per consecutive failure
+ * (30 min → 1 h → 2 h). Matches the heartbeat interval so the first retry lands
+ * on the next tick rather than being skipped.
+ */
+export const CONSOLIDATION_BACKOFF_BASE_MS = 30 * 60 * 1000;
 
 /** Max slug length for fetch_url download filenames (FR-NET-01). */
 export const DOWNLOAD_SLUG_MAX_LEN = 80;

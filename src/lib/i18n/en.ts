@@ -119,6 +119,8 @@ export const en: LocaleStrings = {
   budgetWarningBody: "You've used ${spent} of your ${budget} monthly budget (80%).",
   budgetExceededTitle: "Buddy — budget reached",
   budgetExceededBody: "Monthly budget reached (${spent} of ${budget}). Chat is paused until you adjust the budget or next month.",
+  maintenancePausedTitle: "Buddy — maintenance paused",
+  maintenancePausedBody: "I could not organise my memory several times in a row, so I have stopped trying rather than spend your budget on it. Everything we talked about is still saved.",
   notificationTitle: "buddy",
   fileViewerClose: "Close",
   fileViewerLoading: "Loading file…",

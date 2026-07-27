@@ -6,10 +6,18 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 import {
+  CONSOLIDATION_BACKOFF_BASE_MS,
   CONSOLIDATION_LOG_PATH,
+  CONSOLIDATION_RETRY_CEILING,
   CONSOLIDATION_STATE_PATH,
 } from "./defaults";
 import { MS_PER_HOUR } from "./dates";
+
+/** Consecutive-failure tracking for one depth (FR-CONSOL-09). */
+export interface DepthFailureState {
+  count: number;
+  lastFailureAt: string;
+}
 
 export interface ConsolidationState {
   sessionsSinceLastDepth1: number;
@@ -22,13 +30,15 @@ export interface ConsolidationState {
   liveSessionFile?: string | null;
   /** True when session-end reflect was requested but may not have completed. */
   reflectPending?: boolean;
+  /** Per-depth consecutive failures, keyed by depth (FR-CONSOL-09). */
+  failures?: Record<string, DepthFailureState>;
 }
 
 export interface ConsolidationLogEntry {
   timestamp: string;
   depth: number;
   duration_ms: number;
-  status: "success" | "fail";
+  status: "success" | "fail" | "skipped" | "budget-stopped";
   error?: string;
 }
 
@@ -130,11 +140,78 @@ export function isDepthDue(depth: 1 | 2 | 3, state: ConsolidationState, now?: Da
   }
 }
 
-/** Highest consolidation depth whose usage threshold is met, or null. */
+// ---------------------------------------------------------------------------
+// Failure tracking (FR-CONSOL-09)
+//
+// A depth that fails deterministically used to retry on every heartbeat tick
+// forever, each retry costing a full LLM call. Failures are now counted per
+// depth, retried with exponential backoff, and abandoned at a ceiling.
+// ---------------------------------------------------------------------------
+
+export type DepthBlockReason = "backoff" | "abandoned";
+
+export function depthFailureCount(state: ConsolidationState, depth: 1 | 2 | 3): number {
+  return state.failures?.[String(depth)]?.count ?? 0;
+}
+
+/** Delay before the next attempt: base × 2^(failures−1). */
+export function backoffDelayMs(failureCount: number): number {
+  if (failureCount <= 0) return 0;
+  return CONSOLIDATION_BACKOFF_BASE_MS * 2 ** (failureCount - 1);
+}
+
+/**
+ * Why a depth may not run right now, or null when it is free to run.
+ * `abandoned` is terminal until a manual reset; `backoff` clears with time.
+ */
+export function depthBlockReason(
+  state: ConsolidationState,
+  depth: 1 | 2 | 3,
+  now: Date = new Date(),
+): DepthBlockReason | null {
+  const failure = state.failures?.[String(depth)];
+  if (!failure || failure.count <= 0) return null;
+  if (failure.count >= CONSOLIDATION_RETRY_CEILING) return "abandoned";
+
+  const since = now.getTime() - new Date(failure.lastFailureAt).getTime();
+  if (Number.isNaN(since)) return null;
+  return since < backoffDelayMs(failure.count) ? "backoff" : null;
+}
+
+export function recordDepthFailure(
+  state: ConsolidationState,
+  depth: 1 | 2 | 3,
+  now: Date = new Date(),
+): DepthFailureState {
+  const key = String(depth);
+  const current = state.failures?.[key]?.count ?? 0;
+  const next: DepthFailureState = {
+    count: current + 1,
+    lastFailureAt: now.toISOString(),
+  };
+  state.failures = { ...(state.failures ?? {}), [key]: next };
+  return next;
+}
+
+/** A successful run clears the depth's failure history. */
+export function clearDepthFailure(state: ConsolidationState, depth: 1 | 2 | 3): void {
+  if (!state.failures?.[String(depth)]) return;
+  const { [String(depth)]: _removed, ...rest } = state.failures;
+  state.failures = rest;
+}
+
+/**
+ * Highest consolidation depth whose usage threshold is met and which is not
+ * blocked by backoff or abandonment, or null. Falls through to lower depths:
+ * a broken depth 3 must not stop daily consolidation from running.
+ */
 export function determineTargetDepth(state: ConsolidationState, now?: Date): 1 | 2 | 3 | null {
-  if (isDepthDue(3, state, now)) return 3;
-  if (isDepthDue(2, state, now)) return 2;
-  if (isDepthDue(1, state, now)) return 1;
+  const at = now ?? new Date();
+  for (const depth of [3, 2, 1] as const) {
+    if (isDepthDue(depth, state, at) && depthBlockReason(state, depth, at) === null) {
+      return depth;
+    }
+  }
   return null;
 }
 
@@ -145,6 +222,7 @@ export function cascadeDepths(targetDepth: 1 | 2 | 3): Array<1 | 2 | 3> {
 
 export function advanceCounters(state: ConsolidationState, depth: 1 | 2 | 3, now?: Date): void {
   const timestamp = (now ?? new Date()).toISOString();
+  clearDepthFailure(state, depth);
   switch (depth) {
     case 1:
       state.sessionsSinceLastDepth1 = 0;

@@ -16,7 +16,13 @@ export type AppLogEvent =
   | { event: "reflect_error"; session: string; mode: string; message: string }
   | { event: "consolidation_start"; depth: number }
   | { event: "consolidation_complete"; depth: number }
-  | { event: "consolidation_error"; depth: number; error: string }
+  | { event: "consolidation_error"; depth: number; error: string; failureCount?: number }
+  /** Depth not attempted: in backoff or past the retry ceiling (FR-CONSOL-09). */
+  | { event: "consolidation_skipped"; depth: number; reason: string }
+  /** Depth reached the retry ceiling and will not be retried (FR-CONSOL-09). */
+  | { event: "consolidation_abandoned"; depth: number }
+  /** Cascade stopped mid-flight because spend crossed the threshold (FR-COST-05). */
+  | { event: "consolidation_budget_stopped"; depth: number }
   | { event: "heartbeat_tick"; deferredDue: number; consolidationEvaluated: boolean }
   | { event: "error"; message: string; context?: string };
 

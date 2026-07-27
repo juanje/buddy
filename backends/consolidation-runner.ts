@@ -10,13 +10,19 @@ import {
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { AGENT_TOOLS, EXCLUDED_TOOLS } from "../shared/defaults";
+import {
+  AGENT_TOOLS,
+  CONSOLIDATION_RETRY_CEILING,
+  EXCLUDED_TOOLS,
+} from "../shared/defaults";
 import type { AgentEvent } from "../shared/api";
 import {
   advanceCounters,
   appendConsolidationLogEntry,
   cascadeDepths,
+  depthBlockReason,
   loadConsolidationState,
+  recordDepthFailure,
   saveConsolidationState,
   type ConsolidationState,
 } from "../shared/consolidation-state";
@@ -157,12 +163,22 @@ export interface RunConsolidationOptions {
   state?: ConsolidationState;
   createSession?: CreateMaintenanceSessionFn;
   now?: Date;
+  /**
+   * Re-checked before each depth so a cascade already in flight stops when spend
+   * crosses the background threshold (FR-COST-05). The heartbeat's pre-flight
+   * check only covers the moment the cascade starts.
+   */
+  isBudgetNearLimit?: () => boolean;
 }
 
 export interface RunConsolidationResult {
   ran: boolean;
   completedDepths: number[];
   state: ConsolidationState;
+  /** Set when the cascade stopped early rather than completing. */
+  stoppedBy?: "budget" | "failure";
+  /** Depths that reached the retry ceiling during this run (FR-CONSOL-09). */
+  abandonedDepths: number[];
 }
 
 /**
@@ -179,9 +195,11 @@ export async function runConsolidation(options: RunConsolidationOptions): Promis
   } = options;
   const state = options.state ?? loadConsolidationState(rootDir);
   const completedDepths: number[] = [];
+  const abandonedDepths: number[] = [];
+  let stoppedBy: RunConsolidationResult["stoppedBy"];
 
   if (!acquireLock(rootDir)) {
-    return { ran: false, completedDepths, state };
+    return { ran: false, completedDepths, state, abandonedDepths };
   }
 
   let maintenanceSession: MaintenanceSessionLike | undefined;
@@ -191,6 +209,34 @@ export async function runConsolidation(options: RunConsolidationOptions): Promis
     const date = toIsoDay(now);
 
     for (const depth of cascadeDepths(targetDepth)) {
+      // FR-COST-05: re-check before each billed call, not only before the cascade.
+      if (options.isBudgetNearLimit?.()) {
+        stoppedBy = "budget";
+        appendConsolidationLogEntry(rootDir, {
+          timestamp: now.toISOString(),
+          depth,
+          duration_ms: 0,
+          status: "budget-stopped",
+        });
+        logEvent(rootDir, { event: "consolidation_budget_stopped", depth });
+        break;
+      }
+
+      // A depth in backoff or past the ceiling is skipped without failing the
+      // cascade — a broken depth 2 must not block depth 1 (FR-CONSOL-09).
+      const blocked = depthBlockReason(state, depth, now);
+      if (blocked) {
+        appendConsolidationLogEntry(rootDir, {
+          timestamp: now.toISOString(),
+          depth,
+          duration_ms: 0,
+          status: "skipped",
+          error: blocked,
+        });
+        logEvent(rootDir, { event: "consolidation_skipped", depth, reason: blocked });
+        continue;
+      }
+
       const start = Date.now();
       try {
         logEvent(rootDir, { event: "consolidation_start", depth });
@@ -219,9 +265,17 @@ export async function runConsolidation(options: RunConsolidationOptions): Promis
         });
         advanceCounters(state, depth, now);
         completedDepths.push(depth);
+        // FR-CONSOL-08: persist immediately. Saving only after the whole
+        // cascade meant a later failure discarded work already paid for.
+        saveConsolidationState(rootDir, state);
         logEvent(rootDir, { event: "consolidation_complete", depth });
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
+        const failure = recordDepthFailure(state, depth, now);
+        saveConsolidationState(rootDir, state);
+        if (failure.count >= CONSOLIDATION_RETRY_CEILING) {
+          abandonedDepths.push(depth);
+        }
         appendConsolidationLogEntry(rootDir, {
           timestamp: now.toISOString(),
           depth,
@@ -229,8 +283,14 @@ export async function runConsolidation(options: RunConsolidationOptions): Promis
           status: "fail",
           error: message,
         });
-        logEvent(rootDir, { event: "consolidation_error", depth, error: message });
-        throw error;
+        logEvent(rootDir, {
+          event: "consolidation_error",
+          depth,
+          error: message,
+          failureCount: failure.count,
+        });
+        stoppedBy = "failure";
+        break;
       }
     }
 
@@ -248,7 +308,13 @@ export async function runConsolidation(options: RunConsolidationOptions): Promis
       await commitAll(rootDir, commitMessageForDepth(targetDepth, now));
     }
 
-    return { ran: completedDepths.length > 0, completedDepths, state };
+    return {
+      ran: completedDepths.length > 0,
+      completedDepths,
+      state,
+      stoppedBy,
+      abandonedDepths,
+    };
   } finally {
     maintenanceSession?.dispose();
     releaseLock(rootDir);

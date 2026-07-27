@@ -55,8 +55,7 @@ describe("heartbeat", () => {
     const runConsolidationFn = vi.fn(async (_options: RunConsolidationOptions) => ({
       ran: true,
       completedDepths: [1],
-      state: defaultConsolidationState(),
-    }));
+      state: defaultConsolidationState(), abandonedDepths: [] }));
 
     const hb = startHeartbeat({
       rootDir: dir,
@@ -83,8 +82,7 @@ describe("heartbeat", () => {
     const runConsolidationFn = vi.fn(async (_options: RunConsolidationOptions) => ({
       ran: true,
       completedDepths: [1],
-      state: defaultConsolidationState(),
-    }));
+      state: defaultConsolidationState(), abandonedDepths: [] }));
 
     const hb = startHeartbeat({
       rootDir: dir,
@@ -113,8 +111,7 @@ describe("heartbeat", () => {
     const runConsolidationFn = vi.fn(async (_options: RunConsolidationOptions) => ({
       ran: true,
       completedDepths: [1],
-      state: defaultConsolidationState(),
-    }));
+      state: defaultConsolidationState(), abandonedDepths: [] }));
 
     const hb = startHeartbeat({
       rootDir: dir,

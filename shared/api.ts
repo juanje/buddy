@@ -140,6 +140,12 @@ export interface PrereqStatus {
   platform: string;
 }
 
+/** Background maintenance abandoned at a depth after repeated failures (FR-CONSOL-09). */
+export interface MaintenancePausedInfo {
+  depth: number;
+  consecutiveFailures: number;
+}
+
 /** Due/overdue deferred item for the welcome banner (FR-DEFERRED-01 visual). */
 export interface DeferredItemView {
   type: string;
@@ -237,4 +243,10 @@ export interface FrontendAPI {
   onDeferredDue(items: DeferredItemView[]): void;
   /** Budget threshold crossed (80% warning or 100% exceeded) (FR-COST-03). */
   onBudgetAlert(status: BudgetStatus): void;
+  /**
+   * Background maintenance was abandoned at a depth after repeated failures
+   * (FR-CONSOL-09). Surfaced so the user knows memory is no longer being
+   * organized, rather than discovering it much later.
+   */
+  onMaintenancePaused(info: MaintenancePausedInfo): void;
 }

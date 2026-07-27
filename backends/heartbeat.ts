@@ -5,8 +5,10 @@ import type { ModelRuntime } from "@earendil-works/pi-coding-agent";
 import type { DeferredItemView } from "../shared/api";
 import { HEARTBEAT_INTERVAL_MS, HEARTBEAT_MIN_TICK_MS, LEGACY_DEBUG_ENV } from "../shared/defaults";
 import {
+  depthBlockReason,
   determineTargetDepth,
   incrementSessionCounter,
+  isDepthDue,
   loadConsolidationState,
   saveConsolidationState,
   type ConsolidationState,
@@ -25,6 +27,8 @@ export interface HeartbeatDeps {
   onDeferredDue: (items: DeferredItemView[]) => void;
   onConsolidationStart?: (depth: number) => void;
   onConsolidationEnd?: (depth: number, status: "success" | "fail" | "skipped") => void;
+  /** A depth hit the retry ceiling and will not be retried (FR-CONSOL-09). */
+  onMaintenancePaused?: (depth: number) => void;
   isBudgetNearLimit?: () => boolean;
   intervalMs?: number;
   now?: () => Date;
@@ -48,13 +52,20 @@ export function startHeartbeat(deps: HeartbeatDeps): HeartbeatHandle {
   let timer: ReturnType<typeof setInterval> | undefined;
   let lastTickAt = 0;
   let prunedThisBoot = false;
+  const pausedNotified = new Set<number>();
 
   async function evaluateConsolidation(): Promise<void> {
     if (consolidationInFlight) return;
     if (deps.isStreaming()) return;
 
     const targetDepth = determineTargetDepth(state, nowFn());
-    if (!targetDepth) return;
+    if (!targetDepth) {
+      // Work is waiting but every candidate depth is abandoned. Notify here as
+      // well as at the moment of failure: otherwise a user whose app restarted
+      // after the final failure would never learn maintenance had stopped.
+      reportAbandonedWork();
+      return;
+    }
 
     if (!(await hasNewContentImpl(deps.rootDir, state))) return;
     if (deps.isBudgetNearLimit?.()) return;
@@ -68,18 +79,46 @@ export function startHeartbeat(deps: HeartbeatDeps): HeartbeatHandle {
         modelRuntime: deps.modelRuntime,
         state,
         now: nowFn(),
+        isBudgetNearLimit: deps.isBudgetNearLimit,
       });
       state = result.state;
-      if (result.ran) {
+      // FR-CONSOL-09: tell the user once a depth is abandoned. Silence here is
+      // what turned a broken depth into an unnoticed budget drain.
+      for (const depth of result.abandonedDepths) {
+        notifyMaintenancePaused(depth);
+      }
+      if (result.stoppedBy === "failure") {
+        deps.onConsolidationEnd?.(targetDepth, "fail");
+      } else if (result.ran) {
         deps.onConsolidationEnd?.(targetDepth, "success");
       } else {
         deps.onConsolidationEnd?.(targetDepth, "skipped");
       }
     } catch {
+      // The runner handles per-depth failures internally; reaching here means
+      // the cascade could not start at all (session creation, lock, disk).
       deps.onConsolidationEnd?.(targetDepth, "fail");
     } finally {
       consolidationInFlight = false;
     }
+  }
+
+  /** Depths that are due but permanently blocked — pending work nobody will do. */
+  function reportAbandonedWork(): void {
+    const at = nowFn();
+    for (const depth of [1, 2, 3] as const) {
+      if (isDepthDue(depth, state, at) && depthBlockReason(state, depth, at) === "abandoned") {
+        notifyMaintenancePaused(depth);
+      }
+    }
+  }
+
+  /** Fire the pause notice at most once per depth per app run. */
+  function notifyMaintenancePaused(depth: number): void {
+    if (pausedNotified.has(depth)) return;
+    pausedNotified.add(depth);
+    logEvent(deps.rootDir, { event: "consolidation_abandoned", depth });
+    deps.onMaintenancePaused?.(depth);
   }
 
   async function tickInner(): Promise<void> {

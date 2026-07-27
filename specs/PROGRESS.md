@@ -201,13 +201,10 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 > review of 2026-07-26 (Opus 5) and the project response of 2026-07-27.
 > **FR-WIKI is deferred until H1–H3 close.**
 >
-> **H1 done** (link containment). **H2 done** (render safety).
-> **380 unit + 185 BDD green**, typecheck and vite build clean.
-> **Next: H3** (consolidation cost safety — per-depth state, backoff, in-flight
-> budget abort).
->
-> ⚠️ The H2 CSP is not covered by any test. Verify with `npm run tauri dev` and a
-> production bundle before tagging v0.1.1.
+> **H1, H2, H3 done.** v0.1.1 tagged (H1+H2); H3 is v0.1.2 when released.
+> **394 unit + 192 BDD green**, typecheck and vite build clean.
+> **Next: H4** (network trust boundary — SSRF denylist, untrusted content
+> framing).
 
 ### Sprint: Hardening (v0.1.1) — started 2026-07-27
 
@@ -335,15 +332,49 @@ survives sanitization (FR-CHAT-09/10 must not silently break) · CSP present wit
 `script-src` free of `unsafe-inline`/`unsafe-eval` · app visually verified in the
 real window, not only in tests
 
-#### Sprint H3 — Consolidation cost safety `[M]`
+#### Sprint H3 — Consolidation cost safety `[M]` — DONE (2026-07-27)
 
 Goal: background maintenance can never drain a user's budget unattended.
 
 | ID | Requirement | Status | Commit |
 |----|-------------|--------|--------|
-| FR-CONSOL-08 | State persisted per completed depth | todo | |
-| FR-CONSOL-09 | Failure backoff + retry ceiling | todo | |
-| FR-COST-05 | Budget gate aborts in-flight cascade | todo | |
+| FR-CONSOL-08 | State persisted per completed depth | done | (this sprint) |
+| FR-CONSOL-09 | Failure backoff + retry ceiling | done | (this sprint) |
+| FR-COST-05 | Budget gate aborts in-flight cascade | done | (this sprint) |
+
+**Tests at H3 close:** 394 unit + 192 BDD green, typecheck and vite build clean.
+
+**A failure no longer propagates out of the runner.** `runConsolidation` used to
+`throw`, which is what skipped `saveConsolidationState` and discarded completed
+depths. It now returns `stoppedBy: "failure" | "budget"` and `abandonedDepths`,
+so the caller can distinguish outcomes and state is written either way.
+
+**Backoff:** consecutive failures are counted per depth in
+`consolidation-state.json`; the next attempt waits `30 min × 2^(n−1)`; at
+`CONSOLIDATION_RETRY_CEILING` (3) the depth is abandoned. A success clears the
+count, wired into `advanceCounters` so no call site can forget it.
+
+**A blocked depth does not block the others.** `determineTargetDepth` falls
+through: a broken weekly consolidation must not stop the daily one from running.
+Inside a cascade, a blocked depth is skipped and journalled, not treated as a
+failure.
+
+**The pause notice fires from two places, deliberately.** Once at the moment a
+depth hits the ceiling, and again on any later tick that finds due work behind an
+abandoned depth. Without the second path, a user whose app restarted after the
+final failure would never learn maintenance had stopped — and silence is the
+exact failure mode this requirement exists to prevent.
+
+**A unit test encoded the bug.** `"does not advance counters when a depth fails"`
+asserted that the runner throws *and* that depth 1's advance is discarded. That
+was the defect, written down as a requirement. Rewritten as `"keeps a completed
+depth when a later depth fails"`. Second time this has happened (H1 had two such
+BDD scenarios) — worth watching for in H4–H6.
+
+> **Not verified by tests:** the OS notification itself (`maintenance-notify.ts`)
+> follows the existing budget-alert pattern but, like it, is only exercised
+> manually. To see it: set `CONSOLIDATION_RETRY_CEILING` to 1 temporarily and
+> make a consolidation fail.
 
 Touches: `consolidation-runner.ts` · `heartbeat.ts` · `shared/consolidation-state.ts` ·
 `consolidation-scheduler.feature`

@@ -9,7 +9,14 @@ import { join } from "node:path";
 import { acquireLock, releaseLock } from "../../backends/maintenance";
 import { startHeartbeat } from "../../backends/heartbeat";
 import { runConsolidation } from "../../backends/consolidation-runner";
-import { saveConsolidationState, loadConsolidationLog, defaultConsolidationState } from "../../shared/consolidation-state";
+import {
+  defaultConsolidationState,
+  depthFailureCount,
+  loadConsolidationLog,
+  loadConsolidationState,
+  saveConsolidationState,
+} from "../../shared/consolidation-state";
+import { CONSOLIDATION_RETRY_CEILING } from "../../shared/defaults";
 import { initTestGitRepo } from "../support/test-git";
 import type { BuddyWorld } from "../support/world";
 import type { DeferredItemView } from "../../shared/api";
@@ -25,6 +32,12 @@ interface ConsolidationWorld extends BuddyWorld {
   consolidationRuns?: number[];
   streaming?: boolean;
   heartbeat?: ReturnType<typeof startHeartbeat>;
+  /** Depth at which the scripted maintenance session throws (FR-CONSOL-09). */
+  failAtDepth?: number;
+  /** Depth after which the budget threshold is reported crossed (FR-COST-05). */
+  budgetCrossesAfterDepth?: number;
+  depthsPrompted?: number[];
+  maintenancePausedNotices?: number[];
 }
 
 After(function (this: ConsolidationWorld) {
@@ -49,6 +62,8 @@ Given("a buddy directory prepared for consolidation", async function (this: Cons
 
   this.deferredNotifications = [];
   this.consolidationRuns = [];
+  this.depthsPrompted = [];
+  this.maintenancePausedNotices = [];
   this.streaming = false;
 
   this.heartbeat = startHeartbeat({
@@ -58,12 +73,27 @@ Given("a buddy directory prepared for consolidation", async function (this: Cons
     onDeferredDue: (items) => {
       this.deferredNotifications!.push(items);
     },
+    onMaintenancePaused: (depth) => {
+      this.maintenancePausedNotices!.push(depth);
+    },
+    // The runner re-checks this before each depth (FR-COST-05); the scenario
+    // decides after which depth it starts returning true.
+    isBudgetNearLimit: () =>
+      this.budgetCrossesAfterDepth !== undefined &&
+      this.depthsPrompted!.length > this.budgetCrossesAfterDepth - 1,
     intervalMs: TEST_HEARTBEAT_INTERVAL_MS,
     now: () => TEST_FROZEN_NOW,
     hasNewContentFn: async () => true,
     runConsolidationFn: async (options) => {
+      let currentDepth = 0;
       const createSession = async (): Promise<MaintenanceSessionLike> => ({
-        prompt: async () => {},
+        prompt: async (text: string) => {
+          currentDepth = Number(/Run consolidation at depth (\d)/.exec(text)?.[1] ?? 0);
+          this.depthsPrompted!.push(currentDepth);
+          if (this.failAtDepth === currentDepth) {
+            throw new Error(`scripted failure at depth ${currentDepth}`);
+          }
+        },
         dispose: () => {},
       });
       const result = await runConsolidation({
@@ -128,13 +158,6 @@ When("the heartbeat ticks", async function (this: ConsolidationWorld) {
   await this.heartbeat!.tick();
 });
 
-When("consolidation is triggered at depth 1", async function (this: ConsolidationWorld) {
-  const state = defaultConsolidationState();
-  state.sessionsSinceLastDepth1 = 3;
-  saveConsolidationState(this.buddyDir!, state);
-  await this.heartbeat!.tick();
-});
-
 Then("deferred due notification is sent", function (this: ConsolidationWorld) {
   assert.ok(this.deferredNotifications!.some((batch) => batch.length > 0));
   assert.match(this.deferredNotifications![0]![0]!.text, /dentista/);
@@ -155,4 +178,124 @@ Then("consolidation runs depths 1 and 2 in order", function (this: Consolidation
 Then("a success entry is appended to the consolidation log", function (this: ConsolidationWorld) {
   const log = loadConsolidationLog(this.buddyDir!);
   assert.ok(log.some((entry) => entry.depth === 1 && entry.status === "success"));
+});
+
+// --- FR-CONSOL-08/09, FR-COST-05 ---
+
+Given("depth 3 consolidation is due", function (this: ConsolidationWorld) {
+  const state = defaultConsolidationState();
+  state.sessionsSinceLastDepth1 = 3;
+  state.depth1RunsSinceLastDepth2 = 5;
+  state.depth2RunsSinceLastDepth3 = 4;
+  saveConsolidationState(this.buddyDir!, state);
+});
+
+Given(
+  "the maintenance session fails at depth {int}",
+  function (this: ConsolidationWorld, depth: number) {
+    this.failAtDepth = depth;
+  },
+);
+
+Given(
+  "the budget threshold is crossed after depth {int}",
+  function (this: ConsolidationWorld, depth: number) {
+    this.budgetCrossesAfterDepth = depth;
+  },
+);
+
+Given(
+  "depth {int} has {int} recent consecutive failure",
+  function (this: ConsolidationWorld, depth: number, count: number) {
+    const state = loadConsolidationState(this.buddyDir!);
+    state.sessionsSinceLastDepth1 = 3;
+    state.failures = {
+      [String(depth)]: { count, lastFailureAt: TEST_FROZEN_NOW.toISOString() },
+    };
+    saveConsolidationState(this.buddyDir!, state);
+  },
+);
+
+Given(
+  "depth {int} has {int} consecutive failure from long ago",
+  function (this: ConsolidationWorld, depth: number, count: number) {
+    const state = loadConsolidationState(this.buddyDir!);
+    state.sessionsSinceLastDepth1 = 3;
+    const longAgo = new Date(TEST_FROZEN_NOW.getTime() - 30 * 24 * 60 * 60 * 1000);
+    state.failures = {
+      [String(depth)]: { count, lastFailureAt: longAgo.toISOString() },
+    };
+    saveConsolidationState(this.buddyDir!, state);
+  },
+);
+
+Given(
+  "depth {int} has reached the retry ceiling",
+  function (this: ConsolidationWorld, depth: number) {
+    const state = loadConsolidationState(this.buddyDir!);
+    state.sessionsSinceLastDepth1 = 3;
+    state.failures = {
+      [String(depth)]: {
+        count: CONSOLIDATION_RETRY_CEILING,
+        lastFailureAt: TEST_FROZEN_NOW.toISOString(),
+      },
+    };
+    saveConsolidationState(this.buddyDir!, state);
+  },
+);
+
+When(
+  "consolidation is triggered at depth {int}",
+  async function (this: ConsolidationWorld, depth: number) {
+    const state = loadConsolidationState(this.buddyDir!);
+    state.sessionsSinceLastDepth1 = 3;
+    if (depth >= 2) state.depth1RunsSinceLastDepth2 = 5;
+    if (depth >= 3) state.depth2RunsSinceLastDepth3 = 4;
+    saveConsolidationState(this.buddyDir!, state);
+    await this.heartbeat!.tick();
+  },
+);
+
+Then("depth {int} counters are persisted", function (this: ConsolidationWorld, depth: number) {
+  const state = loadConsolidationState(this.buddyDir!);
+  const stamp = depth === 1 ? state.lastDepth1 : depth === 2 ? state.lastDepth2 : state.lastDepth3;
+  assert.ok(stamp, `depth ${depth} should have been persisted to disk`);
+});
+
+Then("depth {int} counters are not advanced", function (this: ConsolidationWorld, depth: number) {
+  const state = loadConsolidationState(this.buddyDir!);
+  const stamp = depth === 1 ? state.lastDepth1 : depth === 2 ? state.lastDepth2 : state.lastDepth3;
+  assert.equal(stamp, null, `depth ${depth} must not be marked as completed`);
+});
+
+Then(
+  "the failure count for depth {int} is {int}",
+  function (this: ConsolidationWorld, depth: number, expected: number) {
+    const state = loadConsolidationState(this.buddyDir!);
+    assert.equal(depthFailureCount(state, depth as 1 | 2 | 3), expected);
+  },
+);
+
+Then("a fail entry is appended to the consolidation log", function (this: ConsolidationWorld) {
+  const log = loadConsolidationLog(this.buddyDir!);
+  assert.ok(log.some((entry) => entry.status === "fail"));
+});
+
+Then(
+  "a budget-stopped entry is appended to the consolidation log",
+  function (this: ConsolidationWorld) {
+    const log = loadConsolidationLog(this.buddyDir!);
+    assert.ok(log.some((entry) => entry.status === "budget-stopped"));
+  },
+);
+
+Then("only depth {int} runs", function (this: ConsolidationWorld, depth: number) {
+  assert.deepEqual(this.consolidationRuns, [depth]);
+});
+
+Then("the user is told background maintenance is paused", function (this: ConsolidationWorld) {
+  assert.ok(
+    this.maintenancePausedNotices!.length > 0,
+    "the user must be notified when maintenance is abandoned",
+  );
 });

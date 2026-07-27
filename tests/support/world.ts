@@ -94,6 +94,7 @@ export class BuddyWorld extends World {
         onOAuthEvent: () => {},
         onDeferredDue: () => {},
         onBudgetAlert: () => {},
+    onMaintenancePaused: () => {},
       },
       { lifecycle: this.lifecycle },
     );

@@ -12,7 +12,7 @@ import {
 } from "../../backends/consolidation-runner";
 import { acquireLock, releaseLock } from "../../backends/maintenance";
 import { initTestGitRepo } from "../support/test-git";
-import { loadConsolidationLog, loadConsolidationState } from "../../shared/consolidation-state";
+import { depthFailureCount, loadConsolidationLog, loadConsolidationState } from "../../shared/consolidation-state";
 import { setupGlobalConfigDir, teardownGlobalConfigDir } from "../support/global-config";
 
 describe("consolidation runner", () => {
@@ -179,7 +179,11 @@ describe("consolidation runner", () => {
     expect(existsSync(join(dir, ".buddy", "consolidation-log.json"))).toBe(false);
   });
 
-  it("does not advance counters when a depth fails", async () => {
+  // Rewritten in H3. The previous version asserted that a failure at depth 2
+  // threw and discarded depth 1's advance — which is the bug FR-CONSOL-08 fixes,
+  // not a requirement. Each depth is a billed LLM call; work already paid for
+  // must survive a later failure.
+  it("keeps a completed depth when a later depth fails", async () => {
     setupAb();
     await initTestGitRepo(dir);
 
@@ -196,23 +200,62 @@ describe("consolidation runner", () => {
     state.sessionsSinceLastDepth1 = 3;
     state.depth1RunsSinceLastDepth2 = 5;
 
-    await expect(
-      runConsolidation({
-        rootDir: dir,
-        targetDepth: 2,
-        modelRuntime: {} as never,
-        state,
-        createSession,
-      }),
-    ).rejects.toThrow("API timeout");
+    const result = await runConsolidation({
+      rootDir: dir,
+      targetDepth: 2,
+      modelRuntime: {} as never,
+      state,
+      createSession,
+    });
+
+    expect(result.completedDepths).toEqual([1]);
+    expect(result.stoppedBy).toBe("failure");
 
     const reloaded = loadConsolidationState(dir);
-    expect(reloaded.lastDepth1).toBeNull();
+    expect(reloaded.lastDepth1).not.toBeNull();
     expect(reloaded.lastDepth2).toBeNull();
+    expect(depthFailureCount(reloaded, 2)).toBe(1);
+    expect(depthFailureCount(reloaded, 1)).toBe(0);
 
     const log = loadConsolidationLog(dir);
     expect(log).toHaveLength(2);
     expect(log[0]?.status).toBe("success");
     expect(log[1]?.status).toBe("fail");
+  });
+
+  it("stops the cascade when the budget threshold is crossed mid-flight", async () => {
+    setupAb();
+    await initTestGitRepo(dir);
+
+    let prompts = 0;
+    const createSession = vi.fn(async (): Promise<MaintenanceSessionLike> => ({
+      prompt: async () => {
+        prompts += 1;
+      },
+      dispose: () => {},
+    }));
+
+    const state = loadConsolidationState(dir);
+    state.sessionsSinceLastDepth1 = 3;
+    state.depth1RunsSinceLastDepth2 = 5;
+    state.depth2RunsSinceLastDepth3 = 4;
+
+    const result = await runConsolidation({
+      rootDir: dir,
+      targetDepth: 3,
+      modelRuntime: {} as never,
+      state,
+      createSession,
+      isBudgetNearLimit: () => prompts >= 1,
+    });
+
+    expect(result.completedDepths).toEqual([1]);
+    expect(result.stoppedBy).toBe("budget");
+    expect(prompts).toBe(1);
+
+    const reloaded = loadConsolidationState(dir);
+    expect(reloaded.lastDepth1).not.toBeNull();
+    expect(reloaded.lastDepth2).toBeNull();
+    expect(loadConsolidationLog(dir).some((e) => e.status === "budget-stopped")).toBe(true);
   });
 });

@@ -32,7 +32,7 @@ import {
 import { getDueDeferred, removeDueDeferredItems, toDeferredItemViews } from "./deferred";
 import { toIsoDay } from "../shared/dates";
 import { commitAll } from "./git";
-import { GIT_COMMIT_PREFIX } from "../shared/defaults";
+import { CONSOLIDATION_RETRY_CEILING, GIT_COMMIT_PREFIX } from "../shared/defaults";
 import { bootSession, augmentPromptWithAttachments } from "./session-boot";
 import { recoverStaleSession } from "./crash-recovery";
 import { spawnReflectChild } from "./reflect-spawn";
@@ -123,6 +123,16 @@ async function main(): Promise<void> {
           frontend.onDeferredDue(items);
         } catch (err) {
           console.error("[heartbeat] onDeferredDue RPC failed:", err);
+        }
+      },
+      onMaintenancePaused: (depth) => {
+        try {
+          frontend.onMaintenancePaused({
+            depth,
+            consecutiveFailures: CONSOLIDATION_RETRY_CEILING,
+          });
+        } catch (err) {
+          console.error("[heartbeat] onMaintenancePaused RPC failed:", err);
         }
       },
     });

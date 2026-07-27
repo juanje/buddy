@@ -25,6 +25,7 @@
   import type { FileViewerController } from "./lib/file-viewer-controller";
   import { ensureNotificationPermission, notifyDeferredDue } from "./utils/deferred-notify";
   import { formatBudgetNotificationBody, notifyBudgetAlert } from "./utils/budget-notify";
+  import { notifyMaintenancePaused } from "./utils/maintenance-notify";
   import { t } from "./lib/i18n";
   import type { AgentEvent, BudgetStatus, DeferredItemView, OAuthUIEvent, SetupConfig } from "../shared/api";
   import { SHUTDOWN_TIMEOUT_MS } from "../shared/defaults";
@@ -140,6 +141,14 @@
             void notifyDeferredDue(items.length, {
               title: strings.notificationTitle,
               body,
+            });
+          },
+          onMaintenancePaused(info) {
+            devLog(`maintenance paused at depth ${info.depth}`);
+            const strings = get(t);
+            void notifyMaintenancePaused(info, {
+              title: strings.maintenancePausedTitle,
+              body: strings.maintenancePausedBody,
             });
           },
           onBudgetAlert(status: BudgetStatus) {
