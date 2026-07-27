@@ -29,7 +29,7 @@ import { commitAll } from "./git";
 import { acquireLock, releaseLock } from "./maintenance";
 import { alignHttpDispatcherWithPi } from "./pi-http-dispatcher";
 import { collectAssistantText } from "./pi-utils";
-import { defaultAuthPath } from "./provider-auth";
+import { createBuddyModelRuntime } from "./provider-auth";
 import {
   finalizeCheckpointToDailyLog,
   finalizeReflectToDailyLog,
@@ -39,7 +39,7 @@ import {
 import { clearSessionPersistence } from "./crash-recovery";
 import { buildReflectUserPrompt } from "./reflect-prompts";
 import { defaultConfigDir } from "./allowed-paths";
-import { recordUsageToFile, sumUsageFromEvents } from "./usage-tracker";
+import { recordSessionUsage } from "./usage-tracker";
 
 async function resolveFastModelOptions(rootDir: string, modelRuntime: ModelRuntime): Promise<{
   model?: Awaited<ReturnType<ModelRuntime["getModel"]>>;
@@ -104,9 +104,7 @@ async function runReflect(
   });
   await resourceLoader.reload();
 
-  const modelRuntime = await ModelRuntime.create({
-    authPath: defaultAuthPath(),
-  });
+  const modelRuntime = await createBuddyModelRuntime();
 
   const fastModelOptions = isCheckpoint ? await resolveFastModelOptions(rootDir, modelRuntime) : {};
 
@@ -125,10 +123,7 @@ async function runReflect(
   try {
     await session.prompt(buildReflectUserPrompt(mode));
 
-    const usage = sumUsageFromEvents(events);
-    if (usage.cost > 0 || usage.tokens > 0) {
-      recordUsageToFile(defaultConfigDir(), usage);
-    }
+    recordSessionUsage(defaultConfigDir(), events);
 
     // Commit agent writes immediately — before lock, before finalization.
     await commitAll(rootDir, `${GIT_COMMIT_PREFIX} reflect ${mode} (agent writes)`);

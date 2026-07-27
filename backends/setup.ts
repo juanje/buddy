@@ -4,9 +4,11 @@
 // JSON, missing key) is a first run: the wizard owns recovery, so detection
 // never throws.
 
-import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
+
+import { writeStateFile } from "./state-file";
 
 import type { SetupConfig, SetupState } from "../shared/api";
 import {
@@ -53,7 +55,6 @@ export function updateAppConfig(
     throw new Error("App is not configured");
   }
   const updated: SetupConfig = { ...state.config, ...patch };
-  mkdirSync(dirname(configPath), { recursive: true });
-  writeFileSync(configPath, JSON.stringify(updated, null, 2) + "\n");
+  writeStateFile(configPath, updated); // NFR-REL-08
   return updated;
 }

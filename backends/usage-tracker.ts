@@ -1,7 +1,8 @@
 // backends/usage-tracker.ts — Session/monthly cost tracking and budget evaluation (FR-COST-02/03).
 
-import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+
+import { readStateFile, updateStateFile } from "./state-file";
 
 import type { AgentEvent, BudgetStatus, SetupConfig, UsageReport, UsageSummary } from "../shared/api";
 import {
@@ -47,27 +48,11 @@ function addToSummary(summary: UsageSummary, input: RecordUsageInput): UsageSumm
 }
 
 export function loadUsageFile(configDir: string): UsageFileData {
-  const filePath = usageFilePath(configDir);
-  if (!existsSync(filePath)) {
+  const parsed = readStateFile<Partial<UsageFileData>>(usageFilePath(configDir));
+  if (!parsed?.months || typeof parsed.months !== "object") {
     return { months: {} };
   }
-  try {
-    const parsed = JSON.parse(readFileSync(filePath, "utf8")) as Partial<UsageFileData>;
-    if (!parsed.months || typeof parsed.months !== "object") {
-      return { months: {} };
-    }
-    return { months: parsed.months };
-  } catch {
-    return { months: {} };
-  }
-}
-
-function writeUsageFile(configDir: string, data: UsageFileData): void {
-  mkdirSync(configDir, { recursive: true });
-  const filePath = usageFilePath(configDir);
-  const tmp = join(configDir, `.usage.${process.pid}.tmp`);
-  writeFileSync(tmp, JSON.stringify(data, null, 2) + "\n", "utf8");
-  renameSync(tmp, filePath);
+  return { months: parsed.months };
 }
 
 export function getMonthlySummaryFromFile(
@@ -148,7 +133,11 @@ export function sumUsageFromEvents(events: AgentEvent[]): RecordUsageInput {
 
 /**
  * Standalone write for background processes (reflect, consolidation).
- * Read-modify-write on usage.json; no in-memory session state.
+ *
+ * NFR-REL-06: three writers across two processes share this file — the worker,
+ * the reflect child and the consolidation session. The read-modify-write runs
+ * under a cross-process lock, because losing an update here means
+ * under-counting spend, and under-counting is the unsafe direction for a cap.
  */
 export function recordUsageToFile(
   configDir: string,
@@ -158,12 +147,37 @@ export function recordUsageToFile(
   if (input.cost <= 0 && input.tokens <= 0) {
     return getMonthlySummaryFromFile(configDir, now);
   }
-  const data = loadUsageFile(configDir);
   const key = monthKey(now);
-  const current = data.months[key] ?? { ...EMPTY_SUMMARY };
-  data.months[key] = addToSummary(current, input);
-  writeUsageFile(configDir, data);
-  return data.months[key];
+  const updated = updateStateFile<UsageFileData>(
+    usageFilePath(configDir),
+    (current) => {
+      const months = current?.months ?? {};
+      return {
+        ...current,
+        months: { ...months, [key]: addToSummary(months[key] ?? { ...EMPTY_SUMMARY }, input) },
+      };
+    },
+  );
+  return updated.months[key]!;
+}
+
+/**
+ * Record the usage of a completed background session (NFR-SEC-14b).
+ *
+ * Every session must account for what it spent; a call site that forgets makes
+ * its cost invisible to the budget cap. Kept as one helper so there is one
+ * place to get it right.
+ */
+export function recordSessionUsage(configDir: string, events: AgentEvent[], now?: Date): void {
+  const usage = sumUsageFromEvents(events);
+  if (usage.cost <= 0 && usage.tokens <= 0) return;
+  try {
+    recordUsageToFile(configDir, usage, now);
+  } catch (error) {
+    // Never fail a session over accounting. An unreadable or locked usage file
+    // is reported, not silently overwritten (NFR-REL-08).
+    console.error("[usage] could not record session usage:", error);
+  }
 }
 
 export function isBudgetNearLimitFromStatus(budget: BudgetStatus): boolean {

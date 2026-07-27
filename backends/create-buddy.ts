@@ -10,6 +10,7 @@ import { simpleGit } from "simple-git";
 import type { SetupConfig } from "../shared/api";
 import { DEFAULT_LANGUAGE, DEFAULT_MONTHLY_BUDGET, GIT_USER_EMAIL, GIT_USER_NAME } from "../shared/defaults";
 import { getEmbeddedAssets } from "./embedded-assets";
+import { writeStateFile } from "./state-file";
 import { writePiSettings } from "../shared/pi-settings";
 
 /** Bundled templates location (dev: repo root; not present in the compiled sidecar). */
@@ -123,6 +124,5 @@ function markConfigured(config: SetupConfig, configPath: string): void {
     ...config,
     monthlyBudget: config.monthlyBudget ?? DEFAULT_MONTHLY_BUDGET,
   };
-  mkdirSync(dirname(configPath), { recursive: true });
-  writeFileSync(configPath, JSON.stringify(payload, null, 2) + "\n");
+  writeStateFile(configPath, payload); // NFR-REL-08
 }

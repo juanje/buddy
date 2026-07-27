@@ -9,10 +9,11 @@
 // pi-ai's ApiKeyCredential so the SDK reads it natively when ModelRuntime
 // is pointed at this path. The path is injectable; tests only touch temp files.
 
-import { chmodSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { ModelRuntime } from "@earendil-works/pi-coding-agent";
 import { homedir } from "node:os";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 
+import { updateStateFile } from "./state-file";
 import type { KeyCheck, SetupConfig } from "../shared/api";
 import {
   AUTH_FILE_MODE,
@@ -76,6 +77,18 @@ export function defaultAuthPath(): string {
 }
 
 /**
+ * The only way to build a ModelRuntime (NFR-SEC-14a).
+ *
+ * Every session must resolve credentials from buddy's own store. Commit
+ * 231ac31 was a call site that omitted this: the SDK then fell back to the
+ * global `~/.pi/` config and reflect ran against whatever provider happened to
+ * be configured there — a different account, or none.
+ */
+export function createBuddyModelRuntime(): Promise<ModelRuntime> {
+  return ModelRuntime.create({ authPath: defaultAuthPath() });
+}
+
+/**
  * Validate the key with a probe call and, only if accepted, persist it into
  * the Pi auth store (merging with existing entries, 0600 permissions).
  */
@@ -101,18 +114,16 @@ export async function configureProviderKey(
 /**
  * Merge the key into buddy's auth.json. Entry shape matches pi-ai's
  * ApiKeyCredential ({ type: "api_key", key }) so the SDK reads it natively.
+ *
+ * NFR-REL-08: written atomically and under a lock. An unreadable store throws
+ * rather than being replaced — the previous version treated any read failure as
+ * "empty" and wrote only the new key, silently discarding every other
+ * configured provider.
  */
 function storeApiKey(authPath: string, piProvider: string, apiKey: string): void {
-  let store: Record<string, unknown> = {};
-  try {
-    store = JSON.parse(readFileSync(authPath, "utf8")) as Record<string, unknown>;
-  } catch {
-    // Missing or unreadable store: start fresh (never destroy a parseable one).
-  }
-
-  store[piProvider] = { type: "api_key", key: apiKey };
-
-  mkdirSync(dirname(authPath), { recursive: true });
-  writeFileSync(authPath, JSON.stringify(store, null, 2) + "\n");
-  chmodSync(authPath, AUTH_FILE_MODE);
+  updateStateFile<Record<string, unknown>>(
+    authPath,
+    (current) => ({ ...(current ?? {}), [piProvider]: { type: "api_key", key: apiKey } }),
+    { mode: AUTH_FILE_MODE },
+  );
 }

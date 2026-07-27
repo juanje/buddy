@@ -24,7 +24,7 @@ import { resolveSessionModel } from "./model-switch";
 import { OAuthService } from "./oauth-service";
 import { alignHttpDispatcherWithPi } from "./pi-http-dispatcher";
 import { checkPrerequisites } from "./prereqs";
-import { configureProviderKey, defaultAuthPath } from "./provider-auth";
+import { configureProviderKey, createBuddyModelRuntime } from "./provider-auth";
 import {
   fromPiProviderId,
   WIZARD_PI_PROVIDERS,
@@ -51,8 +51,7 @@ async function main(): Promise<void> {
   bootRefreshIfNeeded(configDir);
   await alignHttpDispatcherWithPi();
 
-  const authPath = defaultAuthPath();
-  const modelRuntime = await ModelRuntime.create({ authPath });
+  const modelRuntime = await createBuddyModelRuntime();
 
   // FR-SETUP-01: on first run there is no buddy directory to open a session in.
   // The channel is created either way (the wizard talks to the worker later);

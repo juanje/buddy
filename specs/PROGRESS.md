@@ -207,7 +207,8 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 > `reflect-child.ts`, wizard). 15 findings classified into three themes, now
 > sprints H5–H7; H8 absorbs the rest. H5b (session factory) is **cancelled** —
 > replaced by two shared helpers under a reworded NFR-SEC-14.
-> **Next: H5** (safe state writing). FR-WIKI resumes after H8.
+> **H5 done.** 480 unit + 213 BDD green. **Next: H6** (reflect reliability —
+> git race, child timeout, fork pruning). FR-WIKI resumes after H8.
 
 ### Sprint: Hardening (v0.1.1) — started 2026-07-27
 
@@ -509,15 +510,43 @@ reworded from "a single factory" to shared invariants.
 **The findings regrouped by cause, not by file.** Three themes, three sprints —
 each ends green and is independently shippable.
 
-#### Sprint H5 — Safe state writing `[S–M]`
+#### Sprint H5 — Safe state writing `[S–M]` — DONE (2026-07-27)
 
 Goal: no state file under `~/.buddy/` can be lost or corrupted by a write.
 
 | ID | Requirement | Status | Commit |
 |----|-------------|--------|--------|
-| NFR-REL-08 | Atomic, non-destructive writes for all `~/.buddy/` state | todo | |
-| NFR-REL-06 | `usage.json` concurrent-write safety | todo | |
-| NFR-SEC-14 | Shared session invariants (the two helpers) | todo | |
+| NFR-REL-08 | Atomic, non-destructive writes for all `~/.buddy/` state | done | (this sprint) |
+| NFR-REL-06 | `usage.json` concurrent-write safety | done | (this sprint) |
+| NFR-SEC-14 | Shared session invariants (the two helpers) | done | (this sprint) |
+
+**Tests at H5 close:** 480 unit + 213 BDD green, typecheck and vite build clean.
+
+New module `backends/state-file.ts`: `readStateFile` (absent → undefined,
+unreadable → throw), `writeStateFile` (temp + rename, mode at creation) and
+`updateStateFile` (read-modify-write under a cross-process lock taken with the
+`wx` flag, with staleness breaking).
+
+**A fifth instance found during implementation.** The plan listed four writers;
+`boot-refresh.ts` was a fifth and the worst of them. Its `readConfig` returned
+`{}` on any read failure and then wrote `{last_app_version}` over the file —
+discarding the rootDir pointer, provider, model, language and budget. A
+transient `EIO` was enough to send a fully configured user back to the wizard
+with nothing to recover. It now leaves an unreadable config untouched.
+
+**The concurrency test spawns real processes.** In-process tests cannot
+reproduce the lost update, because the sync fs calls never interleave — the bug
+lives between the worker and the reflect child. Verified by reintroducing the
+plain read-modify-write: **8 of 32 updates survived**, three writers' work gone.
+
+**Helpers for NFR-SEC-14:** `createBuddyModelRuntime()` and
+`recordSessionUsage()`. Verified afterwards that no `ModelRuntime.create` call
+remains outside the helper.
+
+**Out of scope, deliberately:** `writeFileSync` calls that write *content* —
+daily logs, brain files, downloads — are untouched. NFR-REL-08 covers the JSON
+state under `~/.buddy/`. Daily logs arguably deserve atomicity too; not expanded
+here to keep the sprint closed.
 
 Covers A1/A2 (`auth.json` silently replaced when unreadable; written in place),
 NFR-REL-06 (`usage.json`, three writers across two processes) and W4

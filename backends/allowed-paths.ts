@@ -1,8 +1,9 @@
 // backends/allowed-paths.ts — persistent outside-path allowlist (FR-PERM-06).
 // Stored in ~/.buddy/allowed-paths.json; read access only (writes still prompt).
 
-import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
+
+import { readStateFile, updateStateFile } from "./state-file";
 
 import { ALLOWED_PATHS_FILE_NAME } from "../shared/defaults";
 import { defaultConfigPath } from "./setup";
@@ -26,22 +27,23 @@ export function allowedPathsFile(configDir: string = defaultConfigDir()): string
   return join(configDir, ALLOWED_PATHS_FILE_NAME);
 }
 
-export function loadAllowedPaths(configDir: string = defaultConfigDir()): AllowedEntry[] {
-  const filePath = allowedPathsFile(configDir);
-  if (!existsSync(filePath)) return [];
+function validEntries(parsed: Partial<AllowedPathsFile> | undefined): AllowedEntry[] {
+  if (!Array.isArray(parsed?.allowedPaths)) return [];
+  return parsed.allowedPaths.filter(
+    (entry): entry is AllowedEntry =>
+      typeof entry?.path === "string" &&
+      entry.path.trim() !== "" &&
+      (entry.type === "file" || entry.type === "directory"),
+  );
+}
 
-  try {
-    const parsed = JSON.parse(readFileSync(filePath, "utf8")) as Partial<AllowedPathsFile>;
-    if (!Array.isArray(parsed.allowedPaths)) return [];
-    return parsed.allowedPaths.filter(
-      (entry): entry is AllowedEntry =>
-        typeof entry?.path === "string" &&
-        entry.path.trim() !== "" &&
-        (entry.type === "file" || entry.type === "directory"),
-    );
-  } catch {
-    return [];
-  }
+/**
+ * Read the persisted allowlist. An unreadable file throws (NFR-REL-08) instead
+ * of reporting "no approvals": the previous behaviour let `addAllowedPath` then
+ * write only the new entry, discarding every path the user had approved.
+ */
+export function loadAllowedPaths(configDir: string = defaultConfigDir()): AllowedEntry[] {
+  return validEntries(readStateFile<Partial<AllowedPathsFile>>(allowedPathsFile(configDir)));
 }
 
 function normalizeEntry(entry: AllowedEntry): AllowedEntry {
@@ -57,22 +59,14 @@ export function addAllowedPath(
   entry: AllowedEntry,
 ): AllowedEntry[] {
   const normalized = normalizeEntry(entry);
-  const existing = loadAllowedPaths(configDir);
-  const keys = new Set(existing.map(entryKey));
-  if (!keys.has(entryKey(normalized))) {
-    existing.push(normalized);
-  }
-  writeAllowedPaths(configDir, existing);
-  return existing;
-}
-
-function writeAllowedPaths(configDir: string, entries: AllowedEntry[]): void {
-  const filePath = allowedPathsFile(configDir);
-  mkdirSync(configDir, { recursive: true });
-  const payload: AllowedPathsFile = { allowedPaths: entries };
-  const tmp = join(configDir, `.allowed-paths.${process.pid}.tmp`);
-  writeFileSync(tmp, JSON.stringify(payload, null, 2) + "\n", "utf8");
-  renameSync(tmp, filePath);
+  const updated = updateStateFile<AllowedPathsFile>(allowedPathsFile(configDir), (current) => {
+    const existing = validEntries(current);
+    const keys = new Set(existing.map(entryKey));
+    return {
+      allowedPaths: keys.has(entryKey(normalized)) ? existing : [...existing, normalized],
+    };
+  });
+  return validEntries(updated);
 }
 
 /** True when read access to absPath was previously approved via "Allow always". */

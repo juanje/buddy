@@ -47,7 +47,7 @@ import { assembleMaintenancePrompt } from "./prompt";
 import { appendDailyLog, updateLogsIndexEntry } from "./reflect";
 import { defaultConfigDir } from "./allowed-paths";
 import { globalConfigDir } from "./global-config";
-import { recordUsageToFile, sumUsageFromEvents } from "./usage-tracker";
+import { recordSessionUsage } from "./usage-tracker";
 import { buildConsolidationTools, consolidationToolNames } from "./consolidation-tools";
 import { buildSkillTools, skillToolNames } from "./skill-tools";
 
@@ -240,10 +240,7 @@ export async function createMaintenanceSession(options: {
   return {
     async prompt(text) {
       await session.prompt(text);
-      const usage = sumUsageFromEvents(events);
-      if (usage.cost > 0 || usage.tokens > 0) {
-        recordUsageToFile(defaultConfigDir(), usage);
-      }
+      recordSessionUsage(defaultConfigDir(), events);
       events.length = 0;
     },
     dispose: () => {
