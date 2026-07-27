@@ -1,14 +1,38 @@
-// src/lib/markdown.ts — Markdown → HTML for assistant bubbles (FR-CHAT-04).
+// src/lib/markdown.ts — Markdown → HTML for assistant bubbles (FR-CHAT-04)
+// and the inline file viewer (FR-CHAT-10).
+//
+// NFR-SEC-10: the output of this module is bound with {@html}, so it is the
+// last layer before the DOM. Its input is attacker-influenced — assistant
+// replies are shaped by whatever fetch_url pulled in, and the file viewer
+// renders files the agent wrote. Nothing here may produce markup the author of
+// that content chose.
+//
+// Raw HTML is neutralized at the token level rather than post-hoc with a
+// sanitizer: marked routes every raw HTML construct (block and inline) through
+// the `html` renderer hook, so escaping there is complete by construction and
+// needs no DOM. Escaping rather than dropping keeps an injection attempt
+// visible to the user.
 
 import { Marked } from "marked";
 
 import { isExternalHref } from "./local-path";
 
+/** Escape text destined for an HTML text node. */
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+/** Escape a value destined for a double-quoted HTML attribute. */
 function escapeAttr(value: string): string {
   return value
     .replace(/&/g, "&amp;")
     .replace(/"/g, "&quot;")
-    .replace(/</g, "&lt;");
+    .replace(/'/g, "&#39;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
 }
 import hljs from "highlight.js/lib/core";
 import bash from "highlight.js/lib/languages/bash";
@@ -41,12 +65,23 @@ const parser = new Marked({
   breaks: true,
   gfm: true,
   renderer: {
+    /**
+     * Raw HTML — both block-level and inline. Escaped, never emitted. This is
+     * the single hook every raw-HTML construct passes through, so overriding it
+     * neutralizes the whole class (NFR-SEC-10).
+     */
+    html({ text }) {
+      return escapeHtml(text);
+    },
     link({ href, title, text }) {
       const safeHref = href ?? "#";
       const titleAttr = title ? ` title="${escapeAttr(title)}"` : "";
       if (isExternalHref(safeHref)) {
         return `<a href="${escapeAttr(safeHref)}" target="_blank" rel="noopener noreferrer"${titleAttr}>${text}</a>`;
       }
+      // Local links carry the target in a data attribute and an inert href, so
+      // a `javascript:` or `data:` URL can never become a navigable target.
+      // The worker validates the path before anything is read (FR-CHAT-11).
       return `<a href="#" data-local-path="${escapeAttr(safeHref)}"${titleAttr}>${text}</a>`;
     },
     code({ text, lang }) {
@@ -55,7 +90,9 @@ const parser = new Marked({
         language && hljs.getLanguage(language)
           ? hljs.highlight(text, { language }).value
           : hljs.highlightAuto(text).value;
-      const langClass = language ? ` class="language-${language}"` : "";
+      // `language` comes from the fence info string — author-controlled, so it
+      // must be escaped before it lands in an attribute.
+      const langClass = language ? ` class="language-${escapeAttr(language)}"` : "";
       return `<pre><code${langClass}>${highlighted}</code></pre>`;
     },
   },
