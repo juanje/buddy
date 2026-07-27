@@ -1397,7 +1397,7 @@ result — the LLM then follows the procedure.
 | NFR-SEC-05 | API keys stored with restrictive file permissions (mode 600); no credentials inside the buddy repo |
 | NFR-SEC-06 | The agent cannot modify its own model configuration (`.pi/settings.json` writes blocked) |
 | NFR-SEC-07 | buddy uses its own credential store (`~/.buddy/auth.json`), completely isolated from Pi CLI's `~/.pi/agent/auth.json`. Changing provider/model in one tool never affects the other. |
-| NFR-SEC-08 | Single path-containment authority. One worker-side module resolves and validates every path reachable from user- or agent-supplied input. The frontend never resolves paths and never decides containment. |
+| NFR-SEC-08 | No path-containment rule is implemented more than once. A rule may be shared between worker and frontend, but the frontend's use is presentational — it decides what to *render*, never what may be *read*. The worker is the sole enforcement point and revalidates every request before touching the filesystem. **Reworded Jul 27:** the original text ("one worker-side module … validates every path") was written before implementation and described an end state H1 alone could not reach. The unmet part became NFR-SEC-16. |
 | NFR-SEC-09 | The frontend holds no filesystem capability. `capabilities/default.json` grants no `fs:*` permission and no `opener:allow-open-path`. `opener:allow-open-url` is retained, restricted to `https://`, solely for the OAuth login flow. File content reaches the UI only through worker RPC. |
 | NFR-SEC-10 | No raw HTML reaches the DOM. Markdown rendered into `{@html}` is sanitized first, and every interpolated value (code-fence language, link href and title) is attribute-escaped. Applies to assistant messages and to file content shown in the viewer. |
 | NFR-SEC-11 | A Content Security Policy is defined in `tauri.conf.json`. `csp: null` is prohibited. `script-src` excludes `unsafe-inline` and `unsafe-eval`. |
@@ -1405,6 +1405,7 @@ result — the LLM then follows the procedure.
 | NFR-SEC-13 | Every tool declares which of its arguments are paths. The permission gate validates all declared path arguments. Registering a tool with an undeclared path-shaped argument fails the test suite. |
 | NFR-SEC-14 | All Pi sessions are created through a single factory that always supplies buddy's own `ModelRuntime`, registers usage tracking and installs the permission gate. No call site constructs a session directly. |
 | NFR-SEC-15 | Path containment resolves symlinks (`realpath`, falling back to the nearest existing ancestor for paths not yet created) before comparing against the buddy directory. |
+| NFR-SEC-16 | The containment primitives — `isWithin`, `normalizeAbPath`, `resolveViewablePath` — are audited and maintained as one set. They must never disagree about whether a path is inside the buddy directory, and symlink resolution (NFR-SEC-15) is applied in one place rather than added to each independently. **Why this is not cosmetic:** with containment spread across three functions, NFR-SEC-15 would have to be implemented three times, and missing one leaves a silent bypass. |
 
 ### 4.3 Reliability
 

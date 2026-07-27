@@ -240,13 +240,22 @@ external-open button and its i18n key.
 Capabilities dropped: `fs:allow-read-text-file`, `opener:allow-open-path`.
 `opener:allow-open-url` narrowed from `http`+`https` to `https` only.
 
-**Design note — where the authority actually lives.** NFR-SEC-08 is worded as
-"one worker-side module". In practice the *rule* lives in `shared/viewable-path.ts`
-(browser-safe, no `node:path`) and the *enforcement* in `backends/viewable-file.ts`.
-The frontend imports the shared rule only to decide whether to render a link as
-clickable — presentational, non-authoritative. Nothing is read until the worker
-validates again. Writing the rule twice is exactly how S1 happened, so one
-implementation shared by both sides is the point.
+**Design note — where the authority actually lives.** The *rule* is in
+`shared/viewable-path.ts` (browser-safe, no `node:path`); the *enforcement* is in
+`backends/viewable-file.ts`. The frontend imports the shared rule only to decide
+whether to render a link as clickable — presentational, non-authoritative.
+Nothing is read until the worker validates again. S1 happened because the rule
+was *implemented twice* with different logic; one implementation shared by both
+sides is not that pattern.
+
+NFR-SEC-08 was originally worded "one worker-side module … validates every path",
+which H1 did not satisfy on any of its three claims: the module is shared rather
+than worker-side, the frontend does call it, and containment across the codebase
+is still spread over three primitives (`isWithin` in permissions/file-tools/
+allowed-paths, `normalizeAbPath` in hebbian, `resolveViewablePath` for links).
+Resolved on Jul 27 by rewording NFR-SEC-08 to state the invariant that actually
+holds, and splitting the unfinished consolidation into **NFR-SEC-16** (H6) so it
+is tracked rather than buried inside an unmet claim.
 
 Verified against the original review probes: `../../secret.md`, `../.ssh/id_rsa`,
 `downloads/x.command` and `downloads/Evil.app` all resolve to `null`.
@@ -339,9 +348,14 @@ as part of this sprint, not after.
 | ID | Requirement | Status | Commit |
 |----|-------------|--------|--------|
 | NFR-SEC-13 | Path-bearing tool args declared | todo | |
+| NFR-SEC-16 | Containment primitives unified as one set | todo | |
 | NFR-SEC-15 | Symlink resolution in containment | todo | |
 | NFR-REL-07 | Atomic lock acquisition (`wx`) | todo | |
 | NFR-CONFIG-05 | Single config-dir resolver | todo | |
+
+**Order matters here:** NFR-SEC-16 before NFR-SEC-15. Unify the primitives
+first, then add `realpath` once — otherwise symlink resolution has to be written
+three times and any omission is a silent bypass.
 
 Plus review items M1–M7 (unused `pageUrl`, double `parseHTML`, 2.2 MB generated
 asset committed, `this` in usage-tracker literals, empty catch audit).
