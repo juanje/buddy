@@ -17,7 +17,8 @@ fn main() {
         .setup(|app| {
             let about = AboutMetadata {
                 name: Some("buddy".to_string()),
-                version: Some("0.1.0".to_string()),
+                // From Cargo.toml — never hardcode, it silently drifts on release.
+                version: Some(env!("CARGO_PKG_VERSION").to_string()),
                 comments: Some(
                     "Personal assistant with persistent memory.\nEverything lives in a local folder — nothing leaves your computer."
                         .to_string(),

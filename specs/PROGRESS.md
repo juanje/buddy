@@ -410,11 +410,18 @@ asset committed, `this` in usage-tracker literals, empty catch audit).
 
 **Suggested release grouping**
 
-| Release | Sprints | Rationale |
-|---------|---------|-----------|
-| v0.1.1 | H1 + H2 + H3 | The two confirmed-exploitable findings plus the one that spends real money |
-| v0.1.2 | H4 + H5 | Structural; no confirmed exploit, but closes the injection and auth patterns |
-| v0.1.3 | H6 | Cleanup |
+| Release | Sprints | Status | Rationale |
+|---------|---------|--------|-----------|
+| v0.1.1 | H1 + H2 | **tagged 2026-07-27** | The two confirmed-exploitable findings — shipped as soon as they were green rather than held for H3 |
+| v0.1.2 | H3 | planned | Budget drain. No attacker needed, so it ships on its own rather than waiting for H4/H5 |
+| v0.1.3 | H4 + H5 | planned | Structural; no confirmed exploit, but closes the injection and auth patterns |
+| v0.1.4 | H6 | planned | Cleanup |
+
+**Changed from the original grouping (Jul 27):** v0.1.1 was planned as H1+H2+H3.
+H1 and H2 closed green and fix the two findings an attacker could actually reach,
+so they shipped immediately instead of waiting for H3. H3 became v0.1.2 rather
+than being merged into a later release, because budget drain affects a real user
+with no attacker involved.
 
 **Spec amendments made by this sprint (deliberate divergence, not drift):**
 
