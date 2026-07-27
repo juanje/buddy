@@ -201,10 +201,11 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 > review of 2026-07-26 (Opus 5) and the project response of 2026-07-27.
 > **FR-WIKI is deferred until H1–H3 close.**
 >
-> **H1, H2, H3 done.** v0.1.1 tagged (H1+H2); H3 is v0.1.2 when released.
-> **394 unit + 192 BDD green**, typecheck and vite build clean.
-> **Next: H4** (network trust boundary — SSRF denylist, untrusted content
-> framing).
+> **H1–H4 done.** v0.1.1 (H1+H2) and v0.1.2 (H3) tagged. H4 pending release.
+> **439 unit + 207 BDD green**, typecheck and vite build clean.
+> **Next: H5** (session factory + `usage.json` concurrency). Largest and
+> riskiest of the sprint — includes the second-pass review of
+> `reflect-child.ts`, which is unreviewed and already produced one auth bug.
 
 ### Sprint: Hardening (v0.1.1) — started 2026-07-27
 
@@ -386,14 +387,50 @@ mid-cascade stops at the next depth boundary with journal status `budget-stopped
 **Fully independent of H1/H2** — if budget drain is observed in the wild, branch
 from the last green commit and ship this first.
 
-#### Sprint H4 — Network trust boundary `[M]`
+#### Sprint H4 — Network trust boundary `[M]` — DONE (2026-07-27)
 
 Goal: `fetch_url` cannot reach the local network, and what it returns is data.
 
 | ID | Requirement | Status | Commit |
 |----|-------------|--------|--------|
-| NFR-SEC-12 | SSRF protection in `fetch_url` | todo | |
-| FR-NET-03 | Untrusted content framing | todo | |
+| NFR-SEC-12 | SSRF protection in `fetch_url` | done | (this sprint) |
+| FR-NET-03 | Untrusted content framing | done | (this sprint) |
+
+**Tests at H4 close:** 439 unit + 207 BDD green, typecheck and vite build clean.
+
+New module `backends/url-safety.ts`. Three layers, each closing a gap the layer
+above cannot see:
+
+1. **Scheme** — only `http`/`https`. `file:`, `data:`, `ftp:` refused outright.
+2. **Hostname, before DNS** — `localhost`, `*.local`, `*.internal`,
+   `metadata.google.internal` and friends are refused by name. Relying on
+   resolution to tell us `localhost` is local would make the rule only as
+   trustworthy as the resolver.
+3. **Resolved address** — every answer must be public. One private answer is
+   enough to refuse, because the client may pick it.
+
+**Redirects are followed manually** (`redirect: "manual"`, max 5 hops), with the
+full check re-run on every hop. `redirect: "follow"` validates only the first
+URL, which is exactly what redirect-based SSRF relies on.
+
+**The size cap moved into the read loop.** It previously ran after
+`await response.arrayBuffer()`, so a server omitting `content-length` could make
+the worker buffer without bound before the limit was consulted.
+
+**FR-NET-03** wraps fetched content in `<untrusted-content>` before it enters
+context, and `agents-base.md` now states the rule. Mitigation, not a guarantee —
+prompt injection is not solvable at the prompt layer, which is why the enforcing
+defenses are NFR-SEC-08/10/12. The saved file keeps clean markdown; only the
+context copy is wrapped.
+
+**Two test-method corrections during this sprint:**
+- The `localhost` case initially passed through to DNS and was allowed, because
+  the test resolver answered "public". Real DNS would have blocked it — the test
+  was right to fail, and the fix (block by name) is better than what the code
+  had.
+- An assertion counted bytes produced by the mock rather than bytes consumed by
+  the code, so it measured the fixture. Replaced with an endless response body:
+  the scenario can only terminate if the read actually stops.
 
 Touches: `fetch-url.ts` · `bundled/prompts/agents-base.md` · `fetch-url.feature`
 

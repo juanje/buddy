@@ -25,10 +25,38 @@ interface FetchWorld extends BuddyWorld {
   fetchTools?: ReturnType<typeof buildFetchTools>;
   lastToolResult?: string;
   lastToolDetails?: Record<string, unknown>;
+  /** Requests the mock client actually received (NFR-SEC-12). */
+  requestedUrls?: string[];
+  /** Scripted DNS answers, so SSRF rules are testable without network. */
+  dnsAnswers?: Map<string, string[]>;
+  /** Scripted redirects: from URL → Location header. */
+  redirects?: Map<string, string>;
+  /** Largest number of bytes the client was asked to hand over. */
+  streamedBytes?: number;
 }
 
-function mockFetchClient(): FetchHttpClient {
+function mockFetchClient(world: FetchWorld): FetchHttpClient {
   return async (url: string, init?: RequestInit) => {
+    world.requestedUrls!.push(url);
+
+    const redirectTo = world.redirects?.get(url);
+    if (redirectTo) {
+      return new Response(null, { status: 302, headers: { location: redirectTo } });
+    }
+
+    if (url.includes("endless")) {
+      // No content-length and no end: only an implementation that stops reading
+      // once the cap is exceeded can complete this at all (NFR-SEC-12).
+      const chunk = new Uint8Array(1024 * 1024).fill(0x61);
+      const body = new ReadableStream<Uint8Array>({
+        pull(controller) {
+          world.streamedBytes = (world.streamedBytes ?? 0) + chunk.byteLength;
+          controller.enqueue(chunk);
+        },
+      });
+      return new Response(body, { status: 200, headers: { "content-type": "text/html" } });
+    }
+
     if (url.includes("missing")) {
       return new Response("not found", { status: 404, statusText: "Not Found" });
     }
@@ -70,11 +98,31 @@ function mockFetchClient(): FetchHttpClient {
 
 Given("fetch_url is available with a mock HTTP client", function (this: FetchWorld) {
   if (!this.buddyDir) throw new Error("buddy repository not initialized");
+  this.requestedUrls = [];
+  this.dnsAnswers = new Map();
+  this.redirects = new Map();
+  this.streamedBytes = 0;
   this.fetchTools = buildFetchTools(this.buddyDir, {
-    fetchImpl: mockFetchClient(),
+    fetchImpl: mockFetchClient(this),
     fetchTimeoutMs: 50,
+    // Anything not scripted resolves to a public address.
+    lookup: async (hostname: string) => this.dnsAnswers?.get(hostname) ?? ["93.184.216.34"],
   });
 });
+
+Given(
+  "the host {string} resolves to {string}",
+  function (this: FetchWorld, hostname: string, address: string) {
+    this.dnsAnswers!.set(hostname, [address]);
+  },
+);
+
+Given(
+  "{string} redirects to {string}",
+  function (this: FetchWorld, from: string, to: string) {
+    this.redirects!.set(from, to);
+  },
+);
 
 Given("the buddy downloads directory does not exist", function (this: FetchWorld) {
   if (!this.buddyDir) throw new Error("buddy repository not initialized");
@@ -128,4 +176,34 @@ Then("the fetch details include image data", function (this: FetchWorld) {
 Then('the directory "downloads" exists', function (this: FetchWorld) {
   if (!this.buddyDir) throw new Error("buddy repository not initialized");
   assert.ok(existsSync(join(this.buddyDir, "downloads")), "expected downloads directory");
+});
+
+// --- NFR-SEC-12 ---
+
+Then("the fetch is refused as unsafe", function (this: FetchWorld) {
+  assert.ok(
+    this.lastToolResult?.startsWith("Refused to fetch"),
+    `expected a refusal, got:\n${this.lastToolResult ?? "(none)"}`,
+  );
+});
+
+Then("no HTTP request is made", function (this: FetchWorld) {
+  assert.deepEqual(
+    this.requestedUrls,
+    [],
+    `no request should reach the network, got: ${this.requestedUrls?.join(", ")}`,
+  );
+});
+
+// --- FR-NET-03 ---
+
+Then("the fetch tool result marks the content as untrusted", function (this: FetchWorld) {
+  assert.ok(
+    this.lastToolResult?.includes("<untrusted-content"),
+    `expected untrusted-content framing, got:\n${this.lastToolResult?.slice(0, 200)}`,
+  );
+});
+
+Then("the fetch tool result states the content is not instructions", function (this: FetchWorld) {
+  assert.match(this.lastToolResult ?? "", /DATA, not instructions/);
 });
