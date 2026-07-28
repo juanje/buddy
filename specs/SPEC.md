@@ -269,7 +269,7 @@ Supersedes the system-opener behavior originally specified in FR-CHAT-09/10.
 - **And (OAuth path)** tokens are stored in `~/.buddy/auth.json` upon successful login
 - **And (API key path)** the key is validated with a test API call before proceeding
 - **And (API key path)** the key is stored in `~/.buddy/auth.json` with restrictive file permissions
-- **Note:** OpenAI-compatible (custom) providers are available post-setup via Settings → Add provider, not in the setup wizard.
+- **Note (corrected 2026-07-28):** OpenAI-compatible ("custom") providers are **not available**, in the wizard or in Settings. The previous note claimed they were available via Settings → Add provider; that was never implemented — `ADD_PROVIDER_CANDIDATES` has never contained `custom`. The wizard *did* offer it, the inverse of what this line said, and that path did not work either: `configureProviderKey` accepts a `baseUrl`, validates it (NFR-SEC-18) and probes the endpoint with it, but never persists it. It is absent from `SetupConfig` and from `.pi/settings.json`, so a configured custom provider produced a session holding a credential with no address. The wizard entry point was removed rather than left as a choice that cannot work. See **FR-PROVIDER-01** for the real feature.
 
 **FR-SETUP-06 — Model selection**
 
@@ -929,7 +929,8 @@ Fork bomb defense:
 - **And** `session.setModel()` is called with the resolved Pi `Model` object and subsequent messages use the new model
 - **And** the choice persists to `.pi/settings.json` and `~/.buddy/config.json`
 - **And** the last selected model per provider is remembered within the session (switching back restores the previous choice)
-- **And** the user can authenticate additional providers inline ("Add provider") without leaving settings
+- **And** the user can authenticate additional providers inline ("Add provider") without leaving settings — Anthropic, OpenAI and Google only (see FR-PROVIDER-01)
+- **Known defect (FR-PROVIDER-01):** the provider dropdown is built from `[...new Set($models.map(m => m.provider))]`, and `loadAuthenticatedModels` filters `custom` out of that list. Any authenticated provider absent from the model list therefore has no `<option>`, so no option is `selected` and the browser falls back to showing the first one — the dropdown names a provider the user is not using. Unreachable today because `custom` can no longer be configured; it becomes live again the moment it can.
 
 **FR-SETTINGS-04 — Language switching**
 
@@ -1494,6 +1495,55 @@ result — the LLM then follows the procedure.
 - [x] Tracked files moved via `git mv`; new files from copy staged for auto-commit
 - [x] Non-existent source returns error (no crash)
 - [x] BDD feature file covers: valid copy, valid move, denied paths, missing source, external destination rejected
+
+---
+
+### 3.23 OpenAI-Compatible Providers (FR-PROVIDER)
+
+| ID | Requirement | Phase |
+|----|-------------|-------|
+| FR-PROVIDER-01 | Configure and use an OpenAI-compatible endpoint end to end | planned |
+| FR-PROVIDER-02 | Model selection for an endpoint with no catalog | planned |
+| FR-PROVIDER-03 | Legible failure when the endpoint is unreachable | planned |
+
+**Why this is a new FR rather than a bug fix.** The feature was half-built and
+looked finished from every angle we normally check: the wizard offered it, the
+key validated against the real endpoint, the credential reached `auth.json`,
+and a BDD scenario asserted all of it and passed. What no layer did was keep the
+`baseUrl`. Closing that gap needs persistence, model resolution and a UI path
+that do not exist yet, so it is scoped as a feature and not a patch.
+
+**FR-PROVIDER-01 — Configure and use an OpenAI-compatible endpoint**
+
+- **Given** the user wants to use a model that speaks the OpenAI API — Ollama, LM Studio, llama.cpp, vLLM, or a hosted compatible service
+- **When** they configure it with a base URL and (optionally) an API key
+- **Then** the base URL is persisted, not merely used for validation, and survives a restart
+- **And** the model runtime resolves requests to that endpoint — verified by a test that asserts an actual request reaches it, not by asserting the value was written
+- **And** the destination is validated first (NFR-SEC-18), which already allows loopback and LAN precisely for this case
+- **And** the entry point exists in both the setup wizard and Settings → Add provider, which must not disagree about which providers exist
+
+**Persistence is the open design question.** The SDK reads `baseUrl` from a
+`models.json` under `agentDir`, which NFR-SEC-19 deliberately points at an empty
+`~/.buddy/agent/`. Writing a Buddy-managed `models.json` there is the likely
+answer, but it needs checking against the SDK rather than assuming: an
+endpoint that is configured but silently unused is exactly the failure this
+requirement exists to end.
+
+**FR-PROVIDER-02 — Model selection without a catalog**
+
+- **Given** a configured OpenAI-compatible endpoint
+- **When** the user picks a model
+- **Then** models are listed live from the endpoint when it answers `/models`, since most compatible servers do
+- **And** a free-form model id is accepted when it does not — `ModelStep.svelte` already implements this input and it is kept for this purpose
+- **And** the provider appears in the Settings provider dropdown. **Fix the dropdown first:** it is derived from the model list, so a provider with no models has no `<option>`, nothing is `selected`, and the control displays a provider the user is not using
+
+**FR-PROVIDER-03 — Legible failure when the endpoint is unreachable**
+
+- **Given** the user configures `http://localhost:11434/v1` and the server is not running
+- **When** the key is validated
+- **Then** the message says the endpoint could not be reached and names it — the current behaviour surfaces Node's `"fetch failed"`, which tells the user nothing
+- **And** the same applies to a refused connection, a DNS failure and a timeout; NFR-REL-09 covered only the timeout, and a stopped local server is the common case
+- **And** an endpoint that stops responding after setup degrades visibly rather than appearing to hang
 
 ---
 

@@ -25,9 +25,15 @@ Feature: Provider and API key configuration (FR-SETUP-05)
     And the wizard does not allow proceeding
     And nothing is stored in the auth file
 
-  Scenario: OpenAI-compatible providers also need a base URL
-    Given the user selects the "custom" provider
-    Then a base URL input is required before proceeding
-    When they provide a base URL and a key the provider accepts
-    Then the key is stored in the auth file with restrictive permissions
-    And the wizard allows proceeding to the next step
+  # Deleted: "OpenAI-compatible providers also need a base URL".
+  #
+  # The scenario passed, and the feature did not work. It drove the wizard
+  # controller directly, so it never depended on "custom" being offered in the
+  # UI, and it asserted the key reached auth.json — which it did. What no step
+  # checked was the base URL, because nothing persists it: the session ended up
+  # with a credential and no address to send it to.
+  #
+  # A green scenario for a broken feature is worse than no scenario. The entry
+  # point is gone from the wizard until FR-PROVIDER-01 makes the whole path
+  # work; the backend half that does exist (URL validation before the key is
+  # sent, NFR-SEC-18) is covered by tests/unit/provider-network.test.ts.

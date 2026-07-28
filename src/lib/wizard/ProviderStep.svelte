@@ -25,13 +25,17 @@
   const oauthError = $derived(controller.oauthError);
   const showApiKey = $derived(controller.showApiKey);
 
-  const PROVIDERS: Array<{ id: "openai" | "anthropic" | "google" | "custom"; recommended?: boolean }> =
-    [
-      { id: "openai", recommended: true },
-      { id: "anthropic" },
-      { id: "google" },
-      { id: "custom" },
-    ];
+  // "custom" (OpenAI-compatible endpoints) is deliberately absent — FR-PROVIDER-01.
+  // The wizard accepted it and the key validated against the endpoint, but the
+  // base URL was never persisted anywhere the model runtime could read it, so
+  // the session ended up with a credential and no address. Offering a choice
+  // that cannot work is worse than not offering it. The backend keeps its half
+  // (validation, probing, storage) for when the rest lands.
+  const PROVIDERS: Array<{ id: "openai" | "anthropic" | "google"; recommended?: boolean }> = [
+    { id: "openai", recommended: true },
+    { id: "anthropic" },
+    { id: "google" },
+  ];
 
   async function signInOAuth() {
     await controller.loginOAuth();

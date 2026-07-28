@@ -4,7 +4,7 @@
 
 All your data stays on your machine. Nothing is sent anywhere except:
 
-1. **The AI provider** — your messages and context are sent to generate responses. If you configured a model running on your own machine, not even this leaves it.
+1. **The AI provider** — your messages and context are sent to generate responses. This is the one thing that does leave your machine, and it is unavoidable: the model that writes the replies runs on their servers, not here. Your files, your memory and your notes are not sent — only the conversation and the context needed to answer it.
 2. **URLs you explicitly share** — Buddy fetches the page you ask it to read. It will not fetch addresses on your own machine or local network, and it re-checks every redirect: a public URL that redirects to an internal one is refused at that point.
 
 There is no telemetry, no analytics, and no data sent to Buddy's developers. The Settings **Usage** panel tracks local API spend on your machine only — it is not shared anywhere.

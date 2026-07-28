@@ -19,10 +19,7 @@ Feature: Model selection (FR-SETUP-06)
     Then the chosen model is stored for setup
     And the wizard allows proceeding to the next step
 
-  Scenario: OpenAI-compatible providers take a free-form model id
-    Given the setup wizard is on the model step for the "custom" provider
-    Then no model list is available for the provider
-    And the wizard does not allow proceeding
-    When the user types the model id "my-local-model"
-    Then the chosen model is stored for setup
-    And the wizard allows proceeding to the next step
+  # Deleted with its sibling in setup-provider.feature: the "custom" provider is
+  # no longer reachable from the wizard (FR-PROVIDER-01). The free-form model
+  # input still exists in ModelStep.svelte and is the right design — it is kept
+  # for when the provider works end to end, rather than deleted and rewritten.

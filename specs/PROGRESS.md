@@ -210,6 +210,59 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 > **H5–H8 done** (including H6b and H6c). **598 unit + 214 BDD green**,
 > typecheck and vite build clean. The hardening series is complete; H6b, H6c,
 > H7 and H8 are committed and unreleased. **Next: FR-WIKI.**
+>
+> **Custom provider withdrawn (2026-07-28).** Found while checking the self-docs
+> against reality. See below — the entry point is gone from the wizard and the
+> real feature is scoped as FR-PROVIDER-01..03.
+
+### Withdrawn: OpenAI-compatible providers (2026-07-28)
+
+Triggered by a plain question — "I don't see the option to add a custom
+endpoint in Settings, I thought it was there." It was not, and the reason it
+was not turned out to be the least interesting part.
+
+**The spec and the code said opposite things.** `SPEC.md` stated custom
+providers were available "post-setup via Settings → Add provider, not in the
+setup wizard". The implementation had it in the wizard and not in Settings —
+inverted on both halves. Neither had ever been true: `ADD_PROVIDER_CANDIDATES`
+has never contained `custom` since it was introduced in `cece2f0`.
+
+**Neither path worked anyway.** `configureProviderKey` takes a `baseUrl`,
+validates it (NFR-SEC-18, written days earlier in H8) and probes
+`{baseUrl}/models` with it — then stores only the key. `baseUrl` is not in
+`SetupConfig`, not in `.pi/settings.json`, not anywhere the model runtime
+reads. A user who configured Ollama got a credential with no address.
+
+**What this says about the test suite is the part worth keeping.** A BDD
+scenario covered this and passed. It drove the wizard controller directly, so
+it never depended on the option being offered in the UI; and it asserted the
+key reached `auth.json`, which it did. Every assertion was true and the feature
+did not work, because no assertion named the `baseUrl` — the one value the
+feature exists to carry. This is the H4b lesson wearing different clothes:
+there, a check was never invoked; here, a value was never followed to the end
+of its journey. Both are invisible to a test that only asserts what it already
+expects to see.
+
+**I contributed to the problem.** Writing the self-docs the day before, I
+described the provider list from the wizard's source and stated users could
+point Buddy at Ollama or LM Studio. That was the same error the docs commit was
+correcting elsewhere: documenting intent instead of verifying behaviour. The
+commit message even claimed H8 "confirmed these still work" — H8 confirmed the
+URL validator accepted them, nothing more.
+
+Actions taken: entry point removed from `ProviderStep.svelte`; two BDD
+scenarios deleted with the reasoning left in the feature files; `SPEC.md`
+corrected in both places; self-docs now list the feature under what Buddy
+cannot do; FR-PROVIDER-01..03 written, with `baseUrl` persistence as the first
+open question. Backend capability (validation, probe, storage) kept — it is
+half of the future feature and is unit-tested.
+
+**Also recorded, latent:** the Settings provider dropdown is derived from the
+model list. A provider that is authenticated but contributes no models has no
+`<option>`, so nothing is `selected` and the browser shows the first entry —
+the control names a provider the user is not using. Unreachable while `custom`
+cannot be configured; live again the moment it can. Noted under FR-SETTINGS-03
+and FR-PROVIDER-02.
 
 ### Sprint: Hardening (v0.1.1) — started 2026-07-27
 

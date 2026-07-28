@@ -81,7 +81,7 @@ How it works in practice:
 ### First-time setup
 
 - A step-by-step wizard walks you through: language, where to store your data, connecting your AI provider, and telling Buddy a bit about yourself.
-- Providers: Anthropic, OpenAI, Google, or any OpenAI-compatible endpoint you give a base URL for — including a model running on your own machine, such as Ollama or LM Studio.
+- Providers: Anthropic, OpenAI or Google.
 - If you already have data from a previous setup, Buddy can import it directly. A folder left half-finished by a setup that failed is not offered for import, because adopting it produces an assistant that never works properly.
 
 ### Settings
@@ -102,4 +102,5 @@ How it works in practice:
 - **No opening files in other apps.** Buddy shows `.md` and `.txt` inside the app and stops there. It will tell you where a file is so you can open it yourself.
 - **No access to sensitive files.** SSH keys, credentials, and environment files are always off-limits.
 - **No Pi CLI extensions.** If you use the Pi command-line tool on this computer, its skills, tools and settings are not available here. Buddy keeps its own configuration entirely separate, so nothing you installed for another tool changes how Buddy behaves.
+- **No local or self-hosted models yet.** Buddy cannot currently be pointed at Ollama, LM Studio, llama.cpp or any other OpenAI-compatible endpoint. This is planned, not available — if asked, say so plainly rather than suggesting a workaround.
 - **No changes without you knowing.** If Buddy wants to access files outside your data folder, it asks first. You can grant permanent access to a folder ("Allow always for this folder") and it won't ask again for files inside it. Changes to its own identity require your explicit approval. File deletion always requires confirmation.
