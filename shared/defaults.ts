@@ -18,6 +18,17 @@ export const EXCLUDED_TOOLS = ["bash"] as const;
 export const LOCK_RETRY_MS = 500;
 export const LOCK_MAX_RETRIES = 20;
 export const AUTH_FILE_MODE = 0o600;
+/**
+ * Permissions for ~/.buddy/ and the state files inside it (NFR-SEC-17).
+ *
+ * auth.json used to be the only restricted file, but it is not the only one
+ * worth reading: allowed-paths.json lists every directory the user has granted
+ * access to, config.json names their buddy directory, usage.json records when
+ * they were using it. Applied at creation — a file written at the umask default
+ * and chmod-ed afterwards is readable by everyone for the interval in between.
+ */
+export const CONFIG_DIR_MODE = 0o700;
+export const STATE_FILE_MODE = 0o600;
 export const DEFAULT_LANGUAGE = "es";
 /** Default monthly spend cap for new installs (FR-COST-03). 0/null disables. */
 export const DEFAULT_MONTHLY_BUDGET = 10;
@@ -127,6 +138,15 @@ export const DOWNLOADS_DIR = "downloads";
 export const FETCH_MAX_BYTES = 10 * 1024 * 1024;
 /** HTTP timeout for fetch_url in milliseconds (FR-NET-01). */
 export const FETCH_TIMEOUT_MS = 15_000;
+/**
+ * Timeout for the network calls the setup wizard makes (NFR-REL-09).
+ *
+ * Both sit on a user-facing path with a spinner and no cancel: validating the
+ * API key, and listing models. Neither had a timeout, so a provider that
+ * accepted the connection and then stalled left the wizard waiting forever with
+ * nothing to click.
+ */
+export const PROVIDER_REQUEST_TIMEOUT_MS = 10_000;
 
 // --- Security constants (NFR-CONFIG-03) ---
 export const DENYLIST_HOME_DIRS = [".ssh", ".gnupg", ".aws"];

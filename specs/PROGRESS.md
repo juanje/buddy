@@ -207,9 +207,9 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 > `reflect-child.ts`, wizard). 15 findings classified into three themes, now
 > sprints H5–H7; H8 absorbs the rest. H5b (session factory) is **cancelled** —
 > replaced by two shared helpers under a reworded NFR-SEC-14.
-> **H5–H7 done** (including H6b and H6c). 532 unit + 214 BDD green.
-> **Next: H8** (containment and hygiene cleanup), the last of the series.
-> FR-WIKI resumes after it.
+> **H5–H8 done** (including H6b and H6c). **598 unit + 214 BDD green**,
+> typecheck and vite build clean. The hardening series is complete; H6b, H6c,
+> H7 and H8 are committed and unreleased. **Next: FR-WIKI.**
 
 ### Sprint: Hardening (v0.1.1) — started 2026-07-27
 
@@ -721,25 +721,79 @@ because the wizard does gate correctly — but the consequences are `cpSync` wit
 `force: true` plus `git init` inside a directory of the user's own files, or
 adopting the wreckage of a failed setup and losing auto-commit permanently.
 
-#### Sprint H8 — Containment and hygiene cleanup `[M]`
+#### Sprint H8 — Containment and hygiene cleanup `[M]` ✅
 
 | ID | Requirement | Status | Commit |
 |----|-------------|--------|--------|
-| NFR-SEC-16 | Containment primitives unified as one set | todo | |
-| NFR-SEC-15 | Symlink resolution in containment | todo | |
-| NFR-SEC-13 | Path-bearing tool args declared | todo | |
-| NFR-SEC-17 | Restrictive permissions at creation | todo | |
-| NFR-SEC-18 | Custom provider `baseUrl` validated | todo | |
-| NFR-REL-07 | Atomic lock acquisition (`wx`) | todo | |
-| NFR-REL-09 | Timeouts on user-facing network calls | todo | |
-| NFR-CONFIG-05 | Single config-dir resolver | todo | |
+| NFR-SEC-16 | Containment primitives unified as one set | done | H8 |
+| NFR-SEC-15 | Symlink resolution in containment | done | H8 |
+| NFR-SEC-13 | Path-bearing tool args declared | done | H8 |
+| NFR-SEC-17 | Restrictive permissions at creation | done | H8 |
+| NFR-SEC-18 | Custom provider `baseUrl` validated | done | H8 |
+| NFR-REL-07 | Atomic lock acquisition (`wx`) | done | H8 |
+| NFR-REL-09 | Timeouts on user-facing network calls | done | H8 |
+| NFR-CONFIG-05 | Single config-dir resolver | done | H8 |
 
-**Order matters:** NFR-SEC-16 before NFR-SEC-15. Unify the primitives first, then
-add `realpath` once — otherwise symlink resolution has to be written three times
-and any omission is a silent bypass.
+**The ordering constraint held.** NFR-SEC-16 first, then `realpath` added once in
+`backends/containment.ts` — every enforcement point picked it up from there.
 
-Plus M1–M7 (unused `pageUrl`, double `parseHTML`, 2.2 MB generated asset
-committed, `this` in usage-tracker literals, empty catch audit).
+**A fourth containment implementation existed, and it was the broken one.**
+The sprint was planned around three primitives (`isWithin`, `normalizeAbPath`,
+`resolveViewablePath`). `relocate_brain_file` had a fourth, written as a string
+test:
+
+```ts
+if (!src.startsWith("agent_brain/")) throw …
+```
+
+`agent_brain/../.pi/settings.json` satisfies it. `join()` then collapses the
+`..`, and the consolidation session git-mv's the model configuration that
+NFR-SEC-06 exists to keep the agent away from. Confirmed by test before fixing:
+the call returned `{ rewrittenLinks: [] }` and the file had moved. It was
+reachable only from the maintenance session — whose gate denies everything
+outside the buddy directory (FR-CONSOL-10) — but the gate reads `args.path`,
+and this tool takes `source`/`destination`. Two requirements, one hole, from
+opposite ends.
+
+**NFR-SEC-13 turned out to matter more than it looked.** The gate's denylist —
+the layer that blocks `~/.ssh`, `~/.aws` and `.env` with no prompt and no
+override (FR-PERM-04) — read exactly one argument name. `copy_file` and
+`move_file` name theirs `source` and `destination`, so it never ran for them.
+`shared/tool-paths.ts` declares them, and a guard test fails the suite when a
+registered tool has a path-shaped parameter absent from the table: the failure
+mode is quiet by construction, because an undeclared argument is not rejected,
+it is ignored.
+
+**NFR-SEC-18 was amended, deliberately.** See the SPEC entry. The requirement
+said "the same destination rules as `fetch_url`", which refuses loopback — and
+`http://localhost:11434/v1` is what a user points at Ollama. The BDD scenario
+for the custom provider failed on exactly that string, which is the fixture
+telling the truth. `assertSafeProviderBaseUrl` is now separate from
+`assertSafeUrl` and documents why: `fetch_url`'s URL is chosen by the agent,
+this one is typed by the user.
+
+**Two defects found while implementing, neither on the sprint list:**
+- The synchronous lock in `state-file.ts` could not tell ENOENT from "already
+  exists", so the first write into a config directory that did not exist yet
+  spun for the full timeout and then reported the lock held by another process.
+- `acquireLock` in `maintenance.ts` was check-then-unlink-then-write. Now a
+  single `wx` create. **Honest limit:** the race is not reproducible in a
+  single-process suite. The tests pin the surrounding behaviour; atomicity here
+  is guaranteed by construction, not by a test that fails without it.
+
+**M1–M7.** `pageUrl` was unused and the caller ran `parseHTML` twice over the
+same document (up to 10 MB) just to read `document.title` — `htmlToMarkdown` now
+returns both. `usage-tracker`'s methods reached `getUsageReport` through `this`,
+which breaks the moment one is destructured or passed as a callback; now a
+closure, with tests for both call shapes. The empty-catch audit came back clean:
+95 catch blocks, 23 that swallow, all 23 already carrying a written reason.
+
+**M3 not done, on purpose.** `embedded-assets.generated.ts` (1.2 MB) is
+regenerated by `build-worker.sh` before every compile, so committing it is
+redundant — but `tsc` and `vite build` need it present, so gitignoring it makes
+a fresh clone fail typecheck until a `bun` script has run. Trading a build-flow
+change for a diff-size win at the end of a security sprint is the wrong order;
+left for a decision of its own.
 
 ---
 

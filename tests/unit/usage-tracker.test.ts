@@ -162,3 +162,27 @@ describe("createUsageTracker", () => {
     expect(tracker.getUsageReport().monthly.totalCost).toBe(5);
   });
 });
+
+// M4 (H8). These methods used to reach `getUsageReport` through `this`, which
+// works only while every call goes through the object. Detaching a method is
+// the natural way to hand it to the heartbeat or a budget check, and it threw.
+describe("tracker methods do not depend on how they are called", () => {
+  it("survives destructuring", () => {
+    const tracker = createUsageTracker(mkdtempSync(join(tmpdir(), "usage-detached-")), {
+      getBudget: () => 10,
+    });
+    const { isBudgetExceeded, isBudgetNearLimit, checkAndFireAlerts } = tracker;
+
+    expect(() => isBudgetExceeded()).not.toThrow();
+    expect(() => isBudgetNearLimit()).not.toThrow();
+    expect(() => checkAndFireAlerts()).not.toThrow();
+  });
+
+  it("survives being passed as a callback", () => {
+    const tracker = createUsageTracker(mkdtempSync(join(tmpdir(), "usage-detached-")), {
+      getBudget: () => 10,
+    });
+    const run = (fn: () => boolean) => fn();
+    expect(() => run(tracker.isBudgetExceeded)).not.toThrow();
+  });
+});

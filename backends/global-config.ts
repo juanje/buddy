@@ -1,14 +1,53 @@
 // backends/global-config.ts — ~/.buddy/ global config directory paths.
 
-import { mkdirSync } from "node:fs";
+import { chmodSync, mkdirSync, statSync } from "node:fs";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 
-import { GLOBAL_CONFIG_DIR_NAME } from "../shared/defaults";
+import {
+  CONFIG_DIR_MODE,
+  CONFIG_FILE_NAME,
+  GLOBAL_CONFIG_DIR_NAME,
+  LEGACY_CONFIG_PATH_ENV,
+} from "../shared/defaults";
 
-/** Global config directory (~/.buddy/). Overridable in tests via BUDDY_CONFIG_DIR. */
+/**
+ * The one resolver for the global config directory (NFR-CONFIG-05).
+ *
+ * There used to be two. `globalConfigDir()` read `BUDDY_CONFIG_DIR`;
+ * `defaultConfigDir()` in allowed-paths.ts took `dirname(defaultConfigPath())`,
+ * derived from `BUDDY_CONFIG_PATH`. Setting one variable and not the other made
+ * them disagree — and they are not consulted by the same processes. The worker
+ * resolved `usage.json` one way while the reflect child, a separate process,
+ * resolved it the other, so a run could bill against a file nobody was reading.
+ * Both variables are still honoured, but through a single precedence:
+ *
+ *   1. BUDDY_CONFIG_DIR — names the directory outright.
+ *   2. The directory of BUDDY_CONFIG_PATH (or its legacy alias), so setting
+ *      only the config file still moves everything that lives beside it.
+ *   3. ~/.buddy
+ */
 export function globalConfigDir(): string {
-  return process.env.BUDDY_CONFIG_DIR ?? join(homedir(), GLOBAL_CONFIG_DIR_NAME);
+  const explicitDir = process.env.BUDDY_CONFIG_DIR;
+  if (explicitDir) return explicitDir;
+
+  const configPath = process.env.BUDDY_CONFIG_PATH ?? process.env[LEGACY_CONFIG_PATH_ENV];
+  if (configPath) return dirname(configPath);
+
+  return join(homedir(), GLOBAL_CONFIG_DIR_NAME);
+}
+
+/**
+ * Default location of ~/.buddy/config.json. `BUDDY_CONFIG_PATH` may name a file
+ * whose basename is not config.json (tests do), so it wins outright here; every
+ * other file under the directory is placed by `globalConfigDir()`.
+ */
+export function globalConfigPath(): string {
+  return (
+    process.env.BUDDY_CONFIG_PATH ??
+    process.env[LEGACY_CONFIG_PATH_ENV] ??
+    join(globalConfigDir(), CONFIG_FILE_NAME)
+  );
 }
 
 /**
@@ -32,6 +71,28 @@ export function globalConfigDir(): string {
  */
 export function buddyAgentDir(): string {
   const dir = join(globalConfigDir(), "agent");
-  mkdirSync(dir, { recursive: true });
+  mkdirSync(dir, { recursive: true, mode: CONFIG_DIR_MODE }); // NFR-SEC-17
   return dir;
+}
+
+/**
+ * Create ~/.buddy/ (if absent) and narrow it if it is more permissive than
+ * `CONFIG_DIR_MODE` (NFR-SEC-17).
+ *
+ * New installs get the right mode at creation, which is the requirement. This
+ * exists for the ones that already have the directory at the umask default —
+ * they would otherwise keep a world-readable allowed-paths.json forever, since
+ * nothing rewrites a directory's mode once it exists. Called once at worker
+ * boot, and deliberately best-effort: a config directory that cannot be
+ * chmod-ed (a mounted volume, an unusual filesystem) is not a reason to refuse
+ * to start.
+ */
+export function ensureConfigDirMode(dir: string = globalConfigDir()): void {
+  try {
+    mkdirSync(dir, { recursive: true, mode: CONFIG_DIR_MODE });
+    const current = statSync(dir).mode & 0o777;
+    if ((current & ~CONFIG_DIR_MODE) !== 0) chmodSync(dir, CONFIG_DIR_MODE);
+  } catch {
+    // Best effort; the files inside are written 0600 regardless.
+  }
 }

@@ -31,6 +31,8 @@ import {
 } from "node:fs";
 import { basename, dirname, join } from "node:path";
 
+import { CONFIG_DIR_MODE, STATE_FILE_MODE } from "../shared/defaults";
+
 /** The file exists but could not be read or parsed. Never overwrite on this. */
 export class StateFileUnreadableError extends Error {
   constructor(
@@ -51,7 +53,11 @@ export class StateFileLockError extends Error {
 }
 
 export interface StateFileOptions {
-  /** File mode for the written file. Applied at creation, not afterwards. */
+  /**
+   * File mode for the written file. Applied at creation, not afterwards.
+   * Defaults to `STATE_FILE_MODE` — every file this module writes lives in
+   * ~/.buddy/ and none of them is anyone else's business (NFR-SEC-17).
+   */
   mode?: number;
   /** How long to wait for the lock before giving up. */
   lockTimeoutMs?: number;
@@ -90,12 +96,13 @@ export async function withFileLock<T>(
   const lockPath = lockPathFor(resourcePath);
   const deadline = Date.now() + timeoutMs;
 
-  mkdirSync(dirname(resourcePath), { recursive: true });
+  mkdirSync(dirname(resourcePath), { recursive: true, mode: CONFIG_DIR_MODE });
   for (;;) {
     try {
       writeFileSync(lockPath, String(process.pid), { flag: "wx" });
       break;
-    } catch {
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException)?.code !== "EEXIST") throw error;
       if (isLockStale(lockPath)) {
         try {
           unlinkSync(lockPath);
@@ -120,13 +127,22 @@ function acquireFileLock(targetPath: string, timeoutMs: number): string {
   const lockPath = lockPathFor(targetPath);
   const deadline = Date.now() + timeoutMs;
 
+  // Without this the first write into a config directory that does not exist
+  // yet fails with ENOENT, which the loop below could not tell apart from
+  // contention: it retried for the full timeout and then reported the lock as
+  // held by another process.
+  mkdirSync(dirname(targetPath), { recursive: true, mode: CONFIG_DIR_MODE });
+
   for (;;) {
     try {
       // "wx" creates or fails — atomic, with no separate existence check to
       // race against (the flaw NFR-REL-07 describes in maintenance.ts).
       writeFileSync(lockPath, String(process.pid), { flag: "wx" });
       return lockPath;
-    } catch {
+    } catch (error) {
+      // Only "it already exists" is contention. Anything else is a broken
+      // directory, and waiting a second to say so helps nobody.
+      if ((error as NodeJS.ErrnoException)?.code !== "EEXIST") throw error;
       if (isLockStale(lockPath)) {
         try {
           unlinkSync(lockPath);
@@ -180,13 +196,15 @@ export function readStateFile<T>(path: string): T | undefined {
 /** Write JSON atomically: temp file in the same directory, then rename. */
 export function writeStateFile(path: string, data: unknown, options?: StateFileOptions): void {
   const dir = dirname(path);
-  mkdirSync(dir, { recursive: true });
+  mkdirSync(dir, { recursive: true, mode: CONFIG_DIR_MODE });
   // Same directory, so the rename stays within one filesystem and is atomic.
   const tmp = join(dir, `.${basename(path)}.${process.pid}.${Date.now()}.tmp`);
   try {
+    // The mode goes on the temp file, which is the file that ends up in place
+    // after the rename. There is no moment at which it exists more permissively.
     writeFileSync(tmp, JSON.stringify(data, null, 2) + "\n", {
       encoding: "utf8",
-      ...(options?.mode === undefined ? {} : { mode: options.mode }),
+      mode: options?.mode ?? STATE_FILE_MODE,
     });
     renameSync(tmp, path);
   } catch (error) {

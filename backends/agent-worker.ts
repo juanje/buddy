@@ -48,7 +48,7 @@ import { defaultConfigPath, detectFirstRun, updateAppConfig } from "./setup";
 import { writePiSettings } from "../shared/pi-settings";
 import { createWorkerCore } from "./worker-core";
 import { startHeartbeat, type HeartbeatHandle } from "./heartbeat";
-import { globalConfigDir } from "./global-config";
+import { ensureConfigDirMode, globalConfigDir } from "./global-config";
 import { bootRefreshIfNeeded } from "./boot-refresh";
 import { pruneSessionArtifacts } from "./session-log-prune";
 import { createUsageTracker, resolveMonthlyBudget, type UsageTracker } from "./usage-tracker";
@@ -56,6 +56,7 @@ import { readViewableFile } from "./viewable-file";
 
 async function main(): Promise<void> {
   const configDir = globalConfigDir();
+  ensureConfigDirMode(configDir); // NFR-SEC-17, before anything is written into it
   bootRefreshIfNeeded(configDir);
   await alignHttpDispatcherWithPi();
 

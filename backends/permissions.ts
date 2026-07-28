@@ -16,7 +16,9 @@ import { homedir } from "node:os";
 import type { AllowedEntry } from "./allowed-paths";
 import { isPathPersistentlyAllowed } from "./allowed-paths";
 import { DENYLIST_BASENAMES, DENYLIST_HOME_DIRS, READ_TOOLS, WRITE_TOOLS } from "../shared/defaults";
-import { isWithin, expandHome } from "../shared/path-utils";
+import { pathArgsOf } from "../shared/tool-paths";
+import { expandHome } from "../shared/path-utils";
+import { isContained } from "./containment";
 import { globalConfigDir } from "./global-config";
 
 export type PermissionOp = "read" | "write";
@@ -39,7 +41,7 @@ const PROTECTED_CONFIG_RELPATHS = [join(".pi", "settings.json")];
 
 export function isDenylistedPath(absPath: string, home: string = homedir()): boolean {
   if (DENYLIST_BASENAMES.includes(basename(absPath))) return true;
-  return DENYLIST_HOME_DIRS.some((dir) => isWithin(absPath, join(home, dir)));
+  return DENYLIST_HOME_DIRS.some((dir) => isContained(absPath, join(home, dir)));
 }
 
 function isProtectedConfig(absPath: string, rootDir: string): boolean {
@@ -71,11 +73,30 @@ export function evaluateToolCall(
       : undefined;
   if (!op) return { action: "allow" }; // not a file tool
 
-  const rawPath = (args as { path?: unknown } | undefined)?.path;
-  if (typeof rawPath !== "string" || rawPath.trim() === "") {
+  // NFR-SEC-13: judge every declared path argument and return the most
+  // restrictive verdict. A tool is only as contained as its least contained
+  // argument.
+  const rawPaths = pathArgsOf(toolName, args);
+  if (rawPaths.length === 0) {
     return { action: "allow" }; // pathless: operates on the session cwd (buddy directory)
   }
 
+  let pendingAsk: PermissionDecision | undefined;
+  for (const rawPath of rawPaths) {
+    const decision = evaluateOnePath(rawPath, op, rootDir, home, configDir);
+    if (decision.action === "deny") return decision;
+    if (decision.action === "ask" && !pendingAsk) pendingAsk = decision;
+  }
+  return pendingAsk ?? { action: "allow" };
+}
+
+function evaluateOnePath(
+  rawPath: string,
+  op: PermissionOp,
+  rootDir: string,
+  home: string,
+  configDir: string,
+): PermissionDecision {
   // Relative paths resolve against the session cwd, which is the buddy home.
   const absPath = resolve(rootDir, expandHome(rawPath, home));
 
@@ -88,10 +109,13 @@ export function evaluateToolCall(
   if (op === "write" && isProtectedConfig(absPath, rootDir)) {
     return { action: "deny", reason: "Modifying model configuration is not allowed." };
   }
-  if (isWithin(absPath, rootDir)) {
+  // NFR-SEC-15: Zone 1 is decided on the resolved location. A symlink under the
+  // buddy directory pointing at ~/Documents would otherwise make every file it
+  // reaches a silent allow.
+  if (isContained(absPath, rootDir)) {
     return { action: "allow" };
   }
-  if (op === "read" && isWithin(absPath, join(configDir, "docs"))) {
+  if (op === "read" && isContained(absPath, join(configDir, "docs"))) {
     return { action: "allow" };
   }
   return { action: "ask", kind: "outside", op, path: absPath };
@@ -122,20 +146,20 @@ export function createPermissionGate(
 
   return {
     async check(toolName, args) {
-      const rawPath = (args as { path?: unknown } | undefined)?.path;
-      if (typeof rawPath === "string" && rawPath.trim() !== "") {
+      // NFR-SEC-13: every argument the tool declares as a path, not just
+      // `args.path`. copy_file and move_file name theirs `source` and
+      // `destination`, and the denylist below never ran for them.
+      const rawPaths = pathArgsOf(toolName, args);
+      for (const rawPath of rawPaths) {
         const absPath = resolve(rootDir, expandHome(rawPath, home));
         if (isDenylistedPath(absPath, home)) {
           return { block: true, reason: `Access to ${absPath} is not allowed.` };
         }
-        if (
-          sessionAllowedPaths &&
-          READ_TOOLS.has(toolName)
-        ) {
-          for (const allowed of sessionAllowedPaths) {
-            if (resolve(allowed) === absPath) return undefined;
-          }
-        }
+      }
+      if (sessionAllowedPaths && READ_TOOLS.has(toolName) && rawPaths.length > 0) {
+        const absPaths = rawPaths.map((raw) => resolve(rootDir, expandHome(raw, home)));
+        const approved = [...sessionAllowedPaths].map((allowed) => resolve(allowed));
+        if (absPaths.every((absPath) => approved.includes(absPath))) return undefined;
       }
 
       const decision = evaluateToolCall(toolName, args, rootDir, home);

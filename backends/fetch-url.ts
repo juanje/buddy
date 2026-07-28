@@ -125,16 +125,34 @@ export function frameUntrustedContent(source: string, content: string): string {
   );
 }
 
-export function htmlToMarkdown(html: string, pageUrl: string): string {
+/**
+ * Extract readable markdown from an HTML page, plus the document's own title.
+ *
+ * The title comes back with the markdown rather than being re-derived by the
+ * caller, because parsing is the expensive part: `fetchUrlContent` used to run
+ * `parseHTML` a second time over the same document — up to 10 MB of it — purely
+ * to read `document.title` for the download filename.
+ *
+ * The old `pageUrl` parameter is gone. It was never read; links in the
+ * extracted markdown are left exactly as the page wrote them.
+ */
+export function htmlToMarkdown(html: string): { markdown: string; documentTitle: string } {
   const { document } = parseHTML(html);
+  const documentTitle = document.title ?? "";
   const readable = new Readability(document as unknown as Document, { charThreshold: 0 }).parse();
-  const title = readable?.title?.trim() ?? document.title?.trim() ?? "";
+  const title = readable?.title?.trim() ?? documentTitle.trim();
   const contentHtml = readable?.content ?? document.body?.innerHTML ?? html;
   const turndown = new TurndownService({ headingStyle: "atx", codeBlockStyle: "fenced" });
   const body = turndown.turndown(contentHtml).trim();
-  if (title && body) return `# ${title}\n\n${body}`;
-  if (title) return `# ${title}`;
-  return body || "(No readable content extracted)";
+
+  const markdown =
+    title && body
+      ? `# ${title}\n\n${body}`
+      : title
+        ? `# ${title}`
+        : body || "(No readable content extracted)";
+
+  return { markdown, documentTitle };
 }
 
 function ensureDownloadsDir(rootDir: string): string {
@@ -285,9 +303,8 @@ export async function fetchUrlContent(
 
   if (kind === "html") {
     const html = buffer.toString("utf8");
-    const markdown = htmlToMarkdown(html, url);
-    const { document } = parseHTML(html);
-    const slug = slugifyDownloadName(document.title ?? "", url);
+    const { markdown, documentTitle } = htmlToMarkdown(html);
+    const slug = slugifyDownloadName(documentTitle, url);
     const filename = buildDownloadFilename(isoDay, slug, ext);
     const savedPath = join(downloadsDir, filename);
     // The saved file keeps clean markdown; only what enters the model's context

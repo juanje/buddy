@@ -231,6 +231,23 @@ export function createUsageTracker(
     return status;
   }
 
+  // Defined as a closure rather than reached through `this`. The methods below
+  // used to call `this.getUsageReport()`, which is correct only while every
+  // caller goes through the object: `const { isBudgetExceeded } = tracker` — or
+  // passing the method as a callback, which is how the heartbeat and the
+  // consolidation budget check want to use it — makes `this` undefined and the
+  // call throws. Nothing in the signature warns about it.
+  function getUsageReport(): UsageReport {
+    const now = options.nowFn?.() ?? new Date();
+    const monthly = currentMonthly(now);
+    const budget = computeBudgetStatus(monthly.totalCost, options.getBudget());
+    return {
+      session: { ...sessionSummary },
+      monthly: { ...monthly },
+      budget,
+    };
+  }
+
   return {
     record,
     recordFromEvent(event, now) {
@@ -238,25 +255,15 @@ export function createUsageTracker(
       if (!usage) return null;
       return record(usage, now);
     },
-    getUsageReport() {
-      const now = options.nowFn?.() ?? new Date();
-      const monthly = currentMonthly(now);
-      const budget = computeBudgetStatus(monthly.totalCost, options.getBudget());
-      return {
-        session: { ...sessionSummary },
-        monthly: { ...monthly },
-        budget,
-      };
-    },
+    getUsageReport,
     isBudgetExceeded() {
-      const report = this.getUsageReport();
-      return report.budget.level === "exceeded";
+      return getUsageReport().budget.level === "exceeded";
     },
     isBudgetNearLimit() {
-      return isBudgetNearLimitFromStatus(this.getUsageReport().budget);
+      return isBudgetNearLimitFromStatus(getUsageReport().budget);
     },
     checkAndFireAlerts() {
-      const status = this.getUsageReport().budget;
+      const status = getUsageReport().budget;
       maybeFireAlert(status);
       return status;
     },

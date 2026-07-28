@@ -20,8 +20,10 @@ import {
   AUTH_FILE_NAME,
   GLOBAL_CONFIG_DIR_NAME,
   LEGACY_AUTH_PATH_ENV,
+  PROVIDER_REQUEST_TIMEOUT_MS,
 } from "../shared/defaults";
 import { toPiProviderId } from "./provider-mapping";
+import { assertSafeProviderBaseUrl, UnsafeUrlError, type DnsLookupFn } from "./url-safety";
 
 export type ProviderId = SetupConfig["provider"];
 
@@ -59,10 +61,19 @@ const PROBE_TARGETS: Record<ProviderId, ProbeTarget> = {
 const httpKeyProbe: KeyProbe = async (provider, apiKey, baseUrl) => {
   const target = PROBE_TARGETS[provider];
   try {
-    const res = await fetch(target.url(baseUrl), { headers: target.headers(apiKey) });
+    // NFR-REL-09: bounded. This runs behind a spinner in the wizard with no way
+    // to cancel, so a provider that accepts the connection and then says
+    // nothing must not hang the setup indefinitely.
+    const res = await fetch(target.url(baseUrl), {
+      headers: target.headers(apiKey),
+      signal: AbortSignal.timeout(PROVIDER_REQUEST_TIMEOUT_MS),
+    });
     if (res.ok) return { ok: true };
     return { ok: false, error: `HTTP ${res.status}` };
   } catch (err) {
+    if (err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError")) {
+      return { ok: false, error: "The provider did not respond. Check your connection and try again." };
+    }
     return { ok: false, error: err instanceof Error ? err.message : String(err) };
   }
 };
@@ -95,10 +106,38 @@ export function createBuddyModelRuntime(): Promise<ModelRuntime> {
 export async function configureProviderKey(
   provider: ProviderId,
   apiKey: string,
-  options: { baseUrl?: string; authPath?: string; probe?: KeyProbe } = {},
+  options: {
+    baseUrl?: string;
+    authPath?: string;
+    probe?: KeyProbe;
+    lookupFn?: DnsLookupFn;
+  } = {},
 ): Promise<KeyCheck> {
   if (provider === "custom" && !options.baseUrl) {
     return { valid: false, error: "base URL required for OpenAI-compatible providers" };
+  }
+
+  // NFR-SEC-18: the custom base URL is the one destination in the app the user
+  // types by hand, and the very next thing that happens is their API key being
+  // sent to it in an Authorization header. A typo, or a URL pasted from
+  // somewhere untrustworthy, would deliver the credential before anything else
+  // got a chance to object.
+  //
+  // The rules are `assertSafeProviderBaseUrl`, not `assertSafeUrl` — loopback
+  // and LAN addresses stay allowed here because Ollama and LM Studio are why
+  // this field exists. See that function for why the threat model differs.
+  if (provider === "custom") {
+    try {
+      await assertSafeProviderBaseUrl(options.baseUrl!, options.lookupFn);
+    } catch (error) {
+      return {
+        valid: false,
+        error:
+          error instanceof UnsafeUrlError
+            ? error.message
+            : `Could not verify the base URL: ${String(error)}`,
+      };
+    }
   }
 
   const probe = options.probe ?? httpKeyProbe;

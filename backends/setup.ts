@@ -5,25 +5,18 @@
 // never throws.
 
 import { readFileSync } from "node:fs";
-import { homedir } from "node:os";
-import { join } from "node:path";
 
 import { writeStateFile } from "./state-file";
+import { globalConfigPath } from "./global-config";
 
 import type { SetupConfig, SetupState } from "../shared/api";
-import {
-  CONFIG_FILE_NAME,
-  GLOBAL_CONFIG_DIR_NAME,
-  LEGACY_CONFIG_PATH_ENV,
-} from "../shared/defaults";
 
-/** Default location of the app config; overridable for dev/tests via env. */
+/**
+ * Default location of the app config; overridable for dev/tests via env.
+ * Delegates to the single config-dir resolver (NFR-CONFIG-05).
+ */
 export function defaultConfigPath(): string {
-  return (
-    process.env.BUDDY_CONFIG_PATH ??
-    process.env[LEGACY_CONFIG_PATH_ENV] ??
-    join(homedir(), GLOBAL_CONFIG_DIR_NAME, CONFIG_FILE_NAME)
-  );
+  return globalConfigPath();
 }
 
 export function detectFirstRun(configPath: string): SetupState {

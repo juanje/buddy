@@ -1,9 +1,9 @@
 // tests/unit/allowed-paths.test.ts — FR-PERM-06 persistent outside-path allowlist.
 
-import { mkdtempSync, readFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it } from "vitest";
 
 import {
   addAllowedPath,
@@ -14,8 +14,18 @@ import {
 } from "../../backends/allowed-paths";
 import { createPermissionGate } from "../../backends/permissions";
 
-const HOME = "/home/u";
-const AB = "/home/u/buddy";
+// A real directory: containment resolves symlinks now (NFR-SEC-15), so these
+// paths are handed to the filesystem rather than only compared as strings.
+const HOME = mkdtempSync(join(tmpdir(), "allowed-paths-home-"));
+const AB = `${HOME}/buddy`;
+
+mkdirSync(join(HOME, "Documents"), { recursive: true });
+mkdirSync(join(HOME, "Projects"), { recursive: true });
+mkdirSync(AB, { recursive: true });
+
+afterAll(() => {
+  rmSync(HOME, { recursive: true, force: true });
+});
 
 describe("allowed-paths persistence", () => {
   it("returns an empty list when the file is missing", () => {
@@ -25,9 +35,9 @@ describe("allowed-paths persistence", () => {
 
   it("persists entries and deduplicates on add", () => {
     const dir = mkdtempSync(join(tmpdir(), "buddy-allowed-"));
-    addAllowedPath(dir, { path: "/home/u/Documents/report.pdf", type: "file" });
-    addAllowedPath(dir, { path: "/home/u/Documents/report.pdf", type: "file" });
-    addAllowedPath(dir, { path: "/home/u/Documents", type: "directory" });
+    addAllowedPath(dir, { path: `${HOME}/Documents/report.pdf`, type: "file" });
+    addAllowedPath(dir, { path: `${HOME}/Documents/report.pdf`, type: "file" });
+    addAllowedPath(dir, { path: `${HOME}/Documents`, type: "directory" });
 
     const stored = JSON.parse(readFileSync(allowedPathsFile(dir), "utf8"));
     expect(stored.allowedPaths).toHaveLength(2);
@@ -36,14 +46,14 @@ describe("allowed-paths persistence", () => {
 
   it("matches exact files and directories recursively", () => {
     const entries = [
-      { path: "/home/u/Documents/report.pdf", type: "file" as const },
-      { path: "/home/u/Projects", type: "directory" as const },
+      { path: `${HOME}/Documents/report.pdf`, type: "file" as const },
+      { path: `${HOME}/Projects`, type: "directory" as const },
     ];
 
-    expect(isPathPersistentlyAllowed("/home/u/Documents/report.pdf", entries)).toBe(true);
-    expect(isPathPersistentlyAllowed("/home/u/Documents/other.pdf", entries)).toBe(false);
-    expect(isPathPersistentlyAllowed("/home/u/Projects/app/readme.md", entries)).toBe(true);
-    expect(isPathPersistentlyAllowed("/home/u/Other/file.txt", entries)).toBe(false);
+    expect(isPathPersistentlyAllowed(`${HOME}/Documents/report.pdf`, entries)).toBe(true);
+    expect(isPathPersistentlyAllowed(`${HOME}/Documents/other.pdf`, entries)).toBe(false);
+    expect(isPathPersistentlyAllowed(`${HOME}/Projects/app/readme.md`, entries)).toBe(true);
+    expect(isPathPersistentlyAllowed(`${HOME}/Other/file.txt`, entries)).toBe(false);
   });
 });
 
@@ -56,12 +66,12 @@ describe("createPermissionGate persistentAllowedPaths", () => {
       },
       HOME,
       {
-        getPersistentAllowedPaths: () => [{ path: "/home/u/Documents", type: "directory" }],
+        getPersistentAllowedPaths: () => [{ path: `${HOME}/Documents`, type: "directory" }],
       },
     );
 
     await expect(
-      gate.check("read", { path: "/home/u/Documents/notes.txt" }),
+      gate.check("read", { path: `${HOME}/Documents/notes.txt` }),
     ).resolves.toBeUndefined();
   });
 
@@ -75,12 +85,12 @@ describe("createPermissionGate persistentAllowedPaths", () => {
       },
       HOME,
       {
-        getPersistentAllowedPaths: () => [{ path: "/home/u/Documents/report.pdf", type: "file" }],
+        getPersistentAllowedPaths: () => [{ path: `${HOME}/Documents/report.pdf`, type: "file" }],
       },
     );
 
     await expect(
-      gate.check("write", { path: "/home/u/Documents/report.pdf" }),
+      gate.check("write", { path: `${HOME}/Documents/report.pdf` }),
     ).resolves.toBeUndefined();
     expect(asked).toBe(true);
   });
@@ -100,12 +110,12 @@ describe("createPermissionGate persistentAllowedPaths", () => {
       },
     );
 
-    await gate.check("read", { path: "/home/u/Projects/foo.md" });
+    await gate.check("read", { path: `${HOME}/Projects/foo.md` });
     expect(askCount).toBe(1);
 
-    entries.push({ path: "/home/u/Projects", type: "directory" });
+    entries.push({ path: `${HOME}/Projects`, type: "directory" });
 
-    await gate.check("read", { path: "/home/u/Projects/foo.md" });
+    await gate.check("read", { path: `${HOME}/Projects/foo.md` });
     expect(askCount).toBe(1);
   });
 });

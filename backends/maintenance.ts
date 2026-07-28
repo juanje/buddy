@@ -37,20 +37,47 @@ export function isLockStale(rootDir: string, now = Date.now()): boolean {
   }
 }
 
+/**
+ * Take the maintenance lock, or report that someone else holds it (NFR-REL-07).
+ *
+ * The acquisition is a single `wx` write: the file is created or the call
+ * fails, with no window in between. The previous version checked staleness,
+ * then checked existence, then unlinked, then wrote — four steps during which
+ * a second process running the same four steps would reach the same
+ * conclusions. Both would return true, and both would run consolidation over
+ * the same brain at the same time.
+ *
+ * Breaking a stale lock keeps that property. Two processes may both decide the
+ * lock is dead and both unlink it, but only one of them can then create it.
+ */
 export function acquireLock(rootDir: string): boolean {
-  if (!isLockStale(rootDir)) return false;
-  if (existsSync(lockPath(rootDir))) {
-    try {
-      unlinkSync(lockPath(rootDir));
-    } catch {
-      return false;
-    }
-  }
-  const payload: MaintenanceLock = { pid: process.pid, timestamp: new Date().toISOString() };
   const path = lockPath(rootDir);
   mkdirSync(join(rootDir, ".buddy"), { recursive: true });
-  writeFileSync(path, JSON.stringify(payload), "utf8");
-  return true;
+
+  const payload: MaintenanceLock = { pid: process.pid, timestamp: new Date().toISOString() };
+  const write = () => writeFileSync(path, JSON.stringify(payload), { encoding: "utf8", flag: "wx" });
+
+  try {
+    write();
+    return true;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException)?.code !== "EEXIST") return false;
+  }
+
+  // It exists. Only a dead or expired holder may be displaced.
+  if (!isLockStale(rootDir)) return false;
+  try {
+    unlinkSync(path);
+  } catch {
+    // Someone else broke it first; the create below still decides the winner.
+  }
+
+  try {
+    write();
+    return true;
+  } catch {
+    return false; // lost the race to whoever broke it alongside us
+  }
 }
 
 export function releaseLock(rootDir: string): void {

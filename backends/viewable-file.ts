@@ -10,7 +10,7 @@ import { readFileSync, statSync } from "node:fs";
 import { resolve } from "node:path";
 
 import { resolveViewablePath } from "../shared/viewable-path";
-import { isWithin } from "../shared/path-utils";
+import { isContained } from "./containment";
 
 export class ViewableFileError extends Error {}
 
@@ -25,9 +25,12 @@ export function readViewableFile(rootDir: string, rawHref: string): string {
   }
 
   const absPath = resolve(rootDir, relPath);
-  // Belt-and-braces: resolveViewablePath already guarantees containment, but
-  // the read itself must never be reachable outside the buddy directory.
-  if (!isWithin(absPath, rootDir)) {
+  // Not belt-and-braces: `resolveViewablePath` is browser-safe and reasons about
+  // the *spelling* of the link, which is all the frontend can do. Whether the
+  // bytes live inside the buddy directory is a filesystem question, and this is
+  // where it is asked (NFR-SEC-15, NFR-SEC-16). `user/notes -> /etc` produces a
+  // link whose spelling is beyond reproach.
+  if (!isContained(absPath, rootDir)) {
     throw new ViewableFileError("This file cannot be opened inside Buddy.");
   }
 

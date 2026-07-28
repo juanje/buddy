@@ -1,8 +1,9 @@
 // backends/consolidation-relocate.ts — Brain file relocation with link rewriting (FR-CONSOL-07).
 
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
-import { dirname, join, normalize, relative } from "node:path";
+import { dirname, join, normalize, relative, resolve } from "node:path";
 
+import { containedRelPath } from "./containment";
 import { gitClient } from "./git";
 
 const MARKDOWN_LINK_RE = /(?<!!)\[([^\]]*)\]\(([^)]+)\)/g;
@@ -92,21 +93,32 @@ export function rewriteBrokenLinks(
 
 export class RelocateBrainFileError extends Error {}
 
+/**
+ * Resolve an argument to a path inside `agent_brain/`, or throw (NFR-SEC-16).
+ *
+ * The previous rule was `startsWith("agent_brain/")` applied to the raw string,
+ * which `agent_brain/../.pi/settings.json` satisfies — `join` then collapsed the
+ * `..` and the tool git-mv'd the model configuration that the permission layer
+ * explicitly refuses to let the agent write (NFR-SEC-06). Containment is now
+ * decided by `containedRelPath`, and the prefix is checked on the *resolved*
+ * path rather than on the spelling.
+ */
+function assertBrainPath(rootDir: string, raw: string, label: string): string {
+  const relPath = containedRelPath(rootDir, resolve(rootDir, normalizeRepoPath(raw)));
+  if (relPath === null || !relPath.startsWith("agent_brain/")) {
+    throw new RelocateBrainFileError(`${label} must be within agent_brain/`);
+  }
+  return relPath;
+}
+
 /** Move a file within agent_brain/ via git mv and rewrite incoming markdown links. */
 export async function relocateBrainFile(
   rootDir: string,
   source: string,
   destination: string,
 ): Promise<{ rewrittenLinks: string[] }> {
-  const src = normalizeRepoPath(source);
-  const dst = normalizeRepoPath(destination);
-
-  if (!src.startsWith("agent_brain/")) {
-    throw new RelocateBrainFileError("source must be within agent_brain/");
-  }
-  if (!dst.startsWith("agent_brain/")) {
-    throw new RelocateBrainFileError("destination must be within agent_brain/");
-  }
+  const src = assertBrainPath(rootDir, source, "source");
+  const dst = assertBrainPath(rootDir, destination, "destination");
 
   const srcAbs = join(rootDir, src);
   if (!existsSync(srcAbs)) {

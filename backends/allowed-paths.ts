@@ -1,13 +1,13 @@
 // backends/allowed-paths.ts — persistent outside-path allowlist (FR-PERM-06).
 // Stored in ~/.buddy/allowed-paths.json; read access only (writes still prompt).
 
-import { dirname, join, resolve } from "node:path";
+import { join, resolve } from "node:path";
 
 import { readStateFile, updateStateFile } from "./state-file";
 
 import { ALLOWED_PATHS_FILE_NAME } from "../shared/defaults";
-import { defaultConfigPath } from "./setup";
-import { isWithin } from "../shared/path-utils";
+import { globalConfigDir } from "./global-config";
+import { isContained } from "./containment";
 
 export interface AllowedEntry {
   path: string;
@@ -18,9 +18,16 @@ interface AllowedPathsFile {
   allowedPaths: AllowedEntry[];
 }
 
-/** Directory holding ~/.buddy/config.json (overridable via BUDDY_CONFIG_PATH in tests). */
+/**
+ * Directory holding ~/.buddy/config.json.
+ *
+ * NFR-CONFIG-05: kept as a name because the reflect child and the consolidation
+ * runner import it, but it is no longer a second resolver — it is
+ * `globalConfigDir()`. The two used to read different environment variables and
+ * could name different directories in the same run.
+ */
 export function defaultConfigDir(): string {
-  return dirname(defaultConfigPath());
+  return globalConfigDir();
 }
 
 export function allowedPathsFile(configDir: string = defaultConfigDir()): string {
@@ -76,7 +83,9 @@ export function isPathPersistentlyAllowed(absPath: string, entries: AllowedEntry
     const allowedPath = resolve(entry.path);
     if (entry.type === "file") {
       if (allowedPath === resolved) return true;
-    } else if (isWithin(resolved, allowedPath)) {
+      // NFR-SEC-15: the approval covers a directory, not everything a symlink
+      // inside it happens to point at.
+    } else if (isContained(resolved, allowedPath)) {
       return true;
     }
   }

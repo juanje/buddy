@@ -1,14 +1,30 @@
 // tests/unit/permissions.test.ts — FR-PERM zone classification edge cases.
 
-import { describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it } from "vitest";
+import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { evaluateToolCall, createPermissionGate } from "../../backends/permissions";
 import { DENYLIST_BASENAMES, DENYLIST_HOME_DIRS } from "../../shared/defaults";
 
-const HOME = "/home/u";
-const AB = "/home/u/buddy";
+// A real directory, not a fabricated "/home/u". Containment resolves symlinks
+// now (NFR-SEC-15), so these paths are read by the filesystem rather than only
+// compared as strings — and a path that cannot exist cannot be a symlink,
+// which would make every case here the easy one.
+const HOME = mkdtempSync(join(tmpdir(), "permissions-"));
+const AB = join(HOME, "buddy");
 const CONFIG = join(HOME, ".buddy");
+
+mkdirSync(join(AB, "agent_brain", "identity"), { recursive: true });
+mkdirSync(join(AB, ".pi"), { recursive: true });
+mkdirSync(join(AB, "user"), { recursive: true });
+mkdirSync(join(CONFIG, "docs"), { recursive: true });
+mkdirSync(join(HOME, "Documents"), { recursive: true });
+
+afterAll(() => {
+  rmSync(HOME, { recursive: true, force: true });
+});
 
 const evaluate = (tool: string, args: unknown) => evaluateToolCall(tool, args, AB, HOME, CONFIG);
 
@@ -55,9 +71,9 @@ describe("evaluateToolCall", () => {
   });
 
   it("asks for outside paths with the operation kind", () => {
-    const read = evaluate("read", { path: "/home/u/Documents/cv.md" });
+    const read = evaluate("read", { path: `${HOME}/Documents/cv.md` });
     expect(read).toMatchObject({ action: "ask", kind: "outside", op: "read" });
-    const write = evaluate("write", { path: "/home/u/Documents/cv.md" });
+    const write = evaluate("write", { path: `${HOME}/Documents/cv.md` });
     expect(write).toMatchObject({ action: "ask", kind: "outside", op: "write" });
   });
 
@@ -72,7 +88,7 @@ describe("evaluateToolCall", () => {
 
   it("denies the hardcoded denylist silently, wherever it appears", () => {
     const denylistPaths = [
-      ...DENYLIST_HOME_DIRS.map((dir) => `/home/u/${dir}/secret`),
+      ...DENYLIST_HOME_DIRS.map((dir) => `${HOME}/${dir}/secret`),
       `/anywhere/project/${DENYLIST_BASENAMES[0]}`,
       `${AB}/secrets/${DENYLIST_BASENAMES[1]}`,
       `~/${DENYLIST_HOME_DIRS[0]}/config`,
@@ -86,7 +102,7 @@ describe("evaluateToolCall", () => {
 
 describe("createPermissionGate sessionAllowedPaths", () => {
   it("allows reads for attached outside paths without asking", async () => {
-    const allowed = new Set(["/home/u/Documents/draft.md"]);
+    const allowed = new Set([`${HOME}/Documents/draft.md`]);
     const gate = createPermissionGate(
       AB,
       async () => {
@@ -95,7 +111,7 @@ describe("createPermissionGate sessionAllowedPaths", () => {
       HOME,
       { sessionAllowedPaths: allowed },
     );
-    const outcome = await gate.check("read", { path: "/home/u/Documents/draft.md" });
+    const outcome = await gate.check("read", { path: `${HOME}/Documents/draft.md` });
     expect(outcome).toBeUndefined();
   });
 

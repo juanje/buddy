@@ -91,6 +91,117 @@ export function isBlockedHostname(hostname: string): boolean {
   return BLOCKED_HOSTNAME_SUFFIXES.some((suffix) => name.endsWith(suffix));
 }
 
+/**
+ * Addresses refused even for a base URL the user typed deliberately.
+ *
+ * Loopback and private ranges are *not* here — see `assertSafeProviderBaseUrl`.
+ * These are the ones no model server is ever reachable at, and where a request
+ * carrying an Authorization header does real damage: cloud instance metadata
+ * (169.254.169.254 and friends), the unspecified address, multicast, reserved.
+ */
+function isNeverAProviderAddress(ip: string): boolean {
+  if (ip.includes(":")) {
+    const normalized = ip.toLowerCase().split("%")[0]!;
+    if (normalized === "::") return true;
+    const mapped = /^::ffff:(\d+\.\d+\.\d+\.\d+)$/.exec(normalized);
+    if (mapped) return isNeverAProviderAddress(mapped[1]!);
+    return /^fe[89ab][0-9a-f]:/.test(normalized); // link-local
+  }
+  const value = ipv4ToNumber(ip);
+  if (value === null) return false;
+  for (const [network, prefix] of [
+    ["0.0.0.0", 8], // unspecified
+    ["169.254.0.0", 16], // link-local, includes cloud metadata
+    ["224.0.0.0", 4], // multicast
+    ["240.0.0.0", 4], // reserved
+  ] as Array<[string, number]>) {
+    const base = ipv4ToNumber(network)!;
+    const mask = (-1 << (32 - prefix)) >>> 0;
+    if ((value & mask) >>> 0 === (base & mask) >>> 0) return true;
+  }
+  return false;
+}
+
+const METADATA_HOSTNAMES = new Set([
+  "metadata.google.internal",
+  "metadata.goog",
+  "instance-data",
+]);
+
+/**
+ * Validate the base URL of a custom OpenAI-compatible provider (NFR-SEC-18).
+ *
+ * **This is deliberately weaker than `assertSafeUrl`, and the difference is the
+ * threat model, not an oversight.** `fetch_url` receives URLs chosen by the
+ * agent, whose context is shaped by pages it has already fetched — attacker
+ * influence with no human in the loop, so loopback and private ranges are
+ * refused outright. A provider base URL is typed by the user into a field that
+ * exists for exactly this purpose, and the overwhelmingly common thing to type
+ * is `http://localhost:11434/v1`: Ollama, LM Studio, llama.cpp, or a model
+ * server on their own LAN. Applying the SSRF rules verbatim would refuse the
+ * only reason the "custom" option exists.
+ *
+ * What is still refused is what a local model server is never behind: a
+ * non-HTTP scheme, a malformed URL, and the link-local range that carries cloud
+ * instance metadata — where an Authorization header does real harm and where
+ * nobody is running an LLM.
+ */
+export async function assertSafeProviderBaseUrl(
+  rawUrl: string,
+  lookupFn: DnsLookupFn = defaultLookup,
+): Promise<URL> {
+  let url: URL;
+  try {
+    url = new URL(rawUrl);
+  } catch {
+    throw new UnsafeUrlError(`Not a valid URL: ${rawUrl}`);
+  }
+
+  if (!ALLOWED_PROTOCOLS.has(url.protocol)) {
+    throw new UnsafeUrlError(
+      `The base URL must start with http:// or https:// (got "${url.protocol}").`,
+    );
+  }
+
+  const hostname = url.hostname.replace(/^\[|\]$/g, "").toLowerCase().replace(/\.$/, "");
+  if (!hostname) {
+    throw new UnsafeUrlError(`The base URL has no host: ${rawUrl}`);
+  }
+  if (METADATA_HOSTNAMES.has(hostname)) {
+    throw new UnsafeUrlError(`Refusing to send credentials to ${hostname}.`);
+  }
+
+  if (/^[\d.]+$/.test(hostname) || hostname.includes(":")) {
+    if (isNeverAProviderAddress(hostname)) {
+      throw new UnsafeUrlError(`Refusing to send credentials to ${hostname}.`);
+    }
+    return url;
+  }
+
+  // A name that is obviously local needs no resolution and should not be
+  // punished for failing to resolve on a machine without mDNS.
+  if (isBlockedHostname(hostname)) return url;
+
+  let addresses: string[];
+  try {
+    addresses = await lookupFn(hostname);
+  } catch {
+    throw new UnsafeUrlError(`Could not resolve the base URL host: ${hostname}`);
+  }
+  if (addresses.length === 0) {
+    throw new UnsafeUrlError(`Could not resolve the base URL host: ${hostname}`);
+  }
+  for (const address of addresses) {
+    if (isNeverAProviderAddress(address)) {
+      throw new UnsafeUrlError(
+        `Refusing to send credentials to ${hostname} — it resolves to ${address}.`,
+      );
+    }
+  }
+
+  return url;
+}
+
 async function defaultLookup(hostname: string): Promise<string[]> {
   const results = await lookup(hostname, { all: true, verbatim: true });
   return results.map((entry) => entry.address);

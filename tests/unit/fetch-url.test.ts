@@ -74,8 +74,18 @@ describe("error formatting", () => {
 describe("htmlToMarkdown", () => {
   it("extracts article content as markdown", () => {
     const html = `<!DOCTYPE html><html><head><title>Article Title</title></head><body><article><p>Article body text</p></article></body></html>`;
-    const markdown = htmlToMarkdown(html, "https://example.com/article");
+    const { markdown } = htmlToMarkdown(html);
     expect(markdown).toContain("Article body text");
     expect(markdown.toLowerCase()).not.toContain("<script");
+  });
+
+  it("returns the document title, so the caller need not parse the page again", () => {
+    const html = `<!DOCTYPE html><html><head><title>Article Title</title></head><body><article><p>Body</p></article></body></html>`;
+    expect(htmlToMarkdown(html).documentTitle).toBe("Article Title");
+  });
+
+  it("returns an empty title rather than undefined for a page without one", () => {
+    // slugifyDownloadName is handed this value directly now.
+    expect(htmlToMarkdown("<html><body><p>x</p></body></html>").documentTitle).toBe("");
   });
 });
