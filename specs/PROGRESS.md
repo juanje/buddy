@@ -207,7 +207,7 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 > `reflect-child.ts`, wizard). 15 findings classified into three themes, now
 > sprints H5–H7; H8 absorbs the rest. H5b (session factory) is **cancelled** —
 > replaced by two shared helpers under a reworded NFR-SEC-14.
-> **H5, H6 and H6b done.** 493 unit + 213 BDD green. **Next: H7** (setup
+> **H5, H6, H6b and H6c done.** 513 unit + 213 BDD green. **Next: H7** (setup
 > validation). FR-WIKI resumes after H8.
 
 ### Sprint: Hardening (v0.1.1) — started 2026-07-27
@@ -639,6 +639,42 @@ skills; with an empty buddy-owned directory it returns none, with no
 diagnostics and an empty prompt fragment. A guard test asserts no file in
 `backends/` or `scripts/` calls `getAgentDir()`, comment text excluded — checked
 by reintroducing the call and watching it fail.
+
+#### Sprint H6c — Viewer navigation `[S]` — DONE (2026-07-27)
+
+Unplanned. Reported while testing H6b against a real wiki.
+
+| ID | Requirement | Status | Commit |
+|----|-------------|--------|--------|
+| FR-CHAT-12 | Navigation inside the inline viewer | done | (this sprint) |
+
+**Tests at H6c close:** 513 unit + 213 BDD green, typecheck and vite build clean.
+
+**Two defects, and the second was the one that mattered.** Links inside an open
+document rendered as links but did nothing: the click handler lived in
+`ChatView`, bound to the chat container, and the viewer had none. That much was
+obvious. The second was not — links inside a document are written *relative to
+that document*, so even with a handler every one of them would have been
+rejected:
+
+```
+[Ley de Hebb](ley-de-hebb.md)
+[Neurogénesis y BDNF](../sistema-nervioso-y-cerebro/neurogenesis-bdnf.md)
+```
+
+Resolved against the buddy root, the first lands outside the four user-facing
+directories and the second walks past the root. `resolveViewablePath` now takes
+the document being viewed as the base. Containment is unchanged: segments are
+collapsed *after* joining, so a link that walks past the root is still refused
+rather than clamped — covered by tests using paths from the real wiki page.
+
+**Back navigation is part of the requirement, not polish.** Following a link
+without a way back is a trap: the user leaves the page the assistant cited and
+cannot return to it. The trail is per viewing session and resets when the viewer
+is opened afresh from a chat message.
+
+**Not wiki-specific**, though FR-WIKI-01..04 will make it the common case: it
+applies to any internal document containing links.
 
 #### Sprint H7 — Setup validation `[S]`
 

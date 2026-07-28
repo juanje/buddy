@@ -8,8 +8,11 @@ import { createFileViewerController, type FileViewerController } from "./file-vi
 
 export function createDefaultFileViewerController(
   worker: Pick<WorkerAPI, "readViewableFile">,
+  rootDir: () => string,
 ): FileViewerController {
   return createFileViewerController({
     readViewableFile: (relPath) => worker.readViewableFile(relPath),
+    // Needed to resolve links written inside a document (FR-CHAT-12).
+    rootDir,
   });
 }

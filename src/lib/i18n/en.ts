@@ -123,6 +123,7 @@ export const en: LocaleStrings = {
   maintenancePausedBody: "I could not organise my memory several times in a row, so I have stopped trying rather than spend your budget on it. Everything we talked about is still saved.",
   notificationTitle: "buddy",
   fileViewerClose: "Close",
+  fileViewerBack: "Back",
   fileViewerLoading: "Loading file…",
   fileViewerError: "Could not read file: {message}",
 };

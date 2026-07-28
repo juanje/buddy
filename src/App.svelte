@@ -51,7 +51,10 @@
 
   controller = createChatController(workerProxy);
   // File content is read by the worker, not by the webview (NFR-SEC-09).
-  fileViewerController = createDefaultFileViewerController(workerProxy);
+  fileViewerController = createDefaultFileViewerController(
+    workerProxy,
+    () => appConfig?.rootDir ?? "",
+  );
 
   let chatView: ChatView | undefined = $state();
   const scroll = createScrollController(() => chatView?.scrollToLatest());

@@ -48,6 +48,12 @@ function isAbsolute(path: string): boolean {
   return path.startsWith("/") || /^[A-Za-z]:[\\/]/.test(path);
 }
 
+/** Directory part of a path relative to the buddy directory. */
+function relativeDirOf(relPath: string): string[] {
+  const segments = splitPath(relPath).filter((s) => s !== "" && s !== ".");
+  return segments.slice(0, -1);
+}
+
 /**
  * Resolve an agent-authored link to a path relative to the buddy directory,
  * or null when it must not be opened.
@@ -55,8 +61,19 @@ function isAbsolute(path: string): boolean {
  * Rejects, in order: external URLs, paths escaping the buddy directory (via
  * `..`, an absolute path, or a `file://` URL), paths outside the four
  * user-facing directories, and file types Buddy cannot render inline.
+ *
+ * `fromRelPath` is the document the link was written in. Links inside a
+ * document are relative to it, not to the buddy root: a page at
+ * `user/wiki/topic/page.md` links to `sibling.md` and `../other/page.md`
+ * (FR-CHAT-12). Resolving those against the root would reject all of them.
+ * Containment is unaffected — segments are collapsed after joining, so `..`
+ * that walks past the root is still a rejection, not a clamp.
  */
-export function resolveViewablePath(rootDir: string, rawHref: string): string | null {
+export function resolveViewablePath(
+  rootDir: string,
+  rawHref: string,
+  fromRelPath?: string,
+): string | null {
   const href = rawHref.trim();
   if (!href || isExternalHref(href)) return null;
 
@@ -72,7 +89,8 @@ export function resolveViewablePath(rootDir: string, rawHref: string): string | 
     if (!containedInRoot) return null;
     relSegments = pathSegments.slice(rootSegments.length);
   } else {
-    relSegments = normalizeSegments(splitPath(stripped));
+    const base = fromRelPath ? relativeDirOf(fromRelPath) : [];
+    relSegments = normalizeSegments([...base, ...splitPath(stripped)]);
   }
 
   if (!relSegments || relSegments.length < 2) return null;

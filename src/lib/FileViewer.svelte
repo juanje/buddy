@@ -15,10 +15,25 @@
   const isMarkdown = $derived(controller.isMarkdown);
   const loading = $derived(controller.loading);
 
+  const canGoBack = $derived(controller.canGoBack);
+
   function onBackdropClick(event: MouseEvent) {
     if (event.target === event.currentTarget) {
       controller.close();
     }
+  }
+
+  /**
+   * Follow links inside the rendered document (FR-CHAT-12). Same delegation the
+   * chat uses; the controller resolves the target relative to the open document
+   * and refuses anything out of bounds.
+   */
+  function onContentClick(event: MouseEvent) {
+    const anchor = (event.target as HTMLElement).closest("a[data-local-path]");
+    if (!anchor) return;
+    event.preventDefault();
+    const href = anchor.getAttribute("data-local-path");
+    if (href) void controller.followLink(href);
   }
 
   function handleKeydown(event: KeyboardEvent) {
@@ -38,6 +53,17 @@
   <div class="backdrop" onclick={onBackdropClick} role="presentation">
     <div class="panel" role="dialog" aria-labelledby="file-viewer-title">
       <header class="header">
+        {#if $canGoBack}
+          <button
+            type="button"
+            class="back"
+            onclick={() => controller.back()}
+            title={$t.fileViewerBack}
+            aria-label={$t.fileViewerBack}
+          >
+            ←
+          </button>
+        {/if}
         <div class="title-wrap">
           <h2 id="file-viewer-title">{$fileName}</h2>
           <p class="path" title={$filePath}>{$filePath}</p>
@@ -47,7 +73,8 @@
         </button>
       </header>
 
-      <div class="body">
+      <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+      <div class="body" onclick={onContentClick}>
         {#if $loading}
           <p class="muted">{$t.fileViewerLoading}</p>
         {:else if $error}
@@ -114,6 +141,17 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+  .back {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-secondary);
+    color: var(--fg);
+    padding: 6px 12px;
+    cursor: pointer;
+    flex-shrink: 0;
+    font-size: 15px;
+    line-height: 1;
   }
   .close {
     border: 1px solid var(--border);

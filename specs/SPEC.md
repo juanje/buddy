@@ -93,6 +93,7 @@ rootDir (git repo — user/agent content only)
 | FR-CHAT-09 | Local file links are marked and routed internally | 2 ✓ |
 | FR-CHAT-10 | Inline file viewer for markdown/text links | 2 ✓ |
 | FR-CHAT-11 | Local links are view-only, internal, and scoped | 3 |
+| FR-CHAT-12 | Navigation inside the inline viewer | 2 |
 
 **FR-CHAT-01 — Streaming message display**
 
@@ -193,6 +194,26 @@ Supersedes the system-opener behavior originally specified in FR-CHAT-09/10.
 - **Rationale:** the agent authors these links, and the agent ingests untrusted web
   content via `fetch_url`. A link is therefore attacker-influenced input, not a
   user intention. Viewing is safe; launching a program is not.
+
+**FR-CHAT-12 — Navigation inside the inline viewer**
+
+- **Given** a document open in the inline viewer contains markdown links
+- **When** the user clicks one
+- **Then** the viewer navigates to that document, applying the same rules as
+  FR-CHAT-11: viewable type, inside the buddy directory, under one of the four
+  user-facing directories
+- **And** the link is resolved **relative to the directory of the document being
+  viewed**, not relative to the buddy root
+- **And** a link that resolves outside those bounds is not followed
+- **And** the user can go back through the documents visited in this viewing
+  session, and the viewer reports where they are
+- **Rationale:** links inside a document are written relative to it — a wiki page
+  at `user/wiki/topic/page.md` links to `sibling.md` and
+  `../other-topic/page.md`. Resolving those against the buddy root would reject
+  every one of them. Without back navigation, following a link is a trap: the
+  user reaches a page with no way to return to the one the assistant cited.
+- **Note:** this is not wiki-specific. It applies to any internal document with
+  links; FR-WIKI-01..04 will simply make it the common case.
 
 ### 3.2 First-Run / Onboarding (FR-SETUP)
 

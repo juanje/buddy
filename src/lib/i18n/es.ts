@@ -116,6 +116,7 @@ export type LocaleStrings = {
   maintenancePausedBody: string;
   notificationTitle: string;
   fileViewerClose: string;
+  fileViewerBack: string;
   fileViewerLoading: string;
   fileViewerError: string;
 };
@@ -243,6 +244,7 @@ export const es: LocaleStrings = {
   maintenancePausedBody: "No he podido organizar mi memoria varias veces seguidas, así que he dejado de intentarlo para no gastar tu presupuesto. Todo lo que hemos hablado sigue guardado.",
   notificationTitle: "buddy",
   fileViewerClose: "Cerrar",
+  fileViewerBack: "Atrás",
   fileViewerLoading: "Cargando archivo…",
   fileViewerError: "No se pudo leer el archivo: {message}",
 };
