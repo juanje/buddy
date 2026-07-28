@@ -256,6 +256,15 @@ export interface FrontendAPI {
   /** Budget threshold crossed (80% warning or 100% exceeded) (FR-COST-03). */
   onBudgetAlert(status: BudgetStatus): void;
   /**
+   * The Pi session finished booting and is accepting prompts (FR-CHAT-13).
+   *
+   * Boot performs a full LLM call — the silent context injection — before the
+   * worker core exists. The frontend is interactive throughout, so it uses this
+   * to decide whether to tell the user anything: nothing when boot is quick,
+   * a notice when it drags. Prompts sent meanwhile are queued, never lost.
+   */
+  onSessionReady(): void;
+  /**
    * Background maintenance was abandoned at a depth after repeated failures
    * (FR-CONSOL-09). Surfaced so the user knows memory is no longer being
    * organized, rather than discovering it much later.

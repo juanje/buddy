@@ -60,6 +60,7 @@ export type LocaleStrings = {
   creatingError: string;
   creatingRetry: string;
   attachTitle: string;
+  sessionPreparing: string;
   dropOverlay: string;
   unsupportedFormat: string;
   toolReading: string;
@@ -192,6 +193,7 @@ export const es: LocaleStrings = {
   creatingError: "No se pudo completar la configuración",
   creatingRetry: "Reintentar",
   attachTitle: "Adjuntar archivo",
+  sessionPreparing: "Preparando la sesión…",
   dropOverlay: "Suelta el archivo aquí",
   unsupportedFormat: "Formato no compatible — exporta a texto (.md o .txt)",
   toolReading: "Leyendo…",

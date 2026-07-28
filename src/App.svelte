@@ -28,7 +28,7 @@
   import { notifyMaintenancePaused } from "./utils/maintenance-notify";
   import { t } from "./lib/i18n";
   import type { AgentEvent, BudgetStatus, DeferredItemView, OAuthUIEvent, SetupConfig } from "../shared/api";
-  import { SHUTDOWN_TIMEOUT_MS } from "../shared/defaults";
+  import { SESSION_PREPARING_NOTICE_MS, SHUTDOWN_TIMEOUT_MS } from "../shared/defaults";
 
   const APP_VERSION = __APP_VERSION__;
 
@@ -44,6 +44,15 @@
   let settingsController = $state<SettingsController | undefined>();
   let fileViewerController = $state<FileViewerController | undefined>();
   let budgetBlocked = $state(false);
+  /**
+   * FR-CHAT-13: shown only when session boot drags. Boot runs a full LLM call
+   * (the silent context injection) before the session accepts prompts — 1–3s on
+   * a commercial provider, measured at 81s against a local model. Anything typed
+   * meanwhile is queued and sent, so this is reassurance, not a gate: a notice
+   * that flashed for two seconds on every start would be noise.
+   */
+  let sessionPreparing = $state(false);
+  let preparingTimer: ReturnType<typeof setTimeout> | undefined;
 
   // The controller is created before the worker connects so the UI renders
   // immediately; prompts are proxied to whatever connection exists.
@@ -146,6 +155,11 @@
               body,
             });
           },
+          onSessionReady() {
+            devLog("session ready");
+            sessionPreparing = false;
+            clearTimeout(preparingTimer);
+          },
           onMaintenancePaused(info) {
             devLog(`maintenance paused at depth ${info.depth}`);
             const strings = get(t);
@@ -185,6 +199,13 @@
         applySetupConfig(setupState.config);
       }
       if (view === "chat") {
+        // FR-CHAT-13: the session boots behind this view. Say nothing unless it
+        // takes long enough that silence would look like a hang.
+        sessionPreparing = false;
+        clearTimeout(preparingTimer);
+        preparingTimer = setTimeout(() => {
+          sessionPreparing = true;
+        }, SESSION_PREPARING_NOTICE_MS);
         deferredItems = await connection.api.getDeferredItems();
         try {
           const usage = await connection.api.getUsage();
@@ -315,6 +336,9 @@
       {#if dragOver}
         <div class="drop-overlay">{$t.dropOverlay}</div>
       {/if}
+      {#if sessionPreparing}
+        <div class="preparing" role="status">{$t.sessionPreparing}</div>
+      {/if}
       <ChatView
         bind:this={chatView}
         {controller}
@@ -385,6 +409,21 @@
     outline: 2px dashed var(--accent);
     outline-offset: -4px;
   }
+  /* FR-CHAT-13: only appears when boot is slow; queued prompts send regardless. */
+  .preparing {
+    position: absolute;
+    top: 0.75rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 5;
+    padding: 0.35rem 0.85rem;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    background: var(--surface-2, #2a2a2e);
+    color: var(--text-muted, #b8b8c0);
+    border: 1px solid var(--border, #3a3a40);
+  }
+
   .drop-overlay {
     position: absolute;
     inset: 0;

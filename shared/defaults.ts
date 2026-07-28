@@ -99,6 +99,16 @@ export const CONSOLIDATION_RETRY_CEILING = 3;
  */
 export const CONSOLIDATION_BACKOFF_BASE_MS = 30 * 60 * 1000;
 
+/**
+ * How long session boot may run before the UI says anything (FR-CHAT-13).
+ *
+ * Boot makes a full LLM call — the silent context injection — before the
+ * session accepts prompts. On a commercial provider that is 1–3s and a notice
+ * would only flicker; against a local model it was measured at 81s, where
+ * silence reads as a hung app. Prompts typed meanwhile are queued either way.
+ */
+export const SESSION_PREPARING_NOTICE_MS = 2_500;
+
 /** Max slug length for fetch_url download filenames (FR-NET-01). */
 export const DOWNLOAD_SLUG_MAX_LEN = 80;
 export const DOWNLOAD_DEFAULT_SLUG = "download";

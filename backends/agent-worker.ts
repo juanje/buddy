@@ -52,6 +52,7 @@ import { ensureConfigDirMode, globalConfigDir } from "./global-config";
 import { bootRefreshIfNeeded } from "./boot-refresh";
 import { pruneSessionArtifacts } from "./session-log-prune";
 import { createUsageTracker, resolveMonthlyBudget, type UsageTracker } from "./usage-tracker";
+import { createPromptQueue } from "./prompt-queue";
 import { readViewableFile } from "./viewable-file";
 
 async function main(): Promise<void> {
@@ -68,6 +69,10 @@ async function main(): Promise<void> {
   let setupState = detectFirstRun(defaultConfigPath());
 
   let core: ReturnType<typeof createWorkerCore> | undefined;
+  // FR-CHAT-13: the UI is interactive before the session is. Prompts sent
+  // during boot are held here rather than reaching `core?.api.prompt(...)`
+  // with `core` undefined, where optional chaining discarded them silently.
+  const promptQueue = createPromptQueue();
   let heartbeat: HeartbeatHandle | undefined;
   // Definite assignment: set right after the channel is created below, and
   // bootSession only runs after that.
@@ -181,6 +186,16 @@ async function main(): Promise<void> {
     core = booted.core;
     startHeartbeatForAb(rootDir);
     ensureUsageTracker().checkAndFireAlerts();
+    // FR-CHAT-13: tell the frontend before flushing, so the "preparing" notice
+    // clears as the queued prompt starts streaming rather than after it ends.
+    try {
+      frontend.onSessionReady();
+    } catch (err) {
+      console.error("[boot] onSessionReady RPC failed:", err);
+    }
+    // Anything the user typed while the context injection was running goes
+    // now, in the order they sent it.
+    await promptQueue.ready((text, promptOptions) => booted.core.api.prompt(text, promptOptions));
   }
 
   const transport = nodeStdioTransport();
@@ -191,7 +206,10 @@ async function main(): Promise<void> {
           throw new Error("Monthly budget reached");
         }
         const augmented = await augmentPromptWithAttachments(text, sessionAllowedPaths, options);
-        await core?.api.prompt(augmented.text, augmented.images ? { images: augmented.images } : undefined);
+        await promptQueue.submit(
+          augmented.text,
+          augmented.images ? { images: augmented.images } : undefined,
+        );
       },
       async abort() {
         await core?.api.abort();

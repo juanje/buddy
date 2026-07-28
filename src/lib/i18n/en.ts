@@ -70,6 +70,7 @@ export const en: LocaleStrings = {
   creatingError: "Setup could not be completed",
   creatingRetry: "Retry",
   attachTitle: "Attach file",
+  sessionPreparing: "Preparing the session…",
   dropOverlay: "Drop file here",
   unsupportedFormat: "Unsupported format — export to text (.md or .txt)",
   toolReading: "Reading…",

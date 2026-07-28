@@ -93,7 +93,9 @@ rootDir (git repo — user/agent content only)
 | FR-CHAT-09 | Local file links are marked and routed internally | 2 ✓ |
 | FR-CHAT-10 | Inline file viewer for markdown/text links | 2 ✓ |
 | FR-CHAT-11 | Local links are view-only, internal, and scoped | 3 |
+| FR-CHAT-13 | Prompts sent during session boot are queued, not dropped | 2 ✓ |
 | FR-CHAT-12 | Navigation inside the inline viewer | 2 |
+| FR-CHAT-13 | Prompts sent during session boot are queued, not dropped | 2 ✓ |
 
 **FR-CHAT-01 — Streaming message display**
 
@@ -214,6 +216,38 @@ Supersedes the system-opener behavior originally specified in FR-CHAT-09/10.
   user reaches a page with no way to return to the one the assistant cited.
 - **Note:** this is not wiki-specific. It applies to any internal document with
   links; FR-WIKI-01..04 will simply make it the common case.
+
+**FR-CHAT-13 — Prompts sent during session boot are queued**
+
+- **Given** the chat window is open and the Pi session is still booting
+- **When** the user sends a message
+- **Then** it is held and delivered, in order, as soon as the session accepts
+  prompts — never discarded
+- **And** if boot exceeds `SESSION_PREPARING_NOTICE_MS`, the UI says the session
+  is being prepared; below that threshold it says nothing
+
+**The defect.** `prompt()` in the worker read `await core?.api.prompt(...)`, and
+`core` does not exist until `bootSession` resolves. Optional chaining made the
+loss silent: the expression evaluates to undefined, the await resolves, and the
+call reports success having done nothing. The frontend rendered the user's
+bubble and waited for a reply nobody had asked for. No error, no log entry.
+
+**Why it stayed hidden.** Session boot performs a full LLM call before the core
+is created — the silent context injection, ~17.7k tokens, whose response is
+discarded by design because its purpose is to seed conversation history. On a
+commercial provider that window is 1–3 seconds. Measured against a local model
+it was **81 seconds**, and a message typed into a fully interactive UI was
+dropped without trace.
+
+**Queueing does not shorten the wait, and is not meant to.** The user's first
+message cannot precede the injection without giving up the guarantee that the
+first answer is informed by the session context. What the queue removes is the
+*loss*; the notice addresses the *wait*.
+
+**Why the notice is conditional.** A banner that flashes for two seconds on
+every start is noise that teaches users to ignore banners. One that appears only
+when something is genuinely slow carries information. It is reassurance, not a
+gate: input stays enabled throughout, because anything typed is now safe.
 
 ### 3.2 First-Run / Onboarding (FR-SETUP)
 
