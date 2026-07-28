@@ -21,7 +21,14 @@ import { execSync } from "node:child_process";
 import { existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import type { AgentEvent } from "../shared/api";
-import { LOCK_MAX_RETRIES, LOCK_RETRY_MS, REFLECT_ARGV_FLAG, REFLECT_SESSIONS_DIR, GIT_COMMIT_PREFIX } from "../shared/defaults";
+import {
+  GIT_COMMIT_PREFIX,
+  LOCK_MAX_RETRIES,
+  LOCK_RETRY_MS,
+  REFLECT_ARGV_FLAG,
+  REFLECT_CHILD_TIMEOUT_MS,
+  REFLECT_SESSIONS_DIR,
+} from "../shared/defaults";
 import { fastModelForProvider } from "../shared/model-catalog";
 import { readPiProvider } from "../shared/pi-settings";
 import { logEvent } from "./app-logger";
@@ -228,6 +235,22 @@ async function main(): Promise<void> {
     console.error("[reflect-child] missing arguments, argv:", process.argv);
     process.exit(1);
   }
+
+  // FR-REFLECT-07: the child is detached and unref'd, so nothing supervises it.
+  // Without this, a stalled provider leaves the process alive long after the
+  // user closed the app — and nobody sends the SIGTERM the handler below waits
+  // for. Unref'd so it never keeps an otherwise-finished child running.
+  const watchdog = setTimeout(() => {
+    logEvent(rootDir, {
+      event: "reflect_error",
+      session: mode === "checkpoint" ? "checkpoint" : sessionId,
+      mode,
+      message: `timed out after ${REFLECT_CHILD_TIMEOUT_MS}ms`,
+    });
+    console.error(`[reflect-child] timed out after ${REFLECT_CHILD_TIMEOUT_MS}ms`);
+    process.exit(1);
+  }, REFLECT_CHILD_TIMEOUT_MS);
+  watchdog.unref();
 
   process.on("SIGTERM", () => {
     try {

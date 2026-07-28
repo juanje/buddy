@@ -42,7 +42,7 @@ import { createWorkerCore } from "./worker-core";
 import { startHeartbeat, type HeartbeatHandle } from "./heartbeat";
 import { globalConfigDir } from "./global-config";
 import { bootRefreshIfNeeded } from "./boot-refresh";
-import { pruneSessionLogs } from "./session-log-prune";
+import { pruneSessionArtifacts } from "./session-log-prune";
 import { createUsageTracker, resolveMonthlyBudget, type UsageTracker } from "./usage-tracker";
 import { readViewableFile } from "./viewable-file";
 
@@ -144,7 +144,7 @@ async function main(): Promise<void> {
     if (core) return;
 
     recoverStaleSession(rootDir, spawnReflectChild);
-    pruneSessionLogs(rootDir);
+    pruneSessionArtifacts(rootDir);
 
     const booted = await bootSession(
       rootDir,

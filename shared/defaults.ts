@@ -56,6 +56,21 @@ export const LOG_ROTATION_THRESHOLD = 28;
 /** Env var set on spawned reflect children to prevent nested recursion. */
 export const REFLECT_CHILD_ENV_KEY = "BUDDY_REFLECT_CHILD";
 export const REFLECT_CHILD_ENV_VALUE = "1";
+/**
+ * Hard ceiling for a reflect child (FR-REFLECT-07). The child is detached and
+ * unref'd, so nothing else supervises it: without this, a stalled provider
+ * leaves a process alive after the user has closed the app. Generous enough for
+ * one LLM call over a full conversation.
+ */
+export const REFLECT_CHILD_TIMEOUT_MS = 5 * 60 * 1000;
+/**
+ * Retention for forked session files in `.buddy/reflect-sessions/`
+ * (NFR-MAINT-02). Each holds a full conversation transcript; they are kept only
+ * as a manual-recovery window for a reflect that failed.
+ */
+export const REFLECT_FORK_RETENTION_DAYS = 7;
+/** How long a git operation may wait for the repo lock (FR-REFLECT-06). */
+export const GIT_LOCK_TIMEOUT_MS = 30_000;
 /** Usage-based consolidation counters (FR-CONSOL-01). */
 export const CONSOLIDATION_STATE_PATH = ".buddy/consolidation-state.json";
 /** Consolidation run journal (FR-CONSOL-06). */

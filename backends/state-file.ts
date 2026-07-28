@@ -74,6 +74,48 @@ function lockPathFor(targetPath: string): string {
   return join(dirname(targetPath), `.${basename(targetPath)}.lock`);
 }
 
+/**
+ * Run `fn` while holding an exclusive cross-process lock on `resourcePath`.
+ *
+ * Async variant: waits without blocking the event loop, so it is safe to hold
+ * across slow operations. Used to serialize git access between the worker, the
+ * consolidation run and the reflect child (FR-REFLECT-06) — `resourcePath` need
+ * not be a file that exists, only a stable name to lock on.
+ */
+export async function withFileLock<T>(
+  resourcePath: string,
+  fn: () => Promise<T>,
+  timeoutMs: number,
+): Promise<T> {
+  const lockPath = lockPathFor(resourcePath);
+  const deadline = Date.now() + timeoutMs;
+
+  mkdirSync(dirname(resourcePath), { recursive: true });
+  for (;;) {
+    try {
+      writeFileSync(lockPath, String(process.pid), { flag: "wx" });
+      break;
+    } catch {
+      if (isLockStale(lockPath)) {
+        try {
+          unlinkSync(lockPath);
+        } catch {
+          // Broken by someone else first; retry.
+        }
+        continue;
+      }
+      if (Date.now() >= deadline) throw new StateFileLockError(resourcePath);
+      await new Promise((resolve) => setTimeout(resolve, LOCK_RETRY_MS));
+    }
+  }
+
+  try {
+    return await fn();
+  } finally {
+    releaseFileLock(lockPath);
+  }
+}
+
 function acquireFileLock(targetPath: string, timeoutMs: number): string {
   const lockPath = lockPathFor(targetPath);
   const deadline = Date.now() + timeoutMs;

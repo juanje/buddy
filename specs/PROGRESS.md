@@ -207,8 +207,8 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 > `reflect-child.ts`, wizard). 15 findings classified into three themes, now
 > sprints H5–H7; H8 absorbs the rest. H5b (session factory) is **cancelled** —
 > replaced by two shared helpers under a reworded NFR-SEC-14.
-> **H5 done.** 480 unit + 213 BDD green. **Next: H6** (reflect reliability —
-> git race, child timeout, fork pruning). FR-WIKI resumes after H8.
+> **H5 and H6 done.** 487 unit + 213 BDD green. **Next: H7** (setup validation).
+> FR-WIKI resumes after H8.
 
 ### Sprint: Hardening (v0.1.1) — started 2026-07-27
 
@@ -559,15 +559,40 @@ outranks under-counting spend, which is why this goes first.
 that requires reading the existing format too. `auth.json` must keep its shape,
 since the Pi SDK reads it natively.
 
-#### Sprint H6 — Reflect reliability `[M]`
+#### Sprint H6 — Reflect reliability `[M]` — DONE (2026-07-27)
 
 Goal: the path that flushes memory at shutdown cannot lose it or leak processes.
 
 | ID | Requirement | Status | Commit |
 |----|-------------|--------|--------|
-| FR-REFLECT-06 | No git index race between child and worker | todo | |
-| FR-REFLECT-07 | Reflect child bounded by a timeout | todo | |
-| NFR-MAINT-02 | Prune `.buddy/reflect-sessions/` | todo | |
+| FR-REFLECT-06 | No git index race between child and worker | done | (this sprint) |
+| FR-REFLECT-07 | Reflect child bounded by a timeout | done | (this sprint) |
+| NFR-MAINT-02 | Prune `.buddy/reflect-sessions/` | done | (this sprint) |
+
+**Tests at H6 close:** 487 unit + 213 BDD green, typecheck and vite build clean.
+
+`commitAll` now holds an exclusive cross-process lock (the async variant of the
+H5 primitive) around the whole stage-and-commit, since staging is global to the
+repo. Verified by reintroducing the unlocked version: children die with
+`fatal: Unable to create '.git/index.lock': File exists` — which in the reflect
+child meant a non-zero exit and the loss of the session summary.
+
+**The first placement of that lock was wrong, and the existing tests caught it.**
+Putting it under `.buddy/` inside the repo made correctness depend on `.gitignore`
+covering `.buddy/` — which the app cannot guarantee, because FR-SETUP-10 adopts
+an existing directory without modifying its content. `git.test.ts` failed with
+commits named `update .buddy/.git.lock`: `git add -A` was staging the very lock
+that guarded it. The lock now lives in `~/.buddy/locks/`, keyed by a hash of
+rootDir, where it cannot be committed by any repo. The concurrency test
+deliberately runs without a `.gitignore` to keep that property honest.
+
+**FR-REFLECT-07** is a watchdog in the child's `main()`, `unref`'d so it never
+keeps a finished child alive. Five minutes: generous for one LLM call over a
+full conversation, and far short of "forever", which is what it replaced.
+
+**NFR-MAINT-02** extends the existing housekeeping pass rather than adding a
+second one — `pruneSessionArtifacts` now sweeps both `.buddy/logs/` and
+`.buddy/reflect-sessions/`, and both boot and heartbeat call it.
 
 FR-REFLECT-06 is the one that matters: a collision on `.git/index.lock` today
 loses the entire session summary, silently. NFR-MAINT-02 is both disk growth and
