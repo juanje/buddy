@@ -412,16 +412,22 @@
   /* FR-CHAT-13: only appears when boot is slow; queued prompts send regardless. */
   .preparing {
     position: absolute;
-    top: 0.75rem;
+    top: 1.25rem;
     left: 50%;
     transform: translateX(-50%);
     z-index: 5;
-    padding: 0.35rem 0.85rem;
-    border-radius: 999px;
-    font-size: 0.85rem;
+    max-width: min(34rem, calc(100% - 3rem));
+    padding: 0.9rem 1.25rem;
+    border-radius: 0.75rem;
+    /* Sized to be read, not glanced past: the pill it replaced was mistaken
+       for a spinner, and the user waited for it to disappear before typing. */
+    font-size: 1rem;
+    line-height: 1.45;
+    text-align: center;
     background: var(--surface-2, #2a2a2e);
-    color: var(--text-muted, #b8b8c0);
+    color: var(--text, #e8e8ec);
     border: 1px solid var(--border, #3a3a40);
+    box-shadow: 0 6px 20px rgb(0 0 0 / 0.35);
   }
 
   .drop-overlay {

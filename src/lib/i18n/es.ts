@@ -193,7 +193,7 @@ export const es: LocaleStrings = {
   creatingError: "No se pudo completar la configuración",
   creatingRetry: "Reintentar",
   attachTitle: "Adjuntar archivo",
-  sessionPreparing: "Preparando la sesión…",
+  sessionPreparing: "Preparando la sesión… Puedes escribir: tu mensaje se enviará solo. La primera respuesta puede tardar un poco.",
   dropOverlay: "Suelta el archivo aquí",
   unsupportedFormat: "Formato no compatible — exporta a texto (.md o .txt)",
   toolReading: "Leyendo…",

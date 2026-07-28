@@ -911,6 +911,7 @@ instruction cannot govern behaviour that no model controls.
 | FR-HEBB-03 | Exclusions | 2 ✓ |
 | FR-HEBB-04 | Lazy commit | 2 ✓ |
 | FR-HEBB-05 | Counters are created on first read | 2 ✓ |
+| FR-HEBB-06 | Counters survive a whole-file rewrite | 2 ✓ |
 
 **FR-HEBB-01 — Intercept reads**
 
@@ -960,6 +961,31 @@ is rewritten that nobody opens, and no install needs a migration step.
 
 **Starting at 1, not 0:** the read that creates the fields is a real access and
 counts as one.
+
+**FR-HEBB-06 — Counters survive a whole-file rewrite**
+
+- **Given** a brain file carrying `access_count` / `last_accessed`
+- **When** a tool writes the whole file and reconstructs its frontmatter
+- **Then** those two fields are restored to the values they held before the
+  write; every other key and the body are kept exactly as written
+- **And** a file created during the turn, or one deliberately rewritten without
+  frontmatter, is left alone
+
+**Why a rule was not enough.** `AGENTS.md` already told the agent "never edit
+these fields on existing files". On 2026-07-29 a local model failed eight
+consecutive `edit` calls, gave up, and rewrote `user/inbox.md` whole; the
+frontmatter came back from memory with `access_count: 7` reduced to `1`. Seven
+sessions of signal gone, in a diff that reads as a plausible metadata bump.
+
+The instruction did not fail — it did not apply. The model was not editing the
+fields; it was regenerating a file that happens to contain them. No wording
+about editing fields covers that, which is why this is enforcement rather than
+guidance.
+
+**Capture before, restore after.** Reading the file after the write would read
+the damage. A failed tool call restores nothing, because it changed nothing and
+writing a remembered value over the current file would be the guard causing the
+corruption it exists to prevent.
 
 **FR-HEBB-04 — Lazy commit**
 

@@ -7,6 +7,7 @@ import { logEvent } from "./app-logger";
 import { markReflectPending } from "./crash-recovery";
 import { commitAll } from "./git";
 import { createHebbianTracker, type HebbianTracker } from "./hebbian";
+import { createHebbianGuard, type HebbianGuard } from "./hebbian-guard";
 import { spawnReflectChild, type SpawnReflectFn, type SpawnReflectOptions } from "./reflect-spawn";
 import { SessionTracker } from "./session-tracker";
 
@@ -25,6 +26,8 @@ export interface SessionLifecycleOptions {
 export class SessionLifecycle {
   readonly tracker: SessionTracker;
   readonly hebbianTracker: HebbianTracker;
+  /** FR-HEBB-06: keeps a whole-file rewrite from resetting the counters. */
+  private readonly hebbianGuard: HebbianGuard;
   private readonly rootDir: string;
   private sessionFile: string | undefined;
   private readonly spawnReflect: SpawnReflectFn;
@@ -38,6 +41,7 @@ export class SessionLifecycle {
     this.sessionFile = options.sessionFile;
     this.tracker = new SessionTracker(options.sessionId);
     this.hebbianTracker = options.hebbianTracker ?? createHebbianTracker(options.rootDir);
+    this.hebbianGuard = createHebbianGuard(options.rootDir);
     this.spawnReflect = options.spawnReflect ?? spawnReflectChild;
     this.onSessionComplete = options.onSessionComplete;
     this.isBudgetNearLimit = options.isBudgetNearLimit;
@@ -58,10 +62,22 @@ export class SessionLifecycle {
   }
 
   private async handleEventInner(event: AgentEvent): Promise<void> {
+    // FR-HEBB-06: snapshot the worker-owned counters before the tool runs, so
+    // a whole-file rewrite that reconstructs frontmatter from memory can be
+    // put back. Capturing after the fact would read the damage.
+    if (event.type === "tool_execution_start") {
+      const info = extractToolInfo(event);
+      if ((info?.name === "write" || info?.name === "edit") && info.path) {
+        this.hebbianGuard.capture(info.path);
+      }
+    }
     if (event.type === "tool_execution_end") {
       const info = extractToolInfo(event);
       const name = info?.name;
       if (name === "write" || name === "edit" || name === "fetch_url") this.turnDirty = true;
+      if ((name === "write" || name === "edit") && info?.path && event.isError !== true) {
+        this.hebbianGuard.restore(info.path);
+      }
       if (name === "read" && info?.path && event.isError !== true) {
         this.hebbianTracker.trackAccess(info.path);
       }
