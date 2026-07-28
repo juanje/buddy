@@ -3,7 +3,6 @@
 import {
   createAgentSession,
   DefaultResourceLoader,
-  getAgentDir,
   SessionManager,
   type ModelRuntime,
 } from "@earendil-works/pi-coding-agent";
@@ -46,7 +45,7 @@ import { createPermissionGate, type PermissionRequest } from "./permissions";
 import { assembleMaintenancePrompt } from "./prompt";
 import { appendDailyLog, updateLogsIndexEntry } from "./reflect";
 import { defaultConfigDir } from "./allowed-paths";
-import { globalConfigDir } from "./global-config";
+import { buddyAgentDir, globalConfigDir } from "./global-config";
 import { recordSessionUsage } from "./usage-tracker";
 import { buildConsolidationTools, consolidationToolNames } from "./consolidation-tools";
 import { buildSkillTools, skillToolNames } from "./skill-tools";
@@ -194,7 +193,7 @@ async function openRealMaintenanceSession(config: {
   const systemPrompt = assembleMaintenancePrompt(rootDir);
   const resourceLoader = new DefaultResourceLoader({
     cwd: rootDir,
-    agentDir: getAgentDir(),
+    agentDir: buddyAgentDir(), // NFR-SEC-19
     systemPromptOverride: () => systemPrompt,
   });
   await resourceLoader.reload();

@@ -23,7 +23,6 @@ import { ModelRuntime } from "@earendil-works/pi-coding-agent";
 import {
   createAgentSession,
   DefaultResourceLoader,
-  getAgentDir,
   SessionManager,
 } from "@earendil-works/pi-coding-agent";
 
@@ -37,7 +36,7 @@ import { alignHttpDispatcherWithPi } from "../backends/pi-http-dispatcher";
 import { assembleMaintenancePrompt } from "../backends/prompt";
 import { defaultAuthPath } from "../backends/provider-auth";
 import { bootRefreshIfNeeded } from "../backends/boot-refresh";
-import { globalConfigDir } from "../backends/global-config";
+import { buddyAgentDir, globalConfigDir } from "../backends/global-config";
 import { AGENT_TOOLS, EXCLUDED_TOOLS } from "../shared/defaults";
 import {
   loadConsolidationLog,
@@ -373,7 +372,7 @@ async function main(): Promise<void> {
 
         const rl = new DefaultResourceLoader({
           cwd: rd,
-          agentDir: getAgentDir(),
+          agentDir: buddyAgentDir(), // NFR-SEC-19
           systemPromptOverride: () => sysPrompt,
         });
         await rl.reload();

@@ -3,7 +3,6 @@
 import {
   createAgentSession,
   DefaultResourceLoader,
-  getAgentDir,
   ModelRuntime,
   SessionManager,
 } from "@earendil-works/pi-coding-agent";
@@ -21,7 +20,7 @@ import type { AllowedEntry } from "./allowed-paths";
 import { extractPdfText } from "./pdf-extract";
 import { assembleSessionContext, assembleSystemPrompt } from "./prompt";
 import { injectSessionContext } from "./context-injection";
-import { globalConfigDir } from "./global-config";
+import { buddyAgentDir, globalConfigDir } from "./global-config";
 import { buildSkillTools, skillToolNames } from "./skill-tools";
 import { buildFetchTools, fetchToolNames } from "./fetch-url";
 import { buildFileTools, fileToolNames } from "./file-tools";
@@ -139,7 +138,7 @@ export async function bootSession(
   const sessionContext = assembleSessionContext(rootDir);
   const resourceLoader = new DefaultResourceLoader({
     cwd: rootDir,
-    agentDir: getAgentDir(),
+    agentDir: buddyAgentDir(), // NFR-SEC-19
     systemPromptOverride: () => prompt,
   });
   await resourceLoader.reload();

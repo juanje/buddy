@@ -207,8 +207,8 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 > `reflect-child.ts`, wizard). 15 findings classified into three themes, now
 > sprints H5–H7; H8 absorbs the rest. H5b (session factory) is **cancelled** —
 > replaced by two shared helpers under a reworded NFR-SEC-14.
-> **H5 and H6 done.** 487 unit + 213 BDD green. **Next: H7** (setup validation).
-> FR-WIKI resumes after H8.
+> **H5, H6 and H6b done.** 493 unit + 213 BDD green. **Next: H7** (setup
+> validation). FR-WIKI resumes after H8.
 
 ### Sprint: Hardening (v0.1.1) — started 2026-07-27
 
@@ -601,6 +601,44 @@ nothing has ever deleted one.
 
 **Ship this before the next public release.** Silent memory loss is the failure
 this product can least afford.
+
+#### Sprint H6b — Pi CLI isolation `[S]` — DONE (2026-07-27)
+
+Unplanned. Reported from a live instance while testing v0.1.4.
+
+| ID | Requirement | Status | Commit |
+|----|-------------|--------|--------|
+| NFR-SEC-19 | Buddy uses its own agent directory, never `~/.pi/agent` | done | (this sprint) |
+
+**Tests at H6b close:** 493 unit + 213 BDD green, typecheck and vite build clean.
+
+**What happened.** The user asked Buddy to search a wiki; it announced it would
+use `wiki-kb` — a skill installed globally for the Pi CLI. All three session
+creators passed `agentDir: getAgentDir()`, which the SDK resolves to
+`~/.pi/agent`.
+
+**NFR-AUTH-ISO isolated the credentials and nothing else.** `agentDir` also
+governs skills, `settings.json`, `tools/`, `extensions/`, `prompts/`, the
+project trust store and `models.json`. Every Buddy session was inheriting
+whatever the user had installed for a different tool.
+
+**Three layers of failure, in order:** the skill is advertised to the model; the
+model reads it from `~/.pi/`, which raises a Zone 3 permission prompt for a file
+outside the workspace; the skill body then calls for bash, which Buddy excludes.
+The middle step is the worst — it trains the user to approve out-of-workspace
+access for reasons the product itself invented, right after H1–H4b spent the
+sprint tightening exactly that.
+
+**Token cost was the smaller part.** `formatSkillsForPrompt` injects only name,
+description and path — a few hundred tokens, not the ~35 KB of SKILL.md bodies.
+Worth fixing, but the functional break and the permission-prompt pollution
+matter more.
+
+Verified before implementing: with `~/.pi/agent` the loader returns three
+skills; with an empty buddy-owned directory it returns none, with no
+diagnostics and an empty prompt fragment. A guard test asserts no file in
+`backends/` or `scripts/` calls `getAgentDir()`, comment text excluded — checked
+by reintroducing the call and watching it fail.
 
 #### Sprint H7 — Setup validation `[S]`
 
