@@ -1262,10 +1262,22 @@ Design decisions:
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-WIKI-01 | Wiki-style KB for user's personal knowledge | 2 |
-| FR-WIKI-02 | Ingest documents into wiki | 2 |
-| FR-WIKI-03 | Cross-reference and backlinks | 2 |
-| FR-WIKI-04 | Search and retrieve from wiki | 2 |
+| FR-WIKI-01 | Wiki-style KB for user's personal knowledge | post-MVP |
+| FR-WIKI-02 | Ingest documents into wiki | post-MVP |
+| FR-WIKI-03 | Cross-reference and backlinks | post-MVP |
+| FR-WIKI-04 | Search and retrieve from wiki | post-MVP |
+
+**Scheduling (2026-07-28).** Last, deliberately — after every open bug and after
+core functionality and UX are finished. `docs/app-design-principles.md` has
+always placed wiki ingest under *Explicitly NOT in v1*; the phase column said
+"2" and PROGRESS.md said "next", so all three are now aligned on the
+principles' answer.
+
+The reasoning is a scope test, not a priority guess: **Buddy without the wiki is
+still Buddy.** It captures, remembers, organizes and reminds — its reason to
+exist is intact. The wiki adds real value on top of a product that already
+works. Anything that fails that test is core; this passes it, so it waits, and
+gets designed properly rather than squeezed in beside unfinished basics.
 
 **FR-WIKI-01 — User personal KB**
 
@@ -1630,6 +1642,56 @@ points into `~/.pi/agent/` too, making writes possible there as well (not
 observed in probing, but the store is constructed against that path). Passing
 `modelsPath` explicitly closes the leak and is the same change FR-PROVIDER-01
 needs anyway.
+
+**Evaluating a local model before building any of this (2026-07-28)**
+
+The plumbing can be exercised by hand today, with no code changes, on v0.1.7 or
+later. Earlier versions resolve `modelsPath` into `~/.pi/agent/`, so the file
+would land in the user's Pi CLI configuration instead (NFR-SEC-19).
+
+Verified end to end — `getProviders`, `getAvailable`, `listModelsForProvider`
+and `resolveSessionModel` all resolve the model:
+
+1. Write `~/.buddy/models.json`. **The provider id must be literally `custom`**,
+   because `toPiProviderId("custom")` returns `"custom"` and that is what makes
+   Buddy's existing provider mapping line up.
+
+   ```json
+   {"providers":{"custom":{
+     "name":"Local","baseUrl":"http://127.0.0.1:8000/v1","api":"openai-completions",
+     "apiKey":"local",
+     "compat":{"supportsDeveloperRole":false,"supportsReasoningEffort":false,
+               "supportsUsageInStreaming":false,"maxTokensField":"max_tokens",
+               "supportsStrictMode":false,"supportsStore":false},
+     "models":[{"id":"MODEL","name":"Local","contextWindow":32768,"maxTokens":8192}]}}}
+   ```
+
+2. Set `<rootDir>/.pi/settings.json` to `{"defaultProvider":"custom",
+   "defaultModel":"MODEL"}` and the matching `provider`/`model` in
+   `~/.buddy/config.json`.
+3. Start the app and **do not open Settings** — changing the model there calls
+   `writePiSettings` and overwrites step 2. This is the fragile part, and it is
+   the manual procedure's only real trap.
+
+**What the run has to answer is not "does it reply".** Decision 6 in
+`docs/app-design-principles.md` gates local models on whether they *reliably
+follow buddy's memory procedures*, so the evaluation is:
+
+| Check | What it reveals |
+|---|---|
+| End a session, read `logs/YYYY-MM-DD.md` | Does reflect produce the structured block, or prose? |
+| Force a depth-1 consolidation | Is `summary`/`created` frontmatter preserved (NFR-FORMAT-01)? |
+| Mention a task and a decision | Is routing to `user/` vs `agent_brain/` correct? |
+| Ask for something needing a file | Are the tools used, or is bash hallucinated? |
+
+**The consolidation check is the one that decides.** The others fail loudly and
+recoverably; a bad consolidation does not fail at all — it corrupts, and
+malformed frontmatter written once a week is discovered a month later. It is
+also the longest prompt with the most format constraints, so it is where a
+smaller model breaks first.
+
+Use a large local model (27B+). A 7B will fail these and the result says nothing
+about the approach.
 
 **FR-PROVIDER-02 — Model selection without a catalog**
 

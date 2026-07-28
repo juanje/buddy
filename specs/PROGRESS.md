@@ -209,7 +209,20 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 > replaced by two shared helpers under a reworded NFR-SEC-14.
 > **H5–H8 done** (including H6b and H6c). **598 unit + 214 BDD green**,
 > typecheck and vite build clean. The hardening series is complete; H6b, H6c,
-> H7 and H8 are committed and unreleased. **Next: FR-WIKI.**
+> H7 and H8 are committed and unreleased.
+>
+> **FR-WIKI is not next, and never was (corrected 2026-07-28).** This file had
+> said "Next: FR-WIKI" while `docs/app-design-principles.md` — which governs the
+> spec — lists wiki ingest under *Explicitly NOT in v1*. The plan and the
+> governing document disagreed, which is the same failure mode that produced the
+> custom-provider mess. The principles are right: **the wiki is a power feature,
+> not core.** Buddy without it is still Buddy — it captures, remembers,
+> organizes and reminds, which is its reason to exist. The wiki adds a lot of
+> value on top of a product that already works without it.
+>
+> **What comes before it:** remaining bugs, and finishing the core functionality
+> and UX. FR-WIKI is deliberately last, so it can be designed properly rather
+> than squeezed in beside unfinished basics.
 >
 > **Custom provider withdrawn (2026-07-28).** Found while checking the self-docs
 > against reality. See below — the entry point is gone from the wizard and the
