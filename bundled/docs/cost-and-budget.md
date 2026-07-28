@@ -17,6 +17,8 @@ Open **Settings** (gear icon or Cmd/Ctrl+,) → the **Usage** section shows:
 - **This month:** total across all sessions and background work, against your budget.
 - A progress bar showing how close you are to your budget.
 
+**One total, all providers together.** If you switch between Anthropic, OpenAI and Google, Buddy adds everything into a single figure. That is deliberate: the question worth answering is "what is this app costing me", and answering it per provider would send you to three billing dashboards to add them up yourself. Each provider's console is still where you reconcile an actual invoice — this number is Buddy's own running total of what it spent on your behalf.
+
 ## Monthly budget
 
 - A default budget ($10/month) protects you from unexpected spending.

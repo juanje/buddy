@@ -954,6 +954,47 @@ Fork bomb defense:
 | FR-COST-03 | Budget alert and hard limit | 2 ✓ |
 | FR-COST-04 | Memory depth presets (maintenance frequency) | 3+ |
 | FR-COST-05 | Budget gate aborts an in-flight cascade | 2 |
+| ~~FR-COST-06~~ | ~~Usage shown in tokens and messages~~ | — rejected |
+
+**Spend is tracked globally, never per provider (decision, 2026-07-28)**
+
+`usage.json` records `{ months: { "YYYY-MM": { totalCost, totalTokens,
+messageCount } } }`. There is no provider dimension and there should not be one.
+The question a user actually asks is "what is this app costing me", and
+answering it per provider would push them back to adding up three dashboards —
+which is the work the Usage panel exists to remove. Each provider's own console
+remains the place to reconcile a bill; Buddy's job is the total.
+
+This settles the question FR-PROVIDER raised. A local model (Ollama, LM Studio)
+carries a `cost` of zero, so it contributes nothing to the monthly total and
+can never move the cap. That is correct and deliberate: running a model on your
+own machine costs no API money, and a cap denominated in dollars must not be
+consumed by it.
+
+**FR-COST-06 — rejected (2026-07-28)**
+
+Proposed: show token and message counts beside the currency figures, so that
+heavy zero-cost usage (a local model) would be distinguishable from no usage.
+Rejected on the same day it was written, and the reasoning is worth keeping
+because the mistake is easy to repeat.
+
+The argument for it was that `$0.00 / $10.00` after a day of work "looks
+broken". It does not. It is the accurate answer, and for a user paying nothing
+it is the *good* answer — the panel exists to tell them what they will be
+charged, and the honest reply is "nothing". Token counts answer a different
+question, one that interests whoever builds the app and not the person using
+it. Buddy's user is someone who wants to know whether the bill at the end of
+the month will be a surprise; a second number they cannot act on is noise
+competing with the one that matters.
+
+There is also no audience for it. Configuring a local endpoint is inherently a
+technical act, and someone who has done it can read `$0.00` without help.
+
+**The general rule this establishes:** the Usage panel answers "what will I be
+charged". Anything that does not serve that question does not belong in it,
+however cheap it is to render and however available the data already is. The
+data being one line away from display is an argument about cost, not about
+whether it should be there.
 
 **FR-COST-01 — removed**
 
