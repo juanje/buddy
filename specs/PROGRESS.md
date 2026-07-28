@@ -257,6 +257,25 @@ cannot do; FR-PROVIDER-01..03 written, with `baseUrl` persistence as the first
 open question. Backend capability (validation, probe, storage) kept — it is
 half of the future feature and is unit-tested.
 
+**Research done 2026-07-28 (Pi source + probing the bundled SDK).** The design
+question is answered and written into FR-PROVIDER-01: `baseUrl` goes in a
+`models.json`, and `modelsPath` is a first-class `ModelRuntime.create()` option,
+so the file lives at `~/.buddy/models.json` and never touches `agentDir`. The
+feared conflict with NFR-SEC-19 does not exist.
+
+**The research turned up a live defect instead.** `createBuddyModelRuntime()`
+omits `modelsPath`, so the SDK defaults it to `~/.pi/agent/models.json` — the
+Pi CLI's. Probed on this machine: Buddy reports the user's personal `ollama` and
+`omlx` providers among its own. **H6b is incomplete and v0.1.6 ships with it.**
+
+The lesson is in how H6b was scoped. It was framed as "pass Buddy's agentDir to
+`createAgentSession`", and it did that correctly. But `getAgentDir()` is the
+SDK's default for *several* paths, and `ModelRuntime.create` reaches it by its
+own route. The requirement asked which directory we pass; it should have asked
+which directories the SDK can still reach on its own. NFR-SEC-19 has been
+reworded to the second form. Every SDK entry point with a path defaulting to
+`getAgentDir()` now needs auditing, not just the one we knew about.
+
 **Also recorded, latent:** the Settings provider dropdown is derived from the
 model list. A provider that is authenticated but contributes no models has no
 `<option>`, so nothing is `selected` and the browser shows the first entry —

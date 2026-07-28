@@ -1522,12 +1522,73 @@ that do not exist yet, so it is scoped as a feature and not a patch.
 - **And** the destination is validated first (NFR-SEC-18), which already allows loopback and LAN precisely for this case
 - **And** the entry point exists in both the setup wizard and Settings → Add provider, which must not disagree about which providers exist
 
-**Persistence is the open design question.** The SDK reads `baseUrl` from a
-`models.json` under `agentDir`, which NFR-SEC-19 deliberately points at an empty
-`~/.buddy/agent/`. Writing a Buddy-managed `models.json` there is the likely
-answer, but it needs checking against the SDK rather than assuming: an
-endpoint that is configured but silently unused is exactly the failure this
-requirement exists to end.
+**Persistence — resolved 2026-07-28 by reading the Pi source and probing the
+bundled v0.80.10 SDK.** `baseUrl` lives in a `models.json`, under
+`providers.<id>.baseUrl`. Crucially, **that file does not have to be inside
+`agentDir`**: `modelsPath` is a first-class option of `ModelRuntime.create()`
+(`model-runtime.d.ts:7`, present in the bundled version), so Buddy writes
+`~/.buddy/models.json` — a sibling of `auth.json`, outside the deliberately
+empty `~/.buddy/agent/`. The conflict with NFR-SEC-19 disappears rather than
+needing to be managed.
+
+```jsonc
+// ~/.buddy/models.json
+{
+  "providers": {
+    "ollama-local": {                                 // never a built-in id
+      "name": "Ollama (local)",
+      "baseUrl": "http://127.0.0.1:11434/v1",         // the /v1 is required
+      "api": "openai-completions",
+      "apiKey": "ollama",                             // placeholder; see below
+      "compat": {
+        "supportsDeveloperRole": false, "supportsReasoningEffort": false,
+        "supportsUsageInStreaming": false, "maxTokensField": "max_tokens",
+        "supportsStrictMode": false, "supportsStore": false
+      },
+      "models": [{ "id": "qwen2.5:7b", "contextWindow": 32768, "maxTokens": 8192 }]
+    }
+  }
+}
+```
+
+Constraints established, each verified against the bundled SDK rather than the
+docs (the docs disagree in three places and the code was right each time):
+
+- **A keyless endpoint still needs a credential.** With none, the model loads
+  but `getAvailable()` filters the provider out and returns `[]` — a silent
+  empty dropdown. The fix is a literal placeholder `apiKey` in `models.json`,
+  **not** a fabricated entry in `auth.json`: Buddy's credential store must not
+  contain invented secrets. A real key, when the user has one, goes to
+  `auth.json` as today and takes precedence.
+- **`getAvailable()` makes no network request** for a custom provider; it is
+  pure local config. An unreachable endpoint is therefore invisible to it, which
+  is precisely why FR-PROVIDER-03 needs Buddy's own probe.
+- **The provider id must not collide with a built-in.** Reusing `openai` merges
+  instead of replacing and re-attaches the remote-catalog network refresh.
+- **Omitted `cost` defaults to zero via `models.json`** (so local models
+  accumulate no spend — arguably right, but it means they never approach the
+  monthly cap). The same omission via the `registerProvider()` API instead
+  **throws** in `calculateCost`. This is one reason to prefer the file.
+- **`registerProvider()` exists and is public**, but fills no defaults and does
+  not survive a restart. Use `models.json` as the source of truth.
+- **Reload is version-dependent.** On the bundled 0.80.10, `refresh()` does not
+  re-read `models.json`; `reloadConfig()` must be called after writing. That
+  method is removed in 0.82.x, where `refresh()` reloads. Feature-detect.
+- **`runtime.getError()` must be surfaced.** A malformed provider is dropped
+  silently and never appears in `getProviders()`.
+
+**Prerequisite — NFR-SEC-19 is not fully satisfied (found during this
+research).** `createBuddyModelRuntime()` calls `ModelRuntime.create({ authPath })`
+without `modelsPath`, so the SDK falls back to
+`join(getAgentDir(), "models.json")` — the **Pi CLI's** `~/.pi/agent/models.json`.
+Verified empirically on the maintainer's machine: Buddy reports the user's
+personal `ollama` and `omlx` providers among its own. H6b fixed the `agentDir`
+passed to `createAgentSession` and missed this second, independent path to the
+same directory. `modelsStorePath` defaults to `dirname(modelsPath)` and so
+points into `~/.pi/agent/` too, making writes possible there as well (not
+observed in probing, but the store is constructed against that path). Passing
+`modelsPath` explicitly closes the leak and is the same change FR-PROVIDER-01
+needs anyway.
 
 **FR-PROVIDER-02 — Model selection without a catalog**
 
@@ -1580,7 +1641,7 @@ requirement exists to end.
 | NFR-SEC-16 | Containment has one worker-side authority, `backends/containment.ts` (`isContained`, `containedRelPath`), and every enforcement point calls it. `shared/viewable-path.ts` remains separate because it must be browser-safe, and its verdict is explicitly presentational: it decides the *shape* of a link, never whether bytes may be read. Symlink resolution (NFR-SEC-15) lives in the authority and nowhere else. **Why this is not cosmetic:** the rule was implemented four times, and the fourth was wrong — `relocate_brain_file` tested `startsWith("agent_brain/")` on the raw argument, which `agent_brain/../.pi/settings.json` satisfies, letting the consolidation session `git mv` the model configuration that NFR-SEC-06 forbids the agent to write. A containment rule written four times is a containment rule that disagrees with itself. |
 | NFR-SEC-17 | Files and directories under `~/.buddy/` are created with restrictive permissions from the outset, not widened and then narrowed. `auth.json` is created `0600` rather than written at the umask default and `chmod`-ed afterwards, and the directory itself is not world-readable — it also holds `config.json`, `usage.json` and `allowed-paths.json`, the last of which reveals which directories the user has granted access to. |
 | NFR-SEC-18 | A custom provider's `baseUrl` is validated before an API key is sent to it. The URL must parse, must be `http://` or `https://`, and must not be — nor resolve to — a cloud metadata endpoint (`169.254.0.0/16`, `metadata.google.internal` and friends), the unspecified address, multicast or reserved space. **Amended during H8.** The original text said "the same destination rules as `fetch_url` (NFR-SEC-12)", which refuses loopback and private addresses. That is right for `fetch_url`, whose URL is chosen by the agent under the influence of pages it has already fetched, and wrong here: this URL is typed by the user into a field that exists so they can point Buddy at Ollama, LM Studio or llama.cpp, and `http://localhost:11434/v1` is the most common correct value. Applying the SSRF rules verbatim refused the only reason the custom provider exists — the BDD scenario for it failed on exactly that string. Loopback and LAN addresses are therefore allowed; what stays refused is what no local model server is ever behind and where an `Authorization` header does real damage. |
-| NFR-SEC-19 | Buddy sessions use Buddy's own agent directory (`~/.buddy/agent/`), never the Pi CLI's `~/.pi/agent/`. No production code calls the SDK's `getAgentDir()`. **Extends NFR-SEC-07 from credentials to configuration.** `agentDir` governs far more than auth: skills, `settings.json`, `tools/`, `extensions/`, `prompts/`, the project trust store and `models.json`. Passing the global directory meant only credentials were isolated and the user's entire Pi CLI setup leaked into every Buddy session. |
+| NFR-SEC-19 | Buddy sessions use Buddy's own agent directory (`~/.buddy/agent/`), never the Pi CLI's `~/.pi/agent/`. No production code calls the SDK's `getAgentDir()`, **and no production code lets the SDK call it on Buddy's behalf** — every SDK entry point that defaults a path to `getAgentDir()` must be passed an explicit Buddy path. **Amended 2026-07-28: not currently satisfied.** `createBuddyModelRuntime()` omits `modelsPath`, so `ModelRuntime.create` defaults it to `join(getAgentDir(), "models.json")` and reads the user's Pi CLI model configuration; `modelsStorePath` then defaults beside it, inside `~/.pi/agent/`. Confirmed empirically. H6b fixed the `agentDir` argument to `createAgentSession` and missed this second, independent route to the same directory — the requirement was written as "which directory do we pass" when it needed to be "which directories can the SDK reach". Fix tracked with FR-PROVIDER-01. **Extends NFR-SEC-07 from credentials to configuration.** `agentDir` governs far more than auth: skills, `settings.json`, `tools/`, `extensions/`, `prompts/`, the project trust store and `models.json`. Passing the global directory meant only credentials were isolated and the user's entire Pi CLI setup leaked into every Buddy session. |
 
 ### 4.3 Reliability
 
