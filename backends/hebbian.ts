@@ -40,14 +40,34 @@ function isExcluded(relPath: string): boolean {
   return false;
 }
 
-function updateAccessFrontmatter(content: string, today: string): string | null {
+/**
+ * Record one access, creating the tracking fields when absent (FR-HEBB-05).
+ *
+ * **Why creating them matters.** This used to `return null` for any file
+ * without `access_count`, while `consolidation.md` tells the model it must
+ * "never write access_count or last_accessed fields — the worker updates those
+ * automatically". Between the two rules nobody created them: a concept the
+ * agent distilled was born without the fields and could never acquire them, so
+ * it scored zero for ever and every consolidation demoted it. Promotion could
+ * only favour files that arrived carrying a history from somewhere else, and on
+ * a fresh install — where nothing has the fields — the layer did nothing at all.
+ *
+ * Bootstrapping on read is what makes this self-repairing: an existing brain
+ * heals file by file as it is used, with no migration and nothing rewritten
+ * that nobody consults.
+ *
+ * Returns null only for a file with no frontmatter at all. Adding a whole block
+ * would mean inventing a `summary`, which is judgment and belongs to
+ * consolidation; the brain health report lists those separately.
+ */
+export function updateAccessFrontmatter(content: string, today: string): string | null {
   const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---([\s\S]*)$/);
   if (!match) return null;
 
   const fields = parseFrontmatter(content);
-  if (!("access_count" in fields)) return null;
-
-  const current = Number.parseInt(fields.access_count, 10);
+  // A file read for the first time starts at 1, not 0: this read is worth as
+  // much as any other, and starting at zero would discard it.
+  const current = Number.parseInt(fields.access_count ?? "", 10);
   const nextCount = Number.isFinite(current) ? current + 1 : 1;
 
   const lines = match[1].split("\n").map((line) => {
@@ -58,6 +78,10 @@ function updateAccessFrontmatter(content: string, today: string): string | null 
     if (key === "last_accessed") return `last_accessed: ${today}`;
     return line;
   });
+
+  if (!lines.some((line) => line.startsWith("access_count:"))) {
+    lines.push(`access_count: ${nextCount}`);
+  }
 
   const hasLastAccessed = lines.some((line) => line.startsWith("last_accessed:"));
   if (!hasLastAccessed) {

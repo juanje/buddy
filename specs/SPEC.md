@@ -849,6 +849,7 @@ against it.
 | FR-HEBB-02 | Frontmatter update | 2 ✓ |
 | FR-HEBB-03 | Exclusions | 2 ✓ |
 | FR-HEBB-04 | Lazy commit | 2 ✓ |
+| FR-HEBB-05 | Counters are created on first read | 2 ✓ |
 
 **FR-HEBB-01 — Intercept reads**
 
@@ -868,6 +869,36 @@ against it.
 - **Given** a file is read by the agent
 - **When** the file is a structural/exempt file (directory indexes, SOUL.md, USER.md, observations.md, deferred.md, core skills)
 - **Then** no Hebbian tracking occurs
+
+**FR-HEBB-05 — Counters are created on first read**
+
+- **Given** a brain file with frontmatter but no `access_count`
+- **When** the agent reads it
+- **Then** the worker adds `access_count: 1` and `last_accessed: today`,
+  preserving every existing key and the body
+- **And** a file with no frontmatter at all is left alone — creating a block
+  would mean inventing a `summary`, which is consolidation's judgment
+
+**The layer was inert for everything Buddy created.** `consolidation.md` tells
+the model it must "never write `access_count` or `last_accessed` — the worker
+updates those automatically", and the worker returned early for any file
+lacking `access_count`. Between the two rules nobody created them, so a concept
+the agent distilled was born without counters and could never acquire them: it
+scored zero for ever, and consolidation demoted it.
+
+**Consequences observed.** On an instance holding both imported and
+Buddy-created files, all 14 native files lacked counters while every imported
+one had them — so promotion could only ever favour content from the previous
+tool, and the 2026-07-28 depth-1 demoted three native concepts on that basis.
+On a *fresh* install nothing has counters at all, which means promotion and
+demotion by use — the entire purpose of FR-HEBB — never happened for any user.
+
+**Bootstrapping on read rather than by migration** is what makes existing
+brains repair themselves: a file heals the first time it is consulted, nothing
+is rewritten that nobody opens, and no install needs a migration step.
+
+**Starting at 1, not 0:** the read that creates the fields is a real access and
+counts as one.
 
 **FR-HEBB-04 — Lazy commit**
 

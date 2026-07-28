@@ -293,7 +293,13 @@ Steps:
 2. Identify files whose access has grown since last consolidation.
    **Important:** You read metadata for promotion decisions, but you never
    write `access_count` or `last_accessed` fields. The worker updates those
-   automatically — manual edits would corrupt the signal.
+   automatically, and creates them the first time a file is read — manual
+   edits would corrupt the signal.
+
+   A file with no counters has simply not been read since it was written.
+   That is an absence of evidence, not evidence of disuse: **do not demote a
+   file for having no metadata.** A recently created file has had no chance to
+   accumulate any.
 3. For each growing file, **promote one level** — not to Active context
    directly. A file accessed once today becomes more prominent in its
    subdir index. A file accessed repeatedly across sessions over multiple

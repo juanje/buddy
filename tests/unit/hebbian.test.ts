@@ -48,10 +48,31 @@ describe("createHebbianTracker", () => {
     expect(updated).toContain("\nBody\n");
   });
 
-  it("ignores files without access_count in frontmatter", () => {
+  // Rewritten for FR-HEBB-05. This asserted that a file without access_count
+  // was left alone — the defect, not a property worth keeping. The model is
+  // forbidden from creating those fields, so nobody did, and every file the
+  // agent wrote itself stayed permanently invisible to the Hebbian layer.
+  it("starts tracking a file that has frontmatter but no counters yet", () => {
     const ab = setupAb();
     const rel = "agent_brain/concepts/no-meta.md";
-    const original = "---\ntitle: x\n---\n\nBody\n";
+    writeFileSync(join(ab, rel), "---\ntitle: x\n---\n\nBody\n", "utf8");
+
+    const tracker = createHebbianTracker(ab);
+    tracker.trackAccess(rel);
+    expect(tracker.flush()).toBe(true);
+
+    const updated = readFileSync(join(ab, rel), "utf8");
+    expect(updated).toContain("access_count: 1");
+    expect(updated).toContain("title: x"); // existing keys untouched
+    expect(updated).toContain("\nBody\n");
+  });
+
+  it("still ignores a file with no frontmatter at all", () => {
+    // Creating a whole block would mean inventing a `summary` — consolidation's
+    // judgment call, not the read hook's.
+    const ab = setupAb();
+    const rel = "agent_brain/concepts/bare.md";
+    const original = "# Just a heading\n";
     writeFileSync(join(ab, rel), original, "utf8");
 
     const tracker = createHebbianTracker(ab);
