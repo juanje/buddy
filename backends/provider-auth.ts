@@ -22,6 +22,7 @@ import {
   LEGACY_AUTH_PATH_ENV,
   PROVIDER_REQUEST_TIMEOUT_MS,
 } from "../shared/defaults";
+import { buddyModelsPath, buddyModelsStorePath } from "./global-config";
 import { toPiProviderId } from "./provider-mapping";
 import { assertSafeProviderBaseUrl, UnsafeUrlError, type DnsLookupFn } from "./url-safety";
 
@@ -96,7 +97,15 @@ export function defaultAuthPath(): string {
  * be configured there — a different account, or none.
  */
 export function createBuddyModelRuntime(): Promise<ModelRuntime> {
-  return ModelRuntime.create({ authPath: defaultAuthPath() });
+  return ModelRuntime.create({
+    authPath: defaultAuthPath(),
+    // NFR-SEC-19: both are required, not optional hygiene. Left unset, the SDK
+    // defaults modelsPath to join(getAgentDir(), "models.json") — the Pi CLI's —
+    // and modelsStorePath to its directory, so Buddy read the user's provider
+    // definitions and cached its own catalogue inside another tool's config.
+    modelsPath: buddyModelsPath(),
+    modelsStorePath: buddyModelsStorePath(),
+  });
 }
 
 /**

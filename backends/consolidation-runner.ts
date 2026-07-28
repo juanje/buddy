@@ -204,6 +204,7 @@ async function openRealMaintenanceSession(config: {
 
   const { session } = await createAgentSession({
     cwd: rootDir,
+    agentDir: buddyAgentDir(), // NFR-SEC-19: keeps SettingsManager off ~/.pi/agent
     resourceLoader,
     sessionManager: SessionManager.create(rootDir),
     excludeTools: [...EXCLUDED_TOOLS],

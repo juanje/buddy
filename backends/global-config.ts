@@ -76,6 +76,33 @@ export function buddyAgentDir(): string {
 }
 
 /**
+ * Buddy's own model definitions (NFR-SEC-19).
+ *
+ * `ModelRuntime.create` defaults `modelsPath` to `join(getAgentDir(),
+ * "models.json")` — the Pi CLI's. Omitting it meant Buddy loaded the user's
+ * personal provider definitions as if they were its own; verified on a real
+ * install, where Buddy reported the user's `ollama` and `omlx` providers.
+ *
+ * The file need not exist. It is also where FR-PROVIDER-01 will write custom
+ * endpoints, which is why it lives beside `auth.json` rather than inside
+ * `agentDir` — that directory stays empty by design.
+ */
+export function buddyModelsPath(): string {
+  return join(globalConfigDir(), "models.json");
+}
+
+/**
+ * Where the SDK caches refreshed model catalogues (NFR-SEC-19).
+ *
+ * Defaults to `dirname(modelsPath)`, so leaving it unset put Buddy's cache
+ * inside the user's `~/.pi/agent/` — a write into another tool's directory,
+ * not just a read from it.
+ */
+export function buddyModelsStorePath(): string {
+  return join(globalConfigDir(), "models-store.json");
+}
+
+/**
  * Create ~/.buddy/ (if absent) and narrow it if it is more permissive than
  * `CONFIG_DIR_MODE` (NFR-SEC-17).
  *

@@ -117,6 +117,7 @@ async function runReflect(
 
   const { session } = await createAgentSession({
     cwd: rootDir,
+    agentDir: buddyAgentDir(), // NFR-SEC-19: keeps SettingsManager off ~/.pi/agent
     resourceLoader,
     sessionManager: sm,
     noTools: "all",

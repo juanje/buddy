@@ -263,10 +263,13 @@ question is answered and written into FR-PROVIDER-01: `baseUrl` goes in a
 so the file lives at `~/.buddy/models.json` and never touches `agentDir`. The
 feared conflict with NFR-SEC-19 does not exist.
 
-**The research turned up a live defect instead.** `createBuddyModelRuntime()`
-omits `modelsPath`, so the SDK defaults it to `~/.pi/agent/models.json` — the
-Pi CLI's. Probed on this machine: Buddy reports the user's personal `ollama` and
-`omlx` providers among its own. **H6b is incomplete and v0.1.6 ships with it.**
+**The research turned up a live defect instead — since fixed.**
+`createBuddyModelRuntime()` omitted `modelsPath`, so the SDK defaulted it to
+`~/.pi/agent/models.json` — the Pi CLI's. Probed on this machine: Buddy reported
+the user's personal `ollama` and `omlx` providers among its own. A second route
+was found while fixing it: `createAgentSession` was called without `agentDir`,
+so its `SettingsManager` read the user's `~/.pi/agent/settings.json`. Both
+closed; NFR-SEC-19 amended and NFR-SEC-20 written. v0.1.6 shipped with both.
 
 The lesson is in how H6b was scoped. It was framed as "pass Buddy's agentDir to
 `createAgentSession`", and it did that correctly. But `getAgentDir()` is the

@@ -155,6 +155,10 @@ export async function bootSession(
 
   const { session } = await createAgentSession({
     cwd: rootDir,
+    // NFR-SEC-19: without this the SDK falls back to getAgentDir(), and its
+    // SettingsManager reads the user's ~/.pi/agent/settings.json — their Pi CLI
+    // provider, model, thinking level and theme.
+    agentDir: buddyAgentDir(),
     resourceLoader,
     sessionManager: SessionManager.create(rootDir),
     excludeTools: [...EXCLUDED_TOOLS],
