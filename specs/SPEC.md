@@ -673,6 +673,8 @@ Fork bomb defense:
 | FR-CONSOL-09 | Failure backoff and retry ceiling | 2 |
 | FR-CONSOL-10 | Maintenance session enforces the zone model | 2 |
 | FR-CONSOL-11 | Identity changes made by consolidation are surfaced | 2 |
+| FR-CONSOL-12 | A consolidation that produced no output is a failure | 2 ✓ |
+| FR-CONSOL-13 | A consolidation that corrupts the brain is a failure | 2 ✓ |
 
 **Consolidation depths:**
 
@@ -787,6 +789,59 @@ Fork bomb defense:
   (FR-NET-03). Allowing the write is right — it is designed — but it must not be
   silent. Git already records the diff; what was missing was the user learning
   that their assistant's character changed at all.
+
+**FR-CONSOL-12 — A consolidation that produced no output is a failure**
+
+- **Given** a consolidation prompt was sent to the maintenance session
+- **When** `prompt()` resolves but the exchange carries `stopReason: "error"`, or
+  produced no assistant message, or produced only empty content
+- **Then** the depth is recorded `status: "fail"` with the provider's message,
+  counts against the retry ceiling (FR-CONSOL-09), and **the maintenance
+  counters do not advance**
+
+**The incident, 2026-07-28.** A depth-1 run hit a misconfigured endpoint. The
+provider answered 401; the SDK surfaced it as an assistant message with
+`stopReason: "error"` and empty content rather than by throwing, so
+`await session.prompt(...)` resolved normally and the entire success path ran:
+`{"duration_ms": 22, "status": "success"}`, `lastDepth1` advanced, counters
+reset, and `logs/2026-07-28.md` gained the line *"Maintenance cycle completed:
+depth-1."* — which is then injected into every future session's context. The two
+real depth-1 runs that day took 56s and 96s.
+
+**Why this outranks the failed run itself.** Runs fail; that is expected and
+FR-CONSOL-09 handles it. What this did was make the failure *indistinguishable
+from success in every artefact*, so the maintenance clock advanced over work
+that never happened. Whatever should have been promoted from `observations.md`
+is not queued for the next run — it is marked handled. The symptom arrives a
+month later as concepts that should exist and don't, with nothing to explain it.
+
+**Why H3 and H4b missed it.** Both hardened this path, and both hardened it
+against *exceptions*. A failed response is not an exception.
+
+**FR-CONSOL-13 — A consolidation that corrupts the brain is a failure**
+
+- **Given** a consolidation run has finished writing
+- **When** the brain health report contains malformed frontmatter in a file that
+  was not already malformed before the run
+- **Then** the depth is recorded as failed, naming the files and problems, and
+  the counters do not advance
+
+**The gap this closes.** The brain is written by the model through `edit` and
+`write`, and nothing verified the result. The linter existed but ran *before*
+consolidation and looked only for frontmatter that was **missing** — so damage
+of this shape was invisible to it in both directions. NFR-FORMAT-01 was a
+convention nothing enforced.
+
+**Observed:** the depth-1 of 2026-07-28 04:28 appended a second `---` block
+below the existing one in four concept files instead of merging into it, giving
+`local-link-routing.md` two `created` dates, one of them six days earlier than
+the file. Recorded as a success.
+
+**Before-and-after comparison is required, not incidental.** An instance
+carrying inherited damage — one imported from another tool typically does —
+would otherwise fail every consolidation forever, and the failure would say
+nothing about the run that just ran. Only files the run itself broke count
+against it.
 
 | ID | Description | Phase |
 |----|-------------|-------|
@@ -1124,6 +1179,7 @@ detailed specification: [specs/BRAIN-SPEC.md](BRAIN-SPEC.md).
 - **When** the worker runs `computeBrainHealthReport()`
 - **Then** it deterministically checks (no LLM):
   - All `agent_brain/` files have required frontmatter (including `summary` per NFR-FORMAT-01) — exception: `identity/SOUL.md` and `identity/USER.md` (always-injected at session start, no progressive disclosure needed)
+  - No `agent_brain/` file has **malformed** frontmatter: a second `---` block stacked below the first, a key repeated inside one block, or an unterminated block. Distinct from the check above, which only ever asked whether frontmatter was *absent* — corruption of this shape was invisible to it, and it is exactly what a consolidation writes when it appends instead of merging (FR-CONSOL-13). A `---` used as a horizontal rule in the body is not frontmatter and must not be flagged
   - Core files exist with correct format (SOUL.md, USER.md, AGENTS.md or CLAUDE.md, deferred.md)
   - Every directory with more than one file has an `index.md` (documented exceptions: USER.md parent pattern)
   - Files exceeding size threshold are flagged for potential split

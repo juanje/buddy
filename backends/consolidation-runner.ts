@@ -26,6 +26,7 @@ import {
   type ConsolidationState,
 } from "../shared/consolidation-state";
 import { isoWeekLabel, toIsoDay } from "../shared/dates";
+import type { BrainHealthReport } from "./brain-health";
 import {
   computeBrainHealthReport,
   computeHebbianReport,
@@ -215,6 +216,87 @@ async function openRealMaintenanceSession(config: {
   return session;
 }
 
+/** A maintenance turn that produced nothing usable (FR-CONSOL-12). */
+export class MaintenanceResponseError extends Error {}
+
+/** A consolidation that left the brain structurally worse than it found it (FR-CONSOL-13). */
+export class BrainDamagedError extends Error {}
+
+/**
+ * Refuse to call a consolidation successful when it broke frontmatter
+ * (FR-CONSOL-13).
+ *
+ * The brain is written by the model, through `edit` and `write`, and until now
+ * nothing checked the result. A depth-1 run on 2026-07-28 appended a second
+ * `---` block to four concept files — inventing a `created` date earlier than
+ * the file itself — and was recorded as a success. The linter existed but only
+ * ran *before* the run, and only looked for frontmatter that was missing.
+ *
+ * Comparing before and after matters more than it looks: an instance carrying
+ * inherited damage would otherwise fail every consolidation forever. Only files
+ * this run broke count against it.
+ */
+export function assertNoNewBrainDamage(
+  before: BrainHealthReport,
+  after: BrainHealthReport,
+): void {
+  const known = new Set(before.malformedFrontmatter.map((entry) => entry.path));
+  const introduced = after.malformedFrontmatter.filter((entry) => !known.has(entry.path));
+  if (introduced.length === 0) return;
+
+  throw new BrainDamagedError(
+    `consolidation corrupted frontmatter in ${introduced.length} file(s): ` +
+      introduced.map((entry) => `${entry.path} (${entry.problem})`).join("; "),
+  );
+}
+
+interface ObservedMessage {
+  role?: string;
+  stopReason?: string;
+  errorMessage?: string;
+  content?: Array<{ type?: string; text?: string }>;
+}
+
+/**
+ * Throw unless the exchange actually produced work (FR-CONSOL-12).
+ *
+ * `await session.prompt(...)` resolves whether the model consolidated the brain
+ * or the provider returned 401. The SDK reports the second as an assistant
+ * message carrying `stopReason: "error"`, not as a rejected promise — so the
+ * only way to tell them apart is to look at what came back.
+ *
+ * Two rejections, and the second matters as much as the first: an errored turn,
+ * and a turn that produced no content. A model that answers with nothing has
+ * not consolidated anything either, and treating silence as success is what
+ * advanced the maintenance clock over work that never happened.
+ */
+export function assertProductiveResponse(events: readonly AgentEvent[]): void {
+  const assistantTurns = events
+    .filter((event) => event.type === "message_end")
+    .map((event) => event.message as ObservedMessage | undefined)
+    .filter((message): message is ObservedMessage => message?.role === "assistant");
+
+  const failed = assistantTurns.find((message) => message.stopReason === "error");
+  if (failed) {
+    throw new MaintenanceResponseError(
+      failed.errorMessage ?? "the model reported an error and produced no output",
+    );
+  }
+
+  if (assistantTurns.length === 0) {
+    throw new MaintenanceResponseError("the model produced no response at all");
+  }
+
+  const producedSomething = assistantTurns.some((message) =>
+    (message.content ?? []).some((block) =>
+      block.type === "text" ? (block.text ?? "").trim() !== "" : true,
+    ),
+  );
+  if (!producedSomething) {
+    throw new MaintenanceResponseError("the model returned an empty response");
+  }
+}
+
 export async function createMaintenanceSession(options: {
   rootDir: string;
   modelRuntime: ModelRuntime;
@@ -241,7 +323,13 @@ export async function createMaintenanceSession(options: {
     async prompt(text) {
       await session.prompt(text);
       recordSessionUsage(defaultConfigDir(), events);
+      const observed = [...events];
       events.length = 0;
+      // FR-CONSOL-12: `prompt` resolving is not evidence that anything
+      // happened. Throwing here routes the failure into the runner's existing
+      // catch, which records `status: "fail"`, counts it against the retry
+      // ceiling and leaves the counters alone.
+      assertProductiveResponse(observed);
     },
     dispose: () => {
       unsub();
@@ -336,7 +424,12 @@ export async function runConsolidation(options: RunConsolidationOptions): Promis
       const start = Date.now();
       try {
         logEvent(rootDir, { event: "consolidation_start", depth });
+        const healthBefore = computeBrainHealthReport(rootDir);
         await maintenanceSession.prompt(buildConsolidationPrompt(rootDir, depth, now));
+        // FR-CONSOL-13: the model wrote to the brain; verify it did not break
+        // it. Throwing routes into the catch below, so the depth counts as
+        // failed and the maintenance clock does not advance over the damage.
+        assertNoNewBrainDamage(healthBefore, computeBrainHealthReport(rootDir));
         if (depth === 1) {
           updateLogsIndexFromDaySummary(rootDir, date);
         }

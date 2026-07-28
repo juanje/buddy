@@ -16,9 +16,43 @@ import { parseFrontmatter } from "./reflect";
 
 export interface BrainHealthReport {
   missingFrontmatter: string[];
+  /**
+   * Files whose frontmatter exists but is structurally broken (NFR-FORMAT-01):
+   * a second `---` block stacked below the first, or a key repeated inside one
+   * block. Kept separate from `missingFrontmatter` because it is damage rather
+   * than omission — and because this is the shape a consolidation produces when
+   * it appends instead of merging.
+   */
+  malformedFrontmatter: Array<{ path: string; problem: string }>;
   missingCoreFiles: string[];
   missingIndexes: string[];
   oversizedFiles: string[];
+}
+
+const FRONTMATTER_BLOCK = /^---\n([\s\S]*?)\n---\n/;
+
+/**
+ * Describe what is structurally wrong with a file's frontmatter, or null.
+ *
+ * Both shapes detected here were written by a *model*, not by our code: a
+ * consolidation appending a whole new block below the existing one instead of
+ * merging into it, and one adding a key already present. The first is how
+ * `agent_brain/concepts/local-link-routing.md` came to claim two different
+ * `created` dates — one of them earlier than the file itself.
+ */
+export function frontmatterProblem(content: string): string | null {
+  if (!content.startsWith("---\n")) return null; // absent — that is missingFrontmatter
+  const block = FRONTMATTER_BLOCK.exec(content);
+  if (!block) return "frontmatter block is not terminated";
+
+  const keys = (block[1].match(/^(\w+):/gm) ?? []).map((key) => key.slice(0, -1));
+  const duplicated = [...new Set(keys.filter((key, i) => keys.indexOf(key) !== i))];
+  if (duplicated.length > 0) return `duplicated key: ${duplicated.join(", ")}`;
+
+  if (FRONTMATTER_BLOCK.test(content.slice(block[0].length).replace(/^\s*/, ""))) {
+    return "a second frontmatter block follows the first";
+  }
+  return null;
 }
 
 function isArchivePath(relPath: string): boolean {
@@ -101,6 +135,7 @@ function findMissingIndexes(rootDir: string): string[] {
 
 export function computeBrainHealthReport(rootDir: string): BrainHealthReport {
   const missingFrontmatter: string[] = [];
+  const malformedFrontmatter: BrainHealthReport["malformedFrontmatter"] = [];
   const oversizedFiles: string[] = [];
 
   for (const relPath of walkAllBrainMarkdown(rootDir)) {
@@ -111,6 +146,8 @@ export function computeBrainHealthReport(rootDir: string): BrainHealthReport {
     ) {
       missingFrontmatter.push(relPath);
     }
+    const problem = frontmatterProblem(content);
+    if (problem) malformedFrontmatter.push({ path: relPath, problem });
     if (content.split("\n").length > BRAIN_FILE_SIZE_THRESHOLD_LINES) {
       oversizedFiles.push(relPath);
     }
@@ -131,6 +168,7 @@ export function computeBrainHealthReport(rootDir: string): BrainHealthReport {
 
   return {
     missingFrontmatter,
+    malformedFrontmatter,
     missingCoreFiles,
     missingIndexes,
     oversizedFiles,
@@ -140,6 +178,7 @@ export function computeBrainHealthReport(rootDir: string): BrainHealthReport {
 export function formatBrainHealthReportBlock(report: BrainHealthReport): string {
   const hasIssues =
     report.missingFrontmatter.length > 0 ||
+    report.malformedFrontmatter.length > 0 ||
     report.missingCoreFiles.length > 0 ||
     report.missingIndexes.length > 0 ||
     report.oversizedFiles.length > 0;
@@ -152,6 +191,17 @@ export function formatBrainHealthReportBlock(report: BrainHealthReport): string 
     lines.push("Missing frontmatter:");
     for (const path of report.missingFrontmatter) {
       lines.push(`- ${path}`);
+    }
+  }
+
+  if (report.malformedFrontmatter.length > 0) {
+    // Spelled out rather than listed, because the fix is a merge and the model
+    // has to be told not to append — appending is how these arose.
+    lines.push(
+      "Malformed frontmatter (repair by merging into ONE block, never by adding another):",
+    );
+    for (const { path, problem } of report.malformedFrontmatter) {
+      lines.push(`- ${path} — ${problem}`);
     }
   }
 

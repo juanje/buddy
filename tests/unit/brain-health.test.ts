@@ -161,6 +161,7 @@ describe("brain health linter", () => {
   it("formats grouped issues when present", () => {
     const block = formatBrainHealthReportBlock({
       missingFrontmatter: ["agent_brain/concepts/stale.md"],
+      malformedFrontmatter: [],
       missingCoreFiles: ["agent_brain/identity/SOUL.md"],
       missingIndexes: ["agent_brain/projects"],
       oversizedFiles: ["agent_brain/projects/big.md"],
