@@ -1,7 +1,7 @@
 // backends/reflect.ts — Daily agent logs and reflect finalization (FR-REFLECT-01/02/03).
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 
 export type LogStatus = "active" | "maintenance";
 
@@ -210,4 +210,40 @@ export function sanitizeReflectOutput(text: string): string {
   result = result.replace(SESSION_HEADER_RE, "");
   result = result.replace(SECTION_HEADING_RE, "### $1");
   return result.replace(/\n{3,}/g, "\n\n").trim();
+}
+
+/**
+ * File observations the reflect fork produced (FR-REFLECT-08).
+ *
+ * Appended under the entry date, matching the format the consolidation
+ * procedure reads when it promotes ripe observations (`seen 2+`).
+ */
+export function appendReflectObservations(
+  rootDir: string,
+  date: string,
+  observations: string | undefined,
+): void {
+  if (!observations?.trim()) return;
+
+  const path = join(rootDir, "agent_brain", "observations.md");
+  const entry = `\n- **${date}:** ${observations.trim().replace(/^-\s*/, "")}\n`;
+
+  if (!existsSync(path)) {
+    mkdirSync(dirname(path), { recursive: true });
+    writeFileSync(
+      path,
+      `---\nsummary: Working journal for system observations\ncreated: ${date}\n---\n\n# System observations\n${entry}`,
+      "utf8",
+    );
+    return;
+  }
+
+  const content = readFileSync(path, "utf8");
+  const heading = content.indexOf("# System observations");
+  if (heading === -1) {
+    writeFileSync(path, content.trimEnd() + "\n" + entry, "utf8");
+    return;
+  }
+  const insertAt = content.indexOf("\n", heading) + 1;
+  writeFileSync(path, content.slice(0, insertAt) + entry + content.slice(insertAt), "utf8");
 }

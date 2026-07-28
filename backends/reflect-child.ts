@@ -38,13 +38,14 @@ import { alignHttpDispatcherWithPi } from "./pi-http-dispatcher";
 import { collectAssistantText } from "./pi-utils";
 import { createBuddyModelRuntime } from "./provider-auth";
 import {
+  appendReflectObservations,
   finalizeCheckpointToDailyLog,
   finalizeReflectToDailyLog,
   sanitizeReflectOutput,
   updateLogsIndexEntry,
 } from "./reflect";
 import { clearSessionPersistence } from "./crash-recovery";
-import { buildReflectUserPrompt } from "./reflect-prompts";
+import { buildReflectUserPrompt, extractObservationsSection } from "./reflect-prompts";
 import { defaultConfigDir } from "./allowed-paths";
 import { recordSessionUsage } from "./usage-tracker";
 
@@ -173,11 +174,17 @@ async function runReflect(
             logPath: dailyPath,
           });
         } else {
+          // FR-REFLECT-08: the fork has no tools, so it emits observations as
+          // a section instead of writing them. The worker files them and keeps
+          // them out of the daily log — both files reach future sessions, and
+          // the same text in both is noise.
+          const { body, observations } = extractObservationsSection(result);
+          appendReflectObservations(rootDir, sessionDate, observations);
           const dailyPath = finalizeReflectToDailyLog({
             rootDir,
             sessionDate,
             sessionHeader: `${sessionStart}–${sessionEnd}`,
-            sections: result,
+            sections: body,
           });
           updateLogsIndexEntry(rootDir, sessionDate);
           logEvent(rootDir, {

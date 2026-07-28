@@ -26,6 +26,8 @@ Keep it dense. A trivial session gets 2-3 lines. A rich session gets a paragraph
 
 ### 3. Verify captures
 
+*Requires tools — skip this step when told you have none.*
+
 Ensure actionable items landed in the right place:
 - Tasks → `user/` (inbox or project)
 - Ideas → `agent_brain/ideas/`
@@ -40,9 +42,14 @@ Only if genuine signals emerged — skip otherwise:
 
 Write to `agent_brain/observations.md` (increment count if pattern already exists).
 
+*When you have no tools:* emit an `### Observations` section instead and the
+worker files it. Omit the section entirely when nothing emerged — an empty
+heading is not an observation.
+
 ## Quality rules
 
 - **Synthesize, don't transcribe.** Log what was decided/learned, not what was said. "User asked about memory; explained three-layer model" — not a transcript of the explanation.
 - **Be specific.** "Discussed tasks" is useless. "Decided to use GTD inbox with @context lists" is useful.
 - **Don't inflate.** Short sessions get short logs. No filler, no ceremony.
 - **Future reader test.** Someone without today's context should understand what happened and why.
+- **Write about the conversation, never about this procedure.** These instructions are not something the session taught you. A log entry noting "the importance of the future reader test" or "used the process-conversation skill" is the machinery describing itself, in a file that is injected into every future session.
