@@ -71,12 +71,18 @@ How it works in practice:
 - Drag & drop or attach files to share them with Buddy.
 - It can read text files, markdown, images (it can see and describe what's in them), and PDFs (extracts the text automatically).
 - Share a URL and Buddy fetches the page, extracts the main content as readable text, and saves a copy in your downloads folder. Works with web pages, online PDFs, and images.
-- When Buddy mentions files in its responses, you can click links to view markdown and text inline, or open other files with your system's default app.
+### Reading Buddy's files inside the app
+
+- When Buddy mentions one of your files, the link is clickable and the file opens in a panel inside Buddy — no text editor needed.
+- **Only `.md` and `.txt` files open this way**, and only from `agent_brain/`, `user/`, `downloads/` and `logs/`. Anything else is shown as plain text you can't click.
+- Documents that link to each other can be browsed: click a link inside an open document to follow it, and use Back to return the way you came.
+- **Buddy never opens a file with another program.** There is no "open externally". For a PDF, an image, or a spreadsheet, ask Buddy where the file is and open it yourself from your file manager.
 
 ### First-time setup
 
-- A step-by-step wizard walks you through: language, where to store your data, connecting your AI provider (Anthropic, OpenAI, Google), and telling Buddy a bit about yourself.
-- If you already have data from a previous setup, Buddy can import it directly.
+- A step-by-step wizard walks you through: language, where to store your data, connecting your AI provider, and telling Buddy a bit about yourself.
+- Providers: Anthropic, OpenAI, Google, or any OpenAI-compatible endpoint you give a base URL for — including a model running on your own machine, such as Ollama or LM Studio.
+- If you already have data from a previous setup, Buddy can import it directly. A folder left half-finished by a setup that failed is not offered for import, because adopting it produces an assistant that never works properly.
 
 ### Settings
 
@@ -91,7 +97,9 @@ How it works in practice:
 
 ## What Buddy can't do
 
-- **No web search.** Buddy can fetch a specific URL you share, but it can't search the internet on its own or browse freely.
+- **No web search.** Buddy can fetch a specific URL you share, but it can't search the internet on its own or browse freely. It also can't fetch pages served from your own machine or local network — a development server at `http://localhost:3000` is refused, because a link Buddy follows may come from a page it read rather than from you.
 - **No code execution.** It can't run scripts, commands, or programs. It works with files only.
+- **No opening files in other apps.** Buddy shows `.md` and `.txt` inside the app and stops there. It will tell you where a file is so you can open it yourself.
 - **No access to sensitive files.** SSH keys, credentials, and environment files are always off-limits.
+- **No Pi CLI extensions.** If you use the Pi command-line tool on this computer, its skills, tools and settings are not available here. Buddy keeps its own configuration entirely separate, so nothing you installed for another tool changes how Buddy behaves.
 - **No changes without you knowing.** If Buddy wants to access files outside your data folder, it asks first. You can grant permanent access to a folder ("Allow always for this folder") and it won't ask again for files inside it. Changes to its own identity require your explicit approval. File deletion always requires confirmation.

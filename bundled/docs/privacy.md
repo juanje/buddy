@@ -4,14 +4,14 @@
 
 All your data stays on your machine. Nothing is sent anywhere except:
 
-1. **The AI provider** — your messages and context are sent to generate responses.
-2. **URLs you explicitly share** — Buddy fetches the page you ask it to read.
+1. **The AI provider** — your messages and context are sent to generate responses. If you configured a model running on your own machine, not even this leaves it.
+2. **URLs you explicitly share** — Buddy fetches the page you ask it to read. It will not fetch addresses on your own machine or local network, and it re-checks every redirect: a public URL that redirects to an internal one is refused at that point.
 
 There is no telemetry, no analytics, and no data sent to Buddy's developers. The Settings **Usage** panel tracks local API spend on your machine only — it is not shared anywhere.
 
 ## Credentials
 
-Your AI provider credentials are stored locally with restrictive file permissions, separate from any other tool on your computer.
+Your AI provider credentials are stored locally with restrictive file permissions, separate from any other tool on your computer. The same applies to everything else Buddy keeps in `~/.buddy/` — including the list of folders you have granted access to, which is readable only by you.
 
 ## How file access works
 
@@ -20,6 +20,8 @@ Buddy organizes everything in a folder you choose during setup. Inside that fold
 **Your data folder (full access):** Everything inside the folder you picked at setup. Buddy reads and writes here without asking every time.
 
 **Outside your folder (asks first):** If Buddy needs to read a file elsewhere — for example, a document in Documents — it asks you in the chat. You can allow once, allow always for that file, or allow always for the folder. "Allow always" is remembered across sessions.
+
+**Shortcuts and aliases don't widen access.** What counts is where a file really is, not the path used to reach it. If you put a shortcut inside your data folder pointing somewhere else, Buddy still treats what's behind it as outside and asks. The same holds for a folder you granted access to: the grant covers that folder, not wherever a shortcut inside it leads.
 
 **Buddy's own documentation (always allowed):** Buddy can read `~/.buddy/docs/` without asking — that's where this documentation lives.
 
@@ -30,3 +32,5 @@ Buddy organizes everything in a folder you choose during setup. Inside that fold
 ## What you can inspect
 
 Everything Buddy knows is in plain text files in your data folder. You can open them with any text editor, back them up, or copy them elsewhere. Git tracks changes invisibly in the background — if something goes wrong, history can be recovered.
+
+You can also read them without leaving the app: ask Buddy about something and click the file it mentions. Markdown and text files open in a panel, and links between documents can be followed from there.
