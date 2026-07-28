@@ -161,8 +161,19 @@ Then("the app is configured to use that directory", function (this: ImportWorld)
   assert.equal(get(this.wizard!.completed), true);
 });
 
-Then("no file inside the buddy directory is modified", function (this: ImportWorld) {
-  assert.deepEqual(snapshotAb(this), this.snapshot);
+Then("no pre-existing file is modified", function (this: ImportWorld) {
+  // Buddy may *add* its runtime-state ignore rules (FR-SETUP-10, amended); it
+  // must not touch anything that was already there.
+  const now = snapshotAb(this);
+  for (const [path, content] of this.snapshot!) {
+    assert.equal(now.get(path), content, `${path} must not be modified`);
+  }
+});
+
+Then("buddy's runtime state is gitignored", function (this: ImportWorld) {
+  const content = readFileSync(join(this.buddyDir!, ".gitignore"), "utf8");
+  assert.match(content, /^\.buddy\/$/m);
+  assert.match(content, /^\.pi\/$/m);
 });
 
 Then("the platform artifacts remain untouched", function (this: ImportWorld) {

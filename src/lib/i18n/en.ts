@@ -32,6 +32,8 @@ export const en: LocaleStrings = {
   locationNotEmpty: "That folder already has files. Choose an empty folder or one that doesn't exist yet.",
   locationNotADirectory: "That path is not a folder.",
   locationExistingBuddy: "That folder already contains a Buddy assistant.",
+  locationIncompleteBuddy:
+    "That folder holds an unfinished assistant, so it cannot be imported (missing: {missing}). Choose an empty folder instead.",
   locationImport: "Import this assistant",
   locationBrowse: "Browse…",
   locationBrowseTitle: "Choose a folder",

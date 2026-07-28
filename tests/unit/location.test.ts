@@ -43,10 +43,31 @@ describe("validateLocation", () => {
     expect(validateLocation(file)).toEqual({ status: "not-a-directory" });
   });
 
-  it("recognizes an existing buddy instance by its agent_brain dir", () => {
-    const dir = join(scratch(), "old-ab");
+  // Rewritten for FR-SETUP-12. The previous version asserted that an
+  // `agent_brain/` directory alone made a folder importable — the insufficiency
+  // that requirement exists to fix, not a property to preserve. A setup that
+  // failed midway leaves exactly this shape behind, and adopting it produced a
+  // permanently broken install.
+  it("reports a bare agent_brain dir as an incomplete instance", () => {
+    const dir = join(scratch(), "half-created");
     mkdirSync(join(dir, "agent_brain"), { recursive: true });
-    expect(validateLocation(dir)).toEqual({ status: "existing-buddy" });
+
+    const check = validateLocation(dir);
+    expect(check.status).toBe("incomplete-buddy");
+    expect(check.missing?.join(" ")).toMatch(/identity/i);
+  });
+
+  it("recognizes a complete instance as importable", async () => {
+    const dir = join(scratch(), "complete-ab");
+    mkdirSync(join(dir, "agent_brain", "identity"), { recursive: true });
+    writeFileSync(join(dir, "AGENTS.md"), "# Rules\n");
+    writeFileSync(join(dir, "agent_brain", "identity", "SOUL.md"), "# Soul\n");
+    writeFileSync(join(dir, "agent_brain", "identity", "USER.md"), "# User\n");
+    writeFileSync(join(dir, "agent_brain", "deferred.md"), "# Deferred\n");
+    const { initTestGitRepo } = await import("../support/test-git");
+    await initTestGitRepo(dir);
+
+    expect(validateLocation(dir).status).toBe("existing-buddy");
   });
 
   it("treats agent_brain as a plain entry when it is a file", () => {

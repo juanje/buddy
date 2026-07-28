@@ -26,6 +26,7 @@ export type LocaleStrings = {
   locationNotEmpty: string;
   locationNotADirectory: string;
   locationExistingBuddy: string;
+  locationIncompleteBuddy: string;
   locationImport: string;
   providerTitle: string;
   providerHint: string;
@@ -153,6 +154,8 @@ export const es: LocaleStrings = {
   locationNotEmpty: "Esa carpeta ya contiene archivos. Elige una carpeta vacía o una que no exista.",
   locationNotADirectory: "Esa ruta no es una carpeta.",
   locationExistingBuddy: "Esa carpeta ya contiene un asistente Buddy.",
+  locationIncompleteBuddy:
+    "Esa carpeta contiene un asistente a medio crear, así que no se puede importar (falta: {missing}). Elige una carpeta vacía.",
   locationImport: "Importar este asistente",
   locationBrowse: "Explorar…",
   locationBrowseTitle: "Elige una carpeta",

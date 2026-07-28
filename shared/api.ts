@@ -63,13 +63,25 @@ export type SetupState = { firstRun: true } | { firstRun: false; config: SetupCo
  * directory holding a buddy instance, offered for import (FR-SETUP-08).
  */
 export interface LocationCheck {
-  status: "ok-new" | "ok-empty" | "existing-buddy" | "not-empty" | "not-a-directory";
+  status:
+    | "ok-new"
+    | "ok-empty"
+    | "existing-buddy"
+    | "incomplete-buddy"
+    | "not-empty"
+    | "not-a-directory";
   /**
    * For "existing-buddy": provider/model read from the instance's own
    * .pi/settings.json, when present. A complete pair allows direct adoption
    * without re-running the provider and model steps (FR-SETUP-08).
    */
   buddySettings?: { provider?: string; model?: string };
+  /**
+   * For "incomplete-buddy": what the directory is missing (FR-SETUP-12). A
+   * half-created instance has `agent_brain/` but not the rest, and offering it
+   * for import produces a permanently broken install.
+   */
+  missing?: string[];
 }
 
 /** API key validation verdict (FR-SETUP-04). */

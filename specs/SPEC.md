@@ -315,6 +315,12 @@ Supersedes the system-opener behavior originally specified in FR-CHAT-09/10.
 - **But when** auth is missing (e.g. `~/.buddy/auth.json` deleted), the wizard routes to the provider step with the instance's provider/model pre-selected for re-authentication
 - **And** platform artifacts (`.cursor/`, `.codex/`) are ignored
 - **And** the wizard skips personalization (existing instance already has data)
+- **Amended (Jul 27):** adoption additionally ensures `.gitignore` covers
+  `.buddy/` and `.pi/`, and initializes a git repository when the directory has
+  none. Both are additive — no pre-existing file is modified — and both are the
+  difference between working and quietly broken: without the ignore rules Buddy
+  commits its own locks and session state into the user's history, and without a
+  repository every auto-commit fails for the life of the install.
 
 **FR-SETUP-11 — Worker validates the location before creating or adopting**
 
@@ -335,9 +341,15 @@ Supersedes the system-opener behavior originally specified in FR-CHAT-09/10.
 
 - **Given** a directory containing `agent_brain/`
 - **When** it is evaluated for import
-- **Then** completeness is checked — the core brain files and a git repository —
-  and an instance missing them is reported as incomplete rather than offered for
-  adoption
+- **Then** it is refused only when it holds no identity at all — neither
+  `SOUL.md` nor `USER.md` — which is the shape a failed setup leaves behind
+- **And** a missing git repository or missing `.gitignore` rules are **repaired**
+  during adoption rather than treated as disqualifying, since a hand-made
+  instance legitimately arrives without them (FR-SETUP-10, amended)
+- **Note on where the line sits:** the test is *unusable* versus *incomplete but
+  fixable*, not *matches the template* versus *does not*. Requiring the full
+  template would refuse instances that work perfectly well — the upstream
+  template, or a directory carried between machines.
 - **Rationale:** `createBuddyInstance` is not atomic. A setup that fails after
   copying templates but before `markConfigured` leaves `agent_brain/` on disk
   with no git repo, and `validateLocation` only tests for that one directory. On

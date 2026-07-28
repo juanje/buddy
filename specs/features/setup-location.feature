@@ -30,3 +30,11 @@ Feature: Location picker (FR-SETUP-04)
     Given a directory containing an existing buddy instance
     When the user picks that directory as the location
     Then the wizard offers to import the existing instance
+
+  Scenario: The remains of a failed setup are not offered for import
+    # createBuddyInstance is not atomic: a failure partway leaves agent_brain/
+    # without the identity files. Adopting that produced a broken install
+    # (FR-SETUP-12).
+    Given a directory left behind by a failed setup
+    When the user picks that directory as the location
+    Then the wizard reports it as unfinished, not importable

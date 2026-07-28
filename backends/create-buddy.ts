@@ -2,7 +2,7 @@
 // Pure file operations + git: NO LLM call happens here by design. The wizard
 // collects personalization in a form; USER.md is populated from that data.
 
-import { cpSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { simpleGit } from "simple-git";
@@ -116,7 +116,59 @@ export function adoptBuddyInstance(options: Pick<CreateBuddyOptions, "config" | 
     writePiSettings(config.rootDir, config);
   }
 
+  ensureRuntimeStateIgnored(config.rootDir);
   markConfigured(config, configPath);
+}
+
+/**
+ * Initialize a git repository in an adopted instance that has none
+ * (FR-SETUP-12). Creates `.git` and commits nothing; content is untouched.
+ *
+ * A hand-made instance — the upstream template, a directory carried between
+ * machines — legitimately arrives without a repo, and without one every
+ * auto-commit fails silently for the life of the install.
+ */
+export async function ensureGitRepository(rootDir: string): Promise<boolean> {
+  if (existsSync(join(rootDir, ".git"))) return false;
+  const git = simpleGit(rootDir);
+  await git.init();
+  await git.addConfig("user.name", GIT_USER_NAME);
+  await git.addConfig("user.email", GIT_USER_EMAIL);
+  return true;
+}
+
+/**
+ * Make sure `.buddy/` and `.pi/` are gitignored in an adopted instance.
+ *
+ * A deliberate exception to "adopt without modifying" (FR-SETUP-10). Without
+ * these rules Buddy commits its own runtime state into the user's repository —
+ * locks, consolidation state, session files — on every auto-commit. Creating or
+ * extending `.gitignore` is a smaller intrusion than versioning our scratch
+ * data in their history, and the only paths added are directories Buddy itself
+ * creates.
+ */
+export function ensureRuntimeStateIgnored(rootDir: string): void {
+  const gitignorePath = join(rootDir, ".gitignore");
+  const required = [".buddy/", ".pi/"];
+
+  let current = "";
+  try {
+    current = readFileSync(gitignorePath, "utf8");
+  } catch {
+    // Absent: created below with exactly the rules Buddy needs.
+  }
+
+  const lines = current.split("\n").map((line) => line.trim());
+  const absent = required.filter((rule) => !lines.includes(rule));
+  if (absent.length === 0) return;
+
+  const needsNewline = current !== "" && !current.endsWith("\n");
+  const header = current === "" ? "" : "\n# Added by Buddy: runtime state, not content\n";
+  writeFileSync(
+    gitignorePath,
+    `${current}${needsNewline ? "\n" : ""}${header}${absent.join("\n")}\n`,
+    "utf8",
+  );
 }
 
 function markConfigured(config: SetupConfig, configPath: string): void {

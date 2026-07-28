@@ -10,7 +10,8 @@ Feature: Import existing buddy instance (FR-SETUP-10)
     And the configured provider has valid auth credentials
     When the user imports it from the location step
     Then the app is configured to use that directory
-    And no file inside the buddy directory is modified
+    And no pre-existing file is modified
+    And buddy's runtime state is gitignored
 
   Scenario: Import with Pi settings but missing auth asks for re-authentication
     Given an existing buddy directory with Pi settings

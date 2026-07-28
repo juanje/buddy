@@ -17,8 +17,16 @@ import type {
 } from "../shared/api";
 import type { AllowedEntry } from "./allowed-paths";
 import { addAllowedPath, loadAllowedPaths } from "./allowed-paths";
-import { adoptBuddyInstance, createBuddyInstance } from "./create-buddy";
-import { defaultBuddyLocation, validateLocation } from "./location";
+import {
+  adoptBuddyInstance,
+  createBuddyInstance,
+  ensureGitRepository,
+} from "./create-buddy";
+import {
+  assertSetupLocationAllowed,
+  defaultBuddyLocation,
+  validateLocation,
+} from "./location";
 import { listModelsForProvider } from "./model-listing";
 import { resolveSessionModel } from "./model-switch";
 import { OAuthService } from "./oauth-service";
@@ -242,8 +250,14 @@ async function main(): Promise<void> {
         return { providers };
       },
       async runSetup(config, mode = "create") {
+        // FR-SETUP-11: the wizard gates on this too, but the worker decides.
+        // The frontend chooses what to offer; only the worker decides what is
+        // allowed (NFR-SEC-08). Getting it wrong runs cpSync with force: true
+        // and `git init` inside a directory full of the user's own files.
+        assertSetupLocationAllowed(config.rootDir, mode);
         if (mode === "import") {
           adoptBuddyInstance({ config, configPath: defaultConfigPath() });
+          await ensureGitRepository(config.rootDir);
         } else {
           await createBuddyInstance({ config, configPath: defaultConfigPath() });
         }

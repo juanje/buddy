@@ -90,6 +90,13 @@ async function createBuddy() {
         return $t.locationNotADirectory;
       case "existing-buddy":
         return $t.locationExistingBuddy;
+      case "incomplete-buddy":
+        // Not offered for import: adopting it produces a broken install
+        // (FR-SETUP-12).
+        return $t.locationIncompleteBuddy.replace(
+          "{missing}",
+          ($locationCheck?.missing ?? []).join(", "),
+        );
       default:
         return undefined;
     }

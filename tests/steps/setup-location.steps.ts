@@ -56,6 +56,14 @@ Given("a directory that already contains files", function (this: LocationWorld) 
 
 Given("a directory containing an existing buddy instance", function (this: LocationWorld) {
   this.candidate = join(this.locTmpDir!, "old-ab");
+  mkdirSync(join(this.candidate, "agent_brain", "identity"), { recursive: true });
+  writeFileSync(join(this.candidate, "agent_brain", "identity", "SOUL.md"), "# Soul\n");
+  writeFileSync(join(this.candidate, "AGENTS.md"), "# Rules\n");
+});
+
+Given("a directory left behind by a failed setup", function (this: LocationWorld) {
+  // agent_brain/ was created but the identity files never were.
+  this.candidate = join(this.locTmpDir!, "half-created");
   mkdirSync(join(this.candidate, "agent_brain"), { recursive: true });
 });
 
@@ -79,4 +87,10 @@ Then("the location is rejected with a reason", function (this: LocationWorld) {
 Then("the wizard offers to import the existing instance", function (this: LocationWorld) {
   const check = get(wizardOf(this, locationOverrides).locationCheck);
   assert.equal(check?.status, "existing-buddy");
+});
+
+Then("the wizard reports it as unfinished, not importable", function (this: LocationWorld) {
+  const check = get(wizardOf(this, locationOverrides).locationCheck);
+  assert.equal(check?.status, "incomplete-buddy");
+  assert.ok((check?.missing ?? []).length > 0, "should name what is missing");
 });

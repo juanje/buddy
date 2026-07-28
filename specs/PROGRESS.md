@@ -207,8 +207,9 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 > `reflect-child.ts`, wizard). 15 findings classified into three themes, now
 > sprints H5–H7; H8 absorbs the rest. H5b (session factory) is **cancelled** —
 > replaced by two shared helpers under a reworded NFR-SEC-14.
-> **H5, H6, H6b and H6c done.** 513 unit + 213 BDD green. **Next: H7** (setup
-> validation). FR-WIKI resumes after H8.
+> **H5–H7 done** (including H6b and H6c). 532 unit + 214 BDD green.
+> **Next: H8** (containment and hygiene cleanup), the last of the series.
+> FR-WIKI resumes after it.
 
 ### Sprint: Hardening (v0.1.1) — started 2026-07-27
 
@@ -676,14 +677,44 @@ is opened afresh from a chat message.
 **Not wiki-specific**, though FR-WIKI-01..04 will make it the common case: it
 applies to any internal document containing links.
 
-#### Sprint H7 — Setup validation `[S]`
+#### Sprint H7 — Setup validation `[S]` — DONE (2026-07-27)
 
 Goal: the worker decides what setup is allowed, not the wizard.
 
 | ID | Requirement | Status | Commit |
 |----|-------------|--------|--------|
-| FR-SETUP-11 | Worker validates location before create or adopt | todo | |
-| FR-SETUP-12 | Incomplete instances detected, not adopted | todo | |
+| FR-SETUP-11 | Worker validates location before create or adopt | done | (this sprint) |
+| FR-SETUP-12 | Incomplete instances detected, not adopted | done | (this sprint) |
+
+**Tests at H7 close:** 532 unit + 214 BDD green, typecheck and vite build clean.
+
+`runSetup` now calls `assertSetupLocationAllowed` before doing anything: create
+requires `ok-new`/`ok-empty`, import requires `existing-buddy`. The wizard still
+gates too, but the worker decides — the shape H1 established.
+
+**The completeness line moved during implementation, and the tests forced it.**
+The first criterion required the full template: git repo, root overlay, all core
+brain files. The BDD import fixture — a legitimate hand-made instance with
+SOUL.md and AGENTS.md — failed it, which was the fixture telling me the rule was
+wrong, not that the fixture was. The line is now *unusable* versus *incomplete
+but fixable*:
+
+- **Refused:** no identity at all (neither SOUL.md nor USER.md). That is what a
+  failed `createBuddyInstance` leaves behind.
+- **Repaired on adopt:** missing git repository (`git init`, no commit) and
+  missing `.gitignore` rules. Both additive, neither touching content.
+
+**FR-SETUP-10's contract changed, deliberately.** It promised adoption modifies
+nothing. It now adds `.gitignore` rules and a repository when absent. The
+scenario `no file inside the buddy directory is modified` became `no
+pre-existing file is modified` plus an explicit one asserting the ignore rules
+appear. Without them Buddy commits its own locks and session state into the
+user's history — a worse violation of "don't touch their directory" than adding
+two lines to `.gitignore`.
+
+**Fourth test in the sprint that encoded the old behaviour** (`location.test.ts`
+asserted a bare `agent_brain/` was importable — the exact insufficiency
+FR-SETUP-12 exists to fix). H1 had two, H3 one, H7 one.
 
 Same shape as H1: validation living only in the UI. Lower probability here
 because the wizard does gate correctly — but the consequences are `cpSync` with
