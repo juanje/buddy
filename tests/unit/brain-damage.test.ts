@@ -114,9 +114,10 @@ describe("assertNoNewBrainDamage", () => {
   });
 
   it("tolerates damage that was already there", () => {
-    // An instance carrying inherited corruption — this one has ten such files
-    // from a three-month import — would otherwise fail every consolidation
-    // forever, and the failure would say nothing about the run that just ran.
+    // An instance carrying inherited corruption would otherwise fail every
+    // consolidation forever, and the failure would say nothing about the run
+    // that just ran. Not hypothetical: an instance imported from another tool
+    // arrives with damage no consolidation of ours caused.
     const inherited = [{ path: "agent_brain/projects/old.md", problem: "duplicated key: created" }];
     expect(() => assertNoNewBrainDamage(report(inherited), report(inherited))).not.toThrow();
   });

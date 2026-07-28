@@ -34,7 +34,7 @@ import {
 import { lockPath } from "../backends/maintenance";
 import { alignHttpDispatcherWithPi } from "../backends/pi-http-dispatcher";
 import { assembleMaintenancePrompt } from "../backends/prompt";
-import { defaultAuthPath } from "../backends/provider-auth";
+import { createBuddyModelRuntime, defaultAuthPath } from "../backends/provider-auth";
 import { bootRefreshIfNeeded } from "../backends/boot-refresh";
 import { buddyAgentDir, globalConfigDir } from "../backends/global-config";
 import { AGENT_TOOLS, EXCLUDED_TOOLS } from "../shared/defaults";
@@ -355,7 +355,12 @@ async function main(): Promise<void> {
   console.log(`Running consolidation at depth ${depth}...`);
 
   const baselineSha = getHeadSha(testDir);
-  const modelRuntime = await ModelRuntime.create({ authPath });
+  // NFR-SEC-19: build it exactly as the app does. `ModelRuntime.create({
+  // authPath })` would default `modelsPath` to the Pi CLI's
+  // ~/.pi/agent/models.json — so this script would read the user's personal
+  // provider definitions and, worse for its purpose, never see Buddy's own
+  // ~/.buddy/models.json, which is where a custom endpoint is configured.
+  const modelRuntime = await createBuddyModelRuntime();
   const start = Date.now();
 
   try {
