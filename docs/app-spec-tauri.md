@@ -407,7 +407,7 @@ App.svelte
 │   │   ├── MarkdownRenderer (for assistant messages)
 │   │   ├── (thinking indicator — inline in MessageBubble, transient)
 │   │   └── ToolCallBlock.svelte (collapsible, shows tool + result)
-│   ├── FileViewer.svelte (FR-CHAT-10: inline .md/.txt panel; openPath fallback)
+│   ├── FileViewer.svelte (FR-CHAT-11/12: inline .md/.txt panel, link following + back; no external open)
 │   ├── StreamingIndicator.svelte (typing dots while streaming)
 │   └── CompactionNotice.svelte (brief inline notice)
 ├── InputBar.svelte

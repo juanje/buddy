@@ -208,11 +208,22 @@ The user doesn't need to know the file structure to use buddy — they talk,
 and the agent handles the rest. (But they CAN read the files if they want.)
 
 When the agent links to a local file in chat (e.g. a log or note), the app
-opens `.md` and `.txt` files in an inline read-only viewer (FR-CHAT-10); other
-file types use the system default app via `tauri-plugin-opener` `openPath()` —
-not the browser and not the deprecated shell plugin `open()`, which only
-accepts http/mailto/tel URLs. External links still open in the browser via
-`openUrl()`. The viewer includes an optional "Open externally" action.
+opens `.md` and `.txt` files in an inline read-only viewer, and only from
+`agent_brain/`, `user/`, `downloads/` and `logs/` (FR-CHAT-11). Links inside an
+open document can be followed, with a back trail (FR-CHAT-12). External links
+open in the browser via `openUrl()`, restricted to `https://`.
+
+**Buddy never hands a file to another program.** For anything it cannot render,
+it points the user at the location and they open it themselves.
+
+*Corrected 2026-07-28.* This paragraph previously described `openPath()` and an
+"Open externally" action, both removed in July 2026: a click became execution —
+macOS opening a `.command` file with Terminal, for instance — and the agent
+chooses those link targets under the influence of pages it has fetched. The
+stale text outlived the code here and in the self-docs, where the agent read it
+and told users the feature still existed. **A capability withdrawn from the code
+is not withdrawn until it is withdrawn from this document too**; this file
+governs the spec, and the spec governs what the agent is told it can do.
 
 ---
 
@@ -649,17 +660,51 @@ behavior. The app adds the full experience (scheduler, notifications,
 6. **LLM providers (v1):** Anthropic, Google Gemini, OpenAI only. No local
    models until we verify which ones reliably follow buddy's memory procedures.
 
+   **Upheld, and the implementation was corrected to match it (2026-07-28).**
+   The setup wizard had been offering an "OpenAI-compatible" provider,
+   contradicting this decision — and it did not work anyway: the base URL was
+   collected and validated but never persisted, so the session ended up with a
+   credential and no address. The entry point was removed. This principle is
+   why FR-PROVIDER stays deferred rather than being treated as a bug to patch:
+   the blocker was never only the missing persistence, it is the open question
+   stated here. A local model that cannot reliably follow the consolidation and
+   reflect procedures does not fail loudly — it quietly degrades the memory,
+   which is the one thing buddy exists to keep. Making the plumbing work is the
+   easy half; verifying the procedures is the decision.
+
 7. **Tool set:** File tools (read, write, edit, ls, find, grep) + shipped custom
    tools (fetch_url, copy_file, move_file, delete_file, skill tools). No bash.
    All capabilities are Pi SDK custom tools — typed, scoped, auditable.
 
-8. **Global/local split (E11):** Core prompts and the universal system prompt
+8. **Cost is reported globally, and the Usage panel answers exactly one
+   question (2026-07-28):** spend is aggregated across every provider into a
+   single monthly figure — `usage.json` has no provider dimension and must not
+   grow one. The user's question is "what is this app costing me", and
+   answering it per provider would send them to three billing dashboards to add
+   up themselves, which is the work the panel exists to remove. Each provider's
+   own console remains the place to reconcile an invoice.
+
+   **The panel answers "what will I be charged" and nothing else.** A proposal
+   to show token and message counts beside the currency was rejected the day it
+   was written. The argument for it — that `$0.00 / $10.00` after a day on a
+   local model "looks broken" — was wrong: that is the accurate answer and, for
+   someone paying nothing, the good one. Token counts serve whoever builds the
+   app, not the person using it, and a second number the user cannot act on
+   competes with the one that matters. Per the target user above: for her it is
+   noise.
+
+   **The general rule:** that a datum is already computed and one line from
+   being rendered is an argument about implementation cost, not about whether it
+   belongs on screen. Anything that does not serve "what will I be charged"
+   stays out of the Usage panel.
+
+9. **Global/local split (E11):** Core prompts and the universal system prompt
    base (`agents-base.md`) live in `~/.buddy/prompts/`, not inside rootDir.
    App updates refresh them without touching user content. Instance-specific
    behavior stays in `rootDir/AGENTS.md`. Old instances with `CLAUDE.md` work
    without migration — the base layer overrides stale capability claims.
 
-9. **Boot refresh (E11):** On app version change, bundled global content
+10. **Boot refresh (E11):** On app version change, bundled global content
    (`~/.buddy/prompts/`, `~/.buddy/docs/`) is redeployed from embedded sources.
    Tracked via `last_app_version` in `config.json`. See below.
 
