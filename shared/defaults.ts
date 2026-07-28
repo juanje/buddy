@@ -154,6 +154,15 @@ export const DENYLIST_BASENAMES = [".env", "auth.json"];
 export const WRITE_TOOLS = new Set(["write", "edit"]);
 export const READ_TOOLS = new Set(["read", "ls", "find", "grep"]);
 
+/**
+ * How many incomplete-frontmatter files one consolidation is asked to repair
+ * (FR-BRAIN-07). A brain imported from another tool can list sixty at once,
+ * which is a wall rather than a task and gets skipped entirely — observed on
+ * 2026-07-28, when none of sixty were fixed. Later passes take the rest, so
+ * the backlog drains instead of being ignored.
+ */
+export const BRAIN_HEALTH_REPAIR_BUDGET = 8;
+
 /** Directories where delete/move/copy-dest are allowed (FR-DELETE-01, FR-FILE). */
 export const USER_MUTABLE_DIRS = ["user", "downloads"] as const;
 /** Directories never touched by user file ops (FR-DELETE-01, FR-FILE-02). */

@@ -156,7 +156,7 @@ When("the consolidation prompt is built for depth {int}", function (this: BrainH
 Then(
   "the report lists missing frontmatter for {string}",
   function (this: BrainHealthWorld, relPath: string) {
-    assert.ok(this.report?.missingFrontmatter.includes(relPath));
+    assert.ok(this.report?.missingFrontmatter.some((entry) => entry.path === relPath));
   },
 );
 

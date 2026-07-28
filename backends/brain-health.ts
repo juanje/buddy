@@ -5,6 +5,7 @@ import { join, relative } from "node:path";
 
 import {
   BRAIN_FILE_SIZE_THRESHOLD_LINES,
+  BRAIN_HEALTH_REPAIR_BUDGET,
   BRAIN_INDEX_EXEMPT_DIRS,
   BRAIN_INDEX_EXEMPT_ROOT,
   CORE_BRAIN_FILES,
@@ -15,7 +16,13 @@ import {
 import { parseFrontmatter } from "./reflect";
 
 export interface BrainHealthReport {
-  missingFrontmatter: string[];
+  /**
+   * Files whose frontmatter block exists but lacks required keys
+   * (NFR-FORMAT-01). Each entry names what is absent: the report is read by a
+   * model, and "this file is missing frontmatter" about a file that visibly
+   * has frontmatter is an instruction it will correctly ignore.
+   */
+  missingFrontmatter: Array<{ path: string; missing: string[] }>;
   /**
    * Files whose frontmatter exists but is structurally broken (NFR-FORMAT-01):
    * a second `---` block stacked below the first, or a key repeated inside one
@@ -85,10 +92,11 @@ function walkAllBrainMarkdown(rootDir: string): string[] {
   return results.sort();
 }
 
-function hasRequiredFrontmatter(content: string): boolean {
+/** Which required keys are absent or empty (NFR-FORMAT-01). */
+function missingRequiredKeys(content: string): string[] {
   const fields = parseFrontmatter(content);
-  return REQUIRED_BRAIN_FRONTMATTER.every(
-    (key) => key in fields && fields[key].trim().length > 0,
+  return REQUIRED_BRAIN_FRONTMATTER.filter(
+    (key) => !(key in fields) || fields[key].trim().length === 0,
   );
 }
 
@@ -134,17 +142,15 @@ function findMissingIndexes(rootDir: string): string[] {
 }
 
 export function computeBrainHealthReport(rootDir: string): BrainHealthReport {
-  const missingFrontmatter: string[] = [];
+  const missingFrontmatter: BrainHealthReport["missingFrontmatter"] = [];
   const malformedFrontmatter: BrainHealthReport["malformedFrontmatter"] = [];
   const oversizedFiles: string[] = [];
 
   for (const relPath of walkAllBrainMarkdown(rootDir)) {
     const content = readFileSync(join(rootDir, relPath), "utf8");
-    if (
-      !(FRONTMATTER_EXEMPT_FILES as readonly string[]).includes(relPath) &&
-      !hasRequiredFrontmatter(content)
-    ) {
-      missingFrontmatter.push(relPath);
+    if (!(FRONTMATTER_EXEMPT_FILES as readonly string[]).includes(relPath)) {
+      const missing = missingRequiredKeys(content);
+      if (missing.length > 0) missingFrontmatter.push({ path: relPath, missing });
     }
     const problem = frontmatterProblem(content);
     if (problem) malformedFrontmatter.push({ path: relPath, problem });
@@ -188,9 +194,24 @@ export function formatBrainHealthReportBlock(report: BrainHealthReport): string 
   const lines = ["Brain health (pre-computed):"];
 
   if (report.missingFrontmatter.length > 0) {
-    lines.push("Missing frontmatter:");
-    for (const path of report.missingFrontmatter) {
-      lines.push(`- ${path}`);
+    // The label used to read "Missing frontmatter", which is false for almost
+    // every file listed: they have a block, they are missing required *keys*.
+    // A model told the frontmatter is missing opens the file, sees frontmatter,
+    // and reasonably concludes there is nothing to do — which is exactly what
+    // happened on 2026-07-28, when 60 files were reported and none was fixed.
+    // Naming the absent keys turns the list into an instruction.
+    const shown = report.missingFrontmatter.slice(0, BRAIN_HEALTH_REPAIR_BUDGET);
+    const remaining = report.missingFrontmatter.length - shown.length;
+    lines.push(
+      `Incomplete frontmatter — the block exists, these keys are absent. ` +
+        `Fix the ${shown.length} listed here in this pass:`,
+    );
+    for (const entry of shown) {
+      lines.push(`- ${entry.path} — add: ${entry.missing.join(", ")}`);
+    }
+    if (remaining > 0) {
+      // A list of sixty is not a task, it is a wall. Later passes take the rest.
+      lines.push(`(${remaining} more will be listed in later consolidations.)`);
     }
   }
 

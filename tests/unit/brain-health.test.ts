@@ -54,7 +54,7 @@ describe("brain health linter", () => {
     writeBrainFile("agent_brain/concepts/stale.md", "# No frontmatter\n");
 
     const report = computeBrainHealthReport(dir);
-    expect(report.missingFrontmatter).toContain("agent_brain/concepts/stale.md");
+    expect(report.missingFrontmatter.map((e) => e.path)).toContain("agent_brain/concepts/stale.md");
   });
 
   it("flags files with empty summary or created values", () => {
@@ -66,7 +66,11 @@ describe("brain health linter", () => {
     );
 
     const report = computeBrainHealthReport(dir);
-    expect(report.missingFrontmatter).toContain("agent_brain/concepts/empty.md");
+    // The entry names the absent keys, so the model is told what to add rather
+    // than that "frontmatter is missing" from a file that visibly has it.
+    expect(report.missingFrontmatter).toEqual([
+      { path: "agent_brain/concepts/empty.md", missing: ["summary", "created"] },
+    ]);
   });
 
   it("flags missing core brain files", () => {
@@ -135,7 +139,7 @@ describe("brain health linter", () => {
     writeBrainFile("agent_brain/archive/old.md", "# Archived without frontmatter\n");
 
     const report = computeBrainHealthReport(dir);
-    expect(report.missingFrontmatter).not.toContain("agent_brain/archive/old.md");
+    expect(report.missingFrontmatter.map((e) => e.path)).not.toContain("agent_brain/archive/old.md");
   });
 
   it("returns no issues for a healthy brain", () => {
@@ -160,7 +164,7 @@ describe("brain health linter", () => {
 
   it("formats grouped issues when present", () => {
     const block = formatBrainHealthReportBlock({
-      missingFrontmatter: ["agent_brain/concepts/stale.md"],
+      missingFrontmatter: [{ path: "agent_brain/concepts/stale.md", missing: ["summary"] }],
       malformedFrontmatter: [],
       missingCoreFiles: ["agent_brain/identity/SOUL.md"],
       missingIndexes: ["agent_brain/projects"],
@@ -168,7 +172,8 @@ describe("brain health linter", () => {
     });
 
     expect(block).toContain("Brain health (pre-computed):");
-    expect(block).toContain("Missing frontmatter:");
+    expect(block).toContain("Incomplete frontmatter");
+    expect(block).toContain("add: summary"); // names the key, not just the file
     expect(block).toContain("agent_brain/concepts/stale.md");
     expect(block).toContain("Missing core files:");
     expect(block).toContain("Missing index.md:");

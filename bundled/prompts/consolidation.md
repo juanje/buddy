@@ -331,14 +331,22 @@ matters during maintenance.
 
 If the prompt header includes a "Brain health" block, address the reported
 issues:
-- **Missing frontmatter:** Add `summary` (and `created` if missing) to flagged
-  files during this consolidation pass.
+- **Incomplete frontmatter:** each entry names the file and the keys to add.
+  Fix **every file listed** in this pass — the list is already budgeted to a
+  handful, and the rest arrive in later consolidations. Read the file, write a
+  one-line `summary` describing what it contains, and set `created` to the
+  earliest date the file mentions if it is absent.
+  **Merge into the existing block. Never add a second `---` block** — that
+  corrupts the file and the run will be recorded as failed.
 - **Missing indexes:** Create `index.md` for flagged directories using file
   summaries.
 - **Oversized files:** Add an observation noting the file may benefit from
   splitting.
 
 If no health block is present, the brain structure is healthy — skip this step.
+
+Do not report on this step. Repairing metadata is maintenance, not something
+learned; it belongs in the files you fixed and nowhere else.
 
 ---
 
@@ -391,6 +399,15 @@ specified depth.
 All file changes are committed automatically when the consolidation cycle ends.
 No manual action needed — just finish writing and the system persists everything.
 Log rotation runs automatically after you finish — do not archive logs yourself.
+
+**Never record the consolidation's own activity as memory.** Not in the daily
+log, not in `observations.md`, not in the journal. "Reviewed the ripe
+observations and no changes were needed", "completed the maintenance cycle",
+"followed the process-conversation skill" — none of that is something the agent
+learned about the user or the work. It is the machinery describing itself, and
+because these files are injected into future sessions, every such line is
+permanent noise competing with real memory. If a step produced no change, it
+produces no writing.
 
 **Do not write a consolidation report or summary block to the daily log.** The
 artifacts you created (Day summary, journal entry, concepts, index updates) are
