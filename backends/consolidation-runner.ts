@@ -487,7 +487,7 @@ export async function runConsolidation(options: RunConsolidationOptions): Promis
 
     if (completedDepths.length > 0) {
       const depthLabel = completedDepths.map((d) => `depth-${d}`).join(", ");
-      const notes: string[] = [`Maintenance cycle completed: ${depthLabel}.`];
+      const notes: string[] = [];
 
       // FR-CONSOL-11: SOUL.md is re-injected into every future session, so a
       // change to it must not be silent. Git holds the diff; this is how the
@@ -503,13 +503,22 @@ export async function runConsolidation(options: RunConsolidationOptions): Promis
         );
       }
 
-      appendDailyLog(rootDir, {
-        date,
-        sessionHeader: `${now.toISOString().slice(11, 16)} consolidation`,
-        sections: notes.join("\n\n"),
-        status: "maintenance",
-      }, now);
-      updateLogsIndexEntry(rootDir, date, "maintenance");
+      // FR-CONSOL-14: nothing notable, nothing written. An unconditional
+      // "Maintenance cycle completed" told the reader only that the machinery
+      // ran, in a file re-injected into every future session — and it was the
+      // line that made the 22 ms phantom run of 2026-07-28 look legitimate,
+      // since it was emitted without reference to whether any work happened.
+      // The git commit is the record of a routine cycle, and unlike this note
+      // it cannot claim work that was never done.
+      if (notes.length > 0) {
+        appendDailyLog(rootDir, {
+          date,
+          sessionHeader: `${now.toISOString().slice(11, 16)} consolidation`,
+          sections: [`Maintenance cycle: ${depthLabel}.`, ...notes].join("\n\n"),
+          status: "maintenance",
+        }, now);
+        updateLogsIndexEntry(rootDir, date, "maintenance");
+      }
       await commitAll(rootDir, commitMessageForDepth(targetDepth, now));
     }
 

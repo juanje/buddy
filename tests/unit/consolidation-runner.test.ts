@@ -153,9 +153,63 @@ describe("consolidation runner", () => {
 
     const latest = (await git.log({ maxCount: 1 })).latest;
     expect(latest?.message).toBe("daily: 2026-07-22");
+  });
 
-    const logContent = readFileSync(join(dir, "logs", "2026-07-22.md"), "utf8");
-    expect(logContent).toContain("Maintenance cycle completed: depth-1.");
+  // FR-CONSOL-14. This used to assert the daily log always gained
+  // "Maintenance cycle completed: depth-1." — a line saying only that the
+  // machinery ran, written into a file re-injected into every future session.
+  // It was also what made the 22 ms phantom run of 2026-07-28 look legitimate,
+  // since it was emitted without reference to whether any work had happened.
+  it("writes no maintenance note when there is nothing to report", async () => {
+    setupAb();
+    await initTestGitRepo(dir);
+    const { simpleGit } = await import("simple-git");
+    await simpleGit(dir).add("-A").commit("seed");
+
+    const state = loadConsolidationState(dir);
+    state.sessionsSinceLastDepth1 = 3;
+
+    await runConsolidation({
+      rootDir: dir,
+      targetDepth: 1,
+      modelRuntime: {} as never,
+      state,
+      createSession: async () => ({ prompt: async () => {}, dispose: () => {} }),
+      now: new Date("2026-07-22T12:00:00Z"),
+    });
+
+    expect(existsSync(join(dir, "logs", "2026-07-22.md"))).toBe(false);
+  });
+
+  it("writes the note when the run changed identity or refused a path", async () => {
+    // The notes that matter are still delivered — and now they arrive without
+    // routine noise around them, so they are visible.
+    setupAb();
+    await initTestGitRepo(dir);
+    const { simpleGit } = await import("simple-git");
+    await simpleGit(dir).add("-A").commit("seed");
+
+    const state = loadConsolidationState(dir);
+    state.sessionsSinceLastDepth1 = 3;
+
+    await runConsolidation({
+      rootDir: dir,
+      targetDepth: 1,
+      modelRuntime: {} as never,
+      state,
+      createSession: async () => ({
+        prompt: async () => {},
+        dispose: () => {},
+        changedIdentity: () => true,
+        refusedPaths: () => ["/etc/passwd"],
+      }),
+      now: new Date("2026-07-22T12:00:00Z"),
+    });
+
+    const log = readFileSync(join(dir, "logs", "2026-07-22.md"), "utf8");
+    expect(log).toContain("Updated SOUL.md");
+    expect(log).toContain("/etc/passwd");
+    expect(log).toContain("Maintenance cycle: depth-1."); // context for the notes
   });
 
   it("defers when maintenance lock is held", async () => {

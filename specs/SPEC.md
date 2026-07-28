@@ -675,6 +675,7 @@ Fork bomb defense:
 | FR-CONSOL-11 | Identity changes made by consolidation are surfaced | 2 |
 | FR-CONSOL-12 | A consolidation that produced no output is a failure | 2 ✓ |
 | FR-CONSOL-13 | A consolidation that corrupts the brain is a failure | 2 ✓ |
+| FR-CONSOL-14 | The daily log records maintenance only when notable | 2 ✓ |
 
 **Consolidation depths:**
 
@@ -842,6 +843,32 @@ carrying inherited damage — one imported from another tool typically does —
 would otherwise fail every consolidation forever, and the failure would say
 nothing about the run that just ran. Only files the run itself broke count
 against it.
+
+**FR-CONSOL-14 — The daily log records maintenance only when notable**
+
+- **Given** a consolidation finished successfully
+- **When** it changed `SOUL.md` (FR-CONSOL-11) or refused an out-of-workspace
+  access (FR-CONSOL-10)
+- **Then** a maintenance entry is written to the daily log carrying those notes
+- **And when** neither happened, **nothing is written** — the git commit is the
+  record of a routine cycle
+
+**Why the unconditional note was worse than useless.** It said only that the
+machinery ran, in a file re-injected into every future session, so it competed
+for attention with actual memory. Worse, it was emitted purely on
+`completedDepths.length > 0`, without reference to whether any work had
+happened — which is what made the 22 ms phantom run of 2026-07-28 read as
+legitimate to anyone inspecting the log. A record that cannot distinguish a
+real cycle from an empty one is not a record.
+
+**The notes that matter survive**, and are now more visible for having nothing
+around them. Git remains the log of routine cycles and, unlike a written note,
+cannot claim work that was never done.
+
+**Found by fixing it in the wrong place first.** The instruction "never record
+the consolidation's own activity" was added to `consolidation.md`, and the next
+run emitted the line anyway — because the runner writes it, not the model. An
+instruction cannot govern behaviour that no model controls.
 
 | ID | Description | Phase |
 |----|-------------|-------|
