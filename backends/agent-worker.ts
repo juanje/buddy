@@ -1,9 +1,15 @@
-// backends/agent-worker.ts — Worker entry point.
-// Spawned by tauri-plugin-js inside the Tauri app. Detects first run
-// (FR-SETUP-01), creates a real Pi SDK session in the configured buddy directory
-// (excludeTools: ["bash"]) and exposes WorkerAPI to the frontend over kkrpc
-// stdio transport. Includes permission layer, system prompt assembly,
-// auto-commit lifecycle, forked reflect on shutdown, and heartbeat scheduler.
+// backends/agent-worker.ts — Worker RPC entry point.
+// Not the process entry point in production: the compiled sidecar starts at
+// sidecar-entry.ts, which installs polyfills and embedded assets and only then
+// imports this module (E12/E13b). In dev, tauri-plugin-js spawns this file
+// directly under tsx — which is why something can work in dev and fail in the
+// packaged binary.
+//
+// Detects first run (FR-SETUP-01), creates a real Pi SDK session in the
+// configured buddy directory (excludeTools: ["bash"]) and exposes WorkerAPI to
+// the frontend over kkrpc stdio transport. Includes permission layer, system
+// prompt assembly, auto-commit lifecycle, forked reflect on shutdown, and
+// heartbeat scheduler.
 
 import { RPCChannel } from "kkrpc";
 import { nodeStdioTransport } from "kkrpc/stdio";
@@ -122,7 +128,7 @@ async function main(): Promise<void> {
     heartbeat = undefined;
   }
 
-  function startHeartbeatForAb(rootDir: string): void {
+  function restartHeartbeat(rootDir: string): void {
     stopHeartbeat();
     heartbeat = startHeartbeat({
       rootDir,
@@ -183,7 +189,7 @@ async function main(): Promise<void> {
     );
     if (!booted) return;
     core = booted.core;
-    startHeartbeatForAb(rootDir);
+    restartHeartbeat(rootDir);
     ensureUsageTracker().checkAndFireAlerts();
     // FR-CHAT-13: tell the frontend before flushing, so the "preparing" notice
     // clears as the queued prompt starts streaming rather than after it ends.

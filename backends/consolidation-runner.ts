@@ -61,15 +61,6 @@ export interface MaintenanceSessionLike {
 }
 
 /**
- * Permission policy for an unattended session (FR-CONSOL-10).
- *
- * The gate is the same one the chat session uses; only the answer to "ask"
- * differs, because there is nobody to ask. `outside` is refused — nothing
- * consolidation legitimately touches lives beyond the workspace. `identity-write`
- * is allowed, because promoting a universal trait into SOUL.md is what
- * consolidation.md tells the agent to do.
- */
-/**
  * Just the part of a Pi session the gate touches. Derived from the SDK's own
  * return type rather than hand-written, so a signature change upstream fails the
  * build here instead of silently drifting. (The hook's context type lives in a
@@ -104,6 +95,15 @@ export function installMaintenanceGate(
   return policy;
 }
 
+/**
+ * Permission policy for an unattended session (FR-CONSOL-10).
+ *
+ * The gate is the same one the chat session uses; only the answer to "ask"
+ * differs, because there is nobody to ask. `outside` is refused — nothing
+ * consolidation legitimately touches lives beyond the workspace. `identity-write`
+ * is allowed, because promoting a universal trait into SOUL.md is what
+ * consolidation.md tells the agent to do.
+ */
 export function createMaintenancePermissionPolicy(): {
   askUser: (request: Omit<PermissionRequest, "id">) => Promise<boolean>;
   refusedPaths: () => string[];
