@@ -102,10 +102,43 @@ describe("appendReflectObservations", () => {
     appendReflectObservations(root, "2026-07-29", "- **Rule candidate:** use links.");
 
     const content = readFileSync(join(root, "agent_brain", "observations.md"), "utf8");
-    expect(content).toContain("2026-07-29");
-    expect(content).toContain("use links");
+    expect(content).toContain("- **2026-07-29:** **Rule candidate:** use links. (seen: 1)");
     expect(content).toContain("An older note."); // nothing lost
     expect(content).toContain("summary: System observations"); // frontmatter intact
+  });
+
+  it("counts the observation, or promotion can never reach it", () => {
+    // ripe-observations.ts parses `(seen: N)` and consolidation acts at 2+.
+    // Without the counter the entry is inert: filed, never promoted.
+    appendReflectObservations(root, "2026-07-29", "- A signal.");
+    expect(readFileSync(join(root, "agent_brain", "observations.md"), "utf8")).toMatch(
+      /\(seen: 1\)/,
+    );
+  });
+
+  it("strips whichever bullet marker the model used", () => {
+    // The 2026-07-29 run emitted `*   ` and produced
+    // "- **2026-07-29:** *   **Model/Tool interaction:** …".
+    appendReflectObservations(root, "2026-07-29", "*   **Model/Tool:** edit is strict.");
+    const content = readFileSync(join(root, "agent_brain", "observations.md"), "utf8");
+    expect(content).toContain("- **2026-07-29:** **Model/Tool:** edit is strict. (seen: 1)");
+    expect(content).not.toContain("*   **Model/Tool");
+  });
+
+  it("files each bullet as its own observation", () => {
+    // They are counted and promoted independently; merging them into one
+    // paragraph would make two signals share a single counter.
+    appendReflectObservations(root, "2026-07-29", "- First signal.\n- Second signal.");
+    const content = readFileSync(join(root, "agent_brain", "observations.md"), "utf8");
+    expect(content).toContain("- **2026-07-29:** First signal. (seen: 1)");
+    expect(content).toContain("- **2026-07-29:** Second signal. (seen: 1)");
+  });
+
+  it("keeps a wrapped observation as one entry", () => {
+    appendReflectObservations(root, "2026-07-29", "- A long signal\n  that wrapped across lines.");
+    expect(readFileSync(join(root, "agent_brain", "observations.md"), "utf8")).toContain(
+      "- **2026-07-29:** A long signal that wrapped across lines. (seen: 1)",
+    );
   });
 
   it("does not touch the file when there is nothing to file", () => {

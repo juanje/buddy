@@ -215,8 +215,20 @@ export function sanitizeReflectOutput(text: string): string {
 /**
  * File observations the reflect fork produced (FR-REFLECT-08).
  *
- * Appended under the entry date, matching the format the consolidation
- * procedure reads when it promotes ripe observations (`seen 2+`).
+ * The fork emits a free-form `### Observations` section; this normalises it to
+ * the format the promotion logic reads — `- **YYYY-MM-DD:** text (seen: N)`,
+ * parsed by `ripe-observations.ts`. Two things the first version got wrong,
+ * found on the run of 2026-07-29:
+ *
+ * - It stripped only `-` bullets, so a model emitting `*   ` produced
+ *   `- **2026-07-29:** *   **Model/Tool interaction:** …`.
+ * - It omitted `(seen: N)` entirely. Without the counter an observation can
+ *   never reach `seen 2+`, which is the threshold for promotion to a concept —
+ *   so every observation filed this way was inert.
+ *
+ * One emitted bullet becomes one entry. A section with several signals is
+ * several observations, not one paragraph, because they are counted and
+ * promoted independently.
  */
 export function appendReflectObservations(
   rootDir: string,
@@ -225,9 +237,26 @@ export function appendReflectObservations(
 ): void {
   if (!observations?.trim()) return;
 
-  const path = join(rootDir, "agent_brain", "observations.md");
-  const entry = `\n- **${date}:** ${observations.trim().replace(/^-\s*/, "")}\n`;
+  // Split on bullets at the start of a line; keep prose that follows a bullet
+  // attached to it (models wrap long observations across lines).
+  const entries = observations
+    .split(/\n(?=\s*[-*+]\s)/)
+    .map((chunk) =>
+      chunk
+        .replace(/^\s*[-*+]\s+/, "")
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .join(" ")
+        .trim(),
+    )
+    .filter(Boolean);
+  if (entries.length === 0) return;
 
+  const block = entries.map((text) => `- **${date}:** ${text} (seen: 1)`).join("\n\n");
+  const entry = `\n${block}\n`;
+
+  const path = join(rootDir, "agent_brain", "observations.md");
   if (!existsSync(path)) {
     mkdirSync(dirname(path), { recursive: true });
     writeFileSync(
