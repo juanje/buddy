@@ -20,6 +20,7 @@ import { pathArgsOf } from "../shared/tool-paths";
 import { expandHome } from "../shared/path-utils";
 import { isContained } from "./containment";
 import { globalConfigDir } from "./global-config";
+import { identityDirPath } from "./brain-paths";
 
 export type PermissionOp = "read" | "write";
 
@@ -51,7 +52,7 @@ function isProtectedConfig(absPath: string, rootDir: string): boolean {
 }
 
 function isIdentityFile(absPath: string, rootDir: string): boolean {
-  const identityDir = join(rootDir, "agent_brain", "identity");
+  const identityDir = identityDirPath(rootDir);
   return IDENTITY_FILES.some((file) => resolve(identityDir, file) === absPath);
 }
 

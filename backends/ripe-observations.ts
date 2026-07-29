@@ -1,9 +1,9 @@
 // backends/ripe-observations.ts — Ripe observation extraction for consolidation Step 7.
 
 import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
 
 import { RIPE_OBSERVATION_MIN_SEEN } from "../shared/defaults";
+import { observationsPath } from "./brain-paths";
 
 export type RipeObservationCategory =
   | "skill"
@@ -75,10 +75,10 @@ function parseRipeObservationsFromSection(
 }
 
 export function extractRipeObservations(rootDir: string): RipeObservation[] {
-  const observationsPath = join(rootDir, "agent_brain", "observations.md");
-  if (!existsSync(observationsPath)) return [];
+  const path = observationsPath(rootDir);
+  if (!existsSync(path)) return [];
 
-  const content = readFileSync(observationsPath, "utf8");
+  const content = readFileSync(path, "utf8");
   const ripe: RipeObservation[] = [];
 
   for (const { heading, category } of RIPE_OBSERVATION_SECTIONS) {

@@ -12,6 +12,7 @@ import { DEFAULT_LANGUAGE, DEFAULT_MONTHLY_BUDGET, GIT_USER_EMAIL, GIT_USER_NAME
 import { getEmbeddedAssets } from "./embedded-assets";
 import { writeStateFile } from "./state-file";
 import { writePiSettings } from "../shared/pi-settings";
+import { userProfilePath } from "./brain-paths";
 
 /** Bundled templates location (dev: repo root; not present in the compiled sidecar). */
 export function defaultTemplatesDir(): string {
@@ -82,7 +83,7 @@ export async function createBuddyInstance(options: CreateBuddyOptions): Promise<
   copyTemplates(root, options.templatesDir);
 
   if (config.name?.trim()) {
-    writeFileSync(join(root, "agent_brain", "identity", "USER.md"), buildUserProfile(config));
+    writeFileSync(userProfilePath(root), buildUserProfile(config));
   }
 
   // Project-scoped Pi settings: the session created in this cwd uses the

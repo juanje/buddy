@@ -6,10 +6,10 @@
 // the LLM during autonomous cycles, so tolerance beats strictness.
 
 import { readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
 
 import { toIsoDay } from "../shared/dates";
 import type { DeferredItemView } from "../shared/api";
+import { deferredPath } from "./brain-paths";
 
 export interface ParsedDeferredItem {
   type: string;
@@ -44,7 +44,7 @@ export function dueDeferredItems(
 export function getDueDeferred(rootDir: string, now: Date = new Date()): ParsedDeferredItem[] {
   let deferredRaw: string | undefined;
   try {
-    deferredRaw = readFileSync(join(rootDir, "agent_brain", "deferred.md"), "utf8");
+    deferredRaw = readFileSync(deferredPath(rootDir), "utf8");
   } catch {
     return [];
   }
@@ -56,7 +56,7 @@ export function getDueDeferred(rootDir: string, now: Date = new Date()): ParsedD
  * Preserves future entries, headers, and non-entry lines.
  */
 export function removeDueDeferredItems(rootDir: string, now: Date = new Date()): void {
-  const path = join(rootDir, "agent_brain", "deferred.md");
+  const path = deferredPath(rootDir);
   let content: string;
   try {
     content = readFileSync(path, "utf8");

@@ -6,6 +6,7 @@ import { join, relative } from "node:path";
 import { addDays, toIsoDay } from "../shared/dates";
 import { HEBBIAN_DEMOTION_MIN_SESSIONS, HEBBIAN_RECENT_DAYS } from "../shared/defaults";
 import { parseFrontmatter } from "./reflect";
+import { brainDirPath, logsIndexPath } from "./brain-paths";
 
 const LOG_INDEX_ACTIVE_RE = /^-\s+(\d{4}-\d{2}-\d{2}):\s+active\b/;
 
@@ -38,7 +39,7 @@ function isBrainTracked(relPath: string): boolean {
 }
 
 function walkBrainFiles(rootDir: string): string[] {
-  const brainDir = join(rootDir, "agent_brain");
+  const brainDir = brainDirPath(rootDir);
   if (!existsSync(brainDir)) return [];
 
   const results: string[] = [];
@@ -61,7 +62,7 @@ function walkBrainFiles(rootDir: string): string[] {
 }
 
 function readLogsIndex(rootDir: string): string {
-  const indexPath = join(rootDir, "logs", "index.md");
+  const indexPath = logsIndexPath(rootDir);
   if (!existsSync(indexPath)) return "";
   return readFileSync(indexPath, "utf8");
 }

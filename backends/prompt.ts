@@ -10,6 +10,7 @@ import { toIsoDay } from "../shared/dates";
 import { globalConfigDir } from "./global-config";
 import { getEmbeddedAssets } from "./embedded-assets";
 import { defaultTemplatesDir } from "./create-buddy";
+import { dailyLogPath, deferredPath, logsDirPath, logsIndexPath, soulPath, userProfilePath } from "./brain-paths";
 
 export interface AssembledPrompt {
   prompt: string;
@@ -91,8 +92,8 @@ function readIfExists(path: string): string | undefined {
  * Keeps SOUL.md + USER.md for personality and user context.
  */
 export function assembleMaintenancePrompt(rootDir: string, now: Date = new Date()): string {
-  const soul = readIfExists(join(rootDir, "agent_brain", "identity", "SOUL.md"));
-  const user = readIfExists(join(rootDir, "agent_brain", "identity", "USER.md"));
+  const soul = readIfExists(soulPath(rootDir));
+  const user = readIfExists(userProfilePath(rootDir));
 
   const sections: string[] = [];
   if (soul) sections.push(`# Your character\n\n${soul.trim()}`);
@@ -108,8 +109,8 @@ export function assembleSystemPrompt(rootDir: string, now: Date = new Date()): A
   const instanceRules =
     readIfExists(join(rootDir, "AGENTS.md")) ??
     readIfExists(join(rootDir, "CLAUDE.md"));
-  const soul = readIfExists(join(rootDir, "agent_brain", "identity", "SOUL.md"));
-  const user = readIfExists(join(rootDir, "agent_brain", "identity", "USER.md"));
+  const soul = readIfExists(soulPath(rootDir));
+  const user = readIfExists(userProfilePath(rootDir));
 
   const sections: string[] = [];
 
@@ -164,8 +165,8 @@ function wrapSessionContext(body: string): string {
 
 /** Episodic session context — hidden first user message (FR-PROMPT-02). */
 export function assembleSessionContext(rootDir: string, now: Date = new Date()): SessionContext {
-  const user = readIfExists(join(rootDir, "agent_brain", "identity", "USER.md"));
-  const deferredRaw = readIfExists(join(rootDir, "agent_brain", "deferred.md"));
+  const user = readIfExists(userProfilePath(rootDir));
+  const deferredRaw = readIfExists(deferredPath(rootDir));
 
   const dueItems = deferredRaw
     ? dueDeferredItems(parseDeferredItems(deferredRaw), toIsoDay(now))
@@ -174,7 +175,7 @@ export function assembleSessionContext(rootDir: string, now: Date = new Date()):
   const personalizationPending = isUserProfilePlaceholder(user);
   const sections: string[] = [];
 
-  const logsIndex = readIfExists(join(rootDir, "logs", "index.md"));
+  const logsIndex = readIfExists(logsIndexPath(rootDir));
   if (logsIndex) {
     sections.push(`# Sessions index\n\n${logsIndex.trim()}`);
   }
@@ -223,7 +224,7 @@ function findLastLog(rootDir: string, indexContent: string | undefined): string 
   }
 
   if (lastDate) {
-    return readIfExists(join(rootDir, "logs", `${lastDate}.md`));
+    return readIfExists(dailyLogPath(rootDir, lastDate));
   }
 
   return findMostRecentLogFile(rootDir);
@@ -231,7 +232,7 @@ function findLastLog(rootDir: string, indexContent: string | undefined): string 
 
 /** Fallback when logs/index.md is missing or has no dated entries. */
 function findMostRecentLogFile(rootDir: string): string | undefined {
-  const logsDir = join(rootDir, "logs");
+  const logsDir = logsDirPath(rootDir);
   if (!existsSync(logsDir)) return undefined;
   try {
     const files = readdirSync(logsDir)

@@ -14,6 +14,7 @@ import { join } from "node:path";
 import { addDays } from "../shared/dates";
 import { LOG_ROTATION_THRESHOLD } from "../shared/defaults";
 import { updateLogsIndexEntry } from "./reflect";
+import { dailyLogPath, logsDirPath } from "./brain-paths";
 
 const DATE_MARKER_RE = /\b(\d{4}-\d{2}-\d{2})\b/;
 
@@ -30,7 +31,7 @@ function listLogFiles(logsDir: string): string[] {
 }
 
 export function rotateLogs(rootDir: string, targetDate: string): { archived: string[] } {
-  const logsDir = join(rootDir, "logs");
+  const logsDir = logsDirPath(rootDir);
   const files = listLogFiles(logsDir);
   if (files.length <= LOG_ROTATION_THRESHOLD) return { archived: [] };
 
@@ -145,7 +146,7 @@ export function extractDaySummaryKeyThemes(content: string): string | null {
 }
 
 export function updateLogsIndexFromDaySummary(rootDir: string, date: string): void {
-  const logPath = join(rootDir, "logs", `${date}.md`);
+  const logPath = dailyLogPath(rootDir, date);
   if (!existsSync(logPath)) return;
 
   const themes = extractDaySummaryKeyThemes(readFileSync(logPath, "utf8"));

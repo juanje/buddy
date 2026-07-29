@@ -2,6 +2,7 @@
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
+import { logsDirPath, observationsPath } from "./brain-paths";
 
 export type LogStatus = "active" | "maintenance";
 
@@ -53,7 +54,7 @@ function updateLastUpdatedFrontmatter(content: string, now: Date): string {
  * Append reflect output to `logs/YYYY-MM-DD.md` in process-conversation-compatible format.
  */
 export function appendDailyLog(rootDir: string, append: DailyLogAppend, now = new Date()): string {
-  const logsDir = join(rootDir, "logs");
+  const logsDir = logsDirPath(rootDir);
   mkdirSync(logsDir, { recursive: true });
   const logPath = join(logsDir, `${append.date}.md`);
   const blockKind = append.blockKind ?? "session";
@@ -124,7 +125,7 @@ export function updateLogsIndexEntry(
   status: LogStatus = "active",
   description?: string,
 ): void {
-  const logsDir = join(rootDir, "logs");
+  const logsDir = logsDirPath(rootDir);
   mkdirSync(logsDir, { recursive: true });
   const indexPath = join(logsDir, "index.md");
 
@@ -256,7 +257,7 @@ export function appendReflectObservations(
   const block = entries.map((text) => `- **${date}:** ${text} (seen: 1)`).join("\n\n");
   const entry = `\n${block}\n`;
 
-  const path = join(rootDir, "agent_brain", "observations.md");
+  const path = observationsPath(rootDir);
   if (!existsSync(path)) {
     mkdirSync(dirname(path), { recursive: true });
     writeFileSync(

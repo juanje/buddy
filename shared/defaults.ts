@@ -1,6 +1,10 @@
 // shared/defaults.ts — Centralized operational defaults and security constants (NFR-CONFIG-01/03).
 // Browser-safe: no Node.js imports. Backend-only helpers live in backends/.
 
+// The buddy directory layout lives in ./brain-paths.ts. The lists below derive
+// from it rather than respelling the paths, so the two cannot disagree.
+import { BRAIN, BRAIN_DIR, BRAIN_SUBDIRS, DOWNLOADS_DIR, LOGS_DIR, USER_DIR } from "./brain-paths";
+
 // --- Operational defaults (NFR-CONFIG-01) ---
 export const LOCK_STALE_MS = 60 * 60 * 1000;
 /** Retention period for .buddy/logs/*.jsonl session event logs (NFR-MAINT-01). */
@@ -137,27 +141,20 @@ export const RIPE_OBSERVATION_MIN_SEEN = 2;
 /** Required YAML frontmatter keys on agent_brain/ files (NFR-FORMAT-01). */
 export const REQUIRED_BRAIN_FRONTMATTER = ["summary", "created"] as const;
 /** Files exempt from frontmatter requirement (always-injected at session start). */
-export const FRONTMATTER_EXEMPT_FILES = [
-  "agent_brain/identity/SOUL.md",
-  "agent_brain/identity/USER.md",
-] as const;
+export const FRONTMATTER_EXEMPT_FILES = [BRAIN.soul, BRAIN.user] as const;
 /** Line count above which a brain file is flagged for potential split (FR-BRAIN-07). */
 export const BRAIN_FILE_SIZE_THRESHOLD_LINES = 300;
 /** Core agent_brain files that must exist (FR-BRAIN-07). */
-export const CORE_BRAIN_FILES = [
-  "agent_brain/identity/SOUL.md",
-  "agent_brain/identity/USER.md",
-  "agent_brain/deferred.md",
-] as const;
+export const CORE_BRAIN_FILES = [BRAIN.soul, BRAIN.user, BRAIN.deferred] as const;
 /** Root overlay files — at least one must exist (FR-BRAIN-07). */
 export const CORE_ROOT_FILES = ["AGENTS.md", "CLAUDE.md"] as const;
 /** Root brain directory — structural files only, no index required. */
-export const BRAIN_INDEX_EXEMPT_ROOT = "agent_brain";
+export const BRAIN_INDEX_EXEMPT_ROOT = BRAIN_DIR;
 /** Directories exempt from index.md requirement (USER.md parent pattern). */
-export const BRAIN_INDEX_EXEMPT_DIRS = ["agent_brain/identity", "agent_brain/skills"] as const;
+export const BRAIN_INDEX_EXEMPT_DIRS = [BRAIN_SUBDIRS.identity, BRAIN_SUBDIRS.skills] as const;
 
 /** User-visible download directory under rootDir (FR-NET-01). */
-export const DOWNLOADS_DIR = "downloads";
+export { DOWNLOADS_DIR } from "./brain-paths";
 /** Maximum response size for fetch_url (FR-NET-01). */
 export const FETCH_MAX_BYTES = 10 * 1024 * 1024;
 /** HTTP timeout for fetch_url in milliseconds (FR-NET-01). */
@@ -188,9 +185,9 @@ export const READ_TOOLS = new Set(["read", "ls", "find", "grep"]);
 export const BRAIN_HEALTH_REPAIR_BUDGET = 8;
 
 /** Directories where delete/move/copy-dest are allowed (FR-DELETE-01, FR-FILE). */
-export const USER_MUTABLE_DIRS = ["user", "downloads"] as const;
+export const USER_MUTABLE_DIRS = [USER_DIR, DOWNLOADS_DIR] as const;
 /** Directories never touched by user file ops (FR-DELETE-01, FR-FILE-02). */
-export const PROTECTED_DIRS = ["agent_brain", "logs"] as const;
+export const PROTECTED_DIRS = [BRAIN_DIR, LOGS_DIR] as const;
 /** Root identity files that must never be deleted or moved (FR-DELETE-01). */
 export const IDENTITY_ROOT_FILES = ["AGENTS.md", "SOUL.md", "USER.md", "CLAUDE.md"] as const;
 
@@ -199,7 +196,7 @@ export const IDENTITY_ROOT_FILES = ["AGENTS.md", "SOUL.md", "USER.md", "CLAUDE.m
  * else — the buddy root itself, `.buddy/`, `.pi/`, `.git/` — is unreachable
  * from a chat link.
  */
-export const VIEWABLE_DIRS = ["agent_brain", "user", "downloads", "logs"] as const;
+export const VIEWABLE_DIRS = [BRAIN_DIR, USER_DIR, DOWNLOADS_DIR, LOGS_DIR] as const;
 /**
  * File types Buddy renders inline. Deliberately minimal: anything not on this
  * list is not clickable, because Buddy never hands a file to an external

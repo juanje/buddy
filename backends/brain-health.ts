@@ -14,6 +14,7 @@ import {
   REQUIRED_BRAIN_FRONTMATTER,
 } from "../shared/defaults";
 import { parseFrontmatter } from "./reflect";
+import { brainDirPath } from "./brain-paths";
 
 export interface BrainHealthReport {
   /**
@@ -67,7 +68,7 @@ function isArchivePath(relPath: string): boolean {
 }
 
 function walkAllBrainMarkdown(rootDir: string): string[] {
-  const brainDir = join(rootDir, "agent_brain");
+  const brainDir = brainDirPath(rootDir);
   if (!existsSync(brainDir)) return [];
 
   const results: string[] = [];
@@ -108,7 +109,7 @@ function isIndexExemptDir(relDir: string): boolean {
 }
 
 function findMissingIndexes(rootDir: string): string[] {
-  const brainDir = join(rootDir, "agent_brain");
+  const brainDir = brainDirPath(rootDir);
   if (!existsSync(brainDir)) return [];
 
   const missing: string[] = [];
