@@ -54,11 +54,22 @@ Key design choices:
 - **Rust** (for Tauri native shell)
 - **Git** (manages the user's buddy repository)
 
+Bun is also required to compile the worker sidecar, but it ships as a
+devDependency — `npm install` covers it.
+
 ## Getting started
 
 ```bash
 npm install
 npm run tauri dev       # launch the app (Tauri + Vite dev server)
+```
+
+In dev the worker runs from source under `tsx`. For a packaged build it is
+compiled into a standalone binary first:
+
+```bash
+npm run build:worker    # bun --compile → src-tauri/binaries/agent-worker-<target>
+npm run tauri build     # bundle the app (.dmg/.app, .deb/.rpm)
 ```
 
 ## Testing
@@ -73,7 +84,9 @@ npm run test:bdd        # BDD scenarios only (cucumber-js)
 npm run typecheck       # TypeScript type checking (tsc --noEmit)
 ```
 
-**Current status:** 313 unit tests, 163 BDD scenarios passing.
+The full quality gate is three commands, all of which must pass before a
+commit: `npx tsc --noEmit`, `npx vite build` (the only one that checks
+`.svelte`) and `npm test`.
 
 ## Project structure
 

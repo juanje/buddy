@@ -343,7 +343,16 @@ export function buildSkillTools(promptsDir: string) {
 
 ### 3. Shared API Types (TypeScript)
 
-Type-safe contract between frontend and worker:
+Type-safe contract between frontend and worker.
+
+> **This is the original design sketch, not the current interface.** The live
+> contract is [`shared/api.ts`](../shared/api.ts) and it has moved a long way:
+> `setup` became `runSetup(config, mode)`, `steer`/`setThinkingLevel`/`compact`
+> were never built, and roughly twenty methods were added (OAuth, model
+> listing, permissions, usage, the file viewer). `FrontendAPI` has eight
+> callbacks here, not three. Read this section for the *shape* of the
+> arrangement — one kkrpc channel, both directions typed — and read
+> `shared/api.ts` for what the methods actually are.
 
 ```typescript
 // shared/api.ts
@@ -360,7 +369,7 @@ export interface DeferredItem {
 
 // Frontend calls these on the worker
 export interface WorkerAPI {
-    setup(config: SetupConfig): Promise<void>;  // first-run: create AB + configure Pi
+    setup(config: SetupConfig): Promise<void>;  // first-run: create buddy dir + configure Pi
     prompt(text: string): Promise<void>;
     abort(): Promise<void>;
     steer(text: string): Promise<void>;
@@ -932,7 +941,7 @@ export function createPermissionLayer(config: PermissionConfig, frontendApi: Fro
         // Blocked writes — agent can't reconfigure itself
         if (isWrite && matchesAny(path, config.blockedWrites)) return "deny";
 
-        // Zone 1 — AB home
+        // Zone 1 — buddy home
         if (isUnder(path, config.abDir)) {
             // Identity files require confirmation for writes
             if (isWrite && matchesAny(path, config.identityFiles)) {
@@ -1366,7 +1375,7 @@ async function setupAB(abDir: string, llmConfig: LLMConfig) {
     const git = simpleGit(abDir);
     await git.init();
     await git.add("-A");
-    await git.commit("Initial AB setup");
+    await git.commit("Initial buddy setup");
 }
 ```
 
@@ -1547,7 +1556,10 @@ Revisit when distribution (Phase 6) is reached.
 
 ## Worker Packaging (E12 — Shipped)
 
-**Development:** `node --import tsx backends/sidecar-entry.ts` (or via `npm run dev:worker`).
+**Development:** the frontend spawns `backends/agent-worker.ts` directly under
+`tsx` via tauri-plugin-js (see `src/utils/agent.ts`) — `sidecar-entry.ts` is not
+involved, which is why polyfill and embedded-asset problems only appear in a
+packaged build.
 
 **Production:** Bun-compiled standalone binary via `scripts/build-worker.sh`:
 
