@@ -207,7 +207,8 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
       const result = await worker.loginOAuth(id);
       if (result.success) {
         authReady.set(true);
-      } else if (result.error !== "Login cancelled") {
+      } else if (!result.cancelled) {
+        // Cancelling is a decision, not a failure (FR-SETUP-05).
         oauthError.set(result.error);
       }
     } finally {

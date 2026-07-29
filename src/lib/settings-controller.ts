@@ -264,7 +264,8 @@ export function createSettingsController(options: {
       try {
         const result = await options.worker.loginOAuth(provider);
         if (!result.success) {
-          if (result.error !== "Login cancelled") {
+          // Cancelling is a decision, not a failure (FR-SETUP-05).
+          if (!result.cancelled) {
             authError.set(result.error);
           }
           return;

@@ -39,16 +39,18 @@ describe("OAuthService", () => {
     expect(events.some((e) => e.type === "complete")).toBe(true);
   });
 
-  it("returns failure when login throws", async () => {
+  it("returns failure when login throws, and reports it as an error event", async () => {
+    const events: OAuthUIEvent[] = [];
     const service = new OAuthService(
       makeRuntime(async () => {
         throw new Error("network down");
       }),
-      { onEvent: () => {} },
+      { onEvent: (e) => events.push(e) },
     );
 
     const result = await service.login("anthropic");
-    expect(result).toEqual({ success: false, error: "network down" });
+    expect(result).toEqual({ success: false, cancelled: false, error: "network down" });
+    expect(events.some((e) => e.type === "error")).toBe(true);
   });
 
   it("rejects OAuth for google (API key only)", async () => {
@@ -82,19 +84,26 @@ describe("OAuthService", () => {
     await expect(loginPromise).resolves.toEqual({ success: true });
   });
 
-  it("cancels an in-flight login", async () => {
+  it("reports a cancelled login as cancelled, whatever the message says", async () => {
+    const events: OAuthUIEvent[] = [];
     const service = new OAuthService(
+      // The rejection message is deliberately not the string the old code
+      // matched on: cancellation is decided by the abort signal, so a reworded
+      // SDK message or a localized build must not turn it into an error.
       makeRuntime(async (_provider, _type, interaction) => {
         await new Promise((_resolve, reject) => {
-          interaction.signal?.addEventListener("abort", () => reject(new Error("Login cancelled")));
+          interaction.signal?.addEventListener("abort", () => reject(new Error("aborted by user")));
         });
       }),
-      { onEvent: () => {} },
+      { onEvent: (e) => events.push(e) },
     );
 
     const loginPromise = service.login("openai");
     service.cancel();
     const result = await loginPromise;
-    expect(result).toEqual({ success: false, error: "Login cancelled" });
+
+    expect(result).toEqual({ success: false, cancelled: true, error: "aborted by user" });
+    // FR-SETUP-05: no error surfaces for a cancellation.
+    expect(events.some((e) => e.type === "error")).toBe(false);
   });
 });

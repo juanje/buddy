@@ -71,7 +71,7 @@ export class OAuthService {
 
   async login(provider: SetupProviderId): Promise<OAuthLoginResult> {
     if (!supportsOAuth(provider)) {
-      return { success: false, error: "OAuth not supported for this provider" };
+      return { success: false, cancelled: false, error: "OAuth not supported for this provider" };
     }
 
     this.cancel();
@@ -89,10 +89,15 @@ export class OAuthService {
       return { success: true };
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      if (message !== "Login cancelled") {
+      // `signal.aborted` is what actually knows the user cancelled: this
+      // controller belongs to this login attempt and only `cancel()` aborts it.
+      // The message was standing in for it, which made an English sentence a
+      // status code (FR-SETUP-05).
+      const cancelled = signal.aborted;
+      if (!cancelled) {
         this.callbacks.onEvent({ type: "error", message });
       }
-      return { success: false, error: message };
+      return { success: false, cancelled, error: message };
     } finally {
       this.abortController = undefined;
     }

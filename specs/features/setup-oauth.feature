@@ -19,6 +19,17 @@ Feature: OAuth provider login (FR-SETUP-05)
     And an auth URL event is received
     Then the auth URL is available for browser open
 
+  Scenario: Cancelling the sign-in is not an error
+    Given the user selects the "openai" provider
+    When they start OAuth login and cancel it
+    Then the wizard shows no authentication error
+    And the wizard does not allow proceeding to the next step
+
+  Scenario: A genuine login failure is shown to the user
+    Given the user selects the "openai" provider
+    When their OAuth login fails with "provider unreachable"
+    Then the wizard shows the authentication error "provider unreachable"
+
   Scenario: After OAuth, models are loaded for selection
     Given the user has signed in with OAuth as "openai"
     When the wizard loads models for the provider

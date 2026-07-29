@@ -89,8 +89,19 @@ export type KeyCheck = { valid: true } | { valid: false; error: string };
 
 export type SetupProviderId = SetupConfig["provider"];
 
-/** OAuth login result (FR-SETUP-05). */
-export type OAuthLoginResult = { success: true } | { success: false; error: string };
+/**
+ * OAuth login result (FR-SETUP-05).
+ *
+ * `cancelled` is the authority on "the user closed the window", and it exists
+ * because that used to be decided by string-comparing `error` against
+ * `"Login cancelled"` — in the worker and in two frontend controllers, across
+ * the RPC boundary. An English sentence was acting as a status code, so
+ * localizing it or the SDK rewording its abort message would have turned every
+ * cancellation into an error dialog with nothing to catch it.
+ */
+export type OAuthLoginResult =
+  | { success: true }
+  | { success: false; cancelled: boolean; error: string };
 
 /** Model entry for wizard model selection (live or curated). */
 export interface ModelInfo {
