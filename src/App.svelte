@@ -174,12 +174,8 @@
             const strings = get(t);
             void notifyBudgetAlert(status, {
               warningTitle: strings.budgetWarningTitle,
-              warningBody: formatBudgetNotificationBody(status, {
-                warning: strings.budgetWarningBody,
-                exceeded: strings.budgetExceededBody,
-              }),
               exceededTitle: strings.budgetExceededTitle,
-              exceededBody: formatBudgetNotificationBody(status, {
+              body: formatBudgetNotificationBody(status, {
                 warning: strings.budgetWarningBody,
                 exceeded: strings.budgetExceededBody,
               }),
