@@ -198,10 +198,10 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 ## Current focus
 
 > **Hardening series complete. Released through v0.1.8.**
-> **726 unit + 214 BDD green**, typecheck and vite build clean.
+> **731 unit + 214 BDD green**, typecheck and vite build clean.
 >
-> A maintenance audit (2026-07-29) followed; phase 1 is below, phases 2–4 are
-> planned but not started. It does not change the next focus.
+> A maintenance audit (2026-07-29) followed and is **closed** — four phases,
+> recorded below. Next: version bump, release, then FR-WIKI.
 >
 > Two campaigns ran back to back, and the second was not planned.
 >
@@ -354,6 +354,70 @@ through the `locales` record, so a third language would silently get Spanish
 from them. Now that `AppLocale` derives from `SetupConfig["language"]`, the
 record itself fails to compile until a new locale file exists — but those two
 functions do not. Phase 4.
+
+### Sprint: Maintenance audit, phase 4 — DONE (2026-07-29)
+
+| Item | Description | Commit |
+|------|-------------|--------|
+| NFR-MIGRATE-07 | `npm run version:set` + a test that fails on disagreement | 2effd04 |
+| NFR-I18N-03 | i18n dispatch goes through the `locales` Record, not a ternary | 2effd04 |
+| C2 | `STATE_LOCK_*` — no longer shadows the maintenance lock's names | 2effd04 |
+| F6 | CLAUDE.md architecture shows the sidecar entry path | 2effd04 |
+| NFR-CONFIG-06 | Buddy layout named once: absolute paths | f5938e6 |
+| NFR-CONFIG-06 | Buddy layout named once: relative comparisons | 3551582 |
+
+**The version now has one source, and that unblocks the release.** Four files
+carried it, kept in step by hand, and the v0.1.8 bump missed one. It survived a
+release only because the missed file is regenerated at build time, so it was
+wrong solely in the repository — the other three are not self-healing (Cargo's
+is what the About dialog shows, Tauri's names the published release). The
+script was exercised end to end by bumping to 9.9.9 and back; the derived files
+return byte-identical.
+
+**Two modules for the layout, not one, and finding that out was worth the
+pause.** The first draft joined with `"/"` and lived entirely in `shared/`.
+Both were wrong: string concatenation changes behaviour for a `rootDir` with a
+trailing separator, and importing `node:path` into `shared/` would have broken
+the browser-safety the rest of that directory maintains. So relative paths and
+`node:path` builders are separate, and the frontend can use the first.
+
+**The refactor was split in two commits on purpose** — absolute paths, then
+relative comparisons — so a regression would point at one group. It also
+surfaced five sites the first sweep's pattern missed, `prompt.ts`'s
+`USER_TEMPLATE_PATH` among them: a hand-written copy of what is now
+`BRAIN.user`, and one of the examples that motivated the work.
+
+**Naming a path is not deciding about it.** The comparison sites
+(`startsWith("agent_brain/")`) had their literal replaced and nothing else.
+`dirPrefix()` carries the warning in its own doc comment, because the next
+reader could reasonably assume a shared constant means the containment question
+is handled — and NFR-SEC-16 exists because that question was answered four
+times and the fourth was wrong.
+
+**Observation, not fixed: `normalizeAbPath` is still a second lexical
+containment helper.** `backends/containment.ts` opens by naming the four places
+that used to answer "is this inside the buddy directory?", `normalizeAbPath`
+among them, and states that every worker-side enforcement point now calls
+`isContained` "and nothing else". `normalizeAbPath` is nonetheless still live in
+`shared/path-utils.ts` and used by `hebbian.ts` and `hebbian-guard.ts`. Checked
+during this work: **not a hole.** Both callers are trackers, not enforcement —
+they decide whether to record an access counter for a file the permission layer
+has already allowed to be read, and `normalizeAbPath` does collapse `..` before
+comparing. But the header reads as though all four were consolidated, and one
+survives. Either the callers should move to `containedRelPath`, or the header
+should say why tracking is exempt. Left as it is rather than changed quietly,
+because it touches the module NFR-SEC-16 governs.
+
+**Not done, and still worth doing eventually.** The three large functions —
+`agent-worker.ts`'s 287-line `main()` (no test at all), `createSetupController`
+(331), `createChatController` (265). `main()` is the one that would most repay
+it. Deferred past FR-WIKI: it is architectural, it competes for attention with a
+feature, and doing it badly is worse than not doing it. Also still open: the
+redundant third `saveConsolidationState` in `runConsolidation`, declined in
+phase 1 and for the same reason.
+
+**The maintenance audit is closed.** Next: bump the version with
+`npm run version:set`, release, then FR-WIKI.
 
 ### What the local-model evaluation actually found (2026-07-28/29)
 
