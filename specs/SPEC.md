@@ -2123,6 +2123,7 @@ If a release needs a one-shot transform (e.g. rename a field in `config.json`), 
 | ID | Requirement |
 |----|-------------|
 | NFR-TEST-01 | Every FR with an input surface — a path, a URL, file content, or LLM output — carries at least one Gherkin scenario driving hostile or malformed input, not only the happy path. A feature is not `done` until that scenario exists and passes. |
+| NFR-TEST-02 | The test suites never start a real background process, and reaching the code that would is a **loud failure**, not a silent one. `spawnReflectChild` refuses and throws when `BUDDY_FORBID_REAL_REFLECT_SPAWN` is set, which both runners set for every run. **Why:** the BDD suite forked a real detached `reflect-child` on every run (`session-persistence.steps.ts` built a `SessionLifecycle` without injecting `spawnReflect`, so the production default applied). It was harmless only by accident — the scenario's session file did not exist, so `runReflect` returned at its first guard, *before* `createBuddyModelRuntime()`. Point that scenario at a session file that does exist, which is the natural next step for anyone deepening reflect coverage, and the same path reads the developer's real `~/.buddy/auth.json` and makes a billed LLM call from the test suite. The defect is not the two call sites, it is that the dangerous path was the default and the test double was opt-in. |
 
 **Why this exists.** The July 2026 external review found a path traversal
 (`resolveLocalPathForOpen`) that had survived 162 green scenarios. The cause was

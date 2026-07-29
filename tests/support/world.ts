@@ -65,20 +65,22 @@ export class BuddyWorld extends World {
     this.rootDir = rootDir;
     this.session = new FakeSession();
 
+    // `trackSpawn` decides whether a scenario *inspects* the spawns, never
+    // whether they are faked. The double is unconditional: leaving it to a flag
+    // meant the production spawn was one forgotten option away (NFR-TEST-02).
+    const spawns: SpawnReflectOptions[] = [];
     if (options?.trackSpawn) {
-      this.spawnCalls = [];
+      this.spawnCalls = spawns;
     }
 
     this.lifecycle = rootDir
       ? new SessionLifecycle({
           rootDir,
           sessionId: "test-session",
-          spawnReflect: options?.trackSpawn
-            ? (spawnOptions) => {
-                this.spawnCalls!.push(spawnOptions);
-                return 1;
-              }
-            : undefined,
+          spawnReflect: (spawnOptions) => {
+            spawns.push(spawnOptions);
+            return 1;
+          },
         })
       : undefined;
 

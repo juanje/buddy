@@ -1,6 +1,6 @@
 // tests/unit/reflect-spawn.test.ts — E13b reflect spawn (dev fork vs prod argv dispatch).
 
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const forkMock = vi.fn();
 const spawnMock = vi.fn();
@@ -16,7 +16,11 @@ import {
   spawnReflectChild,
   type SpawnReflectOptions,
 } from "../../backends/reflect-spawn";
-import { REFLECT_CHILD_ENV_KEY, REFLECT_CHILD_ENV_VALUE } from "../../shared/defaults";
+import {
+  FORBID_REAL_REFLECT_SPAWN_ENV,
+  REFLECT_CHILD_ENV_KEY,
+  REFLECT_CHILD_ENV_VALUE,
+} from "../../shared/defaults";
 
 describe("sidecarBootTarget", () => {
   it("routes --reflect to reflect-child module", () => {
@@ -40,11 +44,31 @@ describe("spawnReflectChild", () => {
     sessionEnd: "15:45",
   };
 
+  // The only place allowed to disarm the NFR-TEST-02 guard: this file's subject
+  // *is* spawnReflectChild, and node:child_process is mocked above, so nothing
+  // real is forked. The opt-out is explicit and scoped to this describe block —
+  // everywhere else the guard stands.
+  beforeEach(() => {
+    delete process.env[FORBID_REAL_REFLECT_SPAWN_ENV];
+  });
+
   afterEach(() => {
     forkMock.mockReset();
     spawnMock.mockReset();
     delete (globalThis as { Bun?: unknown }).Bun;
     delete process.env[REFLECT_CHILD_ENV_KEY];
+    process.env[FORBID_REAL_REFLECT_SPAWN_ENV] = "1";
+  });
+
+  it("throws rather than forking when the test guard is armed (NFR-TEST-02)", () => {
+    process.env[FORBID_REAL_REFLECT_SPAWN_ENV] = "1";
+    forkMock.mockReturnValue({ unref: vi.fn(), pid: 42 });
+
+    // Throwing, not returning undefined: a silent no-op is how the BDD suite
+    // forked a real child on every run without anyone noticing.
+    expect(() => spawnReflectChild(baseOptions)).toThrow(/reached under a test runner/);
+    expect(forkMock).not.toHaveBeenCalled();
+    expect(spawnMock).not.toHaveBeenCalled();
   });
 
   it("refuses nested spawn when already a reflect child", () => {

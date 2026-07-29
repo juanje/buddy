@@ -17,6 +17,7 @@ Feature: Session path persistence and crash recovery
     Given a session is running with persisted path "/tmp/session-abc.jsonl"
     When the app shuts down gracefully
     Then consolidation-state.json has reflectPending true
+    And a session-end reflect spawn was requested for "/tmp/session-abc.jsonl"
 
   Scenario: Crash recovery forks stale session on boot
     Given consolidation-state.json has liveSessionFile "/tmp/session-old.jsonl" and reflectPending true

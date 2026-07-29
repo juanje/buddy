@@ -64,6 +64,13 @@ export const HEARTBEAT_MIN_TICK_MS = 5_000;
 export const REFLECT_ARGV_FLAG = "--reflect";
 /** Maximum active log files before rotation archives older ones (FR-CONSOL-04). */
 export const LOG_ROTATION_THRESHOLD = 28;
+/**
+ * Set by both test runners; makes `spawnReflectChild` throw instead of forking
+ * (NFR-TEST-02). Deliberately a hard failure: a test that reaches the real
+ * spawn has a missing injection, and returning quietly would hide it the same
+ * way the silent fork did.
+ */
+export const FORBID_REAL_REFLECT_SPAWN_ENV = "BUDDY_FORBID_REAL_REFLECT_SPAWN";
 /** Env var set on spawned reflect children to prevent nested recursion. */
 export const REFLECT_CHILD_ENV_KEY = "BUDDY_REFLECT_CHILD";
 export const REFLECT_CHILD_ENV_VALUE = "1";

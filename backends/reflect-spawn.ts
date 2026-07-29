@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
+  FORBID_REAL_REFLECT_SPAWN_ENV,
   REFLECT_ARGV_FLAG,
   REFLECT_CHILD_ENV_KEY,
   REFLECT_CHILD_ENV_VALUE,
@@ -63,6 +64,16 @@ function buildReflectArgs(options: SpawnReflectOptions): string[] {
  * Prod: spawn(process.execPath, ["--reflect", ...]) — same binary, argv dispatch (E13b).
  */
 export function spawnReflectChild(options: SpawnReflectOptions): number | undefined {
+  // NFR-TEST-02: a test that gets here forgot to inject `spawnReflect`. Throw
+  // rather than return — a silent no-op is how this went unnoticed for months,
+  // forking a detached child on every BDD run.
+  if (process.env[FORBID_REAL_REFLECT_SPAWN_ENV]) {
+    throw new Error(
+      `spawnReflectChild reached under a test runner (mode=${options.mode}). ` +
+        "Inject a spawnReflect double instead of letting the production default apply.",
+    );
+  }
+
   if (process.env[REFLECT_CHILD_ENV_KEY] || process.env[LEGACY_REFLECT_CHILD_ENV]) {
     console.error(
       `[reflect-spawn] refusing nested reflect spawn (${REFLECT_CHILD_ENV_KEY} already set)`,

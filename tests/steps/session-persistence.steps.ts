@@ -61,6 +61,12 @@ Given(
       rootDir: this.buddyDir!,
       sessionId: "test-session",
       sessionFile,
+      // NFR-TEST-02: without this the production default applied and shutdown
+      // forked a real detached reflect child on every run of this suite.
+      spawnReflect: (options) => {
+        this.recoverySpawns!.push(options);
+        return 1;
+      },
     });
   },
 );
