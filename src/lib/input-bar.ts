@@ -23,11 +23,22 @@ export function resetTextareaHeight(textarea: TextareaLike | undefined): void {
   textarea.style.height = "auto";
 }
 
-/** Mirror InputBar send: clear via controller, then reset textarea height. */
+/**
+ * Mirror InputBar send: clear via controller, then reset the textarea height
+ * (FR-CHAT-08).
+ *
+ * `flush` waits for the framework to apply the cleared value to the DOM before
+ * the height is reset. Without it the reset ran while the element still held
+ * the old text, so `height: auto` resolved to the *old* content's height and
+ * the box stayed tall until the next keystroke triggered `autoResize` — which
+ * is exactly what a user sending a long message saw.
+ */
 export async function sendAndResetTextarea(
   send: () => Promise<void>,
   textarea: TextareaLike | undefined,
+  flush?: () => Promise<unknown>,
 ): Promise<void> {
   await send();
+  await flush?.();
   resetTextareaHeight(textarea);
 }

@@ -94,6 +94,7 @@ rootDir (git repo — user/agent content only)
 | FR-CHAT-10 | Inline file viewer for markdown/text links | 2 ✓ |
 | FR-CHAT-11 | Local links are view-only, internal, and scoped | 3 |
 | FR-CHAT-13 | Prompts sent during session boot are queued, not dropped | 2 ✓ |
+| FR-CHAT-14 | An assistant turn with no visible text renders nothing | 2 ✓ |
 | FR-CHAT-12 | Navigation inside the inline viewer | 2 |
 | FR-CHAT-13 | Prompts sent during session boot are queued, not dropped | 2 ✓ |
 
@@ -248,6 +249,21 @@ first answer is informed by the session context. What the queue removes is the
 every start is noise that teaches users to ignore banners. One that appears only
 when something is genuinely slow carries information. It is reassurance, not a
 gate: input stays enabled throughout, because anything typed is now safe.
+
+**FR-CHAT-14 — An assistant turn with no visible text renders nothing**
+
+- **Given** an assistant message whose text is empty or whitespace
+- **Then** no bubble is rendered — not an empty one
+
+**Observed 2026-07-29.** The guard sat *inside* the bubble element, so an empty
+turn still produced a styled, padded box. Local models emit these routinely:
+reasoning-only turns arrive as assistant messages whose content is a bare
+newline. They accumulated between the thinking indicators and remained on
+screen after those cleared, leaving a column of empty grey boxes.
+
+Not local-specific in principle — any provider that emits a turn with no text
+produces one — but frequent enough with local models to be the thing that
+surfaced it.
 
 ### 3.2 First-Run / Onboarding (FR-SETUP)
 

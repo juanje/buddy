@@ -2,6 +2,7 @@
   import type { ChatController } from "./chat-controller";
   import { resolveInputKey } from "./keyboard";
   import { t } from "./i18n";
+  import { tick } from "svelte";
   import { autoResizeTextarea, sendAndResetTextarea } from "./input-bar";
 
   let {
@@ -32,7 +33,9 @@
   }
 
   async function sendNow() {
-    await sendAndResetTextarea(() => controller.send(), textarea);
+    // `tick` lets Svelte apply the cleared value before the height is reset;
+    // otherwise `height: auto` measures the text that is still on screen.
+    await sendAndResetTextarea(() => controller.send(), textarea, tick);
     onSent?.();
   }
 
