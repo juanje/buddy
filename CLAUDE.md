@@ -118,9 +118,14 @@ chore: tooling, deps, config
 
 ```
 Frontend (Svelte, system webview)
-    │ kkrpc
+    │ kkrpc  (spawned by tauri-plugin-js)
     ▼
-Node.js Worker (TypeScript)
+Worker (TypeScript)
+    │  dev:  backends/agent-worker.ts under tsx
+    │  prod: bun-compiled sidecar, entered at backends/sidecar-entry.ts,
+    │        which installs polyfills + embedded assets, then imports
+    │        agent-worker.ts — or reflect-child.ts when argv has --reflect
+    │
     ├── Pi SDK: createAgentSession({ excludeTools: ["bash"] })
     ├── Permission layer (beforeToolCall — chained)
     ├── Hebbian tracker (paired tool_execution_start/end — see below)
@@ -130,6 +135,11 @@ Node.js Worker (TypeScript)
     ▼
 buddy directory (git repo): agent_brain/ + user/ + logs/
 ```
+
+The dev/prod split is the one to keep in mind: the repo tree does not exist
+inside the compiled binary, so anything reading `templates/` or
+`bundled/prompts/` from disk works in dev and fails when packaged. That is what
+`embedded-assets.generated.ts` exists for.
 
 **Key technical patterns:**
 - System prompt: `DefaultResourceLoader({ systemPromptOverride })` → `createAgentSession({ resourceLoader })`
@@ -166,7 +176,8 @@ buddy/
 ## Tech stack
 
 - **App shell:** Tauri v2 (Rust, minimal — window + tray + plugins)
-- **Worker:** Node.js via `tauri-plugin-js` + kkrpc for type-safe RPC
+- **Worker:** spawned by `tauri-plugin-js`, kkrpc for type-safe RPC. Node+tsx in
+  dev; a bun-compiled sidecar binary (`externalBin`) in production.
 - **Agent:** Pi SDK (`@earendil-works/pi-coding-agent` v0.80.x)
 - **Frontend:** Svelte 5
 - **Git:** `simple-git` (wraps system binary)

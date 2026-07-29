@@ -63,10 +63,19 @@ export interface StateFileOptions {
   lockTimeoutMs?: number;
 }
 
-const DEFAULT_LOCK_TIMEOUT_MS = 1_000;
-const LOCK_RETRY_MS = 25;
+// Deliberately named apart from `LOCK_RETRY_MS`/`LOCK_STALE_MS` in
+// shared/defaults.ts, which belong to the *maintenance* lock and differ by a
+// factor of 360 (500ms/1h there, 25ms/10s here). They are not the same knob:
+// that lock guards a consolidation run that makes LLM calls and may legitimately
+// hold for an hour, while this one guards a read-modify-write of a small JSON
+// file and must not be held for longer than that takes. Two same-named
+// constants with wildly different values, one of them "centralized", was a
+// reader's trap. These stay local because they are an implementation detail of
+// this module, not an operational default anyone should tune (NFR-CONFIG-01).
+const STATE_LOCK_TIMEOUT_MS = 1_000;
+const STATE_LOCK_RETRY_MS = 25;
 /** A lock older than this belonged to a process that died holding it. */
-const LOCK_STALE_MS = 10_000;
+const STATE_LOCK_STALE_MS = 10_000;
 
 // Synchronous wait: these helpers are sync because every caller is, and making
 // them async would ripple into the Pi event subscription. Contention is rare
@@ -149,7 +158,7 @@ export async function withFileLock<T>(
     const attempt = tryTakeLock(lockPath, resourcePath, deadline);
     if (attempt === "taken") break;
     if (attempt === "wait") {
-      await new Promise((resolve) => setTimeout(resolve, LOCK_RETRY_MS));
+      await new Promise((resolve) => setTimeout(resolve, STATE_LOCK_RETRY_MS));
     }
   }
 
@@ -167,13 +176,13 @@ function acquireFileLock(targetPath: string, timeoutMs: number): string {
   for (;;) {
     const attempt = tryTakeLock(lockPath, targetPath, deadline);
     if (attempt === "taken") return lockPath;
-    if (attempt === "wait") sleepSync(LOCK_RETRY_MS);
+    if (attempt === "wait") sleepSync(STATE_LOCK_RETRY_MS);
   }
 }
 
 function isLockStale(lockPath: string): boolean {
   try {
-    return Date.now() - statSync(lockPath).mtimeMs > LOCK_STALE_MS;
+    return Date.now() - statSync(lockPath).mtimeMs > STATE_LOCK_STALE_MS;
   } catch {
     return false; // vanished between the failed create and this check
   }
@@ -243,7 +252,7 @@ export function updateStateFile<T>(
   mutate: (current: T | undefined) => T,
   options?: StateFileOptions,
 ): T {
-  const lockPath = acquireFileLock(path, options?.lockTimeoutMs ?? DEFAULT_LOCK_TIMEOUT_MS);
+  const lockPath = acquireFileLock(path, options?.lockTimeoutMs ?? STATE_LOCK_TIMEOUT_MS);
   try {
     const current = readStateFile<T>(path);
     const next = mutate(current);

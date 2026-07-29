@@ -4,10 +4,11 @@
   "private": true,
   "license": "GPL-3.0-only",
   "type": "module",
-  "description": "Buddy — native desktop personal assistant with persistent memory (Tauri + Pi SDK)",
+  "description": "Buddy \u2014 native desktop personal assistant with persistent memory (Tauri + Pi SDK)",
   "scripts": {
     "dev": "vite",
     "build:worker": "bash scripts/build-worker.sh",
+    "version:set": "tsx scripts/set-version.ts",
     "build": "npm run build:worker && vite build",
     "preview": "vite preview",
     "tauri": "tauri",

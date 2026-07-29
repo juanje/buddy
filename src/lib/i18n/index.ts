@@ -40,14 +40,28 @@ export function getLocale(): AppLocale {
   return get(locale);
 }
 
-export function tierDescription(tier: "fast" | "balanced" | "powerful"): string {
-  return get(locale) === "en" ? tierDescriptionEn(tier) : tierDescriptionEs(tier);
+// Not `locale === "en" ? … : …`. The strings table above is a Record keyed by
+// AppLocale, so adding a language fails to compile until its file exists — but
+// a ternary has no such gap to fall into: it would compile and quietly serve
+// Spanish, which is the opposite of what NFR-I18N-03 promises.
+const tierDescriptions: Record<AppLocale, (tier: ModelTierName) => string> = {
+  es: tierDescriptionEs,
+  en: tierDescriptionEn,
+};
+
+const gitInstructions: Record<AppLocale, (platform: string) => string> = {
+  es: gitInstallInstructionsEs,
+  en: gitInstallInstructionsEn,
+};
+
+type ModelTierName = "fast" | "balanced" | "powerful";
+
+export function tierDescription(tier: ModelTierName): string {
+  return tierDescriptions[get(locale)](tier);
 }
 
 export function gitInstallInstructions(platform: string): string {
-  return get(locale) === "en"
-    ? gitInstallInstructionsEn(platform)
-    : gitInstallInstructionsEs(platform);
+  return gitInstructions[get(locale)](platform);
 }
 
 export type { LocaleStrings };
