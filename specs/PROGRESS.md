@@ -198,7 +198,7 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 ## Current focus
 
 > **Hardening series complete. Released through v0.1.8.**
-> **731 unit + 214 BDD green**, typecheck and vite build clean.
+> **732 unit + 214 BDD green**, typecheck and vite build clean.
 >
 > A maintenance audit (2026-07-29) followed and is **closed** — four phases,
 > recorded below. Next: version bump, release, then FR-WIKI.
@@ -416,8 +416,26 @@ feature, and doing it badly is worse than not doing it. Also still open: the
 redundant third `saveConsolidationState` in `runConsolidation`, declined in
 phase 1 and for the same reason.
 
-**The maintenance audit is closed.** Next: bump the version with
-`npm run version:set`, release, then FR-WIKI.
+**Two things the audit missed, both found by Juanje in review.**
+
+`normalizeAbPath` was a fossil of the old project name (now `toBuddyRelPath`,
+along with ~90 `ab-*` test fixtures). Phase 1 searched for "AB" as a whole word
+and as env-var prefixes, never as a camelCase fragment, so every `…Ab…`
+identifier was invisible to the sweep — searching for a rename by one spelling
+of it is the same class of mistake this audit kept finding elsewhere.
+
+And NFR-MIGRATE-07, written in this very phase to stop version drift, **had the
+same hole it was written to close**: it named three derived files and there are
+four. `Cargo.lock` carries the crate's own version, is committed, and cargo
+only rewrites it at the next build — which is not when a tag is cut, so v0.1.8
+went out with a lock still naming 0.1.7. Caught while cutting v0.1.9, by
+comparing against what the previous release commit had actually touched. The
+first run of the script also failed on an already-correct file, because its
+"never report success without a change" guard conflated *pattern did not match*
+with *value already right*; a resync command that errors on being re-run is
+backwards. Both fixed before the tag.
+
+**The maintenance audit is closed.** Released as v0.1.9. Next: FR-WIKI.
 
 ### What the local-model evaluation actually found (2026-07-28/29)
 

@@ -32,6 +32,13 @@ function cargoVersion(): string {
   return match[1];
 }
 
+/** The crate's own entry in the committed lock file. */
+function cargoLockVersion(): string {
+  const match = /\nname = "buddy"\nversion = "([^"]+)"/.exec(read("src-tauri", "Cargo.lock"));
+  if (!match) throw new Error("no buddy package block in Cargo.lock");
+  return match[1];
+}
+
 function embeddedVersion(): string {
   const match = /EMBEDDED_APP_VERSION = "([^"]+)"/.exec(
     read("backends", "embedded-assets.generated.ts"),
@@ -49,6 +56,7 @@ describe("app version (NFR-MIGRATE-07)", () => {
     ["src-tauri/tauri.conf.json — names the published release", tauriConfVersion],
     ["src-tauri/Cargo.toml — shown in the About dialog", cargoVersion],
     ["backends/embedded-assets.generated.ts — reported by the sidecar", embeddedVersion],
+    ["src-tauri/Cargo.lock — committed, and cargo will not fix it before the tag", cargoLockVersion],
   ])("matches package.json in %s", (_where, actual) => {
     expect(actual()).toBe(packageVersion());
   });
@@ -56,7 +64,7 @@ describe("app version (NFR-MIGRATE-07)", () => {
   it("reads a real version from each file rather than silently matching nothing", () => {
     // Each reader throws on a missing match, but a regex that started matching
     // the wrong thing could return a value that happens to agree. Cheap guard.
-    for (const value of [tauriConfVersion(), cargoVersion(), embeddedVersion()]) {
+    for (const value of [tauriConfVersion(), cargoVersion(), embeddedVersion(), cargoLockVersion()]) {
       expect(value).toMatch(SEMVER);
     }
   });
