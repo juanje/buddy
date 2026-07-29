@@ -1,6 +1,6 @@
 // backends/hebbian.ts — Code-enforced Hebbian access tracking (FR-HEBB).
 
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 import { toIsoDay } from "../shared/dates";
@@ -130,4 +130,33 @@ export function createHebbianTracker(rootDir: string): HebbianTracker {
       return wrote;
     },
   };
+}
+
+/**
+ * True when a tool call is a *consultation of a specific file* (FR-HEBB-07).
+ *
+ * `read` is the obvious case. `grep` counts too when it targets one file:
+ * searching inside a document is how the agent consults it, and it is the
+ * cheaper way to do so — a model that greps a file instead of reading it whole
+ * has still used that file, and charging it nothing would push the signal
+ * towards whichever tool happens to be less efficient.
+ *
+ * A `grep` over a directory does not count. That is brute force, not
+ * consultation: it says nothing about which files matter, and crediting every
+ * file under a tree for one recursive search would drown the real signal.
+ */
+export function isFileConsultation(
+  name: string,
+  path: string | undefined,
+  rootDir: string,
+): boolean {
+  if (!path) return false;
+  if (name === "read") return true;
+  if (name !== "grep") return false;
+
+  try {
+    return statSync(resolve(rootDir, path)).isFile();
+  } catch {
+    return false; // vanished, or never existed: nothing to credit
+  }
 }

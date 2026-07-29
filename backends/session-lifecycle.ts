@@ -6,7 +6,7 @@ import { extractToolInfo } from "../shared/pi-events";
 import { logEvent } from "./app-logger";
 import { markReflectPending } from "./crash-recovery";
 import { commitAll } from "./git";
-import { createHebbianTracker, type HebbianTracker } from "./hebbian";
+import { createHebbianTracker, isFileConsultation, type HebbianTracker } from "./hebbian";
 import { createHebbianGuard, type HebbianGuard } from "./hebbian-guard";
 import { spawnReflectChild, type SpawnReflectFn, type SpawnReflectOptions } from "./reflect-spawn";
 import { SessionTracker } from "./session-tracker";
@@ -71,19 +71,24 @@ export class SessionLifecycle {
         this.hebbianGuard.capture(info.path);
       }
     }
-    if (event.type === "tool_execution_end") {
-      const info = extractToolInfo(event);
-      const name = info?.name;
-      if (name === "write" || name === "edit" || name === "fetch_url") this.turnDirty = true;
-      if ((name === "write" || name === "edit") && info?.path && event.isError !== true) {
-        this.hebbianGuard.restore(info.path);
-      }
-      if (name === "read" && info?.path && event.isError !== true) {
-        this.hebbianTracker.trackAccess(info.path);
-      }
-    }
 
     const flags = this.tracker.recordEvent(event, this.rootDir);
+
+    // FR-HEBB-07: the path comes from `finishedTool`, which the tracker pairs
+    // with the start event. `tool_execution_end` has no `args` of its own, so
+    // reading it directly left `path` undefined and every access check failed
+    // its guard in silence — while the `turnDirty` flags below kept working,
+    // because they only test the tool name. Auto-commit therefore looked
+    // healthy while nothing was ever tracked.
+    const finished = flags.finishedTool;
+    if (finished) {
+      const { name, path } = finished;
+      if (name === "write" || name === "edit" || name === "fetch_url") this.turnDirty = true;
+      if (event.isError !== true) {
+        if ((name === "write" || name === "edit") && path) this.hebbianGuard.restore(path);
+        if (isFileConsultation(name, path, this.rootDir)) this.hebbianTracker.trackAccess(path!);
+      }
+    }
 
     if (flags.compactionStart) {
       await this.runCheckpointReflect();

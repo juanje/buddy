@@ -47,6 +47,14 @@ export class SessionTracker {
   recordEvent(event: AgentEvent, rootDir: string): {
     turnEnded: boolean;
     compactionStart: boolean;
+    /**
+     * The tool call that just finished, with its path resolved from the
+     * matching start event (FR-HEBB-07). `tool_execution_end` carries no
+     * `args`, so this is the only place the pairing exists — exposing it stops
+     * callers from keeping a second copy of the same map and disagreeing with
+     * this one.
+     */
+    finishedTool?: TrackedToolCall;
   } {
     if (event.type === "tool_execution_start") {
       const toolCallId = event.toolCallId as string | undefined;
@@ -56,7 +64,8 @@ export class SessionTracker {
       }
     }
     if (event.type === "tool_execution_end") {
-      this.trackToolEnd(event, rootDir);
+      const finishedTool = this.trackToolEnd(event, rootDir);
+      if (finishedTool) return { turnEnded: false, compactionStart: false, finishedTool };
     }
     if (event.type === "agent_end") {
       this.turnCount += 1;
@@ -88,14 +97,14 @@ export class SessionTracker {
     };
   }
 
-  private trackToolEnd(event: AgentEvent, rootDir: string): void {
+  private trackToolEnd(event: AgentEvent, rootDir: string): TrackedToolCall | undefined {
     const toolCallId = event.toolCallId as string | undefined;
     const endInfo = extractToolInfo(event);
     const startInfo = toolCallId ? this.pendingArgs.get(toolCallId) : undefined;
     if (toolCallId) this.pendingArgs.delete(toolCallId);
 
     const name = endInfo?.name ?? startInfo?.name;
-    if (!name) return;
+    if (!name) return undefined;
 
     const path = startInfo?.path ?? endInfo?.path;
     const timestamp = new Date().toISOString();
@@ -110,6 +119,7 @@ export class SessionTracker {
     if (relP && WRITE_TOOLS.has(name)) {
       this.pushUnique(this.filesWritten, relP);
     }
+    return entry;
   }
 
   private pushUnique(list: string[], value: string): void {

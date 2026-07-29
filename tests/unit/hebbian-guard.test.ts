@@ -27,6 +27,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { createHebbianGuard } from "../../backends/hebbian-guard";
+import { SessionLifecycle } from "../../backends/session-lifecycle";
+import { initTestGitRepo } from "../support/test-git";
 
 let root: string;
 
@@ -154,27 +156,75 @@ describe("createHebbianGuard", () => {
 });
 
 // ---------------------------------------------------------------------------
-// The wiring. The guard is inert unless the lifecycle drives it, and a guard
-// nobody calls looks exactly like a guard that works.
+// The wiring, driven through the real lifecycle with the event shapes the SDK
+// emits. This replaced a source-text scan: the scan broke when the block was
+// restructured for FR-HEBB-07 even though the behaviour was intact, which is
+// the failure mode of testing source rather than effect.
 // ---------------------------------------------------------------------------
 
 describe("the session lifecycle drives the guard", () => {
-  const source = readFileSync(
-    join(import.meta.dirname, "..", "..", "backends", "session-lifecycle.ts"),
-    "utf8",
-  ).replace(/^\s*\/\/.*$/gm, "");
+  it("restores counters after a whole-file rewrite, end to end", async () => {
+    const rel = "agent_brain/concepts/thing.md";
+    mkdirSync(join(root, "agent_brain", "concepts"), { recursive: true });
+    write(rel, ORIGINAL);
+    await initTestGitRepo(root);
 
-  it("captures before a write or edit runs", () => {
-    expect(source).toMatch(/tool_execution_start[\s\S]{0,300}hebbianGuard\.capture\(/);
+    const life = new SessionLifecycle({
+      rootDir: root,
+      sessionId: "test",
+      spawnReflect: () => {},
+    } as never);
+
+    await life.handleEvent({
+      type: "tool_execution_start",
+      toolCallId: "c1",
+      toolName: "write",
+      args: { path: rel },
+    } as never);
+    // The model rewrites the file, frontmatter reconstructed from memory.
+    write(rel, ORIGINAL.replace("access_count: 7", "access_count: 1"));
+    await life.handleEvent({
+      type: "tool_execution_end",
+      toolCallId: "c1",
+      toolName: "write",
+      isError: false,
+    } as never);
+    await life.handleEvent({ type: "agent_end" } as never);
+    await life.flush();
+
+    expect(read(rel)).toContain("access_count: 7");
   });
 
-  it("restores after it finishes", () => {
-    expect(source).toMatch(/tool_execution_end[\s\S]{0,600}hebbianGuard\.restore\(/);
-  });
+  it("leaves the file alone when the write failed", async () => {
+    const rel = "agent_brain/concepts/thing.md";
+    mkdirSync(join(root, "agent_brain", "concepts"), { recursive: true });
+    write(rel, ORIGINAL);
+    await initTestGitRepo(root);
 
-  it("does not restore after a failed tool call", () => {
-    // A failed write did not change the file; "repairing" it would write a
-    // stale value over whatever is actually there.
-    expect(source).toMatch(/isError !== true[\s\S]{0,120}hebbianGuard\.restore\(/);
+    const life = new SessionLifecycle({
+      rootDir: root,
+      sessionId: "test",
+      spawnReflect: () => {},
+    } as never);
+
+    await life.handleEvent({
+      type: "tool_execution_start",
+      toolCallId: "c1",
+      toolName: "write",
+      args: { path: rel },
+    } as never);
+    write(rel, ORIGINAL.replace("access_count: 7", "access_count: 1"));
+    await life.handleEvent({
+      type: "tool_execution_end",
+      toolCallId: "c1",
+      toolName: "write",
+      isError: true,
+    } as never);
+    await life.handleEvent({ type: "agent_end" } as never);
+    await life.flush();
+
+    // A failed call changed nothing by definition; writing a remembered value
+    // over whatever is on disk would be the guard causing corruption.
+    expect(read(rel)).toContain("access_count: 1");
   });
 });

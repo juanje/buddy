@@ -928,6 +928,7 @@ instruction cannot govern behaviour that no model controls.
 | FR-HEBB-04 | Lazy commit | 2 ✓ |
 | FR-HEBB-05 | Counters are created on first read | 2 ✓ |
 | FR-HEBB-06 | Counters survive a whole-file rewrite | 2 ✓ |
+| FR-HEBB-07 | Access is recorded from the paired tool events | 2 ✓ |
 
 **FR-HEBB-01 — Intercept reads**
 
@@ -1002,6 +1003,41 @@ guidance.
 the damage. A failed tool call restores nothing, because it changed nothing and
 writing a remembered value over the current file would be the guard causing the
 corruption it exists to prevent.
+
+**FR-HEBB-07 — Access is recorded from the paired tool events**
+
+- **Given** the agent consults a brain file
+- **When** the tool call finishes successfully
+- **Then** the access is recorded, using the path from the matching
+  `tool_execution_start` — `tool_execution_end` carries none
+- **And** a `grep` aimed at a specific file counts as consultation; a `grep`
+  over a directory does not
+
+**The layer had never recorded a single access, on any install.** Not because
+the tracker was wrong — it works correctly in isolation — but because it was
+never called. `tool_execution_end` carries `toolCallId`, `toolName`, `result`
+and `isError`, and no `args`, so `extractToolInfo(event).path` was always
+undefined and the `info?.path` guard skipped every read in silence.
+
+**Why it looked healthy.** The adjacent `turnDirty` flags test only the tool
+*name*, so auto-commit worked perfectly throughout. Every visible symptom of a
+functioning pipeline was present.
+
+**Found by a user question**, not by a test: a file at `access_count: 0` was
+still at 0 after a session that demonstrably read it. FR-HEBB-05 had been built
+on top of this and could not have worked either — one half of a mechanism whose
+other half never ran.
+
+**The pairing is not duplicated.** `SessionTracker` already maintained the
+call-id → args map for its own bookkeeping; `recordEvent` now returns the
+resolved call rather than the lifecycle keeping a second copy that could
+disagree with it.
+
+**`grep` on one file counts.** Searching inside a document is consultation, and
+the cheaper way to do it; charging it nothing would bias the signal towards
+whichever tool happens to be less efficient. A recursive `grep` does not count —
+that is brute force, and crediting every file under a tree for one search would
+drown the signal it is meant to measure.
 
 **FR-HEBB-04 — Lazy commit**
 
