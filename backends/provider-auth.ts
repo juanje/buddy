@@ -23,7 +23,7 @@ import {
   PROVIDER_REQUEST_TIMEOUT_MS,
 } from "../shared/defaults";
 import { buddyModelsPath, buddyModelsStorePath } from "./global-config";
-import { toPiProviderId } from "./provider-mapping";
+import { toPiProviderId } from "../shared/provider-mapping";
 import { assertSafeProviderBaseUrl, UnsafeUrlError, type DnsLookupFn } from "./url-safety";
 
 export type ProviderId = SetupConfig["provider"];

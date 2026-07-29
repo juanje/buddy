@@ -81,6 +81,55 @@ function lockPathFor(targetPath: string): string {
 }
 
 /**
+ * Prepare to lock `resourcePath` and return the lock file's path.
+ *
+ * The mkdir is not incidental: without it the first write into a config
+ * directory that does not exist yet fails with ENOENT, which the acquisition
+ * loop cannot tell apart from contention — it retried for the full timeout and
+ * then reported the lock as held by another process.
+ */
+function beginLock(resourcePath: string): string {
+  mkdirSync(dirname(resourcePath), { recursive: true, mode: CONFIG_DIR_MODE });
+  return lockPathFor(resourcePath);
+}
+
+/**
+ * One attempt at the lock. The caller does the waiting, which is the only thing
+ * the sync and async variants ever disagreed about — everything else here was
+ * written out twice, and only one of the two copies carried the reasoning.
+ *
+ * - `taken` — the lock is ours.
+ * - `retry` — a dead holder's lock was broken; try again **without** waiting.
+ * - `wait`  — a live holder; back off, then try again.
+ */
+function tryTakeLock(
+  lockPath: string,
+  resourcePath: string,
+  deadline: number,
+): "taken" | "retry" | "wait" {
+  try {
+    // "wx" creates or fails — atomic, with no separate existence check to
+    // race against (the flaw NFR-REL-07 describes in maintenance.ts).
+    writeFileSync(lockPath, String(process.pid), { flag: "wx" });
+    return "taken";
+  } catch (error) {
+    // Only "it already exists" is contention. Anything else is a broken
+    // directory, and waiting a second to say so helps nobody.
+    if ((error as NodeJS.ErrnoException)?.code !== "EEXIST") throw error;
+    if (isLockStale(lockPath)) {
+      try {
+        unlinkSync(lockPath);
+      } catch {
+        // Someone else broke it first; the next attempt decides the winner.
+      }
+      return "retry";
+    }
+    if (Date.now() >= deadline) throw new StateFileLockError(resourcePath);
+    return "wait";
+  }
+}
+
+/**
  * Run `fn` while holding an exclusive cross-process lock on `resourcePath`.
  *
  * Async variant: waits without blocking the event loop, so it is safe to hold
@@ -93,25 +142,13 @@ export async function withFileLock<T>(
   fn: () => Promise<T>,
   timeoutMs: number,
 ): Promise<T> {
-  const lockPath = lockPathFor(resourcePath);
+  const lockPath = beginLock(resourcePath);
   const deadline = Date.now() + timeoutMs;
 
-  mkdirSync(dirname(resourcePath), { recursive: true, mode: CONFIG_DIR_MODE });
   for (;;) {
-    try {
-      writeFileSync(lockPath, String(process.pid), { flag: "wx" });
-      break;
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException)?.code !== "EEXIST") throw error;
-      if (isLockStale(lockPath)) {
-        try {
-          unlinkSync(lockPath);
-        } catch {
-          // Broken by someone else first; retry.
-        }
-        continue;
-      }
-      if (Date.now() >= deadline) throw new StateFileLockError(resourcePath);
+    const attempt = tryTakeLock(lockPath, resourcePath, deadline);
+    if (attempt === "taken") break;
+    if (attempt === "wait") {
       await new Promise((resolve) => setTimeout(resolve, LOCK_RETRY_MS));
     }
   }
@@ -124,36 +161,13 @@ export async function withFileLock<T>(
 }
 
 function acquireFileLock(targetPath: string, timeoutMs: number): string {
-  const lockPath = lockPathFor(targetPath);
+  const lockPath = beginLock(targetPath);
   const deadline = Date.now() + timeoutMs;
 
-  // Without this the first write into a config directory that does not exist
-  // yet fails with ENOENT, which the loop below could not tell apart from
-  // contention: it retried for the full timeout and then reported the lock as
-  // held by another process.
-  mkdirSync(dirname(targetPath), { recursive: true, mode: CONFIG_DIR_MODE });
-
   for (;;) {
-    try {
-      // "wx" creates or fails — atomic, with no separate existence check to
-      // race against (the flaw NFR-REL-07 describes in maintenance.ts).
-      writeFileSync(lockPath, String(process.pid), { flag: "wx" });
-      return lockPath;
-    } catch (error) {
-      // Only "it already exists" is contention. Anything else is a broken
-      // directory, and waiting a second to say so helps nobody.
-      if ((error as NodeJS.ErrnoException)?.code !== "EEXIST") throw error;
-      if (isLockStale(lockPath)) {
-        try {
-          unlinkSync(lockPath);
-        } catch {
-          // Someone else broke it first; loop and try to take it.
-        }
-        continue;
-      }
-      if (Date.now() >= deadline) throw new StateFileLockError(targetPath);
-      sleepSync(LOCK_RETRY_MS);
-    }
+    const attempt = tryTakeLock(lockPath, targetPath, deadline);
+    if (attempt === "taken") return lockPath;
+    if (attempt === "wait") sleepSync(LOCK_RETRY_MS);
   }
 }
 

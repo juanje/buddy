@@ -7,6 +7,7 @@ import { recommendedModelFor } from "../../shared/model-catalog";
 import { DEFAULT_LANGUAGE } from "../../shared/defaults";
 import { fromPiProviderId } from "../../shared/provider-mapping";
 import { DEFAULT_SETUP_PROVIDER, isApiKeyOnlyProvider } from "./provider-setup";
+import type { AppLocale } from "./i18n";
 import type {
   KeyCheck,
   LocationCheck,
@@ -18,7 +19,7 @@ import type {
 } from "../../shared/api";
 
 export type ProviderId = SetupConfig["provider"];
-export type AppLocale = NonNullable<SetupConfig["language"]>;
+
 
 export type SetupStep =
   | "language"

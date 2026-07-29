@@ -1,7 +1,8 @@
 // backends/oauth-service.ts — Pi SDK OAuth login wrapper (FR-SETUP-05).
 
 import type { OAuthUIEvent, OAuthLoginResult, SetupProviderId } from "../shared/api";
-import { supportsOAuth, toPiProviderId } from "./provider-mapping";
+import { supportsOAuth } from "../shared/provider-constants";
+import { toPiProviderId } from "../shared/provider-mapping";
 
 type AuthPromptLike = {
   type: string;

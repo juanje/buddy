@@ -1,7 +1,7 @@
 // backends/model-switch.ts — Resolve Pi Model objects for session.setModel (FR-SETTINGS-03).
 
 import type { SetupProviderId } from "../shared/api";
-import { toPiProviderId } from "./provider-mapping";
+import { toPiProviderId } from "../shared/provider-mapping";
 
 export interface SessionModelLike {
   id: string;

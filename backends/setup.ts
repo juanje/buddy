@@ -15,10 +15,6 @@ import type { SetupConfig, SetupState } from "../shared/api";
  * Default location of the app config; overridable for dev/tests via env.
  * Delegates to the single config-dir resolver (NFR-CONFIG-05).
  */
-export function defaultConfigPath(): string {
-  return globalConfigPath();
-}
-
 export function detectFirstRun(configPath: string): SetupState {
   let raw: string;
   try {
@@ -41,7 +37,7 @@ export function detectFirstRun(configPath: string): SetupState {
 /** Persist partial updates to ~/.buddy/config.json (FR-SETTINGS-02). */
 export function updateAppConfig(
   patch: Partial<Pick<SetupConfig, "language" | "model" | "provider" | "monthlyBudget">>,
-  configPath: string = defaultConfigPath(),
+  configPath: string = globalConfigPath(),
 ): SetupConfig {
   const state = detectFirstRun(configPath);
   if (state.firstRun) {

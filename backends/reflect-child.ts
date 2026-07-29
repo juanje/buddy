@@ -19,7 +19,7 @@ import {
 import { execSync } from "node:child_process";
 import { existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
-import { buddyAgentDir } from "./global-config";
+import { buddyAgentDir, globalConfigDir } from "./global-config";
 import type { AgentEvent } from "../shared/api";
 import {
   GIT_COMMIT_PREFIX,
@@ -46,7 +46,6 @@ import {
 } from "./reflect";
 import { clearSessionPersistence } from "./crash-recovery";
 import { buildReflectUserPrompt, extractObservationsSection } from "./reflect-prompts";
-import { defaultConfigDir } from "./allowed-paths";
 import { recordSessionUsage } from "./usage-tracker";
 
 async function resolveFastModelOptions(rootDir: string, modelRuntime: ModelRuntime): Promise<{
@@ -132,7 +131,7 @@ async function runReflect(
   try {
     await session.prompt(buildReflectUserPrompt(mode));
 
-    recordSessionUsage(defaultConfigDir(), events);
+    recordSessionUsage(globalConfigDir(), events);
 
     // Commit agent writes immediately — before lock, before finalization.
     await commitAll(rootDir, `${GIT_COMMIT_PREFIX} reflect ${mode} (agent writes)`);

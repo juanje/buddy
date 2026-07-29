@@ -45,7 +45,6 @@ import { acquireLock, releaseLock } from "./maintenance";
 import { createPermissionGate, type PermissionRequest } from "./permissions";
 import { assembleMaintenancePrompt } from "./prompt";
 import { appendDailyLog, updateLogsIndexEntry } from "./reflect";
-import { defaultConfigDir } from "./allowed-paths";
 import { buddyAgentDir, globalConfigDir } from "./global-config";
 import { recordSessionUsage } from "./usage-tracker";
 import { buildConsolidationTools, consolidationToolNames } from "./consolidation-tools";
@@ -322,7 +321,7 @@ export async function createMaintenanceSession(options: {
   return {
     async prompt(text) {
       await session.prompt(text);
-      recordSessionUsage(defaultConfigDir(), events);
+      recordSessionUsage(globalConfigDir(), events);
       const observed = [...events];
       events.length = 0;
       // FR-CONSOL-12: `prompt` resolving is not evidence that anything

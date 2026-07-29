@@ -41,7 +41,7 @@ import { configureProviderKey, createBuddyModelRuntime } from "./provider-auth";
 import {
   fromPiProviderId,
   WIZARD_PI_PROVIDERS,
-} from "./provider-mapping";
+} from "../shared/provider-mapping";
 import { getDueDeferred, removeDueDeferredItems, toDeferredItemViews } from "./deferred";
 import { toIsoDay } from "../shared/dates";
 import { commitAll } from "./git";
@@ -49,16 +49,32 @@ import { CONSOLIDATION_RETRY_CEILING, GIT_COMMIT_PREFIX } from "../shared/defaul
 import { bootSession, augmentPromptWithAttachments } from "./session-boot";
 import { recoverStaleSession } from "./crash-recovery";
 import { spawnReflectChild } from "./reflect-spawn";
-import { defaultConfigPath, detectFirstRun, updateAppConfig } from "./setup";
+import { detectFirstRun, updateAppConfig } from "./setup";
 import { writePiSettings } from "../shared/pi-settings";
 import { createWorkerCore } from "./worker-core";
 import { startHeartbeat, type HeartbeatHandle } from "./heartbeat";
-import { ensureConfigDirMode, globalConfigDir } from "./global-config";
+import { ensureConfigDirMode, globalConfigDir, globalConfigPath } from "./global-config";
 import { bootRefreshIfNeeded } from "./boot-refresh";
 import { pruneSessionArtifacts } from "./session-log-prune";
 import { createUsageTracker, resolveMonthlyBudget, type UsageTracker } from "./usage-tracker";
 import { createPromptQueue } from "./prompt-queue";
 import { readViewableFile } from "./viewable-file";
+
+/**
+ * Fire-and-forget notification to the frontend.
+ *
+ * A notification that cannot be delivered must never take the worker down: the
+ * RPC channel can be gone while a heartbeat tick or a boot step is still in
+ * flight. Written out at every call site, this was one forgotten try/catch away
+ * from an unhandled throw inside a timer callback.
+ */
+function notifyFrontend(scope: string, method: string, send: () => void): void {
+  try {
+    send();
+  } catch (err) {
+    console.error(`[${scope}] ${method} RPC failed:`, err);
+  }
+}
 
 async function main(): Promise<void> {
   const configDir = globalConfigDir();
@@ -71,7 +87,7 @@ async function main(): Promise<void> {
   // FR-SETUP-01: on first run there is no buddy directory to open a session in.
   // The channel is created either way (the wizard talks to the worker later);
   // the Pi session only exists when a buddy instance is configured, rooted at its dir.
-  let setupState = detectFirstRun(defaultConfigPath());
+  let setupState = detectFirstRun(globalConfigPath());
 
   let core: ReturnType<typeof createWorkerCore> | undefined;
   // FR-CHAT-13: the UI is interactive before the session is. Prompts sent
@@ -102,13 +118,8 @@ async function main(): Promise<void> {
     if (!usageTracker) {
       usageTracker = createUsageTracker(configDir, {
         getBudget: getBudgetLimit,
-        onBudgetAlert: (status) => {
-          try {
-            frontend.onBudgetAlert(status);
-          } catch (err) {
-            console.error("[usage] onBudgetAlert RPC failed:", err);
-          }
-        },
+        onBudgetAlert: (status) =>
+          notifyFrontend("usage", "onBudgetAlert", () => frontend.onBudgetAlert(status)),
       });
     }
     return usageTracker;
@@ -137,22 +148,15 @@ async function main(): Promise<void> {
       isBudgetNearLimit: () => ensureUsageTracker().isBudgetNearLimit(),
       onDeferredDue: (items) => {
         console.error(`[heartbeat] onDeferredDue: ${items.length} item(s), forwarding to frontend…`);
-        try {
-          frontend.onDeferredDue(items);
-        } catch (err) {
-          console.error("[heartbeat] onDeferredDue RPC failed:", err);
-        }
+        notifyFrontend("heartbeat", "onDeferredDue", () => frontend.onDeferredDue(items));
       },
-      onMaintenancePaused: (depth) => {
-        try {
+      onMaintenancePaused: (depth) =>
+        notifyFrontend("heartbeat", "onMaintenancePaused", () =>
           frontend.onMaintenancePaused({
             depth,
             consecutiveFailures: CONSOLIDATION_RETRY_CEILING,
-          });
-        } catch (err) {
-          console.error("[heartbeat] onMaintenancePaused RPC failed:", err);
-        }
-      },
+          }),
+        ),
     });
   }
 
@@ -193,11 +197,7 @@ async function main(): Promise<void> {
     ensureUsageTracker().checkAndFireAlerts();
     // FR-CHAT-13: tell the frontend before flushing, so the "preparing" notice
     // clears as the queued prompt starts streaming rather than after it ends.
-    try {
-      frontend.onSessionReady();
-    } catch (err) {
-      console.error("[boot] onSessionReady RPC failed:", err);
-    }
+    notifyFrontend("boot", "onSessionReady", () => frontend.onSessionReady());
     // Anything the user typed while the context injection was running goes
     // now, in the order they sent it.
     await promptQueue.ready((text, promptOptions) => booted.core.api.prompt(text, promptOptions));
@@ -280,10 +280,10 @@ async function main(): Promise<void> {
         // and `git init` inside a directory full of the user's own files.
         assertSetupLocationAllowed(config.rootDir, mode);
         if (mode === "import") {
-          adoptBuddyInstance({ config, configPath: defaultConfigPath() });
+          adoptBuddyInstance({ config, configPath: globalConfigPath() });
           await ensureGitRepository(config.rootDir);
         } else {
-          await createBuddyInstance({ config, configPath: defaultConfigPath() });
+          await createBuddyInstance({ config, configPath: globalConfigPath() });
         }
         setupState = { firstRun: false, config };
         await startSession(config.rootDir, {
@@ -304,7 +304,7 @@ async function main(): Promise<void> {
         if (setupState.firstRun) {
           throw new Error("App is not configured");
         }
-        const updated = updateAppConfig(patch, defaultConfigPath());
+        const updated = updateAppConfig(patch, globalConfigPath());
         setupState = { firstRun: false, config: updated };
         if (patch.monthlyBudget !== undefined) {
           usageTracker?.resetSessionAlertDedup();
@@ -321,7 +321,7 @@ async function main(): Promise<void> {
         const resolved = await resolveSessionModel(modelRuntime, provider, model);
         await core.api.setModel(resolved);
         writePiSettings(setupState.config.rootDir, { provider, model });
-        const updated = updateAppConfig({ provider, model }, defaultConfigPath());
+        const updated = updateAppConfig({ provider, model }, globalConfigPath());
         setupState = { firstRun: false, config: updated };
       },
       async getUsage() {

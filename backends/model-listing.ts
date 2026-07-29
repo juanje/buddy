@@ -7,7 +7,7 @@ import {
   recommendedModelFor,
   type ModelChoice,
 } from "../shared/model-catalog";
-import { toPiProviderId } from "./provider-mapping";
+import { toPiProviderId } from "../shared/provider-mapping";
 
 export interface ModelRuntimeLike {
   getAvailable(providerId?: string): Promise<readonly { id: string; name?: string }[]>;

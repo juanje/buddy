@@ -11,7 +11,7 @@ import { join } from "node:path";
 import { get } from "svelte/store";
 
 import { configureProviderKey, type ProviderId } from "../../backends/provider-auth";
-import { toPiProviderId } from "../../backends/provider-mapping";
+import { toPiProviderId } from "../../shared/provider-mapping";
 import type { SetupController } from "../../src/lib/setup-controller";
 import { advanceToProviderStep } from "../support/setup-wizard-helpers";
 import { wizardOf } from "../support/setup-wizard-factory";

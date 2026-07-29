@@ -18,19 +18,7 @@ interface AllowedPathsFile {
   allowedPaths: AllowedEntry[];
 }
 
-/**
- * Directory holding ~/.buddy/config.json.
- *
- * NFR-CONFIG-05: kept as a name because the reflect child and the consolidation
- * runner import it, but it is no longer a second resolver — it is
- * `globalConfigDir()`. The two used to read different environment variables and
- * could name different directories in the same run.
- */
-export function defaultConfigDir(): string {
-  return globalConfigDir();
-}
-
-export function allowedPathsFile(configDir: string = defaultConfigDir()): string {
+export function allowedPathsFile(configDir: string = globalConfigDir()): string {
   return join(configDir, ALLOWED_PATHS_FILE_NAME);
 }
 
@@ -49,7 +37,7 @@ function validEntries(parsed: Partial<AllowedPathsFile> | undefined): AllowedEnt
  * of reporting "no approvals": the previous behaviour let `addAllowedPath` then
  * write only the new entry, discarding every path the user had approved.
  */
-export function loadAllowedPaths(configDir: string = defaultConfigDir()): AllowedEntry[] {
+export function loadAllowedPaths(configDir: string = globalConfigDir()): AllowedEntry[] {
   return validEntries(readStateFile<Partial<AllowedPathsFile>>(allowedPathsFile(configDir)));
 }
 

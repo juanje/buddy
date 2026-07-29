@@ -22,6 +22,11 @@ import {
  * resolved it the other, so a run could bill against a file nobody was reading.
  * Both variables are still honoured, but through a single precedence:
  *
+ * Both alias names (`defaultConfigDir`, `defaultConfigPath`) were removed on
+ * 2026-07-29: making the second name delegate left the condition that caused
+ * the divergence — two names for one answer — and a test can only pin the
+ * agreement of the names it knows about.
+ *
  *   1. BUDDY_CONFIG_DIR — names the directory outright.
  *   2. The directory of BUDDY_CONFIG_PATH (or its legacy alias), so setting
  *      only the config file still moves everything that lives beside it.
