@@ -5,6 +5,7 @@ import { dirname, join, normalize, relative, resolve } from "node:path";
 
 import { containedRelPath } from "./containment";
 import { gitClient } from "./git";
+import { BRAIN_PREFIX } from "../shared/brain-paths";
 
 const MARKDOWN_LINK_RE = /(?<!!)\[([^\]]*)\]\(([^)]+)\)/g;
 const EXTERNAL_LINK_RE = /^(?:https?:|mailto:|#)/i;
@@ -105,7 +106,7 @@ export class RelocateBrainFileError extends Error {}
  */
 function assertBrainPath(rootDir: string, raw: string, label: string): string {
   const relPath = containedRelPath(rootDir, resolve(rootDir, normalizeRepoPath(raw)));
-  if (relPath === null || !relPath.startsWith("agent_brain/")) {
+  if (relPath === null || !relPath.startsWith(BRAIN_PREFIX)) {
     throw new RelocateBrainFileError(`${label} must be within agent_brain/`);
   }
   return relPath;

@@ -11,6 +11,7 @@ import { globalConfigDir } from "./global-config";
 import { getEmbeddedAssets } from "./embedded-assets";
 import { defaultTemplatesDir } from "./create-buddy";
 import { dailyLogPath, deferredPath, logsDirPath, logsIndexPath, soulPath, userProfilePath } from "./brain-paths";
+import { BRAIN } from "../shared/brain-paths";
 
 export interface AssembledPrompt {
   prompt: string;
@@ -67,7 +68,7 @@ export function isUserProfilePlaceholder(
   return profile === normalizeProfile(templateMd);
 }
 
-const USER_TEMPLATE_PATH = "agent_brain/identity/USER.md";
+const USER_TEMPLATE_PATH = BRAIN.user;
 
 /** The shipped USER.md template: embedded in the sidecar, on disk in dev. */
 function readUserProfileTemplate(): string | undefined {

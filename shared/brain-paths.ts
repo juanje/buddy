@@ -69,3 +69,20 @@ export function dailyLogRelPath(isoDay: string): string {
 export function indexRelPath(dirRelPath: string): string {
   return `${dirRelPath}/${INDEX_FILE}`;
 }
+
+/**
+ * Prefix form of a directory, for `startsWith` on a relative path.
+ *
+ * Spelling only. A `startsWith(dirPrefix(BRAIN_DIR))` test says what a string
+ * looks like, not where it points — `agent_brain/../.pi/settings.json` passes
+ * it. Callers that need to know whether a path is genuinely inside the brain
+ * must resolve it through `backends/containment.ts` first and test the result,
+ * which is what `consolidation-relocate.ts` does after NFR-SEC-16.
+ */
+export function dirPrefix(dirRelPath: string): string {
+  return `${dirRelPath}/`;
+}
+
+export const BRAIN_PREFIX = dirPrefix(BRAIN_DIR);
+/** Suffix identifying any directory index (`…/index.md`). */
+export const INDEX_SUFFIX = `/${INDEX_FILE}`;

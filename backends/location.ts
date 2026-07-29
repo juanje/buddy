@@ -9,6 +9,8 @@ import { join } from "node:path";
 
 import type { LocationCheck } from "../shared/api";
 import { readPiSettings } from "../shared/pi-settings";
+import { BRAIN } from "../shared/brain-paths";
+import { brainDirPath } from "./brain-paths";
 
 /** Proposed default buddy location (FR-SETUP-03). */
 export function defaultBuddyLocation(): string {
@@ -33,7 +35,7 @@ export function validateLocation(path: string): LocationCheck {
   }
 
   try {
-    if (statSync(join(path, "agent_brain")).isDirectory()) {
+    if (statSync(brainDirPath(path)).isDirectory()) {
       // FR-SETUP-12: `agent_brain/` alone does not make a usable instance.
       const missing = missingInstanceParts(path);
       if (missing.length > 0) {
@@ -68,7 +70,7 @@ export function validateLocation(path: string): LocationCheck {
  * Requiring the full template would refuse instances that work perfectly well.
  */
 export function missingInstanceParts(path: string): string[] {
-  const identityFiles = ["agent_brain/identity/SOUL.md", "agent_brain/identity/USER.md"];
+  const identityFiles = [BRAIN.soul, BRAIN.user];
   const hasIdentity = identityFiles.some((relPath) => existsSync(join(path, relPath)));
   return hasIdentity ? [] : ["an identity (SOUL.md or USER.md)"];
 }

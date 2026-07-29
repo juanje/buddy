@@ -6,6 +6,7 @@ import { resolve } from "node:path";
 import { toIsoDay } from "../shared/dates";
 import { normalizeAbPath } from "../shared/path-utils";
 import { parseFrontmatter } from "./reflect";
+import { BRAIN, BRAIN_PREFIX, BRAIN_SUBDIRS, INDEX_SUFFIX, dirPrefix } from "../shared/brain-paths";
 
 export interface HebbianTracker {
   trackAccess(path: string): void;
@@ -23,15 +24,15 @@ const CORE_SKILL_NAMES = new Set([
 ]);
 
 function isExcluded(relPath: string): boolean {
-  if (!relPath.startsWith("agent_brain/")) return true;
+  if (!relPath.startsWith(BRAIN_PREFIX)) return true;
 
-  if (relPath === "agent_brain/identity/SOUL.md") return true;
-  if (relPath === "agent_brain/identity/USER.md") return true;
-  if (relPath === "agent_brain/observations.md") return true;
-  if (relPath === "agent_brain/deferred.md") return true;
-  if (relPath.endsWith("/index.md") || relPath === "agent_brain/index.md") return true;
+  if (relPath === BRAIN.soul) return true;
+  if (relPath === BRAIN.user) return true;
+  if (relPath === BRAIN.observations) return true;
+  if (relPath === BRAIN.deferred) return true;
+  if (relPath.endsWith(INDEX_SUFFIX) || relPath === BRAIN.index) return true;
 
-  const skillsPrefix = "agent_brain/skills/";
+  const skillsPrefix = dirPrefix(BRAIN_SUBDIRS.skills);
   if (relPath.startsWith(skillsPrefix)) {
     const skillName = relPath.slice(skillsPrefix.length);
     if (!skillName.includes("/") && CORE_SKILL_NAMES.has(skillName)) return true;

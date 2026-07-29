@@ -22,6 +22,7 @@ import { expandHome } from "../shared/path-utils";
 import { containedRelPath, isContained } from "./containment";
 import { gitClient } from "./git";
 import { evaluateToolCall } from "./permissions";
+import { BRAIN_SUBDIRS, dirPrefix } from "../shared/brain-paths";
 
 export class FileToolError extends Error {}
 
@@ -49,7 +50,7 @@ function isIdentityPath(relPath: string): boolean {
   if (IDENTITY_ROOT_FILES.includes(relPath as (typeof IDENTITY_ROOT_FILES)[number])) {
     return true;
   }
-  return relPath.startsWith("agent_brain/identity/");
+  return relPath.startsWith(dirPrefix(BRAIN_SUBDIRS.identity));
 }
 
 function isProtectedPath(relPath: string): boolean {

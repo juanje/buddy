@@ -7,13 +7,14 @@ import { addDays, toIsoDay } from "../shared/dates";
 import { HEBBIAN_DEMOTION_MIN_SESSIONS, HEBBIAN_RECENT_DAYS } from "../shared/defaults";
 import { parseFrontmatter } from "./reflect";
 import { brainDirPath, logsIndexPath } from "./brain-paths";
+import { BRAIN, BRAIN_PREFIX, BRAIN_SUBDIRS, INDEX_SUFFIX, dirPrefix } from "../shared/brain-paths";
 
 const LOG_INDEX_ACTIVE_RE = /^-\s+(\d{4}-\d{2}-\d{2}):\s+active\b/;
 
 const BRAIN_EXCLUDED_PREFIXES = [
-  "agent_brain/identity/",
-  "agent_brain/skills/",
-  "agent_brain/archive/",
+  dirPrefix(BRAIN_SUBDIRS.identity),
+  dirPrefix(BRAIN_SUBDIRS.skills),
+  dirPrefix(BRAIN_SUBDIRS.archive),
 ];
 
 export interface HebbianFileInfo {
@@ -30,9 +31,9 @@ export interface HebbianReport {
 }
 
 function isBrainTracked(relPath: string): boolean {
-  if (!relPath.startsWith("agent_brain/") || !relPath.endsWith(".md")) return false;
-  if (relPath.endsWith("/index.md") || relPath === "agent_brain/index.md") return false;
-  if (relPath === "agent_brain/observations.md" || relPath === "agent_brain/deferred.md") {
+  if (!relPath.startsWith(BRAIN_PREFIX) || !relPath.endsWith(".md")) return false;
+  if (relPath.endsWith(INDEX_SUFFIX) || relPath === BRAIN.index) return false;
+  if (relPath === BRAIN.observations || relPath === BRAIN.deferred) {
     return false;
   }
   return !BRAIN_EXCLUDED_PREFIXES.some((prefix) => relPath.startsWith(prefix));

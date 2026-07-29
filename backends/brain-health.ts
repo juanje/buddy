@@ -15,6 +15,7 @@ import {
 } from "../shared/defaults";
 import { parseFrontmatter } from "./reflect";
 import { brainDirPath } from "./brain-paths";
+import { BRAIN_PREFIX, BRAIN_SUBDIRS, dirPrefix } from "../shared/brain-paths";
 
 export interface BrainHealthReport {
   /**
@@ -64,7 +65,9 @@ export function frontmatterProblem(content: string): string | null {
 }
 
 function isArchivePath(relPath: string): boolean {
-  return relPath === "agent_brain/archive" || relPath.startsWith("agent_brain/archive/");
+  return (
+    relPath === BRAIN_SUBDIRS.archive || relPath.startsWith(dirPrefix(BRAIN_SUBDIRS.archive))
+  );
 }
 
 function walkAllBrainMarkdown(rootDir: string): string[] {
@@ -84,7 +87,7 @@ function walkAllBrainMarkdown(rootDir: string): string[] {
       const rel = relative(rootDir, abs).replace(/\\/g, "/");
       if (statSync(abs).isDirectory()) {
         if (!isArchivePath(rel)) stack.push(abs);
-      } else if (rel.startsWith("agent_brain/") && rel.endsWith(".md")) {
+      } else if (rel.startsWith(BRAIN_PREFIX) && rel.endsWith(".md")) {
         results.push(rel);
       }
     }
