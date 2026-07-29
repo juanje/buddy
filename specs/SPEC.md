@@ -1027,6 +1027,37 @@ corruption it exists to prevent.
 - **And** it does **not** include logs, deferred items, or first-run interview instructions
 - **And** it is passed to Pi via `DefaultResourceLoader({ systemPromptOverride: () => prompt })`
 
+**FR-PROMPT-05 — "Unpersonalized profile" means "identical to the template"**
+
+- **Given** `agent_brain/identity/USER.md`
+- **When** the worker decides whether to inject the first-conversation setup
+  interview
+- **Then** the interview is injected only if the file is absent, empty, or
+  still byte-identical to the shipped template (whitespace-normalised)
+- **And** when no template is available for comparison, a non-empty profile
+  counts as personalized
+
+**The detector used to search for a literal `**Name:**` line.** A profile that
+had grown to say `- **Full name:** Juan Jesús …` failed that test, so an
+instance in daily use reported "placeholder" on **every session**. Buddy then
+injected a block opening "This is your first conversation together" which
+instructs the model to *rewrite USER.md completely*.
+
+Observed 2026-07-29: an assistant holding a 200-line profile of its user asked
+them to introduce themselves. Earlier runs had rewritten that profile — not the
+model's initiative, but exactly what the injected block told it to do.
+
+**Why the template and not a better key search.** Accepting `**Full name:**`
+too would have moved the failure rather than removed it: the profile is
+*designed* to grow, the agent maintains it, and nothing requires it to keep
+English key names in a Spanish instance. The template is the one reference that
+does not depend on a convention the agent is free to change.
+
+**The fallback direction is deliberate.** With no template to compare against,
+a non-empty profile counts as personalized. A missed interview costs one
+unasked question; a false one tells a months-long user that their assistant
+does not know them, and orders their profile overwritten.
+
 **FR-PROMPT-02 — Session-start context message**
 
 - **Given** a session is starting

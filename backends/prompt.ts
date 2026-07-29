@@ -8,6 +8,8 @@ import { join } from "node:path";
 import { dueDeferredItems, parseDeferredItems, type ParsedDeferredItem } from "./deferred";
 import { toIsoDay } from "../shared/dates";
 import { globalConfigDir } from "./global-config";
+import { getEmbeddedAssets } from "./embedded-assets";
+import { defaultTemplatesDir } from "./create-buddy";
 
 export interface AssembledPrompt {
   prompt: string;
@@ -25,13 +27,54 @@ export interface SessionContext {
  * (FR-SETUP-07). The wizard copies the template verbatim; the agent fills
  * the name during the first conversation, which ends the interview mode.
  */
-export function isUserProfilePlaceholder(userMd: string | undefined): boolean {
-  if (userMd === undefined) return true; // no profile at all: fresh buddy instance
-  const nameLine = userMd.split("\n").find((line) => line.includes("**Name:**"));
-  if (!nameLine) return true;
-  const value = nameLine.slice(nameLine.indexOf("**Name:**") + "**Name:**".length).trim();
-  return value === "";
+/** Collapse whitespace so deployment differences do not read as personalization. */
+function normalizeProfile(text: string): string {
+  return text.replace(/\r\n/g, "\n").replace(/[ \t]+$/gm, "").trim();
 }
+
+/**
+ * True when the profile has not been personalized yet (FR-PROMPT-05).
+ *
+ * **Compared against the shipped template, deliberately.** The previous
+ * implementation searched for a literal `**Name:**` line and reported
+ * "placeholder" when it was absent. A profile that had grown to say
+ * `- **Full name:** …` therefore looked empty on *every* session, and Buddy
+ * injected a block opening "This is your first conversation together" which
+ * instructs the model to rewrite USER.md completely. Observed on an instance
+ * with a 200-line profile: the assistant asked the user to introduce
+ * themselves, and earlier runs had rewritten the profile because they were
+ * told to.
+ *
+ * The template is the one definition that does not depend on a convention the
+ * agent is free to change — and it does change it, because the profile is
+ * meant to grow, in whatever language and shape the conversation produces.
+ *
+ * With no template to compare against, a non-empty profile counts as
+ * personalized. That direction is the safe one: a missed interview costs one
+ * unasked question, while a false interview tells a user who has been using
+ * Buddy for months that it does not know them, and orders their profile
+ * overwritten.
+ */
+export function isUserProfilePlaceholder(
+  userMd: string | undefined,
+  templateMd: string | undefined = readUserProfileTemplate(),
+): boolean {
+  if (userMd === undefined) return true; // no profile at all: fresh buddy instance
+  const profile = normalizeProfile(userMd);
+  if (profile === "") return true;
+  if (templateMd === undefined) return false;
+  return profile === normalizeProfile(templateMd);
+}
+
+const USER_TEMPLATE_PATH = "agent_brain/identity/USER.md";
+
+/** The shipped USER.md template: embedded in the sidecar, on disk in dev. */
+function readUserProfileTemplate(): string | undefined {
+  const embedded = getEmbeddedAssets();
+  if (embedded) return embedded.templates[USER_TEMPLATE_PATH];
+  return readIfExists(join(defaultTemplatesDir(), USER_TEMPLATE_PATH));
+}
+
 
 function readIfExists(path: string): string | undefined {
   try {
