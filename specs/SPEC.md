@@ -2060,6 +2060,7 @@ about the approach.
 | NFR-ACC-01 | Dark and light mode following system preference (`prefers-color-scheme`) |
 | NFR-ACC-02 | Keyboard shortcuts for all primary actions (send, abort, settings) |
 | NFR-ACC-03 | Semantic HTML in chat messages for screen reader compatibility |
+| NFR-ACC-04 | Every CSS custom property a component references is defined in `src/app.css`, and no reference carries a literal colour as fallback. **Why this is not cosmetic:** NFR-ACC-01 is stated as a promise about `prefers-color-scheme`, but `var(--name, #hex)` keeps the component rendering when `--name` does not exist — with the hex, in both themes, silently. The "session preparing" banner (FR-CHAT-13) referenced `--surface-2` and `--text`, neither of which was ever defined, so it drew itself dark-on-dark in light mode from the day it shipped. Nothing disobeyed a rule: the typo *is* the fallback syntax working as designed. A fallback on a token that **is** defined is dead in the other direction — it can never be reached, and it lies about which value applies. Both are checked by `tests/unit/design-tokens.test.ts`. |
 
 ### 4.7 Internationalization (i18n)
 

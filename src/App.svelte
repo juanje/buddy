@@ -424,9 +424,9 @@
     font-size: 1rem;
     line-height: 1.45;
     text-align: center;
-    background: var(--surface-2, #2a2a2e);
-    color: var(--text, #e8e8ec);
-    border: 1px solid var(--border, #3a3a40);
+    background: var(--bg-secondary);
+    color: var(--fg);
+    border: 1px solid var(--border);
     box-shadow: 0 6px 20px rgb(0 0 0 / 0.35);
   }
 

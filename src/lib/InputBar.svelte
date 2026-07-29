@@ -158,7 +158,7 @@
     gap: 4px;
     padding: 4px 8px;
     border-radius: 8px;
-    background: var(--chip-bg, rgba(127, 127, 127, 0.15));
+    background: var(--bg-secondary);
     font-size: 13px;
   }
   .chip-remove {

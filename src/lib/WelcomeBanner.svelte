@@ -86,7 +86,7 @@
   }
   li {
     font-size: 13px;
-    color: var(--fg-secondary, var(--fg));
+    color: var(--fg-secondary);
     padding: 4px 0;
     line-height: 1.4;
   }
@@ -125,10 +125,10 @@
     margin-top: 8px;
   }
   .dismiss-btn {
-    border: 1px solid var(--fg-secondary, var(--muted));
+    border: 1px solid var(--fg-secondary);
     border-radius: 6px;
     background: transparent;
-    color: var(--fg-secondary, var(--fg));
+    color: var(--fg-secondary);
     font-size: 12px;
     font-weight: 500;
     cursor: pointer;
