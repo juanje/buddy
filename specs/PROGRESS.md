@@ -198,7 +198,7 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 ## Current focus
 
 > **Hardening series complete. Released through v0.1.8.**
-> **697 unit + 212 BDD green**, typecheck and vite build clean.
+> **698 unit + 214 BDD green**, typecheck and vite build clean.
 >
 > A maintenance audit (2026-07-29) followed; phase 1 is below, phases 2–4 are
 > planned but not started. It does not change the next focus.
@@ -263,6 +263,53 @@ sentinel across the RPC boundary; the `worker-proxy.ts` boilerplate; the
 duplicated lock loop in `state-file.ts`; and the brain-path literals spread
 across ~12 files against NFR-CONFIG-01. That last one is worth doing *before*
 FR-WIKI rather than after, so the new feature is born centralized.
+
+### Sprint: Maintenance audit, phase 2 — DONE (2026-07-29)
+
+| Item | Description | Commit |
+|------|-------------|--------|
+| NFR-TEST-02 | The BDD suite no longer forks a real reflect child | 916f786 |
+| CI | Quality gate runs on every push/PR; `release.yml` needs it | 5e73d88 |
+| FR-SETUP-05 | OAuth cancellation is a typed flag, not a string comparison | 242d1d7 |
+
+**The audit named the wrong file, and the correction mattered.** Phase 1's
+report blamed `tests/support/world.ts`. The live leak was
+`session-persistence.steps.ts`, which built a `SessionLifecycle` without
+injecting `spawnReflect`; `world.ts` had the same shape but no caller could
+reach it. Fixing only what the report said would have left the fork in place.
+
+**Both fixes are the same defect wearing different clothes: the safe path was
+opt-in and the dangerous one was the default.** The reflect double had to be
+requested (`trackSpawn`), so forgetting it forked a real detached process —
+harmless only because the scenario's session file did not exist, which is one
+edit away from reading `~/.buddy/auth.json` and billing an LLM call from the
+test suite. Cancellation had to be recognized by its English message, so a
+localization would have turned it into an error dialog. Neither needed anyone
+to disobey anything, so neither was fixed with a rule: `spawnReflectChild`
+throws under the runners, and `OAuthLoginResult` carries `cancelled`.
+
+**Two tests that passed for the wrong reason, caught before they were kept.**
+The OAuth scenarios were first written with `"Login cancelled"` as the message
+and passed against the *unfixed* code, because the literal comparison happened
+to agree. Rewriting them with a message the old code would not have matched
+made them fail as they should. This is the "reintroduce the bug to check the
+test" rule paying for itself twice in one sprint.
+
+**Rejected: a stray-process sweep in CI.** `pgrep -f 'reflect-child|agent-worker'`
+was written, then removed — it passes on a clean runner and fails on any
+machine with buddy.app installed and running, which it was verified to do
+locally by matching the shipped binary. A check that is green in one
+environment and red in another for reasons unrelated to the code is worse than
+no check.
+
+**Phases 3–4 still open.** `worker-proxy.ts` boilerplate, the duplicated lock
+loop in `state-file.ts`, the `provider-mapping`/`defaultConfigDir` indirection
+shims, the duplicated provider-auth flow across the two controllers; then the
+brain-path literals against NFR-CONFIG-01 and the version-propagation script.
+**The version script is a precondition for the next release**, agreed
+2026-07-29: the version lives in four places, the last bump missed one
+(`embedded-assets.generated.ts`, fixed in a6950b8), and no bump happens until
+one command propagates it.
 
 ### What the local-model evaluation actually found (2026-07-28/29)
 
