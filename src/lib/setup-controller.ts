@@ -2,7 +2,7 @@
 // The SetupWizard component is a thin view over these stores, mirroring the
 // chat-controller pattern.
 
-import { derived, get, writable, type Readable, type Writable } from "svelte/store";
+import { derived, get, writable, type Readable } from "svelte/store";
 import { recommendedModelFor } from "../../shared/model-catalog";
 import { DEFAULT_LANGUAGE } from "../../shared/defaults";
 import { fromPiProviderId } from "../../shared/provider-mapping";

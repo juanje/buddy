@@ -5,7 +5,6 @@
 // stdio transport. Includes permission layer, system prompt assembly,
 // auto-commit lifecycle, forked reflect on shutdown, and heartbeat scheduler.
 
-import { ModelRuntime } from "@earendil-works/pi-coding-agent";
 import { RPCChannel } from "kkrpc";
 import { nodeStdioTransport } from "kkrpc/stdio";
 

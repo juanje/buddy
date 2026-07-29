@@ -76,7 +76,7 @@ These are not style preferences. Each one cost a defect that shipped.
 ### Quality gate (all three, before every commit)
 
 ```
-npx tsc --noEmit      # types
+npx tsc --noEmit      # types + dead imports/locals (noUnusedLocals)
 npx vite build        # tsc does NOT check .svelte — this is what catches
                       # broken components and orphaned CSS
 npm test              # vitest + cucumber
@@ -84,6 +84,15 @@ npm test              # vitest + cucumber
 
 `vite build` is not optional. It was added to the gate after a refactor left
 orphaned CSS that `tsc` reported as clean.
+
+`tsc` also runs `noUnusedLocals`/`noUnusedParameters`. Eight dead imports had
+accumulated where `strict` alone saw nothing wrong. Prefix a deliberately
+unused parameter with `_` rather than turning the flag off.
+
+Note what `vite build` still does **not** check: a `.svelte` file referencing a
+CSS custom property that nobody defines builds cleanly, because
+`var(--typo, #hex)` renders the fallback. `tests/unit/design-tokens.test.ts`
+covers that (NFR-ACC-04).
 
 ### Commit convention
 
