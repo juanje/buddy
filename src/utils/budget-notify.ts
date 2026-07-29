@@ -17,9 +17,17 @@ export function resetBudgetNotifyStateForTests(): void {
   notifyInFlight = false;
 }
 
+/**
+ * Notify once per threshold per app session (FR-COST-03).
+ *
+ * `body` is singular on purpose. `formatBudgetNotificationBody` already selects
+ * its template from `status.level`, so asking for a warning body *and* an
+ * exceeded body made the only caller compute the identical string twice under
+ * two names. The title is the one thing that genuinely differs.
+ */
 export async function notifyBudgetAlert(
   status: BudgetStatus,
-  labels: { warningTitle: string; warningBody: string; exceededTitle: string; exceededBody: string },
+  labels: { warningTitle: string; exceededTitle: string; body: string },
 ): Promise<void> {
   if (status.level !== "warning" && status.level !== "exceeded") return;
   if (notifyInFlight) return;
@@ -32,10 +40,9 @@ export async function notifyBudgetAlert(
 
     await ensureDeferredNotificationClickHandler();
 
-    const isWarning = status.level === "warning";
     sendNotification({
-      title: isWarning ? labels.warningTitle : labels.exceededTitle,
-      body: isWarning ? labels.warningBody : labels.exceededBody,
+      title: status.level === "warning" ? labels.warningTitle : labels.exceededTitle,
+      body: labels.body,
       autoCancel: true,
     });
     void focusAppWindow();

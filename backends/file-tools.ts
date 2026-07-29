@@ -9,7 +9,7 @@ import {
   unlinkSync,
 } from "node:fs";
 import { homedir } from "node:os";
-import { dirname, join, relative, resolve, sep } from "node:path";
+import { dirname, resolve } from "node:path";
 import { Type } from "typebox";
 import { defineTool, type ToolDefinition } from "@earendil-works/pi-coding-agent";
 

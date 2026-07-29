@@ -8,7 +8,6 @@ import { join } from "node:path";
 
 import { createBuddyInstance, defaultTemplatesDir } from "../../backends/create-buddy";
 import {
-  clearSessionPersistence,
   persistLiveSession,
   recoverStaleSession,
 } from "../../backends/crash-recovery";

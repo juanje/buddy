@@ -25,7 +25,7 @@ fn main() {
                 ),
                 copyright: Some("© 2026 Juanje Ojeda".to_string()),
                 license: Some("GPL-3.0".to_string()),
-                website: Some("https://github.com/juanje/ab-app".to_string()),
+                website: Some("https://github.com/juanje/buddy".to_string()),
                 website_label: Some("GitHub".to_string()),
                 ..Default::default()
             };

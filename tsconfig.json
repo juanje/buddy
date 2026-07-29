@@ -5,6 +5,12 @@
     "moduleResolution": "bundler",
     "lib": ["ES2022", "DOM"],
     "strict": true,
+    // Dead imports and dead locals are invisible to `strict` and survive
+    // refactors indefinitely — eight had accumulated. These put them in front
+    // of the quality gate instead of a reviewer. Prefix a deliberately unused
+    // parameter with `_` to exempt it.
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
     "noEmit": true,
     "esModuleInterop": true,
     "skipLibCheck": true,

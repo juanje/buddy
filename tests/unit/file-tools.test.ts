@@ -1,7 +1,6 @@
 // tests/unit/file-tools.test.ts — FR-DELETE-01, FR-FILE-01, FR-FILE-02.
 
 import {
-  copyFileSync,
   existsSync,
   mkdirSync,
   mkdtempSync,

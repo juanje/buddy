@@ -56,7 +56,7 @@
     padding: 4px 0;
   }
   .summary.running {
-    color: var(--fg-secondary, var(--muted));
+    color: var(--fg-secondary);
   }
   .summary:hover {
     color: var(--fg);

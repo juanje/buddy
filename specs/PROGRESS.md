@@ -198,7 +198,10 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 ## Current focus
 
 > **Hardening series complete. Released through v0.1.8.**
-> **688 unit + 212 BDD green**, typecheck and vite build clean.
+> **697 unit + 212 BDD green**, typecheck and vite build clean.
+>
+> A maintenance audit (2026-07-29) followed; phase 1 is below, phases 2–4 are
+> planned but not started. It does not change the next focus.
 >
 > Two campaigns ran back to back, and the second was not planned.
 >
@@ -217,6 +220,49 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 > **Next: FR-WIKI**, per `docs/app-design-principles.md`, which has always
 > listed it under *Explicitly NOT in v1*. It waits until open bugs and core UX
 > are finished — which after v0.1.8 they largely are.
+
+### Sprint: Maintenance audit, phase 1 — DONE (2026-07-29)
+
+An audit for dead code, stale comments, hardcoded data, duplication and drifted
+documentation. Phase 1 is the subset that is mechanical or has a user-visible
+defect behind it; the rest is planned and unstarted.
+
+| Item | Description | Commit |
+|------|-------------|--------|
+| NFR-ACC-04 | CSS custom properties must exist; no literal-colour fallbacks | 3071df9 |
+| FR-COST-03 | `notifyBudgetAlert` takes one body, not one per level | 14be385 |
+| Gate | `noUnusedLocals`/`noUnusedParameters` + 8 dead imports removed | f001778 |
+| Docs | Stale names, misplaced doc block, wrong About link, `ab-app` residue | cc68e8f |
+| Docs | README counts/build steps, `app-spec-tauri.md` §3 marked as a sketch | 58ad4a0 |
+
+**The one real defect.** The FR-CHAT-13 "session preparing" banner referenced
+`--surface-2` and `--text`, which are defined nowhere, and `--chip-bg` did the
+same on the attachment chips. `var(--name, #hex)` does not fail on a missing
+token — it renders the fallback — so the banner had drawn itself in dark-theme
+hexes in *both* colour schemes since it shipped, quietly breaking NFR-ACC-01.
+
+This is the "a rule only governs what a rule can reach" pattern again, in a new
+place: nothing disobeyed anything, the CSS fallback syntax simply worked as
+designed over a typo. `vite build` reports it clean, which is why the guard is
+a test (`tests/unit/design-tokens.test.ts`) and the requirement is new
+(NFR-ACC-04). It also rejects the inverse — a fallback on a token that *is*
+defined, of which there were four — because that value can never be reached and
+misstates which colour applies.
+
+**Deliberately not done.** `runConsolidation` saves consolidation state a third
+time after the cascade loop, where both mutators have already persisted and
+`depthBlockReason` is pure — so it is provably redundant. Left in place: it is
+a defensive write in the subsystem that produced the 22 ms phantom run, and
+removing it buys nothing a user can see.
+
+**Phases 2–4 (planned, not started).** Injecting the reflect spawn double in
+the Cucumber world (the BDD suite currently forks a real detached process); a
+CI workflow, since the quality gate is mandated only in CLAUDE.md and
+`release.yml` publishes without running it; `"Login cancelled"` as a string
+sentinel across the RPC boundary; the `worker-proxy.ts` boilerplate; the
+duplicated lock loop in `state-file.ts`; and the brain-path literals spread
+across ~12 files against NFR-CONFIG-01. That last one is worth doing *before*
+FR-WIKI rather than after, so the new feature is born centralized.
 
 ### What the local-model evaluation actually found (2026-07-28/29)
 
