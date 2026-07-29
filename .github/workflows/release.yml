@@ -9,7 +9,12 @@ permissions:
   contents: write
 
 jobs:
+  # A tag must not publish anything the quality gate has not passed.
+  gate:
+    uses: ./.github/workflows/ci.yml
+
   build:
+    needs: gate
     strategy:
       fail-fast: false
       matrix:
