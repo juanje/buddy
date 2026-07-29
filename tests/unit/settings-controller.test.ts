@@ -193,4 +193,42 @@ describe("createSettingsController", () => {
     expect(get(controller.models).some((m) => m.provider === "openai")).toBe(true);
     expect(get(controller.unauthenticatedProviders)).not.toContain("openai");
   });
+
+  // FR-SETUP-05. The wizard and this panel each implement the "cancelling is
+  // not an error" policy, because their success paths are too different to
+  // share (the wizard unlocks one step; this refreshes one provider's models
+  // and collapses the panel). A common runner was considered and rejected for
+  // the reason NFR-SEC-14 records. What that costs is this: the policy is
+  // written twice, so it is pinned twice.
+  it.each([
+    ["a cancelled login", { success: false, cancelled: true, error: "aborted" }, undefined],
+    ["a failed login", { success: false, cancelled: false, error: "provider down" }, "provider down"],
+  ] as const)("%s leaves the panel open and shows %#", async (_label, result, expectedError) => {
+    let config: SetupConfig = {
+      rootDir: "/tmp/buddy",
+      provider: "anthropic",
+      model: "claude-sonnet-5",
+      language: "es",
+    };
+
+    const controller = createSettingsController({
+      worker: mockWorker({ loginOAuth: async () => result }),
+      getConfig: () => config,
+      onConfigChange: (next) => {
+        config = next;
+      },
+      version: "0.1.0-test",
+    });
+
+    controller.openSettings();
+    await new Promise((r) => setTimeout(r, 0));
+    controller.startAddProvider();
+    controller.selectAuthProvider("openai");
+    await controller.submitAuthOAuth();
+
+    expect(get(controller.authError)).toBe(expectedError);
+    // Either way the user stays where they were; nothing was added.
+    expect(get(controller.addingProvider)).toBe(true);
+    expect(get(controller.providerAddedNotice)).toBe(false);
+  });
 });

@@ -1,6 +1,6 @@
 // src/lib/input-bar.ts — Input bar DOM helpers (FR-CHAT-08).
 
-export const INPUT_TEXTAREA_MAX_HEIGHT_PX = 160;
+const INPUT_TEXTAREA_MAX_HEIGHT_PX = 160;
 
 export interface TextareaLike {
   style: { height: string };

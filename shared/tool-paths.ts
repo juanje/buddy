@@ -40,7 +40,7 @@ export const TOOL_PATH_ARGS: Record<string, readonly string[]> = {
  * them. Deliberately broad: a false positive costs one line in the table, a
  * false negative costs a permission check nobody notices is missing.
  */
-export const PATH_SHAPED_ARG_NAMES = [
+const PATH_SHAPED_ARG_NAMES = [
   "path",
   "paths",
   "file",

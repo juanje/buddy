@@ -25,11 +25,11 @@ export interface UsageFileData {
 
 const EMPTY_SUMMARY: UsageSummary = { totalCost: 0, totalTokens: 0, messageCount: 0 };
 
-export function usageFilePath(configDir: string): string {
+function usageFilePath(configDir: string): string {
   return join(configDir, USAGE_FILE_NAME);
 }
 
-export function monthKey(date: Date): string {
+function monthKey(date: Date): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   return `${year}-${month}`;
@@ -101,7 +101,7 @@ export function computeBudgetStatus(
   };
 }
 
-export function extractUsageFromAgentEvent(event: AgentEvent): RecordUsageInput | null {
+function extractUsageFromAgentEvent(event: AgentEvent): RecordUsageInput | null {
   if (event.type !== "message_end") return null;
   const message = event.message as
     | {
@@ -116,7 +116,7 @@ export function extractUsageFromAgentEvent(event: AgentEvent): RecordUsageInput 
   };
 }
 
-export function sumUsageFromEvents(events: AgentEvent[]): RecordUsageInput {
+function sumUsageFromEvents(events: AgentEvent[]): RecordUsageInput {
   let cost = 0;
   let tokens = 0;
   let count = 0;

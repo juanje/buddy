@@ -61,11 +61,11 @@ export function defaultConsolidationState(): ConsolidationState {
   };
 }
 
-export function stateFilePath(rootDir: string): string {
+function stateFilePath(rootDir: string): string {
   return join(rootDir, CONSOLIDATION_STATE_PATH);
 }
 
-export function logFilePath(rootDir: string): string {
+function logFilePath(rootDir: string): string {
   return join(rootDir, CONSOLIDATION_LOG_PATH);
 }
 
