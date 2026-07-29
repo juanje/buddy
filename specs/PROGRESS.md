@@ -198,7 +198,7 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 ## Current focus
 
 > **Hardening series complete. Released through v0.1.8.**
-> **698 unit + 214 BDD green**, typecheck and vite build clean.
+> **726 unit + 214 BDD green**, typecheck and vite build clean.
 >
 > A maintenance audit (2026-07-29) followed; phase 1 is below, phases 2–4 are
 > planned but not started. It does not change the next focus.
@@ -310,6 +310,50 @@ brain-path literals against NFR-CONFIG-01 and the version-propagation script.
 2026-07-29: the version lives in four places, the last bump missed one
 (`embedded-assets.generated.ts`, fixed in a6950b8), and no bump happens until
 one command propagates it.
+
+### Sprint: Maintenance audit, phase 3 — DONE (2026-07-29)
+
+Duplication. Nothing here changes behaviour; the existing suites are the net,
+plus one characterization test written before touching anything.
+
+| Item | Description | Commit |
+|------|-------------|--------|
+| worker-proxy | 20 hand-written methods → a Proxy (104 → 52 lines) | 642c3ff |
+| state-file | One lock loop instead of two identical copies | 642c3ff |
+| NFR-CONFIG-05 | `defaultConfigDir`/`defaultConfigPath` deleted (29 sites) | 642c3ff |
+| Shims | `backends/provider-mapping.ts`, `WorkerConnection` getter, duplicate `AppLocale` | 642c3ff |
+| agent-worker | Four try/catch RPC wrappers → `notifyFrontend` | 642c3ff |
+| A5 | Eight helpers unexported | 23eb410 |
+
+**Rejected: D3, the shared provider-auth flow.** The audit claimed
+`setup-controller` and `settings-controller` duplicate provider authentication.
+Reading both in full, they diverge far more than that: the wizard authenticates
+one chosen provider and preselects a model; Settings loads every authenticated
+provider, tracks `unauthenticatedProviders`, merges per provider, and drives an
+add-provider panel with its own notice. The genuinely shared part is about six
+lines, and a common runner would have become a signature of optional flags —
+**the same conclusion, for the same reason, as cancelling H5b under
+NFR-SEC-14.** The invariant is kept without the abstraction: "cancelling is not
+an error" is now pinned on both sides (BDD for the wizard, unit tests for
+Settings), because a policy written twice must be tested twice.
+
+**Two names for one answer is the bug, not the redundancy.** NFR-CONFIG-05 was
+first satisfied by making `defaultConfigDir()` delegate to `globalConfigDir()`,
+and the requirement said so. That leaves the condition that caused the original
+divergence intact — the second name is where a future "small" change lands, and
+`config-dir-resolver.test.ts` could only pin the agreement of names it knew
+about. The aliases are gone and the test now pins the precedence instead.
+
+**The Proxy has a failure mode the old code could not have.** Answering every
+property with a function makes `await proxy` find a `.then` and try to call it.
+The characterization test pins it, and it was verified by removing the guard.
+
+**Deliberately unresolved.** `tierDescription`/`gitInstallInstructions` in
+`i18n/index.ts` still dispatch with `locale === "en" ? … : …` instead of going
+through the `locales` record, so a third language would silently get Spanish
+from them. Now that `AppLocale` derives from `SetupConfig["language"]`, the
+record itself fails to compile until a new locale file exists — but those two
+functions do not. Phase 4.
 
 ### What the local-model evaluation actually found (2026-07-28/29)
 
