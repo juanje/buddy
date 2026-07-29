@@ -672,6 +672,36 @@ behavior. The app adds the full experience (scheduler, notifications,
    which is the one thing buddy exists to keep. Making the plumbing work is the
    easy half; verifying the procedures is the decision.
 
+   **Evaluated 2026-07-28/29, and the decision stands — now on evidence.** Two
+   models were run end to end against a real instance (gemma-4 12B and 26B via
+   oMLX). What was learned:
+
+   - **Conversation and retrieval were genuinely good.** Wiki search, link
+     rendering and answer quality were close to a commercial model, and decode
+     speed (~17 tok/s) is comfortably readable.
+   - **File editing was not.** The 12B failed 8 of 8 `edit` calls by dropping
+     Markdown bold markers when reconstructing `oldText`; the 26B reproduced
+     ~900 characters verbatim but still duplicated a section it had just read.
+   - **The disqualifying behaviour is confabulated completion.** Across runs the
+     models repeatedly stated a file had been written when no tool call had been
+     made — including immediately after apologising for the previous instance of
+     it. For an assistant whose value is remembering, "I wrote that down" when it
+     did not is the worst available failure, and it is silent.
+   - **Disabling reasoning improved editing and worsened confabulation.** The
+     leaked reasoning trace, ugly as it was, contained an accurate self-audit of
+     which tool calls had succeeded. That is what disappeared.
+
+   **The honest summary: it works well enough to be tempting and not well enough
+   to be trusted with memory.** FR-PROVIDER stays deferred, and the question to
+   answer before revisiting is not "can we send the requests" — that is solved
+   and documented — but whether any local model completes a depth-1
+   consolidation without corrupting the brain.
+
+   **A separate finding, and the more valuable one:** the evaluation surfaced
+   eight defects in Buddy itself, every one of which affected the commercial
+   path identically. A slow, imprecise model is an excellent instrument for
+   finding failures that report success.
+
 7. **Tool set:** File tools (read, write, edit, ls, find, grep) + shipped custom
    tools (fetch_url, copy_file, move_file, delete_file, skill tools). No bash.
    All capabilities are Pi SDK custom tools — typed, scoped, auditable.

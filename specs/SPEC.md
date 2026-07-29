@@ -92,11 +92,10 @@ rootDir (git repo — user/agent content only)
 | FR-CHAT-08 | Input textarea resets height after send | 2 ✓ |
 | FR-CHAT-09 | Local file links are marked and routed internally | 2 ✓ |
 | FR-CHAT-10 | Inline file viewer for markdown/text links | 2 ✓ |
-| FR-CHAT-11 | Local links are view-only, internal, and scoped | 3 |
+| FR-CHAT-11 | Local links are view-only, internal, and scoped | 2 ✓ |
+| FR-CHAT-12 | Navigation inside the inline viewer | 2 ✓ |
 | FR-CHAT-13 | Prompts sent during session boot are queued, not dropped | 2 ✓ |
 | FR-CHAT-14 | An assistant turn with no visible text renders nothing | 2 ✓ |
-| FR-CHAT-12 | Navigation inside the inline viewer | 2 |
-| FR-CHAT-13 | Prompts sent during session boot are queued, not dropped | 2 ✓ |
 
 **FR-CHAT-01 — Streaming message display**
 
@@ -279,8 +278,8 @@ surfaced it.
 | FR-SETUP-08 | Deterministic buddy directory setup | 1 ✓ |
 | FR-SETUP-09 | First conversation with warm handoff | 1 ✓ |
 | FR-SETUP-10 | Import existing instance | 1 ✓ |
-| FR-SETUP-11 | Worker validates the location before creating or adopting | 2 |
-| FR-SETUP-12 | Incomplete instances are detected, not adopted | 2 |
+| FR-SETUP-11 | Worker validates the location before creating or adopting | 2 ✓ |
+| FR-SETUP-12 | Incomplete instances are detected, not adopted | 2 ✓ |
 
 **FR-SETUP-01 — First-run detection**
 
@@ -1812,9 +1811,21 @@ result — the LLM then follows the procedure.
 
 | ID | Requirement | Phase |
 |----|-------------|-------|
-| FR-PROVIDER-01 | Configure and use an OpenAI-compatible endpoint end to end | planned |
-| FR-PROVIDER-02 | Model selection for an endpoint with no catalog | planned |
-| FR-PROVIDER-03 | Legible failure when the endpoint is unreachable | planned |
+| FR-PROVIDER-01 | Configure and use an OpenAI-compatible endpoint end to end | deferred |
+| FR-PROVIDER-02 | Model selection for an endpoint with no catalog | deferred |
+| FR-PROVIDER-03 | Legible failure when the endpoint is unreachable | deferred |
+
+**Deferred on evidence, 2026-07-29.** Two local models were evaluated end to end
+(gemma-4 12B and 26B via oMLX). Conversation and retrieval were close to a
+commercial model; file editing was not, and the disqualifying behaviour is that
+both repeatedly stated a file had been written when no tool call had been made.
+For an assistant whose value is remembering, a silent false "I wrote that down"
+is the worst available failure.
+
+The plumbing question is answered and documented below — it is no longer the
+blocker. The question to settle before revisiting is whether any local model
+completes a depth-1 consolidation without corrupting the brain. See decision 6
+in `docs/app-design-principles.md`.
 
 **Why this is a new FR rather than a bug fix.** The feature was half-built and
 looked finished from every angle we normally check: the wizard offered it, the

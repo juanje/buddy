@@ -19,23 +19,16 @@ using BDD + TDD.
 7. Update `PROGRESS.md`: mark feature as `done`, add commit hash, set next focus
 8. Commit with FR-ID: `feat(scope): FR-ID description`
 
-### Phase order (implement in this sequence)
+### Current state (2026-07-29)
 
-**Phase 0 — Architecture PoC:**
-1. FR-CHAT-02 (user input + send) — basic Tauri window + worker connection
-2. FR-CHAT-01 (streaming display) — Pi SDK session + subscribe
-3. FR-CHAT-03 (abort) — session.abort()
-4. FR-CHAT-07 (auto-scroll) — UI polish
+Phase 0 and Phase 1 are complete and released through **v0.1.8**. Two hardening
+campaigns followed: sprints H1–H8 from an external code review, then eight
+defects surfaced by evaluating a local model. `specs/PROGRESS.md` has the
+detail and the lessons.
 
-**Phase 1 — MVP (after Phase 0 is green):**
-1. FR-SETUP-01..10 (wizard: language, welcome, location, provider, model, personalization, create/import)
-2. FR-PROMPT-01 (system prompt assembly)
-3. FR-PERM-01/02 (permission zones)
-4. FR-SESSION-01 (fresh session each launch)
-5. FR-REFLECT-01/02 (fork-only reflect + daily log finalization)
-6. FR-DEFERRED-01 (surface on start)
-7. FR-INGEST-01/02 (drag & drop)
-8. FR-GIT-01/02 (auto-commit + index)
+**Next: FR-WIKI.** It has always been listed under *Explicitly NOT in v1* in
+`docs/app-design-principles.md`; the scope test is that Buddy without it is
+still Buddy.
 
 ### Rules
 
@@ -55,6 +48,42 @@ using BDD + TDD.
   Feature tests for user-facing behavior (chat, wizard, ingest).
   Why: unit tests are fast and precise for pure functions; feature tests validate
   the user experience end-to-end.
+
+### What repeated failures have taught this project
+
+These are not style preferences. Each one cost a defect that shipped.
+
+- **Test the composition, not just the component.** A function can be correct
+  and never called. The Hebbian layer passed its unit tests for months while
+  recording nothing, because no test drove the real event flow. If a fix is "the
+  call was missing", a test of the callee cannot catch its regression.
+- **A rule only governs what a rule can reach.** Several defects were already
+  forbidden in a prompt or in `AGENTS.md`. The instruction did not fail — it did
+  not apply, because the failure occurred without anyone disobeying. When a
+  failure needs no disobedience, enforcement belongs in code.
+- **A test asserting something does *not* happen deserves suspicion.** Six tests
+  in one stretch had to be rewritten because they had pinned a defect in place
+  as though it were a requirement. Ask whether it describes a decision or a
+  limitation.
+- **Reintroduce the bug to check the test.** A test written after a fix often
+  passes with the fix removed. Verify it fails.
+- **Prefer behavioural tests to source-text scans.** A scan checking that a call
+  exists breaks on refactors with the behaviour intact, and passes when the call
+  is present but unreachable.
+- **"Reported success" is not evidence.** Duration, side effects and the actual
+  artefact are. A consolidation that "succeeded" in 22 ms did nothing.
+
+### Quality gate (all three, before every commit)
+
+```
+npx tsc --noEmit      # types
+npx vite build        # tsc does NOT check .svelte — this is what catches
+                      # broken components and orphaned CSS
+npm test              # vitest + cucumber
+```
+
+`vite build` is not optional. It was added to the gate after a refactor left
+orphaned CSS that `tsc` reported as clean.
 
 ### Commit convention
 
@@ -85,7 +114,7 @@ Frontend (Svelte, system webview)
 Node.js Worker (TypeScript)
     ├── Pi SDK: createAgentSession({ excludeTools: ["bash"] })
     ├── Permission layer (beforeToolCall — chained)
-    ├── Hebbian tracker (tool_execution_end via subscribe)
+    ├── Hebbian tracker (paired tool_execution_start/end — see below)
     ├── Scheduler + Consolidation runner
     └── Setup, Reflect, Sync modules
     │
@@ -100,6 +129,10 @@ buddy directory (git repo): agent_brain/ + user/ + logs/
 - Session resume: `SessionManager.create(cwd)` — fresh session every launch; continuity via file memory
 - Separate session for maintenance (consolidation never touches user's live session)
 - Events: `agent_start/end`, `message_start/update/end`, `tool_execution_start/end`, `compaction_start/end`
+- **`tool_execution_end` carries no `args`** — only `toolCallId`, `toolName`,
+  `result`, `isError`. Any code needing the path must pair it with the matching
+  `tool_execution_start`. `SessionTracker.recordEvent` already does this and
+  returns the resolved call; do not keep a second map that can disagree with it
 
 ## Project structure
 

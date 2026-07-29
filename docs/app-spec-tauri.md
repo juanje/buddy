@@ -1105,13 +1105,28 @@ Code-enforced file access tracking. Uses **`tool_execution_end`** events via
 `session.subscribe()` to record successful reads (only when `!event.isError` and
 `toolName === "Read"`). See the worker setup section for the subscribe handler.
 
-**Mechanism:** When the agent calls `read` on a file, the worker checks if
-the file has YAML frontmatter with `access_count`. If so:
+**Mechanism:** When the agent consults a file, the worker records the access
+(FR-HEBB-05/07):
 
-1. Increment `access_count`
+1. Increment `access_count`, **creating it at 1 when absent** — the model is
+   forbidden from writing these fields, so if the worker only updated existing
+   ones nobody would ever create them, and every file the agent wrote itself
+   would score zero for ever
 2. Update `last_accessed` to today's date
 3. Queue the frontmatter update (don't write immediately — see race handling)
 4. Pass the file content through to the LLM unchanged
+
+**The path comes from the paired `tool_execution_start`.** `tool_execution_end`
+carries `toolCallId`, `toolName`, `result` and `isError` — **no `args`**.
+Reading the path from the end event yields `undefined`, which is why the layer
+recorded nothing at all until 2026-07-29. `SessionTracker.recordEvent` performs
+the pairing and returns the resolved call; callers must use that rather than
+keeping a second map.
+
+**Which calls count:** `read` on a file, and `grep` aimed at a specific file —
+searching inside a document is consultation, and the cheaper way to do it. A
+`grep` over a directory does not count: that is brute force, and crediting every
+file under a tree would drown the signal.
 
 **Frontmatter fields:**
 
@@ -1372,7 +1387,9 @@ Before Phase A runs, the frontend shows a minimal wizard (Svelte screens):
   - **Anthropic** (Claude) — pedir API key
   - **OpenAI** (GPT) — pedir API key
   - **Google** (Gemini) — pedir API key
-  - **Other (OpenAI-compatible)** — advanced option: base URL + key
+  - ~~**Other (OpenAI-compatible)**~~ — withdrawn 2026-07-28. The base URL was
+    collected and validated but never persisted, so the session ended up with a
+    credential and no address. Deferred as FR-PROVIDER-01..03
 - Show key input field, validate with a test call
 
 **Screen 4 — Model selection:**

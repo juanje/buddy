@@ -197,36 +197,62 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 
 ## Current focus
 
-> **SPRINT: Hardening (v0.1.1) — IN PROGRESS.** Triggered by the external code
-> review of 2026-07-26 (Opus 5) and the project response of 2026-07-27.
-> **FR-WIKI is deferred until H1–H3 close.**
+> **Hardening series complete. Released through v0.1.8.**
+> **688 unit + 212 BDD green**, typecheck and vite build clean.
 >
-> **H1–H4 plus H4b done.** v0.1.1 (H1+H2) and v0.1.2 (H3) tagged; H4 and H4b
-> pending release. **454 unit + 213 BDD green**, typecheck and vite build clean.
-> **Review pass complete** (`oauth-service.ts`, `provider-auth.ts`,
-> `reflect-child.ts`, wizard). 15 findings classified into three themes, now
-> sprints H5–H7; H8 absorbs the rest. H5b (session factory) is **cancelled** —
-> replaced by two shared helpers under a reworded NFR-SEC-14.
-> **H5–H8 done** (including H6b and H6c). **598 unit + 214 BDD green**,
-> typecheck and vite build clean. The hardening series is complete; H6b, H6c,
-> H7 and H8 are committed and unreleased.
+> Two campaigns ran back to back, and the second was not planned.
 >
-> **FR-WIKI is not next, and never was (corrected 2026-07-28).** This file had
-> said "Next: FR-WIKI" while `docs/app-design-principles.md` — which governs the
-> spec — lists wiki ingest under *Explicitly NOT in v1*. The plan and the
-> governing document disagreed, which is the same failure mode that produced the
-> custom-provider mess. The principles are right: **the wiki is a power feature,
-> not core.** Buddy without it is still Buddy — it captures, remembers,
-> organizes and reminds, which is its reason to exist. The wiki adds a lot of
-> value on top of a product that already works without it.
+> **H1–H8 (v0.1.1 … v0.1.5)** — triggered by the external code review of
+> 2026-07-26 and the project response of 2026-07-27. All five findings with a
+> confirmed exploit path are closed, plus the ones the sprints uncovered.
+> H5b (session factory) was **cancelled** — replaced by two shared helpers under
+> a reworded NFR-SEC-14.
 >
-> **What comes before it:** remaining bugs, and finishing the core functionality
-> and UX. FR-WIKI is deliberately last, so it can be designed properly rather
-> than squeezed in beside unfinished basics.
+> **The local-model evaluation (v0.1.6 … v0.1.8)** — running Buddy against a
+> local model was meant to answer whether FR-PROVIDER was worth building. It
+> answered that question ("not yet") and found **eight defects of our own**, all
+> affecting the commercial path identically. See the section below; the pattern
+> they share is worth more than any individual fix.
 >
-> **Custom provider withdrawn (2026-07-28).** Found while checking the self-docs
-> against reality. See below — the entry point is gone from the wizard and the
-> real feature is scoped as FR-PROVIDER-01..03.
+> **Next: FR-WIKI**, per `docs/app-design-principles.md`, which has always
+> listed it under *Explicitly NOT in v1*. It waits until open bugs and core UX
+> are finished — which after v0.1.8 they largely are.
+
+### What the local-model evaluation actually found (2026-07-28/29)
+
+The model was never the subject. It was the instrument: slow and imprecise
+enough to make silent failures loud.
+
+Every defect shares one shape — **something fails and the system reports
+success** — and several were hidden by a healthy neighbour:
+
+| Defect | What hid it |
+|---|---|
+| The Hebbian layer had **never recorded a single access**, on any install (FR-HEBB-07) | `tool_execution_end` carries no `args`, so the path was always undefined. The adjacent `turnDirty` flags test only the tool *name*, so auto-commit worked perfectly and the pipeline looked alive |
+| A consolidation could report success having done nothing (FR-CONSOL-12) | The runner caught exceptions; a 401 arrives as an errored *message*, not a throw |
+| A consolidation could corrupt frontmatter unnoticed (FR-CONSOL-13) | The linter ran *before* the model wrote, and only looked for frontmatter that was **missing** |
+| The health report was ignored for sixty files (FR-BRAIN-07) | It said "missing frontmatter" about files that had frontmatter and lacked one key — an instruction a model correctly ignores |
+| The setup interview fired on every session (FR-PROMPT-05) | The detector searched for a literal `**Name:**` the profile stopped using as it grew |
+| A message typed during boot was discarded (FR-CHAT-13) | `await core?.api.prompt(...)` — optional chaining resolves to `undefined` and reports success |
+| Counters destroyed by a whole-file rewrite (FR-HEBB-06) | `AGENTS.md` forbade *editing* the fields; the model was *regenerating the file* |
+| Reflect asked a toolless fork to write files (FR-REFLECT-08) | The skill is loaded in two places with opposite capabilities |
+
+**Three lessons worth carrying forward.**
+
+1. **A rule only governs what a rule can reach.** Three of these were "already
+   forbidden" in a prompt or a doc. The instruction did not fail — it did not
+   apply. Enforcement belongs in code whenever the failure can occur without
+   anyone disobeying anything.
+2. **Testing the component proves the component.** FR-HEBB-05 was built on top
+   of a mechanism that never ran, and reported as repairing the layer. Only a
+   test driving the real composition catches a call that is never made.
+3. **A test that asserts something *does not* happen may be encoding a
+   limitation as a requirement.** Six tests in this stretch had to be rewritten
+   because they pinned the defect in place.
+
+**Also corrected during this work:** a source-text wiring check I had written
+broke on a refactor while the behaviour was intact — testing source rather than
+effect has the same weakness it was meant to guard against.
 
 ### Withdrawn: OpenAI-compatible providers (2026-07-28)
 
@@ -898,10 +924,13 @@ than interleaving.
 | Release | Sprints | Status | Rationale |
 |---------|---------|--------|-----------|
 | v0.1.1 | H1 + H2 | **tagged 2026-07-27** | The two confirmed-exploitable findings — shipped as soon as they were green rather than held for H3 |
-| v0.1.2 | H3 | planned | Budget drain. No attacker needed, so it ships on its own rather than waiting for H4/H5 |
+| v0.1.2 | H3 | **tagged 2026-07-27** | Budget drain. No attacker needed, so it shipped on its own |
 | v0.1.3 | H4 + H4b | **tagged 2026-07-27** | SSRF and the ungated maintenance session |
-| v0.1.4 | H5 + H6 | planned | Losing credentials and losing memory — the two remaining ways state disappears |
-| v0.1.5 | H7 + H8 | planned | Setup validation and cleanup |
+| v0.1.4 | H5 + H6 | **tagged 2026-07-28** | Losing credentials and losing memory — the two remaining ways state disappeared |
+| v0.1.5 | H6b + H6c + H7 + H8 | **tagged 2026-07-28** | Containment unified, setup validated, viewer navigation |
+| v0.1.6 | — | **tagged 2026-07-28** | Honest capabilities: the custom provider withdrawn, self-docs corrected |
+| v0.1.7 | — | **tagged 2026-07-28** | Pi CLI isolation completed (NFR-SEC-19/20) |
+| v0.1.8 | — | **tagged 2026-07-29** | The memory layer works for the first time: eight defects from the local-model evaluation |
 
 **Changed from the original grouping (Jul 27):** v0.1.1 was planned as H1+H2+H3.
 H1 and H2 closed green and fix the two findings an attacker could actually reach,
