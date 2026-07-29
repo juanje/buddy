@@ -32,7 +32,7 @@ function writeBrainFile(buddyDir: string, relPath: string, content: string): voi
 }
 
 Given("an AB instance with {string}", async function (this: RelocateWorld, relPath: string) {
-  this.relocateTmpDir = mkdtempSync(join(tmpdir(), "ab-relocate-bdd-"));
+  this.relocateTmpDir = mkdtempSync(join(tmpdir(), "buddy-relocate-bdd-"));
   this.buddyDir = join(this.relocateTmpDir, "buddy");
   mkdirSync(this.buddyDir, { recursive: true });
   writeFileSync(join(this.buddyDir, "AGENTS.md"), "# Rules\n");

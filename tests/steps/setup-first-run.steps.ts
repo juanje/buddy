@@ -19,7 +19,7 @@ interface SetupWorld extends BuddyWorld {
 }
 
 function freshConfigPath(world: SetupWorld): string {
-  world.setupTmpDir = mkdtempSync(join(tmpdir(), "ab-setup-"));
+  world.setupTmpDir = mkdtempSync(join(tmpdir(), "buddy-setup-"));
   world.configPath = join(world.setupTmpDir, "config.json");
   return world.configPath;
 }

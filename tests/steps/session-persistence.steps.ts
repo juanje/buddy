@@ -32,7 +32,7 @@ After(function (this: SessionPersistenceWorld) {
 });
 
 Given("an initialized buddy git repository for session persistence", async function (this: SessionPersistenceWorld) {
-  this.persistTmpDir = mkdtempSync(join(tmpdir(), "ab-persist-"));
+  this.persistTmpDir = mkdtempSync(join(tmpdir(), "buddy-persist-"));
   this.buddyDir = join(this.persistTmpDir, "buddy");
   const config: SetupConfig = {
     rootDir: this.buddyDir,

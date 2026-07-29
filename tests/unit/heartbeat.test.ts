@@ -17,13 +17,13 @@ describe("heartbeat", () => {
     if (dir) rmSync(dir, { recursive: true, force: true });
   });
 
-  function setupAb(): void {
-    dir = mkdtempSync(join(tmpdir(), "ab-heartbeat-"));
+  function setupBuddyDir(): void {
+    dir = mkdtempSync(join(tmpdir(), "buddy-heartbeat-"));
     mkdirSync(join(dir, "agent_brain"), { recursive: true });
   }
 
   it("notifies frontend of due deferred items on tick", async () => {
-    setupAb();
+    setupBuddyDir();
     writeFileSync(
       join(dir, "agent_brain", "deferred.md"),
       "- **reminder** (2026-07-22, user): Call dentist.\n",
@@ -51,7 +51,7 @@ describe("heartbeat", () => {
   });
 
   it("defers consolidation while the user is streaming", async () => {
-    setupAb();
+    setupBuddyDir();
     const runConsolidationFn = vi.fn(async (_options: RunConsolidationOptions) => ({
       ran: true,
       completedDepths: [1],
@@ -78,7 +78,7 @@ describe("heartbeat", () => {
   });
 
   it("runs consolidation when idle and thresholds are met", async () => {
-    setupAb();
+    setupBuddyDir();
     const runConsolidationFn = vi.fn(async (_options: RunConsolidationOptions) => ({
       ran: true,
       completedDepths: [1],
@@ -107,7 +107,7 @@ describe("heartbeat", () => {
   });
 
   it("skips consolidation when budget is near limit", async () => {
-    setupAb();
+    setupBuddyDir();
     const runConsolidationFn = vi.fn(async (_options: RunConsolidationOptions) => ({
       ran: true,
       completedDepths: [1],

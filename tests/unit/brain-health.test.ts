@@ -19,7 +19,7 @@ describe("brain health linter", () => {
   });
 
   function setupRoot(): void {
-    dir = mkdtempSync(join(tmpdir(), "ab-brain-health-"));
+    dir = mkdtempSync(join(tmpdir(), "buddy-brain-health-"));
     writeFileSync(join(dir, "AGENTS.md"), "# Rules\n");
   }
 
@@ -89,7 +89,7 @@ describe("brain health linter", () => {
   });
 
   it("flags when neither AGENTS.md nor CLAUDE.md exists", () => {
-    dir = mkdtempSync(join(tmpdir(), "ab-brain-health-"));
+    dir = mkdtempSync(join(tmpdir(), "buddy-brain-health-"));
     writeHealthyCore();
 
     const report = computeBrainHealthReport(dir);

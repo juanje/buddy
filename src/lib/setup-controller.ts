@@ -303,12 +303,12 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
 
   const KNOWN_PROVIDERS: ReadonlyArray<ProviderId> = ["anthropic", "openai", "google", "custom"];
 
-  function resolveImportProvider(piOrAbProvider: string | undefined): ProviderId | undefined {
-    if (!piOrAbProvider) return undefined;
-    const fromPi = fromPiProviderId(piOrAbProvider);
+  function resolveImportProvider(piOrBuddyProvider: string | undefined): ProviderId | undefined {
+    if (!piOrBuddyProvider) return undefined;
+    const fromPi = fromPiProviderId(piOrBuddyProvider);
     if (fromPi) return fromPi;
-    if (KNOWN_PROVIDERS.includes(piOrAbProvider as ProviderId)) {
-      return piOrAbProvider as ProviderId;
+    if (KNOWN_PROVIDERS.includes(piOrBuddyProvider as ProviderId)) {
+      return piOrBuddyProvider as ProviderId;
     }
     return undefined;
   }

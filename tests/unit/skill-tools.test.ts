@@ -19,7 +19,7 @@ describe("buildSkillTools", () => {
   });
 
   it("returns both skill tools when prompt files exist", async () => {
-    dir = mkdtempSync(join(tmpdir(), "ab-skill-tools-"));
+    dir = mkdtempSync(join(tmpdir(), "buddy-skill-tools-"));
     writeFileSync(join(dir, "process-conversation.md"), "# Skill: Process conversation\n", "utf8");
     writeFileSync(join(dir, "triage-inbox.md"), "# Skill: Triage inbox\n", "utf8");
 
@@ -35,7 +35,7 @@ describe("buildSkillTools", () => {
   });
 
   it("skips tools whose prompt files are missing", () => {
-    dir = mkdtempSync(join(tmpdir(), "ab-skill-tools-"));
+    dir = mkdtempSync(join(tmpdir(), "buddy-skill-tools-"));
     writeFileSync(join(dir, "process-conversation.md"), "# Skill: Process conversation\n", "utf8");
 
     const tools = buildSkillTools(dir);
@@ -44,7 +44,7 @@ describe("buildSkillTools", () => {
   });
 
   it("returns empty list when prompts directory has no skill files", () => {
-    dir = mkdtempSync(join(tmpdir(), "ab-skill-tools-"));
+    dir = mkdtempSync(join(tmpdir(), "buddy-skill-tools-"));
     mkdirSync(dir, { recursive: true });
 
     expect(buildSkillTools(dir)).toEqual([]);

@@ -21,7 +21,7 @@ After(function (this: MemoryWorld) {
 });
 
 Given("an initialized buddy git repository", async function (this: MemoryWorld) {
-  this.memoryTmpDir = mkdtempSync(join(tmpdir(), "ab-memory-"));
+  this.memoryTmpDir = mkdtempSync(join(tmpdir(), "buddy-memory-"));
   this.buddyDir = join(this.memoryTmpDir, "buddy");
   const config: SetupConfig = {
     rootDir: this.buddyDir,

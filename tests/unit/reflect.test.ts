@@ -68,7 +68,7 @@ describe("finalizeReflectToDailyLog", () => {
   });
 
   it("appends session block using metadata args", () => {
-    dir = mkdtempSync(join(tmpdir(), "ab-finalize-"));
+    dir = mkdtempSync(join(tmpdir(), "buddy-finalize-"));
     const path = finalizeReflectToDailyLog({
       rootDir: dir,
       sessionDate: "2026-07-23",
@@ -82,7 +82,7 @@ describe("finalizeReflectToDailyLog", () => {
   });
 
   it("uses session start date for cross-midnight sessions", () => {
-    dir = mkdtempSync(join(tmpdir(), "ab-finalize-"));
+    dir = mkdtempSync(join(tmpdir(), "buddy-finalize-"));
     finalizeReflectToDailyLog({
       rootDir: dir,
       sessionDate: "2026-07-20",
@@ -102,7 +102,7 @@ describe("appendDailyLog", () => {
   });
 
   it("creates daily log with session header", () => {
-    dir = mkdtempSync(join(tmpdir(), "ab-daily-"));
+    dir = mkdtempSync(join(tmpdir(), "buddy-daily-"));
     const path = appendDailyLog(dir, {
       date: "2026-07-19",
       sessionHeader: "14:00–14:30",
@@ -115,7 +115,7 @@ describe("appendDailyLog", () => {
   });
 
   it("appends a second session to an existing daily log", () => {
-    dir = mkdtempSync(join(tmpdir(), "ab-daily-"));
+    dir = mkdtempSync(join(tmpdir(), "buddy-daily-"));
     appendDailyLog(dir, {
       date: "2026-07-19",
       sessionHeader: "10:00–10:15",
@@ -132,7 +132,7 @@ describe("appendDailyLog", () => {
   });
 
   it("appends a checkpoint block to the daily log", () => {
-    dir = mkdtempSync(join(tmpdir(), "ab-daily-"));
+    dir = mkdtempSync(join(tmpdir(), "buddy-daily-"));
     const path = appendDailyLog(dir, {
       date: "2026-07-21",
       sessionHeader: "10:30",
@@ -153,7 +153,7 @@ describe("finalizeCheckpointToDailyLog", () => {
   });
 
   it("writes checkpoint section and rebuilds index", () => {
-    dir = mkdtempSync(join(tmpdir(), "ab-checkpoint-log-"));
+    dir = mkdtempSync(join(tmpdir(), "buddy-checkpoint-log-"));
     const path = finalizeCheckpointToDailyLog({
       rootDir: dir,
       date: "2026-07-21",
@@ -174,7 +174,7 @@ describe("updateLogsIndexEntry", () => {
   });
 
   it("creates index with header and entry when missing", () => {
-    dir = mkdtempSync(join(tmpdir(), "ab-index-"));
+    dir = mkdtempSync(join(tmpdir(), "buddy-index-"));
     appendDailyLog(dir, {
       date: "2026-07-19",
       sessionHeader: "12:00–12:30",
@@ -187,7 +187,7 @@ describe("updateLogsIndexEntry", () => {
   });
 
   it("preserves existing entry on reflect without explicit description", () => {
-    dir = mkdtempSync(join(tmpdir(), "ab-index-"));
+    dir = mkdtempSync(join(tmpdir(), "buddy-index-"));
     mkdirSync(join(dir, "logs"), { recursive: true });
     writeFileSync(
       join(dir, "logs", "index.md"),
@@ -217,7 +217,7 @@ describe("updateLogsIndexEntry", () => {
   });
 
   it("uses explicit description when provided", () => {
-    dir = mkdtempSync(join(tmpdir(), "ab-index-"));
+    dir = mkdtempSync(join(tmpdir(), "buddy-index-"));
     mkdirSync(join(dir, "logs"), { recursive: true });
     writeFileSync(
       join(dir, "logs", "index.md"),
@@ -233,7 +233,7 @@ describe("updateLogsIndexEntry", () => {
   });
 
   it("inserts new entry in sorted position", () => {
-    dir = mkdtempSync(join(tmpdir(), "ab-index-"));
+    dir = mkdtempSync(join(tmpdir(), "buddy-index-"));
     mkdirSync(join(dir, "logs"), { recursive: true });
     writeFileSync(
       join(dir, "logs", "index.md"),
@@ -262,7 +262,7 @@ describe("updateLogsIndexEntry", () => {
   });
 
   it("uses maintenance status when specified", () => {
-    dir = mkdtempSync(join(tmpdir(), "ab-index-"));
+    dir = mkdtempSync(join(tmpdir(), "buddy-index-"));
     appendDailyLog(dir, {
       date: "2026-07-20",
       sessionHeader: "03:00 consolidation",
@@ -275,7 +275,7 @@ describe("updateLogsIndexEntry", () => {
   });
 
   it("does not downgrade active to maintenance", () => {
-    dir = mkdtempSync(join(tmpdir(), "ab-index-"));
+    dir = mkdtempSync(join(tmpdir(), "buddy-index-"));
     mkdirSync(join(dir, "logs"), { recursive: true });
     writeFileSync(
       join(dir, "logs", "index.md"),
@@ -302,7 +302,7 @@ describe("updateLogsIndexEntry", () => {
   });
 
   it("preserves curated description when blocking maintenance downgrade", () => {
-    dir = mkdtempSync(join(tmpdir(), "ab-index-"));
+    dir = mkdtempSync(join(tmpdir(), "buddy-index-"));
     mkdirSync(join(dir, "logs"), { recursive: true });
     writeFileSync(
       join(dir, "logs", "index.md"),
@@ -318,7 +318,7 @@ describe("updateLogsIndexEntry", () => {
   });
 
   it("does not overwrite existing entry when called without explicit description", () => {
-    dir = mkdtempSync(join(tmpdir(), "ab-index-"));
+    dir = mkdtempSync(join(tmpdir(), "buddy-index-"));
     mkdirSync(join(dir, "logs"), { recursive: true });
     writeFileSync(
       join(dir, "logs", "index.md"),

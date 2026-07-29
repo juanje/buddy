@@ -26,7 +26,7 @@ After(function (this: CreateWorld) {
 });
 
 Given("a completed wizard configuration", function (this: CreateWorld) {
-  this.createTmpDir = mkdtempSync(join(tmpdir(), "ab-create-"));
+  this.createTmpDir = mkdtempSync(join(tmpdir(), "buddy-create-"));
   this.buddyDir = join(this.createTmpDir, "buddy");
   this.createConfigPath = join(this.createTmpDir, "config.json");
   this.setupConfig = {

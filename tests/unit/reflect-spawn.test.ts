@@ -24,7 +24,7 @@ import {
 
 describe("sidecarBootTarget", () => {
   it("routes --reflect to reflect-child module", () => {
-    expect(sidecarBootTarget(["/bin/agent-worker", "--reflect", "/ab"])).toBe("reflect-child");
+    expect(sidecarBootTarget(["/bin/agent-worker", "--reflect", "/tmp/buddy"])).toBe("reflect-child");
   });
 
   it("routes normal argv to agent-worker module", () => {
@@ -35,7 +35,7 @@ describe("sidecarBootTarget", () => {
 
 describe("spawnReflectChild", () => {
   const baseOptions: SpawnReflectOptions = {
-    rootDir: "/tmp/ab",
+    rootDir: "/tmp/buddy",
     forkedSessionFile: "/tmp/session.jsonl",
     mode: "session-end",
     sessionId: "abc12345",

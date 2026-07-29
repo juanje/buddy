@@ -10,7 +10,7 @@ import { defaultBuddyLocation, validateLocation } from "../../backends/location"
 const tmpDirs: string[] = [];
 
 function scratch(): string {
-  const dir = mkdtempSync(join(tmpdir(), "ab-loc-unit-"));
+  const dir = mkdtempSync(join(tmpdir(), "buddy-loc-unit-"));
   tmpDirs.push(dir);
   return dir;
 }

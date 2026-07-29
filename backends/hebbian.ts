@@ -4,7 +4,7 @@ import { existsSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 import { toIsoDay } from "../shared/dates";
-import { normalizeAbPath } from "../shared/path-utils";
+import { toBuddyRelPath } from "../shared/path-utils";
 import { parseFrontmatter } from "./reflect";
 import { BRAIN, BRAIN_PREFIX, BRAIN_SUBDIRS, INDEX_SUFFIX, dirPrefix } from "../shared/brain-paths";
 
@@ -100,7 +100,7 @@ export function createHebbianTracker(rootDir: string): HebbianTracker {
 
   return {
     trackAccess(path: string): void {
-      const relPath = normalizeAbPath(rootDir, path);
+      const relPath = toBuddyRelPath(rootDir, path);
       if (!relPath) return;
       if (isExcluded(relPath)) return;
       if (sessionReadSet.has(relPath)) return;

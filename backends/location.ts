@@ -75,8 +75,8 @@ export function missingInstanceParts(path: string): string[] {
   return hasIdentity ? [] : ["an identity (SOUL.md or USER.md)"];
 }
 
-function readBuddySettings(abPath: string): LocationCheck["buddySettings"] {
-  const raw = readPiSettings(abPath);
+function readBuddySettings(rootDir: string): LocationCheck["buddySettings"] {
+  const raw = readPiSettings(rootDir);
   if (!raw) return undefined;
   return { provider: raw.defaultProvider, model: raw.defaultModel };
 }

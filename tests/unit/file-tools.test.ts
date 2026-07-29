@@ -103,7 +103,7 @@ describe("file tool execution", () => {
   });
 
   async function setupRepo(): Promise<void> {
-    rootDir = mkdtempSync(join(tmpdir(), "ab-filetools-"));
+    rootDir = mkdtempSync(join(tmpdir(), "buddy-filetools-"));
     mkdirSync(join(rootDir, "user"), { recursive: true });
     writeFileSync(join(rootDir, "AGENTS.md"), "# Rules\n");
     await initTestGitRepo(rootDir);
@@ -129,7 +129,7 @@ describe("file tool execution", () => {
 
   it("copyWorkspaceFile copies external bytes without reading into LLM", async () => {
     await setupRepo();
-    externalDir = mkdtempSync(join(tmpdir(), "ab-filetools-ext-"));
+    externalDir = mkdtempSync(join(tmpdir(), "buddy-filetools-ext-"));
     const externalPath = join(externalDir, "source.bin");
     writeFileSync(externalPath, Buffer.from([0, 1, 2, 3]));
 

@@ -92,7 +92,7 @@ describe("removeDueDeferredItems", () => {
   });
 
   it("removes due and overdue entries, keeps future and non-entry lines", () => {
-    dir = mkdtempSync(join(tmpdir(), "ab-deferred-rm-"));
+    dir = mkdtempSync(join(tmpdir(), "buddy-deferred-rm-"));
     mkdirSync(join(dir, "agent_brain"), { recursive: true });
     writeFileSync(
       join(dir, "agent_brain", "deferred.md"),
@@ -117,7 +117,7 @@ describe("removeDueDeferredItems", () => {
   });
 
   it("no-ops when deferred.md is missing", () => {
-    dir = mkdtempSync(join(tmpdir(), "ab-deferred-rm-"));
+    dir = mkdtempSync(join(tmpdir(), "buddy-deferred-rm-"));
     expect(() => removeDueDeferredItems(dir)).not.toThrow();
   });
 });

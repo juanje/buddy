@@ -24,7 +24,7 @@ describe("crash recovery", () => {
   });
 
   it("persists live session path and clears reflectPending", () => {
-    dir = mkdtempSync(join(tmpdir(), "ab-crash-"));
+    dir = mkdtempSync(join(tmpdir(), "buddy-crash-"));
     persistLiveSession(dir, "/tmp/session-abc.jsonl");
 
     const state = loadConsolidationState(dir);
@@ -33,7 +33,7 @@ describe("crash recovery", () => {
   });
 
   it("marks reflect pending on shutdown", () => {
-    dir = mkdtempSync(join(tmpdir(), "ab-crash-"));
+    dir = mkdtempSync(join(tmpdir(), "buddy-crash-"));
     persistLiveSession(dir, "/tmp/session-abc.jsonl");
     markReflectPending(dir);
 
@@ -43,7 +43,7 @@ describe("crash recovery", () => {
   });
 
   it("recovers stale session on boot and clears state", () => {
-    dir = mkdtempSync(join(tmpdir(), "ab-crash-"));
+    dir = mkdtempSync(join(tmpdir(), "buddy-crash-"));
     persistLiveSession(dir, "/tmp/session-old.jsonl");
     markReflectPending(dir);
 
@@ -63,7 +63,7 @@ describe("crash recovery", () => {
   });
 
   it("skips recovery when reflectPending is false", () => {
-    dir = mkdtempSync(join(tmpdir(), "ab-crash-"));
+    dir = mkdtempSync(join(tmpdir(), "buddy-crash-"));
     persistLiveSession(dir, "/tmp/session-old.jsonl");
 
     const recovered = recoverStaleSession(dir, (options) => {
@@ -76,7 +76,7 @@ describe("crash recovery", () => {
   });
 
   it("clearSessionPersistence resets fields", () => {
-    dir = mkdtempSync(join(tmpdir(), "ab-crash-"));
+    dir = mkdtempSync(join(tmpdir(), "buddy-crash-"));
     persistLiveSession(dir, "/tmp/session-old.jsonl");
     markReflectPending(dir);
     clearSessionPersistence(dir);

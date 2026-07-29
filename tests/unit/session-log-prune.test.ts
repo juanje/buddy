@@ -26,7 +26,7 @@ describe("session log prune", () => {
   }
 
   beforeEach(() => {
-    rootDir = mkdtempSync(join(tmpdir(), "ab-log-prune-"));
+    rootDir = mkdtempSync(join(tmpdir(), "buddy-log-prune-"));
     logsDir = join(rootDir, APP_LOGS_DIR);
     mkdirSync(logsDir, { recursive: true });
   });

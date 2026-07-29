@@ -34,7 +34,7 @@ describe("consolidation mechanics", () => {
   });
 
   function setupRoot(): void {
-    dir = mkdtempSync(join(tmpdir(), "ab-consol-mech-"));
+    dir = mkdtempSync(join(tmpdir(), "buddy-consol-mech-"));
   }
 
   describe("rotateLogs", () => {

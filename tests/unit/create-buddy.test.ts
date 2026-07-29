@@ -7,7 +7,7 @@ import { buildUserProfile } from "../../backends/create-buddy";
 describe("buildUserProfile", () => {
   it("writes real content with no template prose", () => {
     const md = buildUserProfile({
-      rootDir: "/tmp/ab",
+      rootDir: "/tmp/buddy",
       provider: "anthropic",
       model: "claude-haiku-4-5",
       language: "en",
@@ -22,7 +22,7 @@ describe("buildUserProfile", () => {
 
   it("uses defaults when about is empty", () => {
     const md = buildUserProfile({
-      rootDir: "/tmp/ab",
+      rootDir: "/tmp/buddy",
       provider: "openai",
       model: "gpt-4o-mini",
       name: "Sam",

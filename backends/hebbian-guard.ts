@@ -20,7 +20,7 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-import { normalizeAbPath } from "../shared/path-utils";
+import { toBuddyRelPath } from "../shared/path-utils";
 import { parseFrontmatter } from "./reflect";
 
 /** Fields the worker owns; the model may read them, never write them. */
@@ -55,7 +55,7 @@ export function createHebbianGuard(rootDir: string): HebbianGuard {
   const captured = new Map<string, Record<string, string>>();
 
   function keyFor(path: string): string | null {
-    return normalizeAbPath(rootDir, path);
+    return toBuddyRelPath(rootDir, path);
   }
 
   return {

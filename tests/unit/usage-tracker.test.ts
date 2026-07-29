@@ -74,7 +74,7 @@ describe("recordUsageToFile", () => {
   });
 
   it("persists monthly totals", () => {
-    configDir = mkdtempSync(join(tmpdir(), "ab-usage-"));
+    configDir = mkdtempSync(join(tmpdir(), "buddy-usage-"));
     const now = new Date(2026, 6, 24);
     recordUsageToFile(configDir, { cost: 1.5, tokens: 100 }, now);
     recordUsageToFile(configDir, { cost: 0.5, tokens: 50 }, now);
@@ -85,7 +85,7 @@ describe("recordUsageToFile", () => {
   });
 
   it("rolls over by month key", () => {
-    configDir = mkdtempSync(join(tmpdir(), "ab-usage-"));
+    configDir = mkdtempSync(join(tmpdir(), "buddy-usage-"));
     recordUsageToFile(configDir, { cost: 3, tokens: 10 }, new Date(2026, 6, 31));
     recordUsageToFile(configDir, { cost: 1, tokens: 5 }, new Date(2026, 7, 1));
     const data = loadUsageFile(configDir);
@@ -101,7 +101,7 @@ describe("createUsageTracker", () => {
   });
 
   it("accumulates session and monthly totals", () => {
-    configDir = mkdtempSync(join(tmpdir(), "ab-usage-"));
+    configDir = mkdtempSync(join(tmpdir(), "buddy-usage-"));
     const tracker = createUsageTracker(configDir, { getBudget: () => 10 });
     tracker.record({ cost: 1.5, tokens: 500 });
     tracker.record({ cost: 0.75, tokens: 200 });
@@ -111,7 +111,7 @@ describe("createUsageTracker", () => {
   });
 
   it("fires warning alert once at 80%", () => {
-    configDir = mkdtempSync(join(tmpdir(), "ab-usage-"));
+    configDir = mkdtempSync(join(tmpdir(), "buddy-usage-"));
     recordUsageToFile(configDir, { cost: 7.5, tokens: 100 }, new Date(2026, 6, 24));
     const onBudgetAlert = vi.fn();
     const tracker = createUsageTracker(configDir, {
@@ -127,7 +127,7 @@ describe("createUsageTracker", () => {
   });
 
   it("blocks when budget exceeded", () => {
-    configDir = mkdtempSync(join(tmpdir(), "ab-usage-"));
+    configDir = mkdtempSync(join(tmpdir(), "buddy-usage-"));
     recordUsageToFile(configDir, { cost: 9.5, tokens: 100 }, new Date(2026, 6, 24));
     const tracker = createUsageTracker(configDir, {
       getBudget: () => 10,
@@ -140,7 +140,7 @@ describe("createUsageTracker", () => {
   });
 
   it("isBudgetNearLimit at 95% without blocking send threshold", () => {
-    configDir = mkdtempSync(join(tmpdir(), "ab-usage-"));
+    configDir = mkdtempSync(join(tmpdir(), "buddy-usage-"));
     recordUsageToFile(configDir, { cost: 9.5, tokens: 100 }, new Date(2026, 6, 24));
     const tracker = createUsageTracker(configDir, {
       getBudget: () => 10,
@@ -151,7 +151,7 @@ describe("createUsageTracker", () => {
   });
 
   it("reloads monthly totals from disk in a new tracker", () => {
-    configDir = mkdtempSync(join(tmpdir(), "ab-usage-"));
+    configDir = mkdtempSync(join(tmpdir(), "buddy-usage-"));
     const now = new Date(2026, 6, 24);
     recordUsageToFile(configDir, { cost: 4, tokens: 100 }, now);
     const tracker = createUsageTracker(configDir, {

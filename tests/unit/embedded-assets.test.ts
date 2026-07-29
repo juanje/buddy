@@ -20,7 +20,7 @@ describe("embedded assets (compiled sidecar)", () => {
   });
 
   it("boot refresh writes prompts and docs from embedded assets, not disk", () => {
-    dir = mkdtempSync(join(tmpdir(), "ab-embedded-"));
+    dir = mkdtempSync(join(tmpdir(), "buddy-embedded-"));
     registerEmbeddedAssets({
       templates: {},
       prompts: { "agents-base.md": "# embedded base\n", "consolidation.md": "# embedded consol\n" },
@@ -38,7 +38,7 @@ describe("embedded assets (compiled sidecar)", () => {
   });
 
   it("copyTemplates materializes the embedded tree including dotfiles", () => {
-    dir = mkdtempSync(join(tmpdir(), "ab-embedded-"));
+    dir = mkdtempSync(join(tmpdir(), "buddy-embedded-"));
     registerEmbeddedAssets({
       templates: {
         "AGENTS.md": "# agents\n",
@@ -60,7 +60,7 @@ describe("embedded assets (compiled sidecar)", () => {
   });
 
   it("an explicit templatesDir wins over embedded assets", () => {
-    dir = mkdtempSync(join(tmpdir(), "ab-embedded-"));
+    dir = mkdtempSync(join(tmpdir(), "buddy-embedded-"));
     registerEmbeddedAssets({ templates: { "AGENTS.md": "# embedded\n" }, prompts: {}, docs: {} });
 
     const source = join(dir, "source");
@@ -74,7 +74,7 @@ describe("embedded assets (compiled sidecar)", () => {
   });
 
   it("without registration, copyTemplates falls back to the repo templates dir", () => {
-    dir = mkdtempSync(join(tmpdir(), "ab-embedded-"));
+    dir = mkdtempSync(join(tmpdir(), "buddy-embedded-"));
 
     const target = join(dir, "ab");
     copyTemplates(target);

@@ -31,7 +31,7 @@ describe("SessionLifecycle checkpoint reflect", () => {
   }
 
   it("spawns checkpoint reflect on compaction_start", async () => {
-    dir = mkdtempSync(join(tmpdir(), "ab-checkpoint-"));
+    dir = mkdtempSync(join(tmpdir(), "buddy-checkpoint-"));
     await initTestGitRepo(dir);
     const lc = lifecycle();
 
@@ -46,7 +46,7 @@ describe("SessionLifecycle checkpoint reflect", () => {
   });
 
   it("does not spawn checkpoint reflect without activity", async () => {
-    dir = mkdtempSync(join(tmpdir(), "ab-checkpoint-"));
+    dir = mkdtempSync(join(tmpdir(), "buddy-checkpoint-"));
     await initTestGitRepo(dir);
     const lc = lifecycle();
 
@@ -57,7 +57,7 @@ describe("SessionLifecycle checkpoint reflect", () => {
   });
 
   it("does not spawn checkpoint reflect on turn count alone", async () => {
-    dir = mkdtempSync(join(tmpdir(), "ab-checkpoint-"));
+    dir = mkdtempSync(join(tmpdir(), "buddy-checkpoint-"));
     await initTestGitRepo(dir);
     const lc = lifecycle();
 
@@ -73,7 +73,7 @@ describe("SessionLifecycle checkpoint reflect", () => {
   });
 
   it("does not spawn checkpoint reflect on compaction without activity", async () => {
-    dir = mkdtempSync(join(tmpdir(), "ab-checkpoint-"));
+    dir = mkdtempSync(join(tmpdir(), "buddy-checkpoint-"));
     await initTestGitRepo(dir);
     const lc = lifecycle();
 

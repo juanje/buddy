@@ -62,7 +62,7 @@ Given("a temporary buddy root directory", function (this: BrainHealthWorld) {
   ({ configDir: this.globalConfigDir } = setupGlobalConfigDir({
     consolidationSkill: "# Skill\n\nDo consolidation.\n",
   }));
-  this.tmpDir = mkdtempSync(join(tmpdir(), "ab-brain-health-bdd-"));
+  this.tmpDir = mkdtempSync(join(tmpdir(), "buddy-brain-health-bdd-"));
   this.buddyDir = join(this.tmpDir, "buddy");
   mkdirSync(this.buddyDir, { recursive: true });
   writeFileSync(join(this.buddyDir, "AGENTS.md"), "# Rules\n");

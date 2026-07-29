@@ -10,7 +10,7 @@ import { detectFirstRun, updateAppConfig } from "../../backends/setup";
 const tmpDirs: string[] = [];
 
 function configIn(content?: string): string {
-  const dir = mkdtempSync(join(tmpdir(), "ab-setup-unit-"));
+  const dir = mkdtempSync(join(tmpdir(), "buddy-setup-unit-"));
   tmpDirs.push(dir);
   const path = join(dir, "config.json");
   if (content !== undefined) writeFileSync(path, content);

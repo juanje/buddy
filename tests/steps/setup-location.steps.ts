@@ -35,7 +35,7 @@ After(function (this: LocationWorld) {
 });
 
 Given("the setup wizard is on the location step", async function (this: LocationWorld) {
-  this.locTmpDir = mkdtempSync(join(tmpdir(), "ab-location-"));
+  this.locTmpDir = mkdtempSync(join(tmpdir(), "buddy-location-"));
   await advanceToLocationStep(wizardOf(this, locationOverrides));
 });
 

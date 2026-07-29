@@ -59,7 +59,7 @@ Given(
 Given(
   "an external file {string} with content {string}",
   function (this: FileOpsWorld, absPath: string, content: string) {
-    this.externalTmpDir = mkdtempSync(join(tmpdir(), "ab-fileops-ext-"));
+    this.externalTmpDir = mkdtempSync(join(tmpdir(), "buddy-fileops-ext-"));
     const target = join(this.externalTmpDir, absPath.replace(/^\/tmp\//, ""));
     mkdirSync(join(target, ".."), { recursive: true });
     writeFileSync(target, content);

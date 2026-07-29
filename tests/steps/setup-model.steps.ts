@@ -31,7 +31,7 @@ After(function (this: ModelWorld) {
 });
 
 async function wizardOnModelStep(world: ModelWorld, provider: ProviderId): Promise<void> {
-  world.modelTmpDir = mkdtempSync(join(tmpdir(), "ab-model-step-"));
+  world.modelTmpDir = mkdtempSync(join(tmpdir(), "buddy-model-step-"));
   world.modelProvider = provider;
   world.wizard = createSetupController(
     makeSetupWorkerFake({

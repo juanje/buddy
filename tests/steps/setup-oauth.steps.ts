@@ -43,7 +43,7 @@ After(function (this: OAuthWorld) {
 });
 
 Given("the setup wizard is on the provider step for OAuth", async function (this: OAuthWorld) {
-  this.authTmpDir = mkdtempSync(join(tmpdir(), "ab-oauth-"));
+  this.authTmpDir = mkdtempSync(join(tmpdir(), "buddy-oauth-"));
   await advanceToProviderStep(wizardOf(this, oauthOverrides), join(this.authTmpDir, "buddy"));
 });
 

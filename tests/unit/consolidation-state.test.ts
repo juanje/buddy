@@ -26,12 +26,12 @@ describe("consolidation state", () => {
   });
 
   it("returns defaults when state file is missing", () => {
-    dir = mkdtempSync(join(tmpdir(), "ab-consol-state-"));
+    dir = mkdtempSync(join(tmpdir(), "buddy-consol-state-"));
     expect(loadConsolidationState(dir)).toEqual(defaultConsolidationState());
   });
 
   it("persists and reloads state", () => {
-    dir = mkdtempSync(join(tmpdir(), "ab-consol-state-"));
+    dir = mkdtempSync(join(tmpdir(), "buddy-consol-state-"));
     const state = defaultConsolidationState();
     state.sessionsSinceLastDepth1 = 2;
     saveConsolidationState(dir, state);
@@ -123,7 +123,7 @@ describe("consolidation state", () => {
   });
 
   it("appends consolidation log entries", () => {
-    dir = mkdtempSync(join(tmpdir(), "ab-consol-state-"));
+    dir = mkdtempSync(join(tmpdir(), "buddy-consol-state-"));
     appendConsolidationLogEntry(dir, {
       timestamp: "2026-07-22T10:00:00Z",
       depth: 1,

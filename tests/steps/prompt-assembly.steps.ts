@@ -27,7 +27,7 @@ After(function (this: PromptWorld) {
 
 Given("a buddy directory with identity files", function (this: PromptWorld) {
   ({ configDir: this.globalConfigDir } = setupGlobalConfigDir());
-  this.promptTmpDir = mkdtempSync(join(tmpdir(), "ab-prompt-"));
+  this.promptTmpDir = mkdtempSync(join(tmpdir(), "buddy-prompt-"));
   this.buddyDir = join(this.promptTmpDir, "buddy");
   mkdirSync(join(this.buddyDir, "agent_brain", "identity"), { recursive: true });
   writeFileSync(join(this.buddyDir, "AGENTS.md"), "# Behavioral rules\n\nAlways be kind.\n");

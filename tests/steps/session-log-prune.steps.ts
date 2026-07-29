@@ -25,7 +25,7 @@ After(function (this: SessionLogPruneWorld) {
 });
 
 Given("an initialized buddy git repository with session logs directory", async function (this: SessionLogPruneWorld) {
-  this.pruneTmpDir = mkdtempSync(join(tmpdir(), "ab-prune-"));
+  this.pruneTmpDir = mkdtempSync(join(tmpdir(), "buddy-prune-"));
   this.buddyDir = join(this.pruneTmpDir, "buddy");
   const config: SetupConfig = {
     rootDir: this.buddyDir,

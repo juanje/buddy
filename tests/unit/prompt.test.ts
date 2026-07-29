@@ -20,7 +20,7 @@ describe("assembleSessionContext last log selection", () => {
 
   it("loads the last index entry regardless of maintenance status", () => {
     ({ configDir: globalConfigDir } = setupGlobalConfigDir({ agentsBase: "# Base\n" }, vi));
-    dir = mkdtempSync(join(tmpdir(), "ab-prompt-"));
+    dir = mkdtempSync(join(tmpdir(), "buddy-prompt-"));
     mkdirSync(join(dir, "logs"), { recursive: true });
     writeFileSync(
       join(dir, "logs", "index.md"),
@@ -75,7 +75,7 @@ describe("assembleSystemPrompt", () => {
     ({ configDir: globalConfigDir } = setupGlobalConfigDir({
       agentsBase: "# Your environment\n\nGlobal base rules.\n",
     }, vi));
-    dir = mkdtempSync(join(tmpdir(), "ab-prompt-"));
+    dir = mkdtempSync(join(tmpdir(), "buddy-prompt-"));
     writeFileSync(join(dir, "AGENTS.md"), "# Instance\n\nInstance rules.\n");
     mkdirSync(join(dir, "logs"), { recursive: true });
     writeFileSync(join(dir, "logs", "index.md"), "# Sessions index\n\n- 2026-07-21: active\n");
@@ -94,7 +94,7 @@ describe("assembleSystemPrompt", () => {
 
   it("returns empty session context when nothing episodic applies", () => {
     ({ configDir: globalConfigDir } = setupGlobalConfigDir({ agentsBase: "# Base\n" }, vi));
-    dir = mkdtempSync(join(tmpdir(), "ab-prompt-"));
+    dir = mkdtempSync(join(tmpdir(), "buddy-prompt-"));
     mkdirSync(join(dir, "agent_brain", "identity"), { recursive: true });
     writeFileSync(
       join(dir, "agent_brain", "identity", "USER.md"),

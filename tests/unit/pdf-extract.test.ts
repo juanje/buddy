@@ -10,7 +10,7 @@ import { createMinimalPdf } from "../support/minimal-pdf";
 
 describe("extractPdfText", () => {
   it("returns text content from a valid PDF", async () => {
-    const dir = mkdtempSync(join(tmpdir(), "ab-pdf-"));
+    const dir = mkdtempSync(join(tmpdir(), "buddy-pdf-"));
     const filePath = join(dir, "sample.pdf");
     writeFileSync(filePath, createMinimalPdf("Hello from PDF"));
 

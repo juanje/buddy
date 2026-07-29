@@ -10,7 +10,7 @@ import { configureProviderKey } from "../../backends/provider-auth";
 const tmpDirs: string[] = [];
 
 function tempAuthPath(): string {
-  const dir = mkdtempSync(join(tmpdir(), "ab-auth-unit-"));
+  const dir = mkdtempSync(join(tmpdir(), "buddy-auth-unit-"));
   tmpDirs.push(dir);
   return join(dir, "auth.json");
 }

@@ -21,7 +21,7 @@ interface CostWorld extends BuddyWorld {
 
 function ensureDir(world: CostWorld): string {
   if (!world.configDir) {
-    world.configDir = mkdtempSync(join(tmpdir(), "ab-cost-"));
+    world.configDir = mkdtempSync(join(tmpdir(), "buddy-cost-"));
   }
   return world.configDir;
 }

@@ -16,7 +16,7 @@ export function isWithin(child: string, parent: string): boolean {
 }
 
 /** Resolve `rawPath` against `rootDir` when relative; null if outside buddy home. */
-export function normalizeAbPath(rootDir: string, rawPath: string): string | null {
+export function toBuddyRelPath(rootDir: string, rawPath: string): string | null {
   const abs = isAbsolute(rawPath) ? resolve(rawPath) : resolve(rootDir, rawPath);
   if (!isWithin(abs, rootDir)) return null;
   return relative(rootDir, abs).split(sep).join("/");

@@ -16,7 +16,7 @@ describe("boot refresh", () => {
   });
 
   it("refreshes bundled content when app version differs", () => {
-    configDir = mkdtempSync(join(tmpdir(), "ab-boot-refresh-"));
+    configDir = mkdtempSync(join(tmpdir(), "buddy-boot-refresh-"));
     mkdirSync(join(configDir, "prompts"), { recursive: true });
     writeFileSync(
       join(configDir, "config.json"),
@@ -38,7 +38,7 @@ describe("boot refresh", () => {
   });
 
   it("is a no-op when version matches", () => {
-    configDir = mkdtempSync(join(tmpdir(), "ab-boot-refresh-"));
+    configDir = mkdtempSync(join(tmpdir(), "buddy-boot-refresh-"));
     mkdirSync(join(configDir, "prompts"), { recursive: true });
     writeFileSync(join(configDir, "prompts", "agents-base.md"), "# custom\n", "utf8");
     writeFileSync(
@@ -54,7 +54,7 @@ describe("boot refresh", () => {
   });
 
   it("creates config.json on fresh install", () => {
-    configDir = mkdtempSync(join(tmpdir(), "ab-boot-refresh-"));
+    configDir = mkdtempSync(join(tmpdir(), "buddy-boot-refresh-"));
 
     const refreshed = bootRefreshIfNeeded(configDir, "0.1.0");
 

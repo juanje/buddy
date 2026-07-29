@@ -16,7 +16,7 @@ describe("logEvent", () => {
   });
 
   it("appends JSONL lines to .buddy/logs/YYYY-MM-DD.jsonl", () => {
-    dir = mkdtempSync(join(tmpdir(), "ab-applog-"));
+    dir = mkdtempSync(join(tmpdir(), "buddy-applog-"));
     const now = new Date("2026-07-19T14:30:00.000Z");
     logEvent(dir, { event: "session_start", session: "abc12345" }, now);
     logEvent(dir, { event: "turn_end", session: "abc12345", turn: 1 }, now);

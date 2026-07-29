@@ -2,7 +2,7 @@
 // (NFR-SEC-15, NFR-SEC-16).
 //
 // Before this module, "is this path inside the buddy directory?" was answered in
-// four places: `isWithin` (lexical), `normalizeAbPath` (lexical),
+// four places: `isWithin` (lexical), `toBuddyRelPath` (lexical),
 // `resolveViewablePath` (segment-based, browser-safe) and a `startsWith
 // ("agent_brain/")` string test in consolidation-relocate.ts. The last one was
 // wrong — `agent_brain/../.pi/settings.json` passes it — which is the argument

@@ -18,7 +18,7 @@ describe("maintenance lock", () => {
   });
 
   it("acquires and releases lock", () => {
-    dir = mkdtempSync(join(tmpdir(), "ab-lock-"));
+    dir = mkdtempSync(join(tmpdir(), "buddy-lock-"));
     expect(acquireLock(dir)).toBe(true);
     expect(existsSync(lockPath(dir))).toBe(true);
     expect(acquireLock(dir)).toBe(false);
@@ -27,14 +27,14 @@ describe("maintenance lock", () => {
   });
 
   it("treats missing lock as stale", () => {
-    dir = mkdtempSync(join(tmpdir(), "ab-lock-"));
+    dir = mkdtempSync(join(tmpdir(), "buddy-lock-"));
     expect(isLockStale(dir)).toBe(true);
   });
 
   // NFR-REL-07. The lock is what keeps two consolidation runs off the same
   // brain, so "who holds it" has to have exactly one answer.
   it("takes over a lock whose holder is gone", () => {
-    dir = mkdtempSync(join(tmpdir(), "ab-lock-"));
+    dir = mkdtempSync(join(tmpdir(), "buddy-lock-"));
     mkdirSync(join(dir, ".buddy"), { recursive: true });
     // A pid that cannot be running: process.kill(pid, 0) fails, so the lock is
     // stale however recent its timestamp.
@@ -49,7 +49,7 @@ describe("maintenance lock", () => {
   });
 
   it("refuses a lock held by a live process, however it is asked", () => {
-    dir = mkdtempSync(join(tmpdir(), "ab-lock-"));
+    dir = mkdtempSync(join(tmpdir(), "buddy-lock-"));
     expect(acquireLock(dir)).toBe(true);
     // Repeatedly, because the failure this guards against is a race: the old
     // implementation's check-then-unlink-then-write let two callers both
@@ -59,7 +59,7 @@ describe("maintenance lock", () => {
   });
 
   it("does not leave a lock behind when it fails to take one", () => {
-    dir = mkdtempSync(join(tmpdir(), "ab-lock-"));
+    dir = mkdtempSync(join(tmpdir(), "buddy-lock-"));
     acquireLock(dir);
     const held = readFileSync(lockPath(dir), "utf8");
     acquireLock(dir);

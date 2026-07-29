@@ -31,7 +31,7 @@ After(function (this: PermWorld) {
 });
 
 Given("a permission layer for a buddy directory", function (this: PermWorld) {
-  this.permTmpDir = mkdtempSync(join(tmpdir(), "ab-perm-"));
+  this.permTmpDir = mkdtempSync(join(tmpdir(), "buddy-perm-"));
   this.home = join(this.permTmpDir, "home");
   this.buddyDir = join(this.home, "buddy");
   this.asked = [];

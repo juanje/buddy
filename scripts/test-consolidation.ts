@@ -235,7 +235,7 @@ async function runSimulated(
 }
 
 function prepareFixture(sourceDir: string): string {
-  const testDir = mkdtempSync(join(tmpdir(), "ab-consol-test-"));
+  const testDir = mkdtempSync(join(tmpdir(), "buddy-consol-test-"));
   console.log(`Copying ${sourceDir} → ${testDir}`);
   cpSync(sourceDir, testDir, { recursive: true });
 

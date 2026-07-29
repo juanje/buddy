@@ -28,7 +28,7 @@ describe("commitAll", () => {
   });
 
   it("commits uncommitted changes", async () => {
-    dir = mkdtempSync(join(tmpdir(), "ab-git-"));
+    dir = mkdtempSync(join(tmpdir(), "buddy-git-"));
     await initTestGitRepo(dir);
     writeFileSync(join(dir, "note.md"), "hello");
     expect(await hasUncommittedChanges(dir)).toBe(true);
@@ -38,7 +38,7 @@ describe("commitAll", () => {
   });
 
   it("returns null when clean", async () => {
-    dir = mkdtempSync(join(tmpdir(), "ab-git-"));
+    dir = mkdtempSync(join(tmpdir(), "buddy-git-"));
     await initTestGitRepo(dir);
     const git = simpleGit(dir);
     writeFileSync(join(dir, "note.md"), "hello");

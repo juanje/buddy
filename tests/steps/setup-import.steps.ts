@@ -36,7 +36,7 @@ interface ImportWorld extends BuddyWorld {
   authHasAnthropic?: boolean;
 }
 
-function snapshotAb(world: ImportWorld): Map<string, string> {
+function snapshotBuddyDir(world: ImportWorld): Map<string, string> {
   const files = new Map<string, string>();
   const walk = (dir: string) => {
     for (const entry of readdirSync(dir)) {
@@ -96,8 +96,8 @@ function makeWizard(world: ImportWorld, authHasAnthropic = true): SetupControlle
   return world.wizard;
 }
 
-function seedAb(world: ImportWorld, options: { piSettings?: boolean; artifacts?: boolean }): void {
-  world.importTmpDir = mkdtempSync(join(tmpdir(), "ab-import-"));
+function seedBuddyDir(world: ImportWorld, options: { piSettings?: boolean; artifacts?: boolean }): void {
+  world.importTmpDir = mkdtempSync(join(tmpdir(), "buddy-import-"));
   world.buddyDir = join(world.importTmpDir, "old-ab");
   world.importConfigPath = join(world.importTmpDir, "config.json");
 
@@ -119,7 +119,7 @@ function seedAb(world: ImportWorld, options: { piSettings?: boolean; artifacts?:
     writeFileSync(join(world.buddyDir, ".codex", "cache.bin"), "xx");
   }
 
-  world.snapshot = snapshotAb(world);
+  world.snapshot = snapshotBuddyDir(world);
 }
 
 After(function (this: ImportWorld) {
@@ -127,15 +127,15 @@ After(function (this: ImportWorld) {
 });
 
 Given("an existing buddy directory with Pi settings", function (this: ImportWorld) {
-  seedAb(this, { piSettings: true });
+  seedBuddyDir(this, { piSettings: true });
 });
 
 Given("an existing buddy directory containing platform artifacts", function (this: ImportWorld) {
-  seedAb(this, { piSettings: true, artifacts: true });
+  seedBuddyDir(this, { piSettings: true, artifacts: true });
 });
 
 Given("an existing buddy directory without Pi settings", function (this: ImportWorld) {
-  seedAb(this, { piSettings: false });
+  seedBuddyDir(this, { piSettings: false });
 });
 
 Given("the configured provider has valid auth credentials", function (this: ImportWorld) {
@@ -164,7 +164,7 @@ Then("the app is configured to use that directory", function (this: ImportWorld)
 Then("no pre-existing file is modified", function (this: ImportWorld) {
   // Buddy may *add* its runtime-state ignore rules (FR-SETUP-10, amended); it
   // must not touch anything that was already there.
-  const now = snapshotAb(this);
+  const now = snapshotBuddyDir(this);
   for (const [path, content] of this.snapshot!) {
     assert.equal(now.get(path), content, `${path} must not be modified`);
   }

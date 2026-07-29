@@ -39,7 +39,7 @@ export function setupGlobalConfigDir(
   },
   envStub?: EnvStub,
 ): GlobalConfigFixture {
-  const configDir = mkdtempSync(join(tmpdir(), "ab-global-config-"));
+  const configDir = mkdtempSync(join(tmpdir(), "buddy-global-config-"));
 
   if (envStub) {
     envStub.stubEnv("BUDDY_CONFIG_DIR", configDir);

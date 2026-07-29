@@ -57,7 +57,7 @@ Given("a buddy directory prepared for consolidation", async function (this: Cons
   ({ configDir: this.globalConfigDir } = setupGlobalConfigDir({
     consolidationSkill: "# Skill\n\nConsolidate.\n",
   }));
-  this.consolTmpDir = mkdtempSync(join(tmpdir(), "ab-consol-bdd-"));
+  this.consolTmpDir = mkdtempSync(join(tmpdir(), "buddy-consol-bdd-"));
   this.buddyDir = join(this.consolTmpDir, "buddy");
   mkdirSync(join(this.buddyDir, "agent_brain"), { recursive: true });
   writeFileSync(join(this.buddyDir, "AGENTS.md"), "# Rules\n");

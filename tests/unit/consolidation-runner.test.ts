@@ -28,17 +28,17 @@ describe("consolidation runner", () => {
     globalConfigDir = undefined;
   });
 
-  function setupAb(): void {
+  function setupBuddyDir(): void {
     ({ configDir: globalConfigDir } = setupGlobalConfigDir({
       consolidationSkill: "# Skill\n\nDo consolidation.\n",
     }, vi));
-    dir = mkdtempSync(join(tmpdir(), "ab-consol-run-"));
+    dir = mkdtempSync(join(tmpdir(), "buddy-consol-run-"));
     writeFileSync(join(dir, "AGENTS.md"), "# Rules\n");
     writeFileSync(join(dir, "notes.txt"), "hello\n");
   }
 
   it("builds consolidation prompt from the global skill file", () => {
-    setupAb();
+    setupBuddyDir();
     const prompt = buildConsolidationPrompt(dir, 1, new Date("2026-07-22T12:00:00Z"));
     expect(prompt).toContain("Date:");
     expect(prompt).toContain("Run consolidation at depth 1");
@@ -50,7 +50,7 @@ describe("consolidation runner", () => {
   });
 
   it("includes brain health block when issues exist", () => {
-    setupAb();
+    setupBuddyDir();
     mkdirSync(join(dir, "agent_brain", "concepts"), { recursive: true });
     writeFileSync(join(dir, "agent_brain", "concepts", "stale.md"), "# Missing frontmatter\n");
 
@@ -60,7 +60,7 @@ describe("consolidation runner", () => {
   });
 
   it("omits brain health block when brain is healthy", () => {
-    setupAb();
+    setupBuddyDir();
     mkdirSync(join(dir, "agent_brain", "identity"), { recursive: true });
     writeFileSync(
       join(dir, "agent_brain", "identity", "SOUL.md"),
@@ -84,7 +84,7 @@ describe("consolidation runner", () => {
   });
 
   it("runs cascade depths, commits, and advances counters", async () => {
-    setupAb();
+    setupBuddyDir();
     await initTestGitRepo(dir);
     writeFileSync(join(dir, "tracked.txt"), "v1\n");
     const { simpleGit } = await import("simple-git");
@@ -122,7 +122,7 @@ describe("consolidation runner", () => {
   });
 
   it("commits once per consolidation cycle including maintenance log entry", async () => {
-    setupAb();
+    setupBuddyDir();
     await initTestGitRepo(dir);
     writeFileSync(join(dir, "tracked.txt"), "v1\n");
     const { simpleGit } = await import("simple-git");
@@ -161,7 +161,7 @@ describe("consolidation runner", () => {
   // It was also what made the 22 ms phantom run of 2026-07-28 look legitimate,
   // since it was emitted without reference to whether any work had happened.
   it("writes no maintenance note when there is nothing to report", async () => {
-    setupAb();
+    setupBuddyDir();
     await initTestGitRepo(dir);
     const { simpleGit } = await import("simple-git");
     await simpleGit(dir).add("-A").commit("seed");
@@ -184,7 +184,7 @@ describe("consolidation runner", () => {
   it("writes the note when the run changed identity or refused a path", async () => {
     // The notes that matter are still delivered — and now they arrive without
     // routine noise around them, so they are visible.
-    setupAb();
+    setupBuddyDir();
     await initTestGitRepo(dir);
     const { simpleGit } = await import("simple-git");
     await simpleGit(dir).add("-A").commit("seed");
@@ -213,7 +213,7 @@ describe("consolidation runner", () => {
   });
 
   it("defers when maintenance lock is held", async () => {
-    setupAb();
+    setupBuddyDir();
     acquireLock(dir);
     const createSession = vi.fn();
 
@@ -238,7 +238,7 @@ describe("consolidation runner", () => {
   // not a requirement. Each depth is a billed LLM call; work already paid for
   // must survive a later failure.
   it("keeps a completed depth when a later depth fails", async () => {
-    setupAb();
+    setupBuddyDir();
     await initTestGitRepo(dir);
 
     let calls = 0;
@@ -278,7 +278,7 @@ describe("consolidation runner", () => {
   });
 
   it("stops the cascade when the budget threshold is crossed mid-flight", async () => {
-    setupAb();
+    setupBuddyDir();
     await initTestGitRepo(dir);
 
     let prompts = 0;

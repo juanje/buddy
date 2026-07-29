@@ -44,7 +44,7 @@ After(function (this: ProviderWorld) {
 });
 
 Given("the setup wizard is on the provider step", async function (this: ProviderWorld) {
-  this.authTmpDir = mkdtempSync(join(tmpdir(), "ab-provider-"));
+  this.authTmpDir = mkdtempSync(join(tmpdir(), "buddy-provider-"));
   this.authPath = join(this.authTmpDir, "auth.json");
 
   await advanceToProviderStep(wizardOf(this, providerOverrides), join(this.authTmpDir, "buddy"));
