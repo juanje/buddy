@@ -197,11 +197,12 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 
 ## Current focus
 
-> **Hardening series complete. Released through v0.1.8.**
-> **732 unit + 214 BDD green**, typecheck and vite build clean.
+> **Released through v0.1.9 (2026-07-30).**
+> **733 unit + 214 BDD green**, typecheck and vite build clean.
 >
-> A maintenance audit (2026-07-29) followed and is **closed** — four phases,
-> recorded below. Next: version bump, release, then FR-WIKI.
+> Phase 0 and Phase 1 are complete. Three campaigns followed, all closed:
+> the H1–H8 hardening sprints, the local-model evaluation, and the four-phase
+> maintenance audit. **Next: FR-WIKI.**
 >
 > Two campaigns ran back to back, and the second was not planned.
 >
@@ -217,9 +218,9 @@ responses). Dev-only diagnostics bridge added in c2442ff (`/__ab_log`,
 > affecting the commercial path identically. See the section below; the pattern
 > they share is worth more than any individual fix.
 >
-> **Next: FR-WIKI**, per `docs/app-design-principles.md`, which has always
-> listed it under *Explicitly NOT in v1*. It waits until open bugs and core UX
-> are finished — which after v0.1.8 they largely are.
+> **FR-WIKI**, per `docs/app-design-principles.md`, has always been listed
+> under *Explicitly NOT in v1*. It waits until open bugs and core UX are
+> finished — which after v0.1.9 they are.
 
 ### Sprint: Maintenance audit, phase 1 — DONE (2026-07-29)
 
