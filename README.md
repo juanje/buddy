@@ -88,6 +88,15 @@ The full quality gate is three commands, all of which must pass before a
 commit: `npx tsc --noEmit`, `npx vite build` (the only one that checks
 `.svelte`) and `npm test`.
 
+## Releasing
+
+Set the version with `npm run version:set <semver>`, write
+`docs/releases/v<semver>.md`, then commit, tag and push. Pushing the tag runs
+the quality gate, builds installers for macOS (ARM64 + x64) and Linux, and
+opens a **draft** release with those notes as its body.
+
+Full steps and the release-note template: **[docs/releases/](docs/releases/)**.
+
 ## Project structure
 
 ```

@@ -7,7 +7,7 @@
 // whole release because the file it missed is regenerated at build time, so it
 // was wrong only in the repository. Nothing was going to notice that but this.
 
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -46,6 +46,19 @@ function embeddedVersion(): string {
   if (!match) throw new Error("no EMBEDDED_APP_VERSION in the generated snapshot");
   return match[1];
 }
+
+describe("release notes (NFR-MIGRATE-07)", () => {
+  // The notes for a version are written before it is tagged, not typed into
+  // the GitHub UI afterwards — release.yml reads this exact file and refuses to
+  // publish without it. Because package.json holds the *released* version, this
+  // is green between releases and only turns red during one, which is the
+  // moment the notes are supposed to be written.
+  it("exist for the version in package.json", () => {
+    const path = join(ROOT, "docs", "releases", `v${packageVersion()}.md`);
+    expect(existsSync(path), `missing ${path}`).toBe(true);
+    expect(readFileSync(path, "utf8").trim().length).toBeGreaterThan(0);
+  });
+});
 
 describe("app version (NFR-MIGRATE-07)", () => {
   it("is a semver in package.json", () => {

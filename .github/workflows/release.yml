@@ -71,6 +71,25 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
+      # The notes are written and reviewed in the repo, not typed into the
+      # GitHub UI after the fact. Every release up to v0.1.9 was published with
+      # the placeholder body and edited by hand afterwards; v0.1.0 still carries
+      # the leftover "Download the installer" line because of it.
+      - name: Read release notes
+        id: notes
+        run: |
+          notes="docs/releases/${GITHUB_REF_NAME}.md"
+          if [ ! -s "$notes" ]; then
+            echo "::error::Missing release notes: $notes"
+            exit 1
+          fi
+          {
+            echo 'body<<RELEASE_NOTES_EOF'
+            cat "$notes"
+            echo
+            echo 'RELEASE_NOTES_EOF'
+          } >> "$GITHUB_OUTPUT"
+
       - name: Build sidecar
         env:
           BUDDY_BUILD_TARGET: ${{ matrix.rust_target || '' }}
@@ -84,7 +103,7 @@ jobs:
         with:
           tagName: v__VERSION__
           releaseName: 'Buddy v__VERSION__'
-          releaseBody: 'Download the installer for your platform below.'
+          releaseBody: ${{ steps.notes.outputs.body }}
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.rust_target && format('--target {0}', matrix.rust_target) || '' }}
