@@ -19,16 +19,22 @@ using BDD + TDD.
 7. Update `PROGRESS.md`: mark feature as `done`, add commit hash, set next focus
 8. Commit with FR-ID: `feat(scope): FR-ID description`
 
-### Current state (2026-07-29)
+### Current state (2026-07-30)
 
-Phase 0 and Phase 1 are complete and released through **v0.1.8**. Two hardening
-campaigns followed: sprints H1–H8 from an external code review, then eight
-defects surfaced by evaluating a local model. `specs/PROGRESS.md` has the
-detail and the lessons.
+Phase 0 and Phase 1 are complete and released through **v0.1.9**. Three
+campaigns followed and all are closed: H1–H8 from an external code review, the
+local-model evaluation, and the maintenance audit. See `specs/PROGRESS.md` for
+current state and `docs/releases/` for per-release detail.
 
-**Next: FR-WIKI.** It has always been listed under *Explicitly NOT in v1* in
-`docs/app-design-principles.md`; the scope test is that Buddy without it is
-still Buddy.
+**Current focus: polishing UX, infrastructure, CI and distribution.** The MVP
+feature set is in place; the work now is making what exists pleasant to use and
+reliable to install, not adding capability. Distribution counts as UX upstream —
+a package that installs badly, or a platform with no build, is a user who never
+reaches the UI. `specs/PROGRESS.md` has the verified state of both.
+
+**FR-WIKI is not next.** It is an extra feature to be added once the MVP is
+considered finished — do not propose it, and do not frame work as leading up to
+it. Same for FR-PROVIDER. Both are in the PROGRESS backlog.
 
 ### Rules
 

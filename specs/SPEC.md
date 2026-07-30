@@ -447,7 +447,7 @@ platform-specific install instructions is shown and setup cannot continue.
 | FR-REFLECT-03 | Compaction-triggered checkpoint reflect (fork before Pi compacts) | 2 ✓ |
 | FR-REFLECT-04 | Log output sanitizer (strip tool-call artifacts) | 2 ✓ |
 | FR-REFLECT-05 | Session path persistence and crash recovery | 2 ✓ |
-| FR-REFLECT-06 | Reflect child does not race the worker for the git index | 2 |
+| FR-REFLECT-06 | Reflect child does not race the worker for the git index | 2 ✓ |
 | FR-REFLECT-07 | Reflect child is bounded by a timeout | 2 |
 
 **FR-REFLECT-01 — Session-end reflect finalization**
@@ -719,10 +719,10 @@ Fork bomb defense:
 | FR-CONSOL-05 | Idle-aware scheduling | 2 ✓ |
 | FR-CONSOL-06 | Run journal | 2 ✓ |
 | FR-CONSOL-07 | Consolidation relocate tool for brain file grouping | 2 ✓ |
-| FR-CONSOL-08 | Consolidation state persisted per completed depth | 2 |
-| FR-CONSOL-09 | Failure backoff and retry ceiling | 2 |
-| FR-CONSOL-10 | Maintenance session enforces the zone model | 2 |
-| FR-CONSOL-11 | Identity changes made by consolidation are surfaced | 2 |
+| FR-CONSOL-08 | Consolidation state persisted per completed depth | 2 ✓ |
+| FR-CONSOL-09 | Failure backoff and retry ceiling | 2 ✓ |
+| FR-CONSOL-10 | Maintenance session enforces the zone model | 2 ✓ |
+| FR-CONSOL-11 | Identity changes made by consolidation are surfaced | 2 ✓ |
 | FR-CONSOL-12 | A consolidation that produced no output is a failure | 2 ✓ |
 | FR-CONSOL-13 | A consolidation that corrupts the brain is a failure | 2 ✓ |
 | FR-CONSOL-14 | The daily log records maintenance only when notable | 2 ✓ |
@@ -1209,7 +1209,7 @@ does not know them, and orders their profile overwritten.
 | FR-COST-02 | Usage panel in Settings (session + monthly) | 2 ✓ |
 | FR-COST-03 | Budget alert and hard limit | 2 ✓ |
 | FR-COST-04 | Memory depth presets (maintenance frequency) | 3+ |
-| FR-COST-05 | Budget gate aborts an in-flight cascade | 2 |
+| FR-COST-05 | Budget gate aborts an in-flight cascade | 2 ✓ |
 | ~~FR-COST-06~~ | ~~Usage shown in tokens and messages~~ | — rejected |
 
 **Spend is tracked globally, never per provider (decision, 2026-07-28)**
@@ -1637,7 +1637,7 @@ result — the LLM then follows the procedure.
 |----|-------------|-------|
 | FR-NET-01 | Fetch URL content (web→markdown, PDF, image) | 2 ✓ |
 | FR-NET-02 | Web search (opt-in toggle) | 3+ |
-| FR-NET-03 | Untrusted content framing | 2 |
+| FR-NET-03 | Untrusted content framing | 2 ✓ |
 
 **FR-NET-01 — Fetch URL content**
 

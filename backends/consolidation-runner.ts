@@ -482,6 +482,10 @@ export async function runConsolidation(options: RunConsolidationOptions): Promis
       }
     }
 
+    // Provably redundant: both mutators above persist, and `depthBlockReason`
+    // is pure. Kept deliberately (reviewed twice, 2026-07-29) as a defensive
+    // write in the subsystem that produced the 22 ms phantom run. Removing it
+    // buys nothing a user can see.
     saveConsolidationState(rootDir, state);
 
     if (completedDepths.length > 0) {
