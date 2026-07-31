@@ -18,7 +18,7 @@ independent of the other two.
 | Item | State | Note |
 |------|-------|------|
 | FR-CHAT-15 — viewer does not render frontmatter | **done**, uncommitted | `parseFrontmatter` moved from `backends/reflect.ts` to `shared/frontmatter.ts` so the frontend could reach it without a second copy; `splitFrontmatter` added beside it. |
-| FR-CHAT-16 — buddy paths become labelled links | **done**, uncommitted | Renderer half only, covering bare paths, code spans, and links the agent wrote whose label is just the path. The `agents-base.md` line telling Buddy the viewer exists is **still pending** — without it Buddy has no reason to name a file, and a renderer can only link a path that appears. |
+| FR-CHAT-16 — buddy paths become labelled links | **done**, uncommitted | Both halves: the renderer (bare paths, code spans, agent-written links whose label is just the path) and the `agents-base.md` affordance. |
 | FR-CHAT-17 — `show_file` opens the viewer | specified | New `FrontendAPI` callback + custom tool. Containment reuses FR-CHAT-11. Needs an entry in `bundled/docs/capabilities.md` or the user never learns it exists (FR-DOCS-01/02). |
 | FR-CHAT-18 — export to PDF from the viewer | **blocked on a spike** | Whether `window.print()` works in the Tauri webview decides between an afternoon and several days of per-platform Rust. WKWebView has historically not implemented it. Measure on macOS and Linux before designing further. |
 

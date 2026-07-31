@@ -372,6 +372,9 @@ hiding anything: the viewer header states the full path.
 
 **This is the code half of a two-part design.** The other half is prompt-side:
 `agents-base.md` tells Buddy the viewer exists, so it refers to files at all.
+That line lives in `~/.buddy/prompts/`, which is app-managed and redeployed on
+any version change (NFR-MIGRATE-06), so it reaches installs already in use —
+unlike `SOUL.md`, which sits in the rootDir the app never modifies.
 Neither substitutes for the other. A renderer can only link a path that appears
 in the text — an agent saying *"lo guardé en tu inbox"* offers nothing to link —
 and a prompt cannot guarantee the link, because forgetting requires no
