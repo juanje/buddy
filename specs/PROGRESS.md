@@ -11,10 +11,21 @@ Nothing in the backlog starts until the MVP is considered finished.
 
 ## In flight
 
+Showing the user a file — three FRs written 2026-07-30, none implemented.
+Suggested order is the one below: each stands alone, and FR-CHAT-15 is
+independent of the other two.
+
 | Item | State | Note |
 |------|-------|------|
-| Buddy shows files as links, not bare paths | discussed, unspecified | The viewer exists (FR-CHAT-09/10/11/12); no prompt tells the agent it is there. `agents-base.md` for the affordance, `SOUL.md` for the disposition, plus a possible renderer fallback that auto-links viewable paths. |
-| File viewer renders YAML frontmatter as a heading | discussed, unspecified | `<hr>` + setext H2 makes metadata the largest thing on the page. Strip it from the body; `summary` could go in the header, which already shows name and path. |
+| FR-CHAT-15 — viewer does not render frontmatter | **done**, uncommitted | `parseFrontmatter` moved from `backends/reflect.ts` to `shared/frontmatter.ts` so the frontend could reach it without a second copy; `splitFrontmatter` added beside it. |
+| FR-CHAT-16 — buddy paths become labelled links | specified | Label follows the directory: file name under `agent_brain/` and `logs/`, full path under `user/` and `downloads/`. Must be a marked token-level extension — a regex over rendered HTML would nest anchors. Pairs with a line in `agents-base.md` telling Buddy the viewer exists; app-managed, so it reaches installs already deployed. |
+| FR-CHAT-17 — `show_file` opens the viewer | specified | New `FrontendAPI` callback + custom tool. Containment reuses FR-CHAT-11. Needs an entry in `bundled/docs/capabilities.md` or the user never learns it exists (FR-DOCS-01/02). |
+| FR-CHAT-18 — export to PDF from the viewer | **blocked on a spike** | Whether `window.print()` works in the Tauri webview decides between an afternoon and several days of per-platform Rust. WKWebView has historically not implemented it. Measure on macOS and Linux before designing further. |
+
+**Decided against: a character line in `SOUL.md`.** It lives in the rootDir,
+which the app never modifies, so it would reach new instances only — and with
+`agents-base.md` carrying the affordance it adds little. Keeping it out also
+means new and old instances behave the same.
 
 ## Open
 

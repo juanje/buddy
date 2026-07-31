@@ -97,6 +97,9 @@ rootDir (git repo — user/agent content only)
 | FR-CHAT-13 | Prompts sent during session boot are queued, not dropped | 2 ✓ |
 | FR-CHAT-14 | An assistant turn with no visible text renders nothing | 2 ✓ |
 | FR-CHAT-15 | The inline viewer does not render frontmatter as content | 3 ✓ |
+| FR-CHAT-16 | Buddy paths in assistant text become labelled links | 3 |
+| FR-CHAT-17 | `show_file` — the agent opens a file in the viewer | 3 |
+| FR-CHAT-18 | Export the viewed file as PDF via the system print dialog | 3 |
 
 **FR-CHAT-01 — Streaming message display**
 
@@ -284,6 +287,138 @@ markdown a `---` line under text is a setext heading. Frontmatter therefore
 renders as a horizontal rule followed by an H2 built from the metadata: opening
 any brain file makes `summary: … last_accessed: …` the largest thing on the
 page, above the content it describes.
+
+**FR-CHAT-16 — Buddy paths in assistant text become labelled links**
+
+- **Given** an assistant message containing a path inside the buddy directory
+  that resolves to a viewable file (FR-CHAT-11)
+- **When** the message is rendered
+- **Then** the path is rendered as a local link (FR-CHAT-09), opening the
+  inline viewer on click
+- **And** the visible text depends on whose space the file is in:
+  - under `agent_brain/` or `logs/` — the file name alone
+  - under `user/` or `downloads/` — the full relative path
+- **And** the full path remains available in every case: in the link's `title`,
+  and in the viewer header once opened
+- **But when** the path is inside a code span or code block
+- **Then** it is left exactly as written — there it is content, not a reference
+- **And when** the path is already inside a markdown link — as the href **or**
+  as the link's visible text
+- **Then** it is left alone, so no link is ever produced inside another
+- **And when** the path does not resolve to a viewable file, or falls outside
+  the four user-facing directories
+- **Then** it is left as plain text, never linked
+
+**Why the label follows the directory rather than a lookup table.** The four
+user-facing directories already split in two, and the app makes that split
+everywhere: `agent_brain/` and `logs/` are Buddy's memory, `user/` and
+`downloads/` are the user's own space ("never auto-archive or prune files in
+`user/` — the user controls that space"). For Buddy's own files the location is
+Buddy's business and the path is noise mid-sentence. For the user's files the
+path *is* the useful part — it is what lets them open the file in Obsidian or a
+file manager. The rule is derived from a distinction that already exists, so
+there is nothing to keep in sync.
+
+A curated map of file → human label ("your profile" for `USER.md`) was
+considered and rejected: it is a hand-maintained list that needs translating per
+locale, goes stale silently, and reintroduces inconsistency for everything it
+omits — while the files that would benefit most, `USER.md` and `SOUL.md`, read
+well enough as names.
+
+**Nested links are a defect this must not produce.** `src/lib/markdown.ts`
+renders through marked's token hooks, so this belongs at the token level. A
+regex over the rendered HTML would match the href inside an anchor the agent
+wrote deliberately and emit `<a>` inside `<a>`. The link *text* is the subtler
+case: in `[agent_brain/foo.md](agent_brain/foo.md)` the visible label is a text
+token nested in a link token, and an inline extension would re-tokenize it
+unless descendants of a link are excluded.
+
+**Why the label matters, and why this is not only a convenience.** Buddy
+routinely names the file it touched — *"Cambié tu perfil
+`agent_brain/identity/USER.md`"*. Linking that string while still displaying it
+leaves the internal layout on screen; it only becomes clickable. The target user
+has never opened a terminal and did not ask to learn the directory structure.
+Showing `USER.md` and keeping the path behind the link removes the noise without
+hiding anything: the viewer header states the full path.
+
+**This is the code half of a two-part design.** The other half is prompt-side:
+`agents-base.md` tells Buddy the viewer exists, so it refers to files at all.
+Neither substitutes for the other. A renderer can only link a path that appears
+in the text — an agent saying *"lo guardé en tu inbox"* offers nothing to link —
+and a prompt cannot guarantee the link, because forgetting requires no
+disobedience. The prompt makes it likely; the renderer makes it certain once a
+path appears.
+
+**FR-CHAT-17 — `show_file` — the agent opens a file in the viewer**
+
+- **Given** the user asks to be shown a file or the content of something Buddy
+  keeps ("muéstrame mi perfil", "enséñame el inbox")
+- **When** the agent calls `show_file` with a path inside the buddy directory
+- **Then** the inline viewer opens on that file, with no click required
+- **And** the path is validated exactly as a clicked link is (FR-CHAT-11,
+  NFR-SEC-09): viewable extension, inside the four user-facing directories,
+  symlinks resolved by the worker
+- **And** the tool declares its path argument, so the permission gate covers it
+  (NFR-SEC-13)
+- **But when** the path is refused
+- **Then** the tool returns a plain-language error the agent can relay, and no
+  panel opens
+
+**Why this is in the MVP rather than deferred.** For a user coming from a chat
+assistant, "muéstrame el archivo" means *see the content*, not *receive a link
+to click*. Reading a link as an offer to view is expert knowledge about how
+Buddy works. The capability is discoverable through FR-DOCS-01/02: Buddy is
+asked what it can do during first use, so `~/.buddy/docs/capabilities.md` is
+where the user learns this exists. Waiting for users to request a feature nobody
+advertises measures the silence, not the demand.
+
+**Cost, and why it is low.** `FrontendAPI` is already a worker→frontend push
+channel with seven callbacks (permissions, deferred items, budget alerts); this
+adds one. Containment is already built and already enforced for clicked links —
+the tool surfaces a file the agent could already read, to the user who owns it.
+
+**FR-CHAT-18 — Export the viewed file as PDF via the system print dialog**
+
+**Blocked on a spike.** Whether `window.print()` works in the Tauri webview is
+unverified, and it decides the whole shape of this. The spike is a button
+calling `window.print()`, built and tried on macOS (WKWebView) and Linux
+(WebKitGTK). WKWebView has historically not implemented it, so a negative result
+is plausible and must be measured, not assumed. If it fails, the fallback is a
+per-platform Rust command (`createPDF()` on macOS, WebKitGTK's print operation
+on Linux) — several days rather than an afternoon, and platform-specific code at
+a moment when Windows support is already in question. Do not design further
+until the spike answers.
+
+- **Given** a file open in the inline viewer (FR-CHAT-10)
+- **When** the user activates the export action
+- **Then** the system print dialog opens, from which the OS offers "Save as PDF"
+- **And** what is printed is the rendered document only — not the app chrome,
+  the backdrop, the chat behind it, or the viewer's own buttons
+- **And** the user chooses the destination through the native dialog; Buddy
+  never writes the PDF to a location it picked
+- **And** the file on disk is untouched — the export is a rendering, not a
+  conversion
+
+**Why the print dialog rather than a PDF library.** It reuses the exact HTML the
+viewer already renders, so the PDF matches what the user is looking at, keeps
+selectable text, and adds no dependency. A client-side library would either
+rasterize the DOM — unselectable text, poor print quality — or re-implement
+markdown layout and drift from the viewer. It is also the clearer concept: the
+user is printing or exporting *a version of* content that stays where it was.
+Nothing leaves their space; a copy is made.
+
+**Why it does not contradict FR-CHAT-11.** That requirement withdrew handing a
+file to an external program, because a link the *agent* wrote must never
+invoke the system opener. This is the user acting on the document they are
+already looking at, through a native dialog they drive. Stated explicitly so a
+later reader does not read it as an oversight.
+
+**Why it is worth building.** Markdown is right for editing and wrong for
+sending. A report or article Buddy helped write is trapped for any recipient
+without a markdown renderer — and "send it to someone" is the ordinary next step
+for the target user, who is not going to install one. FR-CHAT-15 compounds with
+it: with frontmatter no longer rendered, the exported PDF carries no bookkeeping
+metadata without any extra work.
 
 ### 3.2 First-Run / Onboarding (FR-SETUP)
 
