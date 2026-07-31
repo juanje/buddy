@@ -106,6 +106,53 @@ Feature: Inline file viewer (FR-CHAT-10, FR-CHAT-11)
     Then the file viewer is open
     And the file viewer shows an error
 
+  # --- FR-CHAT-15: frontmatter is metadata, not content ---
+  #
+  # `---` under text is a setext heading in markdown, so rendering the raw file
+  # turns the metadata block into an <hr> plus an H2 — the largest thing on the
+  # page, above the content it describes.
+
+  Scenario: Frontmatter is kept out of the rendered body
+    Given a readable file "agent_brain/concepts/foo.md" with content "---\nsummary: What this holds\nlast_accessed: 2026-07-30\naccess_count: 4\ncreated: 2026-01-01\n---\n\n# Title\n\nBody"
+    When the file viewer opens "agent_brain/concepts/foo.md"
+    Then the file viewer shows content "# Title\n\nBody"
+    And the file viewer shows summary "What this holds"
+
+  Scenario: A file without frontmatter renders unchanged and has no summary
+    Given a readable file "agent_brain/concepts/foo.md" with content "# Title\n\nBody"
+    When the file viewer opens "agent_brain/concepts/foo.md"
+    Then the file viewer shows content "# Title\n\nBody"
+    And the file viewer shows no summary
+
+  Scenario: Frontmatter without a summary field surfaces nothing in the header
+    Given a readable file "agent_brain/concepts/foo.md" with content "---\naccess_count: 4\n---\n\nBody"
+    When the file viewer opens "agent_brain/concepts/foo.md"
+    Then the file viewer shows content "Body"
+    And the file viewer shows no summary
+
+  # A horizontal rule is not a frontmatter block: it is content, and the file
+  # opens with it only when the author put it there.
+  Scenario: A leading horizontal rule is not treated as frontmatter
+    Given a readable file "agent_brain/concepts/foo.md" with content "---\n\n# Title"
+    When the file viewer opens "agent_brain/concepts/foo.md"
+    Then the file viewer shows content "---\n\n# Title"
+    And the file viewer shows no summary
+
+  # Plain text has no frontmatter convention — a .txt starting with dashes is
+  # showing the user exactly what the file says.
+  Scenario: Frontmatter is not stripped from a plain text file
+    Given a readable file "user/notes/readme.txt" with content "---\nsummary: not metadata here\n---\n\nPlain notes"
+    When the file viewer opens "user/notes/readme.txt"
+    Then the file viewer shows content "---\nsummary: not metadata here\n---\n\nPlain notes"
+    And the file viewer shows no summary
+
+  Scenario: Reopening a file without frontmatter clears the previous summary
+    Given a readable file "agent_brain/concepts/foo.md" with content "---\nsummary: First file\n---\n\nBody"
+    And a readable file "agent_brain/concepts/bar.md" with content "# Bare\n\nBody"
+    When the file viewer opens "agent_brain/concepts/foo.md"
+    And the file viewer opens "agent_brain/concepts/bar.md"
+    Then the file viewer shows no summary
+
   # --- The removed capability stays removed ---
 
   Scenario: The file viewer offers no external-open action

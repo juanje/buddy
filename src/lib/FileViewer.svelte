@@ -11,6 +11,7 @@
   const filePath = $derived(controller.filePath);
   const fileName = $derived(controller.fileName);
   const content = $derived(controller.content);
+  const summary = $derived(controller.summary);
   const error = $derived(controller.error);
   const isMarkdown = $derived(controller.isMarkdown);
   const loading = $derived(controller.loading);
@@ -66,6 +67,11 @@
         {/if}
         <div class="title-wrap">
           <h2 id="file-viewer-title">{$fileName}</h2>
+          <!-- The file's own one-line description, lifted out of the frontmatter
+               that no longer renders in the body (FR-CHAT-15). -->
+          {#if $summary}
+            <p class="summary">{$summary}</p>
+          {/if}
           <p class="path" title={$filePath}>{$filePath}</p>
         </div>
         <button type="button" class="close" onclick={() => controller.close()}>
@@ -133,6 +139,12 @@
     margin: 0;
     font-size: 18px;
     line-height: 1.3;
+  }
+  .summary {
+    margin: 4px 0 0;
+    color: var(--fg);
+    font-size: 13px;
+    line-height: 1.4;
   }
   .path {
     margin: 4px 0 0;

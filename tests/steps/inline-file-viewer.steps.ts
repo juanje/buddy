@@ -19,6 +19,16 @@ interface InlineFileViewerWorld {
   fileViewer?: ReturnType<typeof createFileViewerController>;
 }
 
+/**
+ * Cucumber's {string} hands back the characters between the quotes, so `\n` in
+ * a feature file arrives as a backslash and an n. Scenarios that only compare
+ * one literal against another never noticed; FR-CHAT-15 is about a block
+ * delimited by real line breaks, so it does.
+ */
+function gherkinText(value: string): string {
+  return value.replace(/\\n/g, "\n");
+}
+
 function readStore<T>(store: { subscribe: (fn: (value: T) => void) => () => void }): T {
   let value!: T;
   store.subscribe((next) => {
@@ -46,7 +56,7 @@ Given("the buddy root directory is {string}", function (this: InlineFileViewerWo
 Given(
   "a readable file {string} with content {string}",
   function (this: InlineFileViewerWorld, relPath: string, content: string) {
-    this.fileContents?.set(relPath, content);
+    this.fileContents?.set(relPath, gherkinText(content));
   },
 );
 
@@ -101,7 +111,15 @@ Then("the file viewer content is plain text", function (this: InlineFileViewerWo
 });
 
 Then("the file viewer shows content {string}", function (this: InlineFileViewerWorld, content: string) {
-  assert.equal(readStore(this.fileViewer!.content), content);
+  assert.equal(readStore(this.fileViewer!.content), gherkinText(content));
+});
+
+Then("the file viewer shows summary {string}", function (this: InlineFileViewerWorld, summary: string) {
+  assert.equal(readStore(this.fileViewer!.summary), summary);
+});
+
+Then("the file viewer shows no summary", function (this: InlineFileViewerWorld) {
+  assert.equal(readStore(this.fileViewer!.summary), undefined);
 });
 
 Then("the file viewer shows an error", function (this: InlineFileViewerWorld) {

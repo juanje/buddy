@@ -3,6 +3,7 @@
 import { get, writable, type Readable } from "svelte/store";
 
 import { basename } from "../utils/path";
+import { splitFrontmatter } from "../../shared/frontmatter";
 import { resolveViewablePath } from "../../shared/viewable-path";
 
 export interface FileViewerDeps {
@@ -20,6 +21,12 @@ export interface FileViewerController {
   filePath: Readable<string>;
   fileName: Readable<string>;
   content: Readable<string>;
+  /**
+   * The `summary` frontmatter field of the open document, when it has one
+   * (FR-CHAT-15). Undefined for plain text, for files without frontmatter, and
+   * for frontmatter that declares no summary.
+   */
+  summary: Readable<string | undefined>;
   error: Readable<string | undefined>;
   isMarkdown: Readable<boolean>;
   loading: Readable<boolean>;
@@ -43,6 +50,7 @@ export function createFileViewerController(deps: FileViewerDeps): FileViewerCont
   const filePathStore = writable("");
   const fileNameStore = writable("");
   const contentStore = writable("");
+  const summaryStore = writable<string | undefined>(undefined);
   const errorStore = writable<string | undefined>(undefined);
   const isMarkdownStore = writable(false);
   const loadingStore = writable(false);
@@ -55,14 +63,26 @@ export function createFileViewerController(deps: FileViewerDeps): FileViewerCont
     openStore.set(true);
     filePathStore.set(relPath);
     fileNameStore.set(basename(relPath));
-    isMarkdownStore.set(/\.md$/i.test(relPath));
+    const isMarkdown = /\.md$/i.test(relPath);
+    isMarkdownStore.set(isMarkdown);
     contentStore.set("");
+    summaryStore.set(undefined);
     errorStore.set(undefined);
     loadingStore.set(true);
 
     try {
       const text = await deps.readViewableFile(relPath);
-      contentStore.set(text);
+      // Frontmatter is metadata, and markdown renders it as a rule plus a
+      // setext heading — the biggest thing on the page (FR-CHAT-15). Plain text
+      // has no such convention, so a .txt opening with dashes says exactly what
+      // the user should see.
+      if (isMarkdown) {
+        const { fields, body } = splitFrontmatter(text);
+        contentStore.set(body);
+        summaryStore.set(fields.summary);
+      } else {
+        contentStore.set(text);
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       errorStore.set(message);
@@ -108,6 +128,7 @@ export function createFileViewerController(deps: FileViewerDeps): FileViewerCont
     filePathStore.set("");
     fileNameStore.set("");
     contentStore.set("");
+    summaryStore.set(undefined);
     errorStore.set(undefined);
     isMarkdownStore.set(false);
     loadingStore.set(false);
@@ -118,6 +139,7 @@ export function createFileViewerController(deps: FileViewerDeps): FileViewerCont
     filePath: { subscribe: filePathStore.subscribe },
     fileName: { subscribe: fileNameStore.subscribe },
     content: { subscribe: contentStore.subscribe },
+    summary: { subscribe: summaryStore.subscribe },
     error: { subscribe: errorStore.subscribe },
     isMarkdown: { subscribe: isMarkdownStore.subscribe },
     loading: { subscribe: loadingStore.subscribe },

@@ -96,6 +96,7 @@ rootDir (git repo — user/agent content only)
 | FR-CHAT-12 | Navigation inside the inline viewer | 2 ✓ |
 | FR-CHAT-13 | Prompts sent during session boot are queued, not dropped | 2 ✓ |
 | FR-CHAT-14 | An assistant turn with no visible text renders nothing | 2 ✓ |
+| FR-CHAT-15 | The inline viewer does not render frontmatter as content | 3 ✓ |
 
 **FR-CHAT-01 — Streaming message display**
 
@@ -263,6 +264,26 @@ screen after those cleared, leaving a column of empty grey boxes.
 Not local-specific in principle — any provider that emits a turn with no text
 produces one — but frequent enough with local models to be the thing that
 surfaced it.
+
+**FR-CHAT-15 — The inline viewer does not render frontmatter as content**
+
+- **Given** a markdown file whose first line is `---` opening a YAML frontmatter block
+- **When** it is opened in the inline viewer (FR-CHAT-10)
+- **Then** the rendered body starts at the content, with no frontmatter in it
+- **And** the `summary` field, when present, is shown in the viewer header
+  beneath the file name
+- **And** the remaining fields (`last_accessed`, `access_count`, `created`) are
+  not shown — they are Hebbian bookkeeping, written by the worker and meaningful
+  to consolidation, not to the user
+- **But when** the file has no frontmatter
+- **Then** it renders exactly as before, and the header shows name and path only
+- **And** the file on disk is never modified — this is presentation only
+
+**Why it is not cosmetic.** `renderMarkdown` receives the raw text, and in
+markdown a `---` line under text is a setext heading. Frontmatter therefore
+renders as a horizontal rule followed by an H2 built from the metadata: opening
+any brain file makes `summary: … last_accessed: …` the largest thing on the
+page, above the content it describes.
 
 ### 3.2 First-Run / Onboarding (FR-SETUP)
 
