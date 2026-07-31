@@ -97,7 +97,7 @@ rootDir (git repo — user/agent content only)
 | FR-CHAT-13 | Prompts sent during session boot are queued, not dropped | 2 ✓ |
 | FR-CHAT-14 | An assistant turn with no visible text renders nothing | 2 ✓ |
 | FR-CHAT-15 | The inline viewer does not render frontmatter as content | 3 ✓ |
-| FR-CHAT-16 | Buddy paths in assistant text become labelled links | 3 |
+| FR-CHAT-16 | Buddy paths in assistant text become labelled links | 3 ✓ |
 | FR-CHAT-17 | `show_file` — the agent opens a file in the viewer | 3 |
 | FR-CHAT-18 | Export the viewed file as PDF via the system print dialog | 3 |
 
@@ -300,14 +300,35 @@ page, above the content it describes.
   - under `user/` or `downloads/` — the full relative path
 - **And** the full path remains available in every case: in the link's `title`,
   and in the viewer header once opened
-- **But when** the path is inside a code span or code block
-- **Then** it is left exactly as written — there it is content, not a reference
+- **And when** a code span holds nothing but such a path — `` `user/inbox.md` ``
+- **Then** it becomes a link too: wrapping a file name in backticks is how a
+  model writes a path in prose, so that *is* the reference, not a quotation
+- **But when** the path is inside a fenced or indented code block, or inside a
+  code span holding anything else besides the path
+- **Then** it is left exactly as written — there it is content being shown
 - **And when** the path is already inside a markdown link — as the href **or**
   as the link's visible text
 - **Then** it is left alone, so no link is ever produced inside another
 - **And when** the path does not resolve to a viewable file, or falls outside
   the four user-facing directories
 - **Then** it is left as plain text, never linked
+
+**Given** the agent wrote the link itself, and its label is nothing but the
+target path — bare or inside a code span, which is the form Buddy actually
+emits
+- **Then** the label is replaced by the same zone-dependent one an autolinked
+  path would get
+- **But when** the label says anything else (`[mi perfil](…)`)
+- **Then** it is left alone: the agent chose a description, and that is better
+  than any rule here
+
+**Why this half exists.** Observed in dev: asked for the paths of three files,
+Buddy answered with `` [`agent_brain/identity/USER.md`](agent_brain/…) `` — a
+markdown link whose label is a code span of the path. Autolinking never sees it,
+because the path is already inside a link, so the full internal path reached the
+user with the backticks still around it. A rule that only governs the paths
+*Buddy did not link* leaves the most polished-looking case as the worst-looking
+one.
 
 **Why the label follows the directory rather than a lookup table.** The four
 user-facing directories already split in two, and the app makes that split
@@ -324,6 +345,14 @@ considered and rejected: it is a hand-maintained list that needs translating per
 locale, goes stale silently, and reintroduces inconsistency for everything it
 omits — while the files that would benefit most, `USER.md` and `SOUL.md`, read
 well enough as names.
+
+**Why a code span counts, established by testing in dev (2026-07-31).** It is
+tempting to read backticks as "content, not reference" and exempt them. Buddy's
+actual habit is the opposite: asked where a file lives, it answers with ``
+`agent_brain/identity/USER.md` `` — for a path in prose, backticks *are* how a
+model writes the reference. Exempting them leaves the most common case in the
+product unlinked. What distinguishes a quotation is the rest of the span: `cat
+user/inbox.md` is a command, and a fenced block is a listing.
 
 **Nested links are a defect this must not produce.** `src/lib/markdown.ts`
 renders through marked's token hooks, so this belongs at the token level. A

@@ -16,6 +16,7 @@
 import { Marked } from "marked";
 
 import { isExternalHref } from "./local-path";
+import { autolinkPathTokens } from "./path-autolink";
 
 /** Escape text destined for an HTML text node. */
 function escapeHtml(value: string): string {
@@ -73,16 +74,22 @@ const parser = new Marked({
     html({ text }) {
       return escapeHtml(text);
     },
-    link({ href, title, text }) {
+    link({ href, title, text, tokens }) {
       const safeHref = href ?? "#";
       const titleAttr = title ? ` title="${escapeAttr(title)}"` : "";
+      // The label is markdown and has to be parsed as such. Reading `text` off
+      // the token gives the raw source instead, which is why `[**bold**](x)`
+      // used to render its asterisks and a code-span label kept its backticks
+      // on screen. Raw HTML inside a label still passes through the `html` hook
+      // above, so NFR-SEC-10 is unaffected.
+      const label = tokens?.length ? this.parser.parseInline(tokens) : escapeHtml(text ?? "");
       if (isExternalHref(safeHref)) {
-        return `<a href="${escapeAttr(safeHref)}" target="_blank" rel="noopener noreferrer"${titleAttr}>${text}</a>`;
+        return `<a href="${escapeAttr(safeHref)}" target="_blank" rel="noopener noreferrer"${titleAttr}>${label}</a>`;
       }
       // Local links carry the target in a data attribute and an inert href, so
       // a `javascript:` or `data:` URL can never become a navigable target.
       // The worker validates the path before anything is read (FR-CHAT-11).
-      return `<a href="#" data-local-path="${escapeAttr(safeHref)}"${titleAttr}>${text}</a>`;
+      return `<a href="#" data-local-path="${escapeAttr(safeHref)}"${titleAttr}>${label}</a>`;
     },
     code({ text, lang }) {
       const language = lang?.trim();
@@ -101,5 +108,10 @@ const parser = new Marked({
 /** Render assistant markdown to HTML for {@html} binding. */
 export function renderMarkdown(text: string): string {
   if (!text.trim()) return "";
-  return parser.parse(text) as string;
+  // Lex and parse in two steps so bare buddy paths can be turned into links on
+  // the token tree (FR-CHAT-16). Doing it on the rendered HTML instead would
+  // put an anchor inside an anchor the agent wrote.
+  const tokens = parser.lexer(text);
+  autolinkPathTokens(tokens);
+  return parser.parser(tokens);
 }
