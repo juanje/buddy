@@ -9,7 +9,6 @@ import {
   appendDailyLog,
   finalizeCheckpointToDailyLog,
   finalizeReflectToDailyLog,
-  parseFrontmatter,
   sanitizeReflectOutput,
   updateLogsIndexEntry,
 } from "../../backends/reflect";
@@ -335,13 +334,5 @@ describe("updateLogsIndexEntry", () => {
     const index = readFileSync(join(dir, "logs", "index.md"), "utf8");
     expect(index).toContain("- 2026-07-23: active — Key themes from Day summary");
     expect(index).not.toContain("Different context line");
-  });
-});
-
-describe("parseFrontmatter", () => {
-  it("parses yaml frontmatter fields", () => {
-    const fm = parseFrontmatter("---\ndate: 2026-07-23\nstatus: active\n---\n");
-    expect(fm.date).toBe("2026-07-23");
-    expect(fm.status).toBe("active");
   });
 });

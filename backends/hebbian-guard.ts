@@ -21,7 +21,7 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 import { toBuddyRelPath } from "../shared/path-utils";
-import { parseFrontmatter } from "./reflect";
+import { parseFrontmatter } from "../shared/frontmatter";
 
 /** Fields the worker owns; the model may read them, never write them. */
 const GUARDED_FIELDS = ["access_count", "last_accessed"] as const;

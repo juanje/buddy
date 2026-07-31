@@ -5,7 +5,7 @@ import { resolve } from "node:path";
 
 import { toIsoDay } from "../shared/dates";
 import { toBuddyRelPath } from "../shared/path-utils";
-import { parseFrontmatter } from "./reflect";
+import { parseFrontmatter } from "../shared/frontmatter";
 import { BRAIN, BRAIN_PREFIX, BRAIN_SUBDIRS, INDEX_SUFFIX, dirPrefix } from "../shared/brain-paths";
 
 export interface HebbianTracker {

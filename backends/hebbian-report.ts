@@ -5,7 +5,7 @@ import { join, relative } from "node:path";
 
 import { addDays, toIsoDay } from "../shared/dates";
 import { HEBBIAN_DEMOTION_MIN_SESSIONS, HEBBIAN_RECENT_DAYS } from "../shared/defaults";
-import { parseFrontmatter } from "./reflect";
+import { parseFrontmatter } from "../shared/frontmatter";
 import { brainDirPath, logsIndexPath } from "./brain-paths";
 import { BRAIN, BRAIN_PREFIX, BRAIN_SUBDIRS, INDEX_SUFFIX, dirPrefix } from "../shared/brain-paths";
 

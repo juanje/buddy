@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
-import { parseFrontmatter } from "../../backends/reflect";
+import { parseFrontmatter } from "../../shared/frontmatter";
 import { toIsoDay } from "../../shared/dates";
 import type { BuddyWorld } from "../support/world";
 

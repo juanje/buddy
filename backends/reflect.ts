@@ -28,18 +28,6 @@ export interface FinalizeCheckpointOptions {
   sections: string;
 }
 
-export function parseFrontmatter(content: string): Record<string, string> {
-  const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
-  if (!match) return {};
-  const fields: Record<string, string> = {};
-  for (const line of match[1].split("\n")) {
-    const idx = line.indexOf(":");
-    if (idx === -1) continue;
-    fields[line.slice(0, idx).trim()] = line.slice(idx + 1).trim();
-  }
-  return fields;
-}
-
 function updateLastUpdatedFrontmatter(content: string, now: Date): string {
   const stamp = now.toISOString().slice(0, 16);
   if (/^last_updated:/m.test(content)) {

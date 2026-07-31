@@ -13,7 +13,7 @@ import {
   FRONTMATTER_EXEMPT_FILES,
   REQUIRED_BRAIN_FRONTMATTER,
 } from "../shared/defaults";
-import { parseFrontmatter } from "./reflect";
+import { parseFrontmatter } from "../shared/frontmatter";
 import { brainDirPath } from "./brain-paths";
 import { BRAIN_PREFIX, BRAIN_SUBDIRS, dirPrefix } from "../shared/brain-paths";
 
