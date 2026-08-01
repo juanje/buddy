@@ -26,10 +26,17 @@ Verified 2026-07-30.
 |------|-------|------|
 | FR-REFLECT-07 has no test | `backends/reflect-child.ts:249` | The watchdog is implemented and correct; nothing trips it. Not marked ✓, and it should not be until a test exists. |
 | 20 FRs marked ✓ that no test names | `UNBACKED_BASELINE` in `tests/unit/fr-status.test.ts` | Frozen so it cannot grow. Three different problems — the comment there sorts them. FR-SETTINGS/FR-GIT are the cheap ones: the tests exist, they just don't cite the ID. |
-| Three oversized functions | `agent-worker.ts` `main()` (282 lines, **no test at all**), `createSetupController` (331), `createChatController` (265) | `main()` would most repay it. Architectural — deliberately or not at all. |
+| Three oversized functions | `agent-worker.ts` `main()` (~290 lines), `createSetupController` (331), `createChatController` (265) | `main()` now has one test — that startup does not wait on the model catalogue — and an injection seam for its dependencies. Still the one that would most repay splitting. |
 | `"Login cancelled"` as a string sentinel across RPC | `backends/oauth-service.ts` + two frontend controllers | Documented at `shared/api.ts:97`. |
 | `toBuddyRelPath` is a second lexical containment helper | `shared/path-utils.ts`, used by `hebbian.ts` / `hebbian-guard.ts` | **Not a hole** — both callers are trackers, not enforcement, and it collapses `..`. But `containment.ts`'s header reads as though all four helpers were consolidated. Move the callers to `containedRelPath`, or say in the header why tracking is exempt. |
 | `worker-proxy.ts` boilerplate; duplicated lock loop in `state-file.ts`; duplicated provider-auth flow across the two controllers | — | Maintenance audit leftovers. Cosmetic. |
+
+**Watching, not fixed: `pi.dev` hangs rather than failing.** It accepts TCP and
+never answers, so the model-catalogue fetch costs a 15s abort every launch. The
+worker no longer waits for it, but the first session still does — a user can
+open Buddy instantly and then wait to send a prompt. Bounding that wait, or
+running with the cached catalogue when the host is unreachable, is the next
+step if this persists.
 
 **Declined, do not re-open:** the third `saveConsolidationState` in
 `runConsolidation`. Reviewed twice, kept on purpose; the reason is in a comment

@@ -37,6 +37,7 @@ import { resolveSessionModel } from "./model-switch";
 import { OAuthService } from "./oauth-service";
 import { alignHttpDispatcherWithPi } from "./pi-http-dispatcher";
 import { checkPrerequisites } from "./prereqs";
+import type { ModelRuntime } from "@earendil-works/pi-coding-agent";
 import { configureProviderKey, createBuddyModelRuntime } from "./provider-auth";
 import {
   fromPiProviderId,
@@ -45,7 +46,11 @@ import {
 import { getDueDeferred, removeDueDeferredItems, toDeferredItemViews } from "./deferred";
 import { toIsoDay } from "../shared/dates";
 import { commitAll } from "./git";
-import { CONSOLIDATION_RETRY_CEILING, GIT_COMMIT_PREFIX } from "../shared/defaults";
+import {
+  CONSOLIDATION_RETRY_CEILING,
+  FORBID_WORKER_AUTOSTART_ENV,
+  GIT_COMMIT_PREFIX,
+} from "../shared/defaults";
 import { bootSession, augmentPromptWithAttachments } from "./session-boot";
 import { recoverStaleSession } from "./crash-recovery";
 import { spawnReflectChild } from "./reflect-spawn";
@@ -76,13 +81,32 @@ function notifyFrontend(scope: string, method: string, send: () => void): void {
   }
 }
 
-async function main(): Promise<void> {
+export interface WorkerDeps {
+  /**
+   * Injectable so a test can hold it pending. It reaches the network — the Pi
+   * model catalogue — and nothing on the startup path may wait for that.
+   */
+  createModelRuntime?: () => Promise<ModelRuntime>;
+  /** Streams for the RPC transport. Defaults to this process's stdio. */
+  streams?: { readable: NodeJS.ReadableStream; writable: NodeJS.WritableStream };
+}
+
+export async function main(deps: WorkerDeps = {}): Promise<void> {
   const configDir = globalConfigDir();
   ensureConfigDirMode(configDir); // NFR-SEC-17, before anything is written into it
   bootRefreshIfNeeded(configDir);
   await alignHttpDispatcherWithPi();
 
-  const modelRuntime = await createBuddyModelRuntime();
+  // Started, not awaited. Building the runtime fetches the remote model
+  // catalogue, and on 2026-08-01 `pi.dev` began accepting connections without
+  // ever answering: every launch cost 15s of blank window, because the RPC
+  // channel below did not exist yet. Buddy's own availability must not depend
+  // on a third party's (NFR-PERF-02). Each use awaits it; all of them run after
+  // the channel is up.
+  const modelRuntimeReady = (deps.createModelRuntime ?? createBuddyModelRuntime)();
+  // A rejection here is surfaced where it is awaited, but an unawaited promise
+  // that rejects first would take the process down.
+  modelRuntimeReady.catch(() => {});
 
   // FR-SETUP-01: on first run there is no buddy directory to open a session in.
   // The channel is created either way (the wizard talks to the worker later);
@@ -125,9 +149,9 @@ async function main(): Promise<void> {
     return usageTracker;
   }
 
-  function ensureOAuthService(): OAuthService {
+  async function ensureOAuthService(): Promise<OAuthService> {
     if (!oauthService) {
-      oauthService = new OAuthService(modelRuntime, {
+      oauthService = new OAuthService(await modelRuntimeReady, {
         onEvent: (event) => frontend.onOAuthEvent(event),
       });
     }
@@ -139,11 +163,11 @@ async function main(): Promise<void> {
     heartbeat = undefined;
   }
 
-  function restartHeartbeat(rootDir: string): void {
+  async function restartHeartbeat(rootDir: string): Promise<void> {
     stopHeartbeat();
     heartbeat = startHeartbeat({
       rootDir,
-      modelRuntime,
+      modelRuntime: await modelRuntimeReady,
       isStreaming: () => core?.isStreaming() ?? false,
       isBudgetNearLimit: () => ensureUsageTracker().isBudgetNearLimit(),
       onDeferredDue: (items) => {
@@ -173,7 +197,7 @@ async function main(): Promise<void> {
       rootDir,
       {
         frontend,
-        modelRuntime,
+        modelRuntime: await modelRuntimeReady,
         sessionAllowedPaths,
         persistentAllowedPaths: () => persistentAllowedPaths,
         usageTracker: ensureUsageTracker(),
@@ -193,7 +217,7 @@ async function main(): Promise<void> {
     );
     if (!booted) return;
     core = booted.core;
-    restartHeartbeat(rootDir);
+    await restartHeartbeat(rootDir);
     ensureUsageTracker().checkAndFireAlerts();
     // FR-CHAT-13: tell the frontend before flushing, so the "preparing" notice
     // clears as the queued prompt starts streaming rather than after it ends.
@@ -203,7 +227,7 @@ async function main(): Promise<void> {
     await promptQueue.ready((text, promptOptions) => booted.core.api.prompt(text, promptOptions));
   }
 
-  const transport = nodeStdioTransport();
+  const transport = nodeStdioTransport(deps.streams);
   const channel = new RPCChannel<WorkerAPI, FrontendAPI>(transport, {
     expose: {
       async prompt(text: string, options?: PromptOptions) {
@@ -245,27 +269,28 @@ async function main(): Promise<void> {
         return configureProviderKey(provider, apiKey, { baseUrl });
       },
       async loginOAuth(provider) {
-        return ensureOAuthService().login(provider);
+        return (await ensureOAuthService()).login(provider);
       },
       async answerOAuthPrompt(requestId, value) {
-        ensureOAuthService().answerPrompt(requestId, value);
+        (await ensureOAuthService()).answerPrompt(requestId, value);
       },
       async cancelOAuthLogin() {
-        ensureOAuthService().cancel();
+        (await ensureOAuthService()).cancel();
       },
       async listModels(provider) {
-        return listModelsForProvider(modelRuntime, provider);
+        return listModelsForProvider(await modelRuntimeReady, provider);
       },
       async getAuthStatus() {
+        const runtime = await modelRuntimeReady;
         const providers = WIZARD_PI_PROVIDERS.map((piProviderId) => {
           const buddyProvider = fromPiProviderId(piProviderId);
-          const status = modelRuntime.getProviderAuthStatus(piProviderId);
+          const status = runtime.getProviderAuthStatus(piProviderId);
           return {
             piProviderId,
             buddyProvider: buddyProvider ?? ("openai" as SetupConfig["provider"]),
             hasAuth: status.configured,
             authType: status.configured
-              ? modelRuntime.isUsingOAuth(piProviderId)
+              ? runtime.isUsingOAuth(piProviderId)
                 ? ("oauth" as const)
                 : ("api_key" as const)
               : undefined,
@@ -318,7 +343,7 @@ async function main(): Promise<void> {
         if (!core) {
           throw new Error("No active session");
         }
-        const resolved = await resolveSessionModel(modelRuntime, provider, model);
+        const resolved = await resolveSessionModel(await modelRuntimeReady, provider, model);
         await core.api.setModel(resolved);
         writePiSettings(setupState.config.rootDir, { provider, model });
         const updated = updateAppConfig({ provider, model }, globalConfigPath());
@@ -352,9 +377,14 @@ async function main(): Promise<void> {
   }
 }
 
-main().catch((err) => {
-  // Worker crash surfaces as a process exit; tauri-plugin-js onExit notifies
-  // the frontend, which shows a friendly error + restart option (NFR-REL-05).
-  console.error("[agent-worker] fatal:", err);
-  process.exit(1);
-});
+// Importing this module must not start a worker: the test that drives `main`
+// with a pending model runtime imports it (NFR-TEST-02 has the same shape for
+// reflect spawning).
+if (!process.env[FORBID_WORKER_AUTOSTART_ENV]) {
+  main().catch((err) => {
+    // Worker crash surfaces as a process exit; tauri-plugin-js onExit notifies
+    // the frontend, which shows a friendly error + restart option (NFR-REL-05).
+    console.error("[agent-worker] fatal:", err);
+    process.exit(1);
+  });
+}

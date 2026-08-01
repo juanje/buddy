@@ -75,6 +75,11 @@ export const LOG_ROTATION_THRESHOLD = 28;
  * way the silent fork did.
  */
 export const FORBID_REAL_REFLECT_SPAWN_ENV = "BUDDY_FORBID_REAL_REFLECT_SPAWN";
+/**
+ * Set by the test runners so importing `agent-worker.ts` does not start a real
+ * worker against the developer's own `~/.buddy` (NFR-TEST-02).
+ */
+export const FORBID_WORKER_AUTOSTART_ENV = "BUDDY_FORBID_WORKER_AUTOSTART";
 /** Env var set on spawned reflect children to prevent nested recursion. */
 export const REFLECT_CHILD_ENV_KEY = "BUDDY_REFLECT_CHILD";
 export const REFLECT_CHILD_ENV_VALUE = "1";
