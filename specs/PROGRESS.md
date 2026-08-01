@@ -31,12 +31,18 @@ Verified 2026-07-30.
 | `toBuddyRelPath` is a second lexical containment helper | `shared/path-utils.ts`, used by `hebbian.ts` / `hebbian-guard.ts` | **Not a hole** — both callers are trackers, not enforcement, and it collapses `..`. But `containment.ts`'s header reads as though all four helpers were consolidated. Move the callers to `containedRelPath`, or say in the header why tracking is exempt. |
 | `worker-proxy.ts` boilerplate; duplicated lock loop in `state-file.ts`; duplicated provider-auth flow across the two controllers | — | Maintenance audit leftovers. Cosmetic. |
 
-**Watching, not fixed: `pi.dev` hangs rather than failing.** It accepts TCP and
-never answers, so the model-catalogue fetch costs a 15s abort every launch. The
-worker no longer waits for it, but the first session still does — a user can
-open Buddy instantly and then wait to send a prompt. Bounding that wait, or
-running with the cached catalogue when the host is unreachable, is the next
-step if this persists.
+**Watching, not a defect of ours: `pi.dev` accepts connections and never
+answers.** Startup no longer waits on it, and the catalogue refresh is bounded
+at 2s (NFR-REL-09), so a cold launch pauses once and proceeds on the cached
+catalogue. Pi issues #7113 and #7443 are the same outage on SDK paths that have
+no timeout at all; the path Buddy uses does.
+
+**Pi SDK is three minors behind.** Installed 0.80.10, latest 0.83.0. Not urgent
+— the catalogue timeout is handled here, and #7113 is still open upstream — but
+0.83 changed `ModelRuntime.create` so the network refresh runs only when
+`allowModelNetwork` is explicitly true. `createBuddyModelRuntime` now states it,
+so the upgrade is safe to make. Give it its own cycle with a dev run, like the
+actions bump.
 
 **Declined, do not re-open:** the third `saveConsolidationState` in
 `runConsolidation`. Reviewed twice, kept on purpose; the reason is in a comment
