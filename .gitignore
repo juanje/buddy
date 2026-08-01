@@ -7,3 +7,8 @@ src-tauri/binaries/
 *.log
 .DS_Store
 fixtures/consolidation-test/
+
+# Editor and OS leftovers. Never content, and the embedded-asset snapshot
+# walks the working tree, so a stray swap file would end up in the sidecar.
+*.sw[a-z]
+*~

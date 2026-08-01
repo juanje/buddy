@@ -6,22 +6,13 @@
 // committed so `tsc --noEmit` works without a build step; the build always
 // regenerates it, so the committed copy never goes stale in a release.
 
-import { readdirSync, readFileSync, writeFileSync } from "node:fs";
-import { join, relative, sep } from "node:path";
+import { readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+
+import { snapshotDir } from "./snapshot-assets";
 
 const ROOT = join(import.meta.dirname, "..");
 const OUT = join(ROOT, "backends", "embedded-assets.generated.ts");
-
-function snapshotDir(dir: string): Record<string, string> {
-  const files: Record<string, string> = {};
-  for (const entry of readdirSync(dir, { recursive: true, withFileTypes: true })) {
-    if (!entry.isFile()) continue;
-    const absolute = join(entry.parentPath, entry.name);
-    const key = relative(dir, absolute).split(sep).join("/");
-    files[key] = readFileSync(absolute, "utf8");
-  }
-  return Object.fromEntries(Object.entries(files).sort(([a], [b]) => a.localeCompare(b)));
-}
 
 const pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8")) as { version: string };
 const templates = snapshotDir(join(ROOT, "templates"));

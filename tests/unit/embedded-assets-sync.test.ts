@@ -13,9 +13,10 @@
 // comes from node_modules rather than from the repo, so it is not something a
 // contributor edits and forgets.
 
-import { readdirSync, readFileSync } from "node:fs";
-import { join, relative, sep } from "node:path";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+
+import { snapshotDir } from "../../scripts/snapshot-assets";
 
 import {
   EMBEDDED_DOCS,
@@ -24,17 +25,6 @@ import {
 } from "../../backends/embedded-assets.generated";
 
 const ROOT = join(__dirname, "..", "..");
-
-/** The same snapshot the generator takes: relative path → contents. */
-function snapshotDir(dir: string): Record<string, string> {
-  const files: Record<string, string> = {};
-  for (const entry of readdirSync(dir, { recursive: true, withFileTypes: true })) {
-    if (!entry.isFile()) continue;
-    const absolute = join(entry.parentPath, entry.name);
-    files[relative(dir, absolute).split(sep).join("/")] = readFileSync(absolute, "utf8");
-  }
-  return files;
-}
 
 const CASES: [string, Record<string, string>, string[]][] = [
   ["templates", EMBEDDED_TEMPLATES, ["templates"]],
