@@ -372,10 +372,6 @@ export function buildFetchTools(rootDir: string, options?: FetchToolOptions): To
   ];
 }
 
-export function fetchToolNames(tools: ToolDefinition[]): string[] {
-  return tools.map((tool) => tool.name);
-}
-
 /** Invoke fetch_url and return text + details (tests + BDD). */
 export async function executeFetchTool(
   tools: ToolDefinition[],

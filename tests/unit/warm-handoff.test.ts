@@ -24,6 +24,7 @@ describe("warm handoff", () => {
       onWorkerError: vi.fn(),
       onPermissionRequest: vi.fn(),
       onOAuthEvent: vi.fn(),
+      onShowFile: vi.fn(),
       onDeferredDue: vi.fn(),
       onBudgetAlert: vi.fn(),
     onMaintenancePaused: vi.fn(),

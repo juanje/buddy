@@ -139,6 +139,12 @@
           onOAuthEvent(event) {
             void handleOAuthEvent(event);
           },
+          onShowFile(relPath) {
+            // FR-CHAT-17. The path was validated worker-side, exactly as a
+            // clicked link is; the viewer opens it the same way either way.
+            devLog(`show file: ${relPath}`);
+            void fileViewerController?.openFile(relPath);
+          },
           onDeferredDue(items) {
             devLog(`deferred due: ${items.length} item(s)`);
             deferredItems = items;

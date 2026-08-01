@@ -5,6 +5,7 @@ import {
   DefaultResourceLoader,
   ModelRuntime,
   SessionManager,
+  type ToolDefinition,
 } from "@earendil-works/pi-coding-agent";
 import { existsSync, readFileSync } from "node:fs";
 import { randomUUID } from "node:crypto";
@@ -21,9 +22,10 @@ import { extractPdfText } from "./pdf-extract";
 import { assembleSessionContext, assembleSystemPrompt } from "./prompt";
 import { injectSessionContext } from "./context-injection";
 import { buddyAgentDir, globalConfigDir } from "./global-config";
-import { buildSkillTools, skillToolNames } from "./skill-tools";
-import { buildFetchTools, fetchToolNames } from "./fetch-url";
-import { buildFileTools, fileToolNames } from "./file-tools";
+import { buildSkillTools } from "./skill-tools";
+import { buildFetchTools } from "./fetch-url";
+import { buildFileTools } from "./file-tools";
+import { buildShowFileTools } from "./show-file-tool";
 import { SessionLifecycle } from "./session-lifecycle";
 import { persistLiveSession } from "./crash-recovery";
 import { createWorkerCore, type PiSessionLike, type WorkerCore } from "./worker-core";
@@ -37,6 +39,44 @@ export interface SessionBootContext {
   sessionAllowedPaths: Set<string>;
   persistentAllowedPaths: () => AllowedEntry[];
   usageTracker?: UsageTracker;
+}
+
+export interface AgentToolsetDeps {
+  requestPermission: (request: Omit<PermissionRequest, "id">) => Promise<boolean>;
+  showFile: (relPath: string) => void;
+}
+
+/**
+ * The tools a live user session gets, as one value.
+ *
+ * Extracted so it can be tested, and because `tools` and `customTools` are two
+ * lists that have to agree: a custom tool absent from `tools` is registered and
+ * never offered to the model, which looks exactly like the model choosing not
+ * to call it. Building both from the same array is what makes them agree, and
+ * `tests/unit/agent-toolset.test.ts` holds them to it.
+ *
+ * Consolidation assembles its own set (`consolidation-runner.ts`) — it runs
+ * without a user to ask or a window to show anything in.
+ */
+export function buildAgentToolset(
+  rootDir: string,
+  deps: AgentToolsetDeps,
+): { names: string[]; customTools: ToolDefinition[] } {
+  const skillTools = buildSkillTools(join(globalConfigDir(), "prompts"));
+  const fetchTools = buildFetchTools(rootDir);
+  const fileTools = buildFileTools(rootDir, {
+    confirmDelete: (absPath) =>
+      deps.requestPermission({ kind: "delete-file", op: "write", path: absPath }),
+    askReadPermission: (absPath) =>
+      deps.requestPermission({ kind: "outside", op: "read", path: absPath }),
+  });
+  const showFileTools = buildShowFileTools({ rootDir, showFile: deps.showFile });
+
+  const customTools = [...skillTools, ...fetchTools, ...fileTools, ...showFileTools];
+  return {
+    names: [...AGENT_TOOLS, ...customTools.map((tool) => tool.name)],
+    customTools,
+  };
 }
 
 export interface BootSessionOptions {
@@ -143,14 +183,18 @@ export async function bootSession(
   });
   await resourceLoader.reload();
 
-  const promptsDir = join(globalConfigDir(), "prompts");
-  const skillTools = buildSkillTools(promptsDir);
-  const fetchTools = buildFetchTools(rootDir);
-  const fileTools = buildFileTools(rootDir, {
-    confirmDelete: (absPath) =>
-      context.requestPermission({ kind: "delete-file", op: "write", path: absPath }),
-    askReadPermission: (absPath) =>
-      context.requestPermission({ kind: "outside", op: "read", path: absPath }),
+  const toolset = buildAgentToolset(rootDir, {
+    requestPermission: context.requestPermission,
+    showFile: (relPath) => {
+      // A failed push must not fail the tool call: the agent has already been
+      // told the file was opened, and a dropped RPC is the frontend's problem,
+      // not something to surface as a refusal.
+      try {
+        context.frontend.onShowFile(relPath);
+      } catch (err) {
+        console.error("[show_file] onShowFile RPC failed:", err);
+      }
+    },
   });
 
   const { session } = await createAgentSession({
@@ -162,13 +206,8 @@ export async function bootSession(
     resourceLoader,
     sessionManager: SessionManager.create(rootDir),
     excludeTools: [...EXCLUDED_TOOLS],
-    tools: [
-      ...AGENT_TOOLS,
-      ...skillToolNames(skillTools),
-      ...fetchToolNames(fetchTools),
-      ...fileToolNames(fileTools),
-    ],
-    customTools: [...skillTools, ...fetchTools, ...fileTools],
+    tools: toolset.names,
+    customTools: toolset.customTools,
     modelRuntime: context.modelRuntime,
   });
 

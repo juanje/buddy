@@ -73,6 +73,7 @@ How it works in practice:
 - Share a URL and Buddy fetches the page, extracts the main content as readable text, and saves a copy in your downloads folder. Works with web pages, online PDFs, and images.
 ### Reading Buddy's files inside the app
 
+- **Ask to see something and Buddy opens it for you** — "show me my profile", "let me see my inbox". The panel opens by itself; you don't have to find a link and click it.
 - When Buddy mentions one of your files, the link is clickable and the file opens in a panel inside Buddy — no text editor needed.
 - **Only `.md` and `.txt` files open this way**, and only from `agent_brain/`, `user/`, `downloads/` and `logs/`. Anything else is shown as plain text you can't click.
 - Documents that link to each other can be browsed: click a link inside an open document to follow it, and use Back to return the way you came.

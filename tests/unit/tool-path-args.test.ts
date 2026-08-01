@@ -20,9 +20,8 @@ import type { ToolDefinition } from "@earendil-works/pi-coding-agent";
 import { TOOL_PATH_ARGS, isPathShapedArgName, pathArgsOf } from "../../shared/tool-paths";
 import { AGENT_TOOLS } from "../../shared/defaults";
 import { createPermissionGate } from "../../backends/permissions";
-import { buildFileTools } from "../../backends/file-tools";
-import { buildFetchTools } from "../../backends/fetch-url";
 import { buildConsolidationTools } from "../../backends/consolidation-tools";
+import { buildAgentToolset } from "../../backends/session-boot";
 
 let home: string;
 let root: string;
@@ -102,9 +101,12 @@ describe("the gate reads every declared path argument", () => {
 
 describe("every registered tool declares its path arguments", () => {
   function registeredTools(): ToolDefinition[] {
+    // The live set comes from the function a session actually calls, so a tool
+    // added there is covered here without anyone updating a list. Consolidation
+    // assembles its own, and is added explicitly.
     return [
-      ...buildFileTools(root, { home }),
-      ...buildFetchTools(root),
+      ...buildAgentToolset(root, { requestPermission: async () => true, showFile: () => {} })
+        .customTools,
       ...buildConsolidationTools(root),
     ];
   }

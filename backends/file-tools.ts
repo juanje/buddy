@@ -332,10 +332,6 @@ function toToolError(error: unknown): Error {
   return new Error(String(error));
 }
 
-export function fileToolNames(tools: ToolDefinition[]): string[] {
-  return tools.map((tool) => tool.name);
-}
-
 /** Invoke a file tool and return its text payload (tests + BDD). */
 export async function executeFileTool(
   tools: ToolDefinition[],

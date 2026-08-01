@@ -27,6 +27,13 @@ export const TOOL_PATH_ARGS: Record<string, readonly string[]> = {
   delete_file: ["path"],
   copy_file: ["source", "destination"],
   move_file: ["source", "destination"],
+  show_file: ["path"],
+  // Skill tools take no input at all: they return a procedural prompt. Declared
+  // rather than omitted, so the check below reaches them — until this file
+  // pointed at the real toolset they were simply never examined, and a skill
+  // tool that grew a path argument would have gone unnoticed.
+  process_conversation: [],
+  triage_inbox: [],
   // Consolidation-only.
   relocate_brain_file: ["source", "destination"],
   // Takes a URL, not a path. Destination containment is fetch_url's own

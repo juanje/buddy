@@ -98,7 +98,7 @@ rootDir (git repo — user/agent content only)
 | FR-CHAT-14 | An assistant turn with no visible text renders nothing | 2 ✓ |
 | FR-CHAT-15 | The inline viewer does not render frontmatter as content | 3 ✓ |
 | FR-CHAT-16 | Buddy paths in assistant text become labelled links | 3 ✓ |
-| FR-CHAT-17 | `show_file` — the agent opens a file in the viewer | 3 |
+| FR-CHAT-17 | `show_file` — the agent opens a file in the viewer | 3 ✓ |
 | FR-CHAT-18 | Export the viewed file as PDF via the system print dialog | 3 |
 
 **FR-CHAT-01 — Streaming message display**
@@ -384,7 +384,7 @@ path appears.
 **FR-CHAT-17 — `show_file` — the agent opens a file in the viewer**
 
 - **Given** the user asks to be shown a file or the content of something Buddy
-  keeps ("muéstrame mi perfil", "enséñame el inbox")
+  keeps ("show me my profile", "let me see my inbox")
 - **When** the agent calls `show_file` with a path inside the buddy directory
 - **Then** the inline viewer opens on that file, with no click required
 - **And** the path is validated exactly as a clicked link is (FR-CHAT-11,
@@ -397,8 +397,8 @@ path appears.
   panel opens
 
 **Why this is in the MVP rather than deferred.** For a user coming from a chat
-assistant, "muéstrame el archivo" means *see the content*, not *receive a link
-to click*. Reading a link as an offer to view is expert knowledge about how
+assistant, "show me the file" means *see the content*, not *receive a link to
+click*. Reading a link as an offer to view is expert knowledge about how
 Buddy works. The capability is discoverable through FR-DOCS-01/02: Buddy is
 asked what it can do during first use, so `~/.buddy/docs/capabilities.md` is
 where the user learns this exists. Waiting for users to request a feature nobody

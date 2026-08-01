@@ -262,6 +262,14 @@ export interface FrontendAPI {
   onPermissionRequest(request: PermissionRequest): void;
   /** OAuth login progress (FR-SETUP-05). */
   onOAuthEvent(event: OAuthUIEvent): void;
+  /**
+   * The agent asked for a file to be opened in the viewer (FR-CHAT-17).
+   *
+   * `relPath` has already been validated worker-side, exactly as a clicked
+   * link is — the frontend holds no filesystem capability and does not decide
+   * this (NFR-SEC-09).
+   */
+  onShowFile(relPath: string): void;
   /** Deferred items surfaced by heartbeat (FR-DEFERRED-02). */
   onDeferredDue(items: DeferredItemView[]): void;
   /** Budget threshold crossed (80% warning or 100% exceeded) (FR-COST-03). */

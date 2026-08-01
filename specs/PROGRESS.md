@@ -11,12 +11,11 @@ Nothing in the backlog starts until the MVP is considered finished.
 
 ## In flight
 
-Showing the user a file. FR-CHAT-15 and FR-CHAT-16 shipped in v0.1.10; these
-two remain and neither depends on the other.
+Showing the user a file. FR-CHAT-15 and FR-CHAT-16 shipped in v0.1.10.
 
 | Item | State | Note |
 |------|-------|------|
-| FR-CHAT-17 — `show_file` opens the viewer | specified | New `FrontendAPI` callback + custom tool. Containment reuses FR-CHAT-11. Needs an entry in `bundled/docs/capabilities.md` or the user never learns it exists (FR-DOCS-01/02). |
+| FR-CHAT-17 — `show_file` opens the viewer | **done**, unreleased | Needs a version bump to reach existing installs: the capability is announced in `bundled/docs/capabilities.md`, which only redeploys on a version change. Untested in a running app so far. |
 | FR-CHAT-18 — export to PDF from the viewer | **blocked on a spike** | Whether `window.print()` works in the Tauri webview decides between an afternoon and several days of per-platform Rust. WKWebView has historically not implemented it. Measure on macOS and Linux before designing further. |
 
 ## Open

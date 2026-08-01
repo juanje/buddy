@@ -15,10 +15,17 @@ import { isContained } from "./containment";
 export class ViewableFileError extends Error {}
 
 /**
- * Read a file the agent linked to, or throw. `rawHref` is untrusted: it comes
- * from LLM output, which is influenced by fetched web content.
+ * Decide whether a file may be opened inside Buddy, and where it is.
+ *
+ * Split out of `readViewableFile` for FR-CHAT-17: `show_file` asks the same
+ * question without wanting the bytes. Two callers asking it two ways is how
+ * this project once ended up with four answers to "is this path inside the
+ * buddy directory?", one of them wrong.
  */
-export function readViewableFile(rootDir: string, rawHref: string): string {
+export function resolveViewableFile(
+  rootDir: string,
+  rawHref: string,
+): { relPath: string; absPath: string } {
   const relPath = resolveViewablePath(rootDir, rawHref);
   if (!relPath) {
     throw new ViewableFileError("This file cannot be opened inside Buddy.");
@@ -44,5 +51,14 @@ export function readViewableFile(rootDir: string, rawHref: string): string {
     throw new ViewableFileError(`Not a file: ${relPath}`);
   }
 
+  return { relPath, absPath };
+}
+
+/**
+ * Read a file the agent linked to, or throw. `rawHref` is untrusted: it comes
+ * from LLM output, which is influenced by fetched web content.
+ */
+export function readViewableFile(rootDir: string, rawHref: string): string {
+  const { absPath } = resolveViewableFile(rootDir, rawHref);
   return readFileSync(absPath, "utf8");
 }

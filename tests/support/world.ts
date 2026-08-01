@@ -94,6 +94,7 @@ export class BuddyWorld extends World {
         onWorkerError: () => {},
         onPermissionRequest: (request) => controllerRef?.handlePermissionRequest(request),
         onOAuthEvent: () => {},
+        onShowFile: () => {},
         onDeferredDue: () => {},
         onBudgetAlert: () => {},
     onMaintenancePaused: () => {},
