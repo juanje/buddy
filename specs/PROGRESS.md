@@ -48,6 +48,27 @@ actions bump.
 `runConsolidation`. Reviewed twice, kept on purpose; the reason is in a comment
 at the call site.
 
+## Open (found by manual testing, 2026-08-01 evening)
+
+Both real, both pre-existing — neither introduced by this session's other
+work, verified by checking whether the affected code was touched before today.
+
+- **Fixed: `pickLocation` race in the setup wizard.** Picking a slow-to-validate
+  directory, then a fast one before the first answer returned, let the stale
+  answer win and overwrite the newer one — "import only" stuck no matter how
+  many times the user picked a fresh directory afterward, including going
+  back. A pick-token guard now discards a superseded validation.
+- **Fixed: OAuth login could hang indefinitely.** The installed SDK's
+  `ModelRuntime.login()` follows a successful token exchange with an
+  unbounded model-catalogue refresh (no signal, no timeout — a different code
+  path from the one NFR-PERF-02 bounded at startup). A stalled `pi.dev`
+  (upstream pi#7113, open) hung it forever: browser step completes, Pi's own
+  success page shows, app stuck on "Waiting for browser" until the frontend's
+  own 30s RPC timeout fires. `OAuthService.login()` now races the SDK call
+  against a 5s bound and, on timeout, checks Buddy's own auth.json directly —
+  independent of the SDK's stale in-memory snapshot — to tell a successful
+  login stuck on refresh from one that never happened.
+
 ## Distribution
 
 Verified 2026-07-30 against `release.yml`, `scripts/build-worker.sh` and

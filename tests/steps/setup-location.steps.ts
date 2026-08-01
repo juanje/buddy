@@ -19,6 +19,10 @@ interface LocationWorld extends BuddyWorld {
   locTmpDir?: string;
   candidate?: string;
   wizard?: SetupController;
+  existingInstanceDir?: string;
+  emptyDir?: string;
+  releaseSlowValidation?: () => void;
+  slowValidationPath?: string;
 }
 
 const locationOverrides = (world: LocationWorld) => ({
@@ -26,6 +30,11 @@ const locationOverrides = (world: LocationWorld) => ({
     return join(world.locTmpDir!, "buddy");
   },
   async validateLocation(path: string) {
+    if (path === world.slowValidationPath) {
+      await new Promise<void>((resolve) => {
+        world.releaseSlowValidation = resolve;
+      });
+    }
     return validateLocation(path);
   },
 });
@@ -67,6 +76,23 @@ Given("a directory left behind by a failed setup", function (this: LocationWorld
   mkdirSync(join(this.candidate, "agent_brain"), { recursive: true });
 });
 
+Given(
+  "two candidate locations, one with an existing instance and one empty",
+  function (this: LocationWorld) {
+    this.existingInstanceDir = join(this.locTmpDir!, "old-instance");
+    mkdirSync(join(this.existingInstanceDir, "agent_brain", "identity"), { recursive: true });
+    writeFileSync(join(this.existingInstanceDir, "agent_brain", "identity", "SOUL.md"), "# Soul\n");
+    writeFileSync(join(this.existingInstanceDir, "AGENTS.md"), "# Rules\n");
+
+    this.emptyDir = join(this.locTmpDir!, "fresh-choice");
+    mkdirSync(this.emptyDir);
+  },
+);
+
+Given("validating the existing-instance directory is slow to resolve", function (this: LocationWorld) {
+  this.slowValidationPath = this.existingInstanceDir;
+});
+
 When("the user accepts the proposed location", async function (this: LocationWorld) {
   await wizardOf(this, locationOverrides).pickLocation(this.candidate!);
 });
@@ -74,6 +100,32 @@ When("the user accepts the proposed location", async function (this: LocationWor
 When("the user picks that directory as the location", async function (this: LocationWorld) {
   await wizardOf(this, locationOverrides).pickLocation(this.candidate!);
 });
+
+When(
+  "the user picks the existing-instance directory as the location",
+  function (this: LocationWorld) {
+    // Not awaited: this is the slow pick, deliberately left in flight so the
+    // second pick below can race it.
+    void wizardOf(this, locationOverrides).pickLocation(this.existingInstanceDir!);
+  },
+);
+
+When(
+  "the user picks the empty directory as the location before the first validation resolves",
+  async function (this: LocationWorld) {
+    await wizardOf(this, locationOverrides).pickLocation(this.emptyDir!);
+  },
+);
+
+When(
+  "the slow validation for the existing-instance directory resolves",
+  async function (this: LocationWorld) {
+    this.releaseSlowValidation?.();
+    // Give the released microtask a turn to reach `locationCheck.set(...)`
+    // before the assertions run.
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  },
+);
 
 Then("the location is stored for setup", function (this: LocationWorld) {
   assert.equal(get(wizardOf(this, locationOverrides).location), this.candidate);
@@ -87,6 +139,10 @@ Then("the location is rejected with a reason", function (this: LocationWorld) {
 Then("the wizard offers to import the existing instance", function (this: LocationWorld) {
   const check = get(wizardOf(this, locationOverrides).locationCheck);
   assert.equal(check?.status, "existing-buddy");
+});
+
+Then("the location is stored as the empty directory", function (this: LocationWorld) {
+  assert.equal(get(wizardOf(this, locationOverrides).location), this.emptyDir);
 });
 
 Then("the wizard reports it as unfinished, not importable", function (this: LocationWorld) {

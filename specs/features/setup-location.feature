@@ -38,3 +38,17 @@ Feature: Location picker (FR-SETUP-04)
     Given a directory left behind by a failed setup
     When the user picks that directory as the location
     Then the wizard reports it as unfinished, not importable
+
+  # A slow validation for an earlier pick must not overwrite a faster one for
+  # a pick made after it. Reported from real use: pick a directory with an
+  # existing instance, then pick a fresh empty one — the "import only" state
+  # stuck regardless of going back and re-picking, because validateLocation
+  # has no ordering guarantee against the location it was called for.
+  Scenario: A slow validation for an earlier pick does not overwrite a later one
+    Given two candidate locations, one with an existing instance and one empty
+    And validating the existing-instance directory is slow to resolve
+    When the user picks the existing-instance directory as the location
+    And the user picks the empty directory as the location before the first validation resolves
+    And the slow validation for the existing-instance directory resolves
+    Then the location is stored as the empty directory
+    And the wizard allows proceeding to the next step

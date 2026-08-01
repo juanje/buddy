@@ -189,9 +189,21 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
     return path;
   }
 
+  // Bumped on every pick, so a validation that started for an earlier path
+  // can recognize it is no longer the latest and discard its own result
+  // instead of overwriting a newer one that already resolved. Reported from
+  // real use: pick a slow-to-validate directory, then pick a fast one before
+  // the first answer comes back — without this, the stale answer for the
+  // first path won the race and stuck the wizard on "import only" no matter
+  // how many times the user picked a fresh directory afterward.
+  let locationPickToken = 0;
+
   async function pickLocation(path: string): Promise<void> {
+    const token = ++locationPickToken;
     location.set(path);
-    locationCheck.set(await worker.validateLocation(path));
+    const check = await worker.validateLocation(path);
+    if (token !== locationPickToken) return;
+    locationCheck.set(check);
   }
 
   function selectProvider(id: ProviderId): void {
