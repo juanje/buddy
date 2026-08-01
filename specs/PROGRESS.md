@@ -11,21 +11,13 @@ Nothing in the backlog starts until the MVP is considered finished.
 
 ## In flight
 
-Showing the user a file — three FRs written 2026-07-30, none implemented.
-Suggested order is the one below: each stands alone, and FR-CHAT-15 is
-independent of the other two.
+Showing the user a file. FR-CHAT-15 and FR-CHAT-16 shipped in v0.1.10; these
+two remain and neither depends on the other.
 
 | Item | State | Note |
 |------|-------|------|
-| FR-CHAT-15 — viewer does not render frontmatter | **done**, uncommitted | `parseFrontmatter` moved from `backends/reflect.ts` to `shared/frontmatter.ts` so the frontend could reach it without a second copy; `splitFrontmatter` added beside it. |
-| FR-CHAT-16 — buddy paths become labelled links | **done**, uncommitted | Both halves: the renderer (bare paths, code spans, agent-written links whose label is just the path) and the `agents-base.md` affordance. |
 | FR-CHAT-17 — `show_file` opens the viewer | specified | New `FrontendAPI` callback + custom tool. Containment reuses FR-CHAT-11. Needs an entry in `bundled/docs/capabilities.md` or the user never learns it exists (FR-DOCS-01/02). |
 | FR-CHAT-18 — export to PDF from the viewer | **blocked on a spike** | Whether `window.print()` works in the Tauri webview decides between an afternoon and several days of per-platform Rust. WKWebView has historically not implemented it. Measure on macOS and Linux before designing further. |
-
-**Decided against: a character line in `SOUL.md`.** It lives in the rootDir,
-which the app never modifies, so it would reach new instances only — and with
-`agents-base.md` carrying the affordance it adds little. Keeping it out also
-means new and old instances behave the same.
 
 ## Open
 
@@ -71,6 +63,6 @@ there is no point wiring a runner for something not yet correct.
 
 ## State
 
-Released through **v0.1.9** (2026-07-30). Phase 0 and Phase 1 complete; the
+Released through **v0.1.10** (2026-07-31). Phase 0 and Phase 1 complete; the
 H1–H8 hardening, local-model evaluation and maintenance-audit campaigns are all
 closed. Per-release detail in `docs/releases/`.
