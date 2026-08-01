@@ -23,7 +23,8 @@ Buddy is a personal assistant that remembers. It captures what you tell it, orga
 ### Reminds you
 
 - Say "remind me to call Pedro on Friday" and Buddy captures it with the date.
-- When the day comes, Buddy surfaces the reminder — visually when you open the app and as an OS notification.
+- When the day comes, Buddy surfaces the reminder two ways: visually inside the app, and as a native notification from your operating system.
+- **The reminder reaches you even when you're not chatting.** As long as Buddy is running — including minimized or in the background — it checks for due reminders about every half hour and sends a system notification when one comes due, so you don't have to keep the chat open or watch it. Click the notification and Buddy's window comes to the front. (This needs Buddy to be running: if you've fully quit the app, it can't notify you until you open it again.)
 - Dismiss a reminder when you've seen it and it won't come back.
 
 ### Manages your inbox (GTD — Getting Things Done)
