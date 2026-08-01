@@ -17,6 +17,10 @@ Built with **Tauri v2** (native shell) + **Pi SDK** (LLM agent runtime) +
   lost between conversations.
 - **Learns from use.** Patterns emerge, concepts form, behavior adapts — not
   through configuration, but through accumulated interaction.
+- **Reminds you — even about what you never flagged.** Beyond explicit "remind
+  me" requests, Buddy surfaces deadlines and dated to-dos you only mentioned in
+  passing, on its own, when they come due — as a native OS notification that
+  reaches you even when the app isn't in front.
 - **Stays transparent.** All memory is plain markdown files in a git repo. You
   can read, edit, or move them to any other tool.
 - **Works with any major LLM provider.** Anthropic (Claude), OpenAI, Google
