@@ -64,10 +64,28 @@ work, verified by checking whether the affected code was touched before today.
   path from the one NFR-PERF-02 bounded at startup). A stalled `pi.dev`
   (upstream pi#7113, open) hung it forever: browser step completes, Pi's own
   success page shows, app stuck on "Waiting for browser" until the frontend's
-  own 30s RPC timeout fires. `OAuthService.login()` now races the SDK call
-  against a 5s bound and, on timeout, checks Buddy's own auth.json directly —
-  independent of the SDK's stale in-memory snapshot — to tell a successful
-  login stuck on refresh from one that never happened.
+  own 30s RPC timeout fires. `OAuthService.login()` now waits for *this
+  attempt's* credential to appear in Buddy's auth.json — comparing against a
+  pre-login snapshot, since most logins are re-logins — and only then bounds
+  what remains. A fixed timeout over the whole call was tried first and was
+  wrong: `login()` contains the interactive browser step, so it raced the
+  user. That produced both a false negative (a successful OpenAI login
+  reported as an error) and a false positive (an Anthropic login reported as
+  connected on the strength of a credential that predated it).
+
+- **Fixed: a provider signed in from Settings vanished on reopening.** Sign in
+  to a second provider, pick a model, use it — reopen Settings and it is
+  offered as "sign in" again for the rest of the session, with its model still
+  selected. `ModelRuntime.getProviderAuthStatus` answers from an in-memory
+  snapshot that only updates when its own `refresh()` completes, and that is
+  precisely the call a stalled `pi.dev` hangs. Consequence of not waiting for
+  it (see above): correct to stop waiting, but the snapshot then never learns.
+  `buildAuthStatus` now also consults Buddy's own auth.json, additively — the
+  runtime is never overruled, since it sees credential sources auth.json
+  cannot (runtime API keys, environment). Calling `refresh({allowNetwork:
+  false})` to repair the snapshot was measured at 1ms and rejected anyway:
+  `forceRefreshAvailability` chains behind the in-flight refresh, so it would
+  inherit the very hang it was meant to work around.
 
 ## Distribution
 

@@ -13,7 +13,7 @@ import { ModelRuntime } from "@earendil-works/pi-coding-agent";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
-import { updateStateFile } from "./state-file";
+import { readStateFile, updateStateFile } from "./state-file";
 import type { KeyCheck, SetupConfig } from "../shared/api";
 import {
   AUTH_FILE_MODE,
@@ -87,6 +87,20 @@ export function defaultAuthPath(): string {
     process.env[LEGACY_AUTH_PATH_ENV] ??
     join(homedir(), GLOBAL_CONFIG_DIR_NAME, AUTH_FILE_NAME)
   );
+}
+
+/**
+ * The stored credential for a Pi provider, as an opaque comparable value, or
+ * undefined when Buddy has none.
+ *
+ * Buddy's auth.json is its own store (NFR-SEC-19) and is written before the
+ * SDK refreshes its in-memory view of it, so it answers "is this provider
+ * configured" when that view is stale or still catching up.
+ */
+export function readStoredCredential(piProviderId: string): string | undefined {
+  const auth = readStateFile<Record<string, unknown>>(defaultAuthPath());
+  const entry = auth?.[piProviderId];
+  return entry === undefined ? undefined : JSON.stringify(entry);
 }
 
 /**

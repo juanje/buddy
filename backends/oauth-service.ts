@@ -1,8 +1,13 @@
 // backends/oauth-service.ts — Pi SDK OAuth login wrapper (FR-SETUP-05).
 
 import type { OAuthUIEvent, OAuthLoginResult, SetupProviderId } from "../shared/api";
+import { readStoredCredential } from "./provider-auth";
 import { supportsOAuth } from "../shared/provider-constants";
 import { toPiProviderId } from "../shared/provider-mapping";
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 type AuthPromptLike = {
   type: string;
@@ -45,15 +50,52 @@ export interface OAuthServiceCallbacks {
   onEvent: (event: OAuthUIEvent) => void;
 }
 
+export interface OAuthServiceOptions {
+  /**
+   * How long to keep waiting for `login()` *after* the credential has already
+   * been written to disk.
+   *
+   * Not a bound on the login itself. `runtime.login()` contains the entire
+   * interactive flow — it opens the browser and waits for the user, which
+   * takes as long as a human takes — so any fixed timeout over the whole call
+   * races the person using it. What is bounded here is only the tail: the
+   * installed SDK follows a successful token exchange with
+   * `await this.refresh({ allowNetwork })`, a call that takes no signal and no
+   * timeout, so a stalled `pi.dev` hangs it forever (the same host behind the
+   * NFR-PERF-02 startup fix; `modelRefreshTimeoutMs` on `create()` does not
+   * reach this path). Once the credential is on disk the exchange is done and
+   * only that refresh can still be running.
+   */
+  postCredentialGraceMs?: number;
+  /** How often to check whether the credential has landed. */
+  credentialPollMs?: number;
+  /**
+   * The stored credential for a provider, as an opaque comparable value.
+   * Defaults to Buddy's own auth store. Injected for tests.
+   */
+  readCredential?: (piProviderId: string) => string | undefined;
+}
+
+const DEFAULT_POST_CREDENTIAL_GRACE_MS = 3_000;
+const DEFAULT_CREDENTIAL_POLL_MS = 250;
+
 export class OAuthService {
   private abortController: AbortController | undefined;
   private nextPromptId = 0;
   private pendingPrompts = new Map<number, PendingPrompt>();
+  private readonly postCredentialGraceMs: number;
+  private readonly credentialPollMs: number;
+  private readonly readCredential: (piProviderId: string) => string | undefined;
 
   constructor(
     private runtime: OAuthModelRuntimeLike,
     private callbacks: OAuthServiceCallbacks,
-  ) {}
+    options: OAuthServiceOptions = {},
+  ) {
+    this.postCredentialGraceMs = options.postCredentialGraceMs ?? DEFAULT_POST_CREDENTIAL_GRACE_MS;
+    this.credentialPollMs = options.credentialPollMs ?? DEFAULT_CREDENTIAL_POLL_MS;
+    this.readCredential = options.readCredential ?? readStoredCredential;
+  }
 
   answerPrompt(requestId: number, value: string): void {
     const pending = this.pendingPrompts.get(requestId);
@@ -70,6 +112,30 @@ export class OAuthService {
     this.pendingPrompts.clear();
   }
 
+  /**
+   * Resolve once this attempt's credential is on disk and the SDK still has
+   * not returned — never before that, so the user's time in the browser is
+   * not raced. Never resolves if no credential appears: waiting is then the
+   * correct behaviour, exactly as before this guard existed.
+   */
+  private async waitForCredential(
+    piProvider: string,
+    signal: AbortSignal,
+  ): Promise<"credential-stored"> {
+    const before = this.readCredential(piProvider);
+    for (;;) {
+      await sleep(this.credentialPollMs);
+      if (signal.aborted) return new Promise<never>(() => {}); // cancel() owns the outcome
+      const now = this.readCredential(piProvider);
+      if (now !== undefined && now !== before) {
+        // The exchange is done. Give the SDK's own tail a moment to finish
+        // normally before concluding it is stuck.
+        await sleep(this.postCredentialGraceMs);
+        return "credential-stored";
+      }
+    }
+  }
+
   async login(provider: SetupProviderId): Promise<OAuthLoginResult> {
     if (!supportsOAuth(provider)) {
       return { success: false, cancelled: false, error: "OAuth not supported for this provider" };
@@ -79,13 +145,34 @@ export class OAuthService {
     this.abortController = new AbortController();
     const signal = this.abortController.signal;
 
+    const piProvider = toPiProviderId(provider);
+
     try {
-      const piProvider = toPiProviderId(provider);
-      await this.runtime.login(piProvider, "oauth", {
+      const loginCall = this.runtime.login(piProvider, "oauth", {
         signal,
         notify: (event) => this.forwardNotify(event),
         prompt: (prompt) => this.forwardPrompt(prompt),
       });
+      // If this rejects after the race below already timed out, there is no
+      // one left awaiting it — an unhandled rejection would otherwise crash
+      // the worker over a login the user has already been answered about.
+      loginCall.catch(() => {});
+
+      const outcome = await Promise.race([
+        loginCall.then(() => "logged-in" as const),
+        this.waitForCredential(piProvider, signal),
+      ]);
+
+      if (outcome === "credential-stored") {
+        // Not a cancellation and not a guess: the credential this attempt
+        // produced is on disk, so the token exchange finished. Only the
+        // SDK's own unbounded refresh can still be running, and nothing can
+        // stop it — so stop waiting for it rather than reporting a failure
+        // for a login that succeeded.
+        this.callbacks.onEvent({ type: "complete" });
+        return { success: true };
+      }
+
       this.callbacks.onEvent({ type: "complete" });
       return { success: true };
     } catch (err) {
