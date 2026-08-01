@@ -53,6 +53,7 @@ there is no point wiring a runner for something not yet correct.
 
 | Item | State | Note |
 |------|-------|------|
+| Actions beyond checkout/setup-node | held on purpose | `setup-bun@v2`, `rust-cache@v2` and `tauri-action@v1` are on their current major. `checkout` and `setup-node` are pinned at v5 — the release that leaves the retired node20 runtime — rather than at latest; the reasons are in a comment in `ci.yml`. Dependabot now raises majors as their own PR. |
 | Linux arm64 is never built | **gap, cheap** | `build-worker.sh` already maps `aarch64-unknown-linux-gnu`, and the release matrix only runs `ubuntu-22.04` at x86_64. The sidecar half of the work is done. |
 | Only `deb` + `rpm` | open | `bundle.targets` is `["dmg", "app", "deb", "rpm"]`. No AppImage, no Flatpak — so no distro-agnostic Linux artifact. Package metadata also wants a review. |
 | `~/.buddy/` security modes are POSIX-only | **blocks Windows** | `CONFIG_DIR_MODE` 0700, `AUTH_FILE_MODE` / `STATE_FILE_MODE` 0600, applied at creation (NFR-SEC-17). `chmod` on Windows is close to a no-op, so credentials, granted paths and config would sit readable by every user of the machine. This is not packaging — it is an NFR that Windows breaks silently, and silent is the failure mode this project has already been bitten by. Needs explicit ACLs or a written, conscious exception. |

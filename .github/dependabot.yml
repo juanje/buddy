@@ -1,0 +1,28 @@
+# Keeping the workflow actions current without anyone having to remember.
+#
+# The node20 deprecation notice sat in every CI log for a while before anyone
+# read it, which is the usual way this goes: nothing is broken, so nothing
+# prompts a look, until the runtime is withdrawn and a release cannot build.
+# Dependabot turns that into a pull request instead of a warning.
+#
+# Actions only, on purpose. npm and cargo updates here would mean a stream of
+# pull requests against a project with one maintainer, and application
+# dependencies carry more risk per bump than a checkout action does. Those stay
+# manual until there is a reason to change that.
+version: 2
+
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "chore(ci)"
+    groups:
+      # One pull request for the routine bumps. A major arrives on its own,
+      # because a major is the case that wants reading before merging.
+      actions-minor:
+        update-types:
+          - minor
+          - patch

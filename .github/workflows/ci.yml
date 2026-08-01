@@ -16,10 +16,23 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      # Held at v5 deliberately, not at latest. v5 is the release that moved
+      # these actions off the node20 runtime GitHub is retiring, and it is the
+      # last one that changes nothing else here:
+      #
+      #   checkout v6  — moves credentials to a separate file
+      #   checkout v7  — refuses fork checkouts on pull_request_target
+      #   setup-node   — v5 caches automatically when package.json declares
+      #                  `packageManager`; this repo declares none and sets
+      #                  `cache` explicitly below, so it is a no-op for us
+      #
+      # None of those are known to break this workflow; they are simply changes
+      # that want reading before they land, which a runtime deprecation fix
+      # should not smuggle in.
+      - uses: actions/checkout@v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
