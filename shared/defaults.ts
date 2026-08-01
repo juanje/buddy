@@ -21,6 +21,19 @@ export const AGENT_TOOLS = ["read", "write", "edit", "grep", "find", "ls"] as co
 export const EXCLUDED_TOOLS = ["bash"] as const;
 export const LOCK_RETRY_MS = 500;
 export const LOCK_MAX_RETRIES = 20;
+/**
+ * How long startup may wait for the Pi model catalogue before continuing with
+ * the cached one (NFR-REL-09).
+ *
+ * The SDK default is 15s, chosen for a CLI where the user is already looking at
+ * a terminal. For an app whose window is open and empty it is far too long, and
+ * it is exactly what was paid on 2026-08-01 when `pi.dev` began accepting
+ * connections without answering. The cached catalogue is complete — the refresh
+ * adds newly released models, so losing it for one launch costs nothing a user
+ * would notice.
+ */
+export const MODEL_CATALOG_REFRESH_TIMEOUT_MS = 2_000;
+
 export const AUTH_FILE_MODE = 0o600;
 /**
  * Permissions for ~/.buddy/ and the state files inside it (NFR-SEC-17).

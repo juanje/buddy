@@ -20,6 +20,7 @@ import {
   AUTH_FILE_NAME,
   GLOBAL_CONFIG_DIR_NAME,
   LEGACY_AUTH_PATH_ENV,
+  MODEL_CATALOG_REFRESH_TIMEOUT_MS,
   PROVIDER_REQUEST_TIMEOUT_MS,
 } from "../shared/defaults";
 import { buddyModelsPath, buddyModelsStorePath } from "./global-config";
@@ -105,6 +106,14 @@ export function createBuddyModelRuntime(): Promise<ModelRuntime> {
     // definitions and cached its own catalogue inside another tool's config.
     modelsPath: buddyModelsPath(),
     modelsStorePath: buddyModelsStorePath(),
+    // Both stated outright rather than left to a default, because the default
+    // is not the same across SDK versions. In 0.80 `allowModelNetwork` falls
+    // back to `PI_OFFLINE === undefined`, so it is on; by 0.83 the refresh only
+    // runs when the option is explicitly true. Upgrading without this line
+    // would silently stop refreshing the catalogue, and no test would notice.
+    allowModelNetwork: true,
+    // NFR-REL-09: the SDK's 15s is a CLI's patience, not an app's.
+    modelRefreshTimeoutMs: MODEL_CATALOG_REFRESH_TIMEOUT_MS,
   });
 }
 
