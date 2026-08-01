@@ -16,19 +16,26 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Held at v5 deliberately, not at latest. v5 is the release that moved
-      # these actions off the node20 runtime GitHub is retiring, and it is the
-      # last one that changes nothing else here:
+      # On v7 after reading what each major changed. Two of them would matter to
+      # a different repository, and neither reaches this one:
       #
-      #   checkout v6  — moves credentials to a separate file
-      #   checkout v7  — refuses fork checkouts on pull_request_target
-      #   setup-node   — v5 caches automatically when package.json declares
-      #                  `packageManager`; this repo declares none and sets
-      #                  `cache` explicitly below, so it is a no-op for us
+      #   checkout v6  — persists credentials to a separate file. Relevant when
+      #                  a later step runs git itself against the checkout; no
+      #                  workflow here commits or pushes, and the only token use
+      #                  is passed explicitly to tauri-action, which calls the
+      #                  API.
+      #   checkout v7  — refuses fork checkouts under `pull_request_target` and
+      #                  `workflow_run`. Neither trigger is used. **Adding
+      #                  either is the moment to re-read this**, since a fork PR
+      #                  would then stop being checked out.
+      #   setup-node   — v5 began caching automatically from a `packageManager`
+      #                  field, v6 narrowed that to npm. This repo declares no
+      #                  such field and sets `cache` explicitly below, so the
+      #                  default never applies.
       #
-      # None of those are known to break this workflow; they are simply changes
-      # that want reading before they land, which a runtime deprecation fix
-      # should not smuggle in.
+      # What the pull request proved and what it did not: CI ran green on v7,
+      # but a pull request never triggers release.yml, so the first run of the
+      # installer build on these versions is the next tag.
       - uses: actions/checkout@v7
 
       - name: Setup Node.js
