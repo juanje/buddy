@@ -141,6 +141,21 @@ Then("the wizard offers to import the existing instance", function (this: Locati
   assert.equal(check?.status, "existing-buddy");
 });
 
+When("the user edits the location text", function (this: LocationWorld) {
+  wizardOf(this, locationOverrides).locationInputChanged();
+});
+
+Then("the wizard no longer offers to import", function (this: LocationWorld) {
+  assert.equal(get(wizardOf(this, locationOverrides).locationCheck), undefined);
+});
+
+Then(
+  "importing is refused while no location has been validated",
+  async function (this: LocationWorld) {
+    await assert.rejects(() => wizardOf(this, locationOverrides).importExisting());
+  },
+);
+
 Then("the location is stored as the empty directory", function (this: LocationWorld) {
   assert.equal(get(wizardOf(this, locationOverrides).location), this.emptyDir);
 });

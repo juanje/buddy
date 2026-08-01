@@ -39,6 +39,20 @@ Feature: Location picker (FR-SETUP-04)
     When the user picks that directory as the location
     Then the wizard reports it as unfinished, not importable
 
+  # Reported from real use, and the dangerous one: the verdict swaps Continue
+  # for "Import this assistant", so after an existing-instance result there is
+  # no button left that revalidates. Typing a different path changed the box
+  # and nothing else, and Import then adopted the *previous* directory — the
+  # user only noticed because their new assistant already knew things about
+  # them.
+  Scenario: Editing the path retires the previous verdict
+    Given a directory containing an existing buddy instance
+    When the user picks that directory as the location
+    Then the wizard offers to import the existing instance
+    When the user edits the location text
+    Then the wizard no longer offers to import
+    And importing is refused while no location has been validated
+
   # A slow validation for an earlier pick must not overwrite a faster one for
   # a pick made after it. Reported from real use: pick a directory with an
   # existing instance, then pick a fresh empty one — the "import only" state

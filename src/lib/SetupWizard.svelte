@@ -150,7 +150,13 @@ async function createBuddy() {
     <h2>{$t.locationTitle}</h2>
     <p class="muted">{$t.locationHint}</p>
     <div class="location-row">
-      <input class="location" type="text" bind:value={locationInput} spellcheck="false" />
+      <input
+        class="location"
+        type="text"
+        bind:value={locationInput}
+        oninput={() => wizard.locationInputChanged()}
+        spellcheck="false"
+      />
       <button type="button" class="ghost" onclick={browseDirectory}>{$t.locationBrowse}</button>
     </div>
     {#if $locationCheck && locationError($locationCheck.status)}

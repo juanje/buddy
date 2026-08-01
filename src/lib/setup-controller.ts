@@ -60,6 +60,8 @@ export interface SetupController {
   checkPrerequisites(): Promise<void>;
   loadDefaultLocation(): Promise<string>;
   pickLocation(path: string): Promise<void>;
+  /** The typed path changed, so the last validation no longer applies. */
+  locationInputChanged(): void;
   selectProvider(provider: ProviderId): void;
   setShowApiKey(show: boolean): void;
   submitApiKey(apiKey: string, baseUrl?: string): Promise<void>;
@@ -204,6 +206,23 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
     const check = await worker.validateLocation(path);
     if (token !== locationPickToken) return;
     locationCheck.set(check);
+  }
+
+  /**
+   * The typed path no longer matches what was validated, so the previous
+   * verdict is void.
+   *
+   * Without this the wizard could act on a directory the user was no longer
+   * looking at. Reported from real use: the check said "existing-buddy", which
+   * swaps Continue for Import; typing a different path changed the box but not
+   * the controller, and Import then adopted the *previous* directory. The user
+   * only noticed because the assistant already knew things about them.
+   */
+  function locationInputChanged(): void {
+    // Also discards any validation still in flight, so a late answer for the
+    // old path cannot reinstate the verdict this just cleared.
+    locationPickToken++;
+    locationCheck.set(undefined);
   }
 
   function selectProvider(id: ProviderId): void {
@@ -427,6 +446,7 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
     checkPrerequisites,
     loadDefaultLocation,
     pickLocation,
+    locationInputChanged,
     selectProvider,
     setShowApiKey,
     submitApiKey,
