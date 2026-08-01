@@ -87,6 +87,15 @@ work, verified by checking whether the affected code was touched before today.
   `forceRefreshAvailability` chains behind the in-flight refresh, so it would
   inherit the very hang it was meant to work around.
 
+- **Fixed: the model chosen per provider is now remembered across Settings
+  visits.** Not a regression from this session — `settings-controller.ts` was
+  untouched today, and the memory was a `Map` created in the controller and
+  cleared on every `openSettings()`, so it only ever lasted while the panel
+  stayed open. Switching back afterwards fell through to the provider's first
+  listed model, typically its most expensive. `changeModel` now records the
+  choice per provider in `config.json` alongside the switch it already
+  persisted, and Settings seeds from that instead of wiping.
+
 ## Distribution
 
 Verified 2026-07-30 against `release.yml`, `scripts/build-worker.sh` and

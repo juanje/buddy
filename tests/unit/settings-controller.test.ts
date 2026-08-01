@@ -25,6 +25,73 @@ describe("isSettingsShortcut", () => {
   });
 });
 
+describe("the model chosen per provider survives closing Settings", () => {
+  // Reported from real use: pick a cheaper model for one provider, switch
+  // away, come back — and it has reverted to the provider's first listed
+  // model, which is usually the most expensive one. The memory was a Map
+  // created inside the controller and cleared on every `openSettings()`, so
+  // it only ever lasted while the panel stayed open.
+
+  it("remembers each provider's model across open/close", async () => {
+    // Mirrors the real wiring: the frontend holds its own copy of the config
+    // (`App.svelte`'s `appConfig`), and only `onConfigChange` updates it. The
+    // worker persisting to config.json is a separate store the panel does not
+    // read until the app restarts — a fake that let `changeModel` feed
+    // `getConfig` would test a sync that does not exist.
+    let frontendConfig: SetupConfig = {
+      rootDir: "/tmp/buddy",
+      provider: "anthropic",
+      model: "claude-sonnet-5",
+    };
+    let onDisk: SetupConfig = { ...frontendConfig };
+
+    const controller = createSettingsController({
+      worker: mockWorker({
+        changeModel: async (provider, model) => {
+          const modelByProvider = { ...(onDisk.modelByProvider ?? {}), [provider]: model };
+          onDisk = { ...onDisk, provider, model, modelByProvider };
+        },
+      }),
+      getConfig: () => frontendConfig,
+      onConfigChange: (updated) => {
+        frontendConfig = updated;
+      },
+      version: "0.0.0-test",
+    });
+
+    controller.openSettings();
+    // Choose a cheaper model for anthropic, then move to another provider, so
+    // anthropic is no longer the active one when we come back to it.
+    await controller.setModel("anthropic", "claude-haiku-4-5");
+    await controller.setModel("openai", "gpt-5-mini");
+
+    controller.closeSettings();
+    controller.openSettings();
+
+    // The seeding on open covers the *current* provider for free, so asking
+    // about that one would pass even with no memory at all. The question that
+    // matters is the provider the user is not on.
+    expect(controller.getLastModelForProvider("anthropic")).toBe("claude-haiku-4-5");
+  });
+
+  it("still knows the currently active provider's model", async () => {
+    const config: SetupConfig = {
+      rootDir: "/tmp/buddy",
+      provider: "anthropic",
+      model: "claude-haiku-4-5",
+    };
+    const controller = createSettingsController({
+      worker: mockWorker({}),
+      getConfig: () => config,
+      onConfigChange: () => {},
+      version: "0.0.0-test",
+    });
+
+    controller.openSettings();
+    expect(controller.getLastModelForProvider("anthropic")).toBe("claude-haiku-4-5");
+  });
+});
+
 describe("createSettingsController", () => {
   it("opens, changes language, and persists via worker", async () => {
     let config: SetupConfig = {

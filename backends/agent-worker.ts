@@ -323,7 +323,10 @@ export async function main(deps: WorkerDeps = {}): Promise<void> {
         const resolved = await resolveSessionModel(await modelRuntimeReady, provider, model);
         await core.api.setModel(resolved);
         writePiSettings(setupState.config.rootDir, { provider, model });
-        const updated = updateAppConfig({ provider, model }, globalConfigPath());
+        // Recorded per provider as well as globally: switching back should
+        // return to what the user picked, not to the provider's first listing.
+        const modelByProvider = { ...setupState.config.modelByProvider, [provider]: model };
+        const updated = updateAppConfig({ provider, model, modelByProvider }, globalConfigPath());
         setupState = { firstRun: false, config: updated };
       },
       async getUsage() {

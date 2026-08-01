@@ -36,7 +36,9 @@ export function detectFirstRun(configPath: string): SetupState {
 
 /** Persist partial updates to ~/.buddy/config.json (FR-SETTINGS-02). */
 export function updateAppConfig(
-  patch: Partial<Pick<SetupConfig, "language" | "model" | "provider" | "monthlyBudget">>,
+  patch: Partial<
+    Pick<SetupConfig, "language" | "model" | "provider" | "monthlyBudget" | "modelByProvider">
+  >,
   configPath: string = globalConfigPath(),
 ): SetupConfig {
   const state = detectFirstRun(configPath);

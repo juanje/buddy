@@ -30,6 +30,12 @@ export interface SetupConfig {
   about?: string;
   /** Monthly spend cap in USD. 0 or null disables (FR-COST-03). */
   monthlyBudget?: number | null;
+  /**
+   * The last model chosen for each provider, so switching back returns to the
+   * user's choice rather than to whichever the provider lists first — which is
+   * typically its most expensive.
+   */
+  modelByProvider?: Partial<Record<SetupConfig["provider"], string>>;
 }
 
 /** Aggregated token/cost totals (FR-COST-02). */

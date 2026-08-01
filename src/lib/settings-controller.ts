@@ -194,6 +194,13 @@ export function createSettingsController(options: {
       const current = options.getConfig();
       config.set(toDisplay(current, options.version));
       lastModelByProvider.clear();
+      // Seeded from the stored history, not just the active provider: the Map
+      // used to be wiped here, so the memory lasted only while the panel
+      // stayed open and switching back after reopening fell through to the
+      // provider's first listed model.
+      for (const [provider, model] of Object.entries(current.modelByProvider ?? {})) {
+        if (model) lastModelByProvider.set(provider as SettingsProviderId, model);
+      }
       lastModelByProvider.set(current.provider, current.model);
       addingProvider.set(false);
       authProvider.set(undefined);
@@ -220,7 +227,12 @@ export function createSettingsController(options: {
     async setModel(provider, model) {
       lastModelByProvider.set(provider, model);
       const previous = options.getConfig();
-      const updated: SetupConfig = { ...previous, provider, model };
+      // Recorded here too, not only by the worker. The worker writes
+      // config.json immediately, but the panel reads the frontend's own copy
+      // of the config — so leaving this out meant the choice was on disk and
+      // invisible until the app restarted.
+      const modelByProvider = { ...(previous.modelByProvider ?? {}), [provider]: model };
+      const updated: SetupConfig = { ...previous, provider, model, modelByProvider };
       options.onConfigChange(updated);
       config.update((current) => ({ ...current, provider, model }));
       try {
