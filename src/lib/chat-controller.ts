@@ -16,9 +16,8 @@ import type {
   PermissionRequest,
   PromptOptions,
 } from "../../shared/api";
-import { isSupportedIngestFormat } from "../../shared/ingest-formats";
 import { extractToolInfo } from "../../shared/pi-events";
-import { basename } from "../utils/path";
+import { classifyAttachments } from "./attachment-classifier";
 
 export interface ToolCallEntry {
   name: string;
@@ -186,18 +185,7 @@ export function createChatController(worker: ChatWorkerAPI): ChatController {
   }
 
   function addAttachments(paths: string[]): void {
-    const rejected: string[] = [];
-    const accepted: Attachment[] = [];
-
-    for (const path of paths) {
-      const name = basename(path);
-      if (!isSupportedIngestFormat(path)) {
-        rejected.push(name);
-        continue;
-      }
-      if (get(attachments).some((a) => a.path === path)) continue;
-      accepted.push({ path, name });
-    }
+    const { accepted, rejected } = classifyAttachments(paths, get(attachments));
 
     if (accepted.length > 0) {
       attachments.update((list) => [...list, ...accepted]);

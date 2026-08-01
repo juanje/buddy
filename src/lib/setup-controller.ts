@@ -92,6 +92,27 @@ const STEP_ORDER: SetupStep[] = [
 
 const USABLE_LOCATION: ReadonlyArray<LocationCheck["status"]> = ["ok-new", "ok-empty"];
 
+const KNOWN_PROVIDERS: ReadonlyArray<ProviderId> = ["anthropic", "openai", "google", "custom"];
+
+/**
+ * Map a provider id from an existing instance's `.pi/settings.json` to Buddy's
+ * own provider id, for FR-SETUP-10 import.
+ *
+ * Hoisted out of `createSetupController` rather than left as a nested
+ * function: it closed over nothing but this module-level constant, so moving
+ * it changes nothing about behaviour and makes it testable without
+ * constructing a controller or a worker fake.
+ */
+export function resolveImportProvider(piOrBuddyProvider: string | undefined): ProviderId | undefined {
+  if (!piOrBuddyProvider) return undefined;
+  const fromPi = fromPiProviderId(piOrBuddyProvider);
+  if (fromPi) return fromPi;
+  if (KNOWN_PROVIDERS.includes(piOrBuddyProvider as ProviderId)) {
+    return piOrBuddyProvider as ProviderId;
+  }
+  return undefined;
+}
+
 export function createSetupController(worker: SetupWorkerAPI): SetupController {
   const step = writable<SetupStep>("language");
   const language = writable<AppLocale | undefined>(undefined);
@@ -299,18 +320,6 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
 
   async function finishSetup(): Promise<void> {
     await runSetupWith(buildConfig());
-  }
-
-  const KNOWN_PROVIDERS: ReadonlyArray<ProviderId> = ["anthropic", "openai", "google", "custom"];
-
-  function resolveImportProvider(piOrBuddyProvider: string | undefined): ProviderId | undefined {
-    if (!piOrBuddyProvider) return undefined;
-    const fromPi = fromPiProviderId(piOrBuddyProvider);
-    if (fromPi) return fromPi;
-    if (KNOWN_PROVIDERS.includes(piOrBuddyProvider as ProviderId)) {
-      return piOrBuddyProvider as ProviderId;
-    }
-    return undefined;
   }
 
   async function importExisting(): Promise<"adopted" | "needs-provider"> {

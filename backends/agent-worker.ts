@@ -14,12 +14,7 @@
 import { RPCChannel } from "kkrpc";
 import { nodeStdioTransport } from "kkrpc/stdio";
 
-import type {
-  FrontendAPI,
-  PromptOptions,
-  SetupConfig,
-  WorkerAPI,
-} from "../shared/api";
+import type { FrontendAPI, PromptOptions, WorkerAPI } from "../shared/api";
 import type { AllowedEntry } from "./allowed-paths";
 import { addAllowedPath, loadAllowedPaths } from "./allowed-paths";
 import {
@@ -32,6 +27,7 @@ import {
   defaultBuddyLocation,
   validateLocation,
 } from "./location";
+import { buildAuthStatus } from "./auth-status";
 import { listModelsForProvider } from "./model-listing";
 import { resolveSessionModel } from "./model-switch";
 import { OAuthService } from "./oauth-service";
@@ -39,10 +35,6 @@ import { alignHttpDispatcherWithPi } from "./pi-http-dispatcher";
 import { checkPrerequisites } from "./prereqs";
 import type { ModelRuntime } from "@earendil-works/pi-coding-agent";
 import { configureProviderKey, createBuddyModelRuntime } from "./provider-auth";
-import {
-  fromPiProviderId,
-  WIZARD_PI_PROVIDERS,
-} from "../shared/provider-mapping";
 import { getDueDeferred, removeDueDeferredItems, toDeferredItemViews } from "./deferred";
 import { toIsoDay } from "../shared/dates";
 import { commitAll } from "./git";
@@ -281,22 +273,7 @@ export async function main(deps: WorkerDeps = {}): Promise<void> {
         return listModelsForProvider(await modelRuntimeReady, provider);
       },
       async getAuthStatus() {
-        const runtime = await modelRuntimeReady;
-        const providers = WIZARD_PI_PROVIDERS.map((piProviderId) => {
-          const buddyProvider = fromPiProviderId(piProviderId);
-          const status = runtime.getProviderAuthStatus(piProviderId);
-          return {
-            piProviderId,
-            buddyProvider: buddyProvider ?? ("openai" as SetupConfig["provider"]),
-            hasAuth: status.configured,
-            authType: status.configured
-              ? runtime.isUsingOAuth(piProviderId)
-                ? ("oauth" as const)
-                : ("api_key" as const)
-              : undefined,
-          };
-        }).filter((p) => p.buddyProvider);
-        return { providers };
+        return buildAuthStatus(await modelRuntimeReady);
       },
       async runSetup(config, mode = "create") {
         // FR-SETUP-11: the wizard gates on this too, but the worker decides.
