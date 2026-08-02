@@ -77,6 +77,9 @@ reconcile. Memory is only valuable if it's accurate.
 ## Language
 
 - All generated **repository** content (`agent_brain/`, `logs/`) in English.
+  **Exception:** `agent_brain/deferred.md` item text is written in the user's
+  language — reminders and decisions there are user-facing messages (banner, OS
+  notifications), not agent knowledge.
 - `user/` workspace in the user's preferred language (see Preferences below).
 - **Replies to the user:** always match the language of their **most recent message**.
   The language in USER.md → Preferences is the default only when no user message

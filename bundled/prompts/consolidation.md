@@ -95,26 +95,34 @@ After the inbox triage, do a quick scan of the rest of `user/`:
 - Any completed items in context lists that should be removed?
 - Don't do a full review — that's for weekly and monthly consolidation.
 
-If anything needs user attention (stale items, ambiguous classifications,
-items that can't be routed without input), write to `agent_brain/deferred.md`:
-`- **decision** (YYYY-MM-DD, daily): [description].` Write deferred items in the
-user's language (from `USER.md` → Preferences). If purely informational
-findings, note them in today's log under Decisions. Don't wait for user
-interaction — act or defer.
+If purely informational findings, note them in today's log under Decisions.
 
-#### 4b. Surface reminders
+#### 5. Write deferred items
+
+Two sources feed the deferred queue. Write **all** deferred items in the
+user's language (from `USER.md` → Preferences) — they are user-facing
+messages (banner, OS notifications), not agent knowledge.
+
+**5a. Items needing user attention** (from triage above):
+
+If anything from step 4 needs user input (stale items, ambiguous
+classifications, items that can't be routed without input), write to
+`agent_brain/deferred.md`:
+`- **decision** (YYYY-MM-DD, daily): [description].`
+
+Don't wait for user interaction — act or defer.
+
+**5b. Date-triggered reminders** (from prompt header):
 
 The prompt header includes an "Upcoming items" block listing inbox items
-and Active context deadlines within 24h of the date in the prompt header. If items
-are listed:
+and Active context deadlines within 24h. If items are listed:
 
 1. For each item, write to `agent_brain/deferred.md`:
-   `- **reminder** (YYYY-MM-DD, daily): [description].` Use the user's language
-   (from `USER.md` → Preferences).
+   `- **reminder** (YYYY-MM-DD, daily): [description].`
 2. Remove the date-triggered item from inbox — inbox was storage; deferred
    is the surfacing mechanism for session start.
 
-If the block says "No dated items due within 24h" — skip this step.
+If the block says "No dated items due within 24h" — skip 5b.
 
 Do not scan files yourself — the runner has already done the date matching.
 
@@ -122,7 +130,7 @@ Do not scan files yourself — the runner has already done the date matching.
 
 ### Part 2: Learn
 
-#### 5. Create new concepts
+#### 6. Create new concepts
 
 Review the day's log (especially the Lessons, Decisions, and System
 observations sections). Look for knowledge worth retaining:
@@ -163,7 +171,7 @@ never archived, depth is cooling):
 4. If standalone (domain-specific, no cluster) → leave at root; listed in
    `concepts/index.md` thematic section when the index exists.
 
-#### 6. Form associations
+#### 7. Form associations
 
 Look for connections between today's work and existing brain files:
 
@@ -198,7 +206,7 @@ are five genuine functional connections, create five links. The quality
 criterion is the only filter. Don't force connections either; if nothing
 connects naturally today, skip this step.
 
-#### 7. Act on mature observations
+#### 8. Act on mature observations
 
 The prompt header may include a "Ripe observations" block listing items at
 **seen 2+** that need action. If present, act on **each** item listed — do not
@@ -229,7 +237,7 @@ conversations or days):
 4. Mark the observation as resolved.
 
 **Concept candidates (seen 2+):**
-1. Create the concept file if not already created in step 5 above.
+1. Create the concept file if not already created in step 6 above.
 2. Mark the observation as resolved in the journal.
 
 **Structure candidates (seen 2+):**
@@ -241,7 +249,7 @@ conversations or days):
 Observations with only 1 occurrence stay in the journal — they need more
 data before acting.
 
-#### 8a. Update "Right now"
+#### 9a. Update "Right now"
 
 Update the `### Right now` section of Active context in AGENTS.md. This
 step always runs — it derives from today's logs, not from Hebbian data.
@@ -259,7 +267,7 @@ Keep it to 3-5 bullet points. This is the scratchpad of working memory —
 not a task list, not a log. **Replace the full contents each time; don't
 append.**
 
-#### 8b. Hebbian file promotions
+#### 9b. Hebbian file promotions
 
 Update the `### Files` section of Active context in AGENTS.md based on
 Hebbian data. If the prompt header says "No tracked brain files with
@@ -327,7 +335,7 @@ Each file entry has two layers — **hot data** inline and a **read trigger**:
 Avoid: accumulated history, internal scores, operational detail that only
 matters during maintenance.
 
-#### 8c. Brain health issues
+#### 9c. Brain health issues
 
 If the prompt header includes a "Brain health" block, address the reported
 issues:
@@ -394,7 +402,7 @@ specified depth.
 
 ### Finalize
 
-#### 9. Done
+#### 10. Done
 
 All file changes are committed automatically when the consolidation cycle ends.
 No manual action needed — just finish writing and the system persists everything.
