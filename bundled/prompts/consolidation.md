@@ -74,10 +74,13 @@ what they mentioned about people, life events, and personal reflections.
    (articles written, projects worked on, ideas explored).
 3. Write `user/journal/YYYY/MM/DD.md` — no frontmatter, just a date heading
    and narrative prose.
-4. Tone: agent's notes about the user, third person, factual but warm.
-5. Exclude: system operations (reflect/consolidation runs, skill creation,
+4. **Language:** Write in the user's language (from `USER.md` → Preferences).
+   The journal is a user artifact — it lives in `user/` and the user reads it
+   directly.
+5. Tone: agent's notes about the user, third person, factual but warm.
+6. Exclude: system operations (reflect/consolidation runs, skill creation,
    metadata updates), task management mechanics, agent internal processes.
-6. If no personal content was shared today (e.g., only technical work), write
+7. If no personal content was shared today (e.g., only technical work), write
    a minimal entry or skip.
 
 The journal is a user artifact (like `user/inbox.md`): agent-written,
