@@ -738,6 +738,35 @@ behavior. The app adds the full experience (scheduler, notifications,
    (`~/.buddy/prompts/`, `~/.buddy/docs/`) is redeployed from embedded sources.
    Tracked via `last_app_version` in `config.json`. See below.
 
+11. **The wiki is opt-in, and it stores plain markdown links (2026-08-02):**
+   the personal knowledge base stays under *Explicitly NOT in v1* above, and
+   when it lands it lands off by default. The reason is not prompt budget — two
+   extra tools among a dozen is not the problem — it is that filing a document
+   is slow and costs real money, and spending a minute and a few cents on
+   behalf of someone who never asked for a wiki is a worse experience than not
+   having the feature. Flipping the default on later is a one-line decision;
+   flipping it back after users have paid for filings they did not want is not.
+
+   **Enabling it applies to the next conversation, and the UI says so.** The
+   toolset is fixed at `createAgentSession` and Buddy runs one session per
+   process, so a setting that silently waits for the next launch reads as
+   broken. The setting is offered during setup, where it is free, and in
+   Settings with an explicit notice plus a Restart action. What is *not*
+   acceptable is registering the tools always and having them refuse when the
+   feature is off: a registered tool is an offered tool, and the model will
+   reach for it.
+
+   **Storage is relative markdown links, not `[[wikilinks]]`.** The viewer
+   (`marked`), the chat autolinker and the relocate-and-rewrite path all
+   already understand markdown links and none understands `[[…]]`; supporting
+   them on disk would mean a renderer extension plus a second implementation of
+   link rewriting, which is how NFR-SEC-16 was earned. Obsidian reads relative
+   markdown links natively, so the portability argument does not survive
+   either. Wikilinks, if ever wanted, belong in the renderer.
+
+   Acceptance criteria: `specs/SPEC.md` §3.18. Full design, prior art and
+   rejected alternatives: `~/git/my-ab/agent_brain/projects/agentic-buddy/wiki-design.md`.
+
 ---
 
 ## Boot refresh and migration

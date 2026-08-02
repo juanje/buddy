@@ -30,6 +30,7 @@ Verified 2026-07-30.
 | `"Login cancelled"` as a string sentinel across RPC | `backends/oauth-service.ts` + two frontend controllers | Documented at `shared/api.ts:97`. |
 | `toBuddyRelPath` is a second lexical containment helper | `shared/path-utils.ts`, used by `hebbian.ts` / `hebbian-guard.ts` | **Not a hole** — both callers are trackers, not enforcement, and it collapses `..`. But `containment.ts`'s header reads as though all four helpers were consolidated. Move the callers to `containedRelPath`, or say in the header why tracking is exempt. |
 | `worker-proxy.ts` boilerplate; duplicated lock loop in `state-file.ts`; duplicated provider-auth flow across the two controllers | — | Maintenance audit leftovers. Cosmetic. |
+| FR-CONSOL-15 — every consolidation depth runs on the configured model | `backends/consolidation-runner.ts:205` | `openRealMaintenanceSession` passes no model, so depth-1 and depth-2 pay full price for mechanical work. The tiers already exist (`fastModelForProvider`, used by checkpoint reflect) and nothing consumes them here. Criteria written; not implemented. Independent of the wiki. |
 
 **Watching, not a defect of ours: `pi.dev` accepts connections and never
 answers.** Startup no longer waits on it, and the catalogue refresh is bounded
@@ -117,7 +118,15 @@ there is no point wiring a runner for something not yet correct.
 ## Backlog (post-MVP)
 
 - **FR-WIKI** — an extra feature, not the next one. Listed under *Explicitly NOT
-  in v1* in `docs/app-design-principles.md`.
+  in v1* in `docs/app-design-principles.md`. **Designed 2026-08-02, still not
+  scheduled.** The design was reviewed against the code and its decisions are
+  now acceptance criteria in `SPEC.md` §3.18 (FR-WIKI-01..08, opt-in with a
+  restart notice, markdown links, depth-1 health check gated on commits since
+  the last run, depth-3 synthesis). One gap remains before any `.feature` can
+  be written: reconciliation and enrichment — how an extracted concept merges
+  into an existing page without losing what the user wrote — has an invariant
+  but no procedure. It has to be brought across from `~/git/wiki-kb` and the
+  `wiki-ingest` skill, where a human was doing the reviewing.
 - **FR-PROVIDER** — the local-model evaluation answered "not yet".
 - **FR-SYNC**, **FR-NET-02**, **FR-COST-04** — phase 3+.
 

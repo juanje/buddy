@@ -914,6 +914,7 @@ Fork bomb defense:
 | FR-CONSOL-12 | A consolidation that produced no output is a failure | 2 ✓ |
 | FR-CONSOL-13 | A consolidation that corrupts the brain is a failure | 2 ✓ |
 | FR-CONSOL-14 | The daily log records maintenance only when notable | 2 ✓ |
+| FR-CONSOL-15 | The maintenance session's model is chosen per depth | 2 |
 
 **Consolidation depths:**
 
@@ -1107,6 +1108,43 @@ cannot claim work that was never done.
 the consolidation's own activity" was added to `consolidation.md`, and the next
 run emitted the line anyway — because the runner writes it, not the model. An
 instruction cannot govern behaviour that no model controls.
+
+**FR-CONSOL-15 — The maintenance session's model is chosen per depth**
+
+- **Given** a consolidation is about to run at depth N
+- **When** the maintenance session is created
+- **Then** the model is resolved from the depth by a single function
+  (`modelForDepth(provider, depth)` in `shared/model-catalog.ts`, beside
+  `fastModelForProvider`), and passed explicitly to the session
+- **And** depths 1 and 2 use the provider's fast tier; depth 3 uses the
+  configured model
+- **And** the usage of whichever model ran is recorded through
+  `recordSessionUsage()` (NFR-SEC-14), so the cheaper tier shows up as a lower
+  cost rather than as no cost
+- **And when** the provider exposes no fast tier, the configured model is used
+  — a missing tier is not a reason to skip the run
+
+**Why it is its own requirement, and not part of FR-WIKI.** It applies whether
+or not the wiki exists, and it is a gap in what is already shipped:
+`openRealMaintenanceSession` passes no model at all today, so every depth runs
+on the configured one. The catalogue already carries the tiers
+(`fastModelForProvider`, used by checkpoint reflect); nothing consumes them on
+the consolidation path.
+
+**Why the tier split falls where it does.** Depths 1 and 2 are mechanical —
+rotate logs, rebuild indexes, reconcile counters, apply structural repairs that
+deterministic code has already identified. Depth 3 groups, generalizes and
+decides relocations, which is judgment, and judgment is what the cheap tier is
+worst at. The provider has no pricing metadata to consult — `getAvailable()`
+returns ids and names only — so the curated tiers in `shared/model-catalog.ts`
+are the only source of "cheaper", and the decision belongs in one function
+rather than at each call site.
+
+**Consequence for wiki maintenance (FR-WIKI-05).** Structural repairs that run
+at depth 1 will run on the fast tier. That is acceptable because the
+deterministic half decides *what* is broken and the model only decides which
+repairs to apply; anything needing real judgment about the wiki's shape belongs
+to depth 3 (FR-WIKI-06), not to depth 1.
 
 | ID | Description | Phase |
 |----|-------------|-------|
@@ -1711,6 +1749,10 @@ Design decisions:
 | FR-WIKI-02 | Ingest documents into wiki | post-MVP |
 | FR-WIKI-03 | Cross-reference and backlinks | post-MVP |
 | FR-WIKI-04 | Search and retrieve from wiki | post-MVP |
+| FR-WIKI-05 | Wiki health is checked during depth-1 maintenance | post-MVP |
+| FR-WIKI-06 | Emergent concepts are synthesized during depth-3 maintenance | post-MVP |
+| FR-WIKI-07 | The wiki is opt-in, and enabling it is honest about when it applies | post-MVP |
+| FR-WIKI-08 | Filing shows progress in plain language | post-MVP |
 
 **Scheduling (2026-07-28).** Last, deliberately — after every open bug and after
 core functionality and UX are finished. `docs/app-design-principles.md` has
@@ -1724,36 +1766,188 @@ exist is intact. The wiki adds real value on top of a product that already
 works. Anything that fails that test is core; this passes it, so it waits, and
 gets designed properly rather than squeezed in beside unfinished basics.
 
+**Design (2026-08-02).** The full design — prior art, tool-by-tool
+specifications, page format, rejected alternatives — is
+`~/git/my-ab/agent_brain/projects/agentic-buddy/wiki-design.md`. What follows is
+the part that binds implementation: the acceptance criteria, and the decisions
+this project has to hold to because they touch code that already exists.
+
+**Still open, and it is the hard part.** Reconciliation — deciding whether an
+extracted concept enriches an existing page or becomes a new one, and how the
+enrichment merges — is stated here only as an invariant (FR-WIKI-02). The
+procedure exists in the prior art (`~/git/wiki-kb`, the `wiki-ingest` skill in
+`~/git/my-ab`) and has to be brought across and written out before the
+`.feature` files for FR-WIKI-02 can be honest, because those skills were run by
+a human who reviewed the merge. Nothing else in this section is blocked on it.
+
+**Tool surface, and why it is split.** The interactive session gets two tools,
+`wiki_search` and `wiki_file`. Maintenance tools (`wiki_check`,
+`wiki_repair_links`, `wiki_regenerate`) are registered on the consolidation
+session only, and the synthesis tools (`wiki_synthesis_candidates`,
+`wiki_create_page`) only at depth 3 — the same split that makes
+`relocate_brain_file` consolidation-only (FR-CONSOL-07). Both lists still have
+to be derived from one array per session, or a tool is registered and never
+offered (see `buildAgentToolset`).
+
+**Path constants live in `shared/brain-paths.ts`.** `user/wiki/`, its `.meta/`
+subdirectory and the generated `tags.md` / `glossary.md` are named there like
+every other location, for the reason that module exists: a layout spelled as
+string literals across files fails silently when one of them is mistyped.
+Naming them there is not containment — `backends/containment.ts` remains the
+only authority on where a path points (NFR-SEC-16), and it is what a
+model-supplied `category` or `title` must be resolved through before it becomes
+a directory.
+
 **FR-WIKI-01 — User personal KB**
 
-- **Given** the buddy instance is configured
+- **Given** the buddy instance is configured and the wiki is enabled (FR-WIKI-07)
 - **When** the user shares knowledge worth preserving long-term (notes, ideas, concepts, document summaries)
 - **Then** the agent files it into `user/wiki/` as interconnected markdown pages
-- **And** pages have frontmatter (tags, created, related) and backlinks
+- **And** pages carry frontmatter (`tags`, `sources`, `created`, `updated`, `summary`) and backlinks
 - **And** this is the user's knowledge base — distinct from `agent_brain/` (the agent's learned context about the user)
+- **And** Hebbian tracking does not apply: it covers `agent_brain/` only, and wiki pages carry no `access_count`/`last_accessed`
+- **Bootstrap:** the structure (`index.md`, category directories, `.meta/log.md`) is created by `wiki_file` on first use, when it finds no wiki. Nothing is created at setup, and no empty wiki is advertised to the agent.
 
 **FR-WIKI-02 — Document ingest to wiki**
 
 - **Given** the user provides a document (via drag & drop, attach, or path)
 - **When** they ask the agent to "add to wiki", "save this knowledge", or similar
-- **Then** the agent extracts key concepts from the document
-- **And** creates or updates wiki pages, reconciling against existing content (no duplicates)
-- **And** confirms what was filed and where
+- **Then** `wiki_file` extracts key concepts through a **fresh, toolless child session** — not a fork, so the whole window is available for the source document, and toolless so every write stays in deterministic code
+- **And** the extraction runs on the provider's fast tier (`fastModelForProvider`), like checkpoint reflect
+- **And** the child's token usage is recorded through `recordSessionUsage()` — this feature is expensive, and unrecorded cost is worse than visible cost
+- **And** pages are created or enriched, reconciling against existing content (no duplicates), with the index, backlinks and derived files updated by code
+- **And** the agent confirms what was filed and where
+- **Enrichment invariant:** enriching an existing page never deletes prose the user wrote. New material is added; existing content is not rewritten to accommodate it. A reconciliation that cannot satisfy this creates a new page and links it instead.
+- **Failure is reported, never silent:** a child that errors, times out or is aborted leaves the wiki as it was, or — when pages were already written — reports exactly what was filed. A partial file that reads as a success is the failure mode this project has paid for before.
+- **Single-flight:** one `wiki_file` at a time. Buddy runs one session per process and does not call tools in the background, so this is a guard rather than a scheduler. Consolidation cannot collide with it: FR-CONSOL-05 defers while the session is streaming, and a tool call is streaming.
 
 **FR-WIKI-03 — Cross-references and backlinks**
 
 - **Given** wiki pages reference related concepts
 - **When** the agent creates or updates a page
-- **Then** markdown links connect related pages (`[[concept]]` or `[concept](path)`)
-- **And** backlinks are maintained (if A links to B, B lists A as related)
+- **Then** **relative markdown links** connect related pages (`[concept](../category/concept.md)`), each with a short description of why they connect
+- **And** backlinks are maintained by code (if A links to B, B lists A as related) — the forward link already carries the description; the reverse is mechanical
+- **And** `[[wikilink]]` syntax is **not** used as the storage format
+
+**Why markdown links and not wikilinks.** Three pieces of existing machinery
+already work on markdown links and none understands `[[…]]`: the viewer renders
+with `marked` (a wikilink would show as unclickable text unless a custom
+extension plus a title→path index were added, with a rule for duplicate
+titles), `path-autolink.ts` and `local-link-handler.ts` already make relative
+paths clickable in chat and navigable in the viewer, and
+`consolidation-relocate.ts` already rewrites markdown links when a file moves —
+a wikilink corpus would need a second implementation of the same rule, which is
+exactly how NFR-SEC-16 was earned. The portability argument for wikilinks does
+not survive contact either: Obsidian reads relative markdown links natively,
+and what is lost is autocompletion inside Obsidian, not the ability to open the
+wiki there. If wikilinks are ever wanted, they belong in the renderer, not on
+disk.
 
 **FR-WIKI-04 — Search and retrieve**
 
 - **Given** the user asks about something that may be in their wiki
 - **When** the agent looks for relevant knowledge
-- **Then** it searches the wiki by tags, titles, or content
-- **And** synthesizes an answer from stored pages, citing sources
-- **And** the user's knowledge base grows more useful over time
+- **Then** `wiki_search` returns **metadata only** — path, title, summary, tags, category, connections — and never page bodies
+- **And** the agent reads the matched page before answering from it, and cites the pages it used
+- **And** for open questions it may instead start at `user/wiki/index.md` and navigate connections, which is what builds the accumulated context a synthesis needs
+- **Rationale:** search is a navigation accelerator, not a retrieval shortcut. Returning bodies would collapse progressive disclosure into a one-shot lookup and put un-read text into the answer.
+
+**Extraction output is validated in code, not trusted.** The source document is
+untrusted content — the same rule that governs `fetch_url` — and the extraction
+child's output ends up in files whose `summary` and `tags` `wiki_search` later
+feeds back into the agent's context. Two cheap measures, deliberately not more:
+the untrusted-content rule is stated in the child's system prompt, and the
+formatter validates *shape* before writing — tags against a slug pattern,
+`summary` to a single line with a length cap. The child is toolless and Buddy
+has no shell, so the residual blast radius is text in the user's own knowledge
+base; this is proportionate to that, and not a reason to build an isolation
+apparatus around it.
+
+**FR-WIKI-05 — Wiki health is checked during depth-1 maintenance**
+
+- **Given** the wiki is enabled and a depth-1 consolidation is running
+- **When** the runner checks whether the wiki changed since the last depth-1
+- **Then** it asks git for **commits touching `user/wiki/` since the last run**, the way `hasNewContentSinceConsolidation` already does with `git log --since`, and skips the whole block when there are none
+- **And when** there were changes, `wiki_check` runs as deterministic code and reports: orphan pages, ghost index entries, broken links, missing backlinks, frontmatter integrity, unresolved sources, thin pages, and connectivity stats
+- **And** missing backlinks and resolvable broken links are repaired by code (`wiki_repair_links`); `tags.md` and `glossary.md` are rebuilt (`wiki_regenerate`)
+- **And** what needs judgment is injected into the consolidation prompt for the model to decide
+- **And** manual edits count: the user owns `user/wiki/` and can rename or edit pages outside the app, so the check treats an unindexed page or a stale link as ordinary input, not as corruption
+- **And** the repairs are committed inside the cycle's single `commitAll` (FR-CONSOL-03)
+
+**Not `git diff`.** An earlier draft gated this on `git diff --quiet HEAD --
+user/wiki/`. That is wrong here: writes are committed at session end and at the
+end of each maintenance cycle, so when the heartbeat evaluates, the tree is
+normally clean and the gate would skip forever. The question is "were there
+commits since the last run", and the project already answers it that way.
+
+**Why depth-1 and not depth-2.** In active use links break fast — a page moved
+or a category renamed orphans its neighbours immediately. The change gate makes
+quiet periods free, so the cost of checking often is zero on the days nothing
+happened.
+
+**FR-WIKI-06 — Emergent concepts are synthesized during depth-3 maintenance**
+
+- **Given** the wiki is enabled and a depth-3 consolidation is running
+- **When** `wiki_synthesis_candidates` scans the wiki (deterministic, no model): tags dense in pages with no page of their own, tag pairs co-occurring across several pages, page sets sharing tags but not linked
+- **Then** the scored candidates are injected into the consolidation prompt and the model decides which deserve a page
+- **And** approved candidates are written through `wiki_create_page`, which formats, links, indexes and logs in code
+- **And** a cap enforced **in code** limits how many synthesis pages one cycle may create (default 3)
+- **Rationale:** synthesis needs accumulated material. Running it at depth 1 produces empty pages about nothing, and a cap stated only in a prompt is a cap the model may exceed without disobeying anything it understood as a rule.
+
+**FR-WIKI-07 — The wiki is opt-in, and enabling it is honest about when it applies**
+
+- **Given** the wiki is a power feature, not part of day-one value
+- **When** an instance is created, or the setting is changed later
+- **Then** the wiki is off unless the user turns it on, and the two interactive tools are registered only when it is on
+- **And** turning it on from Settings shows an explicit notice that it applies to the next conversation, together with a **Restart** action
+- **And** the setting is offered during setup, where it costs nothing because no session exists yet
+- **And** the tools are **not** registered-then-refused: a registered tool is an offered tool, and one that always fails is worse than one that is absent
+
+**Why it cannot just apply immediately.** The toolset is fixed at
+`createAgentSession`, and Buddy runs a single session per process
+(`ensureSession` returns early when one exists) with no "new conversation"
+action — so "next session" means the next launch. Rebuilding the session live
+would dispose the conversation and trigger an end-of-session reflect in the
+middle of a chat. Saying so, with a button that does it, is the honest version;
+silently deferring is how a setting comes to look broken.
+
+**Why opt-in rather than on by default, for now.** Not prompt budget — two
+tools among a dozen is not the problem. It is that filing is slow and costs
+real money: a user who never asked for a wiki and watches the agent spend a
+minute and a few cents on it has a worse experience than one who is missing a
+feature they never wanted. Once filing is fast and predictable, flipping the
+default is a one-line decision; the reverse is not.
+
+**FR-WIKI-08 — Filing shows progress in plain language**
+
+- **Given** `wiki_file` is running and may take tens of seconds
+- **When** it moves between phases
+- **Then** the tool activity line changes — reading the document, organizing the ideas, saving to the wiki — in the user's language, with no internal detail (no model names, no counts, never the child's raw output)
+- **And** the phases reach the frontend through a callback passed into the tool, the way `show_file` already pushes to the frontend, rather than through a new SDK event path
+- **And** `wiki_file` and `wiki_search` have real labels in `tool-labels.ts` and both locales — the default fallback renders "Running wiki_file", which is the tool's name leaking into the user's chat
+- **And** a "this can take a moment" line appears only after the wait is already long (~15s), not at the start
+
+**Why phases at all, for a non-technical user.** What makes a long wait feel
+broken is the absence of *change*, not the absence of detail: an animation
+identical for fifty seconds reads as hung, and three messages that replace each
+other read as progress. The content matters less than the movement, which is
+why the phases are coarse and in the user's own words. The expandable detail
+already in `ToolActivity.svelte` is where anything technical belongs. Today the
+frontend sees only `tool_execution_start` and `tool_execution_end`, so this
+adds one event to the frontend↔worker contract (`shared/api.ts`) — worth
+knowing before it is designed as if it were free.
+
+**Testing seam (required, not optional).** `wiki_file` takes an injectable
+extraction function, defaulted to the real child session, in the same way
+`createMaintenanceSession` takes `openSession` — and a test that forgets to
+inject must *fail*, the way `FORBID_REAL_REFLECT_SPAWN_ENV` makes a forgotten
+reflect double fail rather than fork a real child. Without it, tests can only
+cover the deterministic halves separately, each green, with nothing exercising
+the chain — which is precisely how the Hebbian layer recorded nothing for
+months (FR-HEBB-07). The seam brings its own risk, and it is paid off with one
+fixture: a *recorded real extraction*, parsed in a test by the same parser
+production uses, so a fake of a shape no model ever emits cannot keep the suite
+green.
 
 ### 3.19 Skills as Tools (FR-SKILL)
 
