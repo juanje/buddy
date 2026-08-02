@@ -45,7 +45,7 @@
         "depends": ["git"]
       },
       "rpm": {
-        "depends": ["git"]
+        "depends": ["git-core"]
       }
     }
   }
