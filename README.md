@@ -4,31 +4,46 @@
   <img src="brand/buddy-logo-universal.png" width="386" alt="Buddy">
 </picture>
 
-A native desktop app that gives non-technical users a personal assistant with
-persistent, learning memory. You talk; it captures, organizes, remembers, and
-improves over time.
+A native desktop app that gives non-technical users a personal assistant with persistent, learning memory. You talk; it captures, organizes, remembers, and improves over time.
 
-Built with **Tauri v2** (native shell) + **Pi SDK** (LLM agent runtime) +
-**git-backed markdown** (portable, transparent memory).
+![Buddy chat interface](images/chat_welcome.jpg)
 
-## What buddy does
+## What is Buddy?
 
-- **Remembers across sessions.** Decisions, tasks, ideas, context — nothing is
-  lost between conversations.
-- **Learns from use.** Patterns emerge, concepts form, behavior adapts — not
-  through configuration, but through accumulated interaction.
-- **Reminds you — even about what you never flagged.** Beyond explicit "remind
-  me" requests, Buddy surfaces deadlines and dated to-dos you only mentioned in
-  passing, on its own, when they come due — as a native OS notification that
-  reaches you even when the app isn't in front.
-- **Stays transparent.** All memory is plain markdown files in a git repo. You
-  can read, edit, or move them to any other tool.
-- **Works with any major LLM provider.** Anthropic (Claude), OpenAI, Google
-  (Gemini) — authenticate via OAuth or API key.
+Imagine a personal assistant that actually remembers what you discussed last week. Buddy is an AI assistant that lives on your computer and acts as your second brain.
 
-## Architecture
+Unlike standard web chats that start with amnesia every morning, Buddy builds a structured memory in the background. You don't need to manage files, write complex prompts, or learn terminal commands. You just talk to it.
 
-```
+## What makes it different
+
+- **Remembers across sessions:** Decisions, tasks, ideas, context — nothing is lost between conversations.
+- **Learns from use:** Patterns emerge, concepts form, behavior adapts — not through configuration, but through accumulated interaction.
+- **Reminds you organically:** Buddy surfaces deadlines and dated to-dos you only mentioned in passing, natively through OS notifications.
+- **Private and transparent:** All memory is saved as plain markdown files in a local folder. No dark databases, no cloud sync, no telemetry. You own your data.
+- **Provider independence:** Switch between Anthropic, OpenAI, or Google at any time — your agent's memory stays intact because it lives in local files, not in a provider's cloud.
+
+## Easy setup
+
+Getting started is as simple as clicking through a friendly wizard. No technical knowledge required.
+
+<table><tr>
+<td><img src="images/provider_selection.jpg" alt="Provider selection"></td>
+<td><img src="images/personalization.jpg" alt="Personalization"></td>
+</tr></table>
+
+## Download and install
+
+Download the latest macOS (`.dmg`, `.app`) and Linux (`.deb`, `.rpm`) installers from the **[Releases page on GitHub](https://github.com/juanje/buddy/releases)**.
+
+---
+
+## Under the hood: for developers
+
+Built with **Tauri v2** (native shell) + **Pi SDK** (LLM agent runtime) + **git-backed markdown** (portable, transparent memory).
+
+### Architecture
+
+```text
 Frontend (Svelte 5, system webview)
     │ kkrpc (type-safe bidirectional RPC)
     ▼
@@ -52,11 +67,10 @@ Key design choices:
 - **Toolless reflect** — the background LLM that summarizes sessions has no
   tools; it distills the forked conversation context into text. Deterministic
   code handles all file I/O.
-- **Dual-use compatible** — the same buddy directory works in the app, Cursor,
-  or Claude Code. Formats are identical; `AGENTS.md` provides fallback rules
-  for any AI editor.
+- **Proven memory architecture:** The cognitive logic and memory system are the result of months of daily experimentation with **[Agentic Buddy](https://github.com/juanje/agentic-buddy)**. Check out that repository to dive deeper into the theory and foundational logic behind this app's memory layer.
 
-## Prerequisites
+
+### Prerequisites
 
 - **Node.js** >= 22
 - **Rust** (for Tauri native shell)
@@ -65,7 +79,7 @@ Key design choices:
 Bun is also required to compile the worker sidecar, but it ships as a
 devDependency — `npm install` covers it.
 
-## Getting started
+### Getting started
 
 ```bash
 npm install
@@ -80,7 +94,7 @@ npm run build:worker    # bun --compile → src-tauri/binaries/agent-worker-<tar
 npm run tauri build     # bundle the app (.dmg/.app, .deb/.rpm)
 ```
 
-## Testing
+### Testing
 
 The project uses **BDD** (Cucumber/Gherkin) for feature acceptance and
 **Vitest** for unit tests. Both must pass before any feature is considered done.
@@ -96,7 +110,7 @@ The full quality gate is three commands, all of which must pass before a
 commit: `npx tsc --noEmit`, `npx vite build` (the only one that checks
 `.svelte`) and `npm test`.
 
-## Releasing
+### Releasing
 
 Set the version with `npm run version:set <semver>`, write
 `docs/releases/v<semver>.md`, then commit, tag and push. Pushing the tag runs
@@ -105,7 +119,7 @@ opens a **draft** release with those notes as its body.
 
 Full steps and the release-note template: **[docs/releases/](docs/releases/)**.
 
-## Project structure
+### Project structure
 
 ```
 backends/       — Node.js worker: session lifecycle, reflect, git, permissions, OAuth
@@ -118,16 +132,16 @@ tests/          — Unit tests (tests/unit/) and BDD step definitions (tests/ste
 docs/           — Design principles, technical architecture, decisions
 ```
 
-## Documentation
+### Documentation
 
-| Document | Purpose |
-|----------|---------|
-| [specs/SPEC.md](specs/SPEC.md) | Functional and non-functional requirements (the WHAT) |
-| [docs/app-design-principles.md](docs/app-design-principles.md) | Design principles and rationale (the WHY) |
-| [docs/app-spec-tauri.md](docs/app-spec-tauri.md) | Technical architecture and Pi SDK usage (the HOW) |
-| [CLAUDE.md](CLAUDE.md) | Agent workflow: BDD+TDD process, phase order, rules |
-| [PROGRESS.md](specs/PROGRESS.md) | Implementation status and next focus |
+| Document                                                       | Purpose                                               |
+| -------------------------------------------------------------- | ----------------------------------------------------- |
+| [specs/SPEC.md](specs/SPEC.md)                                 | Functional and non-functional requirements (the WHAT) |
+| [docs/app-design-principles.md](docs/app-design-principles.md) | Design principles and rationale (the WHY)             |
+| [docs/app-spec-tauri.md](docs/app-spec-tauri.md)               | Technical architecture and Pi SDK usage (the HOW)     |
+| [CLAUDE.md](CLAUDE.md)                                         | Agent workflow: BDD+TDD process, phase order, rules   |
+| [PROGRESS.md](specs/PROGRESS.md)                               | Implementation status and next focus                  |
 
-## License
+### License
 
 GPL-3.0 — see [LICENSE](LICENSE).
