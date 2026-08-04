@@ -312,4 +312,41 @@ describe("consolidation runner", () => {
     expect(reloaded.lastDepth2).toBeNull();
     expect(loadConsolidationLog(dir).some((e) => e.status === "budget-stopped")).toBe(true);
   });
+
+  it("log rotation does not write to the daily log", async () => {
+    setupBuddyDir();
+    await initTestGitRepo(dir);
+    const logsDir = join(dir, "logs");
+    mkdirSync(logsDir, { recursive: true });
+    // Create 30 log files (threshold is 28) to trigger rotation
+    for (let i = 1; i <= 30; i++) {
+      const day = String(i).padStart(2, "0");
+      writeFileSync(join(logsDir, `2026-06-${day}.md`), `# ${day}\n`);
+    }
+    writeFileSync(join(logsDir, "index.md"), "# Sessions index\n");
+    const { simpleGit } = await import("simple-git");
+    await simpleGit(dir).add("-A").commit("seed");
+
+    const state = loadConsolidationState(dir);
+    state.sessionsSinceLastDepth1 = 3;
+
+    await runConsolidation({
+      rootDir: dir,
+      targetDepth: 1,
+      modelRuntime: {} as never,
+      state,
+      createSession: async () => ({ prompt: async () => {}, dispose: () => {} }),
+      now: new Date("2026-07-22T12:00:00Z"),
+    });
+
+    // Rotation should have moved files but NOT written to the daily log
+    const dailyLogPath = join(logsDir, "2026-07-22.md");
+    if (existsSync(dailyLogPath)) {
+      const content = readFileSync(dailyLogPath, "utf8");
+      expect(content).not.toContain("rotation");
+      expect(content).not.toContain("Archived");
+    }
+    // Archived files should still exist in archive/
+    expect(existsSync(join(logsDir, "archive", "2026-06", "2026-06-01.md"))).toBe(true);
+  });
 });

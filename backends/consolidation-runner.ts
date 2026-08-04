@@ -432,19 +432,7 @@ export async function runConsolidation(options: RunConsolidationOptions): Promis
         if (depth === 1) {
           updateLogsIndexFromDaySummary(rootDir, date);
         }
-        const { archived } = rotateLogs(rootDir, date);
-        if (archived.length > 0) {
-          appendDailyLog(
-            rootDir,
-            {
-              date,
-              sessionHeader: "log rotation",
-              sections: `Archived ${archived.length} log files to logs/archive/: ${archived.join(", ")}.`,
-              status: "maintenance",
-            },
-            now,
-          );
-        }
+        rotateLogs(rootDir, date);
         appendConsolidationLogEntry(rootDir, {
           timestamp: now.toISOString(),
           depth,
