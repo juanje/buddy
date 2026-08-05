@@ -40,6 +40,19 @@ describe("loadProcessConversationPrompt", () => {
   });
 });
 
+describe("process-conversation prompt content", () => {
+  it("instructs English for log entries regardless of conversation language", () => {
+    const prompt = loadProcessConversationPrompt();
+    expect(prompt.toLowerCase()).toContain("in english");
+  });
+
+  it("includes a rule-candidate example to help smaller models", () => {
+    const prompt = loadProcessConversationPrompt();
+    expect(prompt).toContain("Rule candidate:");
+    expect(prompt).toMatch(/example|e\.g\./i);
+  });
+});
+
 describe("buildReflectUserPrompt", () => {
   afterEach(() => {
     registerEmbeddedAssets(undefined);

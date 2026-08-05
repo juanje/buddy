@@ -14,7 +14,9 @@ Read the current or most recent conversation. Extract only what has value:
 
 ### 2. Write the log entry
 
-Produce a `## Session HH:MM–HH:MM` block for today's log. Include ONLY sections that have content — omit empty sections entirely. Available sections:
+Produce a `## Session HH:MM–HH:MM` block for today's log **in English**, regardless of the conversation language. The log is operational documentation, not user-facing content.
+
+Include ONLY sections that have content — omit empty sections entirely. Available sections:
 
 - **Decisions** — what was decided and why
 - **Tasks captured** — what went to inbox/projects
@@ -36,7 +38,7 @@ Ensure actionable items landed in the right place:
 ### 4. Detect observations
 
 Only if genuine signals emerged — skip otherwise:
-- **Rule candidate:** User correction or explicit preference → note for AGENTS.md.
+- **Rule candidate:** User correction or explicit preference → note for AGENTS.md. Example: user says "write my files in Spanish" → rule candidate: "Content in user/ should be in the user's preferred language."
 - **Skill candidate:** Repeatable multi-step workflow emerging.
 - **Concept candidate:** A lesson that generalizes beyond today.
 
