@@ -1302,6 +1302,7 @@ drown the signal it is meant to measure.
 | FR-PROMPT-02 | Session-start context message | 1 ✓ |
 | FR-PROMPT-03 | Global base prompt (agents-base.md) | 2 ✓ |
 | FR-PROMPT-04 | Hidden context injection at session boot | 2 ✓ |
+| FR-PROMPT-06 | Edit batching guidance for append-heavy files | 2 ✓ |
 
 **FR-PROMPT-01 — System prompt assembly**
 
@@ -1370,6 +1371,19 @@ does not know them, and orders their profile overwritten.
 - **And** when context is empty, no hidden message is sent
 - **And** on **first session** when `personalizationPending` is true, injection is **skipped** — warm handoff (FR-SETUP-09) owns the greeting; no logs or deferred exist yet
 - **Note:** Warm handoff uses `injectHiddenPrompt` (assistant events visible, user prompt hidden). Session context uses `injectSessionContext` (fully silent). These are distinct mechanisms.
+
+**FR-PROMPT-06 — Edit batching guidance for append-heavy files**
+
+- **Given** the global base prompt (`agents-base.md`)
+- **When** the model needs to modify brain or identity files
+- **Then** the prompt instructs it to issue one `edit` call per logical change, not multiple edits batched in a single turn
+- **And** for append-heavy files (`deferred.md`, `observations.md`, logs) the guidance is to `write` the full file rather than chain edits that depend on each other's output
+- **Rationale:** local models (Qwen 27B, Gemma 12B) fail `edit` calls at high
+  rates when the `oldText` anchor is long or when multiple edits target the
+  same file in one turn. A batched edit where the second depends on the first's
+  output fails when the first changes line positions. Telling the model to use
+  `write` for append-heavy files and to keep edits atomic avoids the failure
+  mode without restricting capable models.
 
 ### 3.11 Git Operations (FR-GIT)
 

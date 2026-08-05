@@ -5,7 +5,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { readFileSync } from "node:fs";
+
 import { assembleSessionContext, assembleSystemPrompt } from "../../backends/prompt";
+import { bundledPromptsDir } from "../../backends/deploy-bundled-content";
 import { setupGlobalConfigDir, teardownGlobalConfigDir } from "../support/global-config";
 
 describe("assembleSessionContext last log selection", () => {
@@ -107,5 +110,19 @@ describe("assembleSystemPrompt", () => {
     expect(ctx.message).not.toContain("# Sessions index");
     expect(ctx.message).not.toContain("# Pending items");
     expect(ctx.personalizationPending).toBe(false);
+  });
+});
+
+// FR-PROMPT-06: edit batching guidance in agents-base.md.
+describe("agents-base edit batching guidance", () => {
+  it("instructs one edit per change and write for append-heavy files", () => {
+    const base = readFileSync(
+      join(bundledPromptsDir(), "agents-base.md"),
+      "utf8",
+    );
+    expect(base).toContain("one `edit` call per change");
+    expect(base).toContain("`write`");
+    expect(base).toContain("deferred.md");
+    expect(base).toContain("observations.md");
   });
 });
