@@ -40,6 +40,7 @@ import {
   updateLogsIndexFromDaySummary,
 } from "./consolidation-mechanics";
 import { logEvent } from "./app-logger";
+import { createHeadingGuard } from "./heading-guard";
 import { createHebbianGuard } from "./hebbian-guard";
 import { commitAll } from "./git";
 import { acquireLock, releaseLock } from "./maintenance";
@@ -127,6 +128,54 @@ export function installMaintenanceHebbianGuard(
     if ((name === "write" || name === "edit") && !ctx.isError) {
       const path = (ctx.args as Record<string, unknown>)?.path;
       if (typeof path === "string") guard.restore(path);
+    }
+    return originalAfter?.(ctx, signal);
+  };
+}
+
+/**
+ * Install the heading guard on a maintenance session (FR-GUARD-01).
+ *
+ * Same capture/check pattern as the hebbian guard, wired through the same
+ * beforeToolCall/afterToolCall hooks. A write that removes a `## ` heading
+ * from an `agent_brain/` or `logs/` file is reverted and logged.
+ */
+export function installMaintenanceHeadingGuard(
+  session: GateInstallable,
+  rootDir: string,
+): void {
+  const guard = createHeadingGuard(rootDir);
+
+  const originalBefore = session.agent.beforeToolCall;
+  session.agent.beforeToolCall = async (ctx, signal) => {
+    const name = ctx.toolCall.name;
+    if (name === "write" || name === "edit") {
+      const path = (ctx.args as Record<string, unknown>)?.path;
+      if (typeof path === "string") guard.capture(path);
+    }
+    return originalBefore?.(ctx, signal);
+  };
+
+  const originalAfter = (session.agent as unknown as Record<string, unknown>).afterToolCall as
+    | ((ctx: unknown, signal?: AbortSignal) => Promise<unknown>) | undefined;
+  (session.agent as unknown as Record<string, unknown>).afterToolCall = async (
+    ctx: { toolCall: { name: string }; args: unknown; isError: boolean },
+    signal?: AbortSignal,
+  ) => {
+    const name = ctx.toolCall.name;
+    if ((name === "write" || name === "edit") && !ctx.isError) {
+      const path = (ctx.args as Record<string, unknown>)?.path;
+      if (typeof path === "string") {
+        const result = guard.check(path);
+        if (result.reverted) {
+          logEvent(rootDir, {
+            event: "heading_guard_revert",
+            session: "maintenance",
+            path,
+            lostHeadings: result.lostHeadings,
+          });
+        }
+      }
     }
     return originalAfter?.(ctx, signal);
   };
@@ -353,6 +402,7 @@ export async function createMaintenanceSession(options: {
   const session = await openSession({ rootDir, modelRuntime });
   const policy = installMaintenanceGate(session, rootDir);
   installMaintenanceHebbianGuard(session, rootDir);
+  installMaintenanceHeadingGuard(session, rootDir);
 
   const events: AgentEvent[] = [];
   const unsub = session.subscribe((event) => events.push(event));

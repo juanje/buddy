@@ -1311,6 +1311,45 @@ drown the signal it is meant to measure.
 - **Then** the frontmatter changes are included in that commit
 - **And** no separate per-turn metadata-only commits are created
 
+### 3.9b Write Guards (FR-GUARD)
+
+| ID | Description | Phase |
+|----|-------------|-------|
+| FR-GUARD-01 | Heading-snapshot guard prevents structural destruction | 2 ✓ |
+
+**FR-GUARD-01 — Heading-snapshot guard**
+
+- **Given** the agent calls `write` or `edit` on a file inside `agent_brain/`
+  or `logs/`
+- **When** the tool call completes without error
+- **Then** the guard compares the set of `## ` headings before and after
+- **And** if any heading present before the write is missing after it, the
+  file is restored to its pre-write content and the tool result is replaced
+  with an error explaining which headings were lost
+- **And** the guard fires in both the chat session and the maintenance session
+
+**What it does not do:**
+
+- It does not block new headings being added — only disappearance is a fault.
+- It does not protect heading *order* — reordering is a legitimate edit.
+- It does not protect files outside `agent_brain/` and `logs/` — user files
+  are the user's to restructure.
+- It does not apply when the tool call failed (`isError: true`) — a failed
+  call changed nothing, and restoring would overwrite the current state.
+
+**Why headings, not size or diff hunks.** Size guards have false positives:
+`observations.md` and `deferred.md` legitimately shrink when entries are
+promoted or resolved. Diff-hunk analysis is fragile and ambiguous. Headings
+are structural anchors that define the file's schema — their disappearance
+is always damage, never a legitimate edit (the model that wants to merge
+sections should move content under the surviving heading, not delete the
+other).
+
+**Why both sessions.** The worst observed destruction happened in
+consolidation (C2, C3), not chat. A guard installed only on the chat
+session would miss the highest-risk path — repeating the Hebbian guard's
+original gap (FR-HEBB-08).
+
 ### 3.10 System Prompt (FR-PROMPT)
 
 | ID | Description | Phase |

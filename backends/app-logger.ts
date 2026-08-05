@@ -24,6 +24,8 @@ export type AppLogEvent =
   /** Cascade stopped mid-flight because spend crossed the threshold (FR-COST-05). */
   | { event: "consolidation_budget_stopped"; depth: number }
   | { event: "tool_result"; session: string; tool: string; path?: string; isError: boolean }
+  /** FR-GUARD-01: a write/edit destroyed section headings and was reverted. */
+  | { event: "heading_guard_revert"; session: string; path: string; lostHeadings?: string[] }
   | { event: "heartbeat_tick"; deferredDue: number; consolidationEvaluated: boolean }
   | { event: "error"; message: string; context?: string };
 
