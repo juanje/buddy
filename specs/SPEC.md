@@ -1334,7 +1334,7 @@ does not know them, and orders their profile overwritten.
 
 - **Given** a session is starting
 - **When** session context is assembled
-- **Then** episodic and transient content is built as a separate message body: `logs/index.md`, last session log, due/overdue deferred items, first-run interview (when USER.md is a placeholder)
+- **Then** episodic and transient content is built as a separate message body: the current date in plain language, `logs/index.md`, last session log, due/overdue deferred items, first-run interview (when USER.md is a placeholder)
 - **And** due deferred items are formatted so the agent surfaces them proactively in its first reply
 - **And** when no context sections apply, the message is empty (no injection)
 

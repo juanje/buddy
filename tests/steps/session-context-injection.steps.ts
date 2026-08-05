@@ -47,6 +47,15 @@ Then("the session context message is empty", function (this: ContextWorld) {
   assert.equal(this.sessionContext!.message.trim(), "");
 });
 
+Then("the session context includes the current date in plain language", function (this: ContextWorld) {
+  assert.match(this.sessionContext!.message, /# Today\n\n/);
+  assert.match(this.sessionContext!.message, /Sunday, 19 July 2026/);
+});
+
+Then("the session context has no sessions index", function (this: ContextWorld) {
+  assert.doesNotMatch(this.sessionContext!.message, /# Sessions index/);
+});
+
 Then("the session context includes the sessions index", function (this: ContextWorld) {
   assert.match(this.sessionContext!.message, /# Sessions index/);
   assert.match(this.sessionContext!.message, /Today work\./);

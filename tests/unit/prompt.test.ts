@@ -92,7 +92,7 @@ describe("assembleSystemPrompt", () => {
     expect(ctx.message).toContain("# Sessions index");
   });
 
-  it("returns empty session context when nothing episodic applies", () => {
+  it("returns date-only session context when nothing episodic applies", () => {
     ({ configDir: globalConfigDir } = setupGlobalConfigDir({ agentsBase: "# Base\n" }, vi));
     dir = mkdtempSync(join(tmpdir(), "buddy-prompt-"));
     mkdirSync(join(dir, "agent_brain", "identity"), { recursive: true });
@@ -103,7 +103,9 @@ describe("assembleSystemPrompt", () => {
 
     const ctx = assembleSessionContext(dir, new Date("2026-07-22T12:00:00Z"));
 
-    expect(ctx.message).toBe("");
+    expect(ctx.message).toContain("# Today");
+    expect(ctx.message).not.toContain("# Sessions index");
+    expect(ctx.message).not.toContain("# Pending items");
     expect(ctx.personalizationPending).toBe(false);
   });
 });

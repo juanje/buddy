@@ -13,12 +13,25 @@ import { defaultTemplatesDir } from "./create-buddy";
 import { dailyLogPath, deferredPath, logsDirPath, logsIndexPath, soulPath, userProfilePath } from "./brain-paths";
 import { BRAIN } from "../shared/brain-paths";
 
+function formatPlainDate(d: Date): string {
+  return d.toLocaleDateString("en-GB", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+function formatPlainTime(d: Date): string {
+  return d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+}
+
 export interface AssembledPrompt {
   prompt: string;
 }
 
 export interface SessionContext {
-  /** Wrapped hidden user message; empty when no episodic sections apply. */
+  /** Wrapped hidden user message; always contains at least the current date. */
   message: string;
   dueItems: ParsedDeferredItem[];
   personalizationPending: boolean;
@@ -99,7 +112,7 @@ export function assembleMaintenancePrompt(rootDir: string, now: Date = new Date(
   const sections: string[] = [];
   if (soul) sections.push(`# Your character\n\n${soul.trim()}`);
   if (user) sections.push(`# About your user\n\n${user.trim()}`);
-  sections.push(`# Current date and time\n\n${now.toISOString()} (local: ${now.toString()})`);
+  sections.push(`# Current date and time\n\n${formatPlainDate(now)}, ${formatPlainTime(now)}`);
 
   return sections.join("\n\n---\n\n");
 }
@@ -120,7 +133,7 @@ export function assembleSystemPrompt(rootDir: string, now: Date = new Date()): A
   if (soul) sections.push(`# Your character\n\n${soul.trim()}`);
   if (user) sections.push(`# About your user\n\n${user.trim()}`);
 
-  sections.push(`# Current date and time\n\n${now.toISOString()} (local: ${now.toString()})`);
+  sections.push(`# Current date and time\n\n${formatPlainDate(now)}, ${formatPlainTime(now)}`);
 
   return { prompt: sections.join("\n\n---\n\n") };
 }
@@ -175,6 +188,8 @@ export function assembleSessionContext(rootDir: string, now: Date = new Date()):
 
   const personalizationPending = isUserProfilePlaceholder(user);
   const sections: string[] = [];
+
+  sections.push(`# Today\n\n${formatPlainDate(now)}`);
 
   const logsIndex = readIfExists(logsIndexPath(rootDir));
   if (logsIndex) {

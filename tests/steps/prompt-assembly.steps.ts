@@ -126,7 +126,7 @@ Then("it contains the USER.md profile", function (this: PromptWorld) {
 
 Then("it contains the current date and time", function (this: PromptWorld) {
   assert.match(this.assembled!.prompt, /# Current date and time/);
-  assert.ok(this.assembled!.prompt.includes(NOW.toISOString()));
+  assert.match(this.assembled!.prompt, /Sunday, 19 July 2026/);
 });
 
 Then("the prompt has no pending items section", function (this: PromptWorld) {
