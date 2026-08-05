@@ -144,6 +144,23 @@ Feature: Consolidation scheduler (FR-CONSOL-01/02/04/05/06/08/09, FR-COST-05, FR
     When the maintenance session tries to write ".pi/settings.json"
     Then the maintenance tool call is blocked
 
+  # --- FR-CONSOL-16: each depth runs in its own session ---
+
+  Scenario: Each depth in a cascade gets its own session
+    Given depth 2 consolidation is due
+    And there is new content since the last consolidation
+    When consolidation is triggered at depth 2
+    Then 2 separate sessions were created
+    And each session was disposed before the next
+
+  Scenario: A single-depth run still creates and disposes one session
+    Given 3 sessions have completed since the last consolidation
+    And there is new content since the last consolidation
+    When consolidation is triggered at depth 1
+    Then 1 separate sessions were created
+
+  # --- FR-COST-05: the budget gate stops a cascade already running ---
+
   Scenario: Crossing the budget threshold mid-cascade stops at the next depth
     # The 95% gate previously only prevented a cascade from starting, so a
     # depth-3 cascade begun at 70% could run three billed calls past the ceiling.

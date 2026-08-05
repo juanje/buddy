@@ -28,6 +28,11 @@ import type { MaintenanceSessionLike } from "../../backends/consolidation-runner
 import { setupGlobalConfigDir, teardownGlobalConfigDir } from "../support/global-config";
 import { TEST_FROZEN_NOW, TEST_HEARTBEAT_INTERVAL_MS } from "../support/test-constants";
 
+interface SessionLifecycleEvent {
+  type: "create" | "dispose";
+  sessionId: number;
+}
+
 interface ConsolidationWorld extends BuddyWorld {
   consolTmpDir?: string;
   globalConfigDir?: string;
@@ -44,6 +49,8 @@ interface ConsolidationWorld extends BuddyWorld {
   maintenancePausedNotices?: number[];
   maintenancePolicy?: ReturnType<typeof createMaintenancePermissionPolicy>;
   maintenanceGateResult?: { block: true; reason: string } | undefined;
+  /** FR-CONSOL-16: ordered log of session create/dispose events. */
+  sessionLifecycle?: SessionLifecycleEvent[];
 }
 
 After(function (this: ConsolidationWorld) {
@@ -70,6 +77,7 @@ Given("a buddy directory prepared for consolidation", async function (this: Cons
   this.consolidationRuns = [];
   this.depthsPrompted = [];
   this.maintenancePausedNotices = [];
+  this.sessionLifecycle = [];
   this.streaming = false;
 
   this.heartbeat = startHeartbeat({
@@ -92,16 +100,24 @@ Given("a buddy directory prepared for consolidation", async function (this: Cons
     hasNewContentFn: async () => true,
     runConsolidationFn: async (options) => {
       let currentDepth = 0;
-      const createSession = async (): Promise<MaintenanceSessionLike> => ({
-        prompt: async (text: string) => {
-          currentDepth = Number(/Run consolidation at depth (\d)/.exec(text)?.[1] ?? 0);
-          this.depthsPrompted!.push(currentDepth);
-          if (this.failAtDepth === currentDepth) {
-            throw new Error(`scripted failure at depth ${currentDepth}`);
-          }
-        },
-        dispose: () => {},
-      });
+      let sessionCounter = 0;
+      const createSession = async (): Promise<MaintenanceSessionLike> => {
+        sessionCounter += 1;
+        const id = sessionCounter;
+        this.sessionLifecycle!.push({ type: "create", sessionId: id });
+        return {
+          prompt: async (text: string) => {
+            currentDepth = Number(/Run consolidation at depth (\d)/.exec(text)?.[1] ?? 0);
+            this.depthsPrompted!.push(currentDepth);
+            if (this.failAtDepth === currentDepth) {
+              throw new Error(`scripted failure at depth ${currentDepth}`);
+            }
+          },
+          dispose: () => {
+            this.sessionLifecycle!.push({ type: "dispose", sessionId: id });
+          },
+        };
+      };
       const result = await runConsolidation({
         ...options,
         createSession,
@@ -304,6 +320,37 @@ Then("the user is told background maintenance is paused", function (this: Consol
     this.maintenancePausedNotices!.length > 0,
     "the user must be notified when maintenance is abandoned",
   );
+});
+
+// --- FR-CONSOL-16: each depth runs in its own session ---
+
+Then(
+  "{int} separate sessions were created",
+  function (this: ConsolidationWorld, expected: number) {
+    const creates = this.sessionLifecycle!.filter((e) => e.type === "create");
+    assert.equal(
+      creates.length,
+      expected,
+      `expected ${expected} session(s), got ${creates.length}: ${JSON.stringify(this.sessionLifecycle)}`,
+    );
+  },
+);
+
+Then("each session was disposed before the next", function (this: ConsolidationWorld) {
+  const events = this.sessionLifecycle!;
+  for (let i = 0; i < events.length - 1; i++) {
+    const current = events[i]!;
+    const next = events[i + 1]!;
+    if (current.type === "create" && next.type === "create") {
+      assert.fail(
+        `session ${current.sessionId} was not disposed before session ${next.sessionId} was created: ${JSON.stringify(events)}`,
+      );
+    }
+  }
+  const lastCreate = events.filter((e) => e.type === "create").pop();
+  const lastDispose = events.filter((e) => e.type === "dispose").pop();
+  assert.ok(lastDispose, "the last session must also be disposed");
+  assert.equal(lastDispose!.sessionId, lastCreate!.sessionId);
 });
 
 // --- FR-CONSOL-10: the unattended session obeys the zone model ---

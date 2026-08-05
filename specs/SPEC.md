@@ -925,6 +925,7 @@ Fork bomb defense:
 | FR-CONSOL-13 | A consolidation that corrupts the brain is a failure | 2 ✓ |
 | FR-CONSOL-14 | The daily log records maintenance only when notable | 2 ✓ |
 | FR-CONSOL-15 | The maintenance session's model is chosen per depth | 2 |
+| FR-CONSOL-16 | Each cascade depth runs in its own session | 2 ✓ |
 
 **Consolidation depths:**
 
@@ -1155,6 +1156,22 @@ at depth 1 will run on the fast tier. That is acceptable because the
 deterministic half decides *what* is broken and the model only decides which
 repairs to apply; anything needing real judgment about the wiki's shape belongs
 to depth 3 (FR-WIKI-06), not to depth 1.
+
+**FR-CONSOL-16 — Each cascade depth runs in its own session**
+
+- **Given** a consolidation cascade targets depth N (where N > 1)
+- **When** the runner iterates over the cascade depths
+- **Then** each depth creates a fresh maintenance session
+- **And** each session is disposed before the next depth begins
+- **And** identity changes and refused paths are aggregated across all
+  depth sessions for the final maintenance log entry
+- **And** a single commit is made at the end covering all depths, as before
+
+**Why.** A shared session accumulates context across depths — prompt history,
+tool results, system messages. By depth 3 the effective window is exhausted,
+and local models produce 0 tool calls (observed: 42+ turns accumulated,
+0 actions at depth 3; isolated depth 3 produced 17 tool calls). Creating a
+fresh session per depth gives each depth the full window.
 
 | ID | Description | Phase |
 |----|-------------|-------|

@@ -113,7 +113,8 @@ describe("consolidation runner", () => {
     expect(result.ran).toBe(true);
     expect(result.completedDepths).toEqual([1, 2]);
     expect(prompt).toHaveBeenCalledTimes(2);
-    expect(dispose).toHaveBeenCalledTimes(1);
+    expect(createSession).toHaveBeenCalledTimes(2);
+    expect(dispose).toHaveBeenCalledTimes(2);
     expect(loadConsolidationState(dir).lastDepth2).toBe("2026-07-22T12:00:00.000Z");
 
     const log = loadConsolidationLog(dir);
@@ -241,14 +242,17 @@ describe("consolidation runner", () => {
     setupBuddyDir();
     await initTestGitRepo(dir);
 
-    let calls = 0;
-    const createSession = vi.fn(async (): Promise<MaintenanceSessionLike> => ({
-      prompt: async () => {
-        calls += 1;
-        if (calls === 2) throw new Error("API timeout");
-      },
-      dispose: () => {},
-    }));
+    let sessionCount = 0;
+    const createSession = vi.fn(async (): Promise<MaintenanceSessionLike> => {
+      sessionCount += 1;
+      const thisSession = sessionCount;
+      return {
+        prompt: async () => {
+          if (thisSession === 2) throw new Error("API timeout");
+        },
+        dispose: () => {},
+      };
+    });
 
     const state = loadConsolidationState(dir);
     state.sessionsSinceLastDepth1 = 3;
@@ -283,9 +287,7 @@ describe("consolidation runner", () => {
 
     let prompts = 0;
     const createSession = vi.fn(async (): Promise<MaintenanceSessionLike> => ({
-      prompt: async () => {
-        prompts += 1;
-      },
+      prompt: async () => { prompts += 1; },
       dispose: () => {},
     }));
 

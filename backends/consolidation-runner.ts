@@ -424,10 +424,11 @@ export async function runConsolidation(options: RunConsolidationOptions): Promis
     return { ran: false, completedDepths, state, abandonedDepths };
   }
 
-  let maintenanceSession: MaintenanceSessionLike | undefined;
+  // Aggregate identity/refused across per-depth sessions for the final log.
+  let anyChangedIdentity = false;
+  const allRefusedPaths: string[] = [];
 
   try {
-    maintenanceSession = await createSession({ rootDir, modelRuntime });
     const date = toIsoDay(now);
 
     for (const depth of cascadeDepths(targetDepth)) {
@@ -459,14 +460,15 @@ export async function runConsolidation(options: RunConsolidationOptions): Promis
         continue;
       }
 
+      // Each depth gets its own session so context from earlier depths does
+      // not exhaust the model's effective window (#16 — session fatigue).
+      let depthSession: MaintenanceSessionLike | undefined;
       const start = Date.now();
       try {
+        depthSession = await createSession({ rootDir, modelRuntime });
         logEvent(rootDir, { event: "consolidation_start", depth });
         const healthBefore = computeBrainHealthReport(rootDir);
-        await maintenanceSession.prompt(buildConsolidationPrompt(rootDir, depth, now));
-        // FR-CONSOL-13: the model wrote to the brain; verify it did not break
-        // it. Throwing routes into the catch below, so the depth counts as
-        // failed and the maintenance clock does not advance over the damage.
+        await depthSession.prompt(buildConsolidationPrompt(rootDir, depth, now));
         assertNoNewBrainDamage(healthBefore, computeBrainHealthReport(rootDir));
         if (depth === 1) {
           updateLogsIndexFromDaySummary(rootDir, date);
@@ -480,10 +482,11 @@ export async function runConsolidation(options: RunConsolidationOptions): Promis
         });
         advanceCounters(state, depth, now);
         completedDepths.push(depth);
-        // FR-CONSOL-08: persist immediately. Saving only after the whole
-        // cascade meant a later failure discarded work already paid for.
         saveConsolidationState(rootDir, state);
         logEvent(rootDir, { event: "consolidation_complete", depth });
+
+        if (depthSession.changedIdentity?.()) anyChangedIdentity = true;
+        allRefusedPaths.push(...(depthSession.refusedPaths?.() ?? []));
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         const failure = recordDepthFailure(state, depth, now);
@@ -506,40 +509,27 @@ export async function runConsolidation(options: RunConsolidationOptions): Promis
         });
         stoppedBy = "failure";
         break;
+      } finally {
+        depthSession?.dispose();
       }
     }
 
-    // Provably redundant: both mutators above persist, and `depthBlockReason`
-    // is pure. Kept deliberately (reviewed twice, 2026-07-29) as a defensive
-    // write in the subsystem that produced the 22 ms phantom run. Removing it
-    // buys nothing a user can see.
     saveConsolidationState(rootDir, state);
 
     if (completedDepths.length > 0) {
       const depthLabel = completedDepths.map((d) => `depth-${d}`).join(", ");
       const notes: string[] = [];
 
-      // FR-CONSOL-11: SOUL.md is re-injected into every future session, so a
-      // change to it must not be silent. Git holds the diff; this is how the
-      // user learns to go look.
-      if (maintenanceSession.changedIdentity?.()) {
+      if (anyChangedIdentity) {
         notes.push("Updated SOUL.md (character) during this cycle — review the commit if unexpected.");
       }
 
-      const refused = maintenanceSession.refusedPaths?.() ?? [];
-      if (refused.length > 0) {
+      if (allRefusedPaths.length > 0) {
         notes.push(
-          `Refused ${refused.length} access attempt(s) outside the workspace: ${refused.join(", ")}.`,
+          `Refused ${allRefusedPaths.length} access attempt(s) outside the workspace: ${allRefusedPaths.join(", ")}.`,
         );
       }
 
-      // FR-CONSOL-14: nothing notable, nothing written. An unconditional
-      // "Maintenance cycle completed" told the reader only that the machinery
-      // ran, in a file re-injected into every future session — and it was the
-      // line that made the 22 ms phantom run of 2026-07-28 look legitimate,
-      // since it was emitted without reference to whether any work happened.
-      // The git commit is the record of a routine cycle, and unlike this note
-      // it cannot claim work that was never done.
       if (notes.length > 0) {
         appendDailyLog(rootDir, {
           date,
@@ -560,7 +550,6 @@ export async function runConsolidation(options: RunConsolidationOptions): Promis
       abandonedDepths,
     };
   } finally {
-    maintenanceSession?.dispose();
     releaseLock(rootDir);
   }
 }
