@@ -37,7 +37,7 @@ import { assembleMaintenancePrompt } from "../backends/prompt";
 import { createBuddyModelRuntime, defaultAuthPath } from "../backends/provider-auth";
 import { bootRefreshIfNeeded } from "../backends/boot-refresh";
 import { buddyAgentDir, globalConfigDir } from "../backends/global-config";
-import { AGENT_TOOLS, EXCLUDED_TOOLS } from "../shared/defaults";
+import { AGENT_TOOLS, CONSOLIDATION_RETRY_CEILING, EXCLUDED_TOOLS } from "../shared/defaults";
 import {
   loadConsolidationLog,
   loadConsolidationState,
@@ -45,6 +45,22 @@ import {
 } from "../shared/consolidation-state";
 
 const VALID_DEPTHS = new Set([1, 2, 3]);
+
+function seedDepthOnly(testDir: string, targetDepth: 1 | 2 | 3, now: Date): void {
+  const state = loadConsolidationState(testDir);
+  const failures: Record<string, { count: number; lastFailureAt: string }> = {
+    ...(state.failures ?? {}),
+  };
+  for (let d = 1; d < targetDepth; d++) {
+    failures[String(d)] = { count: CONSOLIDATION_RETRY_CEILING, lastFailureAt: now.toISOString() };
+  }
+  state.failures = failures;
+  if (targetDepth === 3) state.depth2RunsSinceLastDepth3 = 99;
+  if (targetDepth >= 2) state.depth1RunsSinceLastDepth2 = 99;
+  if (targetDepth >= 1) state.sessionsSinceLastDepth1 = 99;
+  saveConsolidationState(testDir, state);
+  console.log(`--depth-only: abandoned depths below ${targetDepth}, forced depth ${targetDepth} due.`);
+}
 
 function printUsage(): void {
   console.log(`Usage:
@@ -62,6 +78,8 @@ function printUsage(): void {
                        have run, mid-cascade (FR-COST-05)
   --seed-failures N    Pre-seed N consecutive failures at the target depth,
                        to observe backoff (N<3) or abandonment (N>=3)
+  --depth-only         Skip lower depths in the cascade (abandon them in state
+                       so only the target depth runs)
 
 Examples:
   # depth 2 cascade where the weekly step fails: depth 1 must survive
@@ -71,13 +89,17 @@ Examples:
   npx tsx scripts/test-consolidation.ts --budget-stop-after 1 3
 
   # target depth already past the retry ceiling: skipped, not attempted
-  npx tsx scripts/test-consolidation.ts --seed-failures 3 1`);
+  npx tsx scripts/test-consolidation.ts --seed-failures 3 1
+
+  # run ONLY depth 3 against your live buddy instance (skips depths 1+2)
+  npx tsx scripts/test-consolidation.ts --depth-only 3 ~/.buddy`);
 }
 
 interface SimulateOptions {
   failAtDepth?: number;
   budgetStopAfter?: number;
   seedFailures?: number;
+  depthOnly?: boolean;
 }
 
 function isSimulating(sim: SimulateOptions): boolean {
@@ -121,6 +143,9 @@ function parseArgs(argv: string[]): {
       simulate.budgetStopAfter = takeCount("--budget-stop-after");
     } else if (args[0] === "--seed-failures") {
       simulate.seedFailures = takeCount("--seed-failures");
+    } else if (args[0] === "--depth-only") {
+      simulate.depthOnly = true;
+      args.shift();
     } else if (args[0] === "--date" && args[1]) {
       args.shift();
       const dateStr = args.shift()!;
@@ -185,9 +210,12 @@ async function runSimulated(
   now: Date,
   sim: SimulateOptions,
 ): Promise<void> {
+  if (sim.depthOnly && depth > 1) seedDepthOnly(testDir, depth, now);
+
   if (sim.seedFailures !== undefined) {
     const state = loadConsolidationState(testDir);
     state.failures = {
+      ...(state.failures ?? {}),
       [String(depth)]: { count: sim.seedFailures, lastFailureAt: now.toISOString() },
     };
     saveConsolidationState(testDir, state);
@@ -340,6 +368,8 @@ async function main(): Promise<void> {
     console.log(`\nDry run complete. Inspect fixture at: ${testDir}`);
     return;
   }
+
+  if (simulate.depthOnly && depth > 1) seedDepthOnly(testDir, depth, now);
 
   bootRefreshIfNeeded(globalConfigDir());
   await alignHttpDispatcherWithPi();
