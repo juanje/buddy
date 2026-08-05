@@ -115,8 +115,8 @@ filesystem level — zero tokens.
   the impact.
 - On 32k with a ~15.5k startup, a single large file move can consume half the
   remaining runway or overflow the window entirely.
-- At 17 tok/s local decode (measured), 4k output = ~4 minutes of waiting just
-  to copy a file.
+- At ~14–17 tok/s local decode (measured; varies by model/quantization), 4k
+  output = ~4–5 minutes of waiting just to copy a file.
 
 ### Markdown conversion of URLs and PDFs
 
@@ -196,7 +196,7 @@ How many turns before a 32k window fills and compaction fires?
 | Mixed (includes URL + file move) | ~17 turns | ~5–6 turns | ~3× |
 | Move a long document | fits (0.2k) | ~8–24k (scales with length) | n/a |
 
-Each compaction event on a local model means: an extra LLM call at ~17 tok/s,
+Each compaction event on a local model means: an extra LLM call at ~14–17 tok/s,
 lost detail, and a small model that starts to lose track of the session.
 
 ---
@@ -250,7 +250,7 @@ Every improvement above bends the same way, steepest where the margin is
 thinnest:
 
 - **Small window (32k):** the harness stack that is 2.8% of 1M is 113% of 32k.
-- **Slow decode (~17 tok/s measured):** output tokens avoided = wall-clock time
+- **Slow decode (~14–17 tok/s measured):** output tokens avoided = wall-clock time
   returned to the user.
 - **Weaker instruction-following:** a 12B model told "be a coding agent" in the
   system prompt and "actually be a memory assistant" in an overlay drifts toward
@@ -288,8 +288,8 @@ recorded, the phantom consolidation, the whole-file rewrite — a frontier model
 masked these with graceful degradation. The local model turned silent
 degradation into loud failure, and the fixes improved every model.
 
-**The small model is the canary.** If the design works on 32k at 17 tok/s with
-a 12B model, it works everywhere — and every inefficiency found at that scale
+**The small model is the canary.** If the design works on 32k at ~14–17 tok/s with
+a 12–27B model, it works everywhere — and every inefficiency found at that scale
 is an inefficiency that was also present, just invisible, on the cloud path.
 
 ---
@@ -300,9 +300,13 @@ is an inefficiency that was also present, just invisible, on the cloud path.
 - Claude Code structural overhead: ~28.3k loaded (+35.8k deferred), 74 MCP
   tools, 1M window — live session breakdown.
 - Episodic context injection: ~17.7k tokens (FR-CHAT-13).
-- Local decode: ~17 tok/s; confabulated-completion failure mode
-  (app-design-principles.md §"LLM providers").
+- Local decode: ~17 tok/s (Gemma 12B, 8-bit); ~14 tok/s (Qwen 27B, 4-bit).
+  Confabulated-completion failure mode (app-design-principles.md §"LLM
+  providers").
 - Local context window: 32,768 (SPEC §3.23).
+- Buddy structural overhead: ~7.5k (modeled) confirmed at ~9.2k startup on
+  fresh instance (structural + minimal episodic).
+- Tool choice accuracy: 18/18 correct (Qwen 27B session, 13 available tools).
 - Reliability defects: FR-HEBB-06/07, FR-CONSOL-12 — dated incidents.
 
 **Modeled:**
