@@ -27,6 +27,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { createHebbianGuard } from "../../backends/hebbian-guard";
+import {
+  installMaintenanceHebbianGuard,
+  type GateInstallable,
+} from "../../backends/consolidation-runner";
 import { SessionLifecycle } from "../../backends/session-lifecycle";
 import { initTestGitRepo } from "../support/test-git";
 
@@ -139,6 +143,23 @@ describe("createHebbianGuard", () => {
     expect(read("user/b.md")).toContain("access_count: 2"); // untouched
   });
 
+  it("strips guarded fields added to a file that had none", () => {
+    const rel = "agent_brain/concepts/index.md";
+    const noCounters = "---\nsummary: Concepts index\ncreated: 2026-05-01\n---\n\n# Index\n";
+    write(rel, noCounters);
+    const guard = createHebbianGuard(root);
+
+    guard.capture(rel);
+    write(rel, noCounters.replace("---\n\n# Index", "access_count: 3\nlast_accessed: 2026-08-05\n---\n\n# Index"));
+    expect(guard.restore(rel)).toBe(true);
+
+    const result = read(rel);
+    expect(result).not.toContain("access_count");
+    expect(result).not.toContain("last_accessed");
+    expect(result).toContain("summary: Concepts index");
+    expect(result).toContain("# Index");
+  });
+
   it("forgets a capture once restored, so a later write is judged fresh", () => {
     const rel = "user/inbox.md";
     write(rel, ORIGINAL);
@@ -226,5 +247,62 @@ describe("the session lifecycle drives the guard", () => {
     // A failed call changed nothing by definition; writing a remembered value
     // over whatever is on disk would be the guard causing corruption.
     expect(read(rel)).toContain("access_count: 1");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Maintenance session wiring (FR-HEBB-08).
+// ---------------------------------------------------------------------------
+
+describe("installMaintenanceHebbianGuard", () => {
+  function fakeSession(): GateInstallable {
+    return { agent: {} } as unknown as GateInstallable;
+  }
+
+  it("installs both before and after hooks", () => {
+    const session = fakeSession();
+    installMaintenanceHebbianGuard(session, root);
+    expect(typeof session.agent.beforeToolCall).toBe("function");
+    expect(typeof (session.agent as unknown as Record<string, unknown>).afterToolCall).toBe("function");
+  });
+
+  it("restores counters through the hook chain", async () => {
+    const rel = "agent_brain/concepts/thing.md";
+    write(rel, ORIGINAL);
+
+    const session = fakeSession();
+    installMaintenanceHebbianGuard(session, root);
+
+    const before = session.agent.beforeToolCall as (ctx: unknown, signal: AbortSignal) => Promise<unknown>;
+    const after = (session.agent as unknown as Record<string, unknown>).afterToolCall as (ctx: unknown, signal: AbortSignal) => Promise<unknown>;
+    const signal = new AbortController().signal;
+
+    await before({ toolCall: { name: "write" }, args: { path: rel } }, signal);
+    write(rel, ORIGINAL.replace("access_count: 7", "access_count: 1"));
+    await after({ toolCall: { name: "write" }, args: { path: rel }, isError: false }, signal);
+
+    expect(read(rel)).toContain("access_count: 7");
+  });
+
+  it("strips fields added to a file that had none", async () => {
+    const rel = "agent_brain/concepts/index.md";
+    const noCounters = "---\nsummary: Concepts index\ncreated: 2026-05-01\n---\n\n# Index\n";
+    write(rel, noCounters);
+
+    const session = fakeSession();
+    installMaintenanceHebbianGuard(session, root);
+
+    const before = session.agent.beforeToolCall as (ctx: unknown, signal: AbortSignal) => Promise<unknown>;
+    const after = (session.agent as unknown as Record<string, unknown>).afterToolCall as (ctx: unknown, signal: AbortSignal) => Promise<unknown>;
+    const signal = new AbortController().signal;
+
+    await before({ toolCall: { name: "write" }, args: { path: rel } }, signal);
+    write(rel, noCounters.replace("---\n\n# Index", "access_count: 3\nlast_accessed: 2026-08-05\n---\n\n# Index"));
+    await after({ toolCall: { name: "write" }, args: { path: rel }, isError: false }, signal);
+
+    const result = read(rel);
+    expect(result).not.toContain("access_count");
+    expect(result).not.toContain("last_accessed");
+    expect(result).toContain("# Index");
   });
 });

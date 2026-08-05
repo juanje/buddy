@@ -40,6 +40,7 @@ import {
   updateLogsIndexFromDaySummary,
 } from "./consolidation-mechanics";
 import { logEvent } from "./app-logger";
+import { createHebbianGuard } from "./hebbian-guard";
 import { commitAll } from "./git";
 import { acquireLock, releaseLock } from "./maintenance";
 import { createPermissionGate, type PermissionRequest } from "./permissions";
@@ -92,6 +93,43 @@ export function installMaintenanceGate(
     return blocked ?? prior;
   };
   return policy;
+}
+
+/**
+ * Install the hebbian guard on a maintenance session (FR-HEBB-08).
+ *
+ * Same capture-before / restore-after mechanism as the chat session, but wired
+ * through beforeToolCall/afterToolCall hooks rather than the event stream.
+ */
+export function installMaintenanceHebbianGuard(
+  session: GateInstallable,
+  rootDir: string,
+): void {
+  const guard = createHebbianGuard(rootDir);
+
+  const originalBefore = session.agent.beforeToolCall;
+  session.agent.beforeToolCall = async (ctx, signal) => {
+    const name = ctx.toolCall.name;
+    if (name === "write" || name === "edit") {
+      const path = (ctx.args as Record<string, unknown>)?.path;
+      if (typeof path === "string") guard.capture(path);
+    }
+    return originalBefore?.(ctx, signal);
+  };
+
+  const originalAfter = (session.agent as unknown as Record<string, unknown>).afterToolCall as
+    | ((ctx: unknown, signal?: AbortSignal) => Promise<unknown>) | undefined;
+  (session.agent as unknown as Record<string, unknown>).afterToolCall = async (
+    ctx: { toolCall: { name: string }; args: unknown; isError: boolean },
+    signal?: AbortSignal,
+  ) => {
+    const name = ctx.toolCall.name;
+    if ((name === "write" || name === "edit") && !ctx.isError) {
+      const path = (ctx.args as Record<string, unknown>)?.path;
+      if (typeof path === "string") guard.restore(path);
+    }
+    return originalAfter?.(ctx, signal);
+  };
 }
 
 /**
@@ -314,6 +352,7 @@ export async function createMaintenanceSession(options: {
   const openSession = options.openSession ?? openRealMaintenanceSession;
   const session = await openSession({ rootDir, modelRuntime });
   const policy = installMaintenanceGate(session, rootDir);
+  installMaintenanceHebbianGuard(session, rootDir);
 
   const events: AgentEvent[] = [];
   const unsub = session.subscribe((event) => events.push(event));

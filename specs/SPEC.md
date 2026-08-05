@@ -1165,6 +1165,7 @@ to depth 3 (FR-WIKI-06), not to depth 1.
 | FR-HEBB-05 | Counters are created on first read | 2 ✓ |
 | FR-HEBB-06 | Counters survive a whole-file rewrite | 2 ✓ |
 | FR-HEBB-07 | Access is recorded from the paired tool events | 2 ✓ |
+| FR-HEBB-08 | Counters are guarded in the maintenance session too | 2 ✓ |
 
 **FR-HEBB-01 — Intercept reads**
 
@@ -1274,6 +1275,17 @@ the cheaper way to do it; charging it nothing would bias the signal towards
 whichever tool happens to be less efficient. A recursive `grep` does not count —
 that is brute force, and crediting every file under a tree for one search would
 drown the signal it is meant to measure.
+
+**FR-HEBB-08 — Counters are guarded in the maintenance session too**
+
+- **Given** a consolidation session writes to a brain file
+- **When** the write changes or adds `access_count` / `last_accessed`
+- **Then** the fields are restored (if they existed) or stripped (if added)
+- **And** the guard uses the same mechanism as the chat session (FR-HEBB-06)
+- **Rationale:** the guard was wired only into the chat session
+  (`session-lifecycle.ts`), so metadata damage appeared in every consolidation
+  eval run (C1/C2/C3) but never in chat. A guard that covers half the write
+  paths is half a guard.
 
 **FR-HEBB-04 — Lazy commit**
 

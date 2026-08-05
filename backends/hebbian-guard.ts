@@ -62,15 +62,19 @@ export function createHebbianGuard(rootDir: string): HebbianGuard {
     capture(path) {
       const relPath = keyFor(path);
       if (!relPath) return;
-      const before = readGuarded(resolve(rootDir, relPath));
-      if (before) captured.set(relPath, before);
+      const absPath = resolve(rootDir, relPath);
+      if (!existsSync(absPath)) return;
+      const before = readGuarded(absPath);
+      // Record even when no guarded fields exist (empty object), so restore
+      // can strip fields that were *added* by the write.
+      captured.set(relPath, before ?? {});
     },
 
     restore(path) {
       const relPath = keyFor(path);
       if (!relPath) return false;
       const before = captured.get(relPath);
-      if (!before) return false;
+      if (before === undefined) return false;
       captured.delete(relPath); // one capture, one restore
 
       const absPath = resolve(rootDir, relPath);
@@ -81,12 +85,22 @@ export function createHebbianGuard(rootDir: string): HebbianGuard {
         return false;
       }
       const block = /^---\n([\s\S]*?)\n---/.exec(content);
-      // A rewrite that removed the frontmatter entirely is a content decision.
-      // Re-inserting a block here would be the guard inventing structure.
       if (!block) return false;
 
       let repaired = false;
-      const lines = block[1].split("\n").map((line) => {
+      const lines = block[1].split("\n").filter((line) => {
+        const idx = line.indexOf(":");
+        if (idx === -1) return true;
+        const key = line.slice(0, idx).trim();
+        if (!GUARDED_FIELDS.includes(key as typeof GUARDED_FIELDS[number])) return true;
+        const original = before[key];
+        if (original === undefined) {
+          // Field was added by the write — strip it.
+          repaired = true;
+          return false;
+        }
+        return true;
+      }).map((line) => {
         const idx = line.indexOf(":");
         if (idx === -1) return line;
         const key = line.slice(0, idx).trim();
