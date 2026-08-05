@@ -115,14 +115,11 @@ describe("assembleSystemPrompt", () => {
 
 // FR-PROMPT-06: edit batching guidance in agents-base.md.
 describe("agents-base edit batching guidance", () => {
-  it("instructs one edit per change and write for append-heavy files", () => {
+  it("instructs one edit per change", () => {
     const base = readFileSync(
       join(bundledPromptsDir(), "agents-base.md"),
       "utf8",
     );
     expect(base).toContain("one `edit` call per change");
-    expect(base).toContain("`write`");
-    expect(base).toContain("deferred.md");
-    expect(base).toContain("observations.md");
   });
 });

@@ -35,6 +35,7 @@ export interface FileToolOptions {
   home?: string;
   confirmDelete?: (absPath: string) => Promise<boolean>;
   askReadPermission?: (absPath: string) => Promise<boolean>;
+  sessionAllowedPaths?: Set<string>;
 }
 
 function resolveInputPath(rootDir: string, rawPath: string, home: string): string {
@@ -138,9 +139,11 @@ async function ensureReadPermission(
   sourcePath: string,
   home: string,
   askReadPermission: (absPath: string) => Promise<boolean>,
+  sessionAllowedPaths?: Set<string>,
 ): Promise<void> {
   const absPath = resolveInputPath(rootDir, sourcePath, home);
   if (isContained(absPath, rootDir)) return;
+  if (sessionAllowedPaths?.has(absPath)) return;
 
   const decision = evaluateToolCall("read", { path: sourcePath }, rootDir, home);
   if (decision.action === "allow") return;
@@ -188,8 +191,9 @@ export async function copyWorkspaceFile(
   destinationPath: string,
   askReadPermission: (absPath: string) => Promise<boolean>,
   home: string = homedir(),
+  sessionAllowedPaths?: Set<string>,
 ): Promise<string> {
-  await ensureReadPermission(rootDir, sourcePath, home, askReadPermission);
+  await ensureReadPermission(rootDir, sourcePath, home, askReadPermission, sessionAllowedPaths);
 
   const sourceAbs = resolveInputPath(rootDir, sourcePath, home);
   if (!existsSync(sourceAbs)) {
@@ -252,6 +256,7 @@ export function buildFileTools(rootDir: string, options?: FileToolOptions): Tool
     (async () => {
       throw new FileToolError("Read permission handler is not configured.");
     });
+  const sessionAllowedPaths = options?.sessionAllowedPaths;
 
   return [
     defineTool({
@@ -292,6 +297,7 @@ export function buildFileTools(rootDir: string, options?: FileToolOptions): Tool
             args.destination,
             askReadPermission,
             home,
+            sessionAllowedPaths,
           );
           return {
             content: [{ type: "text", text }],

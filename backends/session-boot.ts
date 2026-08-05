@@ -44,6 +44,7 @@ export interface SessionBootContext {
 export interface AgentToolsetDeps {
   requestPermission: (request: Omit<PermissionRequest, "id">) => Promise<boolean>;
   showFile: (relPath: string) => void;
+  sessionAllowedPaths?: Set<string>;
 }
 
 /**
@@ -69,6 +70,7 @@ export function buildAgentToolset(
       deps.requestPermission({ kind: "delete-file", op: "write", path: absPath }),
     askReadPermission: (absPath) =>
       deps.requestPermission({ kind: "outside", op: "read", path: absPath }),
+    sessionAllowedPaths: deps.sessionAllowedPaths,
   });
   const showFileTools = buildShowFileTools({ rootDir, showFile: deps.showFile });
 
@@ -185,6 +187,7 @@ export async function bootSession(
 
   const toolset = buildAgentToolset(rootDir, {
     requestPermission: context.requestPermission,
+    sessionAllowedPaths: context.sessionAllowedPaths,
     showFile: (relPath) => {
       // A failed push must not fail the tool call: the agent has already been
       // told the file was opened, and a dropped RPC is the frontend's problem,

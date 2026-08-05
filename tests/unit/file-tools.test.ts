@@ -138,6 +138,26 @@ describe("file tool execution", () => {
     expect([...copied]).toEqual([0, 1, 2, 3]);
   });
 
+  it("copyWorkspaceFile skips permission prompt when source is in sessionAllowedPaths", async () => {
+    await setupRepo();
+    externalDir = mkdtempSync(join(tmpdir(), "buddy-filetools-ext-"));
+    const externalPath = join(externalDir, "attached.md");
+    writeFileSync(externalPath, "attached content");
+
+    const sessionAllowedPaths = new Set([externalPath]);
+    let permissionAsked = false;
+    await copyWorkspaceFile(
+      rootDir,
+      externalPath,
+      "user/attached.md",
+      async () => { permissionAsked = true; return true; },
+      undefined,
+      sessionAllowedPaths,
+    );
+    expect(permissionAsked).toBe(false);
+    expect(readFileSync(join(rootDir, "user/attached.md"), "utf8")).toBe("attached content");
+  });
+
   it("moveWorkspaceFile moves within user workspace", async () => {
     await setupRepo();
     writeFileSync(join(rootDir, "user/old.md"), "content");
