@@ -113,15 +113,17 @@ export class SessionLifecycle {
       turns: snapshot.turnCount,
     });
 
-    markReflectPending(this.rootDir);
+    if (snapshot.turnCount > 0) {
+      markReflectPending(this.rootDir);
 
-    this.requestReflect({
-      mode: "session-end",
-      sessionId: this.tracker.sessionId,
-      sessionDate: toIsoDay(this.tracker.startTime),
-      sessionStart: formatLocalTime(this.tracker.startTime.toISOString()),
-      sessionEnd: formatLocalTime(now.toISOString()),
-    });
+      this.requestReflect({
+        mode: "session-end",
+        sessionId: this.tracker.sessionId,
+        sessionDate: toIsoDay(this.tracker.startTime),
+        sessionStart: formatLocalTime(this.tracker.startTime.toISOString()),
+        sessionEnd: formatLocalTime(now.toISOString()),
+      });
+    }
     this.onSessionComplete?.(snapshot.turnCount > 0);
   }
 

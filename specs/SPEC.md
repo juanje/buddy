@@ -637,6 +637,7 @@ platform-specific install instructions is shown and setup cannot continue.
 | FR-REFLECT-05 | Session path persistence and crash recovery | 2 ✓ |
 | FR-REFLECT-06 | Reflect child does not race the worker for the git index | 2 ✓ |
 | FR-REFLECT-07 | Reflect child is bounded by a timeout | 2 |
+| FR-REFLECT-08 | Empty sessions do not spawn a reflect | 2 ✓ |
 
 **FR-REFLECT-01 — Session-end reflect finalization**
 
@@ -729,6 +730,15 @@ Fork bomb defense:
   1. argv.includes("--reflect") — robust parsing regardless of Bun argv structure
   2. BUDDY_REFLECT_CHILD=1 env var — child env marker for recursion guard (legacy: AB_REFLECT_CHILD)
 ```
+
+**FR-REFLECT-08 — Empty sessions do not spawn a reflect**
+
+- **Given** a session ends with zero completed turns (no user message was sent)
+- **When** the shutdown sequence runs
+- **Then** no reflect child is spawned and no reflect-pending marker is written
+- **Rationale:** a setup-only or immediately-closed session has nothing to
+  reflect on. Spawning a reflect child for it wastes an LLM call and produces a
+  log entry like "Session 01:05–01:05" with no content.
 
 **FR-REFLECT-04 — Log output sanitizer (strip tool-call artifacts)**
 

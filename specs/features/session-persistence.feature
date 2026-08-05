@@ -15,6 +15,7 @@ Feature: Session path persistence and crash recovery
 
   Scenario: Reflect pending is marked on shutdown
     Given a session is running with persisted path "/tmp/session-abc.jsonl"
+    And at least one turn has completed
     When the app shuts down gracefully
     Then consolidation-state.json has reflectPending true
     And a session-end reflect spawn was requested for "/tmp/session-abc.jsonl"
@@ -30,3 +31,11 @@ Feature: Session path persistence and crash recovery
     Given consolidation-state.json has liveSessionFile "/tmp/session-old.jsonl" and reflectPending false
     When the app boots
     Then no reflect spawn was requested
+
+  # FR-REFLECT-08
+  Scenario: Empty session does not spawn a reflect
+    Given a session is running with persisted path "/tmp/session-empty.jsonl"
+    And the session has zero completed turns
+    When the app shuts down gracefully
+    Then no reflect spawn was requested
+    And consolidation-state.json has reflectPending false

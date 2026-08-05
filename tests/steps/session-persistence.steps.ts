@@ -129,3 +129,11 @@ Then(
 Then("no reflect spawn was requested", function (this: SessionPersistenceWorld) {
   assert.equal(this.recoverySpawns?.length ?? 0, 0);
 });
+
+Given("the session has zero completed turns", function (this: SessionPersistenceWorld) {
+  // turnCount starts at 0 — this step documents the precondition.
+});
+
+Given("at least one turn has completed", async function (this: SessionPersistenceWorld) {
+  await this.lifecycle!.handleEvent({ type: "agent_end" } as never);
+});
