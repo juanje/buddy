@@ -182,6 +182,7 @@ const TOOL_LEAK_PATTERNS: RegExp[] = [
   /^to=functions\.\w+.*$/gm,
   /^```json\s*\n\{[^}]*"path"[^}]*\}\s*\n```$/gm,
   /^\{"name":"(read|write|edit|ls|find|grep)".*\}$/gm,
+  /<\|[a-z_]+\|?>.*$/gm,
 ];
 
 /** Strip LLM-generated session/checkpoint headers — worker adds the correct one. */

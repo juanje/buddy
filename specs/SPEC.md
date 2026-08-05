@@ -733,7 +733,7 @@ Fork bomb defense:
 **FR-REFLECT-04 — Log output sanitizer (strip tool-call artifacts)**
 
 - **Given** the reflect process writes a session block to the daily log
-- **When** the output contains raw tool-call syntax leaked from the model (e.g. `to=functions.read code:` followed by JSON)
+- **When** the output contains raw tool-call syntax leaked from the model (e.g. `to=functions.read code:` followed by JSON, or `<|tool_call|>` / `<|...|>` special tokens from local-model tokenizers)
 - **Then** those lines are stripped before writing to the log file
 - **When** the LLM output includes a leading `## Session` or `## Checkpoint` header (worker adds the correct header from spawn args)
 - **Then** that header is stripped before append — the daily log contains exactly one session heading per reflect finalization

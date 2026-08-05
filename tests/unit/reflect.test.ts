@@ -50,6 +50,31 @@ describe("sanitizeReflectOutput", () => {
     expect(out).toContain("Mid-session encode.");
   });
 
+  it("strips <|tool_call|> special tokens from local-model output", () => {
+    const input = "### Context\nWorked on feature.\n<|tool_call|>\n{\"name\":\"read\",\"arguments\":{\"path\":\"foo.md\"}}\n<|end|>\n\n### Lessons\nAll good.";
+    const out = sanitizeReflectOutput(input);
+    expect(out).not.toContain("<|tool_call|>");
+    expect(out).not.toContain("<|end|>");
+    expect(out).toContain("Worked on feature.");
+    expect(out).toContain("All good.");
+  });
+
+  it("strips <|tool_call> variant without trailing pipe", () => {
+    const input = "### Context\nNote.\n<|tool_call>\n{\"name\":\"write\"}\n\n### Lessons\nDone.";
+    const out = sanitizeReflectOutput(input);
+    expect(out).not.toContain("<|tool_call>");
+    expect(out).toContain("Note.");
+    expect(out).toContain("Done.");
+  });
+
+  it("strips generic <|...|> special tokens", () => {
+    const input = "### Context\nNote.\n<|im_start|>assistant\n<|im_end|>\n\n### Lessons\nDone.";
+    const out = sanitizeReflectOutput(input);
+    expect(out).not.toContain("<|im_start|>");
+    expect(out).not.toContain("<|im_end|>");
+    expect(out).toContain("Note.");
+  });
+
   it("normalizes ## section headings to ###", () => {
     const input = "## Context\n\nWorked on feature X.\n\n## Open threads\n\nReview draft.";
     const out = sanitizeReflectOutput(input);
