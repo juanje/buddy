@@ -396,10 +396,15 @@ async function main(): Promise<void> {
         const toolCalls: string[] = [];
         session.subscribe((event) => {
           allEvents.push(event);
-          if (event.type === "text" && typeof event.text === "string") {
-            textChunks.push(event.text);
-          } else if (event.type === "tool_use_begin") {
-            toolCalls.push(String(event.name ?? "unknown"));
+          if (event.type === "message_update") {
+            const sub = (event as Record<string, unknown>).assistantMessageEvent as
+              | { type?: string; delta?: string }
+              | undefined;
+            if (sub?.type === "text_delta" && typeof sub.delta === "string") {
+              textChunks.push(sub.delta);
+            }
+          } else if (event.type === "tool_execution_start") {
+            toolCalls.push(String((event as Record<string, unknown>).toolName ?? "unknown"));
           }
         });
 
