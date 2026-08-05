@@ -15,12 +15,13 @@
 // after a session that demonstrably read it.
 
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { isFileConsultation } from "../../backends/hebbian";
 import { SessionLifecycle } from "../../backends/session-lifecycle";
+import { APP_LOGS_DIR } from "../../shared/defaults";
 import { initTestGitRepo } from "../support/test-git";
 
 let root: string;
@@ -144,5 +145,70 @@ describe("the lifecycle records an access from the events the SDK emits", () => 
     await toolCall(life, "read", REL, "a");
     await toolCall(life, "read", REL, "b");
     expect(countOf()).toBe("4");
+  });
+});
+
+describe("tool_result logging", () => {
+  function lifecycle(): SessionLifecycle {
+    return new SessionLifecycle({ rootDir: root, sessionId: "test", spawnReflect: () => {} } as never);
+  }
+
+  function readAppLog(): Array<Record<string, unknown>> {
+    const dir = join(root, APP_LOGS_DIR);
+    const files = readdirSync(dir).filter((f) => f.endsWith(".jsonl"));
+    if (files.length === 0) return [];
+    const lines = readFileSync(join(dir, files[0]), "utf8").trim().split("\n");
+    return lines.map((l) => JSON.parse(l));
+  }
+
+  it("emits a tool_result event when a tool finishes", async () => {
+    const life = lifecycle();
+    await life.handleEvent({
+      type: "tool_execution_start",
+      toolCallId: "c1",
+      toolName: "read",
+      args: { path: REL },
+    } as never);
+    await life.handleEvent({
+      type: "tool_execution_end",
+      toolCallId: "c1",
+      toolName: "read",
+      isError: false,
+    } as never);
+
+    const events = readAppLog().filter((e) => e.event === "tool_result");
+    expect(events).toHaveLength(1);
+    expect(events[0]).toMatchObject({
+      event: "tool_result",
+      session: "test",
+      tool: "read",
+      path: REL,
+      isError: false,
+    });
+  });
+
+  it("records isError: true for failed tool calls", async () => {
+    const life = lifecycle();
+    await life.handleEvent({
+      type: "tool_execution_start",
+      toolCallId: "c2",
+      toolName: "edit",
+      args: { path: REL },
+    } as never);
+    await life.handleEvent({
+      type: "tool_execution_end",
+      toolCallId: "c2",
+      toolName: "edit",
+      isError: true,
+    } as never);
+
+    const events = readAppLog().filter((e) => e.event === "tool_result");
+    expect(events).toHaveLength(1);
+    expect(events[0]).toMatchObject({
+      event: "tool_result",
+      tool: "edit",
+      path: REL,
+      isError: true,
+    });
   });
 });

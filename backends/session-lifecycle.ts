@@ -83,6 +83,13 @@ export class SessionLifecycle {
     const finished = flags.finishedTool;
     if (finished) {
       const { name, path } = finished;
+      logEvent(this.rootDir, {
+        event: "tool_result",
+        session: this.tracker.sessionId,
+        tool: name,
+        path: path ?? undefined,
+        isError: event.isError === true,
+      });
       if (name === "write" || name === "edit" || name === "fetch_url") this.turnDirty = true;
       if (event.isError !== true) {
         if ((name === "write" || name === "edit") && path) this.hebbianGuard.restore(path);

@@ -23,6 +23,7 @@ export type AppLogEvent =
   | { event: "consolidation_abandoned"; depth: number }
   /** Cascade stopped mid-flight because spend crossed the threshold (FR-COST-05). */
   | { event: "consolidation_budget_stopped"; depth: number }
+  | { event: "tool_result"; session: string; tool: string; path?: string; isError: boolean }
   | { event: "heartbeat_tick"; deferredDue: number; consolidationEvaluated: boolean }
   | { event: "error"; message: string; context?: string };
 
