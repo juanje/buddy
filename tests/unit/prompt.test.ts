@@ -155,3 +155,15 @@ describe("consolidation prompt brain health repair", () => {
     expect(prompt).not.toMatch(/set `created` to the earliest date the file mentions/);
   });
 });
+
+// #10: reflect semantic distinction — info stored vs tasks captured.
+describe("process-conversation semantic distinction", () => {
+  it("distinguishes information stored from tasks captured", () => {
+    const prompt = readFileSync(
+      join(bundledPromptsDir(), "process-conversation.md"),
+      "utf8",
+    );
+    expect(prompt).toMatch(/information stored/i);
+    expect(prompt).toMatch(/tasks captured/i);
+  });
+});

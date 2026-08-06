@@ -66,3 +66,52 @@ describe("chat controller display polish", () => {
     expect(get(controller.welcomeVisible)).toBe(false);
   });
 });
+
+// FR-CHAT-19: tokenizer artifact stripping.
+describe("thought token stripping", () => {
+  it("strips bare 'thought' at the start of a text block", () => {
+    const controller = createChatController(fakeWorker());
+    emit(controller, { type: "agent_start" });
+    emit(controller, {
+      type: "message_update",
+      assistantMessageEvent: { type: "text_delta", delta: "thought\nHello!" },
+    });
+    emit(controller, { type: "message_end" });
+
+    const messages = get(controller.messages) as ChatMessage[];
+    const assistant = messages.find((m) => m.role === "assistant");
+    expect(assistant?.text).toBe("Hello!");
+  });
+
+  it("does not strip 'thought' in the middle of text", () => {
+    const controller = createChatController(fakeWorker());
+    emit(controller, { type: "agent_start" });
+    emit(controller, {
+      type: "message_update",
+      assistantMessageEvent: { type: "text_delta", delta: "I had a thought about that." },
+    });
+    emit(controller, { type: "message_end" });
+
+    const messages = get(controller.messages) as ChatMessage[];
+    const assistant = messages.find((m) => m.role === "assistant");
+    expect(assistant?.text).toBe("I had a thought about that.");
+  });
+
+  it("strips 'thought\\n' arriving as the first delta of a new bubble", () => {
+    const controller = createChatController(fakeWorker());
+    emit(controller, { type: "agent_start" });
+    emit(controller, {
+      type: "message_update",
+      assistantMessageEvent: { type: "text_delta", delta: "thought\n" },
+    });
+    emit(controller, {
+      type: "message_update",
+      assistantMessageEvent: { type: "text_delta", delta: "Real content." },
+    });
+    emit(controller, { type: "message_end" });
+
+    const messages = get(controller.messages) as ChatMessage[];
+    const assistant = messages.find((m) => m.role === "assistant");
+    expect(assistant?.text).toBe("Real content.");
+  });
+});

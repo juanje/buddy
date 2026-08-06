@@ -257,9 +257,10 @@ export function createChatController(worker: ChatWorkerAPI): ChatController {
     if (streamingBubbleId === null) {
       const id = nextId++;
       setStreamingBubbleId(id);
+      const cleaned = delta.startsWith("thought\n") ? delta.slice("thought\n".length) : delta;
       messages.update((list) => [
         ...list,
-        { id, role: "assistant", text: delta },
+        { id, role: "assistant", text: cleaned },
       ]);
       return;
     }

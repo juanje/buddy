@@ -19,7 +19,8 @@ Produce a `## Session HH:MM–HH:MM` block for today's log **in English**, regar
 Include ONLY sections that have content — omit empty sections entirely. Available sections:
 
 - **Decisions** — what was decided and why
-- **Tasks captured** — what went to inbox/projects
+- **Tasks captured** — actionable items routed to inbox or projects
+- **Information stored** — reference material saved to brain files, no action required
 - **Context** — situational notes, what prompted the session
 - **Lessons** — patterns discovered, things learned
 - **Open threads** — unresolved items to revisit

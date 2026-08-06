@@ -100,6 +100,7 @@ rootDir (git repo — user/agent content only)
 | FR-CHAT-16 | Buddy paths in assistant text become labelled links | 3 ✓ |
 | FR-CHAT-17 | `show_file` — the agent opens a file in the viewer | 3 ✓ |
 | FR-CHAT-18 | Export the viewed file as PDF via the system print dialog | 3 |
+| FR-CHAT-19 | Tokenizer artifact stripping in assistant output | 2 ✓ |
 
 **FR-CHAT-01 — Streaming message display**
 
@@ -451,6 +452,20 @@ without a markdown renderer — and "send it to someone" is the ordinary next st
 for the target user, who is not going to install one. FR-CHAT-15 compounds with
 it: with frontmatter no longer rendered, the exported PDF carries no bookkeeping
 metadata without any extra work.
+
+**FR-CHAT-19 — Tokenizer artifact stripping**
+
+- **Given** the assistant produces a text delta during streaming
+- **When** the delta or accumulated text starts with a bare tokenizer
+  artifact (`thought`, `thought\n`)
+- **Then** the artifact is stripped before the text reaches the user
+- **And** only the exact token at the start of a text block is stripped —
+  the word "thought" appearing naturally in prose is never removed
+
+**Why.** Some local models (gemma-12B observed, 2 occurrences) leak the
+internal `thought` token as visible text at the start of a response. It is
+a tokenizer artifact, not content — the same family as `<|tool_call|>`
+which the reflect sanitizer already strips.
 
 ### 3.2 First-Run / Onboarding (FR-SETUP)
 
