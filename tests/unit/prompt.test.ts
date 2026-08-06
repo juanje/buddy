@@ -123,3 +123,35 @@ describe("agents-base edit batching guidance", () => {
     expect(base).toContain("one `edit` call per change");
   });
 });
+
+// FR-PROMPT-07: queue file anchoring guidance (#20).
+describe("agents-base queue file anchoring", () => {
+  it("instructs anchoring on section headings, not frontmatter delimiters", () => {
+    const base = readFileSync(
+      join(bundledPromptsDir(), "agents-base.md"),
+      "utf8",
+    );
+    expect(base).toMatch(/anchor.*heading|heading.*anchor/i);
+    expect(base).toMatch(/never.*`---`|not.*`---`/i);
+  });
+});
+
+// Consolidation prompt: brain health repair instructions (#24, #25).
+describe("consolidation prompt brain health repair", () => {
+  it("instructs edit for frontmatter repair, not write (#24)", () => {
+    const prompt = readFileSync(
+      join(bundledPromptsDir(), "consolidation.md"),
+      "utf8",
+    );
+    expect(prompt).toMatch(/`edit`.*frontmatter|frontmatter.*`edit`/i);
+  });
+
+  it("instructs git log for created date when absent, not today (#25)", () => {
+    const prompt = readFileSync(
+      join(bundledPromptsDir(), "consolidation.md"),
+      "utf8",
+    );
+    expect(prompt).toMatch(/git log/i);
+    expect(prompt).not.toMatch(/set `created` to the earliest date the file mentions/);
+  });
+});

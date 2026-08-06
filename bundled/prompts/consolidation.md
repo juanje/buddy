@@ -344,9 +344,12 @@ If the prompt header includes a "Brain health" block, address the reported
 issues:
 - **Incomplete frontmatter:** each entry names the file and the keys to add.
   Fix **every file listed** in this pass — the list is already budgeted to a
-  handful, and the rest arrive in later consolidations. Read the file, write a
-  one-line `summary` describing what it contains, and set `created` to the
-  earliest date the file mentions if it is absent.
+  handful, and the rest arrive in later consolidations. Read the file, then
+  use `edit` targeting the `---` frontmatter block to add the missing fields
+  — never rewrite the whole file for a metadata repair. Write a one-line
+  `summary` describing what it contains. If `created` is absent, use
+  `git log --follow --diff-filter=A -- <path>` to find the commit that added
+  the file and use that date; if git gives no result, leave `created` empty.
   **Merge into the existing block. Never add a second `---` block** — that
   corrupts the file and the run will be recorded as failed.
 - **Missing indexes:** Create `index.md` for flagged directories using file

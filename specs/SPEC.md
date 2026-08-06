@@ -1359,6 +1359,7 @@ original gap (FR-HEBB-08).
 | FR-PROMPT-03 | Global base prompt (agents-base.md) | 2 ✓ |
 | FR-PROMPT-04 | Hidden context injection at session boot | 2 ✓ |
 | FR-PROMPT-06 | Edit batching guidance for append-heavy files | 2 ✓ |
+| FR-PROMPT-07 | Queue file edit anchoring guidance | 2 ✓ |
 
 **FR-PROMPT-01 — System prompt assembly**
 
@@ -1440,6 +1441,18 @@ does not know them, and orders their profile overwritten.
   recommended `write` for append-heavy files, but the depth-3 experiment showed
   that models use `write` destructively — replacing structured templates with
   summaries. Removed to avoid encouraging whole-file rewrites.
+
+**FR-PROMPT-07 — Queue file edit anchoring guidance**
+
+- **Given** the global base prompt (`agents-base.md`)
+- **When** the model needs to append to or edit `deferred.md` or
+  `observations.md`
+- **Then** the prompt instructs it to anchor `edit` calls on a section
+  heading (`## `), never on `---` or frontmatter delimiters
+- **Rationale:** `---` appears in frontmatter and as a horizontal rule —
+  using it as an `oldText` anchor triggers `Found N occurrences ... must be
+  unique`, pushing the model into the write-fallback path (#2b). Section
+  headings are unique by design.
 
 ### 3.11 Git Operations (FR-GIT)
 
