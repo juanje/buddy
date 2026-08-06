@@ -2333,6 +2333,31 @@ blocker. The question to settle before revisiting is whether any local model
 completes a depth-1 consolidation without corrupting the brain. See decision 6
 in `docs/app-design-principles.md`.
 
+**Aug 2026 eval update.** Three interactive sessions + six consolidation runs
+with harness fixes shipped since Jul 29. Key findings:
+
+- **Qwen 27B (4-bit):** viable for chat + reflect (B+ reflect quality, 11.4%
+  edit failure rate). Consolidation not yet tested with this model.
+- **Gemma 12B (8-bit):** viable for chat only (reflect F, 50% edit failure
+  rate). Consolidation with guards ON (C6) produced zero corruption.
+- **Phantom writes root cause found:** not a model capability limit — context
+  saturation past ~40k tokens causes tool-calling loss. Primary fix is setting
+  `contextWindow` correctly in `models.json` so compaction fires before the
+  quality cliff. See `local-model-improvements.md` #26.
+- **Harness guards validated:** heading guard (FR-GUARD-01), Hebbian guard in
+  maintenance (FR-HEBB-08), per-depth sessions (FR-CONSOL-16), reflect
+  sanitizer (#12) — all shipped and validated. C6 vs C4 showed guards
+  eliminate metadata corruption and template destruction.
+- **Remaining harness gaps (Tier 1.1):** #2b (edit-failure recovery), #15
+  remainder (filename validation, broken links), #14 (concepts index
+  injection). See `local-model-improvements.md`.
+
+The deferral rationale from Jul 29 is partially resolved: the worst failures
+(phantom writes, template destruction, reflect garbage) now have shipped
+fixes. The remaining question is whether Qwen 27B passes depth-1
+consolidation — which gates the feature on model tiering (strong model for
+reflect/consolidation, fast model for chat).
+
 **Why this is a new FR rather than a bug fix.** The feature was half-built and
 looked finished from every angle we normally check: the wizard offered it, the
 key validated against the real endpoint, the credential reached `auth.json`,
@@ -2342,12 +2367,18 @@ that do not exist yet, so it is scoped as a feature and not a patch.
 
 **FR-PROVIDER-01 — Configure and use an OpenAI-compatible endpoint**
 
-- **Given** the user wants to use a model that speaks the OpenAI API — Ollama, LM Studio, llama.cpp, vLLM, or a hosted compatible service
+- **Given** the user wants to use a model that speaks the OpenAI API — Ollama, LM Studio, llama.cpp, vLLM, oMLX, or a hosted compatible service
 - **When** they configure it with a base URL and (optionally) an API key
 - **Then** the base URL is persisted, not merely used for validation, and survives a restart
 - **And** the model runtime resolves requests to that endpoint — verified by a test that asserts an actual request reaches it, not by asserting the value was written
 - **And** the destination is validated first (NFR-SEC-18), which already allows loopback and LAN precisely for this case
 - **And** the entry point exists in both the setup wizard and Settings → Add provider, which must not disagree about which providers exist
+- **And** a keyless endpoint (Ollama, oMLX default) does not require an API key — the submit button is enabled without one, and a placeholder `apiKey` is written to `models.json` (not `auth.json`)
+- **And** `contextWindow` is set per model — either auto-detected from `/models` response metadata (when available), entered by the user, or defaulted to a conservative value (32768). Without a correct `contextWindow`, compaction fires too late or never, causing context saturation and phantom writes (#26)
+- **And** after writing `models.json`, the runtime is refreshed — `reloadConfig()` on Pi SDK ≤0.80.x, `refresh()` on ≥0.82.x. Feature-detect which is available
+- **And** `runtime.getError()` is checked after configuration and surfaced to the user if the provider was dropped due to malformed config
+- **And** `custom` is added to `ADD_PROVIDER_CANDIDATES` in settings-controller and to `WIZARD_PI_PROVIDERS` in auth-status, so the provider is visible in both flows
+- **And** `custom` is included in `buildAuthStatus()` so credential state is tracked like cloud providers
 
 **Persistence — resolved 2026-07-28 by reading the Pi source and probing the
 bundled v0.80.10 SDK.** `baseUrl` lives in a `models.json`, under
@@ -2467,6 +2498,24 @@ smaller model breaks first.
 Use a large local model (27B+). A 7B will fail these and the result says nothing
 about the approach.
 
+**Eval results (Aug 2026) — this manual procedure was used for all runs.**
+
+| Model | Chat | Reflect | Consolidation | Edit failure rate |
+|-------|------|---------|---------------|-------------------|
+| Qwen3.5-27B-4bit | A- tools, B+ coherence | B+ (structured, accurate) | Not yet tested | 11.4% |
+| gemma-4-12B-8bit | A tools, A- coherence | F (raw chat dump, tool leaks) | With guards: zero corruption (C6) | ~50% |
+
+**Critical `contextWindow` finding:** the manual procedure above sets
+`contextWindow: 32768` in `models.json`. Without it, Pi reads the model's
+native window from the provider (gemma reports 128k) and compaction never
+fires — the model hits its practical quality cliff (~40k) silently. This is
+the root cause of phantom writes (S5: model claimed 6 file creations, issued
+0 tool calls). **FR-PROVIDER-01 must ensure `contextWindow` is set correctly
+at configuration time** — it is not optional metadata.
+
+Full eval data: `~/git/my-ab/agent_brain/projects/agentic-buddy/eval-results.md`
+and `local-model-improvements.md`.
+
 **FR-PROVIDER-02 — Model selection without a catalog**
 
 - **Given** a configured OpenAI-compatible endpoint
@@ -2474,6 +2523,8 @@ about the approach.
 - **Then** models are listed live from the endpoint when it answers `/models`, since most compatible servers do
 - **And** a free-form model id is accepted when it does not — `ModelStep.svelte` already implements this input and it is kept for this purpose
 - **And** the provider appears in the Settings provider dropdown. **Fix the dropdown first:** it is derived from the model list, so a provider with no models has no `<option>`, nothing is `selected`, and the control displays a provider the user is not using
+- **And** when `/models` returns model metadata with `context_length` or equivalent, it is used as the default `contextWindow` for that model — saving the user from having to know their model's context size
+- **And** `fastModelForProvider("custom")` resolves to a usable model (the configured one, or the first available) instead of `undefined` — so checkpoint reflect does not silently fail on local providers
 
 **FR-PROVIDER-03 — Legible failure when the endpoint is unreachable**
 
@@ -2482,6 +2533,8 @@ about the approach.
 - **Then** the message says the endpoint could not be reached and names it — the current behaviour surfaces Node's `"fetch failed"`, which tells the user nothing
 - **And** the same applies to a refused connection, a DNS failure and a timeout; NFR-REL-09 covered only the timeout, and a stopped local server is the common case
 - **And** an endpoint that stops responding after setup degrades visibly rather than appearing to hang
+- **And** when the endpoint goes down mid-session, the chat shows a recoverable error (not a silent hang) with guidance: "Check that your local model server is running at [url]"
+- **And** the error is distinguishable from an API key rejection — "connection refused" vs "401 unauthorized" are different user actions (start the server vs fix the key)
 
 ---
 
