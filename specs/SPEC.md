@@ -1337,10 +1337,13 @@ drown the signal it is meant to measure.
 - **Given** the agent calls `write` or `edit` on a file inside `agent_brain/`
   or `logs/`
 - **When** the tool call completes without error
-- **Then** the guard compares the set of `## ` headings before and after
+- **Then** the guard compares the set of `#` and `##` headings before and after
 - **And** if any heading present before the write is missing after it, the
   file is restored to its pre-write content and the tool result is replaced
   with an error explaining which headings were lost
+- **And** if the file had a frontmatter block (`---` delimited) before the
+  write and the frontmatter is missing or empty after it, the file is
+  restored to its pre-write content
 - **And** the guard fires in both the chat session and the maintenance session
 
 **What it does not do:**

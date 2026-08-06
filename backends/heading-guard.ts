@@ -1,7 +1,8 @@
 // backends/heading-guard.ts — FR-GUARD-01: heading-snapshot guard.
 //
-// Captures the `## ` heading set before a write/edit and restores the file
-// if any heading disappeared. Same capture/check pattern as hebbian-guard.ts.
+// Captures headings (`#`/`##`) and frontmatter presence before a write/edit,
+// restores the file if any heading disappeared or frontmatter was stripped.
+// Same capture/check pattern as hebbian-guard.ts.
 
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -21,8 +22,15 @@ export interface HeadingGuard {
 
 function extractHeadings(content: string): string[] {
   return content.split("\n")
-    .filter((line) => line.startsWith("## "))
-    .map((line) => line.slice(3).trim());
+    .filter((line) => line.startsWith("# ") || line.startsWith("## "))
+    .map((line) => {
+      if (line.startsWith("## ")) return line.slice(3).trim();
+      return line.slice(2).trim();
+    });
+}
+
+function hasFrontmatter(content: string): boolean {
+  return content.startsWith("---\n") && content.indexOf("\n---", 4) >= 0;
 }
 
 function isGuardedPath(relPath: string): boolean {
@@ -30,7 +38,7 @@ function isGuardedPath(relPath: string): boolean {
 }
 
 export function createHeadingGuard(rootDir: string): HeadingGuard {
-  const snapshots = new Map<string, { headings: string[]; content: string }>();
+  const snapshots = new Map<string, { headings: string[]; hadFrontmatter: boolean; content: string }>();
 
   return {
     capture(path: string) {
@@ -46,6 +54,7 @@ export function createHeadingGuard(rootDir: string): HeadingGuard {
       }
       snapshots.set(relPath, {
         headings: extractHeadings(content),
+        hadFrontmatter: hasFrontmatter(content),
         content,
       });
     },
@@ -67,8 +76,9 @@ export function createHeadingGuard(rootDir: string): HeadingGuard {
 
       const currentHeadings = extractHeadings(currentContent);
       const lost = snapshot.headings.filter((h) => !currentHeadings.includes(h));
+      const frontmatterStripped = snapshot.hadFrontmatter && !hasFrontmatter(currentContent);
 
-      if (lost.length === 0) return { reverted: false };
+      if (lost.length === 0 && !frontmatterStripped) return { reverted: false };
 
       writeFileSync(absPath, snapshot.content, "utf8");
       return { reverted: true, lostHeadings: lost };

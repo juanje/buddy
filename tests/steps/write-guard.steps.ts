@@ -79,6 +79,79 @@ Given(
   },
 );
 
+Given(
+  "a log file {string} with title {string} and headings {string}",
+  function (this: WriteGuardWorld, relPath: string, title: string, headingsCsv: string) {
+    this.tmpDir = mkdtempSync(join(tmpdir(), "buddy-guard-"));
+    this.rootDir = this.tmpDir;
+    this.guard = createHeadingGuard(this.rootDir);
+    this.relPath = relPath;
+    this.filePath = join(this.rootDir, relPath);
+
+    const headings = headingsCsv.split(", ");
+    const body = headings.map((h) => `## ${h}\n\nLog content.\n`).join("\n");
+    const content = `---\ndate: 2026-08-05\nstatus: active\n---\n\n# ${title}\n\n${body}`;
+    ensureDir(this.filePath);
+    writeFileSync(this.filePath, content, "utf8");
+    this.originalContent = content;
+  },
+);
+
+Given(
+  "a brain file {string} with frontmatter and headings {string}",
+  function (this: WriteGuardWorld, relPath: string, headingsCsv: string) {
+    this.tmpDir = mkdtempSync(join(tmpdir(), "buddy-guard-"));
+    this.rootDir = this.tmpDir;
+    this.guard = createHeadingGuard(this.rootDir);
+    this.relPath = relPath;
+    this.filePath = join(this.rootDir, relPath);
+
+    const headings = headingsCsv.split(", ");
+    const body = headings.map((h) => `## ${h}\n\nContent under ${h}.\n`).join("\n");
+    const content = `---\nsummary: test file\nupdated: 2026-08-05\n---\n\n# ${headings[0]}\n\n${body}`;
+    ensureDir(this.filePath);
+    writeFileSync(this.filePath, content, "utf8");
+    this.originalContent = content;
+  },
+);
+
+When(
+  "the agent writes the file without the title {string}",
+  function (this: WriteGuardWorld, title: string) {
+    this.guard!.capture(this.filePath!);
+    const content = readFileSync(this.filePath!, "utf8");
+    const newContent = content
+      .split("\n")
+      .filter((line) => line !== `# ${title}`)
+      .join("\n");
+    writeFileSync(this.filePath!, newContent, "utf8");
+    this.checkResult = this.guard!.check(this.filePath!);
+  },
+);
+
+When(
+  "the agent writes the file without frontmatter",
+  function (this: WriteGuardWorld) {
+    this.guard!.capture(this.filePath!);
+    const content = readFileSync(this.filePath!, "utf8");
+    const fmEnd = content.indexOf("---", 3);
+    const newContent = fmEnd >= 0 ? content.slice(fmEnd + 3).trimStart() : content;
+    writeFileSync(this.filePath!, newContent, "utf8");
+    this.checkResult = this.guard!.check(this.filePath!);
+  },
+);
+
+When(
+  "the agent writes the file keeping frontmatter and all headings",
+  function (this: WriteGuardWorld) {
+    this.guard!.capture(this.filePath!);
+    const content = readFileSync(this.filePath!, "utf8");
+    const newContent = content + "\n\nNew paragraph added.\n";
+    writeFileSync(this.filePath!, newContent, "utf8");
+    this.checkResult = this.guard!.check(this.filePath!);
+  },
+);
+
 When(
   "the agent writes the file without the {string} heading",
   function (this: WriteGuardWorld, removedHeading: string) {

@@ -126,6 +126,67 @@ describe("heading guard", () => {
     expect(result.reverted).toBe(false);
   });
 
+  it("reverts a write that removes an h1 heading", () => {
+    const guard = setup();
+    const filePath = join(dir, "logs", "2026-08-05.md");
+    mkdirSync(join(dir, "logs"), { recursive: true });
+    const original = "---\ndate: 2026-08-05\n---\n\n# Log — 2026-08-05\n\n## Day summary\n\nContent.\n";
+    writeFileSync(filePath, original, "utf8");
+
+    guard.capture(filePath);
+    writeFileSync(filePath, "---\ndate: 2026-08-05\n---\n\n## Day summary\n\nContent.\n", "utf8");
+    const result = guard.check(filePath);
+
+    expect(result.reverted).toBe(true);
+    expect(result.lostHeadings).toContain("Log — 2026-08-05");
+    expect(readFileSync(filePath, "utf8")).toBe(original);
+  });
+
+  it("reverts a write that strips frontmatter", () => {
+    const guard = setup();
+    const filePath = join(dir, "agent_brain", "deferred.md");
+    mkdirSync(join(dir, "agent_brain"), { recursive: true });
+    const original = "---\nsummary: deferred items\n---\n\n## Queue\n\nItems.\n";
+    writeFileSync(filePath, original, "utf8");
+
+    guard.capture(filePath);
+    writeFileSync(filePath, "## Queue\n\nItems.\n", "utf8");
+    const result = guard.check(filePath);
+
+    expect(result.reverted).toBe(true);
+    expect(readFileSync(filePath, "utf8")).toBe(original);
+  });
+
+  it("allows a write that preserves frontmatter", () => {
+    const guard = setup();
+    const filePath = join(dir, "agent_brain", "deferred.md");
+    mkdirSync(join(dir, "agent_brain"), { recursive: true });
+    const original = "---\nsummary: deferred items\n---\n\n## Queue\n\nItems.\n";
+    writeFileSync(filePath, original, "utf8");
+
+    guard.capture(filePath);
+    const newContent = "---\nsummary: deferred items\nupdated: 2026-08-06\n---\n\n## Queue\n\nMore items.\n";
+    writeFileSync(filePath, newContent, "utf8");
+    const result = guard.check(filePath);
+
+    expect(result.reverted).toBe(false);
+    expect(readFileSync(filePath, "utf8")).toBe(newContent);
+  });
+
+  it("does not trigger frontmatter guard when file had no frontmatter", () => {
+    const guard = setup();
+    const filePath = join(dir, "agent_brain", "test.md");
+    mkdirSync(join(dir, "agent_brain"), { recursive: true });
+    writeFileSync(filePath, "## Summary\n\nContent.\n", "utf8");
+
+    guard.capture(filePath);
+    const newContent = "## Summary\n\nUpdated content.\n";
+    writeFileSync(filePath, newContent, "utf8");
+    const result = guard.check(filePath);
+
+    expect(result.reverted).toBe(false);
+  });
+
   it("does not guard files that do not exist at capture time", () => {
     const guard = setup();
     const filePath = join(dir, "agent_brain", "new-file.md");
