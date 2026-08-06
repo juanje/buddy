@@ -28,6 +28,9 @@ import {
 
 import {
   buildConsolidationPrompt,
+  installMaintenanceGate,
+  installMaintenanceHebbianGuard,
+  installMaintenanceHeadingGuard,
   runConsolidation,
   type MaintenanceSessionLike,
 } from "../backends/consolidation-runner";
@@ -421,6 +424,11 @@ async function main(): Promise<void> {
           modelRuntime: mr,
         });
 
+        // Wire the same guards as production (FR-CONSOL-10, FR-HEBB-08, FR-GUARD-01)
+        const policy = installMaintenanceGate(session, rd);
+        installMaintenanceHebbianGuard(session, rd);
+        installMaintenanceHeadingGuard(session, rd);
+
         const allEvents: Array<{ type: string; [k: string]: unknown }> = [];
         const textChunks: string[] = [];
         const toolCalls: string[] = [];
@@ -472,6 +480,8 @@ async function main(): Promise<void> {
             allEvents.length = 0;
           },
           dispose: () => session.dispose(),
+          refusedPaths: policy.refusedPaths,
+          changedIdentity: policy.changedIdentity,
         };
         return wrapper;
       },
