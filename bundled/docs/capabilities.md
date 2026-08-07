@@ -70,7 +70,8 @@ How it works in practice:
 ### Sharing files and URLs
 
 - Drag & drop or attach files to share them with Buddy.
-- It can read text files, markdown, images (it can see and describe what's in them), and PDFs (extracts the text automatically).
+- It can read text files, markdown, CSV, JSON, YAML, log files, images (it can see and describe what's in them), and PDFs (extracts the text automatically).
+- Spreadsheets (`.xlsx`, `.xls`, `.ods`) are not supported directly — export to CSV from your spreadsheet app and attach the CSV instead. Document formats like `.docx` or `.pptx` aren't supported either — export to text (`.md` or `.txt`).
 - Share a URL and Buddy fetches the page, extracts the main content as readable text, and saves a copy in your downloads folder. Works with web pages, online PDFs, and images.
 ### Reading Buddy's files inside the app
 
@@ -78,7 +79,7 @@ How it works in practice:
 - When Buddy mentions one of your files, the link is clickable and the file opens in a panel inside Buddy — no text editor needed.
 - **Only `.md` and `.txt` files open this way**, and only from `agent_brain/`, `user/`, `downloads/` and `logs/`. Anything else is shown as plain text you can't click.
 - Documents that link to each other can be browsed: click a link inside an open document to follow it, and use Back to return the way you came.
-- **Buddy never opens a file with another program.** There is no "open externally". For a PDF, an image, or a spreadsheet, ask Buddy where the file is and open it yourself from your file manager.
+- **Buddy never opens a file with another program.** There is no "open externally". For a PDF or an image you've already shared, ask Buddy where the file is and open it yourself from your file manager.
 
 ### First-time setup
 

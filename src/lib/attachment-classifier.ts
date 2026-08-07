@@ -9,15 +9,20 @@
 // and the dedup rule are actually about — neither needs a controller, a
 // worker fake, or Svelte to be exercised.
 
-import { isSupportedIngestFormat } from "../../shared/ingest-formats";
+import { isSupportedIngestFormat, rejectionReasonForPath, type RejectionReason } from "../../shared/ingest-formats";
 import { basename } from "../utils/path";
 import type { Attachment } from "./chat-controller";
+
+export interface RejectedAttachment {
+  name: string;
+  reason: RejectionReason;
+}
 
 export interface ClassifiedAttachments {
   /** New attachments to add, in the order they were given. */
   accepted: Attachment[];
-  /** File names rejected for an unsupported format, for the error toast. */
-  rejected: string[];
+  /** Rejected files with structured reasons. */
+  rejected: RejectedAttachment[];
 }
 
 /**
@@ -34,13 +39,13 @@ export function classifyAttachments(
   paths: string[],
   existing: readonly Attachment[],
 ): ClassifiedAttachments {
-  const rejected: string[] = [];
+  const rejected: RejectedAttachment[] = [];
   const accepted: Attachment[] = [];
 
   for (const path of paths) {
     const name = basename(path);
     if (!isSupportedIngestFormat(path)) {
-      rejected.push(name);
+      rejected.push({ name, reason: rejectionReasonForPath(path) });
       continue;
     }
     if (existing.some((a) => a.path === path)) continue;

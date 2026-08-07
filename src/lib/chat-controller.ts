@@ -17,7 +17,7 @@ import type {
   PromptOptions,
 } from "../../shared/api";
 import { extractToolInfo } from "../../shared/pi-events";
-import { classifyAttachments } from "./attachment-classifier";
+import { classifyAttachments, type RejectedAttachment } from "./attachment-classifier";
 
 export interface ToolCallEntry {
   name: string;
@@ -53,6 +53,8 @@ export interface ChatController {
   attachments: Writable<Attachment[]>;
   /** Rejected attachment filenames (FR-INGEST-04). */
   attachmentErrors: Readable<string[]>;
+  /** Structured rejection reasons for locale-specific messages (FR-INGEST-04). */
+  attachmentRejectionReasons: Readable<RejectedAttachment[]>;
   /** True while the agent is generating (agent_start → agent_end). */
   streaming: Readable<boolean>;
   /** Input bar disabled while a response streams (FR-CHAT-02). */
@@ -103,6 +105,7 @@ export function createChatController(worker: ChatWorkerAPI): ChatController {
   const input = writable("");
   const attachments = writable<Attachment[]>([]);
   const attachmentErrors = writable<string[]>([]);
+  const attachmentRejectionReasons = writable<RejectedAttachment[]>([]);
   const streaming = writable(false);
   const welcomeVisible = writable(true);
 
@@ -191,7 +194,8 @@ export function createChatController(worker: ChatWorkerAPI): ChatController {
       attachments.update((list) => [...list, ...accepted]);
     }
     if (rejected.length > 0) {
-      attachmentErrors.update((list) => [...list, ...rejected]);
+      attachmentErrors.update((list) => [...list, ...rejected.map((r) => r.name)]);
+      attachmentRejectionReasons.update((list) => [...list, ...rejected]);
       clearTimeout(errorDismissTimer);
       errorDismissTimer = setTimeout(clearAttachmentErrors, 4000);
     }
@@ -206,6 +210,7 @@ export function createChatController(worker: ChatWorkerAPI): ChatController {
   function clearAttachmentErrors(): void {
     clearTimeout(errorDismissTimer);
     attachmentErrors.set([]);
+    attachmentRejectionReasons.set([]);
   }
 
   function dismissWelcome(): void {
@@ -330,6 +335,7 @@ export function createChatController(worker: ChatWorkerAPI): ChatController {
     input,
     attachments,
     attachmentErrors,
+    attachmentRejectionReasons,
     streaming,
     inputDisabled,
     canSend,

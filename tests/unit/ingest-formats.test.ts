@@ -2,13 +2,39 @@
 
 import { describe, expect, it } from "vitest";
 
-import { isSupportedIngestFormat, isImageFormat, isPdfFormat, imageMimeType, isImageExtension, imageMimeTypeFromExt } from "../../shared/ingest-formats";
+import { isSupportedIngestFormat, isImageFormat, isPdfFormat, imageMimeType, isImageExtension, imageMimeTypeFromExt, rejectionReasonForPath } from "../../shared/ingest-formats";
 
 describe("isSupportedIngestFormat", () => {
   it("accepts markdown and plain text", () => {
     expect(isSupportedIngestFormat("/tmp/notes.md")).toBe(true);
     expect(isSupportedIngestFormat("/tmp/readme.txt")).toBe(true);
-    expect(isSupportedIngestFormat("/tmp/LICENSE")).toBe(true);
+  });
+
+  it("rejects extensionless files", () => {
+    expect(isSupportedIngestFormat("/tmp/LICENSE")).toBe(false);
+    expect(isSupportedIngestFormat("/tmp/README")).toBe(false);
+    expect(isSupportedIngestFormat("/tmp/Makefile")).toBe(false);
+  });
+
+  it("accepts CSV files", () => {
+    expect(isSupportedIngestFormat("/tmp/data.csv")).toBe(true);
+    expect(isSupportedIngestFormat("/tmp/data.CSV")).toBe(true);
+  });
+
+  it("accepts JSON files", () => {
+    expect(isSupportedIngestFormat("/tmp/config.json")).toBe(true);
+    expect(isSupportedIngestFormat("/tmp/config.JSON")).toBe(true);
+  });
+
+  it("accepts YAML files", () => {
+    expect(isSupportedIngestFormat("/tmp/settings.yaml")).toBe(true);
+    expect(isSupportedIngestFormat("/tmp/settings.yml")).toBe(true);
+    expect(isSupportedIngestFormat("/tmp/settings.YML")).toBe(true);
+  });
+
+  it("accepts log files", () => {
+    expect(isSupportedIngestFormat("/tmp/app.log")).toBe(true);
+    expect(isSupportedIngestFormat("/tmp/app.LOG")).toBe(true);
   });
 
   it("accepts image formats", () => {
@@ -23,8 +49,41 @@ describe("isSupportedIngestFormat", () => {
     expect(isSupportedIngestFormat("/tmp/report.pdf")).toBe(true);
   });
 
-  it("rejects other binary document formats", () => {
+  it("rejects spreadsheet formats", () => {
+    expect(isSupportedIngestFormat("/tmp/data.xlsx")).toBe(false);
+    expect(isSupportedIngestFormat("/tmp/data.xls")).toBe(false);
+    expect(isSupportedIngestFormat("/tmp/data.ods")).toBe(false);
+  });
+
+  it("rejects document formats", () => {
     expect(isSupportedIngestFormat("/tmp/doc.docx")).toBe(false);
+    expect(isSupportedIngestFormat("/tmp/slides.pptx")).toBe(false);
+    expect(isSupportedIngestFormat("/tmp/book.epub")).toBe(false);
+  });
+});
+
+describe("rejectionReasonForPath", () => {
+  it("returns 'spreadsheet' for spreadsheet extensions", () => {
+    expect(rejectionReasonForPath("/tmp/data.xlsx")).toBe("spreadsheet");
+    expect(rejectionReasonForPath("/tmp/data.xls")).toBe("spreadsheet");
+    expect(rejectionReasonForPath("/tmp/data.ods")).toBe("spreadsheet");
+    expect(rejectionReasonForPath("/tmp/data.XLSX")).toBe("spreadsheet");
+  });
+
+  it("returns 'document' for document extensions", () => {
+    expect(rejectionReasonForPath("/tmp/doc.docx")).toBe("document");
+    expect(rejectionReasonForPath("/tmp/slides.pptx")).toBe("document");
+    expect(rejectionReasonForPath("/tmp/book.epub")).toBe("document");
+  });
+
+  it("returns 'unknown' for other unsupported extensions", () => {
+    expect(rejectionReasonForPath("/tmp/movie.mp4")).toBe("unknown");
+    expect(rejectionReasonForPath("/tmp/archive.zip")).toBe("unknown");
+    expect(rejectionReasonForPath("/tmp/binary.exe")).toBe("unknown");
+  });
+
+  it("returns 'unknown' for extensionless files", () => {
+    expect(rejectionReasonForPath("/tmp/LICENSE")).toBe("unknown");
   });
 });
 

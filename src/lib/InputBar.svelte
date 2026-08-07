@@ -20,6 +20,7 @@
   const input = $derived(controller.input);
   const attachments = $derived(controller.attachments);
   const attachmentErrors = $derived(controller.attachmentErrors);
+  const rejectionReasons = $derived(controller.attachmentRejectionReasons);
   const inputDisabled = $derived(controller.inputDisabled);
   const canSend = $derived(controller.canSend);
   const showAbort = $derived(controller.showAbort);
@@ -65,10 +66,10 @@
     <p class="budget-blocked" role="status">{$t.budgetBlockedMessage}</p>
   {/if}
   <div class="input-capsule">
-    {#if $attachmentErrors.length > 0}
+    {#if $rejectionReasons.length > 0}
       <div class="attachment-errors" role="alert">
-        {#each $attachmentErrors as name (name)}
-          <span>{$t.unsupportedFormat}: {name}</span>
+        {#each $rejectionReasons as entry (entry.name)}
+          <span>{entry.reason === "spreadsheet" ? $t.unsupportedSpreadsheet : entry.reason === "document" ? $t.unsupportedDocument : $t.unsupportedFormat}: {entry.name}</span>
         {/each}
       </div>
     {/if}

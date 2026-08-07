@@ -11,16 +11,13 @@ Nothing in the backlog starts until the MVP is considered finished.
 
 ## In flight
 
-Showing the user a file. FR-CHAT-15 and FR-CHAT-16 shipped in v0.1.10.
-
 | Item | State | Note |
 |------|-------|------|
-| FR-CHAT-17 — `show_file` opens the viewer | **done**, unreleased | Needs a version bump to reach existing installs: the capability is announced in `bundled/docs/capabilities.md`, which only redeploys on a version change. Untested in a running app so far. |
 | FR-CHAT-18 — export to PDF from the viewer | **blocked on a spike** | Whether `window.print()` works in the Tauri webview decides between an afternoon and several days of per-platform Rust. WKWebView has historically not implemented it. Measure on macOS and Linux before designing further. |
 
 ## Open
 
-Verified 2026-07-30.
+Verified 2026-08-07.
 
 | Item | Where | Note |
 |------|-------|------|
@@ -49,71 +46,23 @@ actions bump.
 `runConsolidation`. Reviewed twice, kept on purpose; the reason is in a comment
 at the call site.
 
-## Open (found by manual testing, 2026-08-01 evening)
-
-Both real, both pre-existing — neither introduced by this session's other
-work, verified by checking whether the affected code was touched before today.
-
-- **Fixed: `pickLocation` race in the setup wizard.** Picking a slow-to-validate
-  directory, then a fast one before the first answer returned, let the stale
-  answer win and overwrite the newer one — "import only" stuck no matter how
-  many times the user picked a fresh directory afterward, including going
-  back. A pick-token guard now discards a superseded validation.
-- **Fixed: OAuth login could hang indefinitely.** The installed SDK's
-  `ModelRuntime.login()` follows a successful token exchange with an
-  unbounded model-catalogue refresh (no signal, no timeout — a different code
-  path from the one NFR-PERF-02 bounded at startup). A stalled `pi.dev`
-  (upstream pi#7113, open) hung it forever: browser step completes, Pi's own
-  success page shows, app stuck on "Waiting for browser" until the frontend's
-  own 30s RPC timeout fires. `OAuthService.login()` now waits for *this
-  attempt's* credential to appear in Buddy's auth.json — comparing against a
-  pre-login snapshot, since most logins are re-logins — and only then bounds
-  what remains. A fixed timeout over the whole call was tried first and was
-  wrong: `login()` contains the interactive browser step, so it raced the
-  user. That produced both a false negative (a successful OpenAI login
-  reported as an error) and a false positive (an Anthropic login reported as
-  connected on the strength of a credential that predated it).
-
-- **Fixed: a provider signed in from Settings vanished on reopening.** Sign in
-  to a second provider, pick a model, use it — reopen Settings and it is
-  offered as "sign in" again for the rest of the session, with its model still
-  selected. `ModelRuntime.getProviderAuthStatus` answers from an in-memory
-  snapshot that only updates when its own `refresh()` completes, and that is
-  precisely the call a stalled `pi.dev` hangs. Consequence of not waiting for
-  it (see above): correct to stop waiting, but the snapshot then never learns.
-  `buildAuthStatus` now also consults Buddy's own auth.json, additively — the
-  runtime is never overruled, since it sees credential sources auth.json
-  cannot (runtime API keys, environment). Calling `refresh({allowNetwork:
-  false})` to repair the snapshot was measured at 1ms and rejected anyway:
-  `forceRefreshAvailability` chains behind the in-flight refresh, so it would
-  inherit the very hang it was meant to work around.
-
-- **Fixed: the model chosen per provider is now remembered across Settings
-  visits.** Not a regression from this session — `settings-controller.ts` was
-  untouched today, and the memory was a `Map` created in the controller and
-  cleared on every `openSettings()`, so it only ever lasted while the panel
-  stayed open. Switching back afterwards fell through to the provider's first
-  listed model, typically its most expensive. `changeModel` now records the
-  choice per provider in `config.json` alongside the switch it already
-  persisted, and Settings seeds from that instead of wiping.
-
 ## Distribution
 
-Verified 2026-07-30 against `release.yml`, `scripts/build-worker.sh` and
-`tauri.conf.json`. Suggested order: Linux first (cheap, visible), then the
-POSIX→Windows audit as its own block with its own NFRs, then the CI target —
-there is no point wiring a runner for something not yet correct.
+Verified 2026-08-07 against `release.yml`, `scripts/build-worker.sh` and
+`tauri.conf.json`. CI builds macOS (ARM64 + x64) + Linux x64 (deb + rpm) on
+every tag since v0.1.0. Suggested order: Linux arm64 first (cheap, visible),
+then the POSIX→Windows audit as its own block with its own NFRs, then the CI
+target — there is no point wiring a runner for something not yet correct.
 
 | Item | State | Note |
 |------|-------|------|
 | Workflow actions | current | `checkout` and `setup-node` on v7, `setup-bun@v2`, `rust-cache@v2`, `tauri-action@v1` all on their current major. Why each v7 change does not apply is in a comment in `ci.yml` — worth re-reading before adding a `pull_request_target` or `workflow_run` trigger. Dependabot raises majors as their own PR. |
 | Linux arm64 is never built | **gap, cheap** | `build-worker.sh` already maps `aarch64-unknown-linux-gnu`, and the release matrix only runs `ubuntu-22.04` at x86_64. The sidecar half of the work is done. |
-| Only `deb` + `rpm` | open | `bundle.targets` is `["dmg", "app", "deb", "rpm"]`. No AppImage, no Flatpak — so no distro-agnostic Linux artifact. Package metadata also wants a review. |
+| No distro-agnostic Linux artifact | open | `bundle.targets` is `["dmg", "app", "deb", "rpm"]`. AppImage was dropped (`03b91dc` — linuxdeploy broken on GH runners). Flatpak not started. No distro-agnostic option currently. |
 | `~/.buddy/` security modes are POSIX-only | **blocks Windows** | `CONFIG_DIR_MODE` 0700, `AUTH_FILE_MODE` / `STATE_FILE_MODE` 0600, applied at creation (NFR-SEC-17). `chmod` on Windows is close to a no-op, so credentials, granted paths and config would sit readable by every user of the machine. This is not packaging — it is an NFR that Windows breaks silently, and silent is the failure mode this project has already been bitten by. Needs explicit ACLs or a written, conscious exception. |
 | `containment.ts` symlink semantics | **blocks Windows** | It resolves with `realpathSync` (NFR-SEC-15/16). Windows has junctions, symlinks that need privilege, UNC paths and `\\?\`. This is the module the project calls "one authority", and where the fourth answer to the same question was already wrong once. Porting it without Windows-specific tests is exactly the pattern that has bitten before. |
 | Detached reflect child | open | `--reflect` argv dispatch, detached spawn and the hard timeout all assume POSIX detach semantics. |
 | `build-worker.sh` has no Windows target | open | Bash script with a case over four triples; `bun-windows-x64` is absent. Mechanical once the two security items above are settled. |
-| `git` on PATH | **already handled** | `gitInstallInstructions` already has a `win32` branch in both locales. Nothing to do. |
 
 ## Backlog (post-MVP)
 
@@ -127,11 +76,18 @@ there is no point wiring a runner for something not yet correct.
   into an existing page without losing what the user wrote — has an invariant
   but no procedure. It has to be brought across from `~/git/wiki-kb` and the
   `wiki-ingest` skill, where a human was doing the reviewing.
-- **FR-PROVIDER** — the local-model evaluation answered "not yet".
+- **FR-PROVIDER** — Aug 2026 eval shows Qwen 27B viable for chat + reflect,
+  gemma 12B for chat only. Harness hardening (local-model-improvements #2b,
+  #7, #15, #26) is the prerequisite. FR-PROVIDER-01..03 criteria enriched
+  with compat flags, `contextWindow` requirements, and `thinkingFormat`
+  handling. Not yet scheduled.
 - **FR-SYNC**, **FR-NET-02**, **FR-COST-04** — phase 3+.
 
 ## State
 
-Released through **v0.1.10** (2026-07-31). Phase 0 and Phase 1 complete; the
+Released through **v0.1.15** (2026-08-06). Phase 0 and Phase 1 complete; the
 H1–H8 hardening, local-model evaluation and maintenance-audit campaigns are all
-closed. Per-release detail in `docs/releases/`.
+closed. v0.1.11–v0.1.15 shipped harness guards (heading snapshot, Hebbian,
+thought-token stripping), local-model prompt fixes, and several UX fixes
+(OAuth hang, Settings provider memory, pickLocation race). Per-release detail
+in `docs/releases/`.

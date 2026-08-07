@@ -1,9 +1,14 @@
 // shared/ingest-formats.ts — FR-INGEST-04/05 supported attachment formats.
 
-const TEXT_EXTENSIONS = new Set([".md", ".txt", ""]);
+export type RejectionReason = "spreadsheet" | "document" | "unknown";
+
+const TEXT_EXTENSIONS = new Set([".md", ".txt", ".csv", ".json", ".yaml", ".yml", ".log"]);
 const IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".gif", ".webp"]);
 const PDF_EXTENSIONS = new Set([".pdf"]);
 const SUPPORTED_EXTENSIONS = new Set([...TEXT_EXTENSIONS, ...IMAGE_EXTENSIONS, ...PDF_EXTENSIONS]);
+
+const SPREADSHEET_EXTENSIONS = new Set([".xlsx", ".xls", ".ods"]);
+const DOCUMENT_EXTENSIONS = new Set([".docx", ".pptx", ".epub"]);
 
 function extname(filePath: string): string {
   const base = filePath.replace(/\\/g, "/").split("/").pop() ?? "";
@@ -46,4 +51,12 @@ export function imageMimeTypeFromExt(ext: string): string {
 /** Map file path extension to MIME type for images. */
 export function imageMimeType(filePath: string): string {
   return imageMimeTypeFromExt(extname(filePath));
+}
+
+/** Why a file was rejected — drives locale-specific UI messages. */
+export function rejectionReasonForPath(filePath: string): RejectionReason {
+  const ext = extname(filePath).toLowerCase();
+  if (SPREADSHEET_EXTENSIONS.has(ext)) return "spreadsheet";
+  if (DOCUMENT_EXTENSIONS.has(ext)) return "document";
+  return "unknown";
 }

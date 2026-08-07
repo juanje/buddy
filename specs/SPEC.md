@@ -832,7 +832,7 @@ Fork bomb defense:
 | FR-INGEST-01 | Drag and drop files onto chat | 1 ✓ |
 | FR-INGEST-02 | Attach button | 1 ✓ |
 | FR-INGEST-03 | Dropped file implicit permission | 1 ✓ |
-| FR-INGEST-04 | Supported formats (csv/json/yaml/log, rejection reasons, no extensionless) | 1 partial |
+| FR-INGEST-04 | Supported formats (csv/json/yaml/log, rejection reasons, no extensionless) | 1 ✓ |
 | FR-INGEST-05 | Image attachments (vision) | 1 ✓ |
 | FR-INGEST-06 | PDF attachments (local text extraction) | 1 ✓ |
 

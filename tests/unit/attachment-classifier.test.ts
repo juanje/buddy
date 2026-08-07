@@ -1,8 +1,5 @@
 // tests/unit/attachment-classifier.test.ts — classifyAttachments, extracted
 // from chat-controller.ts's `addAttachments` (FR-INGEST-04).
-//
-// Previously exercised only by driving the whole controller through BDD. Here
-// it is a pure function of two arrays, so every case is a one-line assertion.
 
 import { describe, expect, it } from "vitest";
 
@@ -15,10 +12,26 @@ describe("classifyAttachments", () => {
     expect(rejected).toEqual([]);
   });
 
-  it("rejects an unsupported format by file name", () => {
+  it("rejects an unsupported format with reason", () => {
     const { accepted, rejected } = classifyAttachments(["/tmp/movie.mp4"], []);
     expect(accepted).toEqual([]);
-    expect(rejected).toEqual(["movie.mp4"]);
+    expect(rejected).toEqual([{ name: "movie.mp4", reason: "unknown" }]);
+  });
+
+  it("rejects a spreadsheet with reason 'spreadsheet'", () => {
+    const { rejected } = classifyAttachments(["/tmp/data.xlsx"], []);
+    expect(rejected).toEqual([{ name: "data.xlsx", reason: "spreadsheet" }]);
+  });
+
+  it("rejects a document with reason 'document'", () => {
+    const { rejected } = classifyAttachments(["/tmp/report.docx"], []);
+    expect(rejected).toEqual([{ name: "report.docx", reason: "document" }]);
+  });
+
+  it("rejects extensionless files", () => {
+    const { accepted, rejected } = classifyAttachments(["/tmp/LICENSE"], []);
+    expect(accepted).toEqual([]);
+    expect(rejected).toEqual([{ name: "LICENSE", reason: "unknown" }]);
   });
 
   it("drops a path already pending, silently — neither list gets it", () => {
@@ -35,21 +48,26 @@ describe("classifyAttachments", () => {
       existing,
     );
     expect(accepted).toEqual([{ path: "/tmp/new.md", name: "new.md" }]);
-    expect(rejected).toEqual(["bad.exe"]);
+    expect(rejected).toEqual([{ name: "bad.exe", reason: "unknown" }]);
   });
 
   it("returns two empty lists for no input", () => {
     expect(classifyAttachments([], [])).toEqual({ accepted: [], rejected: [] });
   });
 
-  // Documents the inherited quirk rather than hiding it: a duplicate within
-  // the same call is only checked against `existing`, not against what this
-  // same call already accepted.
   it("adds the same new path twice if it appears twice in one call", () => {
     const { accepted } = classifyAttachments(["/tmp/new.md", "/tmp/new.md"], []);
     expect(accepted).toEqual([
       { path: "/tmp/new.md", name: "new.md" },
       { path: "/tmp/new.md", name: "new.md" },
     ]);
+  });
+
+  it("accepts new text formats: csv, json, yaml, yml, log", () => {
+    for (const ext of [".csv", ".json", ".yaml", ".yml", ".log"]) {
+      const { accepted, rejected } = classifyAttachments([`/tmp/file${ext}`], []);
+      expect(accepted.length, `${ext} should be accepted`).toBe(1);
+      expect(rejected.length, `${ext} should not be rejected`).toBe(0);
+    }
   });
 });

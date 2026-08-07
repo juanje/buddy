@@ -63,6 +63,8 @@ export type LocaleStrings = {
   sessionPreparing: string;
   dropOverlay: string;
   unsupportedFormat: string;
+  unsupportedSpreadsheet: string;
+  unsupportedDocument: string;
   toolReading: string;
   toolReadingFile: string;
   toolWriting: string;
@@ -195,7 +197,9 @@ export const es: LocaleStrings = {
   attachTitle: "Adjuntar archivo",
   sessionPreparing: "Preparando la sesión… Puedes escribir: tu mensaje se enviará solo. La primera respuesta puede tardar un poco.",
   dropOverlay: "Suelta el archivo aquí",
-  unsupportedFormat: "Formato no compatible — exporta a texto (.md o .txt)",
+  unsupportedFormat: "Formato no compatible — prueba con .md, .txt, .csv, .json, .yaml o .log",
+  unsupportedSpreadsheet: "Los archivos de hoja de cálculo no están soportados directamente — expórtalo como CSV desde tu aplicación de hojas de cálculo",
+  unsupportedDocument: "Formato de documento no compatible — exporta a .md o .txt",
   toolReading: "Leyendo…",
   toolReadingFile: "Leyendo {file}",
   toolWriting: "Escribiendo…",

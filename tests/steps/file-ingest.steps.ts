@@ -60,7 +60,7 @@ Then("an attachment error is shown for {string}", function (this: IngestWorld, n
 Then("the attachment error suggests CSV export", function (this: IngestWorld) {
   const errors = this.read(this.controller.attachmentErrors);
   assert.ok(errors.includes("report.xlsx"), `expected report.xlsx rejected, got ${JSON.stringify(errors)}`);
-  const reasons = (this.controller as { attachmentRejectionReasons?: Readable<Array<{ name: string; reason: string }>> } })
+  const reasons = (this.controller as { attachmentRejectionReasons?: Readable<Array<{ name: string; reason: string }>> })
     .attachmentRejectionReasons;
   if (reasons) {
     const list = this.read(reasons);
