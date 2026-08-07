@@ -20,6 +20,28 @@ Feature: File ingest
     Then no attachment chips are shown
     And an attachment error is shown for "report.docx"
 
+  Scenario: A CSV file is accepted as a text attachment
+    When I attach the file "/tmp/data.csv"
+    Then the attachment is accepted
+
+  Scenario: A JSON file is accepted as a text attachment
+    When I attach the file "/tmp/config.json"
+    Then the attachment is accepted
+
+  Scenario: A YAML file is accepted as a text attachment
+    When I attach the file "/tmp/settings.yaml"
+    Then the attachment is accepted
+
+  Scenario: A log file is accepted as a text attachment
+    When I attach the file "/tmp/app.log"
+    Then the attachment is accepted
+
+  Scenario: A spreadsheet file shows export-to-CSV guidance
+    When I attach the file "/tmp/report.xlsx"
+    Then no attachment chips are shown
+    And an attachment error is shown for "report.xlsx"
+    And the attachment error suggests CSV export
+
   Scenario: A PDF file is attached and its text is extracted into the prompt
     Given a PDF file exists at "/tmp/sample.pdf" with text "Hello from PDF"
     When I attach the file "/tmp/sample.pdf"

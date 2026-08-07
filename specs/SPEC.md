@@ -832,7 +832,7 @@ Fork bomb defense:
 | FR-INGEST-01 | Drag and drop files onto chat | 1 ✓ |
 | FR-INGEST-02 | Attach button | 1 ✓ |
 | FR-INGEST-03 | Dropped file implicit permission | 1 ✓ |
-| FR-INGEST-04 | Supported formats | 1 ✓ |
+| FR-INGEST-04 | Supported formats (csv/json/yaml/log, rejection reasons, no extensionless) | 1 partial |
 | FR-INGEST-05 | Image attachments (vision) | 1 ✓ |
 | FR-INGEST-06 | PDF attachments (local text extraction) | 1 ✓ |
 
@@ -860,11 +860,23 @@ Fork bomb defense:
 **FR-INGEST-04 — Supported formats**
 
 - **Given** the user attaches a file
-- **When** it is markdown, plain text, or extensionless
+- **When** it is markdown (`.md`), plain text (`.txt`), CSV (`.csv`), JSON (`.json`), YAML (`.yaml`, `.yml`), log (`.log`), or PDF (`.pdf`)
 - **Then** the agent reads and discusses it normally
-- **But when** it is DOCX or another unsupported format
-- **Then** a friendly message suggests exporting to text
+- **But when** it is XLSX, XLS, or another spreadsheet format (`.xlsx`, `.xls`, `.ods`)
+- **Then** the attachment is rejected and the UI shows a spreadsheet-specific message suggesting CSV export — not the generic unsupported-format string
+- **And** the English locale reads: "Spreadsheet files aren't supported directly — export to CSV from your spreadsheet app and attach that instead"
+- **And** the Spanish locale reads: "Los archivos de hoja de cálculo no están soportados directamente — expórtalo como CSV desde tu aplicación de hojas de cálculo"
+- **But when** it is DOCX or another unsupported document format (`.docx`, `.pptx`, `.epub`, etc.)
+- **Then** the attachment is rejected and the UI shows a document-specific message suggesting export to text (`.md` or `.txt`)
+- **But when** it is any other unsupported format
+- **Then** the attachment is rejected and the UI shows the generic unsupported-format message
+- **Implementation — allowlist:** Extend `TEXT_EXTENSIONS` in `shared/ingest-formats.ts` with `.csv`, `.json`, `.yaml`, `.yml`, `.log`. No conversion step — plain text read by the agent like `.md` and `.txt`.
+- **Implementation — extensionless files:** Remove `""` from `TEXT_EXTENSIONS`. Extensionless paths (e.g. `README`, `LICENSE`, compiled binaries without extension) are rejected. Users with legitimate extensionless text files rename them (e.g. `README.txt`). A UTF-8 sniff gate is explicitly out of scope — regex allowlist only.
+- **Implementation — rejection reasons:** `classifyAttachments()` returns structured rejections, not just filenames. Each rejected file carries a reason: `"spreadsheet"`, `"document"`, or `"unknown"`. Extension mapping lives in `shared/ingest-formats.ts` (e.g. `rejectionReasonForPath(path)`).
+- **Implementation — UI:** `attachmentErrors` becomes (or is supplemented by) structured entries `{ name, reason }`. `InputBar.svelte` maps `reason` to locale keys: `unsupportedSpreadsheet`, `unsupportedDocument`, `unsupportedFormat` (generic fallback). Existing generic string `unsupportedFormat` remains for `"unknown"`.
+- **Implementation — tests:** Unit tests in `ingest-formats.test.ts` cover each new extension and extensionless rejection. `attachment-classifier.test.ts` covers reason per rejection type. BDD scenarios in `file-ingest.feature` cover acceptance and spreadsheet guidance.
 - **Note:** PDF is supported via local text extraction (FR-INGEST-06); `.pdf` is accepted and its text is injected into the prompt.
+- **Note:** CSV is the cheapest path to "spreadsheet support" — no binary parser needed. Log files are a natural fit for technical users diagnosing errors with the agent.
 
 **FR-INGEST-05 — Image attachments (vision)**
 
@@ -1664,6 +1676,11 @@ detailed specification: [specs/BRAIN-SPEC.md](BRAIN-SPEC.md).
 | FR-BRAIN-05 | Observation pipeline captures and promotes patterns | 2 ✓ |
 | FR-BRAIN-06 | AGENTS.md does not declare skills — procedural prompts are skill tools (FR-SKILL) | 2 ✓ |
 | FR-BRAIN-07 | Brain health linter (structural checks, worker code) | 2 ✓ |
+| FR-BRAIN-08 | Preference evolution tracking (`USER.md` Preferences section) | 3 |
+| FR-BRAIN-09 | "What did we learn about the user?" consolidation step | 3 |
+| FR-BRAIN-10 | Cross-domain principle abstraction (weekly depth 2) | 3 |
+| FR-BRAIN-11 | Markov self-sufficiency eval (manual dev tool) | 3 |
+| FR-BRAIN-12 | Forget mechanism | — deferred |
 
 **FR-BRAIN-01 — AGENTS.md behavioral rules**
 
@@ -1735,6 +1752,68 @@ detailed specification: [specs/BRAIN-SPEC.md](BRAIN-SPEC.md).
   - Files exceeding size threshold are flagged for potential split
 - **And** the report is injected into the consolidation prompt (same pattern as Hebbian report) or returned to the user if invoked on demand
 - **Note:** Principle 3.2 — list/count/compare is worker code, not LLM judgment. Index generation can be fully programmatic when `summary` fields are present (NFR-FORMAT-01).
+
+**FR-BRAIN-08 — Preference evolution tracking**
+
+- **Given** a buddy instance (fresh or existing)
+- **When** the user changes a preference during a session (e.g., pauses BJJ, switches work schedule, corrects language preference)
+- **Then** `agent_brain/identity/USER.md` records the change under `## Preferences` with: current state, change date, previous state, and reason when known
+- **And** previous preference states are preserved in the evolution history — not overwritten silently
+- **Template (new instances):** The bundled `USER.md` template ships with a `## Preferences` section scaffold:
+
+  ```markdown
+  ## Preferences
+
+  Structured preference tracking. Each subsection: **Current**, **Changed** (date + previous state), **Reason**.
+
+  ### Example domain
+  - **Current:** …
+  - (No changes recorded)
+  ```
+
+- **Migration (existing instances):** The worker scaffolds missing sections **by code**, not by LLM prompt. Before session start or pre-consolidation, `ensureUserMdSections()` (or equivalent in `backends/brain-migration.ts`) reads `USER.md`, checks for `## Preferences` via heading regex, and appends an empty section template if absent. Same function handles `## Principles` (FR-BRAIN-10). After the section exists, the check is a no-op.
+- **Why code, not prompt:** Deterministic across all models (including local); no tokens spent on structural detection; same pattern as `computeBrainHealthReport()` (FR-BRAIN-07).
+- **Prompt changes:** `process-conversation.md` Step 4 (Detect observations) gains a trigger for preference changes. `consolidation.md` daily steps instruct the LLM to update `## Preferences` when today's log reveals a change — but only within a section that already exists (scaffolded by the worker).
+- **Testable:** Conversation eval — after a session where the user changes a stated preference, consolidation updates `USER.md` with dated evolution entry. Unit test — `ensureUserMdSections()` appends `## Preferences` when missing, leaves file unchanged when present.
+
+**FR-BRAIN-09 — "What did we learn about the user?" consolidation step**
+
+- **Given** daily consolidation (depth 1) runs after one or more sessions today
+- **When** the consolidation prompt is built
+- **Then** it includes an explicit step (between journal write and inbox triage — new Step 3b in `consolidation.md`):
+  > Review today's interactions. Did the user reveal: (a) new preferences or opinions? (b) changes to existing preferences? (c) personal facts not yet in USER.md? (d) corrections to previously stored information? If yes, update USER.md accordingly. Mark preference changes with dates and reasons (FR-BRAIN-08).
+- **And** this step runs even when the day had no dramatic events — implicit signals count (wording choices, corrections, repeated behaviors mentioned in passing)
+- **And** `process-conversation.md` reflect output may include an `### User model updates` section when preference signals emerged during the session (worker files to USER.md during reflect post-processing, or consolidation picks it up from the log)
+- **Scope:** Prompt/template only (`bundled/prompts/consolidation.md`, `bundled/prompts/process-conversation.md`). No new app code beyond FR-BRAIN-08 section scaffolding.
+- **Testable:** Conversation eval — session with implicit preference signal (e.g., user mentions they stopped an activity) → next consolidation updates USER.md without user explicitly asking.
+
+**FR-BRAIN-10 — Cross-domain principle abstraction**
+
+- **Given** weekly consolidation (depth 2) runs with accumulated preference data in `USER.md` (FR-BRAIN-08 operational)
+- **When** the depth 2 extension executes
+- **Then** it includes a principle-extraction step:
+  > From accumulated preferences and behaviors in USER.md, identify underlying principles that explain multiple preferences (require 3+ data points). E.g.: BJJ + café work + complex-systems thinking → "values structured constraints that produce emergent adaptation." Store in `## Principles` in USER.md. Only add principles with strong evidence; omit the section content if nothing qualifies.
+- **And** `## Principles` is scaffolded by the same worker migration as `## Preferences` (FR-BRAIN-08) — created empty if missing before the LLM runs
+- **Depends on:** FR-BRAIN-08 and FR-BRAIN-09 (needs preference data flowing before abstraction is meaningful)
+- **Testable:** Conversation eval after several weeks of preference accumulation — depth 2 produces at least one principle with cited evidence. Unit test — migration scaffolds `## Principles` when absent.
+
+**FR-BRAIN-11 — Markov self-sufficiency eval (manual tool)**
+
+- **Given** FR-BRAIN-08 and FR-BRAIN-09 have been operational for a period
+- **When** a developer runs the eval tool (e.g., `npx tsx scripts/eval-markov.ts <buddy-dir>`)
+- **Then** the tool:
+  1. Samples questions from recent logs (last N days or last M sessions)
+  2. Asks the model to answer each question using **only** `USER.md` + `agent_brain/concepts/index.md` (no log access)
+  3. Asks again with log access (ground truth)
+  4. Reports gaps: questions answerable with logs but not from memory alone
+- **And** the tool is **not** part of the automatic consolidation pipeline — it is a developer/eval artifact, run on demand to measure consolidation distillation quality
+- **Rationale:** A model evaluating its own memory during monthly consolidation has limited value (it won't ask about what it failed to capture). This eval measures whether FR-BRAIN-08/09 are working, similar to `test-consolidation.ts` for consolidation quality.
+- **Depends on:** FR-BRAIN-08 and FR-BRAIN-09 operational (baseline must exist before measuring)
+- **Testable:** Script runs against a fixture instance; output report lists gap count and sample questions.
+
+**FR-BRAIN-12 — Forget mechanism** *(deferred — needs design)*
+
+Structured deletion with consolidation barriers (`[REDACTED]` markers, cross-layer propagation, git history interaction) is documented in [personamem-memory-improvements.md](personamem-memory-improvements.md) but requirements are not clear enough to spec. Deferred until design answers: what triggers forget, how it propagates across memory layers, tool vs convention, and interaction with git history.
 
 **Note:** FR-BRAIN-01 through 03 are Phase 1 prerequisites — the app cannot
 ship without templates that produce correct behavior. These are developed in
@@ -2379,6 +2458,7 @@ that do not exist yet, so it is scoped as a feature and not a patch.
 - **And** `runtime.getError()` is checked after configuration and surfaced to the user if the provider was dropped due to malformed config
 - **And** `custom` is added to `ADD_PROVIDER_CANDIDATES` in settings-controller and to `WIZARD_PI_PROVIDERS` in auth-status, so the provider is visible in both flows
 - **And** `custom` is included in `buildAuthStatus()` so credential state is tracked like cloud providers
+- **And** `compat` flags are pre-populated with safe defaults for local servers (`supportsDeveloperRole: false`, `supportsReasoningEffort: false`, `supportsUsageInStreaming: false`, `supportsStrictMode: false`, `supportsStore: false`, `maxTokensField: "max_tokens"`). The user should not have to know about `supportsDeveloperRole` to get a working setup — this was a hard-won lesson: without it, the model ignores the system prompt entirely
 
 **Persistence — resolved 2026-07-28 by reading the Pi source and probing the
 bundled v0.80.10 SDK.** `baseUrl` lives in a `models.json`, under
@@ -2398,16 +2478,63 @@ needing to be managed.
       "baseUrl": "http://127.0.0.1:11434/v1",         // the /v1 is required
       "api": "openai-completions",
       "apiKey": "ollama",                             // placeholder; see below
-      "compat": {
-        "supportsDeveloperRole": false, "supportsReasoningEffort": false,
-        "supportsUsageInStreaming": false, "maxTokensField": "max_tokens",
-        "supportsStrictMode": false, "supportsStore": false
+      "compat": {                                      // see compat flags above
+        "supportsDeveloperRole": false,
+        "supportsReasoningEffort": false,
+        "supportsUsageInStreaming": false,
+        "maxTokensField": "max_tokens",
+        "supportsStrictMode": false,
+        "supportsStore": false
       },
-      "models": [{ "id": "qwen2.5:7b", "contextWindow": 32768, "maxTokens": 8192 }]
+      "models": [{
+        "id": "qwen2.5:7b",
+        "contextWindow": 32768,                        // REQUIRED — default is 128k
+        "maxTokens": 8192
+      }]
     }
   }
 }
 ```
+
+**Compatibility flags — critical for local model servers.** Most
+OpenAI-compatible servers (Ollama, vLLM, SGLang, oMLX, LM Studio) do not
+implement the full OpenAI API. Without the right `compat` flags in
+`models.json`, requests fail silently or the model ignores the system prompt.
+Reference: Pi docs `packages/coding-agent/docs/models.md` → OpenAI
+Compatibility section.
+
+Minimum `compat` for typical local servers (Ollama, oMLX):
+
+```jsonc
+"compat": {
+  "supportsDeveloperRole": false,     // CRITICAL — without this, system prompt
+                                      // goes as "developer" role, which local
+                                      // servers don't understand. The model
+                                      // ignores AGENTS.md and behaves erratically.
+  "supportsReasoningEffort": false,   // most local servers don't support this
+  "supportsUsageInStreaming": false,   // many don't include usage in stream chunks
+  "maxTokensField": "max_tokens",     // some use old field name
+  "supportsStrictMode": false,        // no strict JSON-schema tool definitions
+  "supportsStore": false              // no store support
+}
+```
+
+Additional `compat` flags to consider per server:
+
+| Flag | When to set | Notes |
+|------|-------------|-------|
+| `supportsFinishReason: false` | Server omits `finish_reason` in streamed responses | Pi infers stop/toolUse from stream end |
+| `thinkingFormat: "qwen"` | Qwen models with thinking via Ollama | Uses top-level `enable_thinking` |
+| `thinkingFormat: "qwen-chat-template"` | Qwen models via vLLM/local servers | Uses `chat_template_kwargs.enable_thinking` |
+| `requiresThinkingAsText: true` | Server can't handle thinking blocks | Converts to plain text |
+
+`compat` can be set at provider level (applies to all models) or per model
+(overrides provider). Provider-level is simpler for single-server setups.
+
+**`contextWindow` defaults to 128000 when omitted** (per Pi model config
+docs). For a 12B model running locally with an effective quality window of
+~32k, this means compaction never fires and context saturation causes phantom
+writes. **Always set `contextWindow` explicitly for local models.**
 
 Constraints established, each verified against the bundled SDK rather than the
 docs (the docs disagree in three places and the code was right each time):
@@ -2523,7 +2650,8 @@ and `local-model-improvements.md`.
 - **Then** models are listed live from the endpoint when it answers `/models`, since most compatible servers do
 - **And** a free-form model id is accepted when it does not — `ModelStep.svelte` already implements this input and it is kept for this purpose
 - **And** the provider appears in the Settings provider dropdown. **Fix the dropdown first:** it is derived from the model list, so a provider with no models has no `<option>`, nothing is `selected`, and the control displays a provider the user is not using
-- **And** when `/models` returns model metadata with `context_length` or equivalent, it is used as the default `contextWindow` for that model — saving the user from having to know their model's context size
+- **And** when `/models` returns model metadata with `context_length` or equivalent, it is used as the default `contextWindow` for that model — saving the user from having to know their model's context size. **If `/models` does not return context size, the setup flow must ask the user explicitly** — the Pi SDK default of 128k is dangerous for local models (causes phantom writes on models with effective quality windows of 32k–40k)
+- **And** for reasoning-capable Qwen models, `compat.thinkingFormat` is set automatically: `"qwen"` for Ollama (which uses top-level `enable_thinking`), `"qwen-chat-template"` for vLLM/local servers (which use `chat_template_kwargs.enable_thinking`). Other reasoning models (DeepSeek, etc.) may need different `thinkingFormat` values — the setup flow should handle this per model family when `reasoning: true` is selected
 - **And** `fastModelForProvider("custom")` resolves to a usable model (the configured one, or the first available) instead of `undefined` — so checkpoint reflect does not silently fail on local providers
 
 **FR-PROVIDER-03 — Legible failure when the endpoint is unreachable**

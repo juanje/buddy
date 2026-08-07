@@ -5,6 +5,7 @@ import assert from "node:assert/strict";
 import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import type { Readable } from "svelte/store";
 
 import { createMinimalPdf } from "../support/minimal-pdf";
 
@@ -54,6 +55,20 @@ Then("no attachment chips are shown", function (this: IngestWorld) {
 Then("an attachment error is shown for {string}", function (this: IngestWorld, name: string) {
   const errors = this.read(this.controller.attachmentErrors);
   assert.ok(errors.includes(name), `expected error for ${name}, got ${JSON.stringify(errors)}`);
+});
+
+Then("the attachment error suggests CSV export", function (this: IngestWorld) {
+  const errors = this.read(this.controller.attachmentErrors);
+  assert.ok(errors.includes("report.xlsx"), `expected report.xlsx rejected, got ${JSON.stringify(errors)}`);
+  const reasons = (this.controller as { attachmentRejectionReasons?: Readable<Array<{ name: string; reason: string }>> } })
+    .attachmentRejectionReasons;
+  if (reasons) {
+    const list = this.read(reasons);
+    assert.ok(
+      list.some((r) => r.name === "report.xlsx" && r.reason === "spreadsheet"),
+      `expected spreadsheet rejection reason, got ${JSON.stringify(list)}`,
+    );
+  }
 });
 
 Then("the prompt includes {string}", function (this: IngestWorld, text: string) {
