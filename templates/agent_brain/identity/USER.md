@@ -13,4 +13,4 @@ What are you using this system for? Permanent facts about your situation go here
 
 ## Preferences
 
-How do you like to work? How should the agent present information? Examples: direct/verbose, structured/conversational, language preferences, formatting, frequency of check-ins.
+How the user likes to work, communicate, and receive information. Keep current — update when preferences change, don't accumulate history here.

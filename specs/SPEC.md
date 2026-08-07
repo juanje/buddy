@@ -1676,8 +1676,8 @@ detailed specification: [specs/BRAIN-SPEC.md](BRAIN-SPEC.md).
 | FR-BRAIN-05 | Observation pipeline captures and promotes patterns | 2 ✓ |
 | FR-BRAIN-06 | AGENTS.md does not declare skills — procedural prompts are skill tools (FR-SKILL) | 2 ✓ |
 | FR-BRAIN-07 | Brain health linter (structural checks, worker code) | 2 ✓ |
-| FR-BRAIN-08 | Preference evolution tracking (`USER.md` Preferences section) | 3 |
-| FR-BRAIN-09 | "What did we learn about the user?" consolidation step | 3 |
+| FR-BRAIN-08 | Preference evolution tracking (`USER.md` Preferences section) | 3 ✓ |
+| FR-BRAIN-09 | "What did we learn about the user?" consolidation step | 3 ✓ |
 | FR-BRAIN-10 | Cross-domain principle abstraction (weekly depth 2) | 3 |
 | FR-BRAIN-11 | Markov self-sufficiency eval (manual dev tool) | 3 |
 | FR-BRAIN-12 | Forget mechanism | — deferred |

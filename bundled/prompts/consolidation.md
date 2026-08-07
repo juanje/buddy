@@ -88,6 +88,27 @@ user-owned. The user can read entries directly or ask the agent questions
 like "what did I do yesterday?", "how has my mother been doing?", "how have
 I progressed with exercise this month?".
 
+#### 3b. Update user model
+
+Review today's interactions. Did the user reveal:
+
+(a) new preferences or opinions?
+(b) changes to existing preferences?
+(c) personal facts not yet in USER.md?
+(d) corrections to previously stored information?
+
+If yes, update USER.md accordingly. Look for both explicit signals ("I stopped doing X") and implicit ones (wording choices, corrections, repeated behaviors mentioned in passing). This step runs even when the day had no dramatic events.
+
+When a preference changes, update `## Preferences` with the current state — don't keep history in USER.md; the change is already in the daily log.
+
+**USER.md size discipline:** This file is always loaded into every session. It must stay dense and short — aim for under 60 lines. When a section grows beyond a few lines of essential facts, extract the detail to a satellite file in `identity/` (e.g. `health.md`, `people.md`, `background.md`) and leave a one-line summary with a link:
+
+```markdown
+> For full health details → [health.md](health.md)
+```
+
+The satellite file carries the depth; USER.md carries the working summary. This pattern applies to all sections — About, Context, Preferences, and any new ones that emerge.
+
 #### 4. Triage inbox
 
 Invoke the `triage_inbox` tool and follow its procedure. Process

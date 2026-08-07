@@ -36,12 +36,13 @@ Ensure actionable items landed in the right place:
 - Ideas → `agent_brain/ideas/`
 - Decisions → `agent_brain/projects/` or `agent_brain/concepts/`
 
-### 4. Detect observations
+### 4. Detect observations and preference signals
 
 Only if genuine signals emerged — skip otherwise:
 - **Rule candidate:** User correction or explicit preference → note for AGENTS.md. Example: user says "write my files in Spanish" → rule candidate: "Content in user/ should be in the user's preferred language."
 - **Skill candidate:** Repeatable multi-step workflow emerging.
 - **Concept candidate:** A lesson that generalizes beyond today.
+- **Preference change:** The user revealed a new preference, changed an existing one, corrected stored information, or mentioned a personal fact not yet in USER.md. Examples: pausing an activity, changing work schedule, correcting a language preference, mentioning a new interest or dropping an old one.
 
 Write to `agent_brain/observations.md` (increment count if pattern already exists).
 

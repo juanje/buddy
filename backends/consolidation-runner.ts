@@ -51,6 +51,7 @@ import { buddyAgentDir, globalConfigDir } from "./global-config";
 import { recordSessionUsage } from "./usage-tracker";
 import { buildConsolidationTools, consolidationToolNames } from "./consolidation-tools";
 import { buildSkillTools, skillToolNames } from "./skill-tools";
+import { ensureUserMdSectionsOnDisk } from "./brain-migration";
 
 export interface MaintenanceSessionLike {
   prompt(text: string): Promise<void>;
@@ -516,6 +517,7 @@ export async function runConsolidation(options: RunConsolidationOptions): Promis
       const start = Date.now();
       try {
         depthSession = await createSession({ rootDir, modelRuntime });
+        ensureUserMdSectionsOnDisk(rootDir);
         logEvent(rootDir, { event: "consolidation_start", depth });
         const healthBefore = computeBrainHealthReport(rootDir);
         await depthSession.prompt(buildConsolidationPrompt(rootDir, depth, now));

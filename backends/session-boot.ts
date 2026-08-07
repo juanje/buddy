@@ -28,6 +28,7 @@ import { buildFileTools } from "./file-tools";
 import { buildShowFileTools } from "./show-file-tool";
 import { SessionLifecycle } from "./session-lifecycle";
 import { persistLiveSession } from "./crash-recovery";
+import { ensureUserMdSectionsOnDisk } from "./brain-migration";
 import { createWorkerCore, type PiSessionLike, type WorkerCore } from "./worker-core";
 import type { UsageTracker } from "./usage-tracker";
 import { runWarmHandoff } from "./warm-handoff";
@@ -162,6 +163,8 @@ export async function bootSession(
     context.frontend.onWorkerError(`buddy directory not found: ${rootDir}`);
     return undefined;
   }
+
+  ensureUserMdSectionsOnDisk(rootDir);
 
   const sessionId = randomUUID().slice(0, SESSION_ID_DISPLAY_LENGTH);
   logEvent(rootDir, { event: "session_start", session: sessionId });
