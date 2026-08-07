@@ -8,6 +8,9 @@ src-tauri/binaries/
 .DS_Store
 fixtures/consolidation-test/
 
+# Eval question banks contain personal data from specific Buddy instances
+eval-questions.json
+
 # Editor and OS leftovers. Never content, and the embedded-asset snapshot
 # walks the working tree, so a stray swap file would end up in the sidecar.
 *.sw[a-z]

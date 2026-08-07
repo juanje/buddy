@@ -1679,8 +1679,9 @@ detailed specification: [specs/BRAIN-SPEC.md](BRAIN-SPEC.md).
 | FR-BRAIN-08 | Preference tracking in USER.md (current state, no history) | 3 ✓ |
 | FR-BRAIN-09 | "What did we learn about the user?" consolidation step | 3 ✓ |
 | FR-BRAIN-10 | Cross-domain principle abstraction (weekly depth 2) | 3 ✓ |
-| FR-BRAIN-11 | Markov self-sufficiency eval (manual dev tool) | 3 |
+| FR-BRAIN-11 | Working memory precision eval (manual dev tool) | 3 ✓ |
 | FR-BRAIN-12 | Forget mechanism | — deferred |
+| FR-BRAIN-13 | Extended memory retrieval eval | — deferred |
 
 **FR-BRAIN-01 — AGENTS.md behavioral rules**
 
@@ -1795,23 +1796,39 @@ detailed specification: [specs/BRAIN-SPEC.md](BRAIN-SPEC.md).
 - **Depends on:** FR-BRAIN-08 and FR-BRAIN-09 (needs preference data flowing before abstraction is meaningful)
 - **Testable:** Conversation eval after several weeks of preference accumulation — depth 2 produces at least one principle with cited evidence. Unit test — migration scaffolds `## Principles` when absent.
 
-**FR-BRAIN-11 — Markov self-sufficiency eval (manual tool)**
+**FR-BRAIN-11 — Working memory precision eval (manual tool)**
 
-- **Given** FR-BRAIN-08 and FR-BRAIN-09 have been operational for a period
-- **When** a developer runs the eval tool (e.g., `npx tsx scripts/eval-markov.ts <buddy-dir>`)
-- **Then** the tool:
-  1. Samples questions from recent logs (last N days or last M sessions)
-  2. Asks the model to answer each question using **only** `USER.md` + `agent_brain/concepts/index.md` (no log access)
-  3. Asks again with log access (ground truth)
-  4. Reports gaps: questions answerable with logs but not from memory alone
-- **And** the tool is **not** part of the automatic consolidation pipeline — it is a developer/eval artifact, run on demand to measure consolidation distillation quality
-- **Rationale:** A model evaluating its own memory during monthly consolidation has limited value (it won't ask about what it failed to capture). This eval measures whether FR-BRAIN-08/09 are working, similar to `test-consolidation.ts` for consolidation quality.
-- **Depends on:** FR-BRAIN-08 and FR-BRAIN-09 operational (baseline must exist before measuring)
-- **Testable:** Script runs against a fixture instance; output report lists gap count and sample questions.
+Measures whether USER.md + concepts are accurate and current — not whether the agent can navigate to information in logs (that's FR-BRAIN-13).
+
+- **Given** a buddy instance with populated memory files
+- **When** a developer runs `npx tsx scripts/eval-markov.ts <buddy-dir>`
+- **Then** the tool loads questions from `<buddy-dir>/eval-questions.json` (or `--questions <path>`) and for each question:
+  1. Asks the model using **only** working memory context (USER.md + concepts/index.md)
+  2. Asks again with full context (memory + all logs)
+  3. Compares keyword hits to detect gaps
+- **And** questions are categorized as:
+  - **profile** — stable facts (identity, work, health, preferences). A gap means USER.md is incomplete.
+  - **currency** — facts that evolved over time (events resolved, preferences changed). A gap means memory is stale — logs have the current version but consolidation hasn't updated USER.md.
+- **And** questions live in an external JSON file (not in the codebase) because they contain instance-specific personal data
+- **And** the tool is NOT part of the test suite — run manually to evaluate consolidation quality
+- **Depends on:** FR-BRAIN-08/09 operational; question bank designed per instance
+- **Testable:** Script runs against any instance; report shows profile accuracy %, currency accuracy %, and per-question detail.
 
 **FR-BRAIN-12 — Forget mechanism** *(deferred — needs design)*
 
 Structured deletion with consolidation barriers (`[REDACTED]` markers, cross-layer propagation, git history interaction) is documented in [personamem-memory-improvements.md](personamem-memory-improvements.md) but requirements are not clear enough to spec. Deferred until design answers: what triggers forget, how it propagates across memory layers, tool vs convention, and interaction with git history.
+
+**FR-BRAIN-13 — Extended memory retrieval eval** *(deferred — needs design)*
+
+FR-BRAIN-11 measures *working memory precision*: whether USER.md and concepts are accurate and current. It deliberately does not test whether the agent can *navigate* to information stored elsewhere (logs, projects, satellite files) — only whether the profile is right.
+
+FR-BRAIN-13 fills the complementary gap: can the agent find and return correct information from extended memory using its retrieval tools? This requires a different eval architecture:
+
+- **Agent-based, not context-dump:** The model gets read/grep tools and must navigate the file hierarchy (indexes → files) to find answers, simulating real retrieval behavior.
+- **Currency under contradiction:** Logs may contain conflicting information over time (preference changed, event status updated). The eval must verify the agent surfaces the *current* version, not a stale one.
+- **Retrieval path quality:** Not just "did it find the answer" but "did it follow progressive disclosure" (index → file, not brute-force grep over all logs).
+
+Open design questions: eval harness for tool-use sessions (Pi session with tools enabled?), cost per run (tool-use sessions are heavier than prompt-only), question design for retrieval vs recall, scoring for partial retrieval (found the file but extracted wrong section).
 
 **Note:** FR-BRAIN-01 through 03 are Phase 1 prerequisites — the app cannot
 ship without templates that produce correct behavior. These are developed in

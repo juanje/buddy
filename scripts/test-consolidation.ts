@@ -39,7 +39,10 @@ import { alignHttpDispatcherWithPi } from "../backends/pi-http-dispatcher";
 import { assembleMaintenancePrompt } from "../backends/prompt";
 import { createBuddyModelRuntime, defaultAuthPath } from "../backends/provider-auth";
 import { bootRefreshIfNeeded } from "../backends/boot-refresh";
-import { buddyAgentDir, globalConfigDir } from "../backends/global-config";
+import { buddyAgentDir, globalConfigDir, globalConfigPath } from "../backends/global-config";
+import { resolveSessionModel } from "../backends/model-switch";
+import { readStateFile } from "../backends/state-file";
+import type { SetupConfig } from "../shared/api";
 import { AGENT_TOOLS, CONSOLIDATION_RETRY_CEILING, EXCLUDED_TOOLS } from "../shared/defaults";
 import {
   loadConsolidationLog,
@@ -394,6 +397,13 @@ async function main(): Promise<void> {
   // provider definitions and, worse for its purpose, never see Buddy's own
   // ~/.buddy/models.json, which is where a custom endpoint is configured.
   const modelRuntime = await createBuddyModelRuntime();
+  const appConfig = readStateFile<SetupConfig>(globalConfigPath());
+  if (!appConfig?.provider || !appConfig?.model) {
+    console.error("Could not read provider/model from config. Run Buddy setup first.");
+    process.exit(1);
+  }
+  const sessionModel = await resolveSessionModel(modelRuntime, appConfig.provider, appConfig.model);
+  console.log(`Model: ${appConfig.provider}/${appConfig.model}`);
   const start = Date.now();
 
   try {
@@ -423,6 +433,8 @@ async function main(): Promise<void> {
           tools: [...AGENT_TOOLS],
           modelRuntime: mr,
         });
+
+        await session.setModel(sessionModel);
 
         // Wire the same guards as production (FR-CONSOL-10, FR-HEBB-08, FR-GUARD-01)
         const policy = installMaintenanceGate(session, rd);

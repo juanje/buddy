@@ -88,5 +88,6 @@ target — there is no point wiring a runner for something not yet correct.
 Released through **v0.1.16** (2026-08-07). Phase 0 and Phase 1 complete; the
 H1–H8 hardening, local-model evaluation and maintenance-audit campaigns are all
 closed. v0.1.16 shipped extended ingest formats (CSV, JSON, YAML, log),
-structured rejection reasons, preference tracking in USER.md, and the
-consolidation user-model update step. Per-release detail in `docs/releases/`.
+structured rejection reasons, preference tracking in USER.md, the
+consolidation user-model update step, and Markov self-sufficiency eval
+(`scripts/eval-markov.ts`). Per-release detail in `docs/releases/`.

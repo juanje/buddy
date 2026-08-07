@@ -21,9 +21,12 @@ import {
 import { buildReflectUserPrompt } from "../backends/reflect-prompts";
 import { assembleMaintenancePrompt } from "../backends/prompt";
 import { alignHttpDispatcherWithPi } from "../backends/pi-http-dispatcher";
-import { defaultAuthPath } from "../backends/provider-auth";
+import { createBuddyModelRuntime, defaultAuthPath } from "../backends/provider-auth";
 import { bootRefreshIfNeeded } from "../backends/boot-refresh";
-import { buddyAgentDir, globalConfigDir } from "../backends/global-config";
+import { buddyAgentDir, globalConfigDir, globalConfigPath } from "../backends/global-config";
+import { resolveSessionModel } from "../backends/model-switch";
+import { readStateFile } from "../backends/state-file";
+import type { SetupConfig } from "../shared/api";
 import { AGENT_TOOLS, EXCLUDED_TOOLS } from "../shared/defaults";
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -125,14 +128,25 @@ async function runReflectEval(fixturePath: string, dryRun: boolean): Promise<str
   });
   await rl.reload();
 
+  const modelRuntime = await createBuddyModelRuntime();
+  const appConfig = readStateFile<SetupConfig>(globalConfigPath());
+  if (!appConfig?.provider || !appConfig?.model) {
+    console.error("Could not read provider/model from config. Run Buddy setup first.");
+    process.exit(1);
+  }
+
   const { session } = await createAgentSession({
     cwd: brainDir,
     resourceLoader: rl,
     sessionManager: SessionManager.create(brainDir),
     excludeTools: [...EXCLUDED_TOOLS, ...AGENT_TOOLS],
     tools: [],
-    modelRuntime: await ModelRuntime.create({ authPath }),
+    modelRuntime,
   });
+
+  const sessionModel = await resolveSessionModel(modelRuntime, appConfig.provider, appConfig.model);
+  await session.setModel(sessionModel);
+  console.log(`Model: ${appConfig.provider}/${appConfig.model}`);
 
   let assistantOutput = "";
   session.subscribe((event) => {
