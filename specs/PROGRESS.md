@@ -85,9 +85,8 @@ target — there is no point wiring a runner for something not yet correct.
 
 ## State
 
-Released through **v0.1.15** (2026-08-06). Phase 0 and Phase 1 complete; the
+Released through **v0.1.16** (2026-08-07). Phase 0 and Phase 1 complete; the
 H1–H8 hardening, local-model evaluation and maintenance-audit campaigns are all
-closed. v0.1.11–v0.1.15 shipped harness guards (heading snapshot, Hebbian,
-thought-token stripping), local-model prompt fixes, and several UX fixes
-(OAuth hang, Settings provider memory, pickLocation race). Per-release detail
-in `docs/releases/`.
+closed. v0.1.16 shipped extended ingest formats (CSV, JSON, YAML, log),
+structured rejection reasons, preference tracking in USER.md, and the
+consolidation user-model update step. Per-release detail in `docs/releases/`.

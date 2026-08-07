@@ -1676,7 +1676,7 @@ detailed specification: [specs/BRAIN-SPEC.md](BRAIN-SPEC.md).
 | FR-BRAIN-05 | Observation pipeline captures and promotes patterns | 2 ✓ |
 | FR-BRAIN-06 | AGENTS.md does not declare skills — procedural prompts are skill tools (FR-SKILL) | 2 ✓ |
 | FR-BRAIN-07 | Brain health linter (structural checks, worker code) | 2 ✓ |
-| FR-BRAIN-08 | Preference evolution tracking (`USER.md` Preferences section) | 3 ✓ |
+| FR-BRAIN-08 | Preference tracking in USER.md (current state, no history) | 3 ✓ |
 | FR-BRAIN-09 | "What did we learn about the user?" consolidation step | 3 ✓ |
 | FR-BRAIN-10 | Cross-domain principle abstraction (weekly depth 2) | 3 |
 | FR-BRAIN-11 | Markov self-sufficiency eval (manual dev tool) | 3 |
@@ -1753,37 +1753,35 @@ detailed specification: [specs/BRAIN-SPEC.md](BRAIN-SPEC.md).
 - **And** the report is injected into the consolidation prompt (same pattern as Hebbian report) or returned to the user if invoked on demand
 - **Note:** Principle 3.2 — list/count/compare is worker code, not LLM judgment. Index generation can be fully programmatic when `summary` fields are present (NFR-FORMAT-01).
 
-**FR-BRAIN-08 — Preference evolution tracking**
+**FR-BRAIN-08 — Preference tracking in USER.md**
 
 - **Given** a buddy instance (fresh or existing)
 - **When** the user changes a preference during a session (e.g., pauses BJJ, switches work schedule, corrects language preference)
-- **Then** `agent_brain/identity/USER.md` records the change under `## Preferences` with: current state, change date, previous state, and reason when known
-- **And** previous preference states are preserved in the evolution history — not overwritten silently
-- **Template (new instances):** The bundled `USER.md` template ships with a `## Preferences` section scaffold:
+- **Then** `agent_brain/identity/USER.md` records the current state under `## Preferences` — updated in place, not accumulated as history
+- **And** change history lives implicitly in daily logs (where reflect captured the signal) and git history — not in USER.md itself
+- **Design decision:** The original design (PersonaMem-v2 inspired) called for evolution history with dates and previous states in USER.md. This was dropped because Buddy's consolidation architecture already solves the problem: consolidation keeps USER.md current, and logs preserve the full history. Accumulating history in USER.md would bloat a file loaded into every session without adding decision-making power.
+- **Template (new instances):** The bundled `USER.md` template ships with a `## Preferences` section:
 
   ```markdown
   ## Preferences
 
-  Structured preference tracking. Each subsection: **Current**, **Changed** (date + previous state), **Reason**.
-
-  ### Example domain
-  - **Current:** …
-  - (No changes recorded)
+  Keep current — update when preferences change, don't accumulate history here.
   ```
 
-- **Migration (existing instances):** The worker scaffolds missing sections **by code**, not by LLM prompt. Before session start or pre-consolidation, `ensureUserMdSections()` (or equivalent in `backends/brain-migration.ts`) reads `USER.md`, checks for `## Preferences` via heading regex, and appends an empty section template if absent. Same function handles `## Principles` (FR-BRAIN-10). After the section exists, the check is a no-op.
+- **Migration (existing instances):** `ensureUserMdSections()` in `backends/brain-migration.ts` reads `USER.md`, checks for `## Preferences` via heading regex, and appends the section if absent. Runs at session boot and pre-consolidation. After the section exists, the check is a no-op.
 - **Why code, not prompt:** Deterministic across all models (including local); no tokens spent on structural detection; same pattern as `computeBrainHealthReport()` (FR-BRAIN-07).
 - **Prompt changes:** `process-conversation.md` Step 4 (Detect observations) gains a trigger for preference changes. `consolidation.md` daily steps instruct the LLM to update `## Preferences` when today's log reveals a change — but only within a section that already exists (scaffolded by the worker).
-- **Testable:** Conversation eval — after a session where the user changes a stated preference, consolidation updates `USER.md` with dated evolution entry. Unit test — `ensureUserMdSections()` appends `## Preferences` when missing, leaves file unchanged when present.
+- **Size discipline:** USER.md must stay under ~60 lines. When a section grows, detail is extracted to satellite files in `identity/` (e.g. `health.md`, `people.md`) with a one-line summary and link in USER.md. Enforced in the consolidation prompt (step 3b), not during interactive sessions.
+- **Testable:** Conversation eval — after a session where the user changes a stated preference, consolidation updates USER.md with current state. Unit test — `ensureUserMdSections()` appends `## Preferences` when missing, leaves file unchanged when present.
 
 **FR-BRAIN-09 — "What did we learn about the user?" consolidation step**
 
 - **Given** daily consolidation (depth 1) runs after one or more sessions today
 - **When** the consolidation prompt is built
-- **Then** it includes an explicit step (between journal write and inbox triage — new Step 3b in `consolidation.md`):
-  > Review today's interactions. Did the user reveal: (a) new preferences or opinions? (b) changes to existing preferences? (c) personal facts not yet in USER.md? (d) corrections to previously stored information? If yes, update USER.md accordingly. Mark preference changes with dates and reasons (FR-BRAIN-08).
+- **Then** it includes an explicit step (between journal write and inbox triage — Step 3b in `consolidation.md`):
+  > Review today's interactions. Did the user reveal: (a) new preferences or opinions? (b) changes to existing preferences? (c) personal facts not yet in USER.md? (d) corrections to previously stored information? If yes, update USER.md accordingly.
 - **And** this step runs even when the day had no dramatic events — implicit signals count (wording choices, corrections, repeated behaviors mentioned in passing)
-- **And** `process-conversation.md` reflect output may include an `### User model updates` section when preference signals emerged during the session (worker files to USER.md during reflect post-processing, or consolidation picks it up from the log)
+- **And** reflect (process-conversation) detects preference-change signals and writes them to `observations.md` — consolidation reads those signals and updates USER.md in step 3b
 - **Scope:** Prompt/template only (`bundled/prompts/consolidation.md`, `bundled/prompts/process-conversation.md`). No new app code beyond FR-BRAIN-08 section scaffolding.
 - **Testable:** Conversation eval — session with implicit preference signal (e.g., user mentions they stopped an activity) → next consolidation updates USER.md without user explicitly asking.
 
@@ -1793,7 +1791,7 @@ detailed specification: [specs/BRAIN-SPEC.md](BRAIN-SPEC.md).
 - **When** the depth 2 extension executes
 - **Then** it includes a principle-extraction step:
   > From accumulated preferences and behaviors in USER.md, identify underlying principles that explain multiple preferences (require 3+ data points). E.g.: BJJ + café work + complex-systems thinking → "values structured constraints that produce emergent adaptation." Store in `## Principles` in USER.md. Only add principles with strong evidence; omit the section content if nothing qualifies.
-- **And** `## Principles` is scaffolded by the same worker migration as `## Preferences` (FR-BRAIN-08) — created empty if missing before the LLM runs
+- **And** `## Principles` is scaffolded by extending the worker migration (`ensureUserMdSections()`) — created empty if missing before the LLM runs. This scaffolding is part of FR-BRAIN-10, not FR-BRAIN-08
 - **Depends on:** FR-BRAIN-08 and FR-BRAIN-09 (needs preference data flowing before abstraction is meaningful)
 - **Testable:** Conversation eval after several weeks of preference accumulation — depth 2 produces at least one principle with cited evidence. Unit test — migration scaffolds `## Principles` when absent.
 
