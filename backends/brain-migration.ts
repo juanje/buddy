@@ -1,27 +1,32 @@
-// backends/brain-migration.ts — FR-BRAIN-08: scaffold missing sections in USER.md.
-
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 const PREFERENCES_HEADING = "## Preferences";
+const PRINCIPLES_HEADING = "## Principles";
 
 const PREFERENCES_SCAFFOLD = `\n${PREFERENCES_HEADING}
 
 How the user likes to work, communicate, and receive information. Keep current — update when preferences change, don't accumulate history here.
 `;
 
+const PRINCIPLES_SCAFFOLD = `\n${PRINCIPLES_HEADING}
+
+Cross-domain patterns that explain multiple preferences or behaviors. Only add principles with strong evidence from several data points.
+`;
+
 function hasSection(content: string, heading: string): boolean {
   return new RegExp(`^${heading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "m").test(content);
 }
 
-/**
- * Ensure USER.md contains a `## Preferences` section.
- * Returns the (possibly modified) content. Pure function — caller decides
- * whether to write.
- */
 export function ensureUserMdSections(content: string): string {
-  if (hasSection(content, PREFERENCES_HEADING)) return content;
-  return content.trimEnd() + "\n" + PREFERENCES_SCAFFOLD;
+  let result = content;
+  if (!hasSection(result, PREFERENCES_HEADING)) {
+    result = result.trimEnd() + "\n" + PREFERENCES_SCAFFOLD;
+  }
+  if (!hasSection(result, PRINCIPLES_HEADING)) {
+    result = result.trimEnd() + "\n" + PRINCIPLES_SCAFFOLD;
+  }
+  return result;
 }
 
 /**

@@ -1678,7 +1678,7 @@ detailed specification: [specs/BRAIN-SPEC.md](BRAIN-SPEC.md).
 | FR-BRAIN-07 | Brain health linter (structural checks, worker code) | 2 ✓ |
 | FR-BRAIN-08 | Preference tracking in USER.md (current state, no history) | 3 ✓ |
 | FR-BRAIN-09 | "What did we learn about the user?" consolidation step | 3 ✓ |
-| FR-BRAIN-10 | Cross-domain principle abstraction (weekly depth 2) | 3 |
+| FR-BRAIN-10 | Cross-domain principle abstraction (weekly depth 2) | 3 ✓ |
 | FR-BRAIN-11 | Markov self-sufficiency eval (manual dev tool) | 3 |
 | FR-BRAIN-12 | Forget mechanism | — deferred |
 

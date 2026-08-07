@@ -401,6 +401,8 @@ specified depth.
    or sessions), advance to `ready`. If stale (no new input in 2+ weeks), note
    it but don't force advancement.
 
+3. **Extract cross-domain principles** — review `## Preferences` in USER.md. When three or more preferences or behaviors share an underlying pattern, distill it into a one-line principle in `## Principles`. Each principle must cite which preferences support it. Only add principles with strong evidence — if the connection feels forced, skip it. Remove principles that lost their supporting preferences.
+
 #### Depth 3 — Monthly review (run after weekly steps)
 
 1. **Review concept directory for grouping** — scan `agent_brain/concepts/` and

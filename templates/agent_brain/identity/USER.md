@@ -14,3 +14,7 @@ What are you using this system for? Permanent facts about your situation go here
 ## Preferences
 
 How the user likes to work, communicate, and receive information. Keep current — update when preferences change, don't accumulate history here.
+
+## Principles
+
+Cross-domain patterns that explain multiple preferences or behaviors. Only add principles with strong evidence from several data points.

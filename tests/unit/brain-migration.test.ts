@@ -30,6 +30,25 @@ Chat language: Spanish.
 Some context.
 `;
 
+const WITH_BOTH = `# User profile
+
+## About
+
+- **Name:** Juanje
+
+## Preferences
+
+Chat language: Spanish.
+
+## Principles
+
+Values iterative feedback loops.
+
+## Context
+
+Some context.
+`;
+
 describe("ensureUserMdSections", () => {
   it("appends ## Preferences when missing", () => {
     const result = ensureUserMdSections(MINIMAL_USER_MD);
@@ -42,11 +61,6 @@ describe("ensureUserMdSections", () => {
     expect(result).toContain("Juanje");
     expect(result).toContain("## Context");
     expect(result).toContain("personal knowledge management");
-  });
-
-  it("returns content unchanged when Preferences exists", () => {
-    const result = ensureUserMdSections(WITH_PREFERENCES);
-    expect(result).toBe(WITH_PREFERENCES);
   });
 
   it("does not duplicate Preferences when already present", () => {
@@ -64,5 +78,28 @@ describe("ensureUserMdSections", () => {
   it("handles empty content", () => {
     const result = ensureUserMdSections("");
     expect(result).toContain("## Preferences");
+    expect(result).toContain("## Principles");
+  });
+
+  it("appends ## Principles when missing", () => {
+    const result = ensureUserMdSections(MINIMAL_USER_MD);
+    expect(result).toContain("## Principles");
+  });
+
+  it("returns content unchanged when both sections exist", () => {
+    const result = ensureUserMdSections(WITH_BOTH);
+    expect(result).toBe(WITH_BOTH);
+  });
+
+  it("adds Principles when only Preferences exists", () => {
+    const result = ensureUserMdSections(WITH_PREFERENCES);
+    expect(result).toContain("## Principles");
+    expect(result).toContain("Chat language: Spanish.");
+  });
+
+  it("does not duplicate Principles when already present", () => {
+    const result = ensureUserMdSections(WITH_BOTH);
+    const count = (result.match(/## Principles/g) ?? []).length;
+    expect(count).toBe(1);
   });
 });
