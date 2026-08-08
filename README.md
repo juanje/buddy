@@ -79,15 +79,26 @@ Key design choices:
 Bun is also required to compile the worker sidecar, but it ships as a
 devDependency — `npm install` covers it.
 
+On **Linux**, install Tauri system libraries and Rust once:
+
+```bash
+bash scripts/setup-linux-dev.sh       # Fedora / Debian / Ubuntu
+bash scripts/setup-linux-dev.sh --verify   # check only
+```
+
+The script mirrors CI (`release.yml`): WebKitGTK **4.1**, GTK3, Soup3, OpenSSL,
+and `rustup` if `cargo` is missing.
+
 ### Getting started
 
 ```bash
 npm install
-npm run tauri dev       # launch the app (Tauri + Vite dev server)
+npm run build:worker   # once per machine — Tauri checks the sidecar path at compile time
+npm run tauri dev      # launch the app (Tauri + Vite dev server)
 ```
 
-In dev the worker runs from source under `tsx`. For a packaged build it is
-compiled into a standalone binary first:
+In dev the frontend still spawns the worker from source (`tsx` + `agent-worker.ts`);
+the compiled sidecar is only required so Tauri's `externalBin` check passes.
 
 ```bash
 npm run build:worker    # bun --compile → src-tauri/binaries/agent-worker-<target>
