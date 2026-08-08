@@ -26,6 +26,8 @@ export type AppLogEvent =
   | { event: "tool_result"; session: string; tool: string; path?: string; isError: boolean }
   /** FR-GUARD-01: a write/edit destroyed section headings and was reverted. */
   | { event: "heading_guard_revert"; session: string; path: string; lostHeadings?: string[] }
+  | { event: "post_consolidation_rename"; from: string; to: string }
+  | { event: "post_consolidation_link_repair"; file: string; target: string }
   | { event: "heartbeat_tick"; deferredDue: number; consolidationEvaluated: boolean }
   | { event: "error"; message: string; context?: string };
 

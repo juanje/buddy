@@ -42,7 +42,12 @@ import {
 import { logEvent } from "./app-logger";
 import { createHeadingGuard } from "./heading-guard";
 import { createHebbianGuard } from "./hebbian-guard";
-import { commitAll } from "./git";
+import { installEditRecoveryHook } from "./edit-recovery";
+import {
+  listChangedFilesSince,
+  runPostConsolidationValidation,
+} from "./post-consolidation-validation";
+import { commitAll, gitClient } from "./git";
 import { acquireLock, releaseLock } from "./maintenance";
 import { createPermissionGate, type PermissionRequest } from "./permissions";
 import { assembleMaintenancePrompt } from "./prompt";
@@ -436,6 +441,7 @@ export async function createMaintenanceSession(options: {
   const policy = installMaintenanceGate(session, rootDir);
   installMaintenanceHebbianGuard(session, rootDir);
   installMaintenanceHeadingGuard(session, rootDir);
+  installEditRecoveryHook(session);
 
   const events: AgentEvent[] = [];
   const unsub = session.subscribe((event) => events.push(event));
@@ -510,8 +516,16 @@ export async function runConsolidation(options: RunConsolidationOptions): Promis
   // Aggregate identity/refused across per-depth sessions for the final log.
   let anyChangedIdentity = false;
   const allRefusedPaths: string[] = [];
+  let consolidationStartHead: string | null = null;
 
   try {
+    const git = gitClient(rootDir);
+    try {
+      consolidationStartHead = (await git.revparse(["HEAD"])).trim();
+    } catch {
+      // Fresh repo with no commits — validation falls back to git status.
+      consolidationStartHead = null;
+    }
     const date = toIsoDay(now);
 
     for (const depth of cascadeDepths(targetDepth)) {
@@ -622,6 +636,21 @@ export async function runConsolidation(options: RunConsolidationOptions): Promis
           status: "maintenance",
         }, now);
         updateLogsIndexEntry(rootDir, date, "maintenance");
+      }
+      if (consolidationStartHead) {
+        const { newFiles, touchedFiles } = await listChangedFilesSince(
+          consolidationStartHead,
+          () => git.status(),
+          (args) => git.diff(args),
+        );
+        runPostConsolidationValidation(rootDir, newFiles, touchedFiles);
+      } else {
+        const status = await git.status();
+        const touchedFiles = [
+          ...new Set([...status.modified, ...status.created, ...status.not_added]),
+        ];
+        const newFiles = [...new Set([...status.created, ...status.not_added])];
+        runPostConsolidationValidation(rootDir, newFiles, touchedFiles);
       }
       await commitAll(rootDir, commitMessageForDepth(targetDepth, now));
     }

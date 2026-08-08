@@ -77,19 +77,23 @@ target — there is no point wiring a runner for something not yet correct.
   but no procedure. It has to be brought across from `~/git/wiki-kb` and the
   `wiki-ingest` skill, where a human was doing the reviewing.
 - **FR-PROVIDER** — Aug 2026 eval shows Qwen 27B viable for chat + reflect,
-  gemma 12B for chat only. Harness hardening (local-model-improvements #2b,
-  #7, #15, #26) is the prerequisite. FR-PROVIDER-01..03 criteria enriched
+  gemma 12B for chat only. Harness hardening (#7, #26, #14) remains before
+  FR-PROVIDER. #2b (FR-GUARD-02) and #15 remainder (FR-GUARD-03) shipped —
+  Pi SDK 0.84 upgrade sprint is next. FR-PROVIDER-01..03 criteria enriched
   with compat flags, `contextWindow` requirements, and `thinkingFormat`
   handling. Not yet scheduled.
 - **FR-SYNC**, **FR-NET-02**, **FR-COST-04** — phase 3+.
 
 ## State
 
-Released through **v0.1.16** (2026-08-07). Phase 0 and Phase 1 complete; the
+Released through **v0.1.17** (2026-08-08). Phase 0 and Phase 1 complete; the
 H1–H8 hardening, local-model evaluation and maintenance-audit campaigns are all
-closed. v0.1.16 shipped extended ingest formats (CSV, JSON, YAML, log),
+closed. v0.1.17 shipped extended ingest formats (CSV, JSON, YAML, log),
 structured rejection reasons, preference tracking in USER.md, the
 consolidation user-model update step, Markov self-sufficiency eval
 (`scripts/eval-markov.ts`), and consolidation model tiering by depth
 (FR-CONSOL-15: depths 1-2 use fast tier with thinking off, depth 3 uses the
-configured model). Per-release detail in `docs/releases/`.
+configured model). **FR-GUARD-02** (edit-failure recovery hints + prompt rule)
+and **FR-GUARD-03** (post-consolidation filename validation + broken-link
+repair) close harness items #2b and #15 — prerequisite for the Pi SDK 0.84
+upgrade sprint. Per-release detail in `docs/releases/`.

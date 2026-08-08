@@ -1353,6 +1353,8 @@ drown the signal it is meant to measure.
 | ID | Description | Phase |
 |----|-------------|-------|
 | FR-GUARD-01 | Heading-snapshot guard prevents structural destruction | 2 ✓ |
+| FR-GUARD-02 | Edit-failure recovery hints and prompt rule | 2 ✓ |
+| FR-GUARD-03 | Post-consolidation filename validation and broken-link repair | 2 ✓ |
 
 **FR-GUARD-01 — Heading-snapshot guard**
 
@@ -1389,6 +1391,76 @@ other).
 consolidation (C2, C3), not chat. A guard installed only on the chat
 session would miss the highest-risk path — repeating the Hebbian guard's
 original gap (FR-HEBB-08).
+
+**FR-GUARD-02 — Edit-failure recovery**
+
+When `edit` fails, local models often retry the same wrong anchor and then
+fall back to a whole-file `write` — the #2b failure mode. FR-GUARD-01 blocks
+the destructive `write` but leaves the model stuck. This FR adds recovery
+guidance so the model can succeed with `edit` instead.
+
+- **Given** the agent calls `edit` and the tool returns an error
+- **When** the error message contains `Could not find the exact text` or
+  `Could not find edits[` 
+- **Then** the tool result is enriched with a hint to re-read the file and
+  copy the anchor text exactly
+- **And when** the error message contains `Found N occurrences`
+- **Then** the tool result is enriched with a hint to include more surrounding
+  lines to make the anchor unique
+- **And when** the error message contains `No changes made`
+- **Then** the tool result is enriched with a hint that the replacement is
+  identical to the original
+- **And when** the error is from a non-`edit` tool, or the message matches
+  none of the known patterns
+- **Then** the result is passed through unchanged
+- **And** enrichment fires in both the chat session and the maintenance session
+  via `afterToolCall`
+
+**Prompt rule (agents-base.md):**
+
+- **Given** the global base prompt
+- **When** the model needs to modify an existing file in `agent_brain/` or
+  `logs/`
+- **Then** the prompt instructs: after an `edit` error, re-read the file and
+  retry with a literal anchor from the re-read — never fall back to `write`
+  on an existing brain or log file
+- **And** if the edit still fails after re-read, stop and inform the user
+  rather than rewriting the whole file
+
+**FR-GUARD-03 — Post-consolidation validation**
+
+Deterministic repairs after consolidation completes and before the runner
+commits. These are `detect-and-repair` — distinct from FR-CONSOL-13's
+`detect-and-fail` for ambiguous frontmatter corruption.
+
+**Order:** `assertNoNewBrainDamage` → filename validation → broken-link
+repair → `commitAll`.
+
+**Filename validation (15.3):**
+
+- **Given** consolidation has finished and produced git changes
+- **When** the runner scans files added during the run
+- **Then** any filename containing spaces, uppercase letters, or characters
+  outside `[a-z0-9._-/]` is renamed to a slug-normalized path
+- **And** markdown links in touched files that pointed at the old name are
+  rewritten to the new name
+- **And** filenames that already conform are left unchanged
+
+**Broken-link repair (15.4):**
+
+- **Given** filename validation has completed
+- **When** the runner scans markdown files touched during the run
+- **Then** each relative markdown link whose target does not exist on disk
+  is stripped to plain text (link syntax removed, display text kept)
+- **And** valid links and external (`http://`, `https://`) links are unchanged
+- **And** each repair is logged via `logEvent`
+
+**What it does not do:**
+
+- It does not scan the entire repo — only files created or modified during
+  the consolidation run.
+- Broken-link repair is hygiene, not data-loss prevention — stripping a link
+  does not restore deleted content.
 
 ### 3.10 System Prompt (FR-PROMPT)
 
@@ -2452,9 +2524,8 @@ with harness fixes shipped since Jul 29. Key findings:
   maintenance (FR-HEBB-08), per-depth sessions (FR-CONSOL-16), reflect
   sanitizer (#12) — all shipped and validated. C6 vs C4 showed guards
   eliminate metadata corruption and template destruction.
-- **Remaining harness gaps (Tier 1.1):** #2b (edit-failure recovery), #15
-  remainder (filename validation, broken links), #14 (concepts index
-  injection). See `local-model-improvements.md`.
+- **Remaining harness gaps (Tier 1.1):** #14 (concepts index injection). See
+  `local-model-improvements.md`.
 
 The deferral rationale from Jul 29 is partially resolved: the worst failures
 (phantom writes, template destruction, reflect garbage) now have shipped

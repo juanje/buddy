@@ -27,6 +27,7 @@ import { buildFetchTools } from "./fetch-url";
 import { buildFileTools } from "./file-tools";
 import { buildShowFileTools } from "./show-file-tool";
 import { SessionLifecycle } from "./session-lifecycle";
+import { installEditRecoveryHook } from "./edit-recovery";
 import { persistLiveSession } from "./crash-recovery";
 import { ensureUserMdSectionsOnDisk } from "./brain-migration";
 import { createWorkerCore, type PiSessionLike, type WorkerCore } from "./worker-core";
@@ -238,6 +239,7 @@ export async function bootSession(
     const blocked = await gate.check(ctx.toolCall.name, ctx.args);
     return blocked ?? prior;
   };
+  installEditRecoveryHook(session);
 
   const sessionLike = asPiSessionLike(session);
 

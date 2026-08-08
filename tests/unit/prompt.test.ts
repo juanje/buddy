@@ -136,6 +136,19 @@ describe("agents-base queue file anchoring", () => {
   });
 });
 
+// FR-GUARD-02: edit failure recovery guidance.
+describe("agents-base edit recovery guidance", () => {
+  it("instructs re-read after edit failure and forbids write fallback", () => {
+    const base = readFileSync(
+      join(bundledPromptsDir(), "agents-base.md"),
+      "utf8",
+    );
+    expect(base).toMatch(/When edit fails/i);
+    expect(base).toMatch(/Never fall back to `write`/i);
+    expect(base).toMatch(/re-read/i);
+  });
+});
+
 // Consolidation prompt: brain health repair instructions (#24, #25).
 describe("consolidation prompt brain health repair", () => {
   it("instructs edit for frontmatter repair, not write (#24)", () => {
