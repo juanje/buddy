@@ -10,6 +10,11 @@ const WORKER_NAME = "agent-worker";
 
 export interface WorkerConnection {
   api: WorkerAPI;
+  /**
+   * Release everything this connection subscribed to (NFR-REL-10). Safe to call
+   * more than once.
+   */
+  dispose(): Promise<void>;
 }
 
 export async function connectWorker(
@@ -36,13 +41,29 @@ export async function connectWorker(
       env: { NODE_OPTIONS: "--import tsx" },
     });
   }
-  await onExit(WORKER_NAME, onCrash);
-  const { api } = await createChannel<FrontendAPI, WorkerAPI>(WORKER_NAME, frontendApi);
+  const unlistenExit = await onExit(WORKER_NAME, onCrash);
+  const { api, transport } = await createChannel<FrontendAPI, WorkerAPI>(
+    WORKER_NAME,
+    frontendApi,
+  );
+
+  // NFR-REL-10. Both subscriptions above are global Tauri event listeners
+  // filtered by process name, and every worker is spawned under the same name.
+  // Dropping them on the floor does not disconnect them from the *next* worker:
+  // it subscribes a second reader to it. Two readers of one stdio stream meant
+  // every event was handled twice and the chat rendered each delta twice.
+  let disposed = false;
+  async function dispose(): Promise<void> {
+    if (disposed) return;
+    disposed = true;
+    unlistenExit();
+    transport.close?.();
+  }
 
   // A plain object, not a getter over a reassignable `api`. The getter existed
   // for an in-place reconnect that was never built: `boot()` ran once and `api`
   // was never reassigned. Reconnecting goes through connectWorker again (see
   // App.svelte's connect()), which produces a new connection object — and
   // worker-proxy re-reads it on every call precisely so that works.
-  return { api };
+  return { api, dispose };
 }

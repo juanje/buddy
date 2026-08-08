@@ -120,6 +120,12 @@
 
   async function connect() {
     connectionError = undefined;
+    // NFR-REL-10: the previous channel keeps reading the worker's stdout unless
+    // it is closed, and the next worker is spawned under the same name — so a
+    // reconnect that skips this adds a reader instead of replacing one.
+    const previous = connection;
+    connection = undefined;
+    await previous?.dispose();
     devLog("connect(): spawning worker…");
     try {
       connection = await connectWorker(

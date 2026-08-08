@@ -48,7 +48,10 @@ function fakeConnection() {
       return target[name];
     },
   });
-  return { connection: { api: api as unknown as WorkerAPI }, api };
+  return {
+    connection: { api: api as unknown as WorkerAPI, dispose: async () => {} },
+    api,
+  };
 }
 
 describe("createWorkerProxy", () => {
@@ -99,7 +102,7 @@ describe("createWorkerProxy", () => {
     it("re-reads the connection on every call, never caching it", async () => {
       // connect() replaces the connection after a crash; a proxy holding the
       // old one would keep talking to a dead worker.
-      let current: { api: WorkerAPI } | undefined;
+      let current: { api: WorkerAPI; dispose: () => Promise<void> } | undefined;
       const proxy = createWorkerProxy(() => current);
 
       await expect(proxy.getUsage()).rejects.toThrow(/not connected/);
