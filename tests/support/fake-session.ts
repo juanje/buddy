@@ -5,7 +5,7 @@
 //
 //   { type: "agent_start" }
 //   { type: "message_start", message }
-//   { type: "message_update", message, assistantMessageEvent: { type: "text_delta", contentIndex, delta, partial } }
+//   { type: "message_update", assistantMessageEvent: { type: "text_delta", contentIndex, delta } }
 //   { type: "message_end", message }
 //   { type: "agent_end", messages, willRetry }
 //
@@ -69,12 +69,10 @@ export class FakeSession implements PiSessionLike {
     this.currentText += delta;
     this.emit({
       type: "message_update",
-      message: { role: "assistant" },
       assistantMessageEvent: {
         type: "text_delta",
         contentIndex: 0,
         delta,
-        partial: { role: "assistant" },
       },
     });
   }

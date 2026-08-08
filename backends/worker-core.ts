@@ -19,7 +19,7 @@ export type SessionWorkerAPI = Omit<ChatWorkerAPI, "resolvePermission" | "dismis
 
 /**
  * Structural subset of Pi's AgentSession that the worker core needs.
- * Verified against @earendil-works/pi-coding-agent 0.80.x AgentSession:
+ * Verified against @earendil-works/pi-coding-agent 0.84.x AgentSession:
  *   prompt(text) → Promise<void>, abort() → Promise<void>,
  *   subscribe(listener) → unsubscribe, isStreaming getter, dispose().
  */
