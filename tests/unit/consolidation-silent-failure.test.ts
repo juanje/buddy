@@ -138,6 +138,7 @@ describe("the maintenance session refuses to report a failed turn as done", () =
     const session = await createMaintenanceSession({
       rootDir: mkdtempSync(join(tmpdir(), "maintenance-")),
       modelRuntime: {} as never,
+      depth: 1,
       openSession: async () => sessionEmitting(events) as never,
     });
     try {

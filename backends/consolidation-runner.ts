@@ -52,6 +52,8 @@ import { recordSessionUsage } from "./usage-tracker";
 import { buildConsolidationTools, consolidationToolNames } from "./consolidation-tools";
 import { buildSkillTools, skillToolNames } from "./skill-tools";
 import { ensureUserMdSectionsOnDisk } from "./brain-migration";
+import { fastModelForProvider } from "../shared/model-catalog";
+import { readPiProvider } from "../shared/pi-settings";
 
 export interface MaintenanceSessionLike {
   prompt(text: string): Promise<void>;
@@ -217,6 +219,7 @@ export interface CreateMaintenanceSessionFn {
   (options: {
     rootDir: string;
     modelRuntime: ModelRuntime;
+    depth: number;
   }): Promise<MaintenanceSessionLike>;
 }
 
@@ -273,11 +276,37 @@ export type MaintenanceAgentSession = Pick<
   "agent" | "subscribe" | "prompt" | "dispose"
 >;
 
+type DepthModelOptions = {
+  model?: Awaited<ReturnType<ModelRuntime["getModel"]>>;
+  thinkingLevel?: "off";
+};
+
+/** Depth 1-2: fast tier with thinking off. Depth 3: configured model, default thinking. */
+async function resolveDepthModel(
+  depth: number,
+  rootDir: string,
+  modelRuntime: ModelRuntime,
+): Promise<DepthModelOptions> {
+  if (depth > 2) return {};
+  const provider = readPiProvider(rootDir);
+  const fastId = fastModelForProvider(provider);
+  if (!fastId) return { thinkingLevel: "off" };
+  let model = modelRuntime.getModel(provider, fastId);
+  if (!model) {
+    const available = await modelRuntime.getAvailable(provider);
+    model = available.find((entry) => entry.id === fastId);
+  }
+  if (!model) return { thinkingLevel: "off" };
+  return { model, thinkingLevel: "off" };
+}
+
 async function openRealMaintenanceSession(config: {
   rootDir: string;
   modelRuntime: ModelRuntime;
+  depth: number;
 }): Promise<MaintenanceAgentSession> {
-  const { rootDir, modelRuntime } = config;
+  const { rootDir, modelRuntime, depth } = config;
+  const depthModelOptions = await resolveDepthModel(depth, rootDir, modelRuntime);
   const systemPrompt = assembleMaintenancePrompt(rootDir);
   const resourceLoader = new DefaultResourceLoader({
     cwd: rootDir,
@@ -299,6 +328,7 @@ async function openRealMaintenanceSession(config: {
     tools: [...AGENT_TOOLS, ...skillToolNames(skillTools), ...consolidationToolNames(consolTools)],
     customTools: [...skillTools, ...consolTools],
     modelRuntime,
+    ...depthModelOptions,
   });
   return session;
 }
@@ -387,6 +417,7 @@ export function assertProductiveResponse(events: readonly AgentEvent[]): void {
 export async function createMaintenanceSession(options: {
   rootDir: string;
   modelRuntime: ModelRuntime;
+  depth: number;
   /**
    * Injectable session opener. Exists so a test can observe that the permission
    * gate is actually installed on whatever session comes back — the original
@@ -396,11 +427,12 @@ export async function createMaintenanceSession(options: {
   openSession?: (config: {
     rootDir: string;
     modelRuntime: ModelRuntime;
+    depth: number;
   }) => Promise<MaintenanceAgentSession>;
 }): Promise<MaintenanceSessionLike> {
-  const { rootDir, modelRuntime } = options;
+  const { rootDir, modelRuntime, depth } = options;
   const openSession = options.openSession ?? openRealMaintenanceSession;
-  const session = await openSession({ rootDir, modelRuntime });
+  const session = await openSession({ rootDir, modelRuntime, depth });
   const policy = installMaintenanceGate(session, rootDir);
   installMaintenanceHebbianGuard(session, rootDir);
   installMaintenanceHeadingGuard(session, rootDir);
@@ -516,7 +548,7 @@ export async function runConsolidation(options: RunConsolidationOptions): Promis
       let depthSession: MaintenanceSessionLike | undefined;
       const start = Date.now();
       try {
-        depthSession = await createSession({ rootDir, modelRuntime });
+        depthSession = await createSession({ rootDir, modelRuntime, depth });
         ensureUserMdSectionsOnDisk(rootDir);
         logEvent(rootDir, { event: "consolidation_start", depth });
         const healthBefore = computeBrainHealthReport(rootDir);

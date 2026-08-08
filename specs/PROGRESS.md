@@ -27,7 +27,7 @@ Verified 2026-08-07.
 | `"Login cancelled"` as a string sentinel across RPC | `backends/oauth-service.ts` + two frontend controllers | Documented at `shared/api.ts:97`. |
 | `toBuddyRelPath` is a second lexical containment helper | `shared/path-utils.ts`, used by `hebbian.ts` / `hebbian-guard.ts` | **Not a hole** — both callers are trackers, not enforcement, and it collapses `..`. But `containment.ts`'s header reads as though all four helpers were consolidated. Move the callers to `containedRelPath`, or say in the header why tracking is exempt. |
 | `worker-proxy.ts` boilerplate; duplicated lock loop in `state-file.ts`; duplicated provider-auth flow across the two controllers | — | Maintenance audit leftovers. Cosmetic. |
-| FR-CONSOL-15 — every consolidation depth runs on the configured model | `backends/consolidation-runner.ts:205` | `openRealMaintenanceSession` passes no model, so depth-1 and depth-2 pay full price for mechanical work. The tiers already exist (`fastModelForProvider`, used by checkpoint reflect) and nothing consumes them here. Criteria written; not implemented. Independent of the wiki. |
+
 
 **Watching, not a defect of ours: `pi.dev` accepts connections and never
 answers.** Startup no longer waits on it, and the catalogue refresh is bounded
@@ -89,5 +89,7 @@ Released through **v0.1.16** (2026-08-07). Phase 0 and Phase 1 complete; the
 H1–H8 hardening, local-model evaluation and maintenance-audit campaigns are all
 closed. v0.1.16 shipped extended ingest formats (CSV, JSON, YAML, log),
 structured rejection reasons, preference tracking in USER.md, the
-consolidation user-model update step, and Markov self-sufficiency eval
-(`scripts/eval-markov.ts`). Per-release detail in `docs/releases/`.
+consolidation user-model update step, Markov self-sufficiency eval
+(`scripts/eval-markov.ts`), and consolidation model tiering by depth
+(FR-CONSOL-15: depths 1-2 use fast tier with thinking off, depth 3 uses the
+configured model). Per-release detail in `docs/releases/`.

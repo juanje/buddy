@@ -69,6 +69,7 @@ describe("session creation call sites", () => {
     await createMaintenanceSession({
       rootDir: "/home/buddy",
       modelRuntime: {} as never,
+      depth: 1,
       openSession: async () => fake as unknown as MaintenanceAgentSession,
     });
 

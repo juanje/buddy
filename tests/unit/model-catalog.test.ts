@@ -2,7 +2,7 @@
 
 import { describe, expect, it } from "vitest";
 
-import { modelChoicesFor, recommendedModelFor, defaultModelForProvider, fastModelForProvider } from "../../shared/model-catalog";
+import { modelChoicesFor, recommendedModelFor, defaultModelForProvider, fastModelForProvider, modelForDepth } from "../../shared/model-catalog";
 
 const LISTED_PROVIDERS = ["anthropic", "openai", "google"] as const;
 
@@ -33,5 +33,15 @@ describe("model catalog", () => {
     expect(fastModelForProvider("anthropic")).toBe("claude-haiku-4-5");
     expect(fastModelForProvider("openai")).toBe("gpt-5-mini");
     expect(fastModelForProvider("google")).toBe("gemini-3.5-flash");
+  });
+
+  it("resolves model id by consolidation depth (FR-CONSOL-15)", () => {
+    expect(modelForDepth("anthropic", 1)).toBe("claude-haiku-4-5");
+    expect(modelForDepth("anthropic", 2)).toBe("claude-haiku-4-5");
+    expect(modelForDepth("anthropic", 3)).toBe("claude-sonnet-5");
+    expect(modelForDepth("openai", 1)).toBe("gpt-5-mini");
+    expect(modelForDepth("openai", 3)).toBe("gpt-5");
+    expect(modelForDepth("custom", 1)).toBeUndefined();
+    expect(modelForDepth("custom", 3)).toBeUndefined();
   });
 });

@@ -159,6 +159,22 @@ Feature: Consolidation scheduler (FR-CONSOL-01/02/04/05/06/08/09, FR-COST-05, FR
     When consolidation is triggered at depth 1
     Then 1 separate sessions were created
 
+  # --- FR-CONSOL-15: the session's model is chosen per depth ---
+
+  Scenario: Each depth in a cascade receives its own depth for model selection
+    Given depth 3 consolidation is due
+    And there is new content since the last consolidation
+    When consolidation is triggered at depth 3
+    Then the session for depth 1 was created with depth 1
+    And the session for depth 2 was created with depth 2
+    And the session for depth 3 was created with depth 3
+
+  Scenario: A single-depth run receives the correct depth
+    Given 3 sessions have completed since the last consolidation
+    And there is new content since the last consolidation
+    When consolidation is triggered at depth 1
+    Then the session for depth 1 was created with depth 1
+
   # --- FR-COST-05: the budget gate stops a cascade already running ---
 
   Scenario: Crossing the budget threshold mid-cascade stops at the next depth

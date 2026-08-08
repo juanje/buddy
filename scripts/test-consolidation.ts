@@ -412,7 +412,7 @@ async function main(): Promise<void> {
       targetDepth: depth,
       modelRuntime,
       now,
-      async createSession({ rootDir: rd, modelRuntime: mr }) {
+      async createSession({ rootDir: rd, modelRuntime: mr, depth: _depth }) {
         const sysPrompt = assembleMaintenancePrompt(rd);
         console.log(`\n--- System prompt (${sysPrompt.length} chars) ---`);
         console.log(sysPrompt.slice(0, 500));

@@ -315,6 +315,58 @@ describe("consolidation runner", () => {
     expect(loadConsolidationLog(dir).some((e) => e.status === "budget-stopped")).toBe(true);
   });
 
+  it("passes the correct depth to createSession for each cascade level (FR-CONSOL-15)", async () => {
+    setupBuddyDir();
+    await initTestGitRepo(dir);
+
+    const receivedDepths: number[] = [];
+    const createSession = vi.fn(async ({ depth }: { rootDir: string; modelRuntime: unknown; depth: number }): Promise<MaintenanceSessionLike> => {
+      receivedDepths.push(depth);
+      return { prompt: async () => {}, dispose: () => {} };
+    });
+
+    const state = loadConsolidationState(dir);
+    state.sessionsSinceLastDepth1 = 3;
+    state.depth1RunsSinceLastDepth2 = 5;
+    state.depth2RunsSinceLastDepth3 = 4;
+
+    await runConsolidation({
+      rootDir: dir,
+      targetDepth: 3,
+      modelRuntime: {} as never,
+      state,
+      createSession,
+      now: new Date("2026-07-22T12:00:00Z"),
+    });
+
+    expect(receivedDepths).toEqual([1, 2, 3]);
+  });
+
+  it("passes depth 1 for a single-depth run (FR-CONSOL-15)", async () => {
+    setupBuddyDir();
+    await initTestGitRepo(dir);
+
+    const receivedDepths: number[] = [];
+    const createSession = vi.fn(async ({ depth }: { rootDir: string; modelRuntime: unknown; depth: number }): Promise<MaintenanceSessionLike> => {
+      receivedDepths.push(depth);
+      return { prompt: async () => {}, dispose: () => {} };
+    });
+
+    const state = loadConsolidationState(dir);
+    state.sessionsSinceLastDepth1 = 3;
+
+    await runConsolidation({
+      rootDir: dir,
+      targetDepth: 1,
+      modelRuntime: {} as never,
+      state,
+      createSession,
+      now: new Date("2026-07-22T12:00:00Z"),
+    });
+
+    expect(receivedDepths).toEqual([1]);
+  });
+
   it("log rotation does not write to the daily log", async () => {
     setupBuddyDir();
     await initTestGitRepo(dir);

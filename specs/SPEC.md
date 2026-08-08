@@ -951,7 +951,7 @@ Fork bomb defense:
 | FR-CONSOL-12 | A consolidation that produced no output is a failure | 2 ✓ |
 | FR-CONSOL-13 | A consolidation that corrupts the brain is a failure | 2 ✓ |
 | FR-CONSOL-14 | The daily log records maintenance only when notable | 2 ✓ |
-| FR-CONSOL-15 | The maintenance session's model is chosen per depth | 2 |
+| FR-CONSOL-15 | The maintenance session's model is chosen per depth | 2 ✓ |
 | FR-CONSOL-16 | Each cascade depth runs in its own session | 2 ✓ |
 
 **Consolidation depths:**
@@ -1154,13 +1154,15 @@ instruction cannot govern behaviour that no model controls.
 - **Then** the model is resolved from the depth by a single function
   (`modelForDepth(provider, depth)` in `shared/model-catalog.ts`, beside
   `fastModelForProvider`), and passed explicitly to the session
-- **And** depths 1 and 2 use the provider's fast tier; depth 3 uses the
-  configured model
+- **And** depths 1 and 2 use the provider's fast tier with
+  `thinkingLevel: "off"`; depth 3 uses the configured model with default
+  thinking
 - **And** the usage of whichever model ran is recorded through
   `recordSessionUsage()` (NFR-SEC-14), so the cheaper tier shows up as a lower
   cost rather than as no cost
 - **And when** the provider exposes no fast tier, the configured model is used
-  — a missing tier is not a reason to skip the run
+  with `thinkingLevel: "off"` — a missing tier is not a reason to skip the
+  run, and thinking off still applies because the task is mechanical
 
 **Why it is its own requirement, and not part of FR-WIKI.** It applies whether
 or not the wiki exists, and it is a gap in what is already shipped:
@@ -1177,6 +1179,14 @@ worst at. The provider has no pricing metadata to consult — `getAvailable()`
 returns ids and names only — so the curated tiers in `shared/model-catalog.ts`
 are the only source of "cheaper", and the decision belongs in one function
 rather than at each call site.
+
+**Why thinking is off for depths 1 and 2.** Local-model evals (Gemma 12B,
+Aug 2026) showed that models with reasoning disabled follow consolidation
+instructions more deterministically — fewer creative reinterpretations of
+structural boilerplate, fewer hallucinated file paths. Mechanical tasks do not
+benefit from extended reasoning, and the thinking tokens add latency and cost
+without improving output quality. Pi SDK clamps `"off"` to the nearest
+supported level if the model does not support disabling thinking entirely.
 
 **Consequence for wiki maintenance (FR-WIKI-05).** Structural repairs that run
 at depth 1 will run on the fast tier. That is acceptable because the

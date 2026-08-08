@@ -51,6 +51,8 @@ interface ConsolidationWorld extends BuddyWorld {
   maintenanceGateResult?: { block: true; reason: string } | undefined;
   /** FR-CONSOL-16: ordered log of session create/dispose events. */
   sessionLifecycle?: SessionLifecycleEvent[];
+  /** FR-CONSOL-15: depths passed to createSession. */
+  sessionDepths?: number[];
 }
 
 After(function (this: ConsolidationWorld) {
@@ -78,6 +80,7 @@ Given("a buddy directory prepared for consolidation", async function (this: Cons
   this.depthsPrompted = [];
   this.maintenancePausedNotices = [];
   this.sessionLifecycle = [];
+  this.sessionDepths = [];
   this.streaming = false;
 
   this.heartbeat = startHeartbeat({
@@ -101,10 +104,11 @@ Given("a buddy directory prepared for consolidation", async function (this: Cons
     runConsolidationFn: async (options) => {
       let currentDepth = 0;
       let sessionCounter = 0;
-      const createSession = async (): Promise<MaintenanceSessionLike> => {
+      const createSession = async ({ depth: d }: { rootDir: string; modelRuntime: unknown; depth: number }): Promise<MaintenanceSessionLike> => {
         sessionCounter += 1;
         const id = sessionCounter;
         this.sessionLifecycle!.push({ type: "create", sessionId: id });
+        this.sessionDepths!.push(d);
         return {
           prompt: async (text: string) => {
             currentDepth = Number(/Run consolidation at depth (\d)/.exec(text)?.[1] ?? 0);
@@ -352,6 +356,24 @@ Then("each session was disposed before the next", function (this: ConsolidationW
   assert.ok(lastDispose, "the last session must also be disposed");
   assert.equal(lastDispose!.sessionId, lastCreate!.sessionId);
 });
+
+// --- FR-CONSOL-15: each depth receives its own depth for model selection ---
+
+Then(
+  "the session for depth {int} was created with depth {int}",
+  function (this: ConsolidationWorld, depthIndex: number, expectedDepth: number) {
+    const idx = depthIndex - 1;
+    assert.ok(
+      idx < this.sessionDepths!.length,
+      `expected at least ${depthIndex} session(s), got ${this.sessionDepths!.length}`,
+    );
+    assert.equal(
+      this.sessionDepths![idx],
+      expectedDepth,
+      `session ${depthIndex} should have been created with depth ${expectedDepth}, got ${this.sessionDepths![idx]}`,
+    );
+  },
+);
 
 // --- FR-CONSOL-10: the unattended session obeys the zone model ---
 // Drives the real gate with the real policy, so the answer to "ask" is the

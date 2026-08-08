@@ -51,3 +51,9 @@ export function defaultModelForProvider(provider: string): string | undefined {
 export function fastModelForProvider(provider: string): string | undefined {
   return modelChoicesFor(provider)?.find((c) => c.tier === "fast")?.id;
 }
+
+/** Model id for consolidation at a given depth (FR-CONSOL-15). */
+export function modelForDepth(provider: string, depth: number): string | undefined {
+  if (depth <= 2) return fastModelForProvider(provider);
+  return defaultModelForProvider(provider);
+}
