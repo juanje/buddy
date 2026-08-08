@@ -1462,6 +1462,41 @@ repair → `commitAll`.
 - Broken-link repair is hygiene, not data-loss prevention — stripping a link
   does not restore deleted content.
 
+### 3.9c Pi SDK compatibility (FR-SDK)
+
+| ID | Description | Phase |
+|----|-------------|-------|
+| FR-SDK-01 | Streaming works with delta-only `message_update` events | Maint ✓ |
+| FR-SDK-02 | Session management APIs remain compatible after SDK upgrade | Maint ✓ |
+| FR-SDK-03 | Sidecar deep imports resolve in the target Pi SDK version | Maint ✓ |
+
+**FR-SDK-01 — Delta-only streaming**
+
+- **Given** the Pi SDK emits `message_update` events during an assistant turn
+- **When** each event carries only `assistantMessageEvent.delta` (no cumulative
+  `message` or `partial` fields)
+- **Then** the chat controller assembles and displays the full assistant text
+- **And** test fixtures (`FakeSession`) emit the same delta-only shape
+
+**FR-SDK-02 — Session management compatibility**
+
+- **Given** Buddy boots a chat session, forks a reflect session, or opens a
+  maintenance session
+- **When** the Pi SDK is upgraded
+- **Then** `SessionManager.create(rootDir)` and `SessionManager.forkFrom(file,
+  rootDir, forkDir)` remain callable with the same argument shapes
+- **And** `createAgentSession()` accepts Buddy's existing options (`cwd`,
+  `agentDir`, `resourceLoader`, `sessionManager`, `excludeTools`, `tools`,
+  `customTools`, `modelRuntime`, `noTools`)
+
+**FR-SDK-03 — Sidecar deep import paths**
+
+- **Given** the production sidecar binary wires OAuth and HTTP dispatch via
+  deep imports into Pi SDK internals
+- **When** `@earendil-works/pi-coding-agent` is upgraded
+- **Then** `bun-oauth.js` and `http-dispatcher.js` paths still resolve on disk
+- **And** `sidecar-entry.ts` imports are updated if paths moved
+
 ### 3.10 System Prompt (FR-PROMPT)
 
 | ID | Description | Phase |
@@ -1927,6 +1962,9 @@ Full specification in [specs/BRAIN-SPEC.md](BRAIN-SPEC.md).
 | FR-SHELL-04 | Attach button in input bar | 1 ✓ |
 | FR-SHELL-05 | Input bar layout (stacked: attachments / text / buttons) | 1 ✓ |
 | FR-SHELL-06 | Wizard back navigation | 1 ✓ |
+| FR-SHELL-07 | About dialog icon on Linux/Windows | 2 ✓ |
+| FR-SHELL-08 | Hide empty Window menu on Linux | 2 ✓ |
+| FR-SHELL-09 | Native menu label i18n (es/en) | 2 ✓ |
 
 **FR-SHELL-01 — App header bar** *(removed)*
 
@@ -1969,6 +2007,44 @@ The native window close (X) already triggers the full shutdown sequence (fork, s
 - **Then** a "Back" button is available that returns to the previous step
 - **And** previously entered values are preserved when going back and forward
 - **Note:** Common wizard pattern. Especially useful after model selection (user may want to change provider or revisit personalization).
+
+**FR-SHELL-07 — About dialog icon**
+
+GTK and Windows About dialogs only show an app icon when `AboutMetadata.icon`
+is set. macOS uses the bundle icon and needs no change.
+
+- **Given** the app runs on Linux or Windows
+- **When** the user opens the About dialog from the app menu
+- **Then** the dialog shows the Buddy app icon
+- **And** the icon is embedded from `icons/128x128@2x.png` via `include_bytes!`
+- **And** `Cargo.toml` enables the Tauri `image-png` feature
+
+**FR-SHELL-08 — Hide empty Window menu on Linux**
+
+On GTK/Wayland, `.minimize()` and `.close_window()` render as blank menu items,
+leaving an empty "Window" submenu.
+
+- **Given** the app runs on Linux
+- **When** the native menu bar is built
+- **Then** no "Window" submenu appears
+- **And when** the app runs on macOS or Windows
+- **Then** the Window submenu is unchanged (minimize + close window)
+
+**FR-SHELL-09 — Native menu label i18n**
+
+Custom submenu names and the Settings menu item are hardcoded in English in the
+Rust shell. Predefined items (Cut, Copy, Paste, etc.) are localized by
+GTK/muda from the system locale — out of scope.
+
+- **Given** `~/.buddy/config.json` exists with `"language": "es"`
+- **When** the native menu bar is built at startup
+- **Then** the Edit submenu is labelled "Editar"
+- **And** the Settings item is labelled "Ajustes…"
+- **And** the Window submenu (non-Linux) is labelled "Ventana"
+- **And when** no config exists or `language` is unset
+- **Then** the shell falls back to the system locale via `sys_locale`
+- **And when** neither config nor system locale is Spanish
+- **Then** English labels are used ("Edit", "Settings…", "Window")
 
 ### 3.16 Git Sync (FR-SYNC)
 

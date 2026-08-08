@@ -78,10 +78,9 @@ target — there is no point wiring a runner for something not yet correct.
   `wiki-ingest` skill, where a human was doing the reviewing.
 - **FR-PROVIDER** — Aug 2026 eval shows Qwen 27B viable for chat + reflect,
   gemma 12B for chat only. Harness hardening (#7, #26, #14) remains before
-  FR-PROVIDER. #2b (FR-GUARD-02) and #15 remainder (FR-GUARD-03) shipped —
-  Pi SDK 0.84 upgrade sprint is next. FR-PROVIDER-01..03 criteria enriched
-  with compat flags, `contextWindow` requirements, and `thinkingFormat`
-  handling. Not yet scheduled.
+  FR-PROVIDER. Pi SDK upgraded to 0.84.x (FR-SDK-01/02/03). FR-PROVIDER-01..03
+  criteria enriched with compat flags, `contextWindow` requirements, and
+  `thinkingFormat` handling. Not yet scheduled.
 - **FR-SYNC**, **FR-NET-02**, **FR-COST-04** — phase 3+.
 
 ## State
@@ -95,5 +94,8 @@ consolidation user-model update step, Markov self-sufficiency eval
 (FR-CONSOL-15: depths 1-2 use fast tier with thinking off, depth 3 uses the
 configured model). **FR-GUARD-02** (edit-failure recovery hints + prompt rule)
 and **FR-GUARD-03** (post-consolidation filename validation + broken-link
-repair) close harness items #2b and #15 — prerequisite for the Pi SDK 0.84
-upgrade sprint. Per-release detail in `docs/releases/`.
+repair) close harness items #2b and #15. **Pi SDK 0.84.x** shipped
+(FR-SDK-01/02/03: delta-only streaming fixtures, session API compat,
+sidecar deep-import guard). **FR-SHELL-07/08/09** (Linux native menu polish: About icon,
+hide empty Window menu, menu label i18n es/en) shipped in the same cycle.
+Per-release detail in `docs/releases/`.

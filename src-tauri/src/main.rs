@@ -4,8 +4,55 @@
 
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use tauri::menu::{AboutMetadata, MenuBuilder, MenuItemBuilder, SubmenuBuilder};
+use tauri::image::Image;
+use tauri::menu::{AboutMetadata, MenuBuilder, MenuItemBuilder, PredefinedMenuItem, SubmenuBuilder};
 use tauri::Emitter;
+
+struct MenuLabels {
+    about: &'static str,
+    edit: &'static str,
+    settings: &'static str,
+    #[cfg_attr(target_os = "linux", allow(dead_code))]
+    window: &'static str,
+}
+
+fn menu_labels(lang: &str) -> MenuLabels {
+    match lang {
+        "es" => MenuLabels {
+            about: "Acerca de buddy",
+            edit: "Editar",
+            settings: "Ajustes…",
+            window: "Ventana",
+        },
+        _ => MenuLabels {
+            about: "About buddy",
+            edit: "Edit",
+            settings: "Settings…",
+            window: "Window",
+        },
+    }
+}
+
+fn detect_language() -> &'static str {
+    if let Some(home) = std::env::var_os("HOME") {
+        let config_path = std::path::PathBuf::from(home).join(".buddy/config.json");
+        if let Ok(raw) = std::fs::read_to_string(config_path) {
+            if let Ok(val) = serde_json::from_str::<serde_json::Value>(&raw) {
+                if let Some(lang) = val.get("language").and_then(|v| v.as_str()) {
+                    if lang.starts_with("es") {
+                        return "es";
+                    }
+                }
+            }
+        }
+    }
+    if let Some(locale) = sys_locale::get_locale() {
+        if locale.starts_with("es") {
+            return "es";
+        }
+    }
+    "en"
+}
 
 fn main() {
     tauri::Builder::default()
@@ -15,7 +62,12 @@ fn main() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_notification::init())
         .setup(|app| {
+            let labels = menu_labels(detect_language());
+
+            let icon = Image::from_bytes(include_bytes!("../icons/64x64.png"))
+                .expect("embedded icon");
             let about = AboutMetadata {
+                icon: Some(icon),
                 name: Some("buddy".to_string()),
                 // From Cargo.toml — never hardcode, it silently drifts on release.
                 version: Some(env!("CARGO_PKG_VERSION").to_string()),
@@ -30,12 +82,14 @@ fn main() {
                 ..Default::default()
             };
 
-            let settings_item = MenuItemBuilder::with_id("settings", "Settings...")
+            let settings_item = MenuItemBuilder::with_id("settings", labels.settings)
                 .accelerator("CmdOrCtrl+,")
                 .build(app)?;
 
+            let about_item = PredefinedMenuItem::about(app, Some(labels.about), Some(about))?;
+
             let app_submenu = SubmenuBuilder::new(app, "buddy")
-                .about(Some(about))
+                .item(&about_item)
                 .item(&settings_item)
                 .separator()
                 .services()
@@ -47,7 +101,7 @@ fn main() {
                 .quit()
                 .build()?;
 
-            let edit_submenu = SubmenuBuilder::new(app, "Edit")
+            let edit_submenu = SubmenuBuilder::new(app, labels.edit)
                 .undo()
                 .redo()
                 .separator()
@@ -57,14 +111,26 @@ fn main() {
                 .select_all()
                 .build()?;
 
-            let window_submenu = SubmenuBuilder::new(app, "Window")
+            #[cfg(not(target_os = "linux"))]
+            let window_submenu = SubmenuBuilder::new(app, labels.window)
                 .minimize()
                 .close_window()
                 .build()?;
 
-            let menu = MenuBuilder::new(app)
-                .items(&[&app_submenu, &edit_submenu, &window_submenu])
-                .build()?;
+            let menu = {
+                #[cfg(not(target_os = "linux"))]
+                {
+                    MenuBuilder::new(app)
+                        .items(&[&app_submenu, &edit_submenu, &window_submenu])
+                        .build()?
+                }
+                #[cfg(target_os = "linux")]
+                {
+                    MenuBuilder::new(app)
+                        .items(&[&app_submenu, &edit_submenu])
+                        .build()?
+                }
+            };
 
             app.set_menu(menu)?;
 
