@@ -13,6 +13,8 @@ const kill = vi.fn(async () => {});
 const spawn = vi.fn(async () => {});
 const unlistenExit = vi.fn();
 const onExit = vi.fn(async () => unlistenExit);
+const unlistenStderr = vi.fn();
+const onStderr = vi.fn(async (_name: string, _cb: (data: string) => void) => unlistenStderr);
 const transportClose = vi.fn();
 const createChannel = vi.fn(async () => ({
   channel: {},
@@ -20,7 +22,7 @@ const createChannel = vi.fn(async () => ({
   transport: { close: transportClose },
 }));
 
-vi.mock("tauri-plugin-js-api", () => ({ kill, spawn, onExit, createChannel }));
+vi.mock("tauri-plugin-js-api", () => ({ kill, spawn, onExit, onStderr, createChannel }));
 
 // Injected by Vite's `define` in the real build; the dev spawn path reads it.
 vi.stubGlobal("__BUDDY_PROJECT_ROOT__", "/tmp/buddy-project");
@@ -43,11 +45,21 @@ describe("connectWorker (NFR-REL-10)", () => {
     expect(transportClose).toHaveBeenCalledTimes(1);
   });
 
-  it("removes the crash listener on dispose", async () => {
+  it("removes the crash and stderr listeners on dispose", async () => {
     const connection = await connectWorker(frontend, onCrash);
 
     await connection.dispose();
     expect(unlistenExit).toHaveBeenCalledTimes(1);
+    expect(unlistenStderr).toHaveBeenCalledTimes(1);
+  });
+
+  it("surfaces worker stderr instead of swallowing it", async () => {
+    const logged = vi.spyOn(console, "error").mockImplementation(() => {});
+    await connectWorker(frontend, onCrash);
+
+    onStderr.mock.calls[0]![1]("[agent-worker] fatal: boom");
+    expect(logged).toHaveBeenCalledWith(expect.stringContaining("fatal: boom"));
+    logged.mockRestore();
   });
 
   it("survives a transport without close()", async () => {
@@ -64,5 +76,6 @@ describe("connectWorker (NFR-REL-10)", () => {
     await connection.dispose();
     expect(transportClose).toHaveBeenCalledTimes(1);
     expect(unlistenExit).toHaveBeenCalledTimes(1);
+    expect(unlistenStderr).toHaveBeenCalledTimes(1);
   });
 });

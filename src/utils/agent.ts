@@ -3,7 +3,7 @@
 // channel to it. Falls back to a connection error state if anything fails
 // (Phase 0 basic error handling).
 
-import { spawn, kill, createChannel, onExit } from "tauri-plugin-js-api";
+import { spawn, kill, createChannel, onExit, onStderr } from "tauri-plugin-js-api";
 import type { FrontendAPI, WorkerAPI } from "../../shared/api";
 
 const WORKER_NAME = "agent-worker";
@@ -42,6 +42,12 @@ export async function connectWorker(
     });
   }
   const unlistenExit = await onExit(WORKER_NAME, onCrash);
+  // The worker's fatal handler writes to stderr and then exits 1. Without this,
+  // that exit reached the user as a bare "Worker exited (code 1)" and the reason
+  // was nowhere — not in the terminal, not in a log.
+  const unlistenStderr = await onStderr(WORKER_NAME, (data) => {
+    console.error(`[agent-worker] ${data}`);
+  });
   const { api, transport } = await createChannel<FrontendAPI, WorkerAPI>(
     WORKER_NAME,
     frontendApi,
@@ -57,6 +63,7 @@ export async function connectWorker(
     if (disposed) return;
     disposed = true;
     unlistenExit();
+    unlistenStderr();
     transport.close?.();
   }
 

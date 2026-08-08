@@ -34,9 +34,13 @@ describe("FR-SDK-02 session management compatibility", () => {
     tmpDir = undefined;
   });
 
-  it("SessionManager.create accepts a rootDir string", () => {
+  it("SessionManager.create accepts a rootDir and an explicit session dir", () => {
     tmpDir = mkdtempSync(join(tmpdir(), "buddy-sdk-sm-"));
-    expect(() => SessionManager.create(tmpDir!)).not.toThrow();
+    // The session dir is explicit on purpose (NFR-SEC-19): omitting it makes the
+    // SDK derive one from getAgentDir(), and this test then writes a session
+    // directory into the developer's own ~/.pi/agent/sessions.
+    const sessionDir = join(tmpDir, "sessions");
+    expect(() => SessionManager.create(tmpDir!, sessionDir)).not.toThrow();
   });
 
   it("SessionManager exposes forkFrom", () => {
