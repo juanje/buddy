@@ -43,6 +43,7 @@ import { logEvent } from "./app-logger";
 import { createHeadingGuard } from "./heading-guard";
 import { createHebbianGuard } from "./hebbian-guard";
 import { installEditRecoveryHook } from "./edit-recovery";
+import { buddySessionsDir } from "./session-paths";
 import {
   listChangedFilesSince,
   runPostConsolidationValidation,
@@ -328,7 +329,7 @@ async function openRealMaintenanceSession(config: {
     cwd: rootDir,
     agentDir: buddyAgentDir(), // NFR-SEC-19: keeps SettingsManager off ~/.pi/agent
     resourceLoader,
-    sessionManager: SessionManager.create(rootDir),
+    sessionManager: SessionManager.create(rootDir, buddySessionsDir(rootDir)),
     excludeTools: [...EXCLUDED_TOOLS],
     tools: [...AGENT_TOOLS, ...skillToolNames(skillTools), ...consolidationToolNames(consolTools)],
     customTools: [...skillTools, ...consolTools],

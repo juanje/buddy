@@ -24,6 +24,7 @@ import { alignHttpDispatcherWithPi } from "../backends/pi-http-dispatcher";
 import { createBuddyModelRuntime, defaultAuthPath } from "../backends/provider-auth";
 import { bootRefreshIfNeeded } from "../backends/boot-refresh";
 import { buddyAgentDir, globalConfigDir, globalConfigPath } from "../backends/global-config";
+import { buddySessionsDir } from "../backends/session-paths";
 import { resolveSessionModel } from "../backends/model-switch";
 import { readStateFile } from "../backends/state-file";
 import type { SetupConfig } from "../shared/api";
@@ -138,7 +139,7 @@ async function runReflectEval(fixturePath: string, dryRun: boolean): Promise<str
   const { session } = await createAgentSession({
     cwd: brainDir,
     resourceLoader: rl,
-    sessionManager: SessionManager.create(brainDir),
+    sessionManager: SessionManager.create(brainDir, buddySessionsDir(brainDir)),
     excludeTools: [...EXCLUDED_TOOLS, ...AGENT_TOOLS],
     tools: [],
     modelRuntime,

@@ -9,6 +9,8 @@ import {
   REFLECT_FORK_RETENTION_DAYS,
   REFLECT_SESSIONS_DIR,
   SESSION_LOG_RETENTION_DAYS,
+  SESSION_RETENTION_DAYS,
+  SESSIONS_DIR,
 } from "../shared/defaults";
 import { MS_PER_DAY } from "../shared/dates";
 
@@ -46,6 +48,20 @@ export function pruneSessionLogs(
 }
 
 /**
+ * Delete live Pi session files older than retentionDays (NFR-MAINT-02).
+ *
+ * Each session holds a full conversation transcript. Kept beside reflect forks
+ * under `.buddy/sessions/` after NFR-SEC-19 (2026-08-08).
+ */
+export function pruneLiveSessions(
+  rootDir: string,
+  retentionDays = SESSION_RETENTION_DAYS,
+  nowMs = Date.now(),
+): number {
+  return pruneOlderThan(join(rootDir, SESSIONS_DIR), ".jsonl", retentionDays, nowMs);
+}
+
+/**
  * Delete forked session files older than retentionDays (NFR-MAINT-02).
  *
  * One fork is created per session and per checkpoint, and each holds the full
@@ -64,6 +80,9 @@ export function pruneReflectForks(
 
 /** Every retention pass the app runs, in one call. */
 export function pruneSessionArtifacts(rootDir: string, nowMs = Date.now()): number {
-  return pruneSessionLogs(rootDir, SESSION_LOG_RETENTION_DAYS, nowMs) +
-    pruneReflectForks(rootDir, REFLECT_FORK_RETENTION_DAYS, nowMs);
+  return (
+    pruneSessionLogs(rootDir, SESSION_LOG_RETENTION_DAYS, nowMs) +
+    pruneLiveSessions(rootDir, SESSION_RETENTION_DAYS, nowMs) +
+    pruneReflectForks(rootDir, REFLECT_FORK_RETENTION_DAYS, nowMs)
+  );
 }

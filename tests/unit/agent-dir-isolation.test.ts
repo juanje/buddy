@@ -245,4 +245,59 @@ describe("no production code reaches the Pi CLI agent directory", () => {
     );
     expect(calls).toBe(3);
   });
+
+  /**
+   * Parse a parenthesised argument list and return true when a second
+   * top-level argument is present (comma at depth 0).
+   */
+  function hasSecondArgument(argsSource: string): boolean {
+    let depth = 0;
+    for (let i = 0; i < argsSource.length; i++) {
+      const ch = argsSource[i];
+      if (ch === "(" || ch === "{" || ch === "[") depth++;
+      else if (ch === ")" || ch === "}" || ch === "]") depth--;
+      else if (ch === "," && depth === 0) return true;
+    }
+    return false;
+  }
+
+  it("every SessionManager.create call passes an explicit sessionDir", () => {
+    const offenders: string[] = [];
+    for (const dir of [BACKENDS_DIR, SCRIPTS_DIR]) {
+      for (const { file, source } of sourcesIn(dir)) {
+        const re = /SessionManager\.create\s*\(/g;
+        let match: RegExpExecArray | null;
+        while ((match = re.exec(source)) !== null) {
+          let depth = 1;
+          let i = match.index + match[0].length;
+          while (i < source.length && depth > 0) {
+            const ch = source[i];
+            if (ch === "(") depth++;
+            else if (ch === ")") depth--;
+            i++;
+          }
+          const args = source.slice(match.index + match[0].length, i - 1);
+          if (!hasSecondArgument(args)) offenders.push(`${dir.split("/").pop()}/${file}`);
+        }
+      }
+    }
+    expect(
+      offenders,
+      `SessionManager.create with one argument defaults session storage to ` +
+        `~/.pi/agent/sessions/ (NFR-SEC-19). Pass buddySessionsDir(rootDir) as the second argument.`,
+    ).toEqual([]);
+  });
+
+  it("finds the five SessionManager.create call sites it is meant to be checking", () => {
+    const calls =
+      sourcesIn(BACKENDS_DIR).reduce(
+        (total, { source }) => total + (source.match(/SessionManager\.create\s*\(/g)?.length ?? 0),
+        0,
+      ) +
+      sourcesIn(SCRIPTS_DIR).reduce(
+        (total, { source }) => total + (source.match(/SessionManager\.create\s*\(/g)?.length ?? 0),
+        0,
+      );
+    expect(calls).toBe(5);
+  });
 });

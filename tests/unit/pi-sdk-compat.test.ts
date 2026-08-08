@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
+import { buddySessionsDir } from "../../backends/session-paths";
 import { SessionManager } from "@earendil-works/pi-coding-agent";
 
 import type { AgentEvent } from "../../shared/api";
@@ -34,13 +35,10 @@ describe("FR-SDK-02 session management compatibility", () => {
     tmpDir = undefined;
   });
 
-  it("SessionManager.create accepts a rootDir and an explicit session dir", () => {
+  it("SessionManager.create accepts rootDir and an explicit session dir", () => {
     tmpDir = mkdtempSync(join(tmpdir(), "buddy-sdk-sm-"));
-    // The session dir is explicit on purpose (NFR-SEC-19): omitting it makes the
-    // SDK derive one from getAgentDir(), and this test then writes a session
-    // directory into the developer's own ~/.pi/agent/sessions.
-    const sessionDir = join(tmpDir, "sessions");
-    expect(() => SessionManager.create(tmpDir!, sessionDir)).not.toThrow();
+    const sessionsDir = buddySessionsDir(tmpDir);
+    expect(() => SessionManager.create(tmpDir!, sessionsDir)).not.toThrow();
   });
 
   it("SessionManager exposes forkFrom", () => {

@@ -40,6 +40,7 @@ import { assembleMaintenancePrompt } from "../backends/prompt";
 import { createBuddyModelRuntime, defaultAuthPath } from "../backends/provider-auth";
 import { bootRefreshIfNeeded } from "../backends/boot-refresh";
 import { buddyAgentDir, globalConfigDir, globalConfigPath } from "../backends/global-config";
+import { buddySessionsDir } from "../backends/session-paths";
 import { resolveSessionModel } from "../backends/model-switch";
 import { readStateFile } from "../backends/state-file";
 import type { SetupConfig } from "../shared/api";
@@ -428,7 +429,7 @@ async function main(): Promise<void> {
         const { session } = await createAgentSession({
           cwd: rd,
           resourceLoader: rl,
-          sessionManager: SessionManager.create(rd),
+          sessionManager: SessionManager.create(rd, buddySessionsDir(rd)),
           excludeTools: [...EXCLUDED_TOOLS],
           tools: [...AGENT_TOOLS],
           modelRuntime: mr,

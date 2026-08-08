@@ -39,6 +39,7 @@ import { collectAssistantText } from "../backends/pi-utils";
 import { createBuddyModelRuntime, defaultAuthPath } from "../backends/provider-auth";
 import { bootRefreshIfNeeded } from "../backends/boot-refresh";
 import { buddyAgentDir, globalConfigDir, globalConfigPath } from "../backends/global-config";
+import { buddySessionsDir } from "../backends/session-paths";
 import { resolveSessionModel } from "../backends/model-switch";
 import { readStateFile } from "../backends/state-file";
 import type { SetupConfig } from "../shared/api";
@@ -198,7 +199,7 @@ async function askModel(
   const { session } = await createAgentSession({
     cwd: sessionDir,
     resourceLoader: rl,
-    sessionManager: SessionManager.create(sessionDir),
+    sessionManager: SessionManager.create(sessionDir, buddySessionsDir(sessionDir)),
     excludeTools: [],
     tools: [],
     modelRuntime,

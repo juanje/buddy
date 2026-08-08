@@ -22,6 +22,7 @@ import { extractPdfText } from "./pdf-extract";
 import { assembleSessionContext, assembleSystemPrompt } from "./prompt";
 import { injectSessionContext } from "./context-injection";
 import { buddyAgentDir, globalConfigDir } from "./global-config";
+import { buddySessionsDir } from "./session-paths";
 import { buildSkillTools } from "./skill-tools";
 import { buildFetchTools } from "./fetch-url";
 import { buildFileTools } from "./file-tools";
@@ -211,7 +212,7 @@ export async function bootSession(
     // provider, model, thinking level and theme.
     agentDir: buddyAgentDir(),
     resourceLoader,
-    sessionManager: SessionManager.create(rootDir),
+    sessionManager: SessionManager.create(rootDir, buddySessionsDir(rootDir)),
     excludeTools: [...EXCLUDED_TOOLS],
     tools: toolset.names,
     customTools: toolset.customTools,

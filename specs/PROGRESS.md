@@ -96,6 +96,10 @@ configured model). **FR-GUARD-02** (edit-failure recovery hints + prompt rule)
 and **FR-GUARD-03** (post-consolidation filename validation + broken-link
 repair) close harness items #2b and #15. **Pi SDK 0.84.x** shipped
 (FR-SDK-01/02/03: delta-only streaming fixtures, session API compat,
-sidecar deep-import guard). **FR-SHELL-07/08/09** (Linux native menu polish: About icon,
+sidecar deep-import guard). **NFR-SEC-19 amendment (2026-08-08):** live Pi
+session JSONL files now stored under `<rootDir>/.buddy/sessions/` with 7-day
+pruning (NFR-MAINT-02); source guard on `SessionManager.create`. **NFR-REL-10:**
+worker reconnect releases the previous kkrpc channel (fixes doubled streaming
+after crash + restart). **FR-SHELL-07/08/09** (Linux native menu polish: About icon,
 hide empty Window menu, menu label i18n es/en) shipped in the same cycle.
 Per-release detail in `docs/releases/`.

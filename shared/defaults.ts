@@ -10,6 +10,16 @@ export const LOCK_STALE_MS = 60 * 60 * 1000;
 /** Retention period for .buddy/logs/*.jsonl session event logs (NFR-MAINT-01). */
 export const SESSION_LOG_RETENTION_DAYS = 7;
 
+/**
+ * Live Pi session transcripts (internal).
+ *
+ * `SessionManager.create(cwd)` derives its session directory from the SDK's
+ * `getAgentDir()` when the second argument is omitted, so leaving it out wrote
+ * every Buddy conversation into `~/.pi/agent/sessions/` — the user's Pi CLI
+ * directory (NFR-SEC-19). Kept beside the reflect forks it is forked from, and
+ * inside `.buddy/`, which the instance template gitignores.
+ */
+export const SESSIONS_DIR = ".buddy/sessions";
 /** Forked Pi sessions for background reflect (internal). */
 export const REFLECT_SESSIONS_DIR = ".buddy/reflect-sessions";
 /** App instrumentation logs (JSONL, machine-oriented). */
@@ -109,6 +119,12 @@ export const REFLECT_CHILD_TIMEOUT_MS = 5 * 60 * 1000;
  * as a manual-recovery window for a reflect that failed.
  */
 export const REFLECT_FORK_RETENTION_DAYS = 7;
+/**
+ * Retention for live Pi session files in `.buddy/sessions/` (NFR-MAINT-02).
+ * Each holds a full conversation transcript; pruned on the same schedule as
+ * reflect forks.
+ */
+export const SESSION_RETENTION_DAYS = 7;
 /** How long a git operation may wait for the repo lock (FR-REFLECT-06). */
 export const GIT_LOCK_TIMEOUT_MS = 30_000;
 /** Usage-based consolidation counters (FR-CONSOL-01). */
