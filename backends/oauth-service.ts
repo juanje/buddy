@@ -9,6 +9,25 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+/**
+ * Pick the SDK login method for a "select" prompt (OpenAI Codex offers
+ * `browser` + `device_code`). On Windows prefer `device_code` — NFR-PORT-10:
+ * the browser callback binds localhost:1455, which Hyper-V often excludes
+ * (EACCES) and which silently becomes "Missing authorization code".
+ */
+export function preferredOAuthLoginMethod(
+  options: readonly string[],
+  platform: NodeJS.Platform = process.platform,
+): string | undefined {
+  const hasBrowser = options.includes("browser");
+  const hasDeviceCode = options.includes("device_code");
+  // Only auto-answer the SDK's login-method select — never other prompts.
+  if (!hasBrowser && !hasDeviceCode) return undefined;
+  if (platform === "win32" && hasDeviceCode) return "device_code";
+  if (hasBrowser) return "browser";
+  return "device_code";
+}
+
 type AuthPromptLike = {
   type: string;
   message: string;
@@ -74,6 +93,8 @@ export interface OAuthServiceOptions {
    * Defaults to Buddy's own auth store. Injected for tests.
    */
   readCredential?: (piProviderId: string) => string | undefined;
+  /** Injected for tests of NFR-PORT-10 (Windows prefers device_code). */
+  platform?: NodeJS.Platform;
 }
 
 const DEFAULT_POST_CREDENTIAL_GRACE_MS = 3_000;
@@ -86,6 +107,7 @@ export class OAuthService {
   private readonly postCredentialGraceMs: number;
   private readonly credentialPollMs: number;
   private readonly readCredential: (piProviderId: string) => string | undefined;
+  private readonly platform: NodeJS.Platform;
 
   constructor(
     private runtime: OAuthModelRuntimeLike,
@@ -95,6 +117,7 @@ export class OAuthService {
     this.postCredentialGraceMs = options.postCredentialGraceMs ?? DEFAULT_POST_CREDENTIAL_GRACE_MS;
     this.credentialPollMs = options.credentialPollMs ?? DEFAULT_CREDENTIAL_POLL_MS;
     this.readCredential = options.readCredential ?? readStoredCredential;
+    this.platform = options.platform ?? process.platform;
   }
 
   answerPrompt(requestId: number, value: string): void {
@@ -246,21 +269,21 @@ export class OAuthService {
   }
 
   /**
-   * Desktop app always uses browser auth — auto-answer the SDK's "select
-   * login method" prompt without showing it to the user.
+   * Auto-answer the SDK's "select login method" prompt without showing it.
+   * Non-Windows: browser. Windows: device_code when offered (NFR-PORT-10).
    */
   private canAutoAnswer(prompt: AuthPromptLike): boolean {
     if (prompt.type !== "select" || !prompt.options) return false;
     const opts = prompt.options.map((o) =>
       typeof o === "string" ? o : String((o as { id?: string }).id ?? o),
     );
-    return opts.includes("browser");
+    return preferredOAuthLoginMethod(opts, this.platform) !== undefined;
   }
 
   private autoAnswer(prompt: AuthPromptLike): string {
     const opts = (prompt.options ?? []).map((o) =>
       typeof o === "string" ? o : String((o as { id?: string }).id ?? o),
     );
-    return opts.find((o) => o === "browser") ?? opts[0] ?? "";
+    return preferredOAuthLoginMethod(opts, this.platform) ?? opts[0] ?? "";
   }
 }

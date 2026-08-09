@@ -69,14 +69,21 @@
   const scroll = createScrollController(() => chatView?.scrollToLatest());
 
   async function handleOAuthEvent(event: OAuthUIEvent): Promise<void> {
-    if (event.type === "auth_url" && event.url) {
+    const url =
+      event.type === "auth_url"
+        ? event.url
+        : event.type === "device_code"
+          ? event.verificationUri
+          : undefined;
+    if (url) {
       try {
-        await openUrl(event.url);
+        await openUrl(url);
       } catch {
-        // Browser dev without Tauri opener — URL still visible in wizard state.
+        // Browser dev without Tauri opener — URL / code still visible in UI.
       }
     }
     setupOAuthHandler?.(event);
+    settingsController?.handleOAuthEvent(event);
   }
 
   function registerSetupOAuth(handler: (event: OAuthUIEvent) => void): () => void {

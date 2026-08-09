@@ -270,7 +270,7 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
   }
 
   function handleOAuthEvent(event: OAuthUIEvent): void {
-    if (event.type === "prompt") {
+    if (event.type === "prompt" || event.type === "device_code") {
       oauthPrompt.set(event);
     } else if (event.type === "error") {
       oauthError.set(event.message);

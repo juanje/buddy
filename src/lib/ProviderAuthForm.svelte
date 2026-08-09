@@ -8,6 +8,7 @@
     loggingIn,
     error = null,
     needsBaseUrl,
+    deviceCode = null,
     apiKeyInput = $bindable(""),
     baseUrlInput = $bindable(""),
     onOAuthClick,
@@ -19,6 +20,7 @@
     loggingIn: boolean;
     error?: string | null;
     needsBaseUrl: boolean;
+    deviceCode?: { userCode: string; verificationUri: string } | null;
     apiKeyInput?: string;
     baseUrlInput?: string;
     onOAuthClick: () => void;
@@ -31,8 +33,19 @@
 
 {#if oauthAvailable && !showApiKey}
   <button type="button" class="primary oauth" onclick={onOAuthClick} disabled={loggingIn}>
-    {loggingIn ? $t.oauthWaiting : $t.oauthSignIn}
+    {loggingIn
+      ? deviceCode
+        ? $t.oauthDeviceCodeWaiting
+        : $t.oauthWaiting
+      : $t.oauthSignIn}
   </button>
+  {#if deviceCode}
+    <div class="device-code">
+      <p>{$t.oauthDeviceCodeHint}</p>
+      <p class="code">{deviceCode.userCode}</p>
+      <p class="muted">{deviceCode.verificationUri}</p>
+    </div>
+  {/if}
   {#if error}
     <p class="error">{error}</p>
   {/if}
@@ -95,6 +108,30 @@
     padding: 8px 14px;
     font-size: 13px;
     margin: 0;
+  }
+  .device-code {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: flex-start;
+    margin-top: 8px;
+    text-align: left;
+  }
+  .device-code .code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 22px;
+    letter-spacing: 0.08em;
+    margin: 0;
+  }
+  .device-code .muted {
+    color: var(--muted);
+    font-size: 12px;
+    margin: 0;
+    word-break: break-all;
+  }
+  .device-code p {
+    margin: 0;
+    font-size: 13px;
   }
   button.primary {
     border: none;

@@ -2,7 +2,11 @@
 
 import { describe, expect, it, vi } from "vitest";
 
-import { OAuthService, type OAuthModelRuntimeLike } from "../../backends/oauth-service";
+import {
+  OAuthService,
+  preferredOAuthLoginMethod,
+  type OAuthModelRuntimeLike,
+} from "../../backends/oauth-service";
 import type { OAuthUIEvent } from "../../shared/api";
 
 function makeRuntime(
@@ -113,7 +117,90 @@ describe("OAuthService — the SDK's post-login refresh can hang", () => {
   });
 });
 
+describe("preferredOAuthLoginMethod — NFR-PORT-10", () => {
+  const both = ["browser", "device_code"] as const;
+
+  it("prefers device_code on Windows when the SDK offers both", () => {
+    expect(preferredOAuthLoginMethod(both, "win32")).toBe("device_code");
+  });
+
+  it("prefers browser on macOS / Linux", () => {
+    expect(preferredOAuthLoginMethod(both, "darwin")).toBe("browser");
+    expect(preferredOAuthLoginMethod(both, "linux")).toBe("browser");
+  });
+
+  it("falls back to browser when device_code is absent", () => {
+    expect(preferredOAuthLoginMethod(["browser"], "win32")).toBe("browser");
+  });
+});
+
 describe("OAuthService", () => {
+  it("auto-answers OpenAI method select with device_code on Windows", async () => {
+    let answered: string | undefined;
+    const service = new OAuthService(
+      makeRuntime(async (_provider, _type, interaction) => {
+        answered = await interaction.prompt({
+          type: "select",
+          message: "Select OpenAI Codex login method:",
+          options: [
+            { id: "browser", label: "Browser login (default)" },
+            { id: "device_code", label: "Device code login (headless)" },
+          ],
+        });
+      }),
+      { onEvent: () => {} },
+      { platform: "win32" },
+    );
+
+    await expect(service.login("openai")).resolves.toEqual({ success: true });
+    expect(answered).toBe("device_code");
+  });
+
+  it("auto-answers OpenAI method select with browser off Windows", async () => {
+    let answered: string | undefined;
+    const service = new OAuthService(
+      makeRuntime(async (_provider, _type, interaction) => {
+        answered = await interaction.prompt({
+          type: "select",
+          message: "Select OpenAI Codex login method:",
+          options: [
+            { id: "browser", label: "Browser login (default)" },
+            { id: "device_code", label: "Device code login (headless)" },
+          ],
+        });
+      }),
+      { onEvent: () => {} },
+      { platform: "darwin" },
+    );
+
+    await expect(service.login("openai")).resolves.toEqual({ success: true });
+    expect(answered).toBe("browser");
+  });
+
+  it("forwards device_code events to the frontend callback", async () => {
+    const events: OAuthUIEvent[] = [];
+    const service = new OAuthService(
+      makeRuntime(async (_provider, _type, interaction) => {
+        interaction.notify({
+          type: "device_code",
+          userCode: "ABCD-EFGH",
+          verificationUri: "https://auth.openai.com/codex/device",
+        });
+      }),
+      { onEvent: (e) => events.push(e) },
+    );
+
+    await expect(service.login("openai")).resolves.toEqual({ success: true });
+    expect(
+      events.some(
+        (e) =>
+          e.type === "device_code" &&
+          e.userCode === "ABCD-EFGH" &&
+          e.verificationUri === "https://auth.openai.com/codex/device",
+      ),
+    ).toBe(true);
+  });
+
   it("forwards auth_url events to the frontend callback", async () => {
     const events: OAuthUIEvent[] = [];
     const service = new OAuthService(
