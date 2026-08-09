@@ -16,11 +16,26 @@ import { homedir } from "node:os";
 import type { AllowedEntry } from "./allowed-paths";
 import { isPathPersistentlyAllowed } from "./allowed-paths";
 import { DENYLIST_BASENAMES, DENYLIST_HOME_DIRS, READ_TOOLS, WRITE_TOOLS } from "../shared/defaults";
+import { windowsFilenameIssue } from "../shared/filename-safety";
 import { pathArgsOf } from "../shared/tool-paths";
 import { expandHome } from "../shared/path-utils";
 import { isContained } from "./containment";
 import { globalConfigDir } from "./global-config";
 import { identityDirPath } from "./brain-paths";
+
+/** Path arguments that are write destinations (NFR-SEC-22). */
+function writeDestinationPaths(toolName: string, args: unknown): string[] {
+  if (WRITE_TOOLS.has(toolName)) return pathArgsOf(toolName, args);
+  if (
+    toolName === "copy_file" ||
+    toolName === "move_file" ||
+    toolName === "relocate_brain_file"
+  ) {
+    const destination = (args as { destination?: unknown } | null)?.destination;
+    return typeof destination === "string" ? [destination] : [];
+  }
+  return [];
+}
 
 export type PermissionOp = "read" | "write";
 
@@ -108,6 +123,11 @@ function evaluateOnePath(
   if (isDenylistedPath(absPath, home)) {
     return { action: "deny", reason: `Access to ${absPath} is not allowed.` };
   }
+  // NFR-SEC-22: refuse illegal Windows names before any write tool runs.
+  if (op === "write") {
+    const filenameIssue = windowsFilenameIssue(absPath);
+    if (filenameIssue) return { action: "deny", reason: filenameIssue };
+  }
   if (op === "write" && isIdentityFile(absPath, rootDir)) {
     return { action: "ask", kind: "identity-write", op, path: absPath };
   }
@@ -160,6 +180,12 @@ export function createPermissionGate(
         if (isDenylistedPath(absPath, home)) {
           return { block: true, reason: `Access to ${absPath} is not allowed.` };
         }
+      }
+      // NFR-SEC-22: write destinations (including copy/move/relocate).
+      for (const rawPath of writeDestinationPaths(toolName, args)) {
+        const absPath = resolve(rootDir, expandHome(rawPath, home));
+        const filenameIssue = windowsFilenameIssue(absPath);
+        if (filenameIssue) return { block: true, reason: filenameIssue };
       }
       if (sessionAllowedPaths && READ_TOOLS.has(toolName) && rawPaths.length > 0) {
         const absPaths = rawPaths.map((raw) => resolve(rootDir, expandHome(raw, home)));
