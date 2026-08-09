@@ -32,6 +32,7 @@ import {
 import { basename, dirname, join } from "node:path";
 
 import { CONFIG_DIR_MODE, STATE_FILE_MODE } from "../shared/defaults";
+import { applyRestrictiveAcl } from "./secure-perms";
 
 /** The file exists but could not be read or parsed. Never overwrite on this. */
 export class StateFileUnreadableError extends Error {
@@ -219,7 +220,11 @@ export function readStateFile<T>(path: string): T | undefined {
 /** Write JSON atomically: temp file in the same directory, then rename. */
 export function writeStateFile(path: string, data: unknown, options?: StateFileOptions): void {
   const dir = dirname(path);
+  const dirExisted = existsSync(dir);
   mkdirSync(dir, { recursive: true, mode: CONFIG_DIR_MODE });
+  // NFR-SEC-17 on Windows: ACL the directory when we create it; the file after
+  // rename. Avoid icacls on the temp name (rename preserves the ACL).
+  if (!dirExisted) applyRestrictiveAcl(dir);
   // Same directory, so the rename stays within one filesystem and is atomic.
   const tmp = join(dir, `.${basename(path)}.${process.pid}.${Date.now()}.tmp`);
   try {
@@ -230,6 +235,7 @@ export function writeStateFile(path: string, data: unknown, options?: StateFileO
       mode: options?.mode ?? STATE_FILE_MODE,
     });
     renameSync(tmp, path);
+    applyRestrictiveAcl(path);
   } catch (error) {
     try {
       rmSync(tmp, { force: true });

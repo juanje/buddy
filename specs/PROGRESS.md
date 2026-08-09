@@ -63,7 +63,7 @@ path — `#` in parent breaks Vite). Installer drop (Block 2): `../buddy_DIST/wi
 | Linux arm64 is never built | **gap, cheap** | `build-worker.sh` already maps `aarch64-unknown-linux-gnu`, and the release matrix only runs `ubuntu-22.04` at x86_64. The sidecar half of the work is done. |
 | No distro-agnostic Linux artifact | open | `bundle.targets` is `["dmg", "app", "deb", "rpm"]`. AppImage was dropped (`03b91dc` — linuxdeploy broken on GH runners). Flatpak not started. No distro-agnostic option currently. |
 | NFR-PORT-06 — CRLF write guards (spike A7) | **closed** (`4ff79f4`) | Shared frontmatter matcher; unit + write-guard.feature CRLF scenario. |
-| NFR-SEC-17 amend — Windows ACLs for `~/.buddy/` (A1) | **blocks Windows** | Decision: explicit ACLs (not silent chmod). |
+| NFR-SEC-17 amend — Windows ACLs for `~/.buddy/` (A1) | **closed** | `applyRestrictiveAcl` via icacls; wired in state-file + ensureConfigDirMode. |
 | NFR-SEC-04 / FR-PERM-04 amend — case-insensitive denylist (A2) | **closed** | Basename match via case-fold; unit + permissions.feature. |
 | NFR-SEC-21 — Windows sensitive paths (A3) | **closed** | `windowsDenylistRoots()` + `isDenylistedPath` env injection. |
 | NFR-SEC-22 — illegal/reserved filenames (A4) | **closed** | `shared/filename-safety.ts`; gate + file-tools + relocate. |

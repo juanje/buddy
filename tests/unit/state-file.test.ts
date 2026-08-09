@@ -5,7 +5,16 @@
 // "empty". The adversarial cases are the point (NFR-TEST-01).
 
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { chmodSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
+import {
+  chmodSync,
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -71,7 +80,13 @@ describe("writeStateFile", () => {
 
   it("applies the requested mode at creation, not afterwards", () => {
     writeStateFile(file, { secret: true }, { mode: 0o600 });
-    expect(statSync(file).mode & 0o777).toBe(0o600);
+    // NFR-SEC-17: POSIX modes on Unix; on Windows chmod is meaningless — ACL
+    // coverage lives in config-permissions.test.ts / secure-perms.test.ts.
+    if (process.platform !== "win32") {
+      expect(statSync(file).mode & 0o777).toBe(0o600);
+    } else {
+      expect(existsSync(file)).toBe(true);
+    }
   });
 
   it("leaves no temp files behind", () => {

@@ -5,8 +5,9 @@
 
 import { Given, When, Then, After } from "@cucumber/cucumber";
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, rmSync, statSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { tmpdir, userInfo } from "node:os";
 import { join } from "node:path";
 import { get } from "svelte/store";
 
@@ -89,8 +90,21 @@ Then(
     const store = JSON.parse(readFileSync(this.authPath!, "utf8"));
     const provider = get(wizardOf(this, providerOverrides).provider)!;
     assert.deepEqual(store[toPiProviderId(provider)], { type: "api_key", key: "valid-test-key" });
-    const mode = statSync(this.authPath!).mode & 0o777;
-    assert.equal(mode, 0o600);
+    // NFR-SEC-17: mode bits on POSIX; ACL on Windows (chmod is a no-op there).
+    if (process.platform === "win32") {
+      const listing = execFileSync("icacls", [this.authPath!], { encoding: "utf8" });
+      assert.match(listing, /\(F\)/);
+      assert.ok(
+        !listing.toLowerCase().includes("builtin\\users"),
+        `expected no BUILTIN\\Users ACE, got:\n${listing}`,
+      );
+      assert.ok(
+        listing.toLowerCase().includes(userInfo().username.toLowerCase()),
+        `expected current user in ACL, got:\n${listing}`,
+      );
+    } else {
+      assert.equal(statSync(this.authPath!).mode & 0o777, 0o600);
+    }
   },
 );
 

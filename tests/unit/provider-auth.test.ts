@@ -1,7 +1,14 @@
 // tests/unit/provider-auth.test.ts — FR-SETUP-04 key validation + storage.
 
 import { describe, expect, it, afterEach } from "vitest";
-import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -33,7 +40,11 @@ describe("configureProviderKey", () => {
     expect(JSON.parse(readFileSync(authPath, "utf8"))).toEqual({
       anthropic: { type: "api_key", key: "sk-test" },
     });
-    expect(statSync(authPath).mode & 0o777).toBe(0o600);
+    if (process.platform !== "win32") {
+      expect(statSync(authPath).mode & 0o777).toBe(0o600);
+    } else {
+      expect(existsSync(authPath)).toBe(true);
+    }
   });
 
   it("merges with existing entries instead of overwriting the store", async () => {
