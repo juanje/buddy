@@ -111,3 +111,9 @@ Then("{string} excludes {string}", function (this: CreateWorld, relPath: string,
   const content = readFileSync(join(this.buddyDir!, relPath), "utf8");
   assert.match(content, new RegExp(`^${pattern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`, "m"));
 });
+
+Then("{string} declares text eol=lf", function (this: CreateWorld, relPath: string) {
+  const content = readFileSync(join(this.buddyDir!, relPath), "utf8");
+  assert.match(content, /eol\s*=\s*lf/i);
+  assert.match(content, /^\*\s+text=auto\s+eol=lf/m);
+});

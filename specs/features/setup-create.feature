@@ -43,3 +43,8 @@ Feature: Deterministic buddy directory setup (FR-SETUP-08)
     When setup runs
     Then ".gitignore" excludes ".buddy/"
     And ".gitignore" excludes ".pi/"
+
+  # NFR-PORT-08 — Git for Windows defaults must not leave a CRLF-only memory repo
+  Scenario: .gitattributes keeps text LF
+    When setup runs
+    Then ".gitattributes" declares text eol=lf

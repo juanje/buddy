@@ -81,6 +81,9 @@ export async function createBuddyInstance(options: CreateBuddyOptions): Promise<
   const root = config.rootDir;
 
   copyTemplates(root, options.templatesDir);
+  // NFR-PORT-08: even if a custom templatesDir omits it, new instances must not
+  // inherit Git for Windows CRLF defaults alone.
+  ensureTextEolAttributes(root);
 
   if (config.name?.trim()) {
     writeFileSync(userProfilePath(root), buildUserProfile(config));
@@ -118,6 +121,7 @@ export function adoptBuddyInstance(options: Pick<CreateBuddyOptions, "config" | 
   }
 
   ensureRuntimeStateIgnored(config.rootDir);
+  ensureTextEolAttributes(config.rootDir);
   markConfigured(config, configPath);
 }
 
@@ -168,6 +172,42 @@ export function ensureRuntimeStateIgnored(rootDir: string): void {
   writeFileSync(
     gitignorePath,
     `${current}${needsNewline ? "\n" : ""}${header}${absent.join("\n")}\n`,
+    "utf8",
+  );
+}
+
+/** Canonical `.gitattributes` body for a new Buddy instance (NFR-PORT-08). */
+export const BUDDY_GITATTRIBUTES = `\
+# NFR-PORT-08 — keep text LF so a Buddy memory repo stays portable when created
+# under Git for Windows (core.autocrlf=true). Binary files stay untouched.
+* text=auto eol=lf
+*.md text eol=lf
+*.json text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+`;
+
+/**
+ * Ensure `.gitattributes` forces LF for text (NFR-PORT-08).
+ *
+ * New installs get the file from `templates/`; this covers adopt and any
+ * templatesDir that omitted it. Does not overwrite a file that already has the
+ * `eol=lf` policy — the user's repo may already be deliberate.
+ */
+export function ensureTextEolAttributes(rootDir: string): void {
+  const path = join(rootDir, ".gitattributes");
+  let current = "";
+  try {
+    current = readFileSync(path, "utf8");
+  } catch {
+    writeFileSync(path, BUDDY_GITATTRIBUTES, "utf8");
+    return;
+  }
+  if (/eol\s*=\s*lf/i.test(current)) return;
+  const needsNewline = current !== "" && !current.endsWith("\n");
+  writeFileSync(
+    path,
+    `${current}${needsNewline ? "\n" : ""}\n# Added by Buddy (NFR-PORT-08)\n* text=auto eol=lf\n`,
     "utf8",
   );
 }

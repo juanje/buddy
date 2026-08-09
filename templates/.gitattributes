@@ -1,0 +1,7 @@
+# NFR-PORT-08 — keep text LF so a Buddy memory repo stays portable when created
+# under Git for Windows (core.autocrlf=true). Binary files stay untouched.
+* text=auto eol=lf
+*.md text eol=lf
+*.json text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf

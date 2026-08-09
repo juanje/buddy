@@ -16,7 +16,11 @@ import {
   missingInstanceParts,
   validateLocation,
 } from "../../backends/location";
-import { adoptBuddyInstance, ensureRuntimeStateIgnored } from "../../backends/create-buddy";
+import {
+  adoptBuddyInstance,
+  ensureRuntimeStateIgnored,
+  ensureTextEolAttributes,
+} from "../../backends/create-buddy";
 import { initTestGitRepo } from "../support/test-git";
 
 let base: string;
@@ -190,5 +194,53 @@ describe("ensureRuntimeStateIgnored", () => {
     // Without this, every auto-commit versions Buddy's own locks and session
     // state into the user's repository.
     expect(readFileSync(join(dir, ".gitignore"), "utf8")).toContain(".buddy/");
+  });
+});
+
+describe("ensureTextEolAttributes (NFR-PORT-08)", () => {
+  it("creates .gitattributes with eol=lf when absent", () => {
+    const dir = join(base, "no-attrs");
+    mkdirSync(dir, { recursive: true });
+
+    ensureTextEolAttributes(dir);
+
+    const content = readFileSync(join(dir, ".gitattributes"), "utf8");
+    expect(content).toMatch(/eol\s*=\s*lf/i);
+    expect(content).toMatch(/^\*\s+text=auto\s+eol=lf/m);
+  });
+
+  it("leaves an existing eol=lf policy untouched", () => {
+    const dir = join(base, "has-attrs");
+    mkdirSync(dir, { recursive: true });
+    const original = "* text=auto eol=lf\n";
+    writeFileSync(join(dir, ".gitattributes"), original, "utf8");
+
+    ensureTextEolAttributes(dir);
+
+    expect(readFileSync(join(dir, ".gitattributes"), "utf8")).toBe(original);
+  });
+
+  it("appends eol=lf when a .gitattributes exists without it", () => {
+    const dir = join(base, "partial-attrs");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, ".gitattributes"), "*.png binary\n", "utf8");
+
+    ensureTextEolAttributes(dir);
+
+    const content = readFileSync(join(dir, ".gitattributes"), "utf8");
+    expect(content).toContain("*.png binary");
+    expect(content).toMatch(/eol\s*=\s*lf/i);
+  });
+
+  it("is applied when an instance is adopted without attributes", async () => {
+    const dir = await completeInstance("adopted-attrs");
+    rmSync(join(dir, ".gitattributes"), { force: true });
+
+    adoptBuddyInstance({
+      config: { rootDir: dir, provider: "anthropic", model: "m" },
+      configPath: join(base, "config-attrs.json"),
+    });
+
+    expect(readFileSync(join(dir, ".gitattributes"), "utf8")).toMatch(/eol\s*=\s*lf/i);
   });
 });

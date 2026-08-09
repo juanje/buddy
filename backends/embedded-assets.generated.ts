@@ -4,6 +4,7 @@
 export const EMBEDDED_APP_VERSION = "0.1.22";
 
 export const EMBEDDED_TEMPLATES: Record<string, string> = {
+  ".gitattributes": "# NFR-PORT-08 — keep text LF so a Buddy memory repo stays portable when created\n# under Git for Windows (core.autocrlf=true). Binary files stay untouched.\n* text=auto eol=lf\n*.md text eol=lf\n*.json text eol=lf\n*.yml text eol=lf\n*.yaml text eol=lf\n",
   ".gitignore": ".buddy/\n.pi/\n",
   "agent_brain/concepts/.gitkeep": "",
   "agent_brain/concepts/index.md": "---\nsummary: \"Index of generalized lessons, patterns, and concepts in agent_brain\"\ncreated:\n---\n\n# Concepts\n\nLessons learned, patterns, generalized knowledge.\n",
