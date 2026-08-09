@@ -1022,6 +1022,10 @@ Fork bomb defense:
 - **And** the destination directory is created if absent
 - **And** all markdown files referencing the old relative path are updated
 - **And** the operation fails gracefully if source is outside `agent_brain/`
+- **And** link resolution decides "inside the buddy directory" via
+  `backends/containment.ts` (NFR-SEC-16 / NFR-PORT-07) — not a hardcoded
+  `startsWith(root + "/")` after `normalize`, which silently disables every
+  rewrite on Windows (spike A6)
 
 **FR-CONSOL-08 — Consolidation state persisted per completed depth**
 
@@ -2961,6 +2965,7 @@ Further context on local-model evaluation methodology and findings:
 | NFR-PORT-04 | Platform artifacts (`.cursor/`, `.codex/`, `.claude/`) in imported instances are ignored |
 | NFR-PORT-05 | Core app prompts live in `~/.buddy/prompts/`, not inside rootDir. On any app semver change (major, minor, or patch), bundled content overwrites `~/.buddy/prompts/` and `~/.buddy/docs/` (see NFR-MIGRATE-06). User content in rootDir is never touched. |
 | NFR-PORT-06 | Write-path guards that depend on detecting YAML frontmatter (FR-HEBB-06 Hebbian counter restore, FR-GUARD-01 frontmatter-strip detect) accept CRLF as well as LF. Detection uses the shared `shared/frontmatter.ts` matcher — not a second `startsWith("---\n")` check. **Why:** Git for Windows defaults to `core.autocrlf=true`; an LF-only guard returns null / "no frontmatter" and silently disarms FR-HEBB-06 / FR-GUARD-01 on a CRLF working tree. `parseFrontmatter` was already CRLF-tolerant; the guards were not. Opened from the Windows static spike (2026-08-08) finding A7. |
+| NFR-PORT-07 | When consolidation relocates a brain file, markdown link rewrite resolves targets with `isContained` / `realPathOrNearest` (NFR-SEC-15/16), never `normalize(root) + "/"` prefix matching. **Why:** on win32 `normalize` yields backslashes; the hardcoded `/` made every internal link resolve to `null`, so `rewriteBrokenLinks` reported success while leaving every link broken (spike A6). |
 
 ### 4.4.0 Windows portability (open — Block 1 before any Windows installer)
 
@@ -2973,7 +2978,7 @@ Opened from `buddy-windows-spike.md` (static audit). Packaging (NSIS/MSI) waits 
 | NFR-SEC-21 | Windows sensitive-path denylist covers GnuPG under `%APPDATA%\gnupg` (not only `~/.gnupg`) and Credential Manager dirs under `%APPDATA%` / `%LOCALAPPDATA%\Microsoft\Credentials`. | A3 | open |
 | NFR-SEC-22 | Before `write` / `edit` / `copy_file` / `move_file`, reject illegal Windows filenames (ADS via `:`, reserved device names `CON`/`NUL`/`PRN`/…). Loud failure — never alternate data streams or discard-to-NUL. | A4 | open |
 | NFR-SEC-15/16 (tests) | Containment covers Windows path shapes: junctions, UNC, `\\?\`, 8.3 short names, per-drive relative paths. | A5 | open |
-| NFR-PORT-07 | Consolidation link rewrite (`consolidation-relocate`) compares paths with platform-safe separators — no hardcoded `/` after `normalize` that disables rewrite on win32. | A6 | open |
+| NFR-PORT-07 | Consolidation link rewrite (`consolidation-relocate`) compares paths with platform-safe separators — no hardcoded `/` after `normalize` that disables rewrite on win32. Uses `isContained` (NFR-SEC-16). | A6 | **closed** |
 | NFR-PORT-06 | See table above (CRLF write guards). | A7 | **closed** (`4ff79f4`) |
 | NFR-PORT-08 | New buddy instances get a `.gitattributes` that keeps markdown/text LF; `create-buddy` does not leave CRLF policy to Git for Windows defaults alone. | A8 | open |
 | NFR-REL-11 | Reflect-child interrupt path is portable: must not rely solely on SIGTERM; must not shell out with POSIX-only quoting; must use the same git lock as `commitAll` (FR-REFLECT-06). | A9 | open |

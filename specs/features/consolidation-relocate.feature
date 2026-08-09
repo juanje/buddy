@@ -11,6 +11,7 @@ Feature: FR-CONSOL-07 Consolidation relocate tool
     When the consolidation tool relocate_brain_file is called with source "agent_brain/concepts/foo.md" and destination "agent_brain/concepts/cluster/foo.md"
     Then "agent_brain/concepts/cluster/foo.md" exists
     And "agent_brain/concepts/foo.md" does not exist
+    # NFR-PORT-07 — must rewrite on Windows too (no startsWith(root+"/"))
     And "agent_brain/concepts/bar.md" link is updated to "cluster/foo.md"
 
   Scenario: Reject relocation outside agent_brain

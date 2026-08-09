@@ -1,9 +1,9 @@
 // backends/consolidation-relocate.ts — Brain file relocation with link rewriting (FR-CONSOL-07).
 
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
-import { dirname, join, normalize, relative, resolve } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
 
-import { containedRelPath } from "./containment";
+import { containedRelPath, isContained, realPathOrNearest } from "./containment";
 import { gitClient } from "./git";
 import { BRAIN_PREFIX } from "../shared/brain-paths";
 
@@ -39,14 +39,17 @@ function resolveMarkdownLink(rootDir: string, fromRelPath: string, href: string)
   if (!pathPart || EXTERNAL_LINK_RE.test(pathPart)) return null;
 
   const fromDir = dirname(join(rootDir, fromRelPath));
-  const abs = normalize(
-    pathPart.startsWith("/")
-      ? join(rootDir, pathPart.slice(1))
-      : join(fromDir, pathPart),
+  // Leading `/` in markdown is repo-root-relative (POSIX convention in links),
+  // not an OS absolute path.
+  const abs = resolve(
+    pathPart.startsWith("/") ? join(rootDir, pathPart.slice(1)) : join(fromDir, pathPart),
   );
-  const rootNorm = normalize(rootDir);
-  if (abs !== rootNorm && !abs.startsWith(`${rootNorm}/`)) return null;
-  return abs;
+  // NFR-PORT-07 / spike A6: do not re-implement containment with
+  // `startsWith(root + "/")` — after `normalize` on win32 the root uses `\` and
+  // every in-repo link fails the check, so rewriteBrokenLinks rewrites nothing
+  // and reports success. Use the single containment authority (NFR-SEC-16).
+  if (!isContained(abs, rootDir)) return null;
+  return realPathOrNearest(abs);
 }
 
 function relativeMarkdownLink(rootDir: string, fromRelPath: string, targetAbs: string): string {
@@ -60,8 +63,8 @@ export function rewriteBrokenLinks(
   oldPath: string,
   newPath: string,
 ): string[] {
-  const oldAbs = normalize(join(rootDir, normalizeRepoPath(oldPath)));
-  const newAbs = normalize(join(rootDir, normalizeRepoPath(newPath)));
+  const oldAbs = realPathOrNearest(join(rootDir, normalizeRepoPath(oldPath)));
+  const newAbs = realPathOrNearest(join(rootDir, normalizeRepoPath(newPath)));
   const rewritten: string[] = [];
 
   for (const absFile of listMarkdownFiles(rootDir)) {
@@ -71,7 +74,7 @@ export function rewriteBrokenLinks(
 
     const updated = original.replace(MARKDOWN_LINK_RE, (match, text: string, href: string) => {
       const resolved = resolveMarkdownLink(rootDir, relFile, href);
-      if (!resolved || normalize(resolved) !== oldAbs) return match;
+      if (!resolved || realPathOrNearest(resolved) !== oldAbs) return match;
 
       const suffix = href.includes("#")
         ? href.slice(href.indexOf("#"))
