@@ -5,7 +5,11 @@ import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { evaluateToolCall, createPermissionGate } from "../../backends/permissions";
+import {
+  evaluateToolCall,
+  createPermissionGate,
+  isDenylistedPath,
+} from "../../backends/permissions";
 import { DENYLIST_BASENAMES, DENYLIST_HOME_DIRS } from "../../shared/defaults";
 
 // A real directory, not a fabricated "/home/u". Containment resolves symlinks
@@ -98,6 +102,21 @@ describe("evaluateToolCall", () => {
       expect(decision.action, path).toBe("deny");
     }
   });
+
+  // NFR-SEC-04 / FR-PERM-04 (spike A2) — capitalisation must not open a hole.
+  it("denies denylist basenames regardless of letter case", () => {
+    const cased = [
+      `${AB}/secrets/.ENV`,
+      `${AB}/secrets/.Env`,
+      `${AB}/secrets/Auth.json`,
+      `${AB}/secrets/AUTH.JSON`,
+      `${HOME}/project/.eNv`,
+    ];
+    for (const path of cased) {
+      expect(isDenylistedPath(path, HOME), path).toBe(true);
+      expect(evaluate("read", { path }).action, path).toBe("deny");
+    }
+  });
 });
 
 describe("createPermissionGate sessionAllowedPaths", () => {
@@ -116,7 +135,11 @@ describe("createPermissionGate sessionAllowedPaths", () => {
   });
 
   it("denies reads for denylist paths even when sessionAllowedPaths includes them", async () => {
-    const allowed = new Set(["/anywhere/project/.env"]);
+    // Use a real absolute path — `resolve` on Windows rewrites `/anywhere/...`
+    // to a drive-rooted form, which made a POSIX-literal reason assertion fail
+    // without testing the denylist property.
+    const envPath = join(HOME, "project", ".env");
+    const allowed = new Set([envPath]);
     const gate = createPermissionGate(
       AB,
       async () => {
@@ -125,10 +148,8 @@ describe("createPermissionGate sessionAllowedPaths", () => {
       HOME,
       { sessionAllowedPaths: allowed },
     );
-    const outcome = await gate.check("read", { path: "/anywhere/project/.env" });
-    expect(outcome).toEqual({
-      block: true,
-      reason: "Access to /anywhere/project/.env is not allowed.",
-    });
+    const outcome = await gate.check("read", { path: envPath });
+    expect(outcome?.block).toBe(true);
+    expect(outcome?.reason).toMatch(/\.env/);
   });
 });

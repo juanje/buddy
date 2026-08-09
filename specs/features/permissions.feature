@@ -54,6 +54,15 @@ Feature: Permission zones (FR-PERM-01, FR-PERM-02, FR-PERM-03, FR-PERM-04)
     Then the operation is blocked
     And the user is never asked
 
+  # NFR-SEC-04 / FR-PERM-04 — case-insensitive basenames (Windows spike A2)
+  Scenario: Denylist basenames match case-insensitively
+    When the agent reads "secrets/Auth.json"
+    Then the operation is blocked
+    And the user is never asked
+    When the agent reads "secrets/.ENV"
+    Then the operation is blocked
+    And the user is never asked
+
   Scenario: Tools without a path argument stay in the buddy directory and are allowed
     When the agent lists files without a path
     Then the operation proceeds without asking the user

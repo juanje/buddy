@@ -41,7 +41,11 @@ const IDENTITY_FILES = ["SOUL.md"];
 const PROTECTED_CONFIG_RELPATHS = [join(".pi", "settings.json")];
 
 export function isDenylistedPath(absPath: string, home: string = homedir()): boolean {
-  if (DENYLIST_BASENAMES.includes(basename(absPath))) return true;
+  // NFR-SEC-04 / FR-PERM-04: basename match is case-insensitive. On NTFS an
+  // exact `includes` check fails open — `.ENV` opens the same file as `.env`
+  // and never hit the denylist (Windows spike A2).
+  const base = basename(absPath).toLowerCase();
+  if (DENYLIST_BASENAMES.some((name) => name.toLowerCase() === base)) return true;
   return DENYLIST_HOME_DIRS.some((dir) => isContained(absPath, join(home, dir)));
 }
 

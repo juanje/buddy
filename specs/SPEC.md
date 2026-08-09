@@ -806,6 +806,11 @@ Fork bomb defense:
 - **Given** the agent attempts to access `~/.ssh/*`, `~/.gnupg/*`, `~/.aws/*`, `**/.env`, or `**/auth.json`
 - **When** the permission layer evaluates the path
 - **Then** access is denied silently — no user prompt, no override possible
+- **And** denylist **basename** matches (`.env`, `auth.json`) are **case-insensitive**
+  (`.ENV`, `Auth.json`, `AUTH.JSON`) so a case-insensitive filesystem cannot
+  bypass the rule by capitalising the name (NFR-SEC-04 amendment / Windows
+  spike A2). Matching is case-insensitive on every platform — denying the
+  alternate spelling is fail-closed, not a Linux regression.
 
 **FR-PERM-05 — Implicit permission from messages** *(rejected)*
 
@@ -2913,7 +2918,7 @@ Further context on local-model evaluation methodology and findings:
 | NFR-SEC-01 | No bash or shell tool available to the agent — enforced at session creation via `excludeTools` |
 | NFR-SEC-02 | Zone model enforced in `beforeToolCall` hook — no file access bypasses the permission layer |
 | NFR-SEC-03 | SOUL.md writes require user confirmation; USER.md writes are silent (agent manages profile freely) |
-| NFR-SEC-04 | Hardcoded denylist paths are never accessible, regardless of user confirmation |
+| NFR-SEC-04 | Hardcoded denylist paths are never accessible, regardless of user confirmation. **Amended 2026-08-09 (spike A2):** denylist basenames (`.env`, `auth.json`) match case-insensitively — on NTFS/APFS an exact-case check fails open because `.ENV` and `.env` are the same file. |
 | NFR-SEC-05 | API keys stored with restrictive file permissions (mode 600); no credentials inside the buddy repo |
 | NFR-SEC-06 | The agent cannot modify its own model configuration (`.pi/settings.json` writes blocked) |
 | NFR-SEC-07 | buddy uses its own credential store (`~/.buddy/auth.json`), completely isolated from Pi CLI's `~/.pi/agent/auth.json`. Changing provider/model in one tool never affects the other. |
@@ -2964,7 +2969,7 @@ Opened from `buddy-windows-spike.md` (static audit). Packaging (NSIS/MSI) waits 
 | ID | Requirement | Spike | State |
 |----|-------------|-------|-------|
 | NFR-SEC-17 (amend) | On Windows, `~/.buddy/` credentials and path grants are not world-readable: apply explicit ACLs equivalent in intent to `0700`/`0600`, or document a conscious exception with a user-visible warning. Silent no-op `chmod` is forbidden. | A1 | open |
-| NFR-SEC-04 / FR-PERM-04 (amend) | Hardcoded denylist basename match is case-insensitive on case-insensitive filesystems (`.ENV`, `Auth.json`). | A2 | open |
+| NFR-SEC-04 / FR-PERM-04 (amend) | Hardcoded denylist basename match is case-insensitive (`.ENV`, `Auth.json`). | A2 | **closed** |
 | NFR-SEC-21 | Windows sensitive-path denylist covers GnuPG under `%APPDATA%\gnupg` (not only `~/.gnupg`) and Credential Manager dirs under `%APPDATA%` / `%LOCALAPPDATA%\Microsoft\Credentials`. | A3 | open |
 | NFR-SEC-22 | Before `write` / `edit` / `copy_file` / `move_file`, reject illegal Windows filenames (ADS via `:`, reserved device names `CON`/`NUL`/`PRN`/…). Loud failure — never alternate data streams or discard-to-NUL. | A4 | open |
 | NFR-SEC-15/16 (tests) | Containment covers Windows path shapes: junctions, UNC, `\\?\`, 8.3 short names, per-drive relative paths. | A5 | open |

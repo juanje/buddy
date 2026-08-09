@@ -64,7 +64,7 @@ path — `#` in parent breaks Vite). Installer drop (Block 2): `../buddy_DIST/wi
 | No distro-agnostic Linux artifact | open | `bundle.targets` is `["dmg", "app", "deb", "rpm"]`. AppImage was dropped (`03b91dc` — linuxdeploy broken on GH runners). Flatpak not started. No distro-agnostic option currently. |
 | NFR-PORT-06 — CRLF write guards (spike A7) | **closed** (`4ff79f4`) | Shared frontmatter matcher; unit + write-guard.feature CRLF scenario. |
 | NFR-SEC-17 amend — Windows ACLs for `~/.buddy/` (A1) | **blocks Windows** | Decision: explicit ACLs (not silent chmod). |
-| NFR-SEC-04 / FR-PERM-04 amend — case-insensitive denylist (A2) | **blocks Windows** | Fail-open on NTFS today. |
+| NFR-SEC-04 / FR-PERM-04 amend — case-insensitive denylist (A2) | **closed** | Basename match via case-fold; unit + permissions.feature. |
 | NFR-SEC-21 — Windows sensitive paths (A3) | open | `%APPDATA%\gnupg` + Credential Manager dirs. |
 | NFR-SEC-22 — illegal/reserved filenames (A4) | **blocks Windows** | ADS `:` and `NUL`/`CON`/… |
 | NFR-SEC-15/16 — containment Windows shapes (A5) | **blocks Windows** | Junctions, UNC, `\\?\`, short names. |
