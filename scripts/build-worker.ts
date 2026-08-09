@@ -8,10 +8,11 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
-  bunTargetFlag,
+  bunCompileArgs,
   resolveSidecarTarget,
   sidecarOutPath,
 } from "./sidecar-target";
+import { patchExeToWindowsGui } from "./windows-pe-subsystem";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -40,7 +41,6 @@ function run(cmd: string, args: string[]): void {
 const target = resolveSidecarTarget();
 const outRel = sidecarOutPath(target);
 const outAbs = join(ROOT, outRel);
-const flag = bunTargetFlag(target);
 const bun = bunBin();
 
 mkdirSync(dirname(outAbs), { recursive: true });
@@ -49,10 +49,14 @@ console.log("Snapshotting embedded assets (templates + prompts)…");
 run(bun, ["scripts/generate-embedded-assets.ts"]);
 
 console.log(`Compiling worker sidecar for ${target}…`);
-const buildArgs = ["build", "--compile"];
-if (flag) buildArgs.push(flag);
-buildArgs.push("backends/sidecar-entry.ts", "--outfile", outRel);
-run(bun, buildArgs);
+run(bun, bunCompileArgs(target, outRel));
+
+if (target.includes("windows")) {
+  // Bun's --windows-hide-console is kept in bunCompileArgs but does not change
+  // the PE subsystem on bun 1.3.x — patch explicitly (NFR-PORT-09 / C2).
+  const { before, after } = patchExeToWindowsGui(outAbs);
+  console.log(`Windows PE subsystem: ${before} → ${after} (2=GUI, no console)`);
+}
 
 if (process.platform !== "win32") {
   try {

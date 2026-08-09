@@ -65,6 +65,24 @@ export function sidecarOutPath(rustTriple: string): string {
   return rustTriple.includes("windows") ? `${base}.exe` : base;
 }
 
+/**
+ * Args for `bun build --compile` of the agent-worker sidecar (NFR-PORT-09 / spike C2).
+ * Windows targets pass `--windows-hide-console` (documented Bun flag). On bun 1.3.x
+ * that flag alone does not flip the PE subsystem — `build-worker.ts` also runs
+ * `patchExeToWindowsGui`. tauri-plugin-js has no CREATE_NO_WINDOW; stderr still
+ * reaches the app via onStderr pipes.
+ */
+export function bunCompileArgs(rustTriple: string, outRel: string): string[] {
+  const args = ["build", "--compile"];
+  const flag = bunTargetFlag(rustTriple);
+  if (flag) args.push(flag);
+  if (rustTriple.includes("windows")) {
+    args.push("--windows-hide-console");
+  }
+  args.push("backends/sidecar-entry.ts", "--outfile", outRel);
+  return args;
+}
+
 /** Resolve the triple: env override → rustc → platform fallback. */
 export function resolveSidecarTarget(
   env: NodeJS.ProcessEnv = process.env,

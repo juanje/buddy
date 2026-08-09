@@ -3,6 +3,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  bunCompileArgs,
   bunTargetFlag,
   platformFallbackTriple,
   resolveSidecarTarget,
@@ -32,6 +33,32 @@ describe("sidecarOutPath", () => {
     expect(sidecarOutPath("x86_64-unknown-linux-gnu")).toBe(
       "src-tauri/binaries/agent-worker-x86_64-unknown-linux-gnu",
     );
+  });
+});
+
+describe("bunCompileArgs", () => {
+  it("adds --windows-hide-console for Windows triples (NFR-PORT-09 / C2)", () => {
+    const args = bunCompileArgs(
+      "x86_64-pc-windows-msvc",
+      "src-tauri/binaries/agent-worker-x86_64-pc-windows-msvc.exe",
+    );
+    expect(args).toContain("--compile");
+    expect(args).toContain("--windows-hide-console");
+    expect(args).toContain("--target=bun-windows-x64");
+    expect(args).toContain("backends/sidecar-entry.ts");
+    expect(args).toContain("--outfile");
+    expect(args.at(-1)).toBe(
+      "src-tauri/binaries/agent-worker-x86_64-pc-windows-msvc.exe",
+    );
+  });
+
+  it("omits --windows-hide-console on unix triples", () => {
+    const args = bunCompileArgs(
+      "x86_64-unknown-linux-gnu",
+      "src-tauri/binaries/agent-worker-x86_64-unknown-linux-gnu",
+    );
+    expect(args).not.toContain("--windows-hide-console");
+    expect(args).toContain("--target=bun-linux-x64");
   });
 });
 

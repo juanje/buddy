@@ -2971,6 +2971,7 @@ Further context on local-model evaluation methodology and findings:
 | NFR-PORT-05 | Core app prompts live in `~/.buddy/prompts/`, not inside rootDir. On any app semver change (major, minor, or patch), bundled content overwrites `~/.buddy/prompts/` and `~/.buddy/docs/` (see NFR-MIGRATE-06). User content in rootDir is never touched. |
 | NFR-PORT-06 | Write-path guards that depend on detecting YAML frontmatter (FR-HEBB-06 Hebbian counter restore, FR-GUARD-01 frontmatter-strip detect) accept CRLF as well as LF. Detection uses the shared `shared/frontmatter.ts` matcher — not a second `startsWith("---\n")` check. **Why:** Git for Windows defaults to `core.autocrlf=true`; an LF-only guard returns null / "no frontmatter" and silently disarms FR-HEBB-06 / FR-GUARD-01 on a CRLF working tree. `parseFrontmatter` was already CRLF-tolerant; the guards were not. Opened from the Windows static spike (2026-08-08) finding A7. |
 | NFR-PORT-07 | When consolidation relocates a brain file, markdown link rewrite resolves targets with `isContained` / `realPathOrNearest` (NFR-SEC-15/16), never `normalize(root) + "/"` prefix matching. **Why:** on win32 `normalize` yields backslashes; the hardcoded `/` made every internal link resolve to `null`, so `rewriteBrokenLinks` reported success while leaving every link broken (spike A6). |
+| NFR-PORT-09 | On Windows, the packaged `agent-worker` sidecar and any detached reflect child must not open a visible console window. Build: `bun build --compile --windows-hide-console` plus a post-compile PE patch to `IMAGE_SUBSYSTEM_WINDOWS_GUI` (Bun 1.3.x still emits CUI despite the flag). Reflect `spawn`/`fork` pass `windowsHide: true`. **Why:** tauri-plugin-js spawns the sidecar with no `CREATE_NO_WINDOW`; a console-subsystem `.exe` shows a persistent black console for the whole session (spike C2). Tradeoff: no allocated console for interactive stderr — worker logs still reach the app via Tauri `onStderr` pipes. |
 
 ### 4.4.0 Windows portability (open — Block 1 before any Windows installer)
 
@@ -2987,6 +2988,7 @@ Opened from `buddy-windows-spike.md` (static audit). Packaging (NSIS/MSI) waits 
 | NFR-PORT-06 | See table above (CRLF write guards). | A7 | **closed** (`4ff79f4`) |
 | NFR-PORT-08 | New buddy instances get a `.gitattributes` that keeps markdown/text LF; `create-buddy` does not leave CRLF policy to Git for Windows defaults alone. | A8 | **closed** |
 | NFR-REL-11 | Reflect-child interrupt path is portable: must not rely solely on SIGTERM; must not shell out with POSIX-only quoting; must use the same git lock as `commitAll` (FR-REFLECT-06). | A9 | **closed** |
+| NFR-PORT-09 | No visible console for packaged sidecar / reflect child (`--windows-hide-console` + `windowsHide`). | C2 | **closed** |
 
 ### 4.4.1 File Format (NFR-FORMAT)
 

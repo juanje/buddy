@@ -39,6 +39,16 @@ export function isCompiledBinary(): boolean {
   return typeof (globalThis as any).Bun !== "undefined";
 }
 
+/**
+ * Windows-only spawn flag so a detached reflect child does not flash a console
+ * (NFR-PORT-09 / spike C2). Harmless no-op object on other platforms.
+ */
+export function windowsHideSpawnOption(
+  platform: NodeJS.Platform = process.platform,
+): { windowsHide?: true } {
+  return platform === "win32" ? { windowsHide: true } : {};
+}
+
 function buildReflectArgs(options: SpawnReflectOptions): string[] {
   const args = [
     options.rootDir,
@@ -88,6 +98,7 @@ export function spawnReflectChild(options: SpawnReflectOptions): number | undefi
       detached: true,
       stdio: "ignore",
       env: { ...process.env, [REFLECT_CHILD_ENV_KEY]: REFLECT_CHILD_ENV_VALUE },
+      ...windowsHideSpawnOption(),
     });
     child.unref();
     const pid = child.pid;
@@ -102,6 +113,7 @@ export function spawnReflectChild(options: SpawnReflectOptions): number | undefi
     stdio: "ignore",
     execArgv: ["--import", "tsx"],
     env: { ...process.env, [REFLECT_CHILD_ENV_KEY]: REFLECT_CHILD_ENV_VALUE },
+    ...windowsHideSpawnOption(),
   });
   child.unref();
   const pid = child.pid;
