@@ -256,6 +256,7 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
     if (!id) return;
     oauthLoggingIn.set(true);
     oauthError.set(undefined);
+    oauthPrompt.set(undefined);
     try {
       const result = await worker.loginOAuth(id);
       if (result.success) {
@@ -266,6 +267,7 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
       }
     } finally {
       oauthLoggingIn.set(false);
+      oauthPrompt.set(undefined);
     }
   }
 
