@@ -74,6 +74,7 @@ path — `#` in parent breaks Vite). Installer drop (Block 2): `../buddy_DIST/wi
 | Detached reflect child (spike C1) | open | Needs real Windows machine after Block 1. |
 | Console window for sidecar / reflect (spike C2) | **closed** | NFR-PORT-09: `--windows-hide-console` + PE GUI patch (`patchExeToWindowsGui`); `windowsHide: true` on reflect spawn. Needs worker rebuild (+ NSIS if verifying installed app). |
 | OpenAI OAuth on Windows (NFR-PORT-10) | **closed** | Prefer SDK `device_code` over localhost:1455 — Hyper-V excludes 1455 (`EACCES`); `PI_OAUTH_CALLBACK_HOST=::` alone insufficient (smoke 20260809b). Unit + setup-oauth.feature. |
+| Empty-folder setup on Windows (NFR-PORT-11) | **closed** | smoke 20260809c — Bun `mkdirSync({recursive:true})` throws `EEXIST` on Explorer ReadOnly empty dirs; `ensureDirectory` adopts + `attrib -R`. Unit in `ensure-directory.test.ts`. |
 | `build-worker` Windows target + NSIS (Block 2) | **closed** (local) | `build-worker.ts` → `.exe`; `nsis` + `icon.ico`; local `buddy_0.1.18_x64-setup.exe` produced. CI `windows-latest` still open (B7/B8). |
 
 ## Backlog (post-MVP)

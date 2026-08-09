@@ -2,7 +2,7 @@
 // Pure file operations + git: NO LLM call happens here by design. The wizard
 // collects personalization in a form; USER.md is populated from that data.
 
-import { cpSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { simpleGit } from "simple-git";
@@ -10,6 +10,7 @@ import { simpleGit } from "simple-git";
 import type { SetupConfig } from "../shared/api";
 import { DEFAULT_LANGUAGE, DEFAULT_MONTHLY_BUDGET, GIT_USER_EMAIL, GIT_USER_NAME } from "../shared/defaults";
 import { getEmbeddedAssets } from "./embedded-assets";
+import { ensureDirectory } from "./ensure-directory";
 import { writeStateFile } from "./state-file";
 import { writePiSettings } from "../shared/pi-settings";
 import { userProfilePath } from "./brain-paths";
@@ -25,6 +26,10 @@ export function defaultTemplatesDir(): string {
  * templates/ on disk (dev).
  */
 export function copyTemplates(targetDir: string, templatesDir?: string): void {
+  // NFR-PORT-11: adopt an existing empty home (incl. Explorer ReadOnly) before
+  // cpSync / per-file mkdir — Bun's recursive mkdir throws EEXIST on Windows.
+  ensureDirectory(targetDir);
+
   if (templatesDir) {
     cpSync(templatesDir, targetDir, { recursive: true });
     return;
@@ -34,7 +39,7 @@ export function copyTemplates(targetDir: string, templatesDir?: string): void {
   if (embedded) {
     for (const [path, content] of Object.entries(embedded.templates)) {
       const target = join(targetDir, path);
-      mkdirSync(dirname(target), { recursive: true });
+      ensureDirectory(dirname(target));
       writeFileSync(target, content, "utf8");
     }
     return;
@@ -80,6 +85,9 @@ export async function createBuddyInstance(options: CreateBuddyOptions): Promise<
   const { config, configPath } = options;
   const root = config.rootDir;
 
+  // FR-SETUP-04/08 + NFR-PORT-11: ok-empty homes must succeed, including
+  // Windows folders that already exist (Explorer often marks them ReadOnly).
+  ensureDirectory(root);
   copyTemplates(root, options.templatesDir);
   // NFR-PORT-08: even if a custom templatesDir omits it, new instances must not
   // inherit Git for Windows CRLF defaults alone.

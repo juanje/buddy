@@ -549,6 +549,7 @@ which the reflect sanitizer already strips.
 - **And** Pi settings are written (`.pi/settings.json`) with the selected provider/model
 - **And** git is initialized with an initial commit
 - **And** no LLM call is made during this phase
+- **And** when the chosen location already exists as an **empty** directory (`ok-empty`, FR-SETUP-04/11), setup adopts it — it must not fail with a raw `EEXIST` from `mkdir` (NFR-PORT-11). A non-empty folder that is not an importable instance is refused with a plain-language error (FR-SETUP-11), not a syscall dump.
 
 **FR-SETUP-09 — First conversation with warm handoff**
 
@@ -2973,6 +2974,7 @@ Further context on local-model evaluation methodology and findings:
 | NFR-PORT-07 | When consolidation relocates a brain file, markdown link rewrite resolves targets with `isContained` / `realPathOrNearest` (NFR-SEC-15/16), never `normalize(root) + "/"` prefix matching. **Why:** on win32 `normalize` yields backslashes; the hardcoded `/` made every internal link resolve to `null`, so `rewriteBrokenLinks` reported success while leaving every link broken (spike A6). |
 | NFR-PORT-09 | On Windows, the packaged `agent-worker` sidecar and any detached reflect child must not open a visible console window. Build: `bun build --compile --windows-hide-console` plus a post-compile PE patch to `IMAGE_SUBSYSTEM_WINDOWS_GUI` (Bun 1.3.x still emits CUI despite the flag). Reflect `spawn`/`fork` pass `windowsHide: true`. **Why:** tauri-plugin-js spawns the sidecar with no `CREATE_NO_WINDOW`; a console-subsystem `.exe` shows a persistent black console for the whole session (spike C2). Tradeoff: no allocated console for interactive stderr — worker logs still reach the app via Tauri `onStderr` pipes. |
 | NFR-PORT-10 | On Windows, when the Pi SDK OAuth login offers both `browser` and `device_code` (OpenAI Codex), Buddy auto-selects `device_code` and surfaces the user code + verification URI in the UI. Browser-callback OAuth (localhost:1455) remains the default on non-Windows. **Why:** smoke 20260809b — `PI_OAUTH_CALLBACK_HOST=::` alone is insufficient. On WHITEBEAST, `localhost` resolves to `::1` first **and** Hyper-V / WinNAT excludes TCP 1367–1466 (includes 1455), so `listen(1455, …)` fails with `EACCES`; pi-ai's listen error handler resolves `waitForCode` → null → Buddy "Missing authorization code" while the browser shows `ERR_CONNECTION_REFUSED`. Device code avoids the local callback server entirely. |
+| NFR-PORT-11 | Creating a new instance into an existing empty directory must succeed on Windows (and POSIX). The worker must not call Bun/Node `mkdir` in a way that surfaces raw `EEXIST` when the path already exists as a directory — including Explorer **ReadOnly** empty folders. Implementation: `ensureDirectory` adopts existing dirs, clears the Windows directory ReadOnly attribute (`attrib -R`, best effort), and creates missing parents without relying on Bun's broken `mkdirSync({ recursive: true })` on ReadOnly paths. Non-empty non-buddy folders stay refused via FR-SETUP-11. **Why:** smoke 20260809c — Pedro chose `D:\WORK\__CAOS__personal__` (empty, Explorer ReadOnly); after OAuth, setup failed with `EEXIST: file already exists, mkdir '…\__CAOS__personal__'` from the Bun-compiled sidecar (oven-sh/bun#34413). |
 
 ### 4.4.0 Windows portability (open — Block 1 before any Windows installer)
 
@@ -2991,6 +2993,7 @@ Opened from `buddy-windows-spike.md` (static audit). Packaging (NSIS/MSI) waits 
 | NFR-REL-11 | Reflect-child interrupt path is portable: must not rely solely on SIGTERM; must not shell out with POSIX-only quoting; must use the same git lock as `commitAll` (FR-REFLECT-06). | A9 | **closed** |
 | NFR-PORT-09 | No visible console for packaged sidecar / reflect child (`--windows-hide-console` + `windowsHide`). | C2 | **closed** |
 | NFR-PORT-10 | OpenAI OAuth on Windows prefers SDK `device_code` over localhost:1455 browser callback (Hyper-V excluded ports + `::1` / silent listen failure). | smoke / post-C | **closed** |
+| NFR-PORT-11 | Setup adopts existing empty dirs on Windows; no raw `EEXIST` from Bun mkdir on Explorer ReadOnly folders (`ensureDirectory` + `attrib -R`). | smoke 20260809c | **closed** |
 
 ### 4.4.1 File Format (NFR-FORMAT)
 
