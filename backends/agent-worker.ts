@@ -11,6 +11,16 @@
 // prompt assembly, auto-commit lifecycle, forked reflect on shutdown, and
 // heartbeat scheduler.
 
+// Workaround: Pi SDK's openai-codex.js loads node:crypto and node:http via
+// async import() at module init but uses them synchronously in createState().
+// In dev (no sidecar-entry.ts), the module isn't loaded until the user clicks
+// "Sign in", and the Promises may not have resolved yet — first attempt fails
+// with "OpenAI Codex OAuth is only available in Node.js environments".
+// Importing the module early forces those Promises to settle before the wizard.
+// In prod, sidecar-entry.ts imports it statically via registerBunOAuthFlows().
+// Remove when upstream fixes the race (pi-ai openai-codex.js).
+import("../node_modules/@earendil-works/pi-coding-agent/node_modules/@earendil-works/pi-ai/dist/auth/oauth/openai-codex.js").catch(() => {});
+
 import { RPCChannel } from "kkrpc";
 import { nodeStdioTransport } from "kkrpc/stdio";
 
