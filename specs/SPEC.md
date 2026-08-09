@@ -2959,7 +2959,7 @@ Further context on local-model evaluation methodology and findings:
 
 ### 4.4.0 Windows portability (open — Block 1 before any Windows installer)
 
-Opened from `buddy-windows-spike.md` (static audit). Packaging (NSIS/MSI) waits until the security/correctness rows below have acceptance tests. Decision defaults (Pedro 2026-08-09): ACLs for `~/.buddy/`; Windows denylist includes `%APPDATA%\gnupg` and Credential Manager dirs; first artifact unsigned; work stays on a local branch (no push to upstream until asked).
+Opened from `buddy-windows-spike.md` (static audit). Packaging (NSIS/MSI) waits until the security/correctness rows below have acceptance tests. Decision defaults (Pedro 2026-08-09): ACLs for `~/.buddy/`; Windows denylist includes `%APPDATA%\gnupg` and Credential Manager dirs; first artifact unsigned; work stays on a local branch (no push to upstream until asked). Tooling worktree on this machine: `D:\WORK\PROJECTS\APPS.windows\buddy` (PARA `#64 @ BUDDY\CODE` is local origin only — path `#` breaks Vite).
 
 | ID | Requirement | Spike | State |
 |----|-------------|-------|-------|

@@ -52,8 +52,9 @@ Verified 2026-08-07 against `release.yml`, `scripts/build-worker.sh` and
 `tauri.conf.json`. CI builds macOS (ARM64 + x64) + Linux x64 (deb + rpm) on
 every tag since v0.1.0. **Windows:** no installer until Block 1 NFRs in
 `SPEC.md` §4.4.0 have tests (Spec → BDD/unit → code). Local work on branch
-`windows-port` only — do not push upstream until asked. Installer drop (when
-Block 2): outside this repo at `../DIST/windows/`.
+`windows-port` only — do not push upstream until asked. Tooling cwd:
+`D:\WORK\PROJECTS\APPS.windows\buddy` (not this PARA `CODE` path — `#` breaks
+Vite). Installer drop (Block 2): `../DIST/windows/`.
 
 | Item | State | Note |
 |------|-------|------|
