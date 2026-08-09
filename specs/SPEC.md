@@ -2982,7 +2982,7 @@ Opened from `buddy-windows-spike.md` (static audit). Packaging (NSIS/MSI) waits 
 | NFR-SEC-04 / FR-PERM-04 (amend) | Hardcoded denylist basename match is case-insensitive (`.ENV`, `Auth.json`). | A2 | **closed** |
 | NFR-SEC-21 | Windows sensitive-path denylist covers GnuPG under `%APPDATA%\gnupg` (not only `~/.gnupg`) and Credential Manager dirs under `%APPDATA%` / `%LOCALAPPDATA%\Microsoft\Credentials`. | A3 | **closed** |
 | NFR-SEC-22 | Before `write` / `edit` / `copy_file` / `move_file`, reject illegal Windows filenames (ADS via `:`, reserved device names `CON`/`NUL`/`PRN`/…). Loud failure — never alternate data streams or discard-to-NUL. | A4 | **closed** |
-| NFR-SEC-15/16 (tests) | Containment covers Windows path shapes: junctions, UNC, `\\?\`, 8.3 short names, per-drive relative paths. | A5 | open |
+| NFR-SEC-15/16 (tests) | Containment covers Windows path shapes: junctions, UNC, `\\?\`, 8.3 short names, per-drive relative paths. | A5 | **closed** |
 | NFR-PORT-07 | Consolidation link rewrite (`consolidation-relocate`) compares paths with platform-safe separators — no hardcoded `/` after `normalize` that disables rewrite on win32. Uses `isContained` (NFR-SEC-16). | A6 | **closed** |
 | NFR-PORT-06 | See table above (CRLF write guards). | A7 | **closed** (`4ff79f4`) |
 | NFR-PORT-08 | New buddy instances get a `.gitattributes` that keeps markdown/text LF; `create-buddy` does not leave CRLF policy to Git for Windows defaults alone. | A8 | open |

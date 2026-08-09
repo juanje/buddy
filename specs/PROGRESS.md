@@ -63,11 +63,11 @@ path — `#` in parent breaks Vite). Installer drop (Block 2): `../buddy_DIST/wi
 | Linux arm64 is never built | **gap, cheap** | `build-worker.sh` already maps `aarch64-unknown-linux-gnu`, and the release matrix only runs `ubuntu-22.04` at x86_64. The sidecar half of the work is done. |
 | No distro-agnostic Linux artifact | open | `bundle.targets` is `["dmg", "app", "deb", "rpm"]`. AppImage was dropped (`03b91dc` — linuxdeploy broken on GH runners). Flatpak not started. No distro-agnostic option currently. |
 | NFR-PORT-06 — CRLF write guards (spike A7) | **closed** (`4ff79f4`) | Shared frontmatter matcher; unit + write-guard.feature CRLF scenario. |
-| NFR-SEC-17 amend — Windows ACLs for `~/.buddy/` (A1) | **closed** | `applyRestrictiveAcl` via icacls; wired in state-file + ensureConfigDirMode. |
+| NFR-SEC-17 amend — Windows ACLs for `~/.buddy/` (A1) | **closed** (`8ff1f72`) | `applyRestrictiveAcl` via icacls (grant then strip inheritance); state-file + ensureConfigDirMode. |
 | NFR-SEC-04 / FR-PERM-04 amend — case-insensitive denylist (A2) | **closed** | Basename match via case-fold; unit + permissions.feature. |
 | NFR-SEC-21 — Windows sensitive paths (A3) | **closed** | `windowsDenylistRoots()` + `isDenylistedPath` env injection. |
 | NFR-SEC-22 — illegal/reserved filenames (A4) | **closed** | `shared/filename-safety.ts`; gate + file-tools + relocate. |
-| NFR-SEC-15/16 — containment Windows shapes (A5) | **blocks Windows** | Junctions, UNC, `\\?\`, short names. |
+| NFR-SEC-15/16 — containment Windows shapes (A5) | **closed** | `stripWin32ExtendedPrefix` in `realPathOrNearest`; junction / `\\?\` / 8.3 / drive-relative unit tests. |
 | NFR-PORT-07 — consolidation link rewrite separators (A6) | **closed** | `resolveMarkdownLink` → `isContained`; unit + consolidation-relocate.feature. |
 | NFR-PORT-08 — `.gitattributes` on create (A8) | open | After NFR-PORT-06. |
 | NFR-REL-11 — portable reflect interrupt (A9) | open | SIGTERM / shell quoting / git lock. |

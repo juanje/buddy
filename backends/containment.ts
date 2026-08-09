@@ -28,6 +28,20 @@ import { basename, dirname, join, relative, resolve, sep } from "node:path";
 import { isWithin } from "../shared/path-utils";
 
 /**
+ * Strip the Win32 extended-length prefix so two spellings of the same path
+ * compare equal under `relative` (spike A5 / NFR-SEC-15).
+ *
+ * Node's `realpathSync` keeps `\\?\` when the input had it. Mixing a prefixed
+ * child with an unprefixed root makes `path.relative` return an absolute-looking
+ * junk path (`D:\?\C:\…`), and `isWithin` then rejects every contained file.
+ */
+export function stripWin32ExtendedPrefix(path: string): string {
+  if (path.startsWith("\\\\?\\UNC\\")) return `\\${path.slice(7)}`;
+  if (path.startsWith("\\\\?\\")) return path.slice(4);
+  return path;
+}
+
+/**
  * The real path of `path`, resolving every symlink along the way.
  *
  * A path that does not exist yet still has to be judged — write and move
@@ -36,13 +50,13 @@ import { isWithin } from "../shared/path-utils";
  * symlink could redirect the write, so resolving it is what matters.
  */
 export function realPathOrNearest(path: string): string {
-  const absolute = resolve(path);
+  const absolute = stripWin32ExtendedPrefix(resolve(path));
   let current = absolute;
   const pending: string[] = [];
 
   for (;;) {
     try {
-      const real = realpathSync(current);
+      const real = stripWin32ExtendedPrefix(realpathSync(current));
       return pending.length === 0 ? real : join(real, ...pending);
     } catch {
       const parent = dirname(current);
