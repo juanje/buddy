@@ -25,7 +25,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["dmg", "app", "deb", "rpm"],
+    "targets": ["dmg", "app", "deb", "rpm", "nsis"],
     "category": "Utility",
     "externalBin": ["binaries/agent-worker"],
     "icon": [
@@ -35,7 +35,8 @@
       "icons/128x128@2x.png",
       "icons/256x256.png",
       "icons/icon.png",
-      "icons/icon.icns"
+      "icons/icon.icns",
+      "icons/icon.ico"
     ],
     "macOS": {
       "minimumSystemVersion": "10.15",
@@ -47,6 +48,11 @@
       },
       "rpm": {
         "depends": ["git-core"]
+      }
+    },
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser"
       }
     }
   }
