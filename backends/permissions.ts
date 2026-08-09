@@ -1,8 +1,9 @@
 // backends/permissions.ts — permission zones for file tools (FR-PERM-01..04).
 //
 // Zones:
-//   denylist — ~/.ssh/*, ~/.gnupg/*, ~/.aws/*, **/.env, **/auth.json:
-//              blocked silently, no prompt, no override (FR-PERM-04).
+//   denylist — ~/.ssh/*, ~/.gnupg/*, ~/.aws/*, **/.env, **/auth.json,
+//              plus Windows %APPDATA%\gnupg and Credential Manager dirs
+//              (NFR-SEC-21): blocked silently, no prompt, no override (FR-PERM-04).
 //   identity — writes to SOUL.md ask for confirmation (FR-PERM-02).
 //              USER.md writes are Zone 1 (silent allow).
 //   ab-home  — anything else inside the buddy directory: silent allow (FR-PERM-01).
@@ -55,13 +56,40 @@ const IDENTITY_FILES = ["SOUL.md"];
 /** Agent-managed config paths that must never be modified by the agent (NFR-SEC-06). */
 const PROTECTED_CONFIG_RELPATHS = [join(".pi", "settings.json")];
 
-export function isDenylistedPath(absPath: string, home: string = homedir()): boolean {
+/**
+ * Absolute denylist roots for Windows credential stores (NFR-SEC-21 / spike A3).
+ * GnuPG uses `%APPDATA%\gnupg` (no dot); Credential Manager uses Microsoft\Credentials
+ * under Roaming and Local AppData. Inject `env` in tests; production uses `process.env`.
+ */
+export function windowsDenylistRoots(
+  env: NodeJS.ProcessEnv = process.env,
+): string[] {
+  const roots: string[] = [];
+  if (env.APPDATA) {
+    roots.push(join(env.APPDATA, "gnupg"));
+    roots.push(join(env.APPDATA, "Microsoft", "Credentials"));
+  }
+  if (env.LOCALAPPDATA) {
+    roots.push(join(env.LOCALAPPDATA, "Microsoft", "Credentials"));
+  }
+  return roots;
+}
+
+export function isDenylistedPath(
+  absPath: string,
+  home: string = homedir(),
+  env: NodeJS.ProcessEnv = process.env,
+): boolean {
   // NFR-SEC-04 / FR-PERM-04: basename match is case-insensitive. On NTFS an
   // exact `includes` check fails open — `.ENV` opens the same file as `.env`
   // and never hit the denylist (Windows spike A2).
   const base = basename(absPath).toLowerCase();
   if (DENYLIST_BASENAMES.some((name) => name.toLowerCase() === base)) return true;
-  return DENYLIST_HOME_DIRS.some((dir) => isContained(absPath, join(home, dir)));
+  if (DENYLIST_HOME_DIRS.some((dir) => isContained(absPath, join(home, dir)))) {
+    return true;
+  }
+  // NFR-SEC-21: Windows AppData locations that DENYLIST_HOME_DIRS miss.
+  return windowsDenylistRoots(env).some((root) => isContained(absPath, root));
 }
 
 function isProtectedConfig(absPath: string, rootDir: string): boolean {

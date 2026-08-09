@@ -9,6 +9,7 @@ import {
   evaluateToolCall,
   createPermissionGate,
   isDenylistedPath,
+  windowsDenylistRoots,
 } from "../../backends/permissions";
 import { DENYLIST_BASENAMES, DENYLIST_HOME_DIRS } from "../../shared/defaults";
 
@@ -115,6 +116,50 @@ describe("evaluateToolCall", () => {
     for (const path of cased) {
       expect(isDenylistedPath(path, HOME), path).toBe(true);
       expect(evaluate("read", { path }).action, path).toBe("deny");
+    }
+  });
+
+  // NFR-SEC-21 / spike A3 — Windows GnuPG + Credential Manager (not ~/.gnupg).
+  it("denies Windows AppData gnupg and Credential Manager paths", () => {
+    const appdata = join(HOME, "AppData", "Roaming");
+    const local = join(HOME, "AppData", "Local");
+    mkdirSync(join(appdata, "gnupg", "private-keys-v1.d"), { recursive: true });
+    mkdirSync(join(appdata, "Microsoft", "Credentials"), { recursive: true });
+    mkdirSync(join(local, "Microsoft", "Credentials"), { recursive: true });
+
+    const env = { APPDATA: appdata, LOCALAPPDATA: local };
+    expect(windowsDenylistRoots(env)).toEqual([
+      join(appdata, "gnupg"),
+      join(appdata, "Microsoft", "Credentials"),
+      join(local, "Microsoft", "Credentials"),
+    ]);
+
+    const secrets = [
+      join(appdata, "gnupg", "private-keys-v1.d", "key"),
+      join(appdata, "Microsoft", "Credentials", "blob"),
+      join(local, "Microsoft", "Credentials", "blob"),
+    ];
+    for (const path of secrets) {
+      expect(isDenylistedPath(path, HOME, env), path).toBe(true);
+    }
+    // Without AppData env (POSIX-like), those absolute paths are not denylisted
+    // by the Windows roots — only basename / ~/.gnupg rules apply.
+    expect(isDenylistedPath(secrets[0], HOME, {})).toBe(false);
+
+    // Production path: evaluateToolCall reads process.env.
+    const prevApp = process.env.APPDATA;
+    const prevLocal = process.env.LOCALAPPDATA;
+    process.env.APPDATA = appdata;
+    process.env.LOCALAPPDATA = local;
+    try {
+      for (const path of secrets) {
+        expect(evaluateToolCall("read", { path }, AB, HOME).action, path).toBe("deny");
+      }
+    } finally {
+      if (prevApp === undefined) delete process.env.APPDATA;
+      else process.env.APPDATA = prevApp;
+      if (prevLocal === undefined) delete process.env.LOCALAPPDATA;
+      else process.env.LOCALAPPDATA = prevLocal;
     }
   });
 });

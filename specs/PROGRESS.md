@@ -65,7 +65,7 @@ path — `#` in parent breaks Vite). Installer drop (Block 2): `../buddy_DIST/wi
 | NFR-PORT-06 — CRLF write guards (spike A7) | **closed** (`4ff79f4`) | Shared frontmatter matcher; unit + write-guard.feature CRLF scenario. |
 | NFR-SEC-17 amend — Windows ACLs for `~/.buddy/` (A1) | **blocks Windows** | Decision: explicit ACLs (not silent chmod). |
 | NFR-SEC-04 / FR-PERM-04 amend — case-insensitive denylist (A2) | **closed** | Basename match via case-fold; unit + permissions.feature. |
-| NFR-SEC-21 — Windows sensitive paths (A3) | open | `%APPDATA%\gnupg` + Credential Manager dirs. |
+| NFR-SEC-21 — Windows sensitive paths (A3) | **closed** | `windowsDenylistRoots()` + `isDenylistedPath` env injection. |
 | NFR-SEC-22 — illegal/reserved filenames (A4) | **closed** | `shared/filename-safety.ts`; gate + file-tools + relocate. |
 | NFR-SEC-15/16 — containment Windows shapes (A5) | **blocks Windows** | Junctions, UNC, `\\?\`, short names. |
 | NFR-PORT-07 — consolidation link rewrite separators (A6) | **closed** | `resolveMarkdownLink` → `isContained`; unit + consolidation-relocate.feature. |
