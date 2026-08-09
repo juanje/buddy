@@ -65,7 +65,11 @@ import { bootRefreshIfNeeded } from "./boot-refresh";
 import { pruneSessionArtifacts } from "./session-log-prune";
 import { createUsageTracker, resolveMonthlyBudget, type UsageTracker } from "./usage-tracker";
 import { createPromptQueue } from "./prompt-queue";
+import { applyWindowsOAuthCallbackHost } from "./oauth-callback-host";
 import { readViewableFile } from "./viewable-file";
+
+// Dev path spawns this file directly (no sidecar-entry). Same Windows OAuth bind.
+applyWindowsOAuthCallbackHost();
 
 /**
  * Fire-and-forget notification to the frontend.
