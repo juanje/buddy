@@ -53,8 +53,9 @@ Verified 2026-08-07 against `release.yml`, `scripts/build-worker.sh` and
 every tag since v0.1.0. **Windows:** no installer until Block 1 NFRs in
 `SPEC.md` §4.4.0 have tests (Spec → BDD/unit → code). Local work on branch
 `windows-port` only — do not push upstream until asked. Tooling cwd:
-`D:\WORK\PROJECTS\APPS.windows\buddy` (not this PARA `CODE` path — `#` breaks
-Vite). Installer drop (Block 2): `../DIST/windows/`.
+`D:\WORK\PROJECTS\APPS.windows\buddy` (not this PARA `buddy_repo_original`
+path — `#` in parent breaks Vite). Installer drop (Block 2): `../DIST/windows/`
+(empty until then). Shortcut from PARA hub: `../buddy_worktree (APPS.windows).lnk`.
 
 | Item | State | Note |
 |------|-------|------|
