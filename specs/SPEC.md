@@ -2986,7 +2986,7 @@ Opened from `buddy-windows-spike.md` (static audit). Packaging (NSIS/MSI) waits 
 | NFR-PORT-07 | Consolidation link rewrite (`consolidation-relocate`) compares paths with platform-safe separators — no hardcoded `/` after `normalize` that disables rewrite on win32. Uses `isContained` (NFR-SEC-16). | A6 | **closed** |
 | NFR-PORT-06 | See table above (CRLF write guards). | A7 | **closed** (`4ff79f4`) |
 | NFR-PORT-08 | New buddy instances get a `.gitattributes` that keeps markdown/text LF; `create-buddy` does not leave CRLF policy to Git for Windows defaults alone. | A8 | **closed** |
-| NFR-REL-11 | Reflect-child interrupt path is portable: must not rely solely on SIGTERM; must not shell out with POSIX-only quoting; must use the same git lock as `commitAll` (FR-REFLECT-06). | A9 | open |
+| NFR-REL-11 | Reflect-child interrupt path is portable: must not rely solely on SIGTERM; must not shell out with POSIX-only quoting; must use the same git lock as `commitAll` (FR-REFLECT-06). | A9 | **closed** |
 
 ### 4.4.1 File Format (NFR-FORMAT)
 

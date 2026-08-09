@@ -70,7 +70,7 @@ path — `#` in parent breaks Vite). Installer drop (Block 2): `../buddy_DIST/wi
 | NFR-SEC-15/16 — containment Windows shapes (A5) | **closed** | `stripWin32ExtendedPrefix` in `realPathOrNearest`; junction / `\\?\` / 8.3 / drive-relative unit tests. |
 | NFR-PORT-07 — consolidation link rewrite separators (A6) | **closed** | `resolveMarkdownLink` → `isContained`; unit + consolidation-relocate.feature. |
 | NFR-PORT-08 — `.gitattributes` on create (A8) | **closed** | `templates/.gitattributes` + `ensureTextEolAttributes` on create/adopt. |
-| NFR-REL-11 — portable reflect interrupt (A9) | open | SIGTERM / shell quoting / git lock. |
+| NFR-REL-11 — portable reflect interrupt (A9) | **closed** | `reflect-interrupt.ts`: SIGINT/SIGTERM(/SIGBREAK) → `commitAll`. |
 | Detached reflect child (spike C1) | open | Needs real Windows machine after Block 1. |
 | `build-worker` Windows target + NSIS (Block 2) | blocked | Mechanical after A1–A7; no `windows-latest` CI until correct. |
 
