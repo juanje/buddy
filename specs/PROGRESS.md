@@ -60,7 +60,7 @@ Block 2): outside this repo at `../DIST/windows/`.
 | Workflow actions | current | `checkout` and `setup-node` on v7, `setup-bun@v2`, `rust-cache@v2`, `tauri-action@v1` all on their current major. Why each v7 change does not apply is in a comment in `ci.yml` — worth re-reading before adding a `pull_request_target` or `workflow_run` trigger. Dependabot raises majors as their own PR. |
 | Linux arm64 is never built | **gap, cheap** | `build-worker.sh` already maps `aarch64-unknown-linux-gnu`, and the release matrix only runs `ubuntu-22.04` at x86_64. The sidecar half of the work is done. |
 | No distro-agnostic Linux artifact | open | `bundle.targets` is `["dmg", "app", "deb", "rpm"]`. AppImage was dropped (`03b91dc` — linuxdeploy broken on GH runners). Flatpak not started. No distro-agnostic option currently. |
-| NFR-PORT-06 — CRLF write guards (spike A7) | **in progress** | Hebbian + heading guards must use shared frontmatter matcher. First Windows Block 1 slice. |
+| NFR-PORT-06 — CRLF write guards (spike A7) | **closed** (`4ff79f4`) | Shared frontmatter matcher; unit + write-guard.feature CRLF scenario. |
 | NFR-SEC-17 amend — Windows ACLs for `~/.buddy/` (A1) | **blocks Windows** | Decision: explicit ACLs (not silent chmod). |
 | NFR-SEC-04 / FR-PERM-04 amend — case-insensitive denylist (A2) | **blocks Windows** | Fail-open on NTFS today. |
 | NFR-SEC-21 — Windows sensitive paths (A3) | open | `%APPDATA%\gnupg` + Credential Manager dirs. |
