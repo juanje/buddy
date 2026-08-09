@@ -5,12 +5,12 @@
 import { cpSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { simpleGit } from "simple-git";
 
 import type { SetupConfig } from "../shared/api";
 import { DEFAULT_LANGUAGE, DEFAULT_MONTHLY_BUDGET, GIT_USER_EMAIL, GIT_USER_NAME } from "../shared/defaults";
 import { getEmbeddedAssets } from "./embedded-assets";
 import { ensureDirectory } from "./ensure-directory";
+import { gitClient } from "./git";
 import { writeStateFile } from "./state-file";
 import { writePiSettings } from "../shared/pi-settings";
 import { userProfilePath } from "./brain-paths";
@@ -103,7 +103,7 @@ export async function createBuddyInstance(options: CreateBuddyOptions): Promise<
 
   // Git identity is repo-local: the target user may have no global git
   // config, and setup must never fail on that (NFR: git invisible).
-  const git = simpleGit(root);
+  const git = gitClient(root);
   await git.init();
   await git.addConfig("user.name", GIT_USER_NAME);
   await git.addConfig("user.email", GIT_USER_EMAIL);
@@ -143,7 +143,7 @@ export function adoptBuddyInstance(options: Pick<CreateBuddyOptions, "config" | 
  */
 export async function ensureGitRepository(rootDir: string): Promise<boolean> {
   if (existsSync(join(rootDir, ".git"))) return false;
-  const git = simpleGit(rootDir);
+  const git = gitClient(rootDir);
   await git.init();
   await git.addConfig("user.name", GIT_USER_NAME);
   await git.addConfig("user.email", GIT_USER_EMAIL);

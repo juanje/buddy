@@ -11,6 +11,10 @@ import {
   REFLECT_CHILD_ENV_VALUE,
   LEGACY_REFLECT_CHILD_ENV,
 } from "../shared/defaults";
+import { windowsHideSpawnOption } from "./windows-process";
+
+/** Re-export for existing tests / callers (NFR-PORT-09). */
+export { windowsHideSpawnOption } from "./windows-process";
 
 export interface SpawnReflectOptions {
   rootDir: string;
@@ -37,16 +41,6 @@ const CHILD_SCRIPT = join(
 /** True when running inside a bun-compiled binary (production sidecar). */
 export function isCompiledBinary(): boolean {
   return typeof (globalThis as any).Bun !== "undefined";
-}
-
-/**
- * Windows-only spawn flag so a detached reflect child does not flash a console
- * (NFR-PORT-09 / spike C2). Harmless no-op object on other platforms.
- */
-export function windowsHideSpawnOption(
-  platform: NodeJS.Platform = process.platform,
-): { windowsHide?: true } {
-  return platform === "win32" ? { windowsHide: true } : {};
 }
 
 function buildReflectArgs(options: SpawnReflectOptions): string[] {

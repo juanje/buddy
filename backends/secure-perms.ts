@@ -9,10 +9,17 @@
 import { execFileSync } from "node:child_process";
 import { userInfo } from "node:os";
 
+import { windowsHideSpawnOption } from "./windows-process";
+
 export type AclRunner = (path: string, args: string[]) => void;
 
 function defaultIcaclsRunner(targetPath: string, args: string[]): void {
-  execFileSync("icacls", [targetPath, ...args], { stdio: "ignore" });
+  // NFR-PORT-09: usage/state writes call this on every chat turn — without
+  // windowsHide, each icacls.exe flashes a console (smoke 20260809d).
+  execFileSync("icacls", [targetPath, ...args], {
+    stdio: "ignore",
+    ...windowsHideSpawnOption(),
+  });
 }
 
 /** `DOMAIN\user` when USERDOMAIN is set; otherwise the local username. */

@@ -11,10 +11,16 @@ import { execFileSync } from "node:child_process";
 import { mkdirSync, statSync } from "node:fs";
 import { dirname } from "node:path";
 
+import { windowsHideSpawnOption } from "./windows-process";
+
 export type AttribRunner = (args: string[]) => void;
 
 function defaultAttribRunner(args: string[]): void {
-  execFileSync("attrib", args, { stdio: "ignore" });
+  // NFR-PORT-09: attrib is a console-subsystem tool — hide the flash.
+  execFileSync("attrib", args, {
+    stdio: "ignore",
+    ...windowsHideSpawnOption(),
+  });
 }
 
 /**
