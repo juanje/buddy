@@ -15,14 +15,28 @@
 const FRONTMATTER_BLOCK = /^---\r?\n([\s\S]*?)\r?\n---/;
 
 /**
+ * Match the opening frontmatter block (LF or CRLF). Single authority for
+ * "does this document have frontmatter" — write guards must not invent a
+ * second LF-only check (NFR-PORT-06 / FR-HEBB-06 / FR-GUARD-01).
+ */
+export function matchFrontmatterBlock(content: string): RegExpMatchArray | null {
+  return content.match(FRONTMATTER_BLOCK);
+}
+
+/** True when `content` opens with a delimited frontmatter block. */
+export function hasFrontmatterBlock(content: string): boolean {
+  return FRONTMATTER_BLOCK.test(content);
+}
+
+/**
  * Frontmatter fields as raw strings. An empty object when the file has none —
  * absence and emptiness are not distinguished, because no caller needs to.
  */
 export function parseFrontmatter(content: string): Record<string, string> {
-  const match = content.match(FRONTMATTER_BLOCK);
+  const match = matchFrontmatterBlock(content);
   if (!match) return {};
   const fields: Record<string, string> = {};
-  for (const line of match[1].split("\n")) {
+  for (const line of match[1].split(/\r?\n/)) {
     const idx = line.indexOf(":");
     if (idx === -1) continue;
     fields[line.slice(0, idx).trim()] = line.slice(idx + 1).trim();
@@ -43,7 +57,7 @@ export function splitFrontmatter(content: string): {
   fields: Record<string, string>;
   body: string;
 } {
-  const match = content.match(FRONTMATTER_BLOCK);
+  const match = matchFrontmatterBlock(content);
   if (!match) return { fields: {}, body: content };
   return {
     fields: parseFrontmatter(content),

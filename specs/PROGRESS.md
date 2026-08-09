@@ -50,19 +50,27 @@ at the call site.
 
 Verified 2026-08-07 against `release.yml`, `scripts/build-worker.sh` and
 `tauri.conf.json`. CI builds macOS (ARM64 + x64) + Linux x64 (deb + rpm) on
-every tag since v0.1.0. Suggested order: Linux arm64 first (cheap, visible),
-then the POSIX→Windows audit as its own block with its own NFRs, then the CI
-target — there is no point wiring a runner for something not yet correct.
+every tag since v0.1.0. **Windows:** no installer until Block 1 NFRs in
+`SPEC.md` §4.4.0 have tests (Spec → BDD/unit → code). Local work on branch
+`windows-port` only — do not push upstream until asked. Installer drop (when
+Block 2): outside this repo at `../DIST/windows/`.
 
 | Item | State | Note |
 |------|-------|------|
 | Workflow actions | current | `checkout` and `setup-node` on v7, `setup-bun@v2`, `rust-cache@v2`, `tauri-action@v1` all on their current major. Why each v7 change does not apply is in a comment in `ci.yml` — worth re-reading before adding a `pull_request_target` or `workflow_run` trigger. Dependabot raises majors as their own PR. |
 | Linux arm64 is never built | **gap, cheap** | `build-worker.sh` already maps `aarch64-unknown-linux-gnu`, and the release matrix only runs `ubuntu-22.04` at x86_64. The sidecar half of the work is done. |
 | No distro-agnostic Linux artifact | open | `bundle.targets` is `["dmg", "app", "deb", "rpm"]`. AppImage was dropped (`03b91dc` — linuxdeploy broken on GH runners). Flatpak not started. No distro-agnostic option currently. |
-| `~/.buddy/` security modes are POSIX-only | **blocks Windows** | `CONFIG_DIR_MODE` 0700, `AUTH_FILE_MODE` / `STATE_FILE_MODE` 0600, applied at creation (NFR-SEC-17). `chmod` on Windows is close to a no-op, so credentials, granted paths and config would sit readable by every user of the machine. This is not packaging — it is an NFR that Windows breaks silently, and silent is the failure mode this project has already been bitten by. Needs explicit ACLs or a written, conscious exception. |
-| `containment.ts` symlink semantics | **blocks Windows** | It resolves with `realpathSync` (NFR-SEC-15/16). Windows has junctions, symlinks that need privilege, UNC paths and `\\?\`. This is the module the project calls "one authority", and where the fourth answer to the same question was already wrong once. Porting it without Windows-specific tests is exactly the pattern that has bitten before. |
-| Detached reflect child | open | `--reflect` argv dispatch, detached spawn and the hard timeout all assume POSIX detach semantics. |
-| `build-worker.sh` has no Windows target | open | Bash script with a case over four triples; `bun-windows-x64` is absent. Mechanical once the two security items above are settled. |
+| NFR-PORT-06 — CRLF write guards (spike A7) | **in progress** | Hebbian + heading guards must use shared frontmatter matcher. First Windows Block 1 slice. |
+| NFR-SEC-17 amend — Windows ACLs for `~/.buddy/` (A1) | **blocks Windows** | Decision: explicit ACLs (not silent chmod). |
+| NFR-SEC-04 / FR-PERM-04 amend — case-insensitive denylist (A2) | **blocks Windows** | Fail-open on NTFS today. |
+| NFR-SEC-21 — Windows sensitive paths (A3) | open | `%APPDATA%\gnupg` + Credential Manager dirs. |
+| NFR-SEC-22 — illegal/reserved filenames (A4) | **blocks Windows** | ADS `:` and `NUL`/`CON`/… |
+| NFR-SEC-15/16 — containment Windows shapes (A5) | **blocks Windows** | Junctions, UNC, `\\?\`, short names. |
+| NFR-PORT-07 — consolidation link rewrite separators (A6) | **blocks Windows** | Hardcoded `/` after normalize. |
+| NFR-PORT-08 — `.gitattributes` on create (A8) | open | After NFR-PORT-06. |
+| NFR-REL-11 — portable reflect interrupt (A9) | open | SIGTERM / shell quoting / git lock. |
+| Detached reflect child (spike C1) | open | Needs real Windows machine after Block 1. |
+| `build-worker` Windows target + NSIS (Block 2) | blocked | Mechanical after A1–A7; no `windows-latest` CI until correct. |
 
 ## Backlog (post-MVP)
 

@@ -198,4 +198,20 @@ describe("heading guard", () => {
 
     expect(result.reverted).toBe(false);
   });
+
+  // NFR-PORT-06 / FR-GUARD-01 — CRLF frontmatter must still count as present.
+  it("reverts a CRLF file when a write strips frontmatter", () => {
+    const guard = setup();
+    const filePath = join(dir, "agent_brain", "deferred.md");
+    mkdirSync(join(dir, "agent_brain"), { recursive: true });
+    const original = "---\r\nsummary: deferred items\r\n---\r\n\r\n## Queue\r\n\r\nItems.\r\n";
+    writeFileSync(filePath, original, "utf8");
+
+    guard.capture(filePath);
+    writeFileSync(filePath, "## Queue\r\n\r\nItems.\r\n", "utf8");
+    const result = guard.check(filePath);
+
+    expect(result.reverted).toBe(true);
+    expect(readFileSync(filePath, "utf8")).toBe(original);
+  });
 });

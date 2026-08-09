@@ -1278,6 +1278,9 @@ counts as one.
   write; every other key and the body are kept exactly as written
 - **And** a file created during the turn, or one deliberately rewritten without
   frontmatter, is left alone
+- **And** the same restoration holds when the file on disk uses CRLF line
+  endings (Git for Windows default checkout) — the guard must not treat a
+  CRLF frontmatter opener as "no frontmatter" (NFR-PORT-06)
 
 **Why a rule was not enough.** `AGENTS.md` already told the agent "never edit
 these fields on existing files". On 2026-07-29 a local model failed eight
@@ -1368,6 +1371,9 @@ drown the signal it is meant to measure.
 - **And** if the file had a frontmatter block (`---` delimited) before the
   write and the frontmatter is missing or empty after it, the file is
   restored to its pre-write content
+- **And** frontmatter presence is detected with the same CRLF-tolerant matcher
+  as `shared/frontmatter.ts` (NFR-PORT-06) — a CRLF checkout must not make
+  the guard believe the file never had frontmatter
 - **And** the guard fires in both the chat session and the maintenance session
 
 **What it does not do:**
@@ -2949,6 +2955,23 @@ Further context on local-model evaluation methodology and findings:
 | NFR-PORT-03 | The app never overwrites AGENTS.md — user customizations are preserved |
 | NFR-PORT-04 | Platform artifacts (`.cursor/`, `.codex/`, `.claude/`) in imported instances are ignored |
 | NFR-PORT-05 | Core app prompts live in `~/.buddy/prompts/`, not inside rootDir. On any app semver change (major, minor, or patch), bundled content overwrites `~/.buddy/prompts/` and `~/.buddy/docs/` (see NFR-MIGRATE-06). User content in rootDir is never touched. |
+| NFR-PORT-06 | Write-path guards that depend on detecting YAML frontmatter (FR-HEBB-06 Hebbian counter restore, FR-GUARD-01 frontmatter-strip detect) accept CRLF as well as LF. Detection uses the shared `shared/frontmatter.ts` matcher — not a second `startsWith("---\n")` check. **Why:** Git for Windows defaults to `core.autocrlf=true`; an LF-only guard returns null / "no frontmatter" and silently disarms FR-HEBB-06 / FR-GUARD-01 on a CRLF working tree. `parseFrontmatter` was already CRLF-tolerant; the guards were not. Opened from the Windows static spike (2026-08-08) finding A7. |
+
+### 4.4.0 Windows portability (open — Block 1 before any Windows installer)
+
+Opened from `buddy-windows-spike.md` (static audit). Packaging (NSIS/MSI) waits until the security/correctness rows below have acceptance tests. Decision defaults (Pedro 2026-08-09): ACLs for `~/.buddy/`; Windows denylist includes `%APPDATA%\gnupg` and Credential Manager dirs; first artifact unsigned; work stays on a local branch (no push to upstream until asked).
+
+| ID | Requirement | Spike | State |
+|----|-------------|-------|-------|
+| NFR-SEC-17 (amend) | On Windows, `~/.buddy/` credentials and path grants are not world-readable: apply explicit ACLs equivalent in intent to `0700`/`0600`, or document a conscious exception with a user-visible warning. Silent no-op `chmod` is forbidden. | A1 | open |
+| NFR-SEC-04 / FR-PERM-04 (amend) | Hardcoded denylist basename match is case-insensitive on case-insensitive filesystems (`.ENV`, `Auth.json`). | A2 | open |
+| NFR-SEC-21 | Windows sensitive-path denylist covers GnuPG under `%APPDATA%\gnupg` (not only `~/.gnupg`) and Credential Manager dirs under `%APPDATA%` / `%LOCALAPPDATA%\Microsoft\Credentials`. | A3 | open |
+| NFR-SEC-22 | Before `write` / `edit` / `copy_file` / `move_file`, reject illegal Windows filenames (ADS via `:`, reserved device names `CON`/`NUL`/`PRN`/…). Loud failure — never alternate data streams or discard-to-NUL. | A4 | open |
+| NFR-SEC-15/16 (tests) | Containment covers Windows path shapes: junctions, UNC, `\\?\`, 8.3 short names, per-drive relative paths. | A5 | open |
+| NFR-PORT-07 | Consolidation link rewrite (`consolidation-relocate`) compares paths with platform-safe separators — no hardcoded `/` after `normalize` that disables rewrite on win32. | A6 | open |
+| NFR-PORT-06 | See table above (CRLF write guards). | A7 | **in progress** |
+| NFR-PORT-08 | New buddy instances get a `.gitattributes` that keeps markdown/text LF; `create-buddy` does not leave CRLF policy to Git for Windows defaults alone. | A8 | open |
+| NFR-REL-11 | Reflect-child interrupt path is portable: must not rely solely on SIGTERM; must not shell out with POSIX-only quoting; must use the same git lock as `commitAll` (FR-REFLECT-06). | A9 | open |
 
 ### 4.4.1 File Format (NFR-FORMAT)
 

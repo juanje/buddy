@@ -115,6 +115,24 @@ Given(
   },
 );
 
+Given(
+  "a brain file {string} with CRLF frontmatter and headings {string}",
+  function (this: WriteGuardWorld, relPath: string, headingsCsv: string) {
+    this.tmpDir = mkdtempSync(join(tmpdir(), "buddy-guard-"));
+    this.rootDir = this.tmpDir;
+    this.guard = createHeadingGuard(this.rootDir);
+    this.relPath = relPath;
+    this.filePath = join(this.rootDir, relPath);
+
+    const headings = headingsCsv.split(", ");
+    const body = headings.map((h) => `## ${h}\r\n\r\nContent under ${h}.\r\n`).join("\r\n");
+    const content = `---\r\nsummary: test file\r\nupdated: 2026-08-05\r\n---\r\n\r\n# ${headings[0]}\r\n\r\n${body}`;
+    ensureDir(this.filePath);
+    writeFileSync(this.filePath, content, "utf8");
+    this.originalContent = content;
+  },
+);
+
 When(
   "the agent writes the file without the title {string}",
   function (this: WriteGuardWorld, title: string) {
