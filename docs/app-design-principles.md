@@ -163,9 +163,27 @@ Never load everything into context. Navigate by layers:
 
 ### 5. Separation of concerns
 
-Two spaces with different ownership:
-- `user/` — the user's world (tasks, drafts, journal, wiki)
-- `agent_brain/` — what the agent learns (concepts, skills, projects, identity)
+Two owners, three destinations:
+
+| Question | Destination | Examples |
+|----------|-------------|---------|
+| Will the **agent** need this to be a better assistant? | `agent_brain/` | User preferences, project decisions, patterns observed, lessons about how to assist this user |
+| Will the **user** want to find and build on this? | `user/wiki/` | Ideas, concepts, reflections, document summaries, brainstorming output, reference knowledge |
+| Will the **user** act on this? | `user/inbox.md` / `user/projects/` | Tasks, reminders, multi-step outcomes (GTD) |
+
+The test is **ownership, not topic.** A concept about "complex systems" could
+go either way: if the agent learned it to understand the user's writing better
+→ `agent_brain/`. If the user shared it as knowledge they want to keep →
+`user/wiki/`. The distinction is *who needs it and why*.
+
+**Operational rules:**
+- "Save this" from the user → `wiki_file` (when wiki is enabled), unless
+  clearly a task (→ inbox) or explicitly directed elsewhere.
+- Agent self-improvement → `agent_brain/`, captured during reflect and
+  consolidation. The user does not direct this.
+- Drafts and work-in-progress documents stay in `user/` as files — they are
+  outputs in progress, not concepts.
+- When the wiki is not enabled, the agent uses `user/` files as before.
 
 The user never needs to touch `agent_brain/` directly. The agent never
 reorganizes `user/` without being asked.
@@ -746,6 +764,12 @@ behavior. The app adds the full experience (scheduler, notifications,
    behalf of someone who never asked for a wiki is a worse experience than not
    having the feature. Flipping the default on later is a one-line decision;
    flipping it back after users have paid for filings they did not want is not.
+
+   **When the wiki is enabled, it becomes the default destination for user
+   knowledge** (principle 5). This is the routing distinction that makes
+   Buddy's dual role — learning assistant and second brain — operationally
+   clear: "save this" from the user goes to the wiki; the agent's own learning
+   goes to `agent_brain/` during reflect and consolidation.
 
    **Enabling it applies to the next conversation, and the UI says so.** The
    toolset is fixed at `createAgentSession` and Buddy runs one session per

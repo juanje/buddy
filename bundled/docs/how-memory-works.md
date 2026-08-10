@@ -32,20 +32,25 @@ All of this is automatic. It runs in the background when you're not chatting. Yo
 
 Knowledge Buddy consults frequently becomes easier to find — it stays close at hand. Knowledge that goes unused for a long time fades into the background. It's still there and still findable, but it doesn't take up attention. This happens naturally, similar to how your own memory works.
 
-## Your files vs Buddy's memory
+## Your knowledge vs Buddy's knowledge
 
-Buddy keeps two kinds of content separate:
+Buddy is two things at once: a **learning assistant** that gets better at helping you, and a **second brain** that stores what you want to remember. These are kept separate:
 
-**Your workspace** — tasks, lists, drafts, documents you work on. Buddy creates and edits these for you, but they are *your* files. Buddy never auto-deletes or archives them.
+**Your second brain** (`user/wiki/`) — ideas, concepts, reflections, summaries of documents you shared, brainstorming output. This is knowledge you told Buddy to save. Buddy organizes it, connects related ideas, and helps you find things later — but the content is yours.
 
-**Buddy's memory** — concepts, project context, lessons, observations. Buddy manages this automatically through reflect and consolidation. You can read it anytime, but you normally don't need to edit it directly.
+**Your tasks** (`user/inbox.md`, `user/projects/`) — things you need to do. Buddy captures tasks and reminders, helps you triage, and tracks projects. This is your action list.
+
+**Buddy's own memory** (`agent_brain/`) — what Buddy learned about you and how to help you: your preferences, patterns it noticed, decisions from past conversations, lessons about how to assist you better. Buddy manages this automatically through reflect and consolidation. You can read it anytime, but you normally don't need to edit it.
+
+**The simple rule:** when you say "save this" or "remember this", it goes to your second brain or your task list — depending on whether it's something to know or something to do. When Buddy learns something on its own about how to help you, that goes to Buddy's memory automatically.
 
 ## Where things live
 
 Inside your data folder:
 
+- **`user/wiki/`** — your second brain: interconnected knowledge pages with search and cross-references. (Available when the wiki feature is enabled.)
 - **`user/`** — your workspace: tasks, projects, drafts, journal entries.
-- **`agent_brain/`** — Buddy's knowledge: concepts, projects, ideas, observations.
+- **`agent_brain/`** — Buddy's knowledge: what it learned to be a better assistant for you.
 - **`logs/`** — conversation records and daily summaries.
 
 Buddy also keeps a profile of you (`USER.md`) and its own character definition (`SOUL.md`) in `agent_brain/identity/`.

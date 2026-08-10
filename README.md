@@ -17,6 +17,7 @@ Unlike standard web chats that start with amnesia every morning, Buddy builds a 
 ## What makes it different
 
 - **Remembers across sessions:** Decisions, tasks, ideas, context — nothing is lost between conversations.
+- **Two kinds of memory:** Your knowledge (ideas, concepts, notes) lives in your personal wiki — a second brain you can search and build on. What Buddy learns about *you* (preferences, patterns, how to help better) stays in its own memory, managed automatically.
 - **Learns from use:** Patterns emerge, concepts form, behavior adapts — not through configuration, but through accumulated interaction.
 - **Reminds you organically:** Buddy surfaces deadlines and dated to-dos you only mentioned in passing, natively through OS notifications.
 - **Private and transparent:** All memory is saved as plain markdown files in a local folder. No dark databases, no cloud sync, no telemetry. You own your data.
@@ -56,8 +57,9 @@ Node.js Worker (TypeScript)
     ▼
 buddy directory (git repo, user's data)
     ├── AGENTS.md          — portable behavioral rules
-    ├── agent_brain/       — agent's learned knowledge
+    ├── agent_brain/       — agent's learned knowledge (what makes it a better assistant)
     ├── user/              — user's tasks, drafts, journal
+    │   └── wiki/          — user's second brain (ideas, concepts, document summaries)
     └── logs/              — daily session logs (process-conversation format)
 ```
 

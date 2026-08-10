@@ -17,7 +17,7 @@ Buddy is a personal assistant that remembers. It captures what you tell it, orga
 ### Captures and organizes
 
 - Tell Buddy about a task, an idea, a decision, or something you learned — it writes it to the right place automatically.
-- Tasks and to-dos go to your workspace. Decisions and lessons go to the knowledge base. Ideas get their own space with a lifecycle (seed → developing → ready).
+- **Tasks and reminders** go to your inbox and projects. **Ideas, concepts, and knowledge** go to your personal wiki (your second brain). **What Buddy learns about you** — preferences, patterns, how to help you better — stays in Buddy's own memory.
 - You don't need to tell it where to put things. It routes based on what you share. If you disagree with where it put something, say so — it'll move it.
 
 ### Reminds you

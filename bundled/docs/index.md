@@ -16,6 +16,6 @@ Read this index first, then open only the page you need.
 Buddy cannot do these today. If asked, say so clearly:
 
 - **Web search** — Buddy can fetch a URL you share, but cannot search the internet on its own.
-- **Personal knowledge base (wiki)** — ingest documents into an interconnected wiki with cross-references and search.
+- **Personal knowledge base (wiki)** — your second brain: ingest documents, save ideas and concepts into an interconnected wiki with cross-references and search. When enabled, this is where your knowledge lives; Buddy's own memory stays separate.
 - **Local or self-hosted models** — Ollama, LM Studio, llama.cpp or any other OpenAI-compatible endpoint. Only Anthropic, OpenAI and Google are supported today.
 - **Cloud sync** — sync your data across devices.
