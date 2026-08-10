@@ -878,7 +878,7 @@ Zone 1 — buddy home (full access, never ask):
 
 Zone 2 — User-designated (read silent, write confirms):
   Explicitly shared paths (persisted in ~/.buddy/allowed-paths.json)
-  e.g. ~/Documents/articles/, ~/git/complex-system-kb/
+  e.g. ~/Documents/articles/, ~/Projects/my-knowledge-base/
   → read: allowed silently
   → write: ask user in chat
 
@@ -1032,8 +1032,8 @@ Zone 2 paths persist in `~/.buddy/allowed-paths.json`:
 ```json
 {
     "allowedPaths": [
-        { "path": "/Users/juanje/Documents/articles", "type": "directory" },
-        { "path": "/Users/juanje/git/complex-system-kb", "type": "directory" }
+        { "path": "/home/user/Documents/articles", "type": "directory" },
+        { "path": "/home/user/Projects/my-knowledge-base", "type": "directory" }
     ]
 }
 ```
@@ -1042,7 +1042,7 @@ App configuration lives in `~/.buddy/config.json`:
 
 ```json
 {
-    "rootDir": "/Users/juanje/buddy",
+    "rootDir": "/home/user/buddy",
     "provider": "openai",
     "model": "gpt-5.6-luna"
 }
@@ -1600,7 +1600,7 @@ Decision deferred to Phase 6 scoping.
 2. **Markdown library:** `marked` is lightweight but basic. Alternative: `markdown-it` (more extensions). For code blocks: `highlight.js` vs `shiki` (better but heavier).
 3. **Quick capture UX (Phase 6):** Global hotkey → floating window, or system tray → input field? Global hotkey is faster but has cross-platform quirks on Linux.
 4. **Session persistence across restarts:** **Decided (E5):** Fresh session every launch. Continuity comes from file memory (logs, identity files), not Pi session resume. `SessionManager.continueRecent()` reserved for future multi-session UI (Phase 5).
-5. **Multiple buddy directories:** Support switching between instances (my-ab, wab) or one instance per app? Could use a workspace switcher in settings.
+5. **Multiple buddy directories:** Support switching between instances (e.g. personal vs work) or one instance per app? Could use a workspace switcher in settings.
 6. **Extension UI in chat vs native dialogs:** Render confirm/select/input as chat bubbles with buttons (more cohesive) or as native OS dialogs (more noticeable)?
 
 ## Git Sync (multi-device)

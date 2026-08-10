@@ -34,26 +34,26 @@ iterated through testing with the actual LLM.
 
 ## File Inventory
 
-Based on exploration of the upstream template (`~/git/agentic-buddy/`).
+Based on exploration of the [Agentic Buddy](https://github.com/juanje/agentic-buddy) template repository.
 
 ### Files that ship as-is (minimal or no changes)
 
 | Template file | Source | Notes |
 |---|---|---|
-| `agent_brain/identity/SOUL.md` | upstream `agent_brain/identity/SOUL.md` (81 lines) | Generalize (remove any instance-specific refs). Add first-session section |
-| `agent_brain/identity/USER.md` | upstream `agent_brain/identity/USER.md` | As-is (placeholder with sections: About, Context, Preferences) |
-| `agent_brain/observations.md` | upstream `agent_brain/observations.md` | As-is (empty with section structure: Skill/Rule/Concept/Structure candidates, Resolved) |
-| `agent_brain/deferred.md` | upstream `agent_brain/deferred.md` | As-is (queue semantics documented, entry format defined, parseable by code) |
-| `logs/index.md` | upstream `logs/index.md` | As-is (empty, managed by worker code) |
-| `user/inbox.md` | upstream `.packs/personal/inbox.md` | As-is when personal pack applied (GTD sections: Capture, Next Actions, @context, Waiting For, Someday/Maybe) |
+| `agent_brain/identity/SOUL.md` | Agentic Buddy template | Generalize (remove any instance-specific refs). Add first-session section |
+| `agent_brain/identity/USER.md` | Agentic Buddy template | As-is (placeholder with sections: About, Context, Preferences) |
+| `agent_brain/observations.md` | Agentic Buddy template | As-is (empty with section structure: Skill/Rule/Concept/Structure candidates, Resolved) |
+| `agent_brain/deferred.md` | Agentic Buddy template | As-is (queue semantics documented, entry format defined, parseable by code) |
+| `logs/index.md` | Agentic Buddy template | As-is (empty, managed by worker code) |
+| `user/inbox.md` | Agentic Buddy personal pack | As-is when personal pack applied (GTD sections: Capture, Next Actions, @context, Waiting For, Someday/Maybe) |
 
 ### Files that need rewriting
 
 | Template file | Source | What changes |
 |---|---|---|
-| `AGENTS.md` | upstream `templates/CLAUDE.md` (104 lines, 16 rules) | Major rewrite — see section below |
-| `agent_brain/skills/process-conversation.md` | upstream (207 lines, 6 steps) | Remove git commit step (worker handles). Remove Step 4 interactive/autonomous branching (worker decides mode). Keep Steps 1-3, 5-6 logic intact |
-| `agent_brain/skills/triage-inbox.md` | upstream `.packs/personal/triage-inbox.md` (141 lines) | As-is (pure GTD procedure, no platform deps) |
+| `AGENTS.md` | Agentic Buddy CLAUDE.md template (104 lines, 16 rules) | Major rewrite — see section below |
+| `agent_brain/skills/process-conversation.md` | Agentic Buddy template (207 lines, 6 steps) | Remove git commit step (worker handles). Remove Step 4 interactive/autonomous branching (worker decides mode). Keep Steps 1-3, 5-6 logic intact |
+| `agent_brain/skills/triage-inbox.md` | Agentic Buddy personal pack (141 lines) | As-is (pure GTD procedure, no platform deps) |
 
 ### Files that DON'T ship (replaced by app code)
 
@@ -72,7 +72,7 @@ Based on exploration of the upstream template (`~/git/agentic-buddy/`).
 
 ## AGENTS.md Design
 
-Source: upstream `templates/CLAUDE.md` (104 lines). Sections: Core behavior (7 rules),
+Source: Agentic Buddy CLAUDE.md template (104 lines). Sections: Core behavior (7 rules),
 Idea file format, File metadata, Active context, Where to find things, Skills, Rules (16).
 
 ### What stays from current templates/CLAUDE.md

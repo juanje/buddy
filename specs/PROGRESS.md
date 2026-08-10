@@ -74,8 +74,9 @@ target — there is no point wiring a runner for something not yet correct.
   the last run, depth-3 synthesis). One gap remains before any `.feature` can
   be written: reconciliation and enrichment — how an extracted concept merges
   into an existing page without losing what the user wrote — has an invariant
-  but no procedure. It has to be brought across from `~/git/wiki-kb` and the
-  `wiki-ingest` skill, where a human was doing the reviewing.
+  but no procedure. The merge workflow still has to be designed and written
+  before `.feature` files can be honest — those decisions require human-style
+  judgment that the current spec does not yet encode.
 - **FR-PROVIDER** — Aug 2026 eval shows Qwen 27B viable for chat + reflect,
   gemma 12B for chat only. Harness hardening (#7, #26, #14) remains before
   FR-PROVIDER. Pi SDK upgraded to 0.84.x (FR-SDK-01/02/03). FR-PROVIDER-01..03

@@ -764,8 +764,9 @@ behavior. The app adds the full experience (scheduler, notifications,
    markdown links natively, so the portability argument does not survive
    either. Wikilinks, if ever wanted, belong in the renderer.
 
-   Acceptance criteria: `specs/SPEC.md` §3.18. Full design, prior art and
-   rejected alternatives: `~/git/my-ab/agent_brain/projects/agentic-buddy/wiki-design.md`.
+   Acceptance criteria: `specs/SPEC.md` §3.18. Design rationale and rejected
+   alternatives are covered in this section; tool specifications are in the
+   SPEC.
 
 ---
 

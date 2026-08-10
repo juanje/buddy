@@ -1837,7 +1837,7 @@ detailed specification: [specs/BRAIN-SPEC.md](BRAIN-SPEC.md).
 - **And** inbox triage empties the Capture section
 - **And** at depth 2, a weekly journal is written covering the full week
 - **And** at depth 3, concept directory is reviewed for grouping + observation hygiene runs
-- **Validated:** 5 eval runs (depth 1–3) against fixture repo — `eval-results.md`
+- **Validated:** 5 eval runs (depth 1–3) against the consolidation test fixture
 
 **FR-BRAIN-05 — Observation pipeline captures and promotes patterns**
 
@@ -2141,19 +2141,19 @@ exist is intact. The wiki adds real value on top of a product that already
 works. Anything that fails that test is core; this passes it, so it waits, and
 gets designed properly rather than squeezed in beside unfinished basics.
 
-**Design (2026-08-02).** The full design — prior art, tool-by-tool
-specifications, page format, rejected alternatives — is
-`~/git/my-ab/agent_brain/projects/agentic-buddy/wiki-design.md`. What follows is
-the part that binds implementation: the acceptance criteria, and the decisions
-this project has to hold to because they touch code that already exists.
+**Design (2026-08-02).** Design rationale, rejected alternatives, and scope
+decisions are in `docs/app-design-principles.md` (principle 11). What follows
+is the part that binds implementation: the acceptance criteria, and the
+decisions this project has to hold to because they touch code that already
+exists.
 
 **Still open, and it is the hard part.** Reconciliation — deciding whether an
 extracted concept enriches an existing page or becomes a new one, and how the
-enrichment merges — is stated here only as an invariant (FR-WIKI-02). The
-procedure exists in the prior art (`~/git/wiki-kb`, the `wiki-ingest` skill in
-`~/git/my-ab`) and has to be brought across and written out before the
-`.feature` files for FR-WIKI-02 can be honest, because those skills were run by
-a human who reviewed the merge. Nothing else in this section is blocked on it.
+enrichment merges — is stated here only as an invariant (FR-WIKI-02). A
+detailed merge procedure still has to be written before the `.feature` files
+for FR-WIKI-02 can be honest, because those decisions require human-style
+judgment that the current spec does not yet encode. Nothing else in this
+section is blocked on it.
 
 **Tool surface, and why it is split.** The interactive session gets two tools,
 `wiki_search` and `wiki_file`. Maintenance tools (`wiki_check`,
@@ -2595,13 +2595,13 @@ with harness fixes shipped since Jul 29. Key findings:
 - **Phantom writes root cause found:** not a model capability limit — context
   saturation past ~40k tokens causes tool-calling loss. Primary fix is setting
   `contextWindow` correctly in `models.json` so compaction fires before the
-  quality cliff. See `local-model-improvements.md` #26.
+  quality cliff. See FR-PROVIDER-01 (mandatory `contextWindow`) below.
 - **Harness guards validated:** heading guard (FR-GUARD-01), Hebbian guard in
   maintenance (FR-HEBB-08), per-depth sessions (FR-CONSOL-16), reflect
   sanitizer (#12) — all shipped and validated. C6 vs C4 showed guards
   eliminate metadata corruption and template destruction.
-- **Remaining harness gaps (Tier 1.1):** #14 (concepts index injection). See
-  `local-model-improvements.md`.
+- **Remaining harness gaps (Tier 1.1):** concepts index injection at
+  consolidation depth 3 (not yet shipped).
 
 The deferral rationale from Jul 29 is partially resolved: the worst failures
 (phantom writes, template destruction, reflect garbage) now have shipped
@@ -2812,8 +2812,8 @@ the root cause of phantom writes (S5: model claimed 6 file creations, issued
 0 tool calls). **FR-PROVIDER-01 must ensure `contextWindow` is set correctly
 at configuration time** — it is not optional metadata.
 
-Full eval data: `~/git/my-ab/agent_brain/projects/agentic-buddy/eval-results.md`
-and `local-model-improvements.md`.
+Further context on local-model evaluation methodology and findings:
+`docs/app-design-principles.md` (decision 6) and the table above.
 
 **FR-PROVIDER-02 — Model selection without a catalog**
 
