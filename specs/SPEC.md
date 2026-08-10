@@ -1561,6 +1561,7 @@ does not know them, and orders their profile overwritten.
 - **When** the system prompt is assembled
 - **Then** `~/.buddy/prompts/agents-base.md` is read first and forms the base behavioral layer
 - **And** it defines: available tools, what's automatic (git, directory creation, session logging), agent limits (no bash, no shell), Buddy identity anchor, and **`~/.buddy/docs/` as authoritative self-reference** — for questions about capabilities, memory, or how Buddy works, read docs before answering (do not infer from instance files like `AGENTS.md`)
+- **And** it includes the **knowledge routing rule** (NFR-ROUTE-01/02): a section that tells the agent where to store captures (user knowledge → `wiki_file`, tasks → inbox/projects, agent learning → `agent_brain/`) and where to search for retrieval (user knowledge → `wiki_search`, agent context → `agent_brain/` indexes, past conversations → logs)
 - **And** the instance-specific file (`rootDir/AGENTS.md` or `rootDir/CLAUDE.md`) is appended after it as an overlay
 - **And** if `agents-base.md` and the instance file contradict, the base takes precedence for capability constraints (the model follows the most specific/earliest instruction)
 - **And** skill tools (FR-SKILL-01) are registered on the session so the LLM can invoke procedural prompts without reading files
@@ -1804,7 +1805,8 @@ detailed specification: [specs/BRAIN-SPEC.md](BRAIN-SPEC.md).
 
 - **Given** a fresh buddy instance with only the template content
 - **When** the user talks to the agent about tasks, ideas, decisions
-- **Then** the agent routes captures correctly (user/ vs agent_brain/)
+- **Then** the agent routes captures per NFR-ROUTE-01: user knowledge → `wiki_file`, actionable items → `user/inbox.md` / `user/projects/`, agent learning → `agent_brain/`
+- **And** retrieval follows NFR-ROUTE-02: `wiki_search` for user knowledge, `agent_brain/` navigation for agent context, logs for conversation history
 - **And** the agent writes to files and commits without being reminded
 - **And** the agent uses progressive disclosure (reads indexes before files)
 - **And** the agent does not execute code or attempt bash operations
@@ -2126,20 +2128,22 @@ Design decisions:
 | FR-WIKI-04 | Search and retrieve from wiki | post-MVP |
 | FR-WIKI-05 | Wiki health is checked during depth-1 maintenance | post-MVP |
 | FR-WIKI-06 | Emergent concepts are synthesized during depth-3 maintenance | post-MVP |
-| FR-WIKI-07 | The wiki is opt-in, and enabling it is honest about when it applies | post-MVP |
+| FR-WIKI-07 | The wiki is always on | post-MVP |
 | FR-WIKI-08 | Filing shows progress in plain language | post-MVP |
+| FR-WIKI-09 | Lightweight capture from conversation (code-only, no child session) | post-MVP |
 
-**Scheduling (2026-07-28).** Last, deliberately — after every open bug and after
-core functionality and UX are finished. `docs/app-design-principles.md` has
-always placed wiki ingest under *Explicitly NOT in v1*; the phase column said
-"2" and PROGRESS.md said "next", so all three are now aligned on the
-principles' answer.
+**Scheduling (2026-07-28, revised 2026-08-10).** Post-MVP, but no longer
+optional. The knowledge routing redesign (NFR-ROUTE-01) makes the wiki the
+default destination for user knowledge. Without it, the routing rule has no
+structured target and falls back to loose files — the ambiguity that prompted
+the redesign. The wiki is always on (FR-WIKI-07) and bootstrapped on first
+use.
 
-The reasoning is a scope test, not a priority guess: **Buddy without the wiki is
-still Buddy.** It captures, remembers, organizes and reminds — its reason to
-exist is intact. The wiki adds real value on top of a product that already
-works. Anything that fails that test is core; this passes it, so it waits, and
-gets designed properly rather than squeezed in beside unfinished basics.
+The original scope test ("Buddy without the wiki is still Buddy") remains true
+for capture and task management. What changed is that the separation between
+agent memory and user knowledge (principle 5 in `app-design-principles.md`)
+needs the wiki to be operationally clear. The wiki is infrastructure for that
+separation, not a power feature layered on top.
 
 **Design (2026-08-02).** Design rationale, rejected alternatives, and scope
 decisions are in `docs/app-design-principles.md` (principle 11). What follows
@@ -2174,14 +2178,10 @@ a directory.
 
 **Knowledge routing (applies to all FR-WIKI).** The wiki makes explicit a
 boundary that capture previously blurred: what the agent stores for itself
-(`agent_brain/` — preferences, decisions, lessons that make it a better
-assistant) vs what it stores for the user (`user/wiki/` — ideas, concepts,
-reflections, summaries, reference knowledge the user will want to find and
-build on). The routing rule in `agents-base.md` must be explicit: "save this"
-from the user → `wiki_file`; actionable items → inbox/projects; agent
-self-improvement → `agent_brain/` during reflect/consolidation. When the wiki
-is not enabled, the agent falls back to `user/` files. Design rationale in
-`wiki-design.md` (D12).
+(`agent_brain/`) vs what it stores for the user (`user/wiki/`). The routing
+rule (NFR-ROUTE-01) and its retrieval counterpart (NFR-ROUTE-02) are declared
+in `agents-base.md` (FR-PROMPT-03) and govern both storage and search. Design
+rationale in `wiki-design.md` (D12).
 
 **FR-WIKI-01 — User personal KB**
 
@@ -2240,6 +2240,7 @@ disk.
 - **Then** `wiki_search` returns **metadata only** — path, title, summary, tags, category, connections — and never page bodies
 - **And** the agent reads the matched page before answering from it, and cites the pages it used
 - **And** for open questions it may instead start at `user/wiki/index.md` and navigate connections, which is what builds the accumulated context a synthesis needs
+- **And** `wiki_search` is exclusively for the user's second brain (NFR-ROUTE-02) — the agent does not use it to look up its own operational knowledge, past decisions, or how to assist the user; for those it navigates `agent_brain/` through indexes and progressive disclosure
 - **Rationale:** search is a navigation accelerator, not a retrieval shortcut. Returning bodies would collapse progressive disclosure into a one-shot lookup and put un-read text into the answer.
 
 **Extraction output is validated in code, not trusted.** The source document is
@@ -2284,29 +2285,29 @@ happened.
 - **And** a cap enforced **in code** limits how many synthesis pages one cycle may create (default 3)
 - **Rationale:** synthesis needs accumulated material. Running it at depth 1 produces empty pages about nothing, and a cap stated only in a prompt is a cap the model may exceed without disobeying anything it understood as a rule.
 
-**FR-WIKI-07 — The wiki is opt-in, and enabling it is honest about when it applies**
+**FR-WIKI-07 — The wiki is always on**
 
-- **Given** the wiki is a power feature, not part of day-one value
-- **When** an instance is created, or the setting is changed later
-- **Then** the wiki is off unless the user turns it on, and the two interactive tools are registered only when it is on
-- **And** turning it on from Settings shows an explicit notice that it applies to the next conversation, together with a **Restart** action
-- **And** the setting is offered during setup, where it costs nothing because no session exists yet
-- **And** the tools are **not** registered-then-refused: a registered tool is an offered tool, and one that always fails is worse than one that is absent
+- **Given** the wiki is the default destination for user knowledge (NFR-ROUTE-01)
+- **When** an instance is created
+- **Then** `wiki_search` and `wiki_file` are registered on every interactive session
+- **And** maintenance tools (`wiki_check`, `wiki_repair_links`, `wiki_regenerate`) are registered on consolidation sessions
+- **And** no setting exists to disable the wiki — it is part of how Buddy stores user knowledge, not an optional add-on
+- **And** the wiki structure (`user/wiki/`) is bootstrapped on first use by `wiki_file`, not at setup (FR-WIKI-01)
 
-**Why it cannot just apply immediately.** The toolset is fixed at
-`createAgentSession`, and Buddy runs a single session per process
-(`ensureSession` returns early when one exists) with no "new conversation"
-action — so "next session" means the next launch. Rebuilding the session live
-would dispose the conversation and trigger an end-of-session reflect in the
-middle of a chat. Saying so, with a button that does it, is the honest version;
-silently deferring is how a setting comes to look broken.
+**Why always-on, reversed from the original opt-in decision (2026-08-02).**
+The knowledge routing redesign (NFR-ROUTE-01, 2026-08-10) made the wiki the
+default destination for user knowledge. With the wiki off, "save this idea"
+has no structured home — it falls back to loose files in `user/`, which is the
+routing ambiguity this redesign exists to resolve. A feature that is off by
+default cannot be the default destination for anything.
 
-**Why opt-in rather than on by default, for now.** Not prompt budget — two
-tools among a dozen is not the problem. It is that filing is slow and costs
-real money: a user who never asked for a wiki and watches the agent spend a
-minute and a few cents on it has a worse experience than one who is missing a
-feature they never wanted. Once filing is fast and predictable, flipping the
-default is a one-line decision; the reverse is not.
+The original cost concern — filing spawns a child session and costs tokens —
+is addressed by FR-WIKI-09: lightweight captures from conversation are
+code-only (no child session, no LLM cost). The expensive path (document
+ingestion with extraction) is still real, but it only triggers when the user
+explicitly shares a document, not on conversational "save this" captures.
+The cost is proportionate to the user's action and visible through the
+progress phases (FR-WIKI-08).
 
 **FR-WIKI-08 — Filing shows progress in plain language**
 
@@ -2338,6 +2339,18 @@ months (FR-HEBB-07). The seam brings its own risk, and it is paid off with one
 fixture: a *recorded real extraction*, parsed in a test by the same parser
 production uses, so a fake of a shape no model ever emits cannot keep the suite
 green.
+
+**FR-WIKI-09 — Lightweight capture from conversation**
+
+- **Given** the user shares an idea, concept, or reflection in conversation and asks Buddy to save it
+- **When** `wiki_file` receives `content` (inline text, not a `source_path`)
+- **And** the content is short enough to be a single concept (heuristic: fits in one wiki page without extraction — e.g. under ~500 words)
+- **Then** `wiki_file` creates or enriches a wiki page **directly in code**, without spawning a child extraction session
+- **And** the agent provides the structured fields (title, summary, key_points, tags, category, connections) as part of its tool call — the extraction is the agent's own judgment, not a child's
+- **And** reconciliation (D13) and page formatting run identically to the document-ingestion path
+- **And** no LLM cost is incurred beyond the interactive session's own turn
+- **Rationale:** the original design assumed all filing goes through a child session. But conversational captures — "save this idea", "remember this concept" — are typically one concept already articulated by the user. Spawning a child to extract what the agent has already understood is redundant cost and latency. The child session is reserved for documents that need multi-concept extraction (PDFs, articles, long notes).
+- **The boundary is the agent's judgment, not a word count.** The heuristic guides, but the agent decides: if the user shares a long brainstorming dump with multiple distinct ideas, the agent should use the document-ingestion path (with child session) even if the content came inline. The test is "does this need extraction into multiple concepts?" — not "how many words is it?"
 
 ### 3.19 Skills as Tools (FR-SKILL)
 
@@ -3014,6 +3027,25 @@ a safe default assumption anywhere near a path, a URL, or the DOM.
 paths, `file://` URLs, unexpected extensions, private/loopback network targets,
 raw HTML in markdown, oversized payloads, and — where a capability has been
 deliberately withdrawn — a scenario asserting it stays withdrawn.
+
+### 4.12 Knowledge Routing (NFR-ROUTE)
+
+| ID | Requirement |
+|----|-------------|
+| NFR-ROUTE-01 | The agent routes captured information to one of three destinations based on **ownership**, not topic. The rule is declared in `agents-base.md` (FR-PROMPT-03) and produces deterministic behavior for the common cases: user knowledge → `user/wiki/`, actionable items → `user/inbox.md` / `user/projects/`, agent self-improvement → `agent_brain/`. The agent does not ask "where should I save this?" unless the input is genuinely ambiguous (e.g. a document that contains both tasks and reference knowledge). |
+| NFR-ROUTE-02 | The routing rule applies symmetrically to **retrieval**. `wiki_search` is for the user's second brain; the agent does not use it to look up its own operational knowledge. When the user asks "what do I know about X?", the agent searches the wiki. When the agent needs context about how to assist this user (preferences, past decisions, project history), it navigates `agent_brain/` through indexes and progressive disclosure. When the user asks about past conversations, the agent reads logs. |
+
+**The test is ownership, not topic.** A concept about "complex systems" could
+live in either space: if the agent learned it to understand the user's writing
+→ `agent_brain/concepts/`. If the user shared it as knowledge they want to keep
+→ `user/wiki/`. The distinction is *who needs it and why*.
+
+**Why this is an NFR, not an FR.** Routing is not a feature the user sees — it
+is a behavioral property that crosses every feature involving capture or
+retrieval: reflect (FR-REFLECT), consolidation (FR-CONSOL), brain template
+(FR-BRAIN), wiki (FR-WIKI), and the prompt that governs all of them
+(FR-PROMPT). Making it an NFR lets the FRs reference it without each one
+restating the rule.
 
 ---
 

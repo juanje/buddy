@@ -48,7 +48,7 @@ Buddy is two things at once: a **learning assistant** that gets better at helpin
 
 Inside your data folder:
 
-- **`user/wiki/`** — your second brain: interconnected knowledge pages with search and cross-references. (Available when the wiki feature is enabled.)
+- **`user/wiki/`** — your second brain: interconnected knowledge pages with search and cross-references.
 - **`user/`** — your workspace: tasks, projects, drafts, journal entries.
 - **`agent_brain/`** — Buddy's knowledge: what it learned to be a better assistant for you.
 - **`logs/`** — conversation records and daily summaries.

@@ -756,20 +756,28 @@ behavior. The app adds the full experience (scheduler, notifications,
    (`~/.buddy/prompts/`, `~/.buddy/docs/`) is redeployed from embedded sources.
    Tracked via `last_app_version` in `config.json`. See below.
 
-11. **The wiki is opt-in, and it stores plain markdown links (2026-08-02):**
-   the personal knowledge base stays under *Explicitly NOT in v1* above, and
-   when it lands it lands off by default. The reason is not prompt budget — two
-   extra tools among a dozen is not the problem — it is that filing a document
-   is slow and costs real money, and spending a minute and a few cents on
-   behalf of someone who never asked for a wiki is a worse experience than not
-   having the feature. Flipping the default on later is a one-line decision;
-   flipping it back after users have paid for filings they did not want is not.
+11. **The wiki is always on, and it stores plain markdown links (2026-08-02,
+   revised 2026-08-10):** the personal knowledge base is the default
+   destination for user knowledge (principle 5, NFR-ROUTE-01). It is always
+   active — no opt-in toggle, no setup step. The wiki tools (`wiki_search`,
+   `wiki_file`) are registered on every interactive session; the structure
+   (`user/wiki/`) is bootstrapped on first use, not at setup.
 
-   **When the wiki is enabled, it becomes the default destination for user
-   knowledge** (principle 5). This is the routing distinction that makes
-   Buddy's dual role — learning assistant and second brain — operationally
-   clear: "save this" from the user goes to the wiki; the agent's own learning
-   goes to `agent_brain/` during reflect and consolidation.
+   **The wiki is what makes Buddy's dual role operationally clear:** "save
+   this" from the user goes to the wiki; the agent's own learning goes to
+   `agent_brain/` during reflect and consolidation. Without the wiki, this
+   routing has no structured destination and falls back to loose files.
+
+   **Cost is managed per path, not per feature.** Conversational captures
+   ("save this idea") are code-only — no child session, no extra LLM cost.
+   Document ingestion (PDFs, articles) spawns a child extraction session on
+   the fast tier and shows progress phases (FR-WIKI-08). The original opt-in
+   decision (2026-08-02) was reversed because a feature that is off by default
+   cannot be the default destination for anything.
+
+   **Storage is relative markdown links, not `[[wikilinks]]`.** The viewer
+   (`marked`), the chat autolinker and the relocate-and-rewrite path all
+   already understand markdown links and none understands `[[...]]`.
 
    **Enabling it applies to the next conversation, and the UI says so.** The
    toolset is fixed at `createAgentSession` and Buddy runs one session per
