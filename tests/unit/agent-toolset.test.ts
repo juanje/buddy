@@ -45,6 +45,18 @@ describe("the toolset a user session is given", () => {
     expect(toolset().names).toContain("show_file");
   });
 
+  it("offers wiki_search and wiki_file to the model", () => {
+    const { names } = toolset();
+    expect(names).toContain("wiki_search");
+    expect(names).toContain("wiki_file");
+  });
+
+  it("registers implementations for wiki tools", () => {
+    const custom = toolset().customTools.map((tool) => tool.name);
+    expect(custom).toContain("wiki_search");
+    expect(custom).toContain("wiki_file");
+  });
+
   it("registers an implementation for show_file", () => {
     expect(toolset().customTools.map((tool) => tool.name)).toContain("show_file");
   });

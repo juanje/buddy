@@ -15,6 +15,10 @@ export function toolCallLabel(entry: ToolCallEntry, strings: LocaleStrings): str
     case "grep":
     case "find":
       return strings.toolSearching;
+    case "wiki_search":
+      return strings.toolWikiSearch;
+    case "wiki_file":
+      return strings.toolWikiFile;
     case "ls":
       return strings.toolListing;
     default:

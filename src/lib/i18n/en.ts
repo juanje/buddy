@@ -81,6 +81,8 @@ export const en: LocaleStrings = {
   toolWritingFile: "Writing {file}",
   toolSearching: "Searching…",
   toolListing: "Listing files…",
+  toolWikiSearch: "Searching wiki…",
+  toolWikiFile: "Filing to wiki…",
   toolRunning: "Running {tool}…",
   toolWorking: "Working…",
   toolReadCount: "Read {count} files",

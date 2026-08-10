@@ -71,6 +71,8 @@ export type LocaleStrings = {
   toolWritingFile: string;
   toolSearching: string;
   toolListing: string;
+  toolWikiSearch: string;
+  toolWikiFile: string;
   toolRunning: string;
   toolWorking: string;
   toolReadCount: string;
@@ -206,6 +208,8 @@ export const es: LocaleStrings = {
   toolWritingFile: "Escribiendo {file}",
   toolSearching: "Buscando…",
   toolListing: "Listando archivos…",
+  toolWikiSearch: "Buscando en el wiki…",
+  toolWikiFile: "Guardando en el wiki…",
   toolRunning: "Ejecutando {tool}…",
   toolWorking: "Trabajando…",
   toolReadCount: "Leyó {count} archivos",

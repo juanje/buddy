@@ -16,6 +16,11 @@ describe("toolCallLabel", () => {
     const entry: ToolCallEntry = { name: "grep", status: "running" };
     expect(toolCallLabel(entry, en)).toBe("Searching…");
   });
+
+  it("labels wiki_search", () => {
+    const entry: ToolCallEntry = { name: "wiki_search", status: "running" };
+    expect(toolCallLabel(entry, en)).toBe("Searching wiki…");
+  });
 });
 
 describe("toolActivitySummary", () => {

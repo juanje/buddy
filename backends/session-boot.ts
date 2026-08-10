@@ -27,6 +27,7 @@ import { buildSkillTools } from "./skill-tools";
 import { buildFetchTools } from "./fetch-url";
 import { buildFileTools } from "./file-tools";
 import { buildShowFileTools } from "./show-file-tool";
+import { buildWikiTools } from "./wiki-tools";
 import { SessionLifecycle } from "./session-lifecycle";
 import { installEditRecoveryHook } from "./edit-recovery";
 import { persistLiveSession } from "./crash-recovery";
@@ -76,8 +77,9 @@ export function buildAgentToolset(
     sessionAllowedPaths: deps.sessionAllowedPaths,
   });
   const showFileTools = buildShowFileTools({ rootDir, showFile: deps.showFile });
+  const wikiTools = buildWikiTools(rootDir);
 
-  const customTools = [...skillTools, ...fetchTools, ...fileTools, ...showFileTools];
+  const customTools = [...skillTools, ...fetchTools, ...fileTools, ...showFileTools, ...wikiTools];
   return {
     names: [...AGENT_TOOLS, ...customTools.map((tool) => tool.name)],
     customTools,
