@@ -86,3 +86,11 @@ export function dirPrefix(dirRelPath: string): string {
 export const BRAIN_PREFIX = dirPrefix(BRAIN_DIR);
 /** Suffix identifying any directory index (`…/index.md`). */
 export const INDEX_SUFFIX = `/${INDEX_FILE}`;
+
+/** User wiki (FR-WIKI-01). Pages live under category subdirectories. */
+export const WIKI_DIR = `${USER_DIR}/wiki`;
+export const WIKI_META_DIR = `${WIKI_DIR}/.meta`;
+export const WIKI_TAGS = `${WIKI_DIR}/tags.md`;
+export const WIKI_GLOSSARY = `${WIKI_DIR}/glossary.md`;
+export const WIKI_INDEX = `${WIKI_DIR}/${INDEX_FILE}`;
+export const WIKI_META_LOG = `${WIKI_META_DIR}/log.md`;

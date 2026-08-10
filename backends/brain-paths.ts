@@ -22,6 +22,12 @@ import {
   LOGS_DIR,
   LOGS_INDEX,
   USER_DIR,
+  WIKI_DIR,
+  WIKI_GLOSSARY,
+  WIKI_INDEX,
+  WIKI_META_DIR,
+  WIKI_META_LOG,
+  WIKI_TAGS,
   dailyLogRelPath,
 } from "../shared/brain-paths";
 
@@ -47,3 +53,10 @@ export const logsArchiveDirPath = (rootDir: string): string =>
   buddyPath(rootDir, LOGS_ARCHIVE_DIR);
 export const dailyLogPath = (rootDir: string, isoDay: string): string =>
   buddyPath(rootDir, dailyLogRelPath(isoDay));
+
+export const wikiDirPath = (rootDir: string): string => buddyPath(rootDir, WIKI_DIR);
+export const wikiIndexPath = (rootDir: string): string => buddyPath(rootDir, WIKI_INDEX);
+export const wikiTagsPath = (rootDir: string): string => buddyPath(rootDir, WIKI_TAGS);
+export const wikiGlossaryPath = (rootDir: string): string => buddyPath(rootDir, WIKI_GLOSSARY);
+export const wikiMetaDirPath = (rootDir: string): string => buddyPath(rootDir, WIKI_META_DIR);
+export const wikiMetaLogPath = (rootDir: string): string => buddyPath(rootDir, WIKI_META_LOG);
