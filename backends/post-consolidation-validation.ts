@@ -131,7 +131,8 @@ export function validateAndFixFilenames(
 
     let candidate = slugifyFilename(normalized);
     let counter = 2;
-    while (existsSync(join(rootDir, candidate)) && candidate !== normalized) {
+    const isCaseOnly = candidate.toLowerCase() === normalized.toLowerCase();
+    while (existsSync(join(rootDir, candidate)) && candidate !== normalized && !isCaseOnly) {
       const dir = dirname(candidate);
       const base = basename(candidate, extname(candidate));
       const ext = extname(candidate);
