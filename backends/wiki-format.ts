@@ -14,6 +14,28 @@ export const WIKI_CONTENT_LINE_GUARD = 80;
 /** Root-level wiki files that are not concept pages. */
 export const WIKI_META_FILES = new Set(["index.md", "tags.md", "glossary.md"]);
 
+export type WikiLanguage = "en" | "es";
+
+export interface WikiSectionHeadings {
+  keyPoints: string;
+  examples: string;
+  connections: string;
+}
+
+/** Localized H2 labels for wiki pages (backend page format, not UI i18n). */
+export const WIKI_SECTION_HEADINGS: Record<WikiLanguage, WikiSectionHeadings> = {
+  en: { keyPoints: "Key points", examples: "Examples", connections: "Connections" },
+  es: { keyPoints: "Puntos clave", examples: "Ejemplos", connections: "Conexiones" },
+};
+
+export function resolveWikiLanguage(language?: string): WikiLanguage {
+  return language === "es" ? "es" : "en";
+}
+
+export function wikiSectionHeadings(language?: string): WikiSectionHeadings {
+  return WIKI_SECTION_HEADINGS[resolveWikiLanguage(language)];
+}
+
 export interface WikiConnection {
   path: string;
   description: string;
@@ -49,9 +71,14 @@ export interface WikiPageMetadata {
   connections: WikiConnection[];
 }
 
+interface H2Section {
+  heading: string;
+  lines: string[];
+}
+
 const H1_RE = /^#\s+(.+)$/m;
-const CONNECTIONS_HEADING = /^##\s+Connections\s*$/m;
-const CONNECTION_LINK_RE = /^\s*-\s*\[([^\]]*)\]\(([^)]+\.md)\)\s*(?:—|--|-)?\s*(.*)$/;
+const H2_LINE_RE = /^##\s+(.+)$/;
+const CONNECTION_LINK_RE = /^\s*-\s*\[[^\]]*\]\(([^)]+\.md)\)\s*(?:—|--|-)?\s*(.*)$/;
 
 /** Strip accents and collapse whitespace for title matching (D13). */
 export function normalizeTitle(title: string): string {
@@ -147,29 +174,119 @@ export function validateWikiSummary(summary: string): string | null {
   return null;
 }
 
+function parseH2Sections(body: string): H2Section[] {
+  const sections: H2Section[] = [];
+  let current: H2Section | null = null;
+
+  for (const line of body.split("\n")) {
+    const match = line.match(H2_LINE_RE);
+    if (match) {
+      if (current) sections.push(current);
+      current = { heading: match[1].trim(), lines: [] };
+    } else if (current) {
+      current.lines.push(line);
+    }
+  }
+  if (current) sections.push(current);
+  return sections;
+}
+
+function sectionBullets(section: H2Section | undefined): string[] {
+  if (!section) return [];
+  return section.lines
+    .map((line) => line.match(/^\s*-\s+(.*)/)?.[1])
+    .filter((line): line is string => Boolean(line));
+}
+
+function isConnectionsSection(section: H2Section): boolean {
+  return section.lines.some((line) => CONNECTION_LINK_RE.test(line));
+}
+
+function connectionsFromSection(section: H2Section): WikiConnection[] {
+  const connections: WikiConnection[] = [];
+  for (const line of section.lines) {
+    const match = line.match(CONNECTION_LINK_RE);
+    if (!match) continue;
+    connections.push({
+      path: match[1].trim(),
+      description: match[2]?.trim() ?? "",
+    });
+  }
+  return connections;
+}
+
+function findConnectionsSectionIndex(sections: H2Section[]): number {
+  for (let i = sections.length - 1; i >= 0; i--) {
+    if (isConnectionsSection(sections[i])) return i;
+  }
+  return -1;
+}
+
+/** Split page body into intro and positional sections (H2 order, language-agnostic). */
+export function splitWikiBody(body: string): {
+  intro: string | undefined;
+  keyPoints: string[];
+  examples: string[];
+  connections: WikiConnection[];
+} {
+  const afterH1 = body.replace(/^#\s+.+\n+/, "");
+  const firstH2 = afterH1.search(/^##\s+/m);
+  const intro =
+    (firstH2 === -1 ? afterH1 : afterH1.slice(0, firstH2)).trim() || undefined;
+  const h2Body = firstH2 === -1 ? "" : afterH1.slice(firstH2);
+  const sections = parseH2Sections(h2Body);
+  const connIdx = findConnectionsSectionIndex(sections);
+
+  let keyPoints: string[] = [];
+  let examples: string[] = [];
+  let connections: WikiConnection[] = [];
+
+  if (sections.length === 0) {
+    return { intro, keyPoints, examples, connections };
+  }
+
+  if (connIdx === -1) {
+    keyPoints = sectionBullets(sections[0]);
+    examples = sections.length > 1 ? sectionBullets(sections[1]) : [];
+  } else if (connIdx === 0) {
+    connections = connectionsFromSection(sections[0]);
+  } else if (connIdx === 1) {
+    keyPoints = sectionBullets(sections[0]);
+    connections = connectionsFromSection(sections[1]);
+  } else {
+    keyPoints = sectionBullets(sections[0]);
+    examples = sectionBullets(sections[1]);
+    connections = connectionsFromSection(sections[connIdx]);
+  }
+
+  return { intro, keyPoints, examples, connections };
+}
+
+/** Lines excluding frontmatter and the connections section (positional). */
 export function contentLineCount(content: string): number {
   const { body } = splitFrontmatter(content);
-  const connectionsIdx = body.search(CONNECTIONS_HEADING);
-  const countable = connectionsIdx === -1 ? body : body.slice(0, connectionsIdx);
-  return countable.split("\n").filter((line) => line.trim().length > 0).length;
+  const afterH1 = body.replace(/^#\s+.+\n+/, "");
+  const firstH2 = afterH1.search(/^##\s+/m);
+  const intro = (firstH2 === -1 ? afterH1 : afterH1.slice(0, firstH2)).trim();
+  const h2Body = firstH2 === -1 ? "" : afterH1.slice(firstH2);
+  const sections = parseH2Sections(h2Body);
+  const connIdx = findConnectionsSectionIndex(sections);
+
+  const lines: string[] = [];
+  if (intro) lines.push(...intro.split("\n").filter((line) => line.trim()));
+
+  const contentSections = connIdx === -1 ? sections : sections.slice(0, connIdx);
+  for (const section of contentSections) {
+    lines.push(`## ${section.heading}`);
+    lines.push(...section.lines.filter((line) => line.trim()));
+  }
+
+  return lines.filter((line) => line.trim()).length;
 }
 
 export function extractConnections(content: string): WikiConnection[] {
   const { body } = splitFrontmatter(content);
-  const connectionsMatch = body.match(CONNECTIONS_HEADING);
-  if (!connectionsMatch || connectionsMatch.index === undefined) return [];
-
-  const section = body.slice(connectionsMatch.index + connectionsMatch[0].length);
-  const connections: WikiConnection[] = [];
-  for (const line of section.split("\n")) {
-    const match = line.match(CONNECTION_LINK_RE);
-    if (!match) continue;
-    connections.push({
-      path: match[2].trim(),
-      description: match[3]?.trim() || match[1]?.trim() || "",
-    });
-  }
-  return connections;
+  return splitWikiBody(body).connections;
 }
 
 function formatFrontmatterList(key: string, items: string[]): string[] {
@@ -180,12 +297,13 @@ function formatFrontmatterList(key: string, items: string[]): string[] {
   return [key + ":", ...items.map((item) => `  - ${item}`)];
 }
 
-export function formatWikiPage(data: WikiPageInput): string {
+export function formatWikiPage(data: WikiPageInput, language?: string): string {
   const tagError = validateWikiTags(data.tags);
   if (tagError) throw new Error(tagError);
   const summaryError = validateWikiSummary(data.summary);
   if (summaryError) throw new Error(summaryError);
 
+  const headings = wikiSectionHeadings(language);
   const lines: string[] = ["---"];
   lines.push(...formatFrontmatterList("tags", data.tags));
   lines.push(...formatFrontmatterList("sources", data.sources ?? []));
@@ -199,7 +317,7 @@ export function formatWikiPage(data: WikiPageInput): string {
   }
 
   if (data.keyPoints && data.keyPoints.length > 0) {
-    lines.push("## Key points");
+    lines.push(`## ${headings.keyPoints}`);
     for (const point of data.keyPoints) {
       lines.push(`- ${point}`);
     }
@@ -207,7 +325,7 @@ export function formatWikiPage(data: WikiPageInput): string {
   }
 
   if (data.examples && data.examples.length > 0) {
-    lines.push("## Examples");
+    lines.push(`## ${headings.examples}`);
     for (const example of data.examples) {
       lines.push(`- ${example}`);
     }
@@ -215,7 +333,7 @@ export function formatWikiPage(data: WikiPageInput): string {
   }
 
   if (data.connections && data.connections.length > 0) {
-    lines.push("## Connections");
+    lines.push(`## ${headings.connections}`);
     for (const conn of data.connections) {
       const label = conn.path.split("/").pop()?.replace(/\.md$/, "") ?? "related";
       const desc = conn.description ? ` — ${conn.description}` : "";

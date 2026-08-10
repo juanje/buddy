@@ -30,7 +30,7 @@ Given("wiki_file tools are available", function (this: WikiFileWorld) {
   const buddyDir = this.buddyDir ?? this.rootDir;
   assert.ok(buddyDir, "buddyDir must be set");
   this.buddyDir = buddyDir;
-  this.fileTools = buildWikiFileTool(buddyDir);
+  this.fileTools = buildWikiFileTool(buddyDir, "en");
 });
 
 Given("the buddy has no wiki directory", function (this: WikiFileWorld) {

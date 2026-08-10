@@ -79,8 +79,43 @@ describe("enrichPage", () => {
     expect(content).toContain("updated: 2026-08-10");
   });
 
+  it("enriches Spanish-headed pages using positional parsing", () => {
+    mkdirSync(wikiJoin("concepts"), { recursive: true });
+    writeFileSync(
+      wikiJoin("concepts", "atractor.md"),
+      formatWikiPage(
+        {
+          title: "Atractor",
+          summary: "Resumen original.",
+          tags: ["sistemas-complejos"],
+          created: "2026-08-01",
+          updated: "2026-08-01",
+          keyPoints: ["Primer punto."],
+        },
+        "es",
+      ),
+      "utf8",
+    );
+
+    enrichPage(
+      root,
+      "concepts/atractor.md",
+      {
+        keyPoints: ["Segundo punto."],
+        updated: "2026-08-10",
+      },
+      "es",
+    );
+
+    const content = readWikiPage(root, "concepts/atractor.md");
+    expect(content).toContain("Primer punto.");
+    expect(content).toContain("Segundo punto.");
+    expect(content).toContain("## Puntos clave");
+    expect(content).not.toContain("## Key points");
+  });
+
   it("aborts when size guard would be exceeded", () => {
-    const keyPoints = Array.from({ length: WIKI_CONTENT_LINE_GUARD - 2 }, (_, i) => `Line ${i}`);
+    const keyPoints = Array.from({ length: WIKI_CONTENT_LINE_GUARD - 1 }, (_, i) => `Line ${i}`);
     mkdirSync(wikiJoin("concepts"), { recursive: true });
     writeFileSync(
       wikiJoin("concepts", "large.md"),

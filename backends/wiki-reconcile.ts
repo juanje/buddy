@@ -10,13 +10,15 @@ import { buddyPath, wikiMetaLogPath } from "./brain-paths";
 import { containedRelPath } from "./containment";
 import {
   WIKI_CONTENT_LINE_GUARD,
+  contentLineCount,
   extractTitle,
   formatWikiPage,
   normalizeTitle,
   parseWikiFrontmatter,
   slugifyTitle,
-  contentLineCount,
+  splitWikiBody,
   type WikiConnection,
+  type WikiLanguage,
   type WikiPageInput,
 } from "./wiki-format";
 import { listWikiPageRelPaths } from "./wiki-index";
@@ -34,8 +36,6 @@ export interface WikiEnrichInput {
   connections?: WikiConnection[];
   updated: string;
 }
-
-const CONNECTIONS_HEADING = "## Connections";
 
 function wikiRelPath(rootDir: string, absPath: string): string | null {
   const rel = containedRelPath(rootDir, absPath);
@@ -108,35 +108,6 @@ export function findMatchingPage(rootDir: string, title: string, tags: string[])
   return tagMatch;
 }
 
-function extractSectionBullets(body: string, sectionName: string): string[] {
-  const re = new RegExp(`## ${sectionName}\\n([\\s\\S]*?)(?=\\n##\\s+|$)`);
-  const match = body.match(re);
-  if (!match) return [];
-  return match[1]
-    .split("\n")
-    .map((line) => line.match(/^\s*-\s+(.*)/)?.[1])
-    .filter((line): line is string => Boolean(line));
-}
-
-function extractIntro(body: string): string | undefined {
-  const afterH1 = body.replace(/^#\s+.+\n+/, "");
-  const beforeFirstSection = afterH1.split(/^##\s+/m)[0]?.trim();
-  return beforeFirstSection || undefined;
-}
-
-function splitBodySections(body: string): { main: string; connections: WikiConnection[] } {
-  const idx = body.indexOf(CONNECTIONS_HEADING);
-  if (idx === -1) return { main: body.replace(/\s+$/, ""), connections: [] };
-  const main = body.slice(0, idx).replace(/\s+$/, "");
-  const connSection = body.slice(idx);
-  const connections: WikiConnection[] = [];
-  for (const line of connSection.split("\n")) {
-    const m = line.match(/^\s*-\s*\[[^\]]*\]\(([^)]+\.md)\)\s*(?:—|--|-)?\s*(.*)$/);
-    if (m) connections.push({ path: m[1].trim(), description: m[2]?.trim() ?? "" });
-  }
-  return { main, connections };
-}
-
 function mergeFrontmatter(
   existing: ReturnType<typeof parseWikiFrontmatter>,
   input: WikiEnrichInput,
@@ -171,25 +142,30 @@ function buildPageFromParts(
   keyPoints: string[],
   examples: string[],
   connections: WikiConnection[],
+  language?: WikiLanguage,
 ): string {
-  return formatWikiPage({
-    title,
-    summary: fm.summary,
-    tags: fm.tags,
-    sources: fm.sources,
-    created: fm.created,
-    updated: fm.updated,
-    intro,
-    keyPoints: keyPoints.length > 0 ? keyPoints : undefined,
-    examples: examples.length > 0 ? examples : undefined,
-    connections,
-  });
+  return formatWikiPage(
+    {
+      title,
+      summary: fm.summary,
+      tags: fm.tags,
+      sources: fm.sources,
+      created: fm.created,
+      updated: fm.updated,
+      intro,
+      keyPoints: keyPoints.length > 0 ? keyPoints : undefined,
+      examples: examples.length > 0 ? examples : undefined,
+      connections,
+    },
+    language,
+  );
 }
 
 export function enrichPage(
   rootDir: string,
   pageRelPath: string,
   input: WikiEnrichInput,
+  language?: WikiLanguage,
 ): { action: "enriched" | "too-large"; content?: string } {
   const wikiDir = buddyPath(rootDir, WIKI_DIR);
   const absPath = join(wikiDir, pageRelPath);
@@ -197,25 +173,20 @@ export function enrichPage(
   const fm = parseWikiFrontmatter(existing);
   const { body } = splitFrontmatter(existing);
   const title = extractTitle(existing);
-  const { main, connections: existingConnections } = splitBodySections(body);
+  const parsed = splitWikiBody(body);
 
-  const keyPoints = [
-    ...extractSectionBullets(main, "Key points"),
-    ...(input.keyPoints ?? []),
-  ];
-  const examples = [
-    ...extractSectionBullets(main, "Examples"),
-    ...(input.examples ?? []),
-  ];
+  const keyPoints = [...parsed.keyPoints, ...(input.keyPoints ?? [])];
+  const examples = [...parsed.examples, ...(input.examples ?? [])];
   const mergedFm = mergeFrontmatter(fm, input);
-  const mergedConnections = mergeConnections(existingConnections, input.connections ?? []);
+  const mergedConnections = mergeConnections(parsed.connections, input.connections ?? []);
   const candidate = buildPageFromParts(
     title,
     mergedFm,
-    extractIntro(main),
+    parsed.intro,
     keyPoints,
     examples,
     mergedConnections,
+    language,
   );
 
   if (contentLineCount(candidate) > WIKI_CONTENT_LINE_GUARD) {
@@ -231,6 +202,7 @@ export function addBacklink(
   targetWikiRel: string,
   sourceWikiRel: string,
   description: string,
+  language?: WikiLanguage,
 ): boolean {
   const wikiDir = buddyPath(rootDir, WIKI_DIR);
   const absPath = join(wikiDir, targetWikiRel);
@@ -240,10 +212,10 @@ export function addBacklink(
   const fm = parseWikiFrontmatter(content);
   const title = extractTitle(content);
   const { body } = splitFrontmatter(content);
-  const { main, connections } = splitBodySections(body);
+  const parsed = splitWikiBody(body);
 
   const linkPath = relativeWikiLink(targetWikiRel, sourceWikiRel);
-  const alreadyLinked = connections.some(
+  const alreadyLinked = parsed.connections.some(
     (conn) =>
       conn.path === linkPath ||
       resolveWikiLinkTarget(rootDir, targetWikiRel, conn.path) === sourceWikiRel,
@@ -253,10 +225,11 @@ export function addBacklink(
   const updated = buildPageFromParts(
     title,
     { ...fm, tags: fm.tags, sources: fm.sources, created: fm.created, updated: fm.updated, summary: fm.summary },
-    extractIntro(main),
-    extractSectionBullets(main, "Key points"),
-    extractSectionBullets(main, "Examples"),
-    [...connections, { path: linkPath, description }],
+    parsed.intro,
+    parsed.keyPoints,
+    parsed.examples,
+    [...parsed.connections, { path: linkPath, description }],
+    language,
   );
   writeFileSync(absPath, updated, "utf8");
   return true;
@@ -267,12 +240,13 @@ export function addBacklinks(
   sourceWikiRel: string,
   connections: WikiConnection[],
   _sourceTitle: string,
+  language?: WikiLanguage,
 ): number {
   let added = 0;
   for (const conn of connections) {
     const targetRel = resolveWikiLinkTarget(rootDir, sourceWikiRel, conn.path);
     if (!targetRel || targetRel === sourceWikiRel) continue;
-    if (addBacklink(rootDir, targetRel, sourceWikiRel, conn.description)) {
+    if (addBacklink(rootDir, targetRel, sourceWikiRel, conn.description, language)) {
       added++;
     }
   }
@@ -282,10 +256,11 @@ export function addBacklinks(
 export function createWikiPage(
   rootDir: string,
   input: WikiPageInput & { category: string },
+  language?: WikiLanguage,
 ): string {
   const { absPath, wikiRelPath } = resolveWikiPagePath(rootDir, input.category, input.title);
   mkdirSync(dirname(absPath), { recursive: true });
-  writeFileSync(absPath, formatWikiPage(input), "utf8");
+  writeFileSync(absPath, formatWikiPage(input, language), "utf8");
   return wikiRelPath;
 }
 

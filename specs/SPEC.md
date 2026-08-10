@@ -2192,6 +2192,7 @@ rationale in `wiki-design.md` (D12).
 - **And** this is the user's knowledge base — distinct from `agent_brain/` (the agent's learned context about the user)
 - **And** the agent's system prompt includes routing guidance: user knowledge → wiki, actionable items → inbox/projects, agent learning → `agent_brain/`
 - **And** Hebbian tracking does not apply: it covers `agent_brain/` only, and wiki pages carry no `access_count`/`last_accessed`
+- **Content language:** wiki pages are written in the instance language (`config.json` → `language`). Section headings use a localized map (`WIKI_SECTION_HEADINGS` in `wiki-format.ts`), and `wiki_file`'s tool description tells the LLM to write prose (title, summary, key points, examples) in that language. Tags stay as lowercase English slugs (they're identifiers, not prose). Reading is positional (H2 order), not heading-name-based, so enrichment and backlinks work regardless of language. **Scaling note:** this approach injects language into a single tool description; document ingest (FR-WIKI-02) will need the same signal threaded into the child-session extraction prompt. Adding a third language requires one entry in `WIKI_SECTION_HEADINGS` and one branch in the description builder.
 - **Bootstrap:** the structure (`index.md`, category directories, `.meta/log.md`) is created by `wiki_file` on first use, when it finds no wiki. Nothing is created at setup, and no empty wiki is advertised to the agent.
 
 **FR-WIKI-02 — Document ingest to wiki**

@@ -7,7 +7,7 @@ import { defineTool, type ToolDefinition } from "@earendil-works/pi-coding-agent
 import { toIsoDay } from "../shared/dates";
 import { WIKI_DIR } from "../shared/brain-paths";
 import { buddyPath, wikiIndexPath, wikiMetaLogPath } from "./brain-paths";
-import { slugifyTitle, validateWikiSummary, validateWikiTags } from "./wiki-format";
+import { slugifyTitle, validateWikiSummary, validateWikiTags, type WikiLanguage } from "./wiki-format";
 import { regenerateWikiIndex } from "./wiki-index";
 import {
   addBacklinks,
@@ -56,6 +56,7 @@ export function bootstrapWiki(rootDir: string): void {
 export function fileWikiConcept(
   rootDir: string,
   input: WikiFileInput,
+  language?: WikiLanguage,
   now: Date = new Date(),
 ): WikiFileOutput {
   bootstrapWiki(rootDir);
@@ -81,31 +82,35 @@ export function fileWikiConcept(
   };
 
   if (match?.matchType === "title") {
-    const result = enrichPage(rootDir, match.relPath, enrichInput);
+    const result = enrichPage(rootDir, match.relPath, enrichInput, language);
     if (result.action === "too-large") {
-      wikiRelPath = createNewLinkedPage(rootDir, input, today, match.relPath);
+      wikiRelPath = createNewLinkedPage(rootDir, input, today, match.relPath, language);
       filed.push({ action: "created", page: wikiRelPath, category: slugCategory(input.category) });
     } else {
       wikiRelPath = match.relPath;
       filed.push({ action: "enriched", page: wikiRelPath, category: wikiRelPath.split("/")[0] ?? "" });
     }
   } else {
-    wikiRelPath = createWikiPage(rootDir, {
-      title: input.title,
-      summary: input.summary,
-      tags: input.tags,
-      sources: input.sources,
-      created: today,
-      updated: today,
-      keyPoints: input.key_points,
-      examples: input.examples,
-      connections: input.connections,
-      category: input.category,
-    });
+    wikiRelPath = createWikiPage(
+      rootDir,
+      {
+        title: input.title,
+        summary: input.summary,
+        tags: input.tags,
+        sources: input.sources,
+        created: today,
+        updated: today,
+        keyPoints: input.key_points,
+        examples: input.examples,
+        connections: input.connections,
+        category: input.category,
+      },
+      language,
+    );
     filed.push({ action: "created", page: wikiRelPath, category: slugCategory(input.category) });
   }
 
-  connectionsAdded += addBacklinks(rootDir, wikiRelPath, input.connections, input.title);
+  connectionsAdded += addBacklinks(rootDir, wikiRelPath, input.connections, input.title, language);
   regenerateWikiIndex(rootDir, now);
 
   const logEntry = `- **${filed[0].action}:** ${wikiRelPath} — ${input.summary}`;
@@ -127,6 +132,7 @@ function createNewLinkedPage(
   input: WikiFileInput,
   today: string,
   existingRelPath: string,
+  language?: WikiLanguage,
 ): string {
   const altTitle = `${input.title} (continued)`;
   const { wikiRelPath: newRelPath } = resolveWikiPagePath(rootDir, input.category, altTitle);
@@ -135,18 +141,22 @@ function createNewLinkedPage(
     ...input.connections,
     { path: seeAlsoPath, description: "see also — related page was too large to enrich" },
   ];
-  return createWikiPage(rootDir, {
-    title: altTitle,
-    summary: input.summary,
-    tags: input.tags,
-    sources: input.sources,
-    created: today,
-    updated: today,
-    keyPoints: input.key_points,
-    examples: input.examples,
-    connections,
-    category: input.category,
-  });
+  return createWikiPage(
+    rootDir,
+    {
+      title: altTitle,
+      summary: input.summary,
+      tags: input.tags,
+      sources: input.sources,
+      created: today,
+      updated: today,
+      keyPoints: input.key_points,
+      examples: input.examples,
+      connections,
+      category: input.category,
+    },
+    language,
+  );
 }
 
 export function formatWikiFileResult(output: WikiFileOutput): string {
@@ -160,13 +170,20 @@ export function formatWikiFileResult(output: WikiFileOutput): string {
   return lines.join("\n");
 }
 
-export function buildWikiFileTool(rootDir: string): ToolDefinition[] {
+export function buildWikiFileTool(rootDir: string, language?: WikiLanguage): ToolDefinition[] {
+  const lang = language ?? "en";
+  // Content language is injected into the tool description so the LLM writes
+  // prose (title, summary, key points, examples) in the instance language.
+  // This works for conversational captures (FR-WIKI-09) where the agent fills
+  // fields directly. Document ingest (FR-WIKI-02) will need the same signal
+  // threaded into the child-session extraction prompt when implemented.
+  const langLabel = lang === "es" ? "Spanish" : "English";
   return [
     defineTool({
       name: "wiki_file",
       label: "File to wiki",
       description:
-        "File user knowledge into the personal wiki as an interconnected markdown page. Provide structured fields directly — title, summary, key points, tags, category, and connections. Use for ideas, concepts, and reference notes the user wants to keep.",
+        `File user knowledge into the personal wiki as an interconnected markdown page. Write all content (title, summary, key points, examples) in ${langLabel}. Tags remain lowercase English slugs. Provide structured fields directly — title, summary, key points, tags, category, and connections. Use for ideas, concepts, and reference notes the user wants to keep.`,
       parameters: Type.Object({
         title: Type.String({ description: "Page title" }),
         summary: Type.String({ description: "One-line summary for index and search" }),
@@ -184,7 +201,7 @@ export function buildWikiFileTool(rootDir: string): ToolDefinition[] {
         sources: Type.Optional(Type.Array(Type.String())),
       }),
       async execute(_callId, args) {
-        const output = fileWikiConcept(rootDir, args as WikiFileInput);
+        const output = fileWikiConcept(rootDir, args as WikiFileInput, language);
         return {
           content: [{ type: "text", text: formatWikiFileResult(output) }],
           details: output as unknown as Record<string, unknown>,
