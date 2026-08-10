@@ -66,17 +66,11 @@ target — there is no point wiring a runner for something not yet correct.
 
 ## Backlog (post-MVP)
 
-- **FR-WIKI** — an extra feature, not the next one. Listed under *Explicitly NOT
-  in v1* in `docs/app-design-principles.md`. **Designed 2026-08-02, still not
-  scheduled.** The design was reviewed against the code and its decisions are
-  now acceptance criteria in `SPEC.md` §3.18 (FR-WIKI-01..08, opt-in with a
-  restart notice, markdown links, depth-1 health check gated on commits since
-  the last run, depth-3 synthesis). One gap remains before any `.feature` can
-  be written: reconciliation and enrichment — how an extracted concept merges
-  into an existing page without losing what the user wrote — has an invariant
-  but no procedure. The merge workflow still has to be designed and written
-  before `.feature` files can be honest — those decisions require human-style
-  judgment that the current spec does not yet encode.
+- **FR-WIKI Sprint 1 shipped (wiki branch, 2026-08-10):** `wiki_search`, `wiki_file`
+  (lightweight capture), bootstrap, backlinks, index regeneration, always-on
+  registration (FR-WIKI-01/03/04/07/09). **Still open:** FR-WIKI-02 (document
+  ingest + child session), FR-WIKI-05/06 (maintenance health + synthesis),
+  FR-WIKI-08 (progress phases) — Sprints 2–4 per wiki-roadmap.
 - **FR-PROVIDER** — Aug 2026 eval shows Qwen 27B viable for chat + reflect,
   gemma 12B for chat only. Harness hardening (#7, #26, #14) remains before
   FR-PROVIDER. Pi SDK upgraded to 0.84.x (FR-SDK-01/02/03). FR-PROVIDER-01..03

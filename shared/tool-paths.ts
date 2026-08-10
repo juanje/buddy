@@ -40,6 +40,8 @@ export const TOOL_PATH_ARGS: Record<string, readonly string[]> = {
   // business (it only ever writes under downloads/), and NFR-SEC-12 governs
   // where it may connect.
   fetch_url: [],
+  wiki_search: [],
+  wiki_file: [],
 };
 
 /**
