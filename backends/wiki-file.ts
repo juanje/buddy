@@ -20,13 +20,18 @@ import {
   type WikiEnrichInput,
 } from "./wiki-reconcile";
 
+export interface WikiConnectionInput {
+  path: string;
+  description: string;
+}
+
 export interface WikiFileInput {
   title: string;
   summary: string;
   key_points: string[];
   tags: string[];
   category: string;
-  connections: Array<{ path: string; description: string }>;
+  connections: WikiConnectionInput[];
   examples?: string[];
   sources?: string[];
 }
@@ -53,6 +58,29 @@ export function bootstrapWiki(rootDir: string): void {
   writeFileSync(wikiMetaLogPath(rootDir), "# Wiki log\n\n", "utf8");
 }
 
+export function normalizeConnectionPath(href: string, pageWikiRel: string): string {
+  const hashIndex = href.indexOf("#");
+  const pathPart = (hashIndex === -1 ? href : href.slice(0, hashIndex)).trim();
+  const fragment = hashIndex === -1 ? "" : href.slice(hashIndex);
+
+  if (!pathPart || /^https?:/i.test(pathPart)) return href;
+  if (pathPart.startsWith("../") || pathPart.startsWith("./")) return href;
+  if (!pathPart.includes("/")) return href;
+
+  let targetWikiRel = pathPart.replace(/^user\/wiki\//, "");
+  return `${wikiLinkBetween(pageWikiRel, targetWikiRel)}${fragment}`;
+}
+
+export function normalizeConnectionPaths(
+  connections: WikiConnectionInput[],
+  pageWikiRel: string,
+): WikiConnectionInput[] {
+  return connections.map((conn) => ({
+    ...conn,
+    path: normalizeConnectionPath(conn.path, pageWikiRel),
+  }));
+}
+
 export function fileWikiConcept(
   rootDir: string,
   input: WikiFileInput,
@@ -71,26 +99,30 @@ export function fileWikiConcept(
   const filed: WikiFileResult[] = [];
   let connectionsAdded = 0;
   let wikiRelPath: string;
-
-  const enrichInput: WikiEnrichInput = {
-    keyPoints: input.key_points,
-    examples: input.examples,
-    tags: input.tags,
-    sources: input.sources,
-    connections: input.connections,
-    updated: today,
-  };
+  let normalizedConnections = input.connections;
 
   if (match?.matchType === "title") {
-    const result = enrichPage(rootDir, match.relPath, enrichInput, language);
+    wikiRelPath = match.relPath;
+    normalizedConnections = normalizeConnectionPaths(input.connections, wikiRelPath);
+    const enrichInput: WikiEnrichInput = {
+      keyPoints: input.key_points,
+      examples: input.examples,
+      tags: input.tags,
+      sources: input.sources,
+      connections: normalizedConnections,
+      updated: today,
+    };
+    const result = enrichPage(rootDir, wikiRelPath, enrichInput, language);
     if (result.action === "too-large") {
       wikiRelPath = createNewLinkedPage(rootDir, input, today, match.relPath, language);
+      normalizedConnections = normalizeConnectionPaths(input.connections, wikiRelPath);
       filed.push({ action: "created", page: wikiRelPath, category: slugCategory(input.category) });
     } else {
-      wikiRelPath = match.relPath;
       filed.push({ action: "enriched", page: wikiRelPath, category: wikiRelPath.split("/")[0] ?? "" });
     }
   } else {
+    const { wikiRelPath: targetPath } = resolveWikiPagePath(rootDir, input.category, input.title);
+    normalizedConnections = normalizeConnectionPaths(input.connections, targetPath);
     wikiRelPath = createWikiPage(
       rootDir,
       {
@@ -102,7 +134,7 @@ export function fileWikiConcept(
         updated: today,
         keyPoints: input.key_points,
         examples: input.examples,
-        connections: input.connections,
+        connections: normalizedConnections,
         category: input.category,
       },
       language,
@@ -110,7 +142,7 @@ export function fileWikiConcept(
     filed.push({ action: "created", page: wikiRelPath, category: slugCategory(input.category) });
   }
 
-  connectionsAdded += addBacklinks(rootDir, wikiRelPath, input.connections, input.title, language);
+  connectionsAdded += addBacklinks(rootDir, wikiRelPath, normalizedConnections, input.title, language);
   regenerateWikiIndex(rootDir, now, language);
 
   const logEntry = `- **${filed[0].action}:** ${wikiRelPath} — ${input.summary}`;
@@ -138,7 +170,7 @@ function createNewLinkedPage(
   const { wikiRelPath: newRelPath } = resolveWikiPagePath(rootDir, input.category, altTitle);
   const seeAlsoPath = wikiLinkBetween(newRelPath, existingRelPath);
   const connections = [
-    ...input.connections,
+    ...normalizeConnectionPaths(input.connections, newRelPath),
     { path: seeAlsoPath, description: "see also — related page was too large to enrich" },
   ];
   return createWikiPage(
