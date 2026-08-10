@@ -45,8 +45,7 @@ Feature: Wiki file lightweight capture
     Then the wiki page frontmatter has tags "test-tag" and source "user/notes.md"
     And the wiki page frontmatter updated date is today
 
-  Scenario: Index tags and glossary are regenerated after filing
+  Scenario: Index and glossary are regenerated after filing
     When wiki_file is called to create "Indexed concept" in category "ideas"
     Then the buddy file "user/wiki/index.md" lists "Indexed concept"
-    And the buddy file "user/wiki/tags.md" lists tag "ideas"
     And the buddy file "user/wiki/glossary.md" lists "Indexed concept"

@@ -111,7 +111,7 @@ export function fileWikiConcept(
   }
 
   connectionsAdded += addBacklinks(rootDir, wikiRelPath, input.connections, input.title, language);
-  regenerateWikiIndex(rootDir, now);
+  regenerateWikiIndex(rootDir, now, language);
 
   const logEntry = `- **${filed[0].action}:** ${wikiRelPath} — ${input.summary}`;
   appendWikiLog(rootDir, logEntry, now);
