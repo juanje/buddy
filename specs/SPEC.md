@@ -2147,13 +2147,12 @@ is the part that binds implementation: the acceptance criteria, and the
 decisions this project has to hold to because they touch code that already
 exists.
 
-**Still open, and it is the hard part.** Reconciliation — deciding whether an
-extracted concept enriches an existing page or becomes a new one, and how the
-enrichment merges — is stated here only as an invariant (FR-WIKI-02). A
-detailed merge procedure still has to be written before the `.feature` files
-for FR-WIKI-02 can be honest, because those decisions require human-style
-judgment that the current spec does not yet encode. Nothing else in this
-section is blocked on it.
+**Reconciliation is specified (2026-08-10).** The enrichment procedure —
+match detection (normalized title → tag overlap → no match), append-by-section
+mechanics, size guard (80 content lines), and connection set-union — is now
+encoded in FR-WIKI-02 as acceptance criteria. Design rationale in
+`wiki-design.md` (D12). Key-point deduplication is deferred as a non-blocking
+improvement.
 
 **Tool surface, and why it is split.** The interactive session gets two tools,
 `wiki_search` and `wiki_file`. Maintenance tools (`wiki_check`,
@@ -2192,6 +2191,10 @@ a directory.
 - **And** the child's token usage is recorded through `recordSessionUsage()` — this feature is expensive, and unrecorded cost is worse than visible cost
 - **And** pages are created or enriched, reconciling against existing content (no duplicates), with the index, backlinks and derived files updated by code
 - **And** the agent confirms what was filed and where
+- **Reconciliation (match detection):** three tiers, resolved in order: (1) normalized title match (slugified: lowercase, strip accents, collapse whitespace) → enrich; (2) high tag overlap (≥3 shared tags) → a second cheap toolless child call decides `"enrich"` or `"create"`; (3) no match → create new page.
+- **Enrichment procedure (append-by-section):** new key points are appended at the end of `## Key points`; new examples at the end of `## Examples`; frontmatter summary is left unchanged; tags are set-unioned; sources list is extended; `updated` is set to today. No rewriting, no reordering — the invariant is satisfied by construction.
+- **Size guard:** if the enriched page would exceed 80 content lines (excluding frontmatter and `## Connections`), the enrichment is aborted and a new page is created instead, linked with a "see also" connection.
+- **Connections on enrichment:** set union by destination path — new connections to pages not already listed are appended; existing connection descriptions are not overwritten; backlinks updated mechanically.
 - **Enrichment invariant:** enriching an existing page never deletes prose the user wrote. New material is added; existing content is not rewritten to accommodate it. A reconciliation that cannot satisfy this creates a new page and links it instead.
 - **Failure is reported, never silent:** a child that errors, times out or is aborted leaves the wiki as it was, or — when pages were already written — reports exactly what was filed. A partial file that reads as a success is the failure mode this project has paid for before.
 - **Single-flight:** one `wiki_file` at a time. Buddy runs one session per process and does not call tools in the background, so this is a guard rather than a scheduler. Consolidation cannot collide with it: FR-CONSOL-05 defers while the session is streaming, and a tool call is streaming.
