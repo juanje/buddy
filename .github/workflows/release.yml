@@ -95,11 +95,18 @@ jobs:
           BUDDY_BUILD_TARGET: ${{ matrix.rust_target || '' }}
         run: bash scripts/build-worker.sh
 
+      # Ad-hoc sign on macOS when no Developer ID certificate is configured.
+      # Without any signature, Gatekeeper shows the non-bypassable "damaged"
+      # error. Ad-hoc signing (identity "-") downgrades this to the
+      # bypassable "unidentified developer" warning (right-click → Open).
+      # When APPLE_SIGNING_IDENTITY is set via repo secrets, Tauri uses
+      # the real certificate instead and this default has no effect.
       - name: Build app with Tauri
         uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           APPIMAGE_EXTRACT_AND_RUN: '1'
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY || '-' }}
         with:
           tagName: v__VERSION__
           releaseName: 'Buddy v__VERSION__'
