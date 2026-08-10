@@ -1188,11 +1188,11 @@ benefit from extended reasoning, and the thinking tokens add latency and cost
 without improving output quality. Pi SDK clamps `"off"` to the nearest
 supported level if the model does not support disabling thinking entirely.
 
-**Consequence for wiki maintenance (FR-WIKI-05).** Structural repairs that run
-at depth 1 will run on the fast tier. That is acceptable because the
-deterministic half decides *what* is broken and the model only decides which
-repairs to apply; anything needing real judgment about the wiki's shape belongs
-to depth 3 (FR-WIKI-06), not to depth 1.
+**Consequence for wiki synthesis (FR-WIKI-06).** Wiki health (FR-WIKI-05) is
+fully deterministic and does not use LLM calls, so model tier is irrelevant.
+Wiki synthesis (FR-WIKI-06) creates its own session on the fast tier — the
+deterministic candidates step is zero cost, and the LLM judgment step is a
+single prompt on structured input.
 
 **FR-CONSOL-16 — Each cascade depth runs in its own session**
 
@@ -2126,8 +2126,8 @@ Design decisions:
 | FR-WIKI-02 | Ingest documents into wiki | post-MVP |
 | FR-WIKI-03 | Cross-reference and backlinks | post-MVP |
 | FR-WIKI-04 | Search and retrieve from wiki | post-MVP |
-| FR-WIKI-05 | Wiki health is checked during depth-1 maintenance | post-MVP |
-| FR-WIKI-06 | Emergent concepts are synthesized during depth-3 maintenance | post-MVP |
+| FR-WIKI-05 | Wiki health: post-write consistency + heartbeat audit | post-MVP |
+| FR-WIKI-06 | Emergent concepts synthesized as heartbeat task | post-MVP |
 | FR-WIKI-07 | The wiki is always on | post-MVP |
 | FR-WIKI-08 | Filing shows progress in plain language | post-MVP |
 | FR-WIKI-09 | Lightweight capture from conversation (code-only, no child session) | post-MVP |
@@ -2159,13 +2159,12 @@ encoded in FR-WIKI-02 as acceptance criteria. Design rationale in
 improvement.
 
 **Tool surface, and why it is split.** The interactive session gets two tools,
-`wiki_search` and `wiki_file`. Maintenance tools (`wiki_check`,
-`wiki_repair_links`, `wiki_regenerate`) are registered on the consolidation
-session only, and the synthesis tools (`wiki_synthesis_candidates`,
-`wiki_create_page`) only at depth 3 — the same split that makes
-`relocate_brain_file` consolidation-only (FR-CONSOL-07). Both lists still have
-to be derived from one array per session, or a tool is registered and never
-offered (see `buildAgentToolset`).
+`wiki_search` and `wiki_file`. Health functions (`wiki_check`,
+`wiki_repair_links`, `wiki_regenerate`) run as deterministic code inside
+`wiki_file` (post-write) and the heartbeat (audit) — they are not LLM tools.
+Synthesis functions (`wiki_synthesis_candidates`, `wiki_create_page`) run in a
+dedicated heartbeat synthesis session with its own cycle and state, decoupled
+from the consolidation cascade (see FR-WIKI-05, FR-WIKI-06).
 
 **Path constants live in `shared/brain-paths.ts`.** `user/wiki/`, its `.meta/`
 subdirectory and the generated `tags.md` / `glossary.md` are named there like
@@ -2256,43 +2255,65 @@ has no shell, so the residual blast radius is text in the user's own knowledge
 base; this is proportionate to that, and not a reason to build an isolation
 apparatus around it.
 
-**FR-WIKI-05 — Wiki health is checked during depth-1 maintenance**
+**FR-WIKI-05 — Wiki health: post-write consistency + heartbeat audit**
 
-- **Given** the wiki is enabled and a depth-1 consolidation is running
-- **When** the runner checks whether the wiki changed since the last depth-1
-- **Then** it asks git for **commits touching `user/wiki/` since the last run**, the way `hasNewContentSinceConsolidation` already does with `git log --since`, and skips the whole block when there are none
-- **And when** there were changes, `wiki_check` runs as deterministic code and reports: orphan pages, ghost index entries, broken links, missing backlinks, frontmatter integrity, unresolved sources, thin pages, and connectivity stats
-- **And** missing backlinks and resolvable broken links are repaired by code (`wiki_repair_links`); `tags.md` and `glossary.md` are rebuilt (`wiki_regenerate`)
-- **And** what needs judgment is injected into the consolidation prompt for the model to decide
-- **And** manual edits count: the user owns `user/wiki/` and can rename or edit pages outside the app, so the check treats an unindexed page or a stale link as ordinary input, not as corruption
-- **And** the repairs are committed inside the cycle's single `commitAll` (FR-CONSOL-03)
+**Revised 2026-08-11 — decoupled from consolidation.** Wiki maintenance runs on
+its own cycle, independent of consolidation. The wiki and conversations grow at
+different rhythms (a user may ingest 300 documents in one session but barely
+chat, or vice versa). Coupling them means wiki repairs compete for the
+consolidation context window, a wiki check failure can break the consolidation
+cycle, and burst wiki activity waits for the next consolidation trigger instead
+of being repaired immediately.
 
-**Not `git diff`.** An earlier draft gated this on `git diff --quiet HEAD --
-user/wiki/`. That is wrong here: writes are committed at session end and at the
-end of each maintenance cycle, so when the heartbeat evaluates, the tree is
-normally clean and the gate would skip forever. The question is "were there
-commits since the last run", and the project already answers it that way.
+**Layer 1 — Post-write (immediate, inside `wiki_file`):**
 
-**Why depth-1 and not depth-2.** In active use links break fast — a page moved
-or a category renamed orphans its neighbours immediately. The change gate makes
-quiet periods free, so the cost of checking often is zero on the days nothing
-happened.
+- **Given** `wiki_file` creates or enriches a page
+- **When** the write completes
+- **Then** `wiki_check` runs as deterministic code: orphan pages, ghost index entries, broken links, missing backlinks, frontmatter integrity, unresolved sources, thin pages, and connectivity stats
+- **And** missing backlinks and resolvable broken links are auto-repaired; index and glossary are regenerated
+- **And** the wiki is always structurally consistent after every `wiki_file` call
 
-**FR-WIKI-06 — Emergent concepts are synthesized during depth-3 maintenance**
+**Layer 2 — Heartbeat audit (periodic, catches external edits):**
 
-- **Given** the wiki is enabled and a depth-3 consolidation is running
-- **When** `wiki_synthesis_candidates` scans the wiki (deterministic, no model): tags dense in pages with no page of their own, tag pairs co-occurring across several pages, page sets sharing tags but not linked
-- **Then** the scored candidates are injected into the consolidation prompt and the model decides which deserve a page
+- **Given** the heartbeat scheduler is running
+- **When** a tick fires and `wiki-state.json` → `lastHealthCheck` is set
+- **Then** git is asked for commits touching `user/wiki/` since `lastHealthCheck`
+- **And when** external commits are found (not authored by Buddy), `wiki_check` + `wiki_repair_links` + `wiki_regenerate` run
+- **And** `lastHealthCheck` and `pagesAtLastCheck` are updated in `wiki-state.json`
+- **And** repairs are committed independently of consolidation
+- **And when** no external commits are found, the audit is skipped (zero cost)
+- **And** wiki health evaluation is independent of consolidation — a wiki check failure does not block or affect the consolidation cycle, and vice versa
+
+**State:** `~/.buddy/wiki-state.json` with `lastHealthCheck`, `pagesAtLastCheck`, `lastSynthesis`, `pagesAtLastSynthesis`, `synthesisCooldownDays`.
+
+**Manual edits are ordinary input:** the user owns `user/wiki/` and can rename or edit pages outside the app. An unindexed page or a stale link is something the audit exists to find, not a corruption to complain about.
+
+**FR-WIKI-06 — Emergent concepts are synthesized as a heartbeat task**
+
+**Revised 2026-08-11 — decoupled from depth-3 consolidation.** Synthesis runs
+on the heartbeat with its own trigger, independent of the consolidation cascade.
+A user who rarely chats but ingests many documents would never trigger depth-3
+(it requires multiple depth-1 and depth-2 cycles). Conversely, an active chatter
+with a small wiki would run synthesis on a wiki with too little material.
+
+- **Given** the heartbeat scheduler is running and `wiki-state.json` exists
+- **When** a tick fires and wiki synthesis is evaluated
+- **Then** synthesis triggers only when: (a) page count has grown by N+ since `pagesAtLastSynthesis` (threshold, e.g. 10–20), (b) `synthesisCooldownDays` have elapsed since `lastSynthesis`, (c) the session is not streaming, and (d) the budget is not near the limit
+- **And when** triggered, `wiki_synthesis_candidates` scans the wiki (deterministic, no model): tags dense in pages with no page of their own, tag pairs co-occurring across several pages, page sets sharing tags but not linked
+- **And** if candidates are found, a fresh synthesis session is created (fast tier, wiki-only tools, independent of consolidation lock)
+- **And** the scored candidates are injected into the session prompt and the model decides which deserve a page
 - **And** approved candidates are written through `wiki_create_page`, which formats, links, indexes and logs in code
-- **And** a cap enforced **in code** limits how many synthesis pages one cycle may create (default 3)
-- **Rationale:** synthesis needs accumulated material. Running it at depth 1 produces empty pages about nothing, and a cap stated only in a prompt is a cap the model may exceed without disobeying anything it understood as a rule.
+- **And** a cap enforced **in code** limits how many synthesis pages one run may create (default 3)
+- **And** `lastSynthesis` and `pagesAtLastSynthesis` are updated in `wiki-state.json`
+- **Rationale:** synthesis needs accumulated material. The page-count threshold ensures enough pages exist before attempting abstraction. The cooldown prevents runaway synthesis on a fast-growing wiki. A cap stated only in a prompt is a cap the model may exceed without disobeying anything it understood as a rule.
 
 **FR-WIKI-07 — The wiki is always on**
 
 - **Given** the wiki is the default destination for user knowledge (NFR-ROUTE-01)
 - **When** an instance is created
 - **Then** `wiki_search` and `wiki_file` are registered on every interactive session
-- **And** maintenance tools (`wiki_check`, `wiki_repair_links`, `wiki_regenerate`) are registered on consolidation sessions
+- **And** wiki health runs as a post-write step inside `wiki_file` and as a heartbeat audit for external edits (FR-WIKI-05)
+- **And** wiki synthesis runs as a separate heartbeat task with its own cycle (FR-WIKI-06)
 - **And** no setting exists to disable the wiki — it is part of how Buddy stores user knowledge, not an optional add-on
 - **And** the wiki structure (`user/wiki/`) is bootstrapped on first use by `wiki_file`, not at setup (FR-WIKI-01)
 
