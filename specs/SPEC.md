@@ -2172,6 +2172,17 @@ only authority on where a path points (NFR-SEC-16), and it is what a
 model-supplied `category` or `title` must be resolved through before it becomes
 a directory.
 
+**Knowledge routing (applies to all FR-WIKI).** The wiki makes explicit a
+boundary that capture previously blurred: what the agent stores for itself
+(`agent_brain/` — preferences, decisions, lessons that make it a better
+assistant) vs what it stores for the user (`user/wiki/` — ideas, concepts,
+reflections, summaries, reference knowledge the user will want to find and
+build on). The routing rule in `agents-base.md` must be explicit: "save this"
+from the user → `wiki_file`; actionable items → inbox/projects; agent
+self-improvement → `agent_brain/` during reflect/consolidation. When the wiki
+is not enabled, the agent falls back to `user/` files. Design rationale in
+`wiki-design.md` (D12).
+
 **FR-WIKI-01 — User personal KB**
 
 - **Given** the buddy instance is configured and the wiki is enabled (FR-WIKI-07)
@@ -2179,6 +2190,7 @@ a directory.
 - **Then** the agent files it into `user/wiki/` as interconnected markdown pages
 - **And** pages carry frontmatter (`tags`, `sources`, `created`, `updated`, `summary`) and backlinks
 - **And** this is the user's knowledge base — distinct from `agent_brain/` (the agent's learned context about the user)
+- **And** the agent's system prompt includes routing guidance: user knowledge → wiki, actionable items → inbox/projects, agent learning → `agent_brain/`
 - **And** Hebbian tracking does not apply: it covers `agent_brain/` only, and wiki pages carry no `access_count`/`last_accessed`
 - **Bootstrap:** the structure (`index.md`, category directories, `.meta/log.md`) is created by `wiki_file` on first use, when it finds no wiki. Nothing is created at setup, and no empty wiki is advertised to the agent.
 
