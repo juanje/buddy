@@ -27,10 +27,11 @@ function bunBin(): string {
 }
 
 function run(cmd: string, args: string[]): void {
+  // Review D5: no shell on Windows — Node resolves `.cmd` / PATHEXT without it,
+  // and shell spawn widens the attack surface for a build helper.
   const result = spawnSync(cmd, args, {
     cwd: ROOT,
     stdio: "inherit",
-    shell: process.platform === "win32",
     env: process.env,
   });
   if (result.status !== 0) {
