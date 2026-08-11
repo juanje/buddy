@@ -72,9 +72,9 @@ Directories with an `index.md` have a content map — read it first to decide wh
   - [Inbox](user/inbox.md) — GTD inbox: Capture, Next Actions, @context lists, Waiting For, Someday/Maybe. Read when the user asks what's pending, what to work on, or when capturing new tasks.
 - [User profile](agent_brain/identity/USER.md) — context, preferences, communication style.
 - [Agent guidelines](agent_brain/identity/SOUL.md) — operating values, limits, interaction style.
-- [Projects](agent_brain/projects/) — project history, context, past decisions.
-- [Concepts](agent_brain/concepts/) — lessons learned, patterns, generalized knowledge.
-- [Ideas](agent_brain/ideas/) — agent's ideas about improving the system. `_scratchpad.md` for one-liners.
+- [Projects](agent_brain/projects/index.md) — project history, context, past decisions.
+- [Concepts](agent_brain/concepts/index.md) — lessons learned, patterns, generalized knowledge.
+- [Ideas](agent_brain/ideas/index.md) — agent's ideas about improving the system. `_scratchpad.md` for one-liners.
 - [Journal](user/journal/) — daily entries and summaries. **Read-only during chat** — written by consolidation from daily logs, never during conversation. Read when the user asks about past activity.
 
 New directories inside `agent_brain/` or `user/` are created as needed. Add them to this list. Format: **what the directory contains** (content description) + **when to read it** (trigger). Don't describe how it's built or maintained — that belongs in the skill, not here.
