@@ -330,6 +330,20 @@ describe("wiki synthesis runner", () => {
     expect(shouldRunWikiSynthesis(state, 100, now)).toBe(false);
   });
 
+  it("shouldRunWikiSynthesis returns initialize on first deployment", () => {
+    const now = new Date("2026-08-11T00:00:00.000Z");
+    expect(shouldRunWikiSynthesis(defaultWikiState(), 169, now)).toBe("initialize");
+  });
+
+  it("evaluateWikiSynthesis initializes state on first deployment without running", async () => {
+    const result = await evaluateWikiSynthesis(root, defaultWikiState(), {} as never, {
+      now: new Date("2026-08-11T00:00:00.000Z"),
+    });
+    expect(result.ran).toBe(false);
+    expect(result.state.lastSynthesis).toBeTruthy();
+    expect(result.state.pagesAtLastSynthesis).toBe(0);
+  });
+
   it("evaluateWikiSynthesis skips when below growth threshold", async () => {
     const state = {
       ...defaultWikiState(),

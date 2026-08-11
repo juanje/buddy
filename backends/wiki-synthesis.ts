@@ -222,21 +222,24 @@ export function daysSinceIso(iso: string | null, now: Date): number {
   return (now.getTime() - new Date(iso).getTime()) / (86400 * 1000);
 }
 
+/**
+ * Whether synthesis should run. Returns `false` (skip) or `true` (run).
+ * When `lastSynthesis` is null (first deployment on an existing wiki),
+ * returns `"initialize"` — the caller should set `pagesAtLastSynthesis`
+ * to the current count and skip, so the first real run only triggers
+ * after genuine page growth.
+ */
 export function shouldRunWikiSynthesis(
   state: WikiMaintenanceState,
   pageCount: number,
   now: Date,
-): boolean {
+): boolean | "initialize" {
+  if (state.lastSynthesis === null) {
+    return "initialize";
+  }
   const growth = pageCount - state.pagesAtLastSynthesis;
-  if (state.lastSynthesis !== null && growth < WIKI_SYNTHESIS_PAGE_GROWTH_THRESHOLD) {
-    return false;
-  }
-  if (state.lastSynthesis !== null && daysSinceIso(state.lastSynthesis, now) < state.synthesisCooldownDays) {
-    return false;
-  }
-  if (state.lastSynthesis === null && pageCount < WIKI_SYNTHESIS_PAGE_GROWTH_THRESHOLD) {
-    return false;
-  }
+  if (growth < WIKI_SYNTHESIS_PAGE_GROWTH_THRESHOLD) return false;
+  if (daysSinceIso(state.lastSynthesis, now) < state.synthesisCooldownDays) return false;
   return true;
 }
 
@@ -451,7 +454,16 @@ export async function evaluateWikiSynthesis(
   if (options.isBudgetNearLimit?.()) {
     return { state, ran: false, pagesCreated: 0, candidates: [] };
   }
-  if (!shouldRunWikiSynthesis(state, pageCount, now)) {
+  const trigger = shouldRunWikiSynthesis(state, pageCount, now);
+  if (trigger === "initialize") {
+    return {
+      state: { ...state, lastSynthesis: now.toISOString(), pagesAtLastSynthesis: pageCount },
+      ran: false,
+      pagesCreated: 0,
+      candidates: [],
+    };
+  }
+  if (!trigger) {
     return { state, ran: false, pagesCreated: 0, candidates: [] };
   }
 
