@@ -19,6 +19,7 @@ import { buddyPath } from "./brain-paths";
 import { resolveFastTierModel } from "./fast-model";
 import { commitAll } from "./git";
 import { buddyAgentDir } from "./global-config";
+import { createPermissionGate } from "./permissions";
 import { buddySessionsDir } from "./session-paths";
 import {
   buildWikiFileTool,
@@ -287,8 +288,23 @@ export function buildCappedWikiFileTools(
 
 export type WikiSynthesisAgentSession = Pick<
   Awaited<ReturnType<typeof createAgentSession>>["session"],
-  "prompt" | "dispose"
+  "agent" | "prompt" | "dispose"
 >;
+
+/** Install permission gate on synthesis session (NFR-SEC-14). Unattended — refuse outside paths. */
+export function installWikiSynthesisGate(
+  session: Pick<WikiSynthesisAgentSession, "agent">,
+  rootDir: string,
+): void {
+  const gate = createPermissionGate(rootDir, async () => false);
+  const originalBeforeToolCall = session.agent.beforeToolCall;
+  session.agent.beforeToolCall = async (ctx, signal) => {
+    const prior = await originalBeforeToolCall?.(ctx, signal);
+    if (prior?.block) return prior;
+    const blocked = await gate.check(ctx.toolCall.name, ctx.args);
+    return blocked ?? prior;
+  };
+}
 
 async function openRealWikiSynthesisSession(config: {
   rootDir: string;
@@ -345,6 +361,7 @@ export async function createWikiSynthesisSession(options: {
     language: options.language,
     counters,
   });
+  installWikiSynthesisGate(session, options.rootDir);
 
   return {
     async prompt(text: string) {

@@ -243,7 +243,7 @@ describe("no production code reaches the Pi CLI agent directory", () => {
       (total, { source }) => total + (source.match(/createAgentSession\s*\(\s*\{/g)?.length ?? 0),
       0,
     );
-    expect(calls).toBe(3);
+    expect(calls).toBe(4);
   });
 
   /**
@@ -298,6 +298,6 @@ describe("no production code reaches the Pi CLI agent directory", () => {
         (total, { source }) => total + (source.match(/SessionManager\.create\s*\(/g)?.length ?? 0),
         0,
       );
-    expect(calls).toBe(5);
+    expect(calls).toBe(6);
   });
 });

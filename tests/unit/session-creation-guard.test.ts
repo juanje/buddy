@@ -43,6 +43,7 @@ describe("session creation call sites", () => {
       "consolidation-runner.ts",
       "reflect-child.ts",
       "session-boot.ts",
+      "wiki-synthesis.ts",
     ]);
   });
 
