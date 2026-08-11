@@ -192,6 +192,45 @@ summary:
     expect(report.stats.bidirectionalPct).toBe(100);
     expect(report.stats.categories).toBe(1);
   });
+
+  it("does not flag out-of-wiki links that exist on disk", () => {
+    mkdirSync(join(root, "user/books"), { recursive: true });
+    writeFileSync(join(root, "user/books/chapter.md"), "# Chapter\n", "utf8");
+    writePage("concepts/source.md", {
+      title: "Source",
+      summary: "Links outside wiki.",
+      tags: ["concepts"],
+      created: "2026-08-01",
+      updated: "2026-08-01",
+      keyPoints: ["One", "Two", "Three", "Four", "Five"],
+      connections: [{ path: "../../books/chapter.md", description: "book chapter" }],
+    });
+    regenerateWikiIndex(root);
+
+    const report = wikiCheck(root);
+    expect(report.brokenLinks).toEqual([]);
+  });
+
+  it("still flags out-of-wiki links that do not exist on disk", () => {
+    writePage("concepts/source.md", {
+      title: "Source",
+      summary: "Broken external link.",
+      tags: ["concepts"],
+      created: "2026-08-01",
+      updated: "2026-08-01",
+      keyPoints: ["One", "Two", "Three", "Four", "Five"],
+      connections: [{ path: "../../books/nonexistent.md", description: "missing book" }],
+    });
+    regenerateWikiIndex(root);
+
+    const report = wikiCheck(root);
+    expect(report.brokenLinks).toEqual([
+      expect.objectContaining({
+        fromPage: "concepts/source.md",
+        href: "../../books/nonexistent.md",
+      }),
+    ]);
+  });
 });
 
 describe("wikiRepairLinks", () => {
@@ -236,6 +275,78 @@ describe("wikiRepairLinks", () => {
 
     const after = wikiCheck(root);
     expect(after.brokenLinks).toEqual([]);
+  });
+
+  it("fixes broken links when href slug has article prefix mismatch", () => {
+    mkdirSync(wikiJoin("concepts"), { recursive: true });
+    writePage("concepts/zapato-como-micro-entorno.md", {
+      title: "Zapato como micro entorno",
+      summary: "Calzado como restricción mecánica.",
+      tags: ["concepts"],
+      created: "2026-08-01",
+      updated: "2026-08-01",
+      keyPoints: ["One", "Two", "Three", "Four", "Five"],
+      connections: [],
+    });
+    writePage("concepts/katy-bowman.md", {
+      title: "Katy Bowman",
+      summary: "Biomecánica y movimiento.",
+      tags: ["concepts"],
+      created: "2026-08-01",
+      updated: "2026-08-01",
+      keyPoints: ["One", "Two", "Three", "Four", "Five"],
+      connections: [
+        {
+          path: "el-zapato-como-micro-entorno.md",
+          description: "Su análisis del calzado como restricción mecánica.",
+        },
+      ],
+    });
+    regenerateWikiIndex(root);
+
+    const report = wikiCheck(root);
+    expect(report.brokenLinks.some((b) => b.fromPage === "concepts/katy-bowman.md")).toBe(true);
+
+    const result = wikiRepairLinks(root, report);
+    expect(result.brokenLinksFixed).toBe(1);
+
+    const after = wikiCheck(root);
+    expect(after.brokenLinks).toEqual([]);
+
+    const katy = readFileSync(wikiJoin("concepts/katy-bowman.md"), "utf8");
+    expect(katy).toContain("zapato-como-micro-entorno.md");
+  });
+
+  it("does not false-match unrelated slugs during broken link repair", () => {
+    mkdirSync(wikiJoin("concepts"), { recursive: true });
+    writePage("concepts/alpha-topic.md", {
+      title: "Alpha topic",
+      summary: "Unrelated page.",
+      tags: ["concepts"],
+      created: "2026-08-01",
+      updated: "2026-08-01",
+      keyPoints: ["One", "Two", "Three", "Four", "Five"],
+      connections: [],
+    });
+    writePage("concepts/hub.md", {
+      title: "Hub",
+      summary: "Broken link to unrelated slug.",
+      tags: ["concepts"],
+      created: "2026-08-01",
+      updated: "2026-08-01",
+      keyPoints: ["One", "Two", "Three", "Four", "Five"],
+      connections: [{ path: "beta-topic.md", description: "no close match" }],
+    });
+    regenerateWikiIndex(root);
+
+    const report = wikiCheck(root);
+    expect(report.brokenLinks.some((b) => b.fromPage === "concepts/hub.md")).toBe(true);
+
+    const result = wikiRepairLinks(root, report);
+    expect(result.brokenLinksFixed).toBe(0);
+
+    const after = wikiCheck(root);
+    expect(after.brokenLinks.some((b) => b.fromPage === "concepts/hub.md")).toBe(true);
   });
 
   it("regenerates index when orphans or ghosts exist", () => {

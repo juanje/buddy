@@ -1,7 +1,7 @@
 // backends/wiki-check.ts — FR-WIKI-05: wiki health check and repair.
 
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
-import { basename, join } from "node:path";
+import { basename, dirname, join } from "node:path";
 
 import { WIKI_DIR } from "../shared/brain-paths";
 import { buddyPath } from "./brain-paths";
@@ -106,6 +106,12 @@ function findPageBySlug(pages: string[], slug: string): string | null {
     const fileSlug = slugifyTitle(basename(relPath, ".md"));
     if (fileSlug === normalized) return relPath;
   }
+  for (const relPath of pages) {
+    const fileSlug = slugifyTitle(basename(relPath, ".md"));
+    if (normalized.endsWith(`-${fileSlug}`) || fileSlug.endsWith(`-${normalized}`)) {
+      return relPath;
+    }
+  }
   return null;
 }
 
@@ -184,12 +190,18 @@ export function wikiCheck(rootDir: string): WikiHealthReport {
       const target = resolveWikiLinkTarget(rootDir, relPath, conn.path);
       const targetContent = target ? inventory.get(target) : undefined;
       if (!target || !targetContent) {
-        if (!/^https?:/i.test(conn.path.split("#")[0] ?? "")) {
-          brokenLinks.push({
-            fromPage: relPath,
-            href: conn.path,
-            description: conn.description,
-          });
+        const pathPart = conn.path.split("#")[0]?.split("?")[0] ?? "";
+        if (!/^https?:/i.test(pathPart)) {
+          const wikiDir = buddyPath(rootDir, WIKI_DIR);
+          const fromDir = dirname(join(wikiDir, relPath));
+          const absTarget = join(fromDir, pathPart);
+          if (!existsSync(absTarget)) {
+            brokenLinks.push({
+              fromPage: relPath,
+              href: conn.path,
+              description: conn.description,
+            });
+          }
         }
         continue;
       }
