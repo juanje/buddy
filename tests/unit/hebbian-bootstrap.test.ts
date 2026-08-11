@@ -100,6 +100,13 @@ describe("updateAccessFrontmatter", () => {
     expect(fieldsOf(content).last_accessed).toBe("2026-07-30");
   });
 
+  it("updates CRLF frontmatter via the shared matcher (review D6)", () => {
+    const crlf = AGENT_CREATED.replaceAll("\n", "\r\n");
+    const out = updateAccessFrontmatter(crlf, TODAY)!;
+    expect(fieldsOf(out.replaceAll("\r\n", "\n")).access_count).toBe("1");
+    expect(out).toContain("# Local link routing");
+  });
+
   it("leaves a file with no frontmatter alone", () => {
     // Adding a whole block needs a `summary`, which is a judgment call and
     // belongs to consolidation. The linter reports these separately.
@@ -109,5 +116,12 @@ describe("updateAccessFrontmatter", () => {
   it("repairs a malformed count rather than propagating it", () => {
     const broken = `---\ncreated: 2026-07-01\naccess_count: not-a-number\n---\n\n# Body\n`;
     expect(fieldsOf(updateAccessFrontmatter(broken, TODAY)!).access_count).toBe("1");
+  });
+
+  it("updates CRLF frontmatter via the shared matcher (review D6)", () => {
+    const crlf = AGENT_CREATED.replaceAll("\n", "\r\n");
+    const out = updateAccessFrontmatter(crlf, TODAY)!;
+    expect(fieldsOf(out.replaceAll("\r\n", "\n")).access_count).toBe("1");
+    expect(out).toContain("# Local link routing");
   });
 });

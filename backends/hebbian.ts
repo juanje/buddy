@@ -5,7 +5,7 @@ import { resolve } from "node:path";
 
 import { toIsoDay } from "../shared/dates";
 import { toBuddyRelPath } from "../shared/path-utils";
-import { parseFrontmatter } from "../shared/frontmatter";
+import { matchFrontmatterBlock, parseFrontmatter } from "../shared/frontmatter";
 import { BRAIN, BRAIN_PREFIX, BRAIN_SUBDIRS, INDEX_SUFFIX, dirPrefix } from "../shared/brain-paths";
 
 export interface HebbianTracker {
@@ -62,7 +62,8 @@ function isExcluded(relPath: string): boolean {
  * consolidation; the brain health report lists those separately.
  */
 export function updateAccessFrontmatter(content: string, today: string): string | null {
-  const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---([\s\S]*)$/);
+  // NFR-PORT-06 / review D6: one frontmatter authority (shared/frontmatter.ts).
+  const match = matchFrontmatterBlock(content);
   if (!match) return null;
 
   const fields = parseFrontmatter(content);
@@ -71,7 +72,7 @@ export function updateAccessFrontmatter(content: string, today: string): string 
   const current = Number.parseInt(fields.access_count ?? "", 10);
   const nextCount = Number.isFinite(current) ? current + 1 : 1;
 
-  const lines = match[1].split("\n").map((line) => {
+  const lines = match[1].split(/\r?\n/).map((line) => {
     const idx = line.indexOf(":");
     if (idx === -1) return line;
     const key = line.slice(0, idx).trim();
@@ -91,7 +92,8 @@ export function updateAccessFrontmatter(content: string, today: string): string 
     else lines.push(`last_accessed: ${today}`);
   }
 
-  return `---\n${lines.join("\n")}\n---${match[2]}`;
+  const body = content.slice(match[0].length);
+  return `---\n${lines.join("\n")}\n---${body}`;
 }
 
 export function createHebbianTracker(rootDir: string): HebbianTracker {
