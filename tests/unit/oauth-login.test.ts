@@ -117,6 +117,21 @@ describe("OAuthService — the SDK's post-login refresh can hang", () => {
   });
 });
 
+describe("OAuthUIEvent device_code union (review B3)", () => {
+  it("accepts device_code events with userCode and verificationUri", () => {
+    const event: OAuthUIEvent = {
+      type: "device_code",
+      userCode: "ABCD-EFGH",
+      verificationUri: "https://example.com/device",
+    };
+    expect(event.type).toBe("device_code");
+    if (event.type === "device_code") {
+      expect(event.userCode).toBe("ABCD-EFGH");
+      expect(event.verificationUri).toContain("example.com");
+    }
+  });
+});
+
 describe("preferredOAuthLoginMethod — NFR-PORT-10", () => {
   const both = ["browser", "device_code"] as const;
 
