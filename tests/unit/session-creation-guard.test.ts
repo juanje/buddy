@@ -83,6 +83,32 @@ describe("session creation call sites", () => {
     expect(blocked?.block, "the installed hook must actually deny outside paths").toBe(true);
   });
 
+  it("blocks read and write to user/wiki/ paths", async () => {
+    const fake = { agent: {}, subscribe: vi.fn(() => () => {}), prompt: vi.fn(), dispose: vi.fn() };
+    await createMaintenanceSession({
+      rootDir: "/home/buddy",
+      modelRuntime: {} as never,
+      depth: 1,
+      openSession: async () => fake as unknown as MaintenanceAgentSession,
+    });
+    const hook = (fake.agent as { beforeToolCall?: unknown }).beforeToolCall as (
+      ctx: unknown,
+      signal: AbortSignal,
+    ) => Promise<{ block?: boolean } | undefined>;
+
+    const writeBlocked = await hook(
+      { toolCall: { name: "write" }, args: { path: "user/wiki/concepts/foo.md" } },
+      new AbortController().signal,
+    );
+    expect(writeBlocked?.block).toBe(true);
+
+    const readBlocked = await hook(
+      { toolCall: { name: "read" }, args: { path: "user/wiki/index.md" } },
+      new AbortController().signal,
+    );
+    expect(readBlocked?.block).toBe(true);
+  });
+
   it("every session creator supplies buddy's own ModelRuntime", () => {
     // The 231ac31 defect: reflect-child omitted modelRuntime in one mode, so the
     // SDK resolved credentials from the global ~/.pi/ config instead.

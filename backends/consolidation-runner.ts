@@ -7,7 +7,7 @@ import {
   type ModelRuntime,
 } from "@earendil-works/pi-coding-agent";
 import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 
 import {
   AGENT_TOOLS,
@@ -59,6 +59,9 @@ import { buildConsolidationTools, consolidationToolNames } from "./consolidation
 import { buildSkillTools, skillToolNames } from "./skill-tools";
 import { ensureUserMdSectionsOnDisk } from "./brain-migration";
 import { resolveDepthModel } from "./fast-model";
+import { WIKI_DIR } from "../shared/brain-paths";
+import { pathArgsOf } from "../shared/tool-paths";
+import { isContained } from "./containment";
 
 export interface MaintenanceSessionLike {
   prompt(text: string): Promise<void>;
@@ -94,10 +97,20 @@ export function installMaintenanceGate(
 ): ReturnType<typeof createMaintenancePermissionPolicy> {
   const policy = createMaintenancePermissionPolicy();
   const gate = createPermissionGate(rootDir, policy.askUser);
+  const wikiAbs = resolve(rootDir, WIKI_DIR);
   const originalBeforeToolCall = session.agent.beforeToolCall;
   session.agent.beforeToolCall = async (ctx, signal) => {
     const prior = await originalBeforeToolCall?.(ctx, signal);
     if (prior?.block) return prior;
+
+    for (const rawPath of pathArgsOf(ctx.toolCall.name, ctx.args)) {
+      const abs = resolve(rootDir, rawPath);
+      if (isContained(abs, wikiAbs)) {
+        await policy.askUser({ kind: "outside", op: "read", path: abs });
+        return { block: true, reason: "Wiki files are maintained by their own lifecycle." };
+      }
+    }
+
     const blocked = await gate.check(ctx.toolCall.name, ctx.args);
     return blocked ?? prior;
   };

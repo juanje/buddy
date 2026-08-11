@@ -14,6 +14,9 @@ input scope — follow the scheduler's depth parameter.
 log all decisions and changes made. No approval gates — if anything goes wrong,
 it can be corrected in the next cycle.
 
+**Scope:** `agent_brain/`, `logs/`, `user/` (except `user/wiki/`). Do not read or
+modify `user/wiki/` — it has its own maintenance cycle (health check + synthesis).
+
 **Prerequisite:** Session reflect runs automatically at session end.
 The daily log already contains `## Session` blocks from reflect. Do not re-run
 reflect before consolidating — read what's already in the log.
