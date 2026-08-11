@@ -2126,8 +2126,8 @@ Design decisions:
 | FR-WIKI-02 | Ingest documents into wiki | post-MVP |
 | FR-WIKI-03 | Cross-reference and backlinks | post-MVP |
 | FR-WIKI-04 | Search and retrieve from wiki | post-MVP |
-| FR-WIKI-05 | Wiki health: post-write consistency + heartbeat audit | post-MVP |
-| FR-WIKI-06 | Emergent concepts synthesized as heartbeat task | post-MVP |
+| FR-WIKI-05 | Wiki health: post-write consistency + heartbeat audit | post-MVP ✓ |
+| FR-WIKI-06 | Emergent concepts synthesized as heartbeat task | post-MVP ✓ |
 | FR-WIKI-07 | The wiki is always on | post-MVP |
 | FR-WIKI-08 | Filing shows progress in plain language | post-MVP |
 | FR-WIKI-09 | Lightweight capture from conversation (code-only, no child session) | post-MVP |
