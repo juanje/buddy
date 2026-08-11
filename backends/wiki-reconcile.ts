@@ -15,6 +15,7 @@ import {
   formatWikiPage,
   normalizeTitle,
   parseWikiFrontmatter,
+  replaceConnectionsSection,
   slugifyTitle,
   splitWikiBody,
   type WikiConnection,
@@ -209,8 +210,6 @@ export function addBacklink(
   if (!existsSync(absPath)) return false;
 
   const content = readFileSync(absPath, "utf8");
-  const fm = parseWikiFrontmatter(content);
-  const title = extractTitle(content);
   const { body } = splitFrontmatter(content);
   const parsed = splitWikiBody(body);
 
@@ -222,12 +221,8 @@ export function addBacklink(
   );
   if (alreadyLinked) return false;
 
-  const updated = buildPageFromParts(
-    title,
-    { ...fm, tags: fm.tags, sources: fm.sources, created: fm.created, updated: fm.updated, summary: fm.summary },
-    parsed.intro,
-    parsed.keyPoints,
-    parsed.examples,
+  const updated = replaceConnectionsSection(
+    content,
     [...parsed.connections, { path: linkPath, description }],
     language,
   );

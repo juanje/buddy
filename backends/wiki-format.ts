@@ -356,6 +356,76 @@ export function humanizeCategorySlug(slug: string): string {
   return words.map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
 }
 
+/**
+ * Render a connections section as markdown lines (no trailing newline).
+ * Used by surgical page editors that replace only the connections section.
+ */
+export function renderConnectionsLines(
+  connections: WikiConnection[],
+  language?: string,
+): string[] {
+  const headings = wikiSectionHeadings(language);
+  const lines = [`## ${headings.connections}`];
+  for (const conn of connections) {
+    const label = conn.path.split("/").pop()?.replace(/\.md$/, "") ?? "related";
+    const desc = conn.description ? ` — ${conn.description}` : "";
+    lines.push(`- [${label}](${conn.path})${desc}`);
+  }
+  return lines;
+}
+
+/**
+ * Replace (or append) the connections section in raw page content without
+ * touching any other section. Preserves frontmatter, intro, and all H2
+ * sections that are not the connections section.
+ */
+export function replaceConnectionsSection(
+  content: string,
+  connections: WikiConnection[],
+  language?: string,
+): string {
+  const { body } = splitFrontmatter(content);
+  const h2Body = body.replace(/^#\s+.+\n+/, "");
+  const sections = parseH2Sections(h2Body);
+  const connIdx = findConnectionsSectionIndex(sections);
+
+  if (connIdx === -1 && connections.length === 0) return content;
+
+  const lines = content.split("\n");
+
+  if (connIdx !== -1) {
+    const section = sections[connIdx];
+    const headingRe = new RegExp(`^##\\s+${escapeRegex(section.heading)}\\s*$`);
+    const startLine = lines.findIndex((line) => headingRe.test(line));
+    if (startLine !== -1) {
+      let endLine = startLine + 1;
+      while (endLine < lines.length && !H2_LINE_RE.test(lines[endLine])) {
+        endLine++;
+      }
+      while (endLine > startLine + 1 && lines[endLine - 1].trim() === "") {
+        endLine--;
+      }
+      const newLines = connections.length > 0
+        ? [...renderConnectionsLines(connections, language), ""]
+        : [];
+      lines.splice(startLine, endLine - startLine, ...newLines);
+      const result = lines.join("\n").replace(/\n{3,}/g, "\n\n").replace(/\n+$/, "") + "\n";
+      return result;
+    }
+  }
+
+  if (connections.length > 0) {
+    const trimmed = content.replace(/\n+$/, "");
+    return trimmed + "\n\n" + renderConnectionsLines(connections, language).join("\n") + "\n";
+  }
+
+  return content;
+}
+
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 export function readWikiPageMetadata(relPath: string, content: string): WikiPageMetadata {
   const fm = parseWikiFrontmatter(content);
   return {

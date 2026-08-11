@@ -4,7 +4,6 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { basename, join } from "node:path";
 
 import { WIKI_DIR } from "../shared/brain-paths";
-import { splitFrontmatter } from "../shared/frontmatter";
 import { buddyPath } from "./brain-paths";
 import { regenerateWikiIndex } from "./wiki-index";
 import {
@@ -17,11 +16,9 @@ import {
 import {
   contentLineCount,
   extractConnections,
-  extractTitle,
-  formatWikiPage,
   parseWikiFrontmatter,
+  replaceConnectionsSection,
   slugifyTitle,
-  splitWikiBody,
   type WikiConnection,
   type WikiLanguage,
 } from "./wiki-format";
@@ -249,28 +246,9 @@ function rewritePageConnections(
   language?: WikiLanguage,
 ): void {
   const content = readWikiPage(rootDir, pageRelPath);
-  const fm = parseWikiFrontmatter(content);
-  const { body } = splitFrontmatter(content);
-  const title = extractTitle(content);
-  const parsed = splitWikiBody(body);
-
   writeFileSync(
     join(buddyPath(rootDir, WIKI_DIR), pageRelPath),
-    formatWikiPage(
-      {
-        title,
-        summary: fm.summary,
-        tags: fm.tags,
-        sources: fm.sources,
-        created: fm.created,
-        updated: fm.updated,
-        intro: parsed.intro,
-        keyPoints: parsed.keyPoints,
-        examples: parsed.examples,
-        connections,
-      },
-      language,
-    ),
+    replaceConnectionsSection(content, connections, language),
     "utf8",
   );
 }

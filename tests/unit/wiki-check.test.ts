@@ -258,4 +258,57 @@ describe("wikiRepairLinks", () => {
     expect(index).toContain("beta.md");
     expect(report.orphans.length).toBeGreaterThan(0);
   });
+
+  it("preserves extra H2 sections when repairing backlinks", () => {
+    mkdirSync(wikiJoin("concepts"), { recursive: true });
+    const richContent = `---
+tags: [concepts]
+sources: []
+created: 2026-08-01
+updated: 2026-08-01
+summary: Rich page with extra sections.
+---
+
+# Rich Page
+
+Rich intro paragraph.
+
+## Key points
+- Point one.
+- Point two.
+
+## Deep dive
+Extra section that is not key points, examples, or connections.
+
+### Subsection
+More detail here.
+
+## Another custom section
+This should survive repair.
+
+## Connections
+- [alpha](alpha.md) — related
+`;
+    writeFileSync(wikiJoin("concepts/rich.md"), richContent, "utf8");
+    writePage("concepts/alpha.md", {
+      title: "Alpha",
+      summary: "Alpha summary.",
+      tags: ["concepts"],
+      created: "2026-08-01",
+      updated: "2026-08-01",
+      keyPoints: ["One", "Two", "Three", "Four", "Five"],
+      connections: [{ path: "rich.md", description: "links to rich" }],
+    });
+    regenerateWikiIndex(root);
+
+    const report = wikiCheck(root);
+    wikiRepairLinks(root, report);
+
+    const after = readFileSync(wikiJoin("concepts/rich.md"), "utf8");
+    expect(after).toContain("## Deep dive");
+    expect(after).toContain("### Subsection");
+    expect(after).toContain("## Another custom section");
+    expect(after).toContain("This should survive repair");
+    expect(after).toContain("alpha.md");
+  });
 });
