@@ -39,6 +39,8 @@ export function wikiSectionHeadings(language?: string): WikiSectionHeadings {
 export interface WikiConnection {
   path: string;
   description: string;
+  /** Visible link text; preserved on read/write round-trips when set. */
+  label?: string;
 }
 
 export interface WikiFrontmatter {
@@ -78,7 +80,7 @@ interface H2Section {
 
 const H1_RE = /^#\s+(.+)$/m;
 const H2_LINE_RE = /^##\s+(.+)$/;
-const CONNECTION_LINK_RE = /^\s*-\s*\[[^\]]*\]\(([^)]+\.md)\)\s*(?:—|--|-)?\s*(.*)$/;
+const CONNECTION_LINK_RE = /^\s*-\s*\[([^\]]*)\]\(([^)]+\.md)\)\s*(?:—|--|-)?\s*(.*)$/;
 
 /** Strip accents and collapse whitespace for title matching (D13). */
 export function normalizeTitle(title: string): string {
@@ -208,8 +210,9 @@ function connectionsFromSection(section: H2Section): WikiConnection[] {
     const match = line.match(CONNECTION_LINK_RE);
     if (!match) continue;
     connections.push({
-      path: match[1].trim(),
-      description: match[2]?.trim() ?? "",
+      path: match[2].trim(),
+      description: match[3]?.trim() ?? "",
+      label: match[1].trim() || undefined,
     });
   }
   return connections;
@@ -289,6 +292,10 @@ export function extractConnections(content: string): WikiConnection[] {
   return splitWikiBody(body).connections;
 }
 
+function connectionLinkLabel(conn: WikiConnection): string {
+  return conn.label ?? conn.path.split("/").pop()?.replace(/\.md$/, "") ?? "related";
+}
+
 function formatFrontmatterList(key: string, items: string[]): string[] {
   if (items.length === 0) return [`${key}: []`];
   if (items.length <= 3 && items.every((item) => !item.includes(","))) {
@@ -335,7 +342,7 @@ export function formatWikiPage(data: WikiPageInput, language?: string): string {
   if (data.connections && data.connections.length > 0) {
     lines.push(`## ${headings.connections}`);
     for (const conn of data.connections) {
-      const label = conn.path.split("/").pop()?.replace(/\.md$/, "") ?? "related";
+      const label = connectionLinkLabel(conn);
       const desc = conn.description ? ` — ${conn.description}` : "";
       lines.push(`- [${label}](${conn.path})${desc}`);
     }
@@ -367,7 +374,7 @@ export function renderConnectionsLines(
   const headings = wikiSectionHeadings(language);
   const lines = [`## ${headings.connections}`];
   for (const conn of connections) {
-    const label = conn.path.split("/").pop()?.replace(/\.md$/, "") ?? "related";
+    const label = connectionLinkLabel(conn);
     const desc = conn.description ? ` — ${conn.description}` : "";
     lines.push(`- [${label}](${conn.path})${desc}`);
   }
@@ -402,8 +409,18 @@ export function replaceConnectionsSection(
       while (endLine < lines.length && !H2_LINE_RE.test(lines[endLine])) {
         endLine++;
       }
-      while (endLine > startLine + 1 && lines[endLine - 1].trim() === "") {
-        endLine--;
+      if (endLine === lines.length) {
+        endLine = startLine + 1;
+        while (
+          endLine < lines.length &&
+          (CONNECTION_LINK_RE.test(lines[endLine]) || lines[endLine].trim() === "")
+        ) {
+          endLine++;
+        }
+      } else {
+        while (endLine > startLine + 1 && lines[endLine - 1].trim() === "") {
+          endLine--;
+        }
       }
       const newLines = connections.length > 0
         ? [...renderConnectionsLines(connections, language), ""]

@@ -280,7 +280,7 @@ function repairBrokenLinks(
       const newPath = wikiLinkBetween(fromPage, match);
       const idx = connections.findIndex((c) => c.path === item.href);
       if (idx === -1) continue;
-      connections[idx] = { path: newPath, description: item.description };
+      connections[idx] = { ...connections[idx], path: newPath, description: item.description };
       changed = true;
       fixed++;
     }

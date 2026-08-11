@@ -11,6 +11,8 @@ import {
   formatWikiPage,
   normalizeTitle,
   parseWikiFrontmatter,
+  renderConnectionsLines,
+  replaceConnectionsSection,
   slugifyTitle,
   splitWikiBody,
   validateWikiSummary,
@@ -148,7 +150,9 @@ Intro line.
 `;
     expect(extractTitle(content)).toBe("My Title");
     expect(contentLineCount(content)).toBeLessThan(WIKI_CONTENT_LINE_GUARD);
-    expect(extractConnections(content)).toEqual([{ path: "y.md", description: "link" }]);
+    expect(extractConnections(content)).toEqual([
+      { path: "y.md", description: "link", label: "x" },
+    ]);
   });
 
   it("parses Spanish headings by position, not by name", () => {
@@ -177,7 +181,97 @@ Intro en español.
     const parsed = splitWikiBody(content.slice(content.indexOf("# Concepto")));
     expect(parsed.keyPoints).toEqual(["primer punto", "segundo punto"]);
     expect(parsed.examples).toEqual(["un ejemplo"]);
-    expect(parsed.connections).toEqual([{ path: "otro.md", description: "enlace" }]);
-    expect(extractConnections(content)).toEqual([{ path: "otro.md", description: "enlace" }]);
+    expect(parsed.connections).toEqual([
+      { path: "otro.md", description: "enlace", label: "relacionado" },
+    ]);
+    expect(extractConnections(content)).toEqual([
+      { path: "otro.md", description: "enlace", label: "relacionado" },
+    ]);
+  });
+});
+
+describe("connection labels", () => {
+  it("extractConnections preserves label from source", () => {
+    const content = `---
+summary: s
+---
+
+# Page
+
+## Conexiones
+- [Human Title](../other/ciclo-percepcion-accion.md) — desc
+`;
+    expect(extractConnections(content)).toEqual([
+      {
+        path: "../other/ciclo-percepcion-accion.md",
+        description: "desc",
+        label: "Human Title",
+      },
+    ]);
+  });
+
+  it("renderConnectionsLines uses label when present", () => {
+    const lines = renderConnectionsLines(
+      [{ path: "../other/ciclo-percepcion-accion.md", description: "desc", label: "Human Title" }],
+      "es",
+    );
+    expect(lines.join("\n")).toContain("[Human Title](../other/ciclo-percepcion-accion.md)");
+    expect(lines.join("\n")).not.toContain("[ciclo-percepcion-accion]");
+  });
+
+  it("renderConnectionsLines falls back to slug when label is missing", () => {
+    const lines = renderConnectionsLines([{ path: "otro.md", description: "rel" }], "en");
+    expect(lines.join("\n")).toContain("[otro](otro.md)");
+  });
+
+  it("replaceConnectionsSection preserves content after connections when no next H2", () => {
+    const content = `---
+summary: s
+---
+
+# Salud
+
+## Conexiones
+- [Sistemas complejos](../sistemas-complejos/sistemas-complejos.md) — link
+
+ Fuentes
+
+- [Cap 02](../../books/02-intro.md)
+`;
+    const updated = replaceConnectionsSection(
+      content,
+      [{ path: "../sistemas-complejos/sistemas-complejos.md", description: "link", label: "Sistemas complejos" }],
+      "es",
+    );
+    expect(updated).toContain(" Fuentes");
+    expect(updated).toContain("[Cap 02](../../books/02-intro.md)");
+    expect(updated).toContain("[Sistemas complejos]");
+  });
+
+  it("replaceConnectionsSection preserves labels on existing connections when adding one", () => {
+    const content = `---
+summary: s
+---
+
+# Page
+
+## Conexiones
+- [Ciclo percepción-acción](../aprendizaje/ciclo-percepcion-accion.md) — first
+`;
+    const updated = replaceConnectionsSection(
+      content,
+      [
+        {
+          path: "../aprendizaje/ciclo-percepcion-accion.md",
+          description: "first",
+          label: "Ciclo percepción-acción",
+        },
+        { path: "nuevo.md", description: "added", label: "Página nueva" },
+      ],
+      "es",
+    );
+    expect(updated).toContain("[Ciclo percepción-acción]");
+    expect(updated).toContain("[Página nueva](nuevo.md)");
+    expect(updated).not.toContain("[ciclo-percepcion-accion]");
   });
 });

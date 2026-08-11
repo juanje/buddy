@@ -311,4 +311,54 @@ This should survive repair.
     expect(after).toContain("This should survive repair");
     expect(after).toContain("alpha.md");
   });
+
+  it("wikiRepairLinks preserves human labels on untouched connections", () => {
+    mkdirSync(wikiJoin("concepts"), { recursive: true });
+    writeFileSync(
+      wikiJoin("concepts/hub.md"),
+      `---
+tags: [concepts]
+sources: []
+created: 2026-08-01
+updated: 2026-08-01
+summary: Hub page.
+---
+
+# Hub
+
+## Conexiones
+- [Otro concepto humano](other.md) — existing link
+`,
+      "utf8",
+    );
+    writePage("concepts/other.md", {
+      title: "Other",
+      summary: "Other summary.",
+      tags: ["concepts"],
+      created: "2026-08-01",
+      updated: "2026-08-01",
+      keyPoints: ["One", "Two", "Three", "Four", "Five"],
+      connections: [],
+    });
+    writePage("concepts/ciclo-percepcion-accion.md", {
+      title: "Ciclo",
+      summary: "Ciclo summary.",
+      tags: ["concepts"],
+      created: "2026-08-01",
+      updated: "2026-08-01",
+      keyPoints: ["One", "Two", "Three", "Four", "Five"],
+      connections: [{ path: "hub.md", description: "hub points here" }],
+    });
+    regenerateWikiIndex(root);
+
+    const report = wikiCheck(root);
+    expect(report.missingBacklinks.some((m) => m.toPage === "concepts/hub.md")).toBe(true);
+
+    wikiRepairLinks(root, report);
+
+    const hub = readFileSync(wikiJoin("concepts/hub.md"), "utf8");
+    expect(hub).toContain("[Otro concepto humano](other.md)");
+    expect(hub).not.toContain("[other](other.md)");
+    expect(hub).toContain("ciclo-percepcion-accion.md");
+  });
 });
