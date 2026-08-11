@@ -58,8 +58,7 @@ import { recordSessionUsage } from "./usage-tracker";
 import { buildConsolidationTools, consolidationToolNames } from "./consolidation-tools";
 import { buildSkillTools, skillToolNames } from "./skill-tools";
 import { ensureUserMdSectionsOnDisk } from "./brain-migration";
-import { fastModelForProvider } from "../shared/model-catalog";
-import { readPiProvider } from "../shared/pi-settings";
+import { resolveDepthModel } from "./fast-model";
 
 export interface MaintenanceSessionLike {
   prompt(text: string): Promise<void>;
@@ -282,29 +281,6 @@ export type MaintenanceAgentSession = Pick<
   "agent" | "subscribe" | "prompt" | "dispose"
 >;
 
-type DepthModelOptions = {
-  model?: Awaited<ReturnType<ModelRuntime["getModel"]>>;
-  thinkingLevel?: "off";
-};
-
-/** Depth 1-2: fast tier with thinking off. Depth 3: configured model, default thinking. */
-async function resolveDepthModel(
-  depth: number,
-  rootDir: string,
-  modelRuntime: ModelRuntime,
-): Promise<DepthModelOptions> {
-  if (depth > 2) return {};
-  const provider = readPiProvider(rootDir);
-  const fastId = fastModelForProvider(provider);
-  if (!fastId) return { thinkingLevel: "off" };
-  let model = modelRuntime.getModel(provider, fastId);
-  if (!model) {
-    const available = await modelRuntime.getAvailable(provider);
-    model = available.find((entry) => entry.id === fastId);
-  }
-  if (!model) return { thinkingLevel: "off" };
-  return { model, thinkingLevel: "off" };
-}
 
 async function openRealMaintenanceSession(config: {
   rootDir: string;

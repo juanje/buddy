@@ -7,12 +7,24 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { WIKI_DIR } from "../../shared/brain-paths";
 import {
+  buildCappedWikiFileTools,
+  buildSynthesisPrompt,
+  evaluateWikiSynthesis,
+  runWikiSynthesis,
+  shouldRunWikiSynthesis,
+  SYNTHESIS_CAP_MESSAGE,
   wikiSynthesisCandidates,
   WIKI_SYNTHESIS_CO_OCCURRENCE_MIN_PAGES,
+  WIKI_SYNTHESIS_MAX_PAGES_PER_RUN,
   WIKI_SYNTHESIS_ORPHAN_TAG_MIN_PAGES,
+  WIKI_SYNTHESIS_PAGE_GROWTH_THRESHOLD,
+  type WikiSynthesisSessionLike,
 } from "../../backends/wiki-synthesis";
+import { executeWikiFileTool } from "../../backends/wiki-file";
+import { defaultWikiState } from "../../shared/wiki-state";
 import { formatWikiPage } from "../../backends/wiki-format";
 import { regenerateWikiIndex } from "../../backends/wiki-index";
+import { initTestGitRepo } from "../support/test-git";
 
 let root: string;
 
@@ -172,5 +184,161 @@ describe("wikiSynthesisCandidates", () => {
     for (let i = 1; i < candidates.length; i++) {
       expect(candidates[i - 1].score).toBeGreaterThanOrEqual(candidates[i].score);
     }
+  });
+});
+
+describe("wiki synthesis runner", () => {
+  it("buildSynthesisPrompt includes candidate labels", () => {
+    const prompt = buildSynthesisPrompt([
+      {
+        type: "orphan-tag",
+        label: "emergence",
+        score: 3,
+        relatedPages: ["a.md"],
+        rationale: "test",
+      },
+    ]);
+    expect(prompt).toContain("emergence");
+    expect(prompt).toContain(String(WIKI_SYNTHESIS_MAX_PAGES_PER_RUN));
+  });
+
+  it("returns ran false when no candidates", async () => {
+    const result = await runWikiSynthesis(root, defaultWikiState(), {} as never);
+    expect(result.ran).toBe(false);
+    expect(result.pagesCreated).toBe(0);
+    expect(result.state.lastSynthesis).toBeTruthy();
+  });
+
+  it("enforces cap on wiki_file calls", async () => {
+    mkdirSync(wikiJoin("concepts"), { recursive: true });
+    const counters = { created: 0, rejected: false };
+    const tools = buildCappedWikiFileTools(root, "en", WIKI_SYNTHESIS_MAX_PAGES_PER_RUN, counters);
+    const input = {
+      title: "Synth",
+      summary: "Synth summary.",
+      key_points: ["One"],
+      tags: ["concepts"],
+      category: "concepts",
+      connections: [] as { path: string; description: string }[],
+    };
+
+    for (let i = 0; i < WIKI_SYNTHESIS_MAX_PAGES_PER_RUN; i++) {
+      const result = await executeWikiFileTool(tools, { ...input, title: `Synth ${i}` });
+      expect(result.text).not.toContain(SYNTHESIS_CAP_MESSAGE);
+    }
+    const blocked = await executeWikiFileTool(tools, { ...input, title: "Synth blocked" });
+    expect(blocked.text).toContain(SYNTHESIS_CAP_MESSAGE);
+    expect(counters.created).toBe(WIKI_SYNTHESIS_MAX_PAGES_PER_RUN);
+    expect(counters.rejected).toBe(true);
+  });
+
+  it("updates state after mock session creates pages", async () => {
+    await initTestGitRepo(root);
+    mkdirSync(wikiJoin("concepts"), { recursive: true });
+    for (let i = 1; i <= 3; i++) {
+      writePage(`concepts/page-${i}.md`, {
+        title: `Page ${i}`,
+        summary: `Summary ${i}.`,
+        tags: ["emergence", "concepts"],
+        created: "2026-08-01",
+        updated: "2026-08-01",
+        keyPoints: ["One", "Two", "Three", "Four", "Five"],
+      });
+    }
+    regenerateWikiIndex(root);
+
+    const mockSession: WikiSynthesisSessionLike = {
+      async prompt() {
+        const tools = buildCappedWikiFileTools(root, "en", WIKI_SYNTHESIS_MAX_PAGES_PER_RUN, {
+          created: 0,
+          rejected: false,
+        });
+        await executeWikiFileTool(tools, {
+          title: "Emergence",
+          summary: "Emergent concept.",
+          key_points: ["One", "Two", "Three", "Four", "Five"],
+          tags: ["emergence", "concepts"],
+          category: "concepts",
+          connections: [],
+          sources: ["synthesis"],
+        });
+      },
+      dispose() {},
+      pagesCreated: () => 1,
+      capRejected: () => false,
+    };
+
+    const result = await runWikiSynthesis(root, defaultWikiState(), {} as never, "en", new Date(), {
+      createSession: async () => mockSession,
+    });
+    expect(result.ran).toBe(true);
+    expect(result.pagesCreated).toBe(1);
+    expect(result.state.pagesAtLastSynthesis).toBeGreaterThan(0);
+  });
+
+  it("disposes session when prompt throws", async () => {
+    mkdirSync(wikiJoin("concepts"), { recursive: true });
+    for (let i = 1; i <= 3; i++) {
+      writePage(`concepts/page-${i}.md`, {
+        title: `Page ${i}`,
+        summary: `Summary ${i}.`,
+        tags: ["emergence", "concepts"],
+        created: "2026-08-01",
+        updated: "2026-08-01",
+        keyPoints: ["One", "Two", "Three", "Four", "Five"],
+      });
+    }
+    regenerateWikiIndex(root);
+
+    let disposed = false;
+    await expect(
+      runWikiSynthesis(root, defaultWikiState(), {} as never, "en", new Date(), {
+        createSession: async () => ({
+          async prompt() {
+            throw new Error("boom");
+          },
+          dispose() {
+            disposed = true;
+          },
+          pagesCreated: () => 0,
+          capRejected: () => false,
+        }),
+      }),
+    ).rejects.toThrow("boom");
+    expect(disposed).toBe(true);
+  });
+
+  it("shouldRunWikiSynthesis respects page growth threshold", () => {
+    const state = {
+      ...defaultWikiState(),
+      lastSynthesis: "2026-08-01T00:00:00.000Z",
+      pagesAtLastSynthesis: 15,
+    };
+    const now = new Date("2026-08-11T00:00:00.000Z");
+    expect(shouldRunWikiSynthesis(state, 20, now)).toBe(false);
+    expect(shouldRunWikiSynthesis(state, 15 + WIKI_SYNTHESIS_PAGE_GROWTH_THRESHOLD, now)).toBe(true);
+  });
+
+  it("shouldRunWikiSynthesis respects cooldown", () => {
+    const state = {
+      ...defaultWikiState(),
+      lastSynthesis: new Date("2026-08-09T00:00:00.000Z").toISOString(),
+      pagesAtLastSynthesis: 0,
+      synthesisCooldownDays: 7,
+    };
+    const now = new Date("2026-08-11T00:00:00.000Z");
+    expect(shouldRunWikiSynthesis(state, 100, now)).toBe(false);
+  });
+
+  it("evaluateWikiSynthesis skips when below growth threshold", async () => {
+    const state = {
+      ...defaultWikiState(),
+      lastSynthesis: "2026-08-01T00:00:00.000Z",
+      pagesAtLastSynthesis: 15,
+    };
+    const result = await evaluateWikiSynthesis(root, state, {} as never, {
+      now: new Date("2026-08-11T00:00:00.000Z"),
+    });
+    expect(result.ran).toBe(false);
   });
 });

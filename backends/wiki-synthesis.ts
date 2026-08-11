@@ -1,14 +1,35 @@
 // backends/wiki-synthesis.ts — FR-WIKI-06 wiki synthesis candidates and runner.
 
+import {
+  createAgentSession,
+  DefaultResourceLoader,
+  SessionManager,
+  defineTool,
+  type ModelRuntime,
+  type ToolDefinition,
+} from "@earendil-works/pi-coding-agent";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { EXCLUDED_TOOLS } from "../shared/defaults";
 import { WIKI_DIR } from "../shared/brain-paths";
+import { toIsoDay } from "../shared/dates";
+import type { WikiMaintenanceState } from "../shared/wiki-state";
 import { buddyPath } from "./brain-paths";
+import { resolveFastTierModel } from "./fast-model";
+import { commitAll } from "./git";
+import { buddyAgentDir } from "./global-config";
+import { buddySessionsDir } from "./session-paths";
+import {
+  buildWikiFileTool,
+  type WikiFileInput,
+} from "./wiki-file";
+import { resolveInstanceLanguage } from "./wiki-tools";
 import {
   extractConnections,
   readWikiPageMetadata,
   slugifyTitle,
+  type WikiLanguage,
   type WikiPageMetadata,
 } from "./wiki-format";
 import { listWikiPageRelPaths } from "./wiki-index";
@@ -171,3 +192,254 @@ export function wikiSynthesisCandidates(rootDir: string): SynthesisCandidate[] {
 
 /** Re-export for tests that build pages with connections from raw content. */
 export { extractConnections };
+
+export interface WikiSynthesisResult {
+  state: WikiMaintenanceState;
+  ran: boolean;
+  pagesCreated: number;
+  candidates: SynthesisCandidate[];
+}
+
+export interface WikiSynthesisSessionLike {
+  prompt(text: string): Promise<void>;
+  dispose(): void;
+  pagesCreated(): number;
+  capRejected(): boolean;
+}
+
+export const SYNTHESIS_CAP_MESSAGE =
+  "Synthesis cap reached (3 pages per run). Stop creating pages.";
+
+function wikiPageCount(rootDir: string): number {
+  const wikiDir = buddyPath(rootDir, WIKI_DIR);
+  if (!existsSync(wikiDir)) return 0;
+  return listWikiPageRelPaths(wikiDir).length;
+}
+
+export function daysSinceIso(iso: string | null, now: Date): number {
+  if (!iso) return Number.POSITIVE_INFINITY;
+  return (now.getTime() - new Date(iso).getTime()) / (86400 * 1000);
+}
+
+export function shouldRunWikiSynthesis(
+  state: WikiMaintenanceState,
+  pageCount: number,
+  now: Date,
+): boolean {
+  const growth = pageCount - state.pagesAtLastSynthesis;
+  if (state.lastSynthesis !== null && growth < WIKI_SYNTHESIS_PAGE_GROWTH_THRESHOLD) {
+    return false;
+  }
+  if (state.lastSynthesis !== null && daysSinceIso(state.lastSynthesis, now) < state.synthesisCooldownDays) {
+    return false;
+  }
+  if (state.lastSynthesis === null && pageCount < WIKI_SYNTHESIS_PAGE_GROWTH_THRESHOLD) {
+    return false;
+  }
+  return true;
+}
+
+export function buildSynthesisPrompt(candidates: SynthesisCandidate[]): string {
+  return [
+    "Evaluate these wiki synthesis candidates. Call wiki_file for each candidate that deserves its own page.",
+    `Do not exceed ${WIKI_SYNTHESIS_MAX_PAGES_PER_RUN} pages in this run.`,
+    "",
+    "Candidates:",
+    JSON.stringify(candidates, null, 2),
+    "",
+    'For each approved candidate, create a synthesis page with title from the label, a one-line summary, key points, tags, category, connections to related pages, and sources including "synthesis".',
+  ].join("\n");
+}
+
+export function buildCappedWikiFileTools(
+  rootDir: string,
+  language: WikiLanguage | undefined,
+  maxPages: number,
+  counters: { created: number; rejected: boolean },
+): ToolDefinition[] {
+  const baseTools = buildWikiFileTool(rootDir, language);
+  return baseTools.map((tool) =>
+    defineTool({
+      name: tool.name,
+      label: tool.label,
+      description: tool.description,
+      parameters: tool.parameters,
+      async execute(callId, args, signal, onUpdate, ctx) {
+        if (counters.created >= maxPages) {
+          counters.rejected = true;
+          return {
+            content: [{ type: "text", text: SYNTHESIS_CAP_MESSAGE }],
+            details: { capped: true },
+          };
+        }
+        const input = {
+          ...(args as WikiFileInput),
+          sources: [...((args as WikiFileInput).sources ?? []), "synthesis"],
+        };
+        const result = await tool.execute(callId, input, signal, onUpdate, ctx);
+        const details = result.details as { capped?: boolean } | undefined;
+        if (!details?.capped) counters.created++;
+        return result;
+      },
+    }),
+  );
+}
+
+export type WikiSynthesisAgentSession = Pick<
+  Awaited<ReturnType<typeof createAgentSession>>["session"],
+  "prompt" | "dispose"
+>;
+
+async function openRealWikiSynthesisSession(config: {
+  rootDir: string;
+  modelRuntime: ModelRuntime;
+  language?: WikiLanguage;
+  counters: { created: number; rejected: boolean };
+}): Promise<WikiSynthesisAgentSession> {
+  const modelOptions = await resolveFastTierModel(config.rootDir, config.modelRuntime, "off");
+  const resourceLoader = new DefaultResourceLoader({
+    cwd: config.rootDir,
+    agentDir: buddyAgentDir(),
+    systemPromptOverride: () =>
+      "You evaluate wiki synthesis candidates and file approved concepts using wiki_file only.",
+  });
+  await resourceLoader.reload();
+
+  const cappedTools = buildCappedWikiFileTools(
+    config.rootDir,
+    config.language,
+    WIKI_SYNTHESIS_MAX_PAGES_PER_RUN,
+    config.counters,
+  );
+
+  const { session } = await createAgentSession({
+    cwd: config.rootDir,
+    agentDir: buddyAgentDir(),
+    resourceLoader,
+    sessionManager: SessionManager.create(config.rootDir, buddySessionsDir(config.rootDir)),
+    excludeTools: [...EXCLUDED_TOOLS],
+    tools: ["wiki_file"],
+    customTools: cappedTools,
+    modelRuntime: config.modelRuntime,
+    ...modelOptions,
+  });
+  return session;
+}
+
+export async function createWikiSynthesisSession(options: {
+  rootDir: string;
+  modelRuntime: ModelRuntime;
+  language?: WikiLanguage;
+  openSession?: (config: {
+    rootDir: string;
+    modelRuntime: ModelRuntime;
+    language?: WikiLanguage;
+    counters: { created: number; rejected: boolean };
+  }) => Promise<WikiSynthesisAgentSession>;
+}): Promise<WikiSynthesisSessionLike> {
+  const counters = { created: 0, rejected: false };
+  const openSession = options.openSession ?? openRealWikiSynthesisSession;
+  const session = await openSession({
+    rootDir: options.rootDir,
+    modelRuntime: options.modelRuntime,
+    language: options.language,
+    counters,
+  });
+
+  return {
+    async prompt(text: string) {
+      await session.prompt(text);
+    },
+    dispose() {
+      session.dispose();
+    },
+    pagesCreated() {
+      return counters.created;
+    },
+    capRejected() {
+      return counters.rejected;
+    },
+  };
+}
+
+export async function runWikiSynthesis(
+  rootDir: string,
+  state: WikiMaintenanceState,
+  modelRuntime: ModelRuntime,
+  language?: WikiLanguage,
+  now: Date = new Date(),
+  deps: {
+    createSession?: typeof createWikiSynthesisSession;
+  } = {},
+): Promise<WikiSynthesisResult> {
+  const lang = language ?? resolveInstanceLanguage();
+  const candidates = wikiSynthesisCandidates(rootDir);
+  const pageCount = wikiPageCount(rootDir);
+
+  if (candidates.length === 0) {
+    return {
+      state: { ...state, lastSynthesis: now.toISOString(), pagesAtLastSynthesis: pageCount },
+      ran: false,
+      pagesCreated: 0,
+      candidates: [],
+    };
+  }
+
+  const createSession = deps.createSession ?? createWikiSynthesisSession;
+  let session: WikiSynthesisSessionLike | undefined;
+  let pagesCreated = 0;
+
+  try {
+    session = await createSession({ rootDir, modelRuntime, language: lang });
+    await session.prompt(buildSynthesisPrompt(candidates));
+    pagesCreated = session.pagesCreated();
+    if (pagesCreated > 0) {
+      await commitAll(rootDir, `wiki: synthesis ${toIsoDay(now)}`);
+    }
+  } finally {
+    session?.dispose();
+  }
+
+  return {
+    state: {
+      ...state,
+      lastSynthesis: now.toISOString(),
+      pagesAtLastSynthesis: wikiPageCount(rootDir),
+    },
+    ran: true,
+    pagesCreated,
+    candidates,
+  };
+}
+
+export async function evaluateWikiSynthesis(
+  rootDir: string,
+  state: WikiMaintenanceState,
+  modelRuntime: ModelRuntime,
+  options: {
+    now?: Date;
+    language?: WikiLanguage;
+    isStreaming?: () => boolean;
+    isBudgetNearLimit?: () => boolean;
+    createSession?: typeof createWikiSynthesisSession;
+    runSynthesisFn?: typeof runWikiSynthesis;
+  } = {},
+): Promise<WikiSynthesisResult> {
+  const now = options.now ?? new Date();
+  const pageCount = wikiPageCount(rootDir);
+
+  if (options.isStreaming?.()) {
+    return { state, ran: false, pagesCreated: 0, candidates: [] };
+  }
+  if (options.isBudgetNearLimit?.()) {
+    return { state, ran: false, pagesCreated: 0, candidates: [] };
+  }
+  if (!shouldRunWikiSynthesis(state, pageCount, now)) {
+    return { state, ran: false, pagesCreated: 0, candidates: [] };
+  }
+
+  const run = options.runSynthesisFn ?? runWikiSynthesis;
+  return run(rootDir, state, modelRuntime, options.language, now, {
+    createSession: options.createSession,
+  });
+}
