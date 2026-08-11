@@ -18,6 +18,7 @@ import { hasNewContentSinceConsolidation } from "./consolidation-content";
 import { runConsolidation } from "./consolidation-runner";
 import { getDueDeferred, toDeferredItemViews } from "./deferred";
 import { evaluateWikiHealth, type WikiHealthEvalResult } from "./wiki-heartbeat";
+import { evaluateWikiSynthesis } from "./wiki-synthesis";
 import { loadWikiState, saveWikiState, type WikiMaintenanceState } from "../shared/wiki-state";
 import { pruneSessionArtifacts } from "./session-log-prune";
 import { toIsoDay } from "../shared/dates";
@@ -40,6 +41,7 @@ export interface HeartbeatDeps {
     rootDir: string,
     state: WikiMaintenanceState,
   ) => Promise<WikiHealthEvalResult>;
+  evaluateWikiSynthesisFn?: typeof evaluateWikiSynthesis;
 }
 
 export interface HeartbeatHandle {
@@ -54,10 +56,12 @@ export function startHeartbeat(deps: HeartbeatDeps): HeartbeatHandle {
   const runConsolidationImpl = deps.runConsolidationFn ?? runConsolidation;
   const hasNewContentImpl = deps.hasNewContentFn ?? hasNewContentSinceConsolidation;
   const evaluateWikiHealthImpl = deps.evaluateWikiHealthFn ?? evaluateWikiHealth;
+  const evaluateWikiSynthesisImpl = deps.evaluateWikiSynthesisFn ?? evaluateWikiSynthesis;
   let state = loadConsolidationState(deps.rootDir);
   let wikiState = loadWikiState(deps.rootDir);
   let consolidationInFlight = false;
   let wikiHealthInFlight = false;
+  let wikiSynthesisInFlight = false;
   let timer: ReturnType<typeof setInterval> | undefined;
   let lastTickAt = 0;
   let prunedThisBoot = false;
@@ -147,6 +151,26 @@ export function startHeartbeat(deps: HeartbeatDeps): HeartbeatHandle {
     }
   }
 
+  async function evaluateWikiSynthesisTask(): Promise<void> {
+    if (wikiSynthesisInFlight) return;
+    wikiSynthesisInFlight = true;
+    try {
+      const result = await evaluateWikiSynthesisImpl(deps.rootDir, wikiState, deps.modelRuntime, {
+        isStreaming: deps.isStreaming,
+        isBudgetNearLimit: deps.isBudgetNearLimit,
+      });
+      wikiState = result.state;
+      saveWikiState(deps.rootDir, wikiState);
+    } catch (error) {
+      logEvent(deps.rootDir, {
+        event: "wiki_synthesis_error",
+        error: error instanceof Error ? error.message : String(error),
+      });
+    } finally {
+      wikiSynthesisInFlight = false;
+    }
+  }
+
   async function tickInner(): Promise<void> {
     if (!prunedThisBoot) {
       pruneSessionArtifacts(deps.rootDir);
@@ -171,6 +195,7 @@ export function startHeartbeat(deps: HeartbeatDeps): HeartbeatHandle {
     }, now);
     await evaluateConsolidation();
     await evaluateWikiHealthTask();
+    await evaluateWikiSynthesisTask();
   }
 
   // Rate-limited tick for setInterval — guards against runaway timer

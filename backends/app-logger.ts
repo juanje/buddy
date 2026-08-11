@@ -31,6 +31,8 @@ export type AppLogEvent =
   | { event: "heartbeat_tick"; deferredDue: number; consolidationEvaluated: boolean }
   /** FR-WIKI-05: heartbeat wiki health audit failed (does not block consolidation). */
   | { event: "wiki_health_error"; error: string }
+  /** FR-WIKI-06: heartbeat wiki synthesis failed (does not block other tasks). */
+  | { event: "wiki_synthesis_error"; error: string }
   | { event: "error"; message: string; context?: string };
 
 function appLogPath(rootDir: string, day: string): string {

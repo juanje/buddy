@@ -192,4 +192,127 @@ describe("heartbeat", () => {
     expect(runConsolidationFn).toHaveBeenCalledTimes(1);
     expect(evaluateWikiHealthFn).toHaveBeenCalled();
   });
+
+  it("calls wiki synthesis eval on tick", async () => {
+    setupBuddyDir();
+    const evaluateWikiSynthesisFn = vi.fn(async () => ({
+      state: defaultWikiState(),
+      ran: false,
+      pagesCreated: 0,
+      candidates: [],
+    }));
+
+    const hb = startHeartbeat({
+      rootDir: dir,
+      modelRuntime: {} as never,
+      isStreaming: () => false,
+      onDeferredDue: vi.fn(),
+      intervalMs: TEST_HEARTBEAT_INTERVAL_MS,
+      hasNewContentFn: async () => false,
+      evaluateWikiSynthesisFn,
+    });
+
+    await hb.tick();
+    hb.stop();
+
+    expect(evaluateWikiSynthesisFn).toHaveBeenCalledTimes(1);
+  });
+
+  it("wiki synthesis failure does not block consolidation or wiki health", async () => {
+    setupBuddyDir();
+    const runConsolidationFn = vi.fn(async (_options: RunConsolidationOptions) => ({
+      ran: true,
+      completedDepths: [1],
+      state: defaultConsolidationState(),
+      abandonedDepths: [],
+    }));
+    const evaluateWikiHealthFn = vi.fn(async () => ({
+      state: defaultWikiState(),
+      ran: false,
+      repairs: null,
+    }));
+    const evaluateWikiSynthesisFn = vi.fn(async () => {
+      throw new Error("wiki synthesis boom");
+    });
+
+    const hb = startHeartbeat({
+      rootDir: dir,
+      modelRuntime: {} as never,
+      isStreaming: () => false,
+      onDeferredDue: vi.fn(),
+      intervalMs: TEST_HEARTBEAT_INTERVAL_MS,
+      runConsolidationFn,
+      hasNewContentFn: async () => true,
+      evaluateWikiHealthFn,
+      evaluateWikiSynthesisFn,
+    });
+
+    hb.incrementSessionCounter();
+    hb.incrementSessionCounter();
+    hb.incrementSessionCounter();
+
+    await hb.tick();
+    hb.stop();
+
+    expect(runConsolidationFn).toHaveBeenCalledTimes(1);
+    expect(evaluateWikiHealthFn).toHaveBeenCalled();
+    expect(evaluateWikiSynthesisFn).toHaveBeenCalled();
+  });
+
+  it("passes streaming gate to wiki synthesis eval", async () => {
+    setupBuddyDir();
+    const evaluateWikiSynthesisFn = vi.fn(async (_root, _state, _runtime, options) => {
+      expect(options?.isStreaming?.()).toBe(true);
+      return {
+        state: defaultWikiState(),
+        ran: false,
+        pagesCreated: 0,
+        candidates: [],
+      };
+    });
+
+    const hb = startHeartbeat({
+      rootDir: dir,
+      modelRuntime: {} as never,
+      isStreaming: () => true,
+      onDeferredDue: vi.fn(),
+      intervalMs: TEST_HEARTBEAT_INTERVAL_MS,
+      hasNewContentFn: async () => false,
+      evaluateWikiSynthesisFn,
+    });
+
+    await hb.tick();
+    hb.stop();
+
+    expect(evaluateWikiSynthesisFn).toHaveBeenCalled();
+  });
+
+  it("passes budget gate to wiki synthesis eval", async () => {
+    setupBuddyDir();
+    const evaluateWikiSynthesisFn = vi.fn(async (_root, _state, _runtime, options) => {
+      expect(options?.isBudgetNearLimit?.()).toBe(true);
+      return {
+        state: defaultWikiState(),
+        ran: false,
+        pagesCreated: 0,
+        candidates: [],
+      };
+    });
+
+    const hb = startHeartbeat({
+      rootDir: dir,
+      modelRuntime: {} as never,
+      isStreaming: () => false,
+      onDeferredDue: vi.fn(),
+      intervalMs: TEST_HEARTBEAT_INTERVAL_MS,
+      hasNewContentFn: async () => false,
+      isBudgetNearLimit: () => true,
+      evaluateWikiSynthesisFn,
+    });
+
+    await hb.tick();
+    hb.stop();
+
+    expect(evaluateWikiSynthesisFn).toHaveBeenCalled();
+  });
 });
