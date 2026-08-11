@@ -129,6 +129,8 @@ export const SESSION_RETENTION_DAYS = 7;
 export const GIT_LOCK_TIMEOUT_MS = 30_000;
 /** Usage-based consolidation counters (FR-CONSOL-01). */
 export const CONSOLIDATION_STATE_PATH = ".buddy/consolidation-state.json";
+/** Wiki maintenance cycle state (FR-WIKI-05/06). */
+export const WIKI_STATE_PATH = ".buddy/wiki-state.json";
 /** Consolidation run journal (FR-CONSOL-06). */
 export const CONSOLIDATION_LOG_PATH = ".buddy/consolidation-log.json";
 /**

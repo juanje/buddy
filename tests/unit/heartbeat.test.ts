@@ -8,6 +8,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { startHeartbeat } from "../../backends/heartbeat";
 import type { RunConsolidationOptions } from "../../backends/consolidation-runner";
 import { defaultConsolidationState } from "../../shared/consolidation-state";
+import { defaultWikiState } from "../../shared/wiki-state";
 import { TEST_FROZEN_NOW, TEST_HEARTBEAT_INTERVAL_MS } from "../support/test-constants";
 
 describe("heartbeat", () => {
@@ -132,5 +133,63 @@ describe("heartbeat", () => {
     hb.stop();
 
     expect(runConsolidationFn).not.toHaveBeenCalled();
+  });
+
+  it("calls wiki health eval on tick", async () => {
+    setupBuddyDir();
+    const evaluateWikiHealthFn = vi.fn(async () => ({
+      state: defaultWikiState(),
+      ran: false,
+      repairs: null,
+    }));
+
+    const hb = startHeartbeat({
+      rootDir: dir,
+      modelRuntime: {} as never,
+      isStreaming: () => false,
+      onDeferredDue: vi.fn(),
+      intervalMs: TEST_HEARTBEAT_INTERVAL_MS,
+      hasNewContentFn: async () => false,
+      evaluateWikiHealthFn,
+    });
+
+    await hb.tick();
+    hb.stop();
+
+    expect(evaluateWikiHealthFn).toHaveBeenCalledTimes(1);
+  });
+
+  it("wiki health failure does not block consolidation", async () => {
+    setupBuddyDir();
+    const runConsolidationFn = vi.fn(async (_options: RunConsolidationOptions) => ({
+      ran: true,
+      completedDepths: [1],
+      state: defaultConsolidationState(),
+      abandonedDepths: [],
+    }));
+    const evaluateWikiHealthFn = vi.fn(async () => {
+      throw new Error("wiki health boom");
+    });
+
+    const hb = startHeartbeat({
+      rootDir: dir,
+      modelRuntime: {} as never,
+      isStreaming: () => false,
+      onDeferredDue: vi.fn(),
+      intervalMs: TEST_HEARTBEAT_INTERVAL_MS,
+      runConsolidationFn,
+      hasNewContentFn: async () => true,
+      evaluateWikiHealthFn,
+    });
+
+    hb.incrementSessionCounter();
+    hb.incrementSessionCounter();
+    hb.incrementSessionCounter();
+
+    await hb.tick();
+    hb.stop();
+
+    expect(runConsolidationFn).toHaveBeenCalledTimes(1);
+    expect(evaluateWikiHealthFn).toHaveBeenCalled();
   });
 });

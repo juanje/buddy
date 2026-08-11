@@ -29,6 +29,8 @@ export type AppLogEvent =
   | { event: "post_consolidation_rename"; from: string; to: string }
   | { event: "post_consolidation_link_repair"; file: string; target: string }
   | { event: "heartbeat_tick"; deferredDue: number; consolidationEvaluated: boolean }
+  /** FR-WIKI-05: heartbeat wiki health audit failed (does not block consolidation). */
+  | { event: "wiki_health_error"; error: string }
   | { event: "error"; message: string; context?: string };
 
 function appLogPath(rootDir: string, day: string): string {
