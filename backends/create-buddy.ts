@@ -142,12 +142,27 @@ export function adoptBuddyInstance(options: Pick<CreateBuddyOptions, "config" | 
  * auto-commit fails silently for the life of the install.
  */
 export async function ensureGitRepository(rootDir: string): Promise<boolean> {
-  if (existsSync(join(rootDir, ".git"))) return false;
   const git = gitClient(rootDir);
-  await git.init();
-  await git.addConfig("user.name", GIT_USER_NAME);
-  await git.addConfig("user.email", GIT_USER_EMAIL);
-  return true;
+  // Spike E / review D8: an adopted clone may already have `.git` but no *local*
+  // identity. Global config (if any) is not enough for a portable Buddy home —
+  // set local name/email when the repo has none.
+  if (!existsSync(join(rootDir, ".git"))) {
+    await git.init();
+    await git.addConfig("user.name", GIT_USER_NAME);
+    await git.addConfig("user.email", GIT_USER_EMAIL);
+    return true;
+  }
+  let localName: string | undefined;
+  try {
+    localName = (await git.getConfig("user.name", "local")).value;
+  } catch {
+    localName = undefined;
+  }
+  if (!localName) {
+    await git.addConfig("user.name", GIT_USER_NAME);
+    await git.addConfig("user.email", GIT_USER_EMAIL);
+  }
+  return false;
 }
 
 /**
