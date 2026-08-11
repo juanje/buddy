@@ -4,7 +4,7 @@
 // somewhere before H5: write atomically, and never treat "cannot read" as
 // "empty". The adversarial cases are the point (NFR-TEST-01).
 
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   chmodSync,
   existsSync,
@@ -17,6 +17,14 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+
+const { applyRestrictiveAcl } = vi.hoisted(() => ({
+  applyRestrictiveAcl: vi.fn(),
+}));
+
+vi.mock("../../backends/secure-perms", () => ({
+  applyRestrictiveAcl,
+}));
 
 import {
   readStateFile,
@@ -32,6 +40,7 @@ let file: string;
 beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), "state-file-"));
   file = join(dir, "state.json");
+  applyRestrictiveAcl.mockClear();
 });
 
 afterEach(() => {
@@ -112,6 +121,18 @@ describe("writeStateFile", () => {
       writeStateFile(file, { n: i, padding: "x".repeat(i * 500) });
       expect(() => JSON.parse(readFileSync(file, "utf8"))).not.toThrow();
     }
+  });
+
+  it("applies ACL only when creating a new file (review B1)", () => {
+    // Parent dir already exists (tmpdir) — only the file ACL is new.
+    writeStateFile(file, { a: 1 });
+    expect(applyRestrictiveAcl.mock.calls.map((c) => c[0])).toContain(file);
+    const creates = applyRestrictiveAcl.mock.calls.filter((c) => c[0] === file);
+    expect(creates).toHaveLength(1);
+
+    applyRestrictiveAcl.mockClear();
+    writeStateFile(file, { a: 2 });
+    expect(applyRestrictiveAcl.mock.calls.filter((c) => c[0] === file)).toHaveLength(0);
   });
 });
 

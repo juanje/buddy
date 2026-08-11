@@ -227,6 +227,10 @@ export function writeStateFile(path: string, data: unknown, options?: StateFileO
   if (!dirExisted) applyRestrictiveAcl(dir);
   // Same directory, so the rename stays within one filesystem and is atomic.
   const tmp = join(dir, `.${basename(path)}.${process.pid}.${Date.now()}.tmp`);
+  // NFR-SEC-17 / review B1: ACL only on first create. Later writes inherit the
+  // parent directory ACL (already restricted above); spawning icacls on every
+  // usage.json rewrite is pure overhead (NFR-PORT-09).
+  const fileExisted = existsSync(path);
   try {
     // The mode goes on the temp file, which is the file that ends up in place
     // after the rename. There is no moment at which it exists more permissively.
@@ -235,7 +239,7 @@ export function writeStateFile(path: string, data: unknown, options?: StateFileO
       mode: options?.mode ?? STATE_FILE_MODE,
     });
     renameSync(tmp, path);
-    applyRestrictiveAcl(path);
+    if (!fileExisted) applyRestrictiveAcl(path);
   } catch (error) {
     try {
       rmSync(tmp, { force: true });
