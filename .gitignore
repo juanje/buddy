@@ -15,3 +15,7 @@ eval-questions.json
 # walks the working tree, so a stray swap file would end up in the sidecar.
 *.sw[a-z]
 *~
+
+# Obsidian creates per-vault config in the directory it opens. Users browsing
+# the wiki (or any buddy directory) with Obsidian should not pollute commits.
+.obsidian/
