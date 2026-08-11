@@ -11,15 +11,15 @@
 // a local account needs.
 
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { execFileSync } from "node:child_process";
-import { chmodSync, mkdirSync, mkdtempSync, rmSync, statSync } from "node:fs";
-import { tmpdir, userInfo } from "node:os";
+import { chmodSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { writeStateFile } from "../../backends/state-file";
 import { addAllowedPath, allowedPathsFile } from "../../backends/allowed-paths";
 import { ensureConfigDirMode } from "../../backends/global-config";
 import { AUTH_FILE_MODE, CONFIG_DIR_MODE, STATE_FILE_MODE } from "../../shared/defaults";
+import { assertRestricted } from "../support/assert-restricted";
 
 let base: string;
 
@@ -30,20 +30,6 @@ beforeEach(() => {
 afterEach(() => {
   rmSync(base, { recursive: true, force: true });
 });
-
-const modeOf = (path: string) => statSync(path).mode & 0o777;
-
-/** NFR-SEC-17: POSIX mode bits on Unix; ACL (no BUILTIN\\Users) on Windows. */
-function assertRestricted(path: string, posixMode: number): void {
-  if (process.platform === "win32") {
-    const listing = execFileSync("icacls", [path], { encoding: "utf8" });
-    expect(listing, path).toMatch(/\(F\)/);
-    expect(listing.toLowerCase(), path).not.toMatch(/builtin\\users/);
-    expect(listing.toLowerCase(), path).toContain(userInfo().username.toLowerCase());
-  } else {
-    expect(modeOf(path), path).toBe(posixMode);
-  }
-}
 
 describe("state files are created restrictively", () => {
   it("writes a state file 0600 by default", () => {

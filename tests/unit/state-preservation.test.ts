@@ -17,6 +17,8 @@ import { bootRefreshIfNeeded } from "../../backends/boot-refresh";
 import { configureProviderKey } from "../../backends/provider-auth";
 import { recordUsageToFile } from "../../backends/usage-tracker";
 import { StateFileUnreadableError } from "../../backends/state-file";
+import { AUTH_FILE_MODE } from "../../shared/defaults";
+import { assertRestricted } from "../support/assert-restricted";
 
 let dir: string;
 const CORRUPT = "{ this is not json";
@@ -63,12 +65,7 @@ describe("auth.json", () => {
       authPath: authPath(),
       probe: async () => ({ ok: true }),
     });
-    const { existsSync, statSync } = await import("node:fs");
-    if (process.platform !== "win32") {
-      expect(statSync(authPath()).mode & 0o777).toBe(0o600);
-    } else {
-      expect(existsSync(authPath())).toBe(true);
-    }
+    assertRestricted(authPath(), AUTH_FILE_MODE);
   });
 });
 

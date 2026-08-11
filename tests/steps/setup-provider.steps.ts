@@ -5,15 +5,16 @@
 
 import { Given, When, Then, After } from "@cucumber/cucumber";
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync, rmSync, statSync } from "node:fs";
-import { tmpdir, userInfo } from "node:os";
+import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { get } from "svelte/store";
 
 import { configureProviderKey, type ProviderId } from "../../backends/provider-auth";
+import { AUTH_FILE_MODE } from "../../shared/defaults";
 import { toPiProviderId } from "../../shared/provider-mapping";
 import type { SetupController } from "../../src/lib/setup-controller";
+import { assertRestricted } from "../support/assert-restricted";
 import { advanceToProviderStep } from "../support/setup-wizard-helpers";
 import { wizardOf } from "../support/setup-wizard-factory";
 import type { BuddyWorld } from "../support/world";
@@ -90,21 +91,8 @@ Then(
     const store = JSON.parse(readFileSync(this.authPath!, "utf8"));
     const provider = get(wizardOf(this, providerOverrides).provider)!;
     assert.deepEqual(store[toPiProviderId(provider)], { type: "api_key", key: "valid-test-key" });
-    // NFR-SEC-17: mode bits on POSIX; ACL on Windows (chmod is a no-op there).
-    if (process.platform === "win32") {
-      const listing = execFileSync("icacls", [this.authPath!], { encoding: "utf8" });
-      assert.match(listing, /\(F\)/);
-      assert.ok(
-        !listing.toLowerCase().includes("builtin\\users"),
-        `expected no BUILTIN\\Users ACE, got:\n${listing}`,
-      );
-      assert.ok(
-        listing.toLowerCase().includes(userInfo().username.toLowerCase()),
-        `expected current user in ACL, got:\n${listing}`,
-      );
-    } else {
-      assert.equal(statSync(this.authPath!).mode & 0o777, 0o600);
-    }
+    // NFR-SEC-17 / review D4: shared ACL/mode helper.
+    assertRestricted(this.authPath!, AUTH_FILE_MODE);
   },
 );
 
