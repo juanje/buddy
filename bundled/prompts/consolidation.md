@@ -256,12 +256,17 @@ conversations or days):
 **Rule candidates (seen 2+):**
 1. Evaluate where it sits on the spectrum:
    - Universal trait describing who the agent IS → add to SOUL.md Character.
-   - Contextual operational rule → add to AGENTS.md Rules, with WHY.
+   - Contextual operational rule → add to `## Rules` in AGENTS.md, with WHY.
    - If unclear, default to AGENTS.md — it can be promoted later.
 2. Formulate the rule with its reasoning: `[rule]. [why — what it prevents,
    enables, or protects]`.
 3. Add directly to the appropriate file. Log what was added and why.
 4. Mark the observation as resolved.
+
+**Core vs instance rules:** Core behavioral rules are already loaded in your
+system prompt context — do not duplicate or modify them. If a pattern worth
+codifying is not already covered, add a new **instance rule** to `## Rules` in
+AGENTS.md only.
 
 **Concept candidates (seen 2+):**
 1. Create the concept file if not already created in step 6 above.

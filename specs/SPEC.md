@@ -1507,6 +1507,7 @@ repair → `commitAll`.
 | FR-PROMPT-04 | Hidden context injection at session boot | 2 ✓ |
 | FR-PROMPT-06 | Edit batching guidance for append-heavy files | 2 ✓ |
 | FR-PROMPT-07 | Queue file edit anchoring guidance | 2 ✓ |
+| FR-PROMPT-08 | AGENTS.md structural migration (strip core instructions) | 2 ✓ |
 
 **FR-PROMPT-01 — System prompt assembly**
 
@@ -1560,8 +1561,7 @@ does not know them, and orders their profile overwritten.
 - **Given** a session is starting
 - **When** the system prompt is assembled
 - **Then** `~/.buddy/prompts/agents-base.md` is read first and forms the base behavioral layer
-- **And** it defines: available tools, what's automatic (git, directory creation, session logging), agent limits (no bash, no shell), Buddy identity anchor, and **`~/.buddy/docs/` as authoritative self-reference** — for questions about capabilities, memory, or how Buddy works, read docs before answering (do not infer from instance files like `AGENTS.md`)
-- **And** it includes the **knowledge routing rule** (NFR-ROUTE-01/02): a section that tells the agent where to store captures (user knowledge → `wiki_file`, tasks → inbox/projects, agent learning → `agent_brain/`) and where to search for retrieval (user knowledge → `wiki_search`, agent context → `agent_brain/` indexes, past conversations → logs)
+- **And** it defines: available tools, what's automatic (git, directory creation, session logging), agent limits (no bash, no shell), Buddy identity anchor, **`~/.buddy/docs/` as authoritative self-reference**, **capture routing rules**, **core rules** (12 behavioral rules), **file metadata contract**, and **knowledge routing** (NFR-ROUTE-01/02) with two subsections: `### Where to write` (capture destinations) and `### Where to search` (retrieval destinations)
 - **And** the instance-specific file (`rootDir/AGENTS.md` or `rootDir/CLAUDE.md`) is appended after it as an overlay
 - **And** if `agents-base.md` and the instance file contradict, the base takes precedence for capability constraints (the model follows the most specific/earliest instruction)
 - **And** skill tools (FR-SKILL-01) are registered on the session so the LLM can invoke procedural prompts without reading files
@@ -1601,6 +1601,23 @@ does not know them, and orders their profile overwritten.
   using it as an `oldText` anchor triggers `Found N occurrences ... must be
   unique`, pushing the model into the write-fallback path (#2b). Section
   headings are unique by design.
+
+**FR-PROMPT-08 — AGENTS.md structural migration**
+
+- **Given** an existing buddy instance with AGENTS.md in the old format (contains `## Core behavior`)
+- **When** the worker boots a session (`session-boot.ts`)
+- **Then** `migrateAgentsMdIfNeeded()` extracts personalized sections: Active context, Where to find things, Skills (if present), and instance-learned rules (rules not matching core rule keywords)
+- **And** backs up the original to `.buddy/migrations/agents-md-pre-split.md`
+- **And** rewrites AGENTS.md with only instance sections (Active context, Where to find things, Rules with instance-learned rules only)
+- **And** core behavioral rules (capture, metadata, 12 core rules) are removed — they live in agents-base.md
+- **And** if AGENTS.md does not contain `## Core behavior`, migration is skipped (idempotent)
+- **And** fresh instances created from the new template never have core instructions in AGENTS.md
+- **Conflict resolutions** (all in agents-base.md, single source of truth):
+  - **Wiki routing:** interconnected knowledge → `user/wiki/` via `wiki_file`; structured content → direct write in `user/`
+  - **Rule 6:** "Write it or don't say it" applies to `agent_brain/` and `user/` only — not `logs/` (reflect owns log writes)
+  - **USER.md authority:** update with observed facts, always inform the user, mark inferences as `[inferred — verify]`
+  - **agent_brain timing:** user's decisions → write during session; agent's own learning → reflect/consolidation only
+  - **Deferred language:** stated once in capture rules; agents-base environment section keeps format/tone guidance only
 
 ### 3.11 Git Operations (FR-GIT)
 
@@ -1787,7 +1804,7 @@ detailed specification: [specs/BRAIN-SPEC.md](BRAIN-SPEC.md).
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-BRAIN-01 | AGENTS.md provides behavioral rules that produce buddy behavior | 1 ✓ |
+| FR-BRAIN-01 | AGENTS.md provides instance state; core rules in agents-base.md | 1 ✓ |
 | FR-BRAIN-02 | SOUL.md defines character and first-session personalization flow | 1 ✓ |
 | FR-BRAIN-03 | USER.md placeholder is correctly populated by agent in first conversation | 1 ✓ |
 | FR-BRAIN-04 | Consolidation skill produces meaningful summaries when invoked | 2 ✓ |
@@ -1801,15 +1818,17 @@ detailed specification: [specs/BRAIN-SPEC.md](BRAIN-SPEC.md).
 | FR-BRAIN-12 | Forget mechanism | — deferred |
 | FR-BRAIN-13 | Extended memory retrieval eval | — deferred |
 
-**FR-BRAIN-01 — AGENTS.md behavioral rules**
+**FR-BRAIN-01 — AGENTS.md instance state + agents-base core rules**
 
 - **Given** a fresh buddy instance with only the template content
 - **When** the user talks to the agent about tasks, ideas, decisions
-- **Then** the agent routes captures per NFR-ROUTE-01: user knowledge → `wiki_file`, actionable items → `user/inbox.md` / `user/projects/`, agent learning → `agent_brain/`
+- **Then** the agent routes captures per NFR-ROUTE-01 (from agents-base.md): user knowledge → `wiki_file`, actionable items → `user/inbox.md` / `user/projects/`, agent learning → `agent_brain/`
 - **And** retrieval follows NFR-ROUTE-02: `wiki_search` for user knowledge, `agent_brain/` navigation for agent context, logs for conversation history
 - **And** the agent writes to files and commits without being reminded
 - **And** the agent uses progressive disclosure (reads indexes before files)
 - **And** the agent does not execute code or attempt bash operations
+- **And** core behavioral rules come from agents-base.md (FR-PROMPT-03), not AGENTS.md
+- **And** AGENTS.md provides instance-specific state: active context, navigation map, learned rules
 
 **FR-BRAIN-02 — SOUL.md character + first-session flow**
 
@@ -1857,7 +1876,8 @@ detailed specification: [specs/BRAIN-SPEC.md](BRAIN-SPEC.md).
 - **When** the AGENTS.md template is authored
 - **Then** it does NOT declare a "Skills" section pointing to files in `agent_brain/skills/`
 - **And** the LLM discovers procedural capabilities via the tool list descriptions
-- **And** AGENTS.md focuses on: instance rules, active context, "where to find things", behavioral constraints
+- **And** AGENTS.md focuses on: instance rules, active context, "where to find things"
+- **And** it does NOT contain core behavioral rules (capture, metadata, 12 rules) — those live in agents-base.md (FR-PROMPT-03)
 - **Note:** Agent-*learned* skills (created from mature observations) may still exist in `agent_brain/skills/` but are invoked naturally from the conversation, not declared as a menu in AGENTS.md.
 
 **FR-BRAIN-07 — Brain health linter (structural checks)**
@@ -2946,7 +2966,7 @@ Further context on local-model evaluation methodology and findings:
 |----|-------------|
 | NFR-PORT-01 | All memory state is in human-readable files (markdown + YAML frontmatter) — no SQLite, no binary formats |
 | NFR-PORT-02 | The buddy repo works in Cursor or Claude Code with basic functionality via AGENTS.md as fallback |
-| NFR-PORT-03 | The app never overwrites AGENTS.md — user customizations are preserved |
+| NFR-PORT-03 | The app may structurally migrate AGENTS.md on boot (one-time, with backup to `.buddy/migrations/`). User customizations (active context, navigation, learned rules) are preserved. Core instructions that moved to agents-base.md are removed. |
 | NFR-PORT-04 | Platform artifacts (`.cursor/`, `.codex/`, `.claude/`) in imported instances are ignored |
 | NFR-PORT-05 | Core app prompts live in `~/.buddy/prompts/`, not inside rootDir. On any app semver change (major, minor, or patch), bundled content overwrites `~/.buddy/prompts/` and `~/.buddy/docs/` (see NFR-MIGRATE-06). User content in rootDir is never touched. |
 

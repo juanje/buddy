@@ -522,8 +522,8 @@ rootDir/                   ← git repo, user/agent content
   it's in rootDir, the user/agent owns it
 
 **System prompt layering:**
-1. `~/.buddy/prompts/agents-base.md` — tools, limits, automatic behaviors, docs self-reference
-2. `rootDir/AGENTS.md` (or `CLAUDE.md`) — instance rules, routing, active context
+1. `~/.buddy/prompts/agents-base.md` — tools, limits, capture rules, core rules, file metadata, knowledge routing, docs self-reference
+2. `rootDir/AGENTS.md` (or `CLAUDE.md`) — instance state: active context, navigation map, learned rules
 3. Identity files (SOUL.md, USER.md)
 4. Current date/time
 
@@ -540,11 +540,11 @@ that mention git commands or bash are overridden by the base's explicit "No
 bash, git is automatic" declaration — the LLM follows the most specific/earliest
 constraint.
 
-**Backward compatibility:** `AGENTS.md` stays in rootDir. It contains the
-instance-specific behavioral rules that allow any AI editor (Cursor, Claude
-Code) to operate on the repo with basic functionality. The app assembles a
-richer system prompt from `agents-base.md` + instance file, but the repo is
-self-contained if opened elsewhere.
+**Backward compatibility:** `AGENTS.md` stays in rootDir. It contains
+instance-specific state (active context, navigation, learned rules) that allow
+any AI editor (Cursor, Claude Code) to operate on the repo with basic
+functionality. Core behavioral rules live in `agents-base.md` and are only
+available when the app assembles the full system prompt.
 
 **Platform artifacts:** `.cursor/`, `.codex/`, `.claude/` are irrelevant to
 the app and ignored. They may exist in imported instances — the app doesn't
@@ -651,11 +651,12 @@ user need on day one to get value?
 
 ## Resolved design decisions
 
-1. **System prompt:** Hybrid — base behavioral rules in `AGENTS.md` (portable,
-   versioned, works in other editors as fallback). The worker loads it and
-   enriches with dynamic context (active context, deferred items, user prefs)
-   at session start. NOT per-turn (too expensive). User can edit AGENTS.md
-   directly for customization; the app never overwrites it.
+1. **System prompt:** Hybrid — core behavioral rules in `agents-base.md`
+   (app-managed, updated on every version). Instance state in `AGENTS.md`
+   (active context, navigation map, learned rules). The worker assembles both
+   at session start. NOT per-turn (too expensive). User customizations in
+   AGENTS.md are preserved; structural migration may strip core instructions
+   that moved to agents-base.md (FR-PROMPT-08).
 
 2. **Consolidation isolation:** Separate Pi session for depth >= 1. The user's
    live session is never contaminated by consolidation output. The worker
@@ -856,8 +857,8 @@ At session start the worker builds **two separate layers** — not one monolithi
 
 ```
 System prompt (identity + rules — stable for the session):
-  1. ~/.buddy/prompts/agents-base.md
-  2. rootDir/AGENTS.md (or CLAUDE.md fallback)
+  1. ~/.buddy/prompts/agents-base.md  (capture rules, core rules, metadata, routing)
+  2. rootDir/AGENTS.md (or CLAUDE.md fallback)  (instance state overlay)
   3. rootDir/agent_brain/identity/SOUL.md
   4. rootDir/agent_brain/identity/USER.md
   5. Current date/time
@@ -895,14 +896,17 @@ The deploy function must be:
 
 | `~/.buddy/` (global) | `rootDir` (per-instance) |
 |---|---|
-| Redeployed on semver bump | Adapted at runtime (backward compat) |
-| App overwrites bundled content freely | App never modifies existing content |
+| Redeployed on semver bump | User/agent content preserved |
+| App overwrites bundled content freely | Structural migrations only (with backup) |
 | Examples: prompts, docs, config format | Examples: AGENTS.md, agent_brain/, logs/ |
 
-The app **never migrates rootDir** — it adapts to what it finds. Old instances
-missing newer files (e.g., no `AGENTS.md`, only `CLAUDE.md`) are handled by
-fallback logic in the worker, not by writing new files into the user's repo.
-This preserves the principle that rootDir belongs to the user/agent.
+The app does not overwrite user/agent content in rootDir. It may perform
+**structural migrations** on specific files when the format changes between
+app versions — with backup to `.buddy/migrations/`. `brain-migration.ts` already
+does this for USER.md (scaffold missing sections) and AGENTS.md (strip core
+instructions that moved to agents-base.md, FR-PROMPT-08). Old instances missing
+newer files (e.g., no `AGENTS.md`, only `CLAUDE.md`) are handled by fallback
+logic in the worker.
 
 ### Why this matters for the future
 

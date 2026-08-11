@@ -1,7 +1,18 @@
-// tests/unit/brain-migration.test.ts — FR-BRAIN-08: USER.md section scaffolding.
+// tests/unit/brain-migration.test.ts — FR-BRAIN-08: USER.md section scaffolding; FR-PROMPT-08: AGENTS.md migration.
 
-import { describe, expect, it } from "vitest";
-import { ensureUserMdSections } from "../../backends/brain-migration";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, describe, expect, it } from "vitest";
+import {
+  AGENTS_MD_BACKUP_REL,
+  extractInstanceRules,
+  isCoreRule,
+  isOldAgentsMdFormat,
+  migrateAgentsMdContent,
+  migrateAgentsMdIfNeeded,
+  ensureUserMdSections,
+} from "../../backends/brain-migration";
 
 const MINIMAL_USER_MD = `# User profile
 
@@ -101,5 +112,75 @@ describe("ensureUserMdSections", () => {
     const result = ensureUserMdSections(WITH_BOTH);
     const count = (result.match(/## Principles/g) ?? []).length;
     expect(count).toBe(1);
+  });
+});
+
+// FR-PROMPT-08: AGENTS.md structural migration.
+describe("migrateAgentsMd", () => {
+  let dir: string;
+
+  afterEach(() => {
+    if (dir) rmSync(dir, { recursive: true, force: true });
+  });
+
+  const OLD_AGENTS = `# Buddy
+
+## Core behavior
+
+1. **Listen and capture:** tasks → inbox
+
+## Active context
+
+### Right now
+- **Scotland:** pending.
+
+## Rules
+
+1. **Language:** Reply in the user's language.
+2. Don't read files preemptively — access on demand.
+13. **Always use 24-hour time** for scheduling.
+`;
+
+  it("detects old format via ## Core behavior marker", () => {
+    expect(isOldAgentsMdFormat(OLD_AGENTS)).toBe(true);
+    expect(isOldAgentsMdFormat("# Buddy\n\n## Active context\n")).toBe(false);
+  });
+
+  it("strips core behavior and preserves instance rules", () => {
+    const migrated = migrateAgentsMdContent(OLD_AGENTS);
+    expect(migrated).not.toContain("## Core behavior");
+    expect(migrated).toContain("Scotland");
+    expect(migrated).toContain("Always use 24-hour time");
+    expect(migrated).not.toMatch(/\*\*Language:\*\*/);
+  });
+
+  it("isCoreRule matches shipped prefixes only", () => {
+    expect(isCoreRule("1. **Language:** Spanish")).toBe(true);
+    expect(isCoreRule("13. **Always use 24-hour time**")).toBe(false);
+  });
+
+  it("extractInstanceRules filters core rules", () => {
+    const rules = extractInstanceRules(`1. **Language:** x
+2. Don't read files preemptively
+13. **Custom rule** for this instance`);
+    expect(rules).toHaveLength(1);
+    expect(rules[0]).toContain("Custom rule");
+  });
+
+  it("migrateAgentsMdIfNeeded writes backup and rewrites AGENTS.md", () => {
+    dir = mkdtempSync(join(tmpdir(), "buddy-agents-migrate-"));
+    writeFileSync(join(dir, "AGENTS.md"), OLD_AGENTS);
+    expect(migrateAgentsMdIfNeeded(dir)).toBe(true);
+    expect(readFileSync(join(dir, "AGENTS.md"), "utf8")).not.toContain("## Core behavior");
+    expect(existsSync(join(dir, AGENTS_MD_BACKUP_REL))).toBe(true);
+    expect(readFileSync(join(dir, AGENTS_MD_BACKUP_REL), "utf8")).toContain("## Core behavior");
+  });
+
+  it("migrateAgentsMdIfNeeded is idempotent on new format", () => {
+    dir = mkdtempSync(join(tmpdir(), "buddy-agents-migrate-"));
+    const newFormat = migrateAgentsMdContent(OLD_AGENTS);
+    writeFileSync(join(dir, "AGENTS.md"), newFormat);
+    expect(migrateAgentsMdIfNeeded(dir)).toBe(false);
+    expect(readFileSync(join(dir, "AGENTS.md"), "utf8")).toBe(newFormat);
   });
 });

@@ -180,3 +180,38 @@ describe("process-conversation semantic distinction", () => {
     expect(prompt).toMatch(/tasks captured/i);
   });
 });
+
+// FR-PROMPT-08: core instructions live in agents-base.md after AGENTS.md split.
+describe("agents-base prompt split content", () => {
+  it("includes capture rules, file metadata, core rules, and knowledge routing", () => {
+    const base = readFileSync(
+      join(bundledPromptsDir(), "agents-base.md"),
+      "utf8",
+    );
+    expect(base).toContain("## Capture rules");
+    expect(base).toContain("## File metadata");
+    expect(base).toContain("## Core rules");
+    expect(base).toContain("## Knowledge routing");
+    expect(base).toContain("### Where to write");
+    expect(base).toContain("### Where to search");
+  });
+
+  it("resolves Rule 6 destinations to agent_brain and user, with logs excluded from capture", () => {
+    const base = readFileSync(
+      join(bundledPromptsDir(), "agents-base.md"),
+      "utf8",
+    );
+    const rule6 = base.match(/6\. \*\*Write it or don't say it\.\*\*[^\n]*/)?.[0] ?? "";
+    expect(rule6).toContain("`agent_brain/` or `user/`");
+    expect(rule6).toMatch(/Do not write to `logs\/` directly/);
+  });
+
+  it("consolidation Step 8 distinguishes core vs instance rules", () => {
+    const prompt = readFileSync(
+      join(bundledPromptsDir(), "consolidation.md"),
+      "utf8",
+    );
+    expect(prompt).toContain("Core behavioral rules are already loaded");
+    expect(prompt).toContain("**instance rule** to `## Rules` in");
+  });
+});

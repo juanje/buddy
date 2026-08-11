@@ -31,7 +31,7 @@ import { buildWikiTools } from "./wiki-tools";
 import { SessionLifecycle } from "./session-lifecycle";
 import { installEditRecoveryHook } from "./edit-recovery";
 import { persistLiveSession } from "./crash-recovery";
-import { ensureUserMdSectionsOnDisk } from "./brain-migration";
+import { ensureUserMdSectionsOnDisk, migrateAgentsMdIfNeeded } from "./brain-migration";
 import { createWorkerCore, type PiSessionLike, type WorkerCore } from "./worker-core";
 import type { UsageTracker } from "./usage-tracker";
 import { runWarmHandoff } from "./warm-handoff";
@@ -169,6 +169,7 @@ export async function bootSession(
   }
 
   ensureUserMdSectionsOnDisk(rootDir);
+  migrateAgentsMdIfNeeded(rootDir);
 
   const sessionId = randomUUID().slice(0, SESSION_ID_DISPLAY_LENGTH);
   logEvent(rootDir, { event: "session_start", session: sessionId });
