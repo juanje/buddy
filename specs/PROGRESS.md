@@ -66,11 +66,14 @@ target — there is no point wiring a runner for something not yet correct.
 
 ## Backlog (post-MVP)
 
-- **FR-WIKI Sprint 1 shipped (wiki branch, 2026-08-10):** `wiki_search`, `wiki_file`
+- **FR-WIKI Sprints 1–2 shipped (2026-08-11):** Sprint 1: `wiki_search`, `wiki_file`
   (lightweight capture), bootstrap, backlinks, index regeneration, always-on
-  registration (FR-WIKI-01/03/04/07/09). **Still open:** FR-WIKI-02 (document
-  ingest + child session), FR-WIKI-05/06 (maintenance health + synthesis),
-  FR-WIKI-08 (progress phases) — Sprints 2–4 per wiki-roadmap.
+  registration (FR-WIKI-01/03/04/07/09). Sprint 2: `wiki_check` +
+  `wiki_repair_links` (8 detection categories + auto-repair), post-write
+  health in `wiki_file`, heartbeat wiki audit with `wiki-state.json`,
+  independent of consolidation (FR-WIKI-05). **Still open:** FR-WIKI-02
+  (document ingest + child session), FR-WIKI-06 (synthesis as heartbeat
+  task), FR-WIKI-08 (progress phases) — Sprints 3–4 per wiki-roadmap.
 - **FR-PROVIDER** — Aug 2026 eval shows Qwen 27B viable for chat + reflect,
   gemma 12B for chat only. Harness hardening (#7, #26, #14) remains before
   FR-PROVIDER. Pi SDK upgraded to 0.84.x (FR-SDK-01/02/03). FR-PROVIDER-01..03
@@ -80,7 +83,7 @@ target — there is no point wiring a runner for something not yet correct.
 
 ## State
 
-Released through **v0.1.17** (2026-08-08). Phase 0 and Phase 1 complete; the
+Released through **v0.1.21** (2026-08-11). Phase 0 and Phase 1 complete; the
 H1–H8 hardening, local-model evaluation and maintenance-audit campaigns are all
 closed. v0.1.17 shipped extended ingest formats (CSV, JSON, YAML, log),
 structured rejection reasons, preference tracking in USER.md, the
