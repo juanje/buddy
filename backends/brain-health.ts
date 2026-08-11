@@ -13,7 +13,7 @@ import {
   FRONTMATTER_EXEMPT_FILES,
   REQUIRED_BRAIN_FRONTMATTER,
 } from "../shared/defaults";
-import { parseFrontmatter } from "../shared/frontmatter";
+import { hasFrontmatterBlock, matchFrontmatterBlock, parseFrontmatter } from "../shared/frontmatter";
 import { brainDirPath } from "./brain-paths";
 import { BRAIN_PREFIX, BRAIN_SUBDIRS, dirPrefix } from "../shared/brain-paths";
 
@@ -38,7 +38,8 @@ export interface BrainHealthReport {
   oversizedFiles: string[];
 }
 
-const FRONTMATTER_BLOCK = /^---\n([\s\S]*?)\n---\n/;
+/** Opening fence only — used to distinguish "absent" from "unterminated". */
+const FRONTMATTER_OPEN = /^---\r?\n/;
 
 /**
  * Describe what is structurally wrong with a file's frontmatter, or null.
@@ -48,17 +49,21 @@ const FRONTMATTER_BLOCK = /^---\n([\s\S]*?)\n---\n/;
  * merging into it, and one adding a key already present. The first is how
  * `agent_brain/concepts/local-link-routing.md` came to claim two different
  * `created` dates — one of them earlier than the file itself.
+ *
+ * NFR-PORT-06 / review B2: must accept CRLF checkouts — never LF-only
+ * `startsWith("---\n")` (that misclassified every CRLF file as "absent").
  */
 export function frontmatterProblem(content: string): string | null {
-  if (!content.startsWith("---\n")) return null; // absent — that is missingFrontmatter
-  const block = FRONTMATTER_BLOCK.exec(content);
+  if (!FRONTMATTER_OPEN.test(content)) return null; // absent — that is missingFrontmatter
+  const block = matchFrontmatterBlock(content);
   if (!block) return "frontmatter block is not terminated";
 
   const keys = (block[1].match(/^(\w+):/gm) ?? []).map((key) => key.slice(0, -1));
   const duplicated = [...new Set(keys.filter((key, i) => keys.indexOf(key) !== i))];
   if (duplicated.length > 0) return `duplicated key: ${duplicated.join(", ")}`;
 
-  if (FRONTMATTER_BLOCK.test(content.slice(block[0].length).replace(/^\s*/, ""))) {
+  const rest = content.slice(block[0].length).replace(/^\s*/, "");
+  if (hasFrontmatterBlock(rest)) {
     return "a second frontmatter block follows the first";
   }
   return null;
