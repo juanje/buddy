@@ -9,6 +9,7 @@ import { buddyPath } from "./brain-paths";
 import { regenerateWikiIndex } from "./wiki-index";
 import {
   addBacklink,
+  appendWikiLog,
   readWikiPage,
   resolveWikiLinkTarget,
   wikiLinkBetween,
@@ -345,4 +346,35 @@ export function wikiRepairLinks(
 
   const repaired = backlinksAdded + brokenLinksFixed + (indexRegenerated ? 1 : 0);
   return { backlinksAdded, brokenLinksFixed, indexRegenerated, repaired };
+}
+
+/** Post-write health pass: check, repair, log remaining warnings (FR-WIKI-05). */
+export function runPostWriteWikiHealth(
+  rootDir: string,
+  language?: WikiLanguage,
+  now: Date = new Date(),
+): WikiRepairResult {
+  const health = wikiCheck(rootDir);
+  const repairs = wikiRepairLinks(rootDir, health, language, now);
+
+  const remaining = wikiCheck(rootDir);
+  const warnings: string[] = [];
+  if (remaining.thinPages.length > 0) {
+    warnings.push(`thin pages: ${remaining.thinPages.join(", ")}`);
+  }
+  if (remaining.unresolvedSources.length > 0) {
+    warnings.push(`unresolved sources on ${remaining.unresolvedSources.length} page(s)`);
+  }
+  if (remaining.frontmatterIssues.length > 0) {
+    warnings.push(`frontmatter issues on ${remaining.frontmatterIssues.length} page(s)`);
+  }
+  if (remaining.brokenLinks.length > 0) {
+    warnings.push(`unresolved broken links on ${remaining.brokenLinks.length} page(s)`);
+  }
+
+  if (warnings.length > 0) {
+    appendWikiLog(rootDir, `- **health warnings:** ${warnings.join("; ")}`, now);
+  }
+
+  return repairs;
 }

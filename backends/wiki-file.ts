@@ -8,6 +8,7 @@ import { toIsoDay } from "../shared/dates";
 import { WIKI_DIR } from "../shared/brain-paths";
 import { buddyPath, wikiIndexPath, wikiMetaLogPath } from "./brain-paths";
 import { slugifyTitle, validateWikiSummary, validateWikiTags, type WikiLanguage } from "./wiki-format";
+import { runPostWriteWikiHealth } from "./wiki-check";
 import { regenerateWikiIndex } from "./wiki-index";
 import {
   addBacklinks,
@@ -144,6 +145,7 @@ export function fileWikiConcept(
 
   connectionsAdded += addBacklinks(rootDir, wikiRelPath, normalizedConnections, input.title, language);
   regenerateWikiIndex(rootDir, now, language);
+  runPostWriteWikiHealth(rootDir, language, now);
 
   const logEntry = `- **${filed[0].action}:** ${wikiRelPath} — ${input.summary}`;
   appendWikiLog(rootDir, logEntry, now);
