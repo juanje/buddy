@@ -3,6 +3,7 @@
 import type { AgentEvent } from "../shared/api";
 import { extractToolInfo } from "../shared/pi-events";
 import { READ_TOOLS, WRITE_TOOLS } from "../shared/defaults";
+import { toLocalIsoStamp } from "../shared/dates";
 import { sep } from "node:path";
 
 export interface TrackedToolCall {
@@ -88,8 +89,8 @@ export class SessionTracker {
   toSnapshot(endTime: Date = new Date()): SessionTrackerSnapshot {
     return {
       sessionId: this.sessionId,
-      startTime: this.startTime.toISOString(),
-      endTime: endTime.toISOString(),
+      startTime: toLocalIsoStamp(this.startTime),
+      endTime: toLocalIsoStamp(endTime),
       turnCount: this.turnCount,
       filesRead: [...this.filesRead],
       filesWritten: [...this.filesWritten],
@@ -107,7 +108,7 @@ export class SessionTracker {
     if (!name) return undefined;
 
     const path = startInfo?.path ?? endInfo?.path;
-    const timestamp = new Date().toISOString();
+    const timestamp = toLocalIsoStamp(new Date());
     const relP = path ? relPath(rootDir, path) : undefined;
     const entry: TrackedToolCall = { name, path: relP, timestamp };
     this.toolCalls.push(entry);

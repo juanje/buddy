@@ -6,7 +6,8 @@ import {
   hasNewContentSinceConsolidation,
   latestConsolidationTimestamp,
 } from "../../backends/consolidation-content";
-import { defaultConsolidationState } from "../../shared/consolidation-state";
+import { advanceCounters, defaultConsolidationState } from "../../shared/consolidation-state";
+import { toLocalIsoStamp } from "../../shared/dates";
 
 describe("consolidation content detection", () => {
   it("returns null when no consolidation has run", () => {
@@ -25,5 +26,14 @@ describe("consolidation content detection", () => {
     await expect(hasNewContentSinceConsolidation(dir, defaultConsolidationState())).resolves.toBe(
       true,
     );
+  });
+
+  it("stores local timestamps for git log --since comparisons", () => {
+    const state = defaultConsolidationState();
+    const now = new Date(2026, 7, 11, 3, 9);
+    advanceCounters(state, 1, now);
+    expect(state.lastDepth1).toBe(toLocalIsoStamp(now));
+    expect(latestConsolidationTimestamp(state)).toBe(toLocalIsoStamp(now));
+    expect(state.lastDepth1).not.toMatch(/Z$/);
   });
 });

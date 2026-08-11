@@ -4,6 +4,7 @@ import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from "
 import { join } from "node:path";
 
 import { LOCK_STALE_MS } from "../shared/defaults";
+import { toLocalIsoStamp } from "../shared/dates";
 
 export interface MaintenanceLock {
   pid: number;
@@ -54,7 +55,7 @@ export function acquireLock(rootDir: string): boolean {
   const path = lockPath(rootDir);
   mkdirSync(join(rootDir, ".buddy"), { recursive: true });
 
-  const payload: MaintenanceLock = { pid: process.pid, timestamp: new Date().toISOString() };
+  const payload: MaintenanceLock = { pid: process.pid, timestamp: toLocalIsoStamp(new Date()) };
   const write = () => writeFileSync(path, JSON.stringify(payload), { encoding: "utf8", flag: "wx" });
 
   try {

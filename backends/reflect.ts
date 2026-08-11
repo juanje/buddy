@@ -3,6 +3,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { logsDirPath, observationsPath } from "./brain-paths";
+import { toLocalIsoStamp } from "../shared/dates";
 
 export type LogStatus = "active" | "maintenance";
 
@@ -29,7 +30,7 @@ export interface FinalizeCheckpointOptions {
 }
 
 function updateLastUpdatedFrontmatter(content: string, now: Date): string {
-  const stamp = now.toISOString().slice(0, 16);
+  const stamp = toLocalIsoStamp(now);
   if (/^last_updated:/m.test(content)) {
     return content.replace(/^last_updated:.*$/m, `last_updated: ${stamp}`);
   }
@@ -57,7 +58,7 @@ export function appendDailyLog(rootDir: string, append: DailyLogAppend, now = ne
     const existing = readFileSync(logPath, "utf8");
     writeFileSync(logPath, updateLastUpdatedFrontmatter(existing, now).trimEnd() + "\n\n" + sessionBlock, "utf8");
   } else {
-    const stamp = now.toISOString().slice(0, 16);
+    const stamp = toLocalIsoStamp(now);
     writeFileSync(
       logPath,
       [

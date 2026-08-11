@@ -13,7 +13,7 @@ import { join } from "node:path";
 
 import { EXCLUDED_TOOLS } from "../shared/defaults";
 import { WIKI_DIR } from "../shared/brain-paths";
-import { toIsoDay } from "../shared/dates";
+import { toIsoDay, toLocalIsoStamp } from "../shared/dates";
 import type { WikiMaintenanceState } from "../shared/wiki-state";
 import { buddyPath } from "./brain-paths";
 import { resolveFastTierModel } from "./fast-model";
@@ -398,7 +398,7 @@ export async function runWikiSynthesis(
 
   if (candidates.length === 0) {
     return {
-      state: { ...state, lastSynthesis: now.toISOString(), pagesAtLastSynthesis: pageCount },
+      state: { ...state, lastSynthesis: toLocalIsoStamp(now), pagesAtLastSynthesis: pageCount },
       ran: false,
       pagesCreated: 0,
       candidates: [],
@@ -423,7 +423,7 @@ export async function runWikiSynthesis(
   return {
     state: {
       ...state,
-      lastSynthesis: now.toISOString(),
+      lastSynthesis: toLocalIsoStamp(now),
       pagesAtLastSynthesis: wikiPageCount(rootDir),
     },
     ran: true,
@@ -457,7 +457,7 @@ export async function evaluateWikiSynthesis(
   const trigger = shouldRunWikiSynthesis(state, pageCount, now);
   if (trigger === "initialize") {
     return {
-      state: { ...state, lastSynthesis: now.toISOString(), pagesAtLastSynthesis: pageCount },
+      state: { ...state, lastSynthesis: toLocalIsoStamp(now), pagesAtLastSynthesis: pageCount },
       ran: false,
       pagesCreated: 0,
       candidates: [],

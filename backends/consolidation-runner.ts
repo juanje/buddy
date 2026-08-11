@@ -25,7 +25,7 @@ import {
   saveConsolidationState,
   type ConsolidationState,
 } from "../shared/consolidation-state";
-import { isoWeekLabel, toIsoDay } from "../shared/dates";
+import { isoWeekLabel, toIsoDay, toLocalIsoStamp } from "../shared/dates";
 import type { BrainHealthReport } from "./brain-health";
 import {
   computeBrainHealthReport,
@@ -523,7 +523,7 @@ export async function runConsolidation(options: RunConsolidationOptions): Promis
       if (options.isBudgetNearLimit?.()) {
         stoppedBy = "budget";
         appendConsolidationLogEntry(rootDir, {
-          timestamp: now.toISOString(),
+          timestamp: toLocalIsoStamp(now),
           depth,
           duration_ms: 0,
           status: "budget-stopped",
@@ -537,7 +537,7 @@ export async function runConsolidation(options: RunConsolidationOptions): Promis
       const blocked = depthBlockReason(state, depth, now);
       if (blocked) {
         appendConsolidationLogEntry(rootDir, {
-          timestamp: now.toISOString(),
+          timestamp: toLocalIsoStamp(now),
           depth,
           duration_ms: 0,
           status: "skipped",
@@ -563,7 +563,7 @@ export async function runConsolidation(options: RunConsolidationOptions): Promis
         }
         rotateLogs(rootDir, date);
         appendConsolidationLogEntry(rootDir, {
-          timestamp: now.toISOString(),
+          timestamp: toLocalIsoStamp(now),
           depth,
           duration_ms: Date.now() - start,
           status: "success",
@@ -583,7 +583,7 @@ export async function runConsolidation(options: RunConsolidationOptions): Promis
           abandonedDepths.push(depth);
         }
         appendConsolidationLogEntry(rootDir, {
-          timestamp: now.toISOString(),
+          timestamp: toLocalIsoStamp(now),
           depth,
           duration_ms: Date.now() - start,
           status: "fail",
@@ -621,7 +621,7 @@ export async function runConsolidation(options: RunConsolidationOptions): Promis
       if (notes.length > 0) {
         appendDailyLog(rootDir, {
           date,
-          sessionHeader: `${now.toISOString().slice(11, 16)} consolidation`,
+          sessionHeader: `${toLocalIsoStamp(now).slice(11, 16)} consolidation`,
           sections: [`Maintenance cycle: ${depthLabel}.`, ...notes].join("\n\n"),
           status: "maintenance",
         }, now);

@@ -6,6 +6,7 @@ import { tmpdir } from "node:os";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { WIKI_DIR } from "../../shared/brain-paths";
+import { toLocalIsoStamp } from "../../shared/dates";
 import { defaultWikiState } from "../../shared/wiki-state";
 import { evaluateWikiHealth } from "../../backends/wiki-heartbeat";
 import { formatWikiPage } from "../../backends/wiki-format";
@@ -97,7 +98,7 @@ describe("evaluateWikiHealth", () => {
       "utf8",
     );
 
-    const now = new Date("2026-08-11T02:00:00.000Z");
+    const now = new Date(2026, 7, 11, 3, 0);
     const result = await evaluateWikiHealth(
       root,
       defaultWikiState(),
@@ -107,7 +108,7 @@ describe("evaluateWikiHealth", () => {
     );
 
     expect(result.ran).toBe(true);
-    expect(result.state.lastHealthCheck).toBe(now.toISOString());
+    expect(result.state.lastHealthCheck).toBe(toLocalIsoStamp(now));
     expect(result.state.pagesAtLastCheck).toBe(2);
     expect(result.repairs?.backlinksAdded).toBeGreaterThanOrEqual(1);
 
@@ -116,12 +117,12 @@ describe("evaluateWikiHealth", () => {
   });
 
   it("updates timestamp for empty wiki without running repairs", async () => {
-    const now = new Date("2026-08-11T03:00:00.000Z");
+    const now = new Date(2026, 7, 11, 4, 0);
     const hasChanges = vi.fn(async () => true);
     const result = await evaluateWikiHealth(root, defaultWikiState(), "en", now, hasChanges);
 
     expect(result.ran).toBe(false);
-    expect(result.state.lastHealthCheck).toBe(now.toISOString());
+    expect(result.state.lastHealthCheck).toBe(toLocalIsoStamp(now));
     expect(hasChanges).not.toHaveBeenCalled();
   });
 });

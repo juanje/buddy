@@ -13,6 +13,7 @@ import {
 import { acquireLock, releaseLock } from "../../backends/maintenance";
 import { initTestGitRepo } from "../support/test-git";
 import { depthFailureCount, loadConsolidationLog, loadConsolidationState } from "../../shared/consolidation-state";
+import { toLocalIsoStamp } from "../../shared/dates";
 import { setupGlobalConfigDir, teardownGlobalConfigDir } from "../support/global-config";
 
 describe("consolidation runner", () => {
@@ -115,7 +116,9 @@ describe("consolidation runner", () => {
     expect(prompt).toHaveBeenCalledTimes(2);
     expect(createSession).toHaveBeenCalledTimes(2);
     expect(dispose).toHaveBeenCalledTimes(2);
-    expect(loadConsolidationState(dir).lastDepth2).toBe("2026-07-22T12:00:00.000Z");
+    expect(loadConsolidationState(dir).lastDepth2).toBe(
+      toLocalIsoStamp(new Date("2026-07-22T12:00:00Z")),
+    );
 
     const log = loadConsolidationLog(dir);
     expect(log).toHaveLength(2);

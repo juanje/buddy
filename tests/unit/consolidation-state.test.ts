@@ -58,15 +58,15 @@ describe("consolidation state", () => {
     state.sessionsSinceLastDepth1 = 3;
     state.depth1RunsSinceLastDepth2 = 2;
 
-    advanceCounters(state, 1, new Date("2026-07-22T10:00:00Z"));
+    advanceCounters(state, 1, new Date(2026, 6, 22, 11, 0));
     expect(state.sessionsSinceLastDepth1).toBe(0);
     expect(state.depth1RunsSinceLastDepth2).toBe(3);
-    expect(state.lastDepth1).toBe("2026-07-22T10:00:00.000Z");
+    expect(state.lastDepth1).toBe("2026-07-22T11:00");
 
-    advanceCounters(state, 2, new Date("2026-07-22T11:00:00Z"));
+    advanceCounters(state, 2, new Date(2026, 6, 22, 12, 0));
     expect(state.depth1RunsSinceLastDepth2).toBe(0);
     expect(state.depth2RunsSinceLastDepth3).toBe(1);
-    expect(state.lastDepth2).toBe("2026-07-22T11:00:00.000Z");
+    expect(state.lastDepth2).toBe("2026-07-22T12:00");
   });
 
   it("increments session counter", () => {

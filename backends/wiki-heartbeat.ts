@@ -3,7 +3,7 @@
 import { existsSync } from "node:fs";
 
 import { WIKI_DIR } from "../shared/brain-paths";
-import { toIsoDay } from "../shared/dates";
+import { toIsoDay, toLocalIsoStamp } from "../shared/dates";
 import type { WikiMaintenanceState } from "../shared/wiki-state";
 import { buddyPath } from "./brain-paths";
 import { commitAll, gitClient } from "./git";
@@ -49,7 +49,7 @@ export async function evaluateWikiHealth(
 
   if (pageCount === 0) {
     return {
-      state: { ...state, lastHealthCheck: now.toISOString(), pagesAtLastCheck: 0 },
+      state: { ...state, lastHealthCheck: toLocalIsoStamp(now), pagesAtLastCheck: 0 },
       ran: false,
       repairs: null,
     };
@@ -70,7 +70,7 @@ export async function evaluateWikiHealth(
   return {
     state: {
       ...state,
-      lastHealthCheck: now.toISOString(),
+      lastHealthCheck: toLocalIsoStamp(now),
       pagesAtLastCheck: wikiPageCount(rootDir),
     },
     ran: true,

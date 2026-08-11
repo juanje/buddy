@@ -2,7 +2,7 @@
 
 import { describe, expect, it } from "vitest";
 
-import { formatLocalTime, toIsoDay } from "../../shared/dates";
+import { formatLocalTime, toIsoDay, toLocalIsoStamp } from "../../shared/dates";
 
 describe("formatLocalTime", () => {
   it("returns local HH:MM from an ISO UTC timestamp", () => {
@@ -25,5 +25,21 @@ describe("formatLocalTime", () => {
 describe("toIsoDay", () => {
   it("formats calendar date as YYYY-MM-DD", () => {
     expect(toIsoDay(new Date(2026, 6, 26))).toBe("2026-07-26");
+  });
+});
+
+describe("toLocalIsoStamp", () => {
+  it("returns YYYY-MM-DDTHH:MM using local time components", () => {
+    const d = new Date(2026, 7, 11, 3, 9);
+    expect(toLocalIsoStamp(d)).toBe("2026-08-11T03:09");
+  });
+
+  it("pads single-digit hours and minutes", () => {
+    const d = new Date(2026, 0, 5, 2, 7);
+    expect(toLocalIsoStamp(d)).toBe("2026-01-05T02:07");
+  });
+
+  it("does not append a UTC Z suffix", () => {
+    expect(toLocalIsoStamp(new Date(2026, 7, 11, 3, 9))).not.toMatch(/Z$/);
   });
 });

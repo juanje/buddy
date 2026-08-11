@@ -11,7 +11,7 @@ import {
   CONSOLIDATION_RETRY_CEILING,
   CONSOLIDATION_STATE_PATH,
 } from "./defaults";
-import { MS_PER_HOUR } from "./dates";
+import { MS_PER_HOUR, toLocalIsoStamp } from "./dates";
 
 /** Consecutive-failure tracking for one depth (FR-CONSOL-09). */
 export interface DepthFailureState {
@@ -187,7 +187,7 @@ export function recordDepthFailure(
   const current = state.failures?.[key]?.count ?? 0;
   const next: DepthFailureState = {
     count: current + 1,
-    lastFailureAt: now.toISOString(),
+    lastFailureAt: toLocalIsoStamp(now),
   };
   state.failures = { ...(state.failures ?? {}), [key]: next };
   return next;
@@ -221,7 +221,7 @@ export function cascadeDepths(targetDepth: 1 | 2 | 3): Array<1 | 2 | 3> {
 }
 
 export function advanceCounters(state: ConsolidationState, depth: 1 | 2 | 3, now?: Date): void {
-  const timestamp = (now ?? new Date()).toISOString();
+  const timestamp = toLocalIsoStamp(now ?? new Date());
   clearDepthFailure(state, depth);
   switch (depth) {
     case 1:

@@ -4,7 +4,7 @@ import { appendFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 
 import { APP_LOGS_DIR } from "../shared/defaults";
-import { toIsoDay } from "../shared/dates";
+import { toIsoDay, toLocalIsoStamp } from "../shared/dates";
 
 export type AppLogEvent =
   | { event: "session_start"; session: string; model?: string }
@@ -44,6 +44,6 @@ export function logEvent(rootDir: string, payload: AppLogEvent, now = new Date()
   const day = toIsoDay(now);
   const dir = join(rootDir, APP_LOGS_DIR);
   mkdirSync(dir, { recursive: true });
-  const line = JSON.stringify({ ts: now.toISOString(), ...payload }) + "\n";
+  const line = JSON.stringify({ ts: toLocalIsoStamp(now), ...payload }) + "\n";
   appendFileSync(appLogPath(rootDir, day), line, "utf8");
 }

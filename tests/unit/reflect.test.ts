@@ -127,15 +127,22 @@ describe("appendDailyLog", () => {
 
   it("creates daily log with session header", () => {
     dir = mkdtempSync(join(tmpdir(), "buddy-daily-"));
-    const path = appendDailyLog(dir, {
-      date: "2026-07-19",
-      sessionHeader: "14:00–14:30",
-      sections: "### Context\nWorked on reflect pipeline.",
-    });
+    const now = new Date(2026, 7, 11, 3, 9);
+    const path = appendDailyLog(
+      dir,
+      {
+        date: "2026-08-11",
+        sessionHeader: "14:00–14:30",
+        sections: "### Context\nWorked on reflect pipeline.",
+      },
+      now,
+    );
     const content = readFileSync(path, "utf8");
-    expect(content).toContain("# Log — 2026-07-19");
+    expect(content).toContain("# Log — 2026-08-11");
     expect(content).toContain("## Session 14:00–14:30");
     expect(content).toContain("Worked on reflect pipeline.");
+    expect(content).toContain("last_updated: 2026-08-11T03:09");
+    expect(content).not.toMatch(/last_updated:.*Z/);
   });
 
   it("appends a second session to an existing daily log", () => {

@@ -18,6 +18,15 @@ export function addDays(isoDay: string, days: number): string {
   return toIsoDay(date);
 }
 
+/**
+ * Local ISO-ish timestamp: `YYYY-MM-DDTHH:MM`.
+ * Buddy is a local desktop app — all persisted timestamps use local time so
+ * user-visible stamps and git log --since comparisons match the system clock.
+ */
+export function toLocalIsoStamp(date: Date): string {
+  return `${toIsoDay(date)}T${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+}
+
 /** Extract local HH:MM from an ISO timestamp string. */
 export function formatLocalTime(isoTimestamp: string): string {
   const date = new Date(isoTimestamp);
