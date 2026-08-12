@@ -4,7 +4,7 @@ Buddy doesn't just save chat history. It builds structured memory over time — 
 
 ## Sessions and reflect
 
-Every time you talk to Buddy, that's a session. When the session ends (you close the app or start fresh), Buddy automatically reviews what happened and captures the important parts:
+Every time you talk to Buddy, that's a session. When the session ends (you close the app), Buddy automatically reviews what happened and captures the important parts:
 
 - Decisions you made
 - Tasks and action items
@@ -22,21 +22,27 @@ Each day gets a log entry summarizing what happened across sessions. Ask "what d
 
 Periodically, Buddy goes deeper — synthesizing knowledge from recent logs, updating projects, surfacing patterns, and keeping its memory organized. This runs in three levels:
 
-- **Daily** — summarizes recent activity, processes your inbox, updates indexes.
+- **Daily** — summarizes recent activity, processes your inbox, updates indexes, writes your journal.
 - **Weekly** — looks for patterns across the week, writes journal summaries.
 - **Monthly** — deeper reorganization: grouping related knowledge, cleaning up structure, reviewing ideas.
 
-All of this is automatic. It runs in the background when you're not chatting. You never need to trigger it manually.
+Consolidation runs automatically while Buddy is in use. Lighter reviews happen frequently; deeper reviews happen after enough activity has accumulated. You never need to trigger it manually.
+
+When consolidation finds something that needs your attention — a pending decision, a reminder that's come due, or something to review — Buddy surfaces it at the start of your next session so you don't miss it.
+
+For more on how each level works: [Reflect and consolidation](memory/reflect-and-consolidation.md).
 
 ## What rises, what fades
 
 Knowledge Buddy consults frequently becomes easier to find — it stays close at hand. Knowledge that goes unused for a long time fades into the background. It's still there and still findable, but it doesn't take up attention. This happens naturally, similar to how your own memory works.
 
+For the details on how this scoring works: [Hebbian scoring](memory/hebbian-scoring.md).
+
 ## Your knowledge vs Buddy's knowledge
 
 Buddy is two things at once: a **learning assistant** that gets better at helping you, and a **second brain** that stores what you want to remember. These are kept separate:
 
-**Your second brain** (`user/wiki/`) — ideas, concepts, reflections, summaries of documents you shared, brainstorming output. This is knowledge you told Buddy to save. Buddy organizes it, connects related ideas, and helps you find things later — but the content is yours.
+**[Your second brain](wiki.md)** (`user/wiki/`) — ideas, concepts, reflections, summaries of documents you shared, brainstorming output. This is knowledge you told Buddy to save. Buddy organizes it, connects related ideas, and helps you find things later — but the content is yours.
 
 **Your tasks** (`user/inbox.md`, `user/projects/`) — things you need to do. Buddy captures tasks and reminders, helps you triage, and tracks projects. This is your action list.
 
@@ -55,6 +61,10 @@ Inside your data folder:
 
 Buddy also keeps a profile of you (`USER.md`) and its own character definition (`SOUL.md`) in `agent_brain/identity/`.
 
+For a detailed breakdown of what goes where and why: [Where things live](memory/where-things-live.md).
+
 ## Everything is files
 
 All of Buddy's knowledge is plain text files on your computer. No hidden database, no proprietary format. You can read any file, search with your editor or Spotlight, or copy the whole folder elsewhere. Git tracks every change invisibly — if something goes wrong, it can be recovered.
+
+For details on how git protects your data: [Git safety net](memory/git-safety-net.md).

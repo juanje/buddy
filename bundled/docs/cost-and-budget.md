@@ -31,4 +31,4 @@ Open **Settings** (gear icon or Cmd/Ctrl+,) → the **Usage** section shows:
 
 - **Switch to a cheaper model** — faster models cost significantly less per message. You can switch in Settings anytime.
 - **Raise or lower the budget** — find the level that's comfortable for your usage pattern.
-- **Expect background costs as part of normal operation** — maintenance runs on a fixed schedule regardless of how much you chat. With more conversations and knowledge accumulated, consolidations may process more content and cost slightly more. This is the cost of having an assistant that genuinely remembers and organizes.
+- **Expect background costs as part of normal operation** — maintenance runs automatically based on accumulated activity, not a fixed schedule. With more conversations and knowledge accumulated, consolidations may process more content and cost slightly more. This is the cost of having an assistant that genuinely remembers and organizes.

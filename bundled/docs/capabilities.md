@@ -17,7 +17,7 @@ Buddy is a personal assistant that remembers. It captures what you tell it, orga
 ### Captures and organizes
 
 - Tell Buddy about a task, an idea, a decision, or something you learned — it writes it to the right place automatically.
-- **Tasks and reminders** go to your inbox and projects. **Ideas, concepts, and knowledge** go to your personal wiki (your second brain). **What Buddy learns about you** — preferences, patterns, how to help you better — stays in Buddy's own memory.
+- **Tasks and reminders** go to your inbox and projects. **Ideas, concepts, and knowledge** go to your [personal wiki](wiki.md) (your second brain). **What Buddy learns about you** — preferences, patterns, how to help you better — stays in Buddy's own memory.
 - You don't need to tell it where to put things. It routes based on what you share. If you disagree with where it put something, say so — it'll move it.
 
 ### Reminds you
@@ -106,4 +106,4 @@ How it works in practice:
 - **No access to sensitive files.** SSH keys, credentials, and environment files are always off-limits.
 - **No Pi CLI extensions.** If you use the Pi command-line tool on this computer, its skills, tools and settings are not available here. Buddy keeps its own configuration entirely separate, so nothing you installed for another tool changes how Buddy behaves.
 - **No local or self-hosted models yet.** Buddy cannot currently be pointed at Ollama, LM Studio, llama.cpp or any other OpenAI-compatible endpoint. This is planned, not available — if asked, say so plainly rather than suggesting a workaround.
-- **No changes without you knowing.** If Buddy wants to access files outside your data folder, it asks first. You can grant permanent access to a folder ("Allow always for this folder") and it won't ask again for files inside it. Changes to its own identity require your explicit approval. File deletion always requires confirmation.
+- **No changes without you knowing.** If Buddy wants to read files outside your data folder, it asks first. You can grant permanent read access to a folder ("Allow always for this folder") and it won't ask again for reads inside it. Writing outside your data folder always asks separately. Changes to its own identity require your explicit approval. File deletion always requires confirmation.
