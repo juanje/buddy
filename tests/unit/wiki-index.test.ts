@@ -1,11 +1,11 @@
 // tests/unit/wiki-index.test.ts — wiki index regeneration.
 
-import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { WIKI_DIR, WIKI_GLOSSARY, WIKI_INDEX, WIKI_TAGS } from "../../shared/brain-paths";
+import { WIKI_DIR, WIKI_GLOSSARY, WIKI_INDEX } from "../../shared/brain-paths";
 import {
   firstSentence,
   listWikiPageRelPaths,
@@ -89,7 +89,7 @@ describe("renderGlossary", () => {
 });
 
 describe("regenerateWikiIndex", () => {
-  it("rebuilds index and glossary but not tags.md", () => {
+  it("rebuilds index and glossary", () => {
     writePage("concepts", "alpha", "Alpha", "First concept.", ["alpha"]);
     writePage("concepts", "beta", "Beta", "Second concept.", ["beta", "shared"]);
 
@@ -98,8 +98,6 @@ describe("regenerateWikiIndex", () => {
     const index = readFileSync(join(root, WIKI_INDEX), "utf8");
     expect(index).toContain("## Concepts");
     expect(index).toContain("[Alpha](concepts/alpha.md) — First concept.");
-
-    expect(existsSync(join(root, WIKI_TAGS))).toBe(false);
 
     const glossary = readFileSync(join(root, WIKI_GLOSSARY), "utf8");
     expect(glossary).toContain("**[Alpha](concepts/alpha.md)**");

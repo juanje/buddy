@@ -3,8 +3,7 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join, relative } from "node:path";
 
-import { toIsoDay } from "../shared/dates";
-import { WIKI_DIR, WIKI_GLOSSARY, WIKI_INDEX, WIKI_TAGS } from "../shared/brain-paths";
+import { WIKI_DIR, WIKI_GLOSSARY, WIKI_INDEX } from "../shared/brain-paths";
 import { buddyPath } from "./brain-paths";
 import {
   WIKI_META_FILES,
@@ -106,37 +105,6 @@ export function renderWikiIndex(pages: WikiPageMetadata[], _language?: WikiLangu
   return `${lines.join("\n").replace(/\n+$/, "")}\n`;
 }
 
-/** Maintenance-only tag index; not regenerated on every wiki_file call. */
-export function renderTagsFile(pages: WikiPageMetadata[], generatedDay: string): string {
-  const tagMap = new Map<string, WikiPageMetadata[]>();
-  for (const page of pages) {
-    for (const tag of page.tags) {
-      const list = tagMap.get(tag) ?? [];
-      list.push(page);
-      tagMap.set(tag, list);
-    }
-  }
-
-  const lines = [
-    "# Tag index",
-    "",
-    `*Generated: ${generatedDay} — ${pages.length} pages, ${tagMap.size} tags*`,
-    "",
-  ];
-
-  for (const tag of [...tagMap.keys()].sort()) {
-    lines.push(`## ${tag}`);
-    const tagged = tagMap.get(tag)!.sort((a, b) => a.title.localeCompare(b.title));
-    for (const page of tagged) {
-      const summary = page.summary ? ` — ${page.summary}` : "";
-      lines.push(`- [${page.title}](${page.relPath})${summary}`);
-    }
-    lines.push("");
-  }
-
-  return `${lines.join("\n").replace(/\n+$/, "")}\n`;
-}
-
 export function renderGlossary(pages: WikiPageMetadata[], language?: WikiLanguage): string {
   const headings = metaHeadings(language);
   const lines = [`# ${headings.glossary}`, ""];
@@ -162,11 +130,6 @@ export function regenerateWikiIndex(
 
   writeFileSync(buddyPath(rootDir, WIKI_INDEX), renderWikiIndex(pages, language), "utf8");
   writeFileSync(buddyPath(rootDir, WIKI_GLOSSARY), renderGlossary(pages, language), "utf8");
-}
-
-export function regenerateTagsFile(rootDir: string, now: Date = new Date()): void {
-  const pages = loadWikiPages(rootDir);
-  writeFileSync(buddyPath(rootDir, WIKI_TAGS), renderTagsFile(pages, toIsoDay(now)), "utf8");
 }
 
 export function regenerateGlossary(rootDir: string, language?: WikiLanguage): void {

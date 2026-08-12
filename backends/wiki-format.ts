@@ -12,7 +12,7 @@ export const WIKI_TAG_SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 export const WIKI_CONTENT_LINE_GUARD = 80;
 
 /** Root-level wiki files that are not concept pages. */
-export const WIKI_META_FILES = new Set(["index.md", "tags.md", "glossary.md"]);
+export const WIKI_META_FILES = new Set(["index.md", "glossary.md"]);
 
 export type WikiLanguage = "en" | "es";
 
