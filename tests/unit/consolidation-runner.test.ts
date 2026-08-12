@@ -42,6 +42,7 @@ describe("consolidation runner", () => {
     setupBuddyDir();
     const prompt = buildConsolidationPrompt(dir, 1, new Date("2026-07-22T12:00:00Z"));
     expect(prompt).toContain("Date:");
+    expect(prompt).toContain("User language:");
     expect(prompt).toContain("Run consolidation at depth 1");
     expect(prompt).toContain("Do consolidation.");
     expect(prompt).toContain("Do not run git commands");

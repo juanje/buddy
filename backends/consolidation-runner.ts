@@ -62,6 +62,7 @@ import { resolveDepthModel } from "./fast-model";
 import { WIKI_DIR } from "../shared/brain-paths";
 import { pathArgsOf } from "../shared/tool-paths";
 import { isContained } from "./containment";
+import { resolveInstanceLanguage } from "./wiki-tools";
 
 export interface MaintenanceSessionLike {
   prompt(text: string): Promise<void>;
@@ -257,13 +258,15 @@ export function buildConsolidationPrompt(
 ): string {
   const skill = readConsolidationSkill();
   const date = toIsoDay(now);
+  const lang = resolveInstanceLanguage();
   const hebbianBlock = formatHebbianReportBlock(computeHebbianReport(rootDir, now));
   const remindersBlock = formatUpcomingRemindersBlock(findUpcomingReminders(rootDir, date));
   const healthBlock = formatBrainHealthReportBlock(computeBrainHealthReport(rootDir));
   const ripeBlock = formatRipeObservationsBlock(extractRipeObservations(rootDir));
 
   return (
-    `Date: ${date}\n\n` +
+    `Date: ${date}\n` +
+    `User language: ${lang === "es" ? "Spanish" : "English"}\n\n` +
     `${remindersBlock}\n\n` +
     `${hebbianBlock}\n\n` +
     (healthBlock ? `${healthBlock}\n\n` : "") +

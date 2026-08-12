@@ -77,7 +77,7 @@ what they mentioned about people, life events, and personal reflections.
    (articles written, projects worked on, ideas explored).
 3. Write `user/journal/YYYY/MM/DD.md` — no frontmatter, just a date heading
    and narrative prose.
-4. **Language:** Write in the user's language (from `USER.md` → Preferences).
+4. **Language:** Write in the user's language (from the `User language:` line in the prompt header).
    The journal is a user artifact — it lives in `user/` and the user reads it
    directly.
 5. Tone: agent's notes about the user, third person, factual but warm.
@@ -127,8 +127,8 @@ If purely informational findings, note them in today's log under Decisions.
 #### 5. Write deferred items
 
 Two sources feed the deferred queue. Write **all** deferred items in the
-user's language (from `USER.md` → Preferences) — they are user-facing
-messages (banner, OS notifications), not agent knowledge.
+user's language (from the `User language:` line in the prompt header) — they
+are user-facing messages (banner, OS notifications), not agent knowledge.
 
 **5a. Items needing user attention** (from triage above):
 
