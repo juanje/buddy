@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { bootRefreshIfNeeded } from "../../backends/boot-refresh";
+import { bootDeployDocs, bootRefreshIfNeeded } from "../../backends/boot-refresh";
 import { bundledDocsDir, bundledPromptsDir } from "../../backends/deploy-bundled-content";
 import { setupGlobalConfigDir, teardownGlobalConfigDir } from "../support/global-config";
 import type { BuddyWorld } from "../support/world";
@@ -51,7 +51,8 @@ When("the boot sequence runs boot refresh", function (this: PromptRefreshWorld) 
     ? readFileSync(promptsPath, "utf8")
     : "# stale prompt content\n";
   writeFileSync(promptsPath, "# stale prompt content\n", "utf8");
-  bootRefreshIfNeeded(this.globalConfigDir!, this.appVersion!);
+  const refreshed = bootRefreshIfNeeded(this.globalConfigDir!, this.appVersion!);
+  if (refreshed) bootDeployDocs(this.globalConfigDir!);
 });
 
 Then("all bundled prompts are copied to the global prompts directory", function (this: PromptRefreshWorld) {

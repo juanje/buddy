@@ -1,6 +1,6 @@
 [package]
 name = "buddy"
-version = "0.1.25"
+version = "0.1.26"
 description = "Buddy — personal assistant with persistent memory"
 license = "GPL-3.0-only"
 edition = "2021"
