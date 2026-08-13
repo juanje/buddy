@@ -24,6 +24,12 @@
   const oauthLoggingIn = $derived(controller.oauthLoggingIn);
   const oauthError = $derived(controller.oauthError);
   const showApiKey = $derived(controller.showApiKey);
+  const oauthPrompt = $derived(controller.oauthPrompt);
+  const deviceCode = $derived(
+    $oauthPrompt?.type === "device_code"
+      ? { userCode: $oauthPrompt.userCode, verificationUri: $oauthPrompt.verificationUri }
+      : null,
+  );
 
   // "custom" (OpenAI-compatible endpoints) is deliberately absent — FR-PROVIDER-01.
   // The wizard accepted it and the key validated against the endpoint, but the
@@ -75,12 +81,18 @@
     loggingIn={$oauthLoggingIn || $validatingKey}
     error={$oauthError || ($keyCheck && !$keyCheck.valid ? $keyCheck.error : null)}
     needsBaseUrl={$needsBaseUrl}
+    deviceCode={deviceCode}
     bind:apiKeyInput
     bind:baseUrlInput
     onOAuthClick={signInOAuth}
     onSubmitKey={submitKeyAndContinue}
     onToggleMode={(show) => controller.setShowApiKey(show)}
   />
+  {#if $oauthLoggingIn}
+    <button type="button" class="link cancel" onclick={() => controller.cancelOAuthLogin()}>
+      {$t.oauthCancel}
+    </button>
+  {/if}
 {/if}
 
 {#if onBack}
@@ -115,5 +127,15 @@
   }
   .actions {
     margin-top: 12px;
+  }
+  .cancel {
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    font-size: 13px;
+    cursor: pointer;
+    text-decoration: underline;
+    margin-top: 8px;
+    padding: 0;
   }
 </style>

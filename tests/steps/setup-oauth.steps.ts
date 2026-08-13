@@ -71,6 +71,25 @@ Then("the auth URL is available for browser open", function (this: OAuthWorld) {
   assert.ok(this.lastAuthUrl?.startsWith("https://"), "auth URL should be an https URL");
 });
 
+When(
+  "a device code event is received with code {string}",
+  function (this: OAuthWorld, code: string) {
+    wizardOf(this, oauthOverrides).handleOAuthEvent({
+      type: "device_code",
+      userCode: code,
+      verificationUri: "https://auth.openai.com/codex/device",
+    });
+  },
+);
+
+Then("the wizard shows the device code {string}", function (this: OAuthWorld, code: string) {
+  const prompt = get(wizardOf(this, oauthOverrides).oauthPrompt);
+  assert.equal(prompt?.type, "device_code");
+  if (prompt?.type === "device_code") {
+    assert.equal(prompt.userCode, code);
+  }
+});
+
 // FR-SETUP-05: the worker reports cancellation as a flag. These two steps
 // differ only in that flag, which is the point — before it existed, the
 // frontend told them apart by string-comparing the error message.

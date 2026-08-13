@@ -14,6 +14,7 @@ import { sidecarBootTarget } from "../../backends/sidecar-dispatch";
 import {
   isCompiledBinary,
   spawnReflectChild,
+  windowsHideSpawnOption,
   type SpawnReflectOptions,
 } from "../../backends/reflect-spawn";
 import {
@@ -111,7 +112,11 @@ describe("spawnReflectChild", () => {
     expect(pid).toBe(99);
     expect(spawnMock).toHaveBeenCalledOnce();
     expect(forkMock).not.toHaveBeenCalled();
-    const [execPath, argv] = spawnMock.mock.calls[0] as [string, string[]];
+    const [execPath, argv, opts] = spawnMock.mock.calls[0] as [
+      string,
+      string[],
+      { windowsHide?: boolean; detached?: boolean },
+    ];
     expect(execPath).toBe(process.execPath);
     expect(argv[0]).toBe("--reflect");
     expect(argv.slice(1)).toEqual([
@@ -123,6 +128,12 @@ describe("spawnReflectChild", () => {
       baseOptions.sessionStart,
       baseOptions.sessionEnd,
     ]);
+    expect(opts.detached).toBe(true);
+    if (process.platform === "win32") {
+      expect(opts.windowsHide).toBe(true);
+    } else {
+      expect(opts.windowsHide).toBeUndefined();
+    }
   });
 
   it("appends checkpoint date/time args for checkpoint mode", () => {
@@ -162,5 +173,16 @@ describe("isCompiledBinary", () => {
   it("is true when Bun global is present", () => {
     (globalThis as { Bun?: unknown }).Bun = {};
     expect(isCompiledBinary()).toBe(true);
+  });
+});
+
+describe("windowsHideSpawnOption", () => {
+  it("sets windowsHide on win32 (NFR-PORT-09 / C2)", () => {
+    expect(windowsHideSpawnOption("win32")).toEqual({ windowsHide: true });
+  });
+
+  it("is empty on unix", () => {
+    expect(windowsHideSpawnOption("linux")).toEqual({});
+    expect(windowsHideSpawnOption("darwin")).toEqual({});
   });
 });

@@ -19,7 +19,11 @@ import { registerBunOAuthFlows } from "../node_modules/@earendil-works/pi-coding
 import { configureHttpDispatcher } from "../node_modules/@earendil-works/pi-coding-agent/dist/core/http-dispatcher.js";
 import { registerEmbeddedAssets } from "./embedded-assets";
 import { EMBEDDED_APP_VERSION, EMBEDDED_DOCS, EMBEDDED_PDF_WORKER, EMBEDDED_PROMPTS, EMBEDDED_TEMPLATES } from "./embedded-assets.generated";
+import { applyWindowsOAuthCallbackHost } from "./oauth-callback-host";
 import { sidecarBootTarget } from "./sidecar-dispatch";
+
+// Before OAuth flows register / login: Windows localhost → ::1 mismatch (see helper).
+applyWindowsOAuthCallbackHost();
 
 (globalThis as any).DOMMatrix = class DOMMatrix {
   a = 1; b = 0; c = 0; d = 1; e = 0; f = 0;

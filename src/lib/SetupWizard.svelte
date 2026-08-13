@@ -209,6 +209,13 @@ async function createBuddy() {
       <button class="primary" onclick={submitOAuthPrompt}>{$t.wizardContinue}</button>
       <button onclick={() => wizard.cancelOAuthLogin()}>{$t.oauthCancel}</button>
     </div>
+  {:else if $oauthPrompt?.type === "device_code"}
+    <div class="oauth-prompt">
+      <p>{$t.oauthDeviceCodeHint}</p>
+      <p class="device-code">{$oauthPrompt.userCode}</p>
+      <p class="muted">{$oauthPrompt.verificationUri}</p>
+      <button onclick={() => wizard.cancelOAuthLogin()}>{$t.oauthCancel}</button>
+    </div>
   {/if}
 </div>
 
@@ -302,5 +309,11 @@ async function createBuddy() {
     gap: 8px;
     min-width: 280px;
     z-index: 20;
+  }
+  .oauth-prompt .device-code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 22px;
+    letter-spacing: 0.08em;
+    margin: 0;
   }
 </style>

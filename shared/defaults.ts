@@ -206,6 +206,8 @@ export const FETCH_TIMEOUT_MS = 15_000;
 export const PROVIDER_REQUEST_TIMEOUT_MS = 10_000;
 
 // --- Security constants (NFR-CONFIG-03) ---
+// Home-relative dirs; Windows AppData roots are resolved in backends/permissions.ts
+// (NFR-SEC-21) because this module stays browser-safe (no node:path).
 export const DENYLIST_HOME_DIRS = [".ssh", ".gnupg", ".aws"];
 export const DENYLIST_BASENAMES = [".env", "auth.json"];
 export const WRITE_TOOLS = new Set(["write", "edit"]);

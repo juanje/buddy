@@ -9,6 +9,7 @@ import { resolve } from "node:path";
 
 import { toBuddyRelPath } from "../shared/path-utils";
 import { BRAIN_DIR, LOGS_DIR } from "../shared/brain-paths";
+import { hasFrontmatterBlock } from "../shared/frontmatter";
 
 export interface HeadingGuardResult {
   reverted: boolean;
@@ -30,7 +31,8 @@ function extractHeadings(content: string): string[] {
 }
 
 function hasFrontmatter(content: string): boolean {
-  return content.startsWith("---\n") && content.indexOf("\n---", 4) >= 0;
+  // NFR-PORT-06: same CRLF-tolerant authority as parseFrontmatter.
+  return hasFrontmatterBlock(content);
 }
 
 function isGuardedPath(relPath: string): boolean {

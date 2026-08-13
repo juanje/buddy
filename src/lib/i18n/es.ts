@@ -87,6 +87,8 @@ export type LocaleStrings = {
   welcomeRegion: string;
   oauthSignIn: string;
   oauthWaiting: string;
+  oauthDeviceCodeHint: string;
+  oauthDeviceCodeWaiting: string;
   oauthUseApiKey: string;
   oauthBackToSignIn: string;
   oauthCancel: string;
@@ -224,6 +226,8 @@ export const es: LocaleStrings = {
   welcomeRegion: "Bienvenida",
   oauthSignIn: "Iniciar sesión",
   oauthWaiting: "Esperando al navegador…",
+  oauthDeviceCodeHint: "Introduce este código en la página de OpenAI que se ha abierto:",
+  oauthDeviceCodeWaiting: "Esperando confirmación del código…",
   oauthUseApiKey: "Tengo una clave de API",
   oauthBackToSignIn: "Volver a iniciar sesión",
   oauthCancel: "Cancelar",

@@ -7,6 +7,7 @@ import type {
   KeyCheck,
   ModelInfo,
   OAuthLoginResult,
+  OAuthUIEvent,
   SetupConfig,
   UsageReport,
 } from "../../shared/api";
@@ -55,6 +56,8 @@ export interface SettingsController {
   authLoggingIn: Readable<boolean>;
   authError: Readable<string | undefined>;
   authShowApiKey: Readable<boolean>;
+  /** OpenAI device-code challenge while Settings OAuth is in flight (NFR-PORT-10). */
+  authDeviceCode: Readable<Extract<OAuthUIEvent, { type: "device_code" }> | undefined>;
   unauthenticatedProviders: Readable<SettingsProviderId[]>;
   providerAddedNotice: Readable<boolean>;
   usage: Readable<UsageReport | undefined>;
@@ -70,6 +73,7 @@ export interface SettingsController {
   submitAuthOAuth(): Promise<void>;
   submitAuthApiKey(apiKey: string, baseUrl?: string): Promise<void>;
   setAuthShowApiKey(show: boolean): void;
+  handleOAuthEvent(event: OAuthUIEvent): void;
   setMonthlyBudget(amount: number | null): Promise<void>;
   formatCost(amount: number): string;
 }
@@ -139,6 +143,9 @@ export function createSettingsController(options: {
   const authLoggingIn = writable(false);
   const authError = writable<string | undefined>(undefined);
   const authShowApiKey = writable(false);
+  const authDeviceCode = writable<Extract<OAuthUIEvent, { type: "device_code" }> | undefined>(
+    undefined,
+  );
   const unauthenticatedProviders = writable<SettingsProviderId[]>([]);
   const providerAddedNotice = writable(false);
   const usage = writable<UsageReport | undefined>(undefined);
@@ -186,6 +193,7 @@ export function createSettingsController(options: {
     authLoggingIn,
     authError,
     authShowApiKey,
+    authDeviceCode,
     unauthenticatedProviders,
     providerAddedNotice,
     usage,
@@ -254,6 +262,7 @@ export function createSettingsController(options: {
       addingProvider.set(true);
       authProvider.set(preferred);
       authError.set(undefined);
+      authDeviceCode.set(undefined);
       authShowApiKey.set(preferred ? isApiKeyOnlyProvider(preferred) : false);
       providerAddedNotice.set(false);
     },
@@ -261,18 +270,28 @@ export function createSettingsController(options: {
       addingProvider.set(false);
       authProvider.set(undefined);
       authError.set(undefined);
+      authDeviceCode.set(undefined);
       authShowApiKey.set(false);
     },
     selectAuthProvider(provider) {
       authProvider.set(provider);
       authError.set(undefined);
+      authDeviceCode.set(undefined);
       authShowApiKey.set(isApiKeyOnlyProvider(provider));
+    },
+    handleOAuthEvent(event: OAuthUIEvent) {
+      if (event.type === "device_code") {
+        authDeviceCode.set(event);
+      } else if (event.type === "complete" || event.type === "error") {
+        authDeviceCode.set(undefined);
+      }
     },
     async submitAuthOAuth() {
       const provider = get(authProvider);
       if (!provider) return;
       authLoggingIn.set(true);
       authError.set(undefined);
+      authDeviceCode.set(undefined);
       try {
         const result = await options.worker.loginOAuth(provider);
         if (!result.success) {
@@ -288,6 +307,7 @@ export function createSettingsController(options: {
         providerAddedNotice.set(true);
       } finally {
         authLoggingIn.set(false);
+        authDeviceCode.set(undefined);
       }
     },
     async submitAuthApiKey(apiKey, baseUrl) {

@@ -257,6 +257,30 @@ date: 2026-07-23
       const bar = readFileSync(join(dir, "agent_brain", "concepts", "bar.md"), "utf8");
       expect(bar).toContain("](cluster/foo.md)");
     });
+
+    // NFR-PORT-07 — rootDir from os.tmpdir() on Windows uses `\`; the old
+    // `startsWith(root + "/")` check made rewritten === [].
+    it("rewrites links when rootDir uses native path separators (NFR-PORT-07)", () => {
+      setupRoot();
+      expect(dir.includes("\\") || process.platform !== "win32").toBe(true);
+      mkdirSync(join(dir, "agent_brain", "concepts"), { recursive: true });
+      writeFileSync(join(dir, "agent_brain", "concepts", "foo.md"), "# Foo\n");
+      writeFileSync(
+        join(dir, "agent_brain", "concepts", "bar.md"),
+        "See [foo](foo.md).\n",
+      );
+
+      const rewritten = rewriteBrokenLinks(
+        dir,
+        "agent_brain/concepts/foo.md",
+        "agent_brain/concepts/cluster/foo.md",
+      );
+
+      expect(rewritten).toContain("agent_brain/concepts/bar.md");
+      expect(readFileSync(join(dir, "agent_brain", "concepts", "bar.md"), "utf8")).toContain(
+        "](cluster/foo.md)",
+      );
+    });
   });
 
   describe("relocateBrainFile", () => {

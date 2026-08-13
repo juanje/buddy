@@ -11,6 +11,10 @@ import {
   REFLECT_CHILD_ENV_VALUE,
   LEGACY_REFLECT_CHILD_ENV,
 } from "../shared/defaults";
+import { windowsHideSpawnOption } from "./windows-process";
+
+/** Re-export for existing tests / callers (NFR-PORT-09). */
+export { windowsHideSpawnOption } from "./windows-process";
 
 export interface SpawnReflectOptions {
   rootDir: string;
@@ -88,6 +92,7 @@ export function spawnReflectChild(options: SpawnReflectOptions): number | undefi
       detached: true,
       stdio: "ignore",
       env: { ...process.env, [REFLECT_CHILD_ENV_KEY]: REFLECT_CHILD_ENV_VALUE },
+      ...windowsHideSpawnOption(),
     });
     child.unref();
     const pid = child.pid;
@@ -102,6 +107,7 @@ export function spawnReflectChild(options: SpawnReflectOptions): number | undefi
     stdio: "ignore",
     execArgv: ["--import", "tsx"],
     env: { ...process.env, [REFLECT_CHILD_ENV_KEY]: REFLECT_CHILD_ENV_VALUE },
+    ...windowsHideSpawnOption(),
   });
   child.unref();
   const pid = child.pid;

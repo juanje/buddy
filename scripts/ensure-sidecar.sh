@@ -1,17 +1,15 @@
 #!/usr/bin/env bash
 # Dev helper: build sidecar if missing (tauri dev warns when externalBin absent).
 set -euo pipefail
-
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-# shellcheck source=sidecar-target.sh
-source "${ROOT}/scripts/sidecar-target.sh"
-OUT="src-tauri/binaries/agent-worker-${SIDECAR_TARGET}"
+TRIPLE="$(npx tsx -e "import { resolveSidecarTarget, sidecarOutPath } from './scripts/sidecar-target.ts'; console.log(sidecarOutPath(resolveSidecarTarget()))")"
+OUT="${ROOT}/${TRIPLE}"
 
-if [[ -x "${OUT}" ]]; then
+if [[ -f "${OUT}" ]]; then
   exit 0
 fi
 
 echo "Sidecar missing — building ${OUT}…"
-bash scripts/build-worker.sh
+npm run build:worker

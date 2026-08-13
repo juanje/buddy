@@ -32,6 +32,13 @@ export function buildCommitMessage(filePaths: string[]): string {
   return `${GIT_COMMIT_PREFIX} update ${filePaths.slice(0, 3).join(", ")} (+${filePaths.length - 3} more)`;
 }
 
+/**
+ * Git client for auto-commit and file tools.
+ *
+ * simple-git already passes `windowsHide: true` on every spawn (NFR-PORT-09) —
+ * do not re-inject `process.env` via `.env()` (that trips simple-git's unsafe
+ * EDITOR/GIT_PAGER guards when the host shell exports those vars).
+ */
 export function gitClient(rootDir: string): SimpleGit {
   return simpleGit(rootDir);
 }

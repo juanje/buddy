@@ -16,7 +16,6 @@ import {
   SessionManager,
 } from "@earendil-works/pi-coding-agent";
 
-import { execSync } from "node:child_process";
 import { existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { buddyAgentDir, globalConfigDir } from "./global-config";
@@ -45,6 +44,7 @@ import {
   updateLogsIndexEntry,
 } from "./reflect";
 import { clearSessionPersistence } from "./crash-recovery";
+import { installReflectInterruptHandlers } from "./reflect-interrupt";
 import { buildReflectUserPrompt, extractObservationsSection } from "./reflect-prompts";
 import { recordSessionUsage } from "./usage-tracker";
 
@@ -245,8 +245,8 @@ async function main(): Promise<void> {
 
   // FR-REFLECT-07: the child is detached and unref'd, so nothing supervises it.
   // Without this, a stalled provider leaves the process alive long after the
-  // user closed the app — and nobody sends the SIGTERM the handler below waits
-  // for. Unref'd so it never keeps an otherwise-finished child running.
+  // user closed the app — and nobody signals the handlers below. Unref'd so it
+  // never keeps an otherwise-finished child running.
   const watchdog = setTimeout(() => {
     logEvent(rootDir, {
       event: "reflect_error",
@@ -259,16 +259,8 @@ async function main(): Promise<void> {
   }, REFLECT_CHILD_TIMEOUT_MS);
   watchdog.unref();
 
-  process.on("SIGTERM", () => {
-    try {
-      execSync(`git add -A && git commit -m '${GIT_COMMIT_PREFIX} reflect interrupted (SIGTERM)' --allow-empty-message`, {
-        cwd: rootDir,
-        stdio: "ignore",
-        timeout: 5000,
-      });
-    } catch { /* best effort */ }
-    process.exit(0);
-  });
+  // NFR-REL-11: SIGINT/SIGTERM/(SIGBREAK on win32) → commitAll (not a shell).
+  installReflectInterruptHandlers(rootDir);
 
   try {
     await runReflect(

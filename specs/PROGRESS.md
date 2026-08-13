@@ -50,19 +50,33 @@ at the call site.
 
 Verified 2026-08-07 against `release.yml`, `scripts/build-worker.sh` and
 `tauri.conf.json`. CI builds macOS (ARM64 + x64) + Linux x64 (deb + rpm) on
-every tag since v0.1.0. Suggested order: Linux arm64 first (cheap, visible),
-then the POSIX→Windows audit as its own block with its own NFRs, then the CI
-target — there is no point wiring a runner for something not yet correct.
+every tag since v0.1.0. **Windows:** no installer until Block 1 NFRs in
+`SPEC.md` §4.4.0 have tests (Spec → BDD/unit → code). Local work on branch
+`windows-port` only — do not push upstream until asked. Tooling cwd:
+`D:\WORK\PROJECTS\APPS.windows\buddy` (not this PARA `buddy_repo_original`
+path — `#` in parent breaks Vite). Installer drop (Block 2): `../buddy_DIST/windows/`
+(empty until then). Shortcut from PARA hub: `../buddy_worktree (APPS.windows).lnk`.
 
 | Item | State | Note |
 |------|-------|------|
 | Workflow actions | current | `checkout` and `setup-node` on v7, `setup-bun@v2`, `rust-cache@v2`, `tauri-action@v1` all on their current major. Why each v7 change does not apply is in a comment in `ci.yml` — worth re-reading before adding a `pull_request_target` or `workflow_run` trigger. Dependabot raises majors as their own PR. |
 | Linux arm64 is never built | **gap, cheap** | `build-worker.sh` already maps `aarch64-unknown-linux-gnu`, and the release matrix only runs `ubuntu-22.04` at x86_64. The sidecar half of the work is done. |
 | No distro-agnostic Linux artifact | open | `bundle.targets` is `["dmg", "app", "deb", "rpm"]`. AppImage was dropped (`03b91dc` — linuxdeploy broken on GH runners). Flatpak not started. No distro-agnostic option currently. |
-| `~/.buddy/` security modes are POSIX-only | **blocks Windows** | `CONFIG_DIR_MODE` 0700, `AUTH_FILE_MODE` / `STATE_FILE_MODE` 0600, applied at creation (NFR-SEC-17). `chmod` on Windows is close to a no-op, so credentials, granted paths and config would sit readable by every user of the machine. This is not packaging — it is an NFR that Windows breaks silently, and silent is the failure mode this project has already been bitten by. Needs explicit ACLs or a written, conscious exception. |
-| `containment.ts` symlink semantics | **blocks Windows** | It resolves with `realpathSync` (NFR-SEC-15/16). Windows has junctions, symlinks that need privilege, UNC paths and `\\?\`. This is the module the project calls "one authority", and where the fourth answer to the same question was already wrong once. Porting it without Windows-specific tests is exactly the pattern that has bitten before. |
-| Detached reflect child | open | `--reflect` argv dispatch, detached spawn and the hard timeout all assume POSIX detach semantics. |
-| `build-worker.sh` has no Windows target | open | Bash script with a case over four triples; `bun-windows-x64` is absent. Mechanical once the two security items above are settled. |
+| NFR-PORT-06 — CRLF write guards (spike A7) | **closed** (`4ff79f4`) | Shared frontmatter matcher; unit + write-guard.feature CRLF scenario. |
+| NFR-SEC-17 amend — Windows ACLs for `~/.buddy/` (A1) | **closed** (`8ff1f72`) | `applyRestrictiveAcl` via icacls (grant then strip inheritance); state-file + ensureConfigDirMode. |
+| NFR-SEC-04 / FR-PERM-04 amend — case-insensitive denylist (A2) | **closed** | Basename match via case-fold; unit + permissions.feature. |
+| NFR-SEC-21 — Windows sensitive paths (A3) | **closed** | `windowsDenylistRoots()` + `isDenylistedPath` env injection. |
+| NFR-SEC-22 — illegal/reserved filenames (A4) | **closed** | `shared/filename-safety.ts`; gate + file-tools + relocate. |
+| NFR-SEC-15/16 — containment Windows shapes (A5) | **closed** | `stripWin32ExtendedPrefix` in `realPathOrNearest`; junction / `\\?\` / 8.3 / drive-relative unit tests. |
+| NFR-PORT-07 — consolidation link rewrite separators (A6) | **closed** | `resolveMarkdownLink` → `isContained`; unit + consolidation-relocate.feature. |
+| NFR-PORT-08 — `.gitattributes` on create (A8) | **closed** | `templates/.gitattributes` + `ensureTextEolAttributes` on create/adopt. |
+| NFR-REL-11 — portable reflect interrupt (A9) | **closed** | `reflect-interrupt.ts`: SIGINT/SIGTERM(/SIGBREAK) → `commitAll`. |
+| Detached reflect child (spike C1) | open | Needs real Windows machine after Block 1. |
+| Console window for sidecar / reflect (spike C2) | **closed** | NFR-PORT-09: `--windows-hide-console` + PE GUI patch (`patchExeToWindowsGui`); `windowsHide: true` on reflect spawn. |
+| Chat-path console flashes (post-C2 / 20260809d) | **closed** | NFR-PORT-09 amend: every turn flashed because `icacls` (usage/`writeStateFile`) lacked `windowsHide`. Shared `windowsHideSpawnOption` on icacls/attrib/prereqs (+ reflect). Installer `20260809e`. |
+| OpenAI OAuth on Windows (NFR-PORT-10) | **closed** | Prefer SDK `device_code` over localhost:1455 — Hyper-V excludes 1455 (`EACCES`); `PI_OAUTH_CALLBACK_HOST=::` alone insufficient (smoke 20260809b). Unit + setup-oauth.feature. |
+| Empty-folder setup on Windows (NFR-PORT-11) | **closed** | smoke 20260809c — Bun `mkdirSync({recursive:true})` throws `EEXIST` on Explorer ReadOnly empty dirs; `ensureDirectory` adopts + `attrib -R`. Unit in `ensure-directory.test.ts`. |
+| `build-worker` Windows target + NSIS (Block 2) | **closed** (local) | `build-worker.ts` → `.exe`; `nsis` + `icon.ico`; local `buddy_0.1.18_x64-setup.exe` produced. CI `windows-latest` still open (B7/B8). |
 
 ## Backlog (post-MVP)
 

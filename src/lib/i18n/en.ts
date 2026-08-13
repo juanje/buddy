@@ -97,6 +97,8 @@ export const en: LocaleStrings = {
   welcomeRegion: "Welcome",
   oauthSignIn: "Sign in",
   oauthWaiting: "Waiting for browser…",
+  oauthDeviceCodeHint: "Enter this code on the OpenAI page that just opened:",
+  oauthDeviceCodeWaiting: "Waiting for device-code confirmation…",
   oauthUseApiKey: "I have an API key",
   oauthBackToSignIn: "Back to sign in",
   oauthCancel: "Cancel",

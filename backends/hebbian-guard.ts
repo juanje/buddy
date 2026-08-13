@@ -21,7 +21,7 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 import { toBuddyRelPath } from "../shared/path-utils";
-import { parseFrontmatter } from "../shared/frontmatter";
+import { matchFrontmatterBlock, parseFrontmatter } from "../shared/frontmatter";
 
 /** Fields the worker owns; the model may read them, never write them. */
 const GUARDED_FIELDS = ["access_count", "last_accessed"] as const;
@@ -41,7 +41,8 @@ function readGuarded(absPath: string): Record<string, string> | null {
   } catch {
     return null;
   }
-  if (!content.startsWith("---\n")) return null;
+  // NFR-PORT-06: must accept CRLF checkouts (Git for Windows default).
+  if (!matchFrontmatterBlock(content)) return null;
 
   const fields = parseFrontmatter(content);
   const present: Record<string, string> = {};
@@ -84,11 +85,11 @@ export function createHebbianGuard(rootDir: string): HebbianGuard {
       } catch {
         return false;
       }
-      const block = /^---\n([\s\S]*?)\n---/.exec(content);
+      const block = matchFrontmatterBlock(content);
       if (!block) return false;
 
       let repaired = false;
-      const lines = block[1].split("\n").filter((line) => {
+      const lines = block[1].split(/\r?\n/).filter((line) => {
         const idx = line.indexOf(":");
         if (idx === -1) return true;
         const key = line.slice(0, idx).trim();

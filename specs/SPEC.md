@@ -517,7 +517,7 @@ which the reflect sanitizer already strips.
 - **When** they select a provider (Anthropic, OpenAI, or Google)
 - **Then** an OAuth "Sign in" button appears as the primary option
 - **And** an "I have an API key" link shows the key input as a secondary option
-- **And (OAuth path)** clicking "Sign in" opens the browser for OAuth authentication
+- **And (OAuth path)** clicking "Sign in" opens the browser for OAuth authentication — **except on Windows for OpenAI**, where Buddy auto-selects the SDK's `device_code` method when offered (NFR-PORT-10): the UI shows the user code, opens `https://auth.openai.com/codex/device`, and does **not** require a localhost:1455 callback
 - **And (OAuth path)** tokens are stored in `~/.buddy/auth.json` upon successful login
 - **And (OAuth path)** a login the user cancelled leaves the wizard unauthenticated and shows **no error** — closing the browser window is a decision, not a failure. Cancellation is carried as a typed field on `OAuthLoginResult`, never inferred from the error text. **Why this is a requirement and not an implementation note:** it was inferred from the text. `"Login cancelled"` was constructed in `oauth-service.ts` and string-compared in three other places, two of them in the frontend across the RPC boundary — so an English sentence was acting as a status code. Localizing it, or the SDK rewording its own abort message, would have silently turned every cancellation into an error dialog, and no type or test would have objected. The authority is `signal.aborted` on the login's own `AbortController`, which is what actually knows.
 - **And (API key path)** the key is validated with a test API call before proceeding
@@ -549,6 +549,7 @@ which the reflect sanitizer already strips.
 - **And** Pi settings are written (`.pi/settings.json`) with the selected provider/model
 - **And** git is initialized with an initial commit
 - **And** no LLM call is made during this phase
+- **And** when the chosen location already exists as an **empty** directory (`ok-empty`, FR-SETUP-04/11), setup adopts it — it must not fail with a raw `EEXIST` from `mkdir` (NFR-PORT-11). A non-empty folder that is not an importable instance is refused with a plain-language error (FR-SETUP-11), not a syscall dump.
 
 **FR-SETUP-09 — First conversation with warm handoff**
 
@@ -806,6 +807,14 @@ Fork bomb defense:
 - **Given** the agent attempts to access `~/.ssh/*`, `~/.gnupg/*`, `~/.aws/*`, `**/.env`, or `**/auth.json`
 - **When** the permission layer evaluates the path
 - **Then** access is denied silently — no user prompt, no override possible
+- **And** denylist **basename** matches (`.env`, `auth.json`) are **case-insensitive**
+  (`.ENV`, `Auth.json`, `AUTH.JSON`) so a case-insensitive filesystem cannot
+  bypass the rule by capitalising the name (NFR-SEC-04 amendment / Windows
+  spike A2). Matching is case-insensitive on every platform — denying the
+  alternate spelling is fail-closed, not a Linux regression
+- **And on Windows** (NFR-SEC-21 / spike A3) the same silent deny covers
+  `%APPDATA%\gnupg\**`, `%APPDATA%\Microsoft\Credentials\**`, and
+  `%LOCALAPPDATA%\Microsoft\Credentials\**` — GnuPG does not use `~/.gnupg` there
 
 **FR-PERM-05 — Implicit permission from messages** *(rejected)*
 
@@ -1017,6 +1026,10 @@ Fork bomb defense:
 - **And** the destination directory is created if absent
 - **And** all markdown files referencing the old relative path are updated
 - **And** the operation fails gracefully if source is outside `agent_brain/`
+- **And** link resolution decides "inside the buddy directory" via
+  `backends/containment.ts` (NFR-SEC-16 / NFR-PORT-07) — not a hardcoded
+  `startsWith(root + "/")` after `normalize`, which silently disables every
+  rewrite on Windows (spike A6)
 
 **FR-CONSOL-08 — Consolidation state persisted per completed depth**
 
@@ -1278,6 +1291,9 @@ counts as one.
   write; every other key and the body are kept exactly as written
 - **And** a file created during the turn, or one deliberately rewritten without
   frontmatter, is left alone
+- **And** the same restoration holds when the file on disk uses CRLF line
+  endings (Git for Windows default checkout) — the guard must not treat a
+  CRLF frontmatter opener as "no frontmatter" (NFR-PORT-06)
 
 **Why a rule was not enough.** `AGENTS.md` already told the agent "never edit
 these fields on existing files". On 2026-07-29 a local model failed eight
@@ -1368,6 +1384,9 @@ drown the signal it is meant to measure.
 - **And** if the file had a frontmatter block (`---` delimited) before the
   write and the frontmatter is missing or empty after it, the file is
   restored to its pre-write content
+- **And** frontmatter presence is detected with the same CRLF-tolerant matcher
+  as `shared/frontmatter.ts` (NFR-PORT-06) — a CRLF checkout must not make
+  the guard believe the file never had frontmatter
 - **And** the guard fires in both the chat session and the maintenance session
 
 **What it does not do:**
@@ -2927,7 +2946,7 @@ Further context on local-model evaluation methodology and findings:
 | NFR-SEC-01 | No bash or shell tool available to the agent — enforced at session creation via `excludeTools` |
 | NFR-SEC-02 | Zone model enforced in `beforeToolCall` hook — no file access bypasses the permission layer |
 | NFR-SEC-03 | SOUL.md writes require user confirmation; USER.md writes are silent (agent manages profile freely) |
-| NFR-SEC-04 | Hardcoded denylist paths are never accessible, regardless of user confirmation |
+| NFR-SEC-04 | Hardcoded denylist paths are never accessible, regardless of user confirmation. **Amended 2026-08-09 (spike A2):** denylist basenames (`.env`, `auth.json`) match case-insensitively — on NTFS/APFS an exact-case check fails open because `.ENV` and `.env` are the same file. |
 | NFR-SEC-05 | API keys stored with restrictive file permissions (mode 600); no credentials inside the buddy repo |
 | NFR-SEC-06 | The agent cannot modify its own model configuration (`.pi/settings.json` writes blocked) |
 | NFR-SEC-07 | buddy uses its own credential store (`~/.buddy/auth.json`), completely isolated from Pi CLI's `~/.pi/agent/auth.json`. Changing provider/model in one tool never affects the other. |
@@ -2940,10 +2959,12 @@ Further context on local-model evaluation methodology and findings:
 | NFR-SEC-14 | Every Pi session satisfies three invariants, each enforced by a shared helper rather than repeated per call site: (a) credentials come from buddy's own auth store via `createBuddyModelRuntime()`; (b) token usage is recorded via `recordSessionUsage()`; (c) a session with file tools installs the permission gate, and a session without tools declares `noTools`. **Reworded Jul 27:** the original text ("a single factory … no call site constructs a session directly") demanded uniformity. A review of the three call sites found them legitimately different — full tools with a gate, toolless reflect, maintenance with its own prompt — so a common factory would have become a signature with many optional flags. What was actually duplicated was two three-line fragments. The factory is rejected; the invariants are not. |
 | NFR-SEC-15 | Path containment resolves symlinks (`realpath`, falling back to the nearest existing ancestor for paths not yet created) before comparing against the buddy directory. |
 | NFR-SEC-16 | Containment has one worker-side authority, `backends/containment.ts` (`isContained`, `containedRelPath`), and every enforcement point calls it. `shared/viewable-path.ts` remains separate because it must be browser-safe, and its verdict is explicitly presentational: it decides the *shape* of a link, never whether bytes may be read. Symlink resolution (NFR-SEC-15) lives in the authority and nowhere else. **Why this is not cosmetic:** the rule was implemented four times, and the fourth was wrong — `relocate_brain_file` tested `startsWith("agent_brain/")` on the raw argument, which `agent_brain/../.pi/settings.json` satisfies, letting the consolidation session `git mv` the model configuration that NFR-SEC-06 forbids the agent to write. A containment rule written four times is a containment rule that disagrees with itself. |
-| NFR-SEC-17 | Files and directories under `~/.buddy/` are created with restrictive permissions from the outset, not widened and then narrowed. `auth.json` is created `0600` rather than written at the umask default and `chmod`-ed afterwards, and the directory itself is not world-readable — it also holds `config.json`, `usage.json` and `allowed-paths.json`, the last of which reveals which directories the user has granted access to. |
+| NFR-SEC-17 | Files and directories under `~/.buddy/` are created with restrictive permissions from the outset, not widened and then narrowed. `auth.json` is created `0600` rather than written at the umask default and `chmod`-ed afterwards, and the directory itself is not world-readable — it also holds `config.json`, `usage.json` and `allowed-paths.json`, the last of which reveals which directories the user has granted access to. **Amended 2026-08-09 (spike A1):** on Windows, POSIX mode bits are not enforced — after create/write, Buddy applies an explicit ACL via `icacls` (grant current user `(F)` first, then `/inheritance:r`) through `backends/secure-perms.ts`. Silent no-op `chmod` alone is forbidden. |
 | NFR-SEC-18 | A custom provider's `baseUrl` is validated before an API key is sent to it. The URL must parse, must be `http://` or `https://`, and must not be — nor resolve to — a cloud metadata endpoint (`169.254.0.0/16`, `metadata.google.internal` and friends), the unspecified address, multicast or reserved space. **Amended during H8.** The original text said "the same destination rules as `fetch_url` (NFR-SEC-12)", which refuses loopback and private addresses. That is right for `fetch_url`, whose URL is chosen by the agent under the influence of pages it has already fetched, and wrong here: this URL is typed by the user into a field that exists so they can point Buddy at Ollama, LM Studio or llama.cpp, and `http://localhost:11434/v1` is the most common correct value. Applying the SSRF rules verbatim refused the only reason the custom provider exists — the BDD scenario for it failed on exactly that string. Loopback and LAN addresses are therefore allowed; what stays refused is what no local model server is ever behind and where an `Authorization` header does real damage. |
 | NFR-SEC-19 | Buddy sessions use Buddy's own agent directory (`~/.buddy/agent/`), never the Pi CLI's `~/.pi/agent/`. No production code calls the SDK's `getAgentDir()`, **and no production code lets the SDK call it on Buddy's behalf** — every SDK entry point that defaults a path to `getAgentDir()` must be passed an explicit Buddy path. **Amended and closed 2026-07-28.** H6b satisfied the first clause and left two routes open, each found by probing rather than by reading: `ModelRuntime.create` defaulted `modelsPath` to `join(getAgentDir(), "models.json")` — so Buddy loaded the user's Pi CLI provider definitions, and cached its own catalogue into `~/.pi/agent/models-store.json` — and `createAgentSession` was called without `agentDir`, so its `SettingsManager` read the user's `~/.pi/agent/settings.json` (provider, model, thinking level, theme). The requirement had been written as *which directory do we pass*; it needed to be *which directories can the SDK still reach on its own*. Now: `modelsPath`/`modelsStorePath` resolve under `~/.buddy/`, all three `createAgentSession` call sites pass `agentDir`, and two guards hold the line — a behavioural test that points `PI_CODING_AGENT_DIR` at a decoy `models.json` and asserts Buddy never loads it, and a source check that fails when a `createAgentSession` call omits `agentDir` (with a companion assertion that it is inspecting all three sites, so deleting them cannot make it vacuously pass). **Amended 2026-08-08.** `SessionManager.create(cwd)` derives its session directory from `getAgentDir()` when the second argument is omitted, placing every Buddy conversation JSONL in `~/.pi/agent/sessions/`. The same unnamed-default pattern applied here and was not covered by the existing guard. Now: all `SessionManager.create` calls pass an explicit `sessionDir` resolving to `<rootDir>/.buddy/sessions/`, and the source guard fails when a call omits it. |
 | NFR-SEC-20 | Adding an SDK call that accepts a path is a security decision. Any option whose default resolves through `getAgentDir()` must be passed explicitly, and the omission must fail a test rather than be caught in review. **Why this is its own requirement:** NFR-SEC-19 names a directory, and a reader satisfies it by checking the calls they know about. The two leaks above were in calls nobody thought of as agent-directory calls — one creates a model runtime, the other a session. The property is not "we pass the right agentDir" but "no SDK default reaches the user's Pi CLI configuration". **Extends NFR-SEC-07 from credentials to configuration.** `agentDir` governs far more than auth: skills, `settings.json`, `tools/`, `extensions/`, `prompts/`, the project trust store and `models.json`. Passing the global directory meant only credentials were isolated and the user's entire Pi CLI setup leaked into every Buddy session. |
+| NFR-SEC-21 | On Windows, the hardcoded denylist (FR-PERM-04) also blocks `%APPDATA%\gnupg`, `%APPDATA%\Microsoft\Credentials`, and `%LOCALAPPDATA%\Microsoft\Credentials`. `~/.gnupg` alone does not cover GnuPG's real home on Windows. **Spike A3.** Implemented via `windowsDenylistRoots()` in `backends/permissions.ts`. |
+| NFR-SEC-22 | Write destinations for `write`, `edit`, `copy_file`, `move_file` and `relocate_brain_file` are rejected when any path segment is illegal on Windows: `:` (alternate data stream), reserved device names (`CON`, `PRN`, `AUX`, `NUL`, `COM1`–`COM9`, `LPT1`–`LPT9`, with or without extension), other illegal characters (`<>"|?*` and controls), or a trailing space/period. Failure is loud. Enforced on every OS so a portable memory directory cannot carry trap names onto NTFS. **Opened from Windows spike A4 (2026-08-08).** Helper: `shared/filename-safety.ts`. |
 
 ### 4.3 Reliability
 
@@ -2969,6 +2990,30 @@ Further context on local-model evaluation methodology and findings:
 | NFR-PORT-03 | The app may structurally migrate AGENTS.md on boot (one-time, with backup to `.buddy/migrations/`). User customizations (active context, navigation, learned rules) are preserved. Core instructions that moved to agents-base.md are removed. |
 | NFR-PORT-04 | Platform artifacts (`.cursor/`, `.codex/`, `.claude/`) in imported instances are ignored |
 | NFR-PORT-05 | Core app prompts live in `~/.buddy/prompts/`, not inside rootDir. On any app semver change (major, minor, or patch), bundled content overwrites `~/.buddy/prompts/` and `~/.buddy/docs/` (see NFR-MIGRATE-06). User content in rootDir is never touched. |
+| NFR-PORT-06 | Write-path guards that depend on detecting YAML frontmatter (FR-HEBB-06 Hebbian counter restore, FR-GUARD-01 frontmatter-strip detect) accept CRLF as well as LF. Detection uses the shared `shared/frontmatter.ts` matcher — not a second `startsWith("---\n")` check. **Why:** Git for Windows defaults to `core.autocrlf=true`; an LF-only guard returns null / "no frontmatter" and silently disarms FR-HEBB-06 / FR-GUARD-01 on a CRLF working tree. `parseFrontmatter` was already CRLF-tolerant; the guards were not. Opened from the Windows static spike (2026-08-08) finding A7. |
+| NFR-PORT-07 | When consolidation relocates a brain file, markdown link rewrite resolves targets with `isContained` / `realPathOrNearest` (NFR-SEC-15/16), never `normalize(root) + "/"` prefix matching. **Why:** on win32 `normalize` yields backslashes; the hardcoded `/` made every internal link resolve to `null`, so `rewriteBrokenLinks` reported success while leaving every link broken (spike A6). |
+| NFR-PORT-09 | On Windows, the packaged `agent-worker` sidecar, any detached reflect child, and short-lived console children spawned during normal chat (`icacls`, `attrib`, prereq `git --version`, and git via simple-git) must not open a visible console window. Build: `bun build --compile --windows-hide-console` plus a post-compile PE patch to `IMAGE_SUBSYSTEM_WINDOWS_GUI` (Bun 1.3.x still emits CUI despite the flag). Reflect `spawn`/`fork` and worker `execFile`/`execFileSync` paths pass `windowsHide: true` (via `windowsHideSpawnOption`). simple-git already defaults `windowsHide` on its spawns. **Why:** tauri-plugin-js spawns the sidecar with no `CREATE_NO_WINDOW`; a console-subsystem `.exe` shows a persistent black console for the whole session (spike C2). After C2, smoke 20260809d still flashed on **every chat turn** because `writeStateFile` → `icacls` (usage/ACL on every state write) is a console-subsystem tool — PE GUI on the parent does not hide children. Tradeoff: no allocated console for interactive stderr — worker logs still reach the app via Tauri `onStderr` pipes. OAuth may still open the system browser (expected). |
+| NFR-PORT-10 | On Windows, when the Pi SDK OAuth login offers both `browser` and `device_code` (OpenAI Codex), Buddy auto-selects `device_code` and surfaces the user code + verification URI in the UI. Browser-callback OAuth (localhost:1455) remains the default on non-Windows. **Why:** smoke 20260809b — `PI_OAUTH_CALLBACK_HOST=::` alone is insufficient. On WHITEBEAST, `localhost` resolves to `::1` first **and** Hyper-V / WinNAT excludes TCP 1367–1466 (includes 1455), so `listen(1455, …)` fails with `EACCES`; pi-ai's listen error handler resolves `waitForCode` → null → Buddy "Missing authorization code" while the browser shows `ERR_CONNECTION_REFUSED`. Device code avoids the local callback server entirely. |
+| NFR-PORT-11 | Creating a new instance into an existing empty directory must succeed on Windows (and POSIX). The worker must not call Bun/Node `mkdir` in a way that surfaces raw `EEXIST` when the path already exists as a directory — including Explorer **ReadOnly** empty folders. Implementation: `ensureDirectory` adopts existing dirs, clears the Windows directory ReadOnly attribute (`attrib -R`, best effort), and creates missing parents without relying on Bun's broken `mkdirSync({ recursive: true })` on ReadOnly paths. Non-empty non-buddy folders stay refused via FR-SETUP-11. **Why:** smoke 20260809c — Pedro chose `D:\WORK\__CAOS__personal__` (empty, Explorer ReadOnly); after OAuth, setup failed with `EEXIST: file already exists, mkdir '…\__CAOS__personal__'` from the Bun-compiled sidecar (oven-sh/bun#34413). |
+
+### 4.4.0 Windows portability (open — Block 1 before any Windows installer)
+
+Opened from `buddy-windows-spike.md` (static audit). Packaging (NSIS/MSI) waits until the security/correctness rows below have acceptance tests. Decision defaults (Pedro 2026-08-09): ACLs for `~/.buddy/`; Windows denylist includes `%APPDATA%\gnupg` and Credential Manager dirs; first artifact unsigned; work stays on a local branch (no push to upstream until asked). Tooling worktree on this machine: `D:\WORK\PROJECTS\APPS.windows\buddy` (PARA `#64 @ BUDDY\buddy_repo_original` is local origin only — path `#` breaks Vite).
+
+| ID | Requirement | Spike | State |
+|----|-------------|-------|-------|
+| NFR-SEC-17 (amend) | On Windows, `~/.buddy/` credentials and path grants are not world-readable: apply explicit ACLs equivalent in intent to `0700`/`0600`, or document a conscious exception with a user-visible warning. Silent no-op `chmod` is forbidden. | A1 | **closed** |
+| NFR-SEC-04 / FR-PERM-04 (amend) | Hardcoded denylist basename match is case-insensitive (`.ENV`, `Auth.json`). | A2 | **closed** |
+| NFR-SEC-21 | Windows sensitive-path denylist covers GnuPG under `%APPDATA%\gnupg` (not only `~/.gnupg`) and Credential Manager dirs under `%APPDATA%` / `%LOCALAPPDATA%\Microsoft\Credentials`. | A3 | **closed** |
+| NFR-SEC-22 | Before `write` / `edit` / `copy_file` / `move_file`, reject illegal Windows filenames (ADS via `:`, reserved device names `CON`/`NUL`/`PRN`/…). Loud failure — never alternate data streams or discard-to-NUL. | A4 | **closed** |
+| NFR-SEC-15/16 (tests) | Containment covers Windows path shapes: junctions, UNC, `\\?\`, 8.3 short names, per-drive relative paths. | A5 | **closed** |
+| NFR-PORT-07 | Consolidation link rewrite (`consolidation-relocate`) compares paths with platform-safe separators — no hardcoded `/` after `normalize` that disables rewrite on win32. Uses `isContained` (NFR-SEC-16). | A6 | **closed** |
+| NFR-PORT-06 | See table above (CRLF write guards). | A7 | **closed** (`4ff79f4`) |
+| NFR-PORT-08 | New buddy instances get a `.gitattributes` that keeps markdown/text LF; `create-buddy` does not leave CRLF policy to Git for Windows defaults alone. | A8 | **closed** |
+| NFR-REL-11 | Reflect-child interrupt path is portable: must not rely solely on SIGTERM; must not shell out with POSIX-only quoting; must use the same git lock as `commitAll` (FR-REFLECT-06). | A9 | **closed** |
+| NFR-PORT-09 | No visible console for packaged sidecar / reflect child, or for chat-path `git`/`icacls`/`attrib` children (`--windows-hide-console` + PE GUI + `windowsHide` on all worker spawns). | C2 / smoke 20260809d | **closed** |
+| NFR-PORT-10 | OpenAI OAuth on Windows prefers SDK `device_code` over localhost:1455 browser callback (Hyper-V excluded ports + `::1` / silent listen failure). | smoke / post-C | **closed** |
+| NFR-PORT-11 | Setup adopts existing empty dirs on Windows; no raw `EEXIST` from Bun mkdir on Explorer ReadOnly folders (`ensureDirectory` + `attrib -R`). | smoke 20260809c | **closed** |
 
 ### 4.4.1 File Format (NFR-FORMAT)
 

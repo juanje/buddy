@@ -18,6 +18,7 @@
   const authLoggingIn = $derived(controller.authLoggingIn);
   const authError = $derived(controller.authError);
   const authShowApiKey = $derived(controller.authShowApiKey);
+  const authDeviceCode = $derived(controller.authDeviceCode);
   const unauthenticatedProviders = $derived(controller.unauthenticatedProviders);
   const providerAddedNotice = $derived(controller.providerAddedNotice);
   const usage = $derived(controller.usage);
@@ -186,6 +187,14 @@
                 loggingIn={$authLoggingIn}
                 error={$authError}
                 needsBaseUrl={authNeedsBaseUrl}
+                deviceCode={
+                  $authDeviceCode
+                    ? {
+                        userCode: $authDeviceCode.userCode,
+                        verificationUri: $authDeviceCode.verificationUri,
+                      }
+                    : null
+                }
                 bind:apiKeyInput
                 bind:baseUrlInput
                 onOAuthClick={() => controller.submitAuthOAuth()}

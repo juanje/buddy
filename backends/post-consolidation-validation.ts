@@ -4,6 +4,7 @@ import { existsSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { basename, dirname, extname, join, relative, resolve } from "node:path";
 
 import { logEvent } from "./app-logger";
+import { isContained } from "./containment";
 
 const VALID_PATH = /^[a-z0-9._\-/]+$/;
 const MARKDOWN_LINK = /\[([^\]]*)\]\(([^)]+)\)/g;
@@ -72,6 +73,9 @@ export function findBrokenLinks(
     if (!withoutAnchor) continue;
 
     const resolved = resolve(rootDir, fileDir, withoutAnchor);
+    // NFR-SEC-16 / review D7: containment authority, not lexical resolve alone.
+    // Escape links are not in-repo broken targets — leave them for permissions.
+    if (!isContained(resolved, rootDir)) continue;
     if (!existsSync(resolved)) {
       broken.push({
         start: match.index ?? 0,

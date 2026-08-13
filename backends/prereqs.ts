@@ -5,10 +5,14 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 
 import type { PrereqStatus } from "../shared/api";
+import { windowsHideSpawnOption } from "./windows-process";
 
 export type ExecFn = (cmd: string, args: string[]) => Promise<{ stdout: string }>;
 
-const defaultExec: ExecFn = promisify(execFile);
+const execFileAsync = promisify(execFile);
+
+const defaultExec: ExecFn = (cmd, args) =>
+  execFileAsync(cmd, args, { ...windowsHideSpawnOption() }) as Promise<{ stdout: string }>;
 
 export async function checkPrerequisites(exec: ExecFn = defaultExec): Promise<PrereqStatus> {
   try {

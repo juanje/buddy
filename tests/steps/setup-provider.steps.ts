@@ -5,14 +5,16 @@
 
 import { Given, When, Then, After } from "@cucumber/cucumber";
 import assert from "node:assert/strict";
-import { existsSync, mkdtempSync, readFileSync, rmSync, statSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { get } from "svelte/store";
 
 import { configureProviderKey, type ProviderId } from "../../backends/provider-auth";
+import { AUTH_FILE_MODE } from "../../shared/defaults";
 import { toPiProviderId } from "../../shared/provider-mapping";
 import type { SetupController } from "../../src/lib/setup-controller";
+import { assertRestricted } from "../support/assert-restricted";
 import { advanceToProviderStep } from "../support/setup-wizard-helpers";
 import { wizardOf } from "../support/setup-wizard-factory";
 import type { BuddyWorld } from "../support/world";
@@ -89,8 +91,8 @@ Then(
     const store = JSON.parse(readFileSync(this.authPath!, "utf8"));
     const provider = get(wizardOf(this, providerOverrides).provider)!;
     assert.deepEqual(store[toPiProviderId(provider)], { type: "api_key", key: "valid-test-key" });
-    const mode = statSync(this.authPath!).mode & 0o777;
-    assert.equal(mode, 0o600);
+    // NFR-SEC-17 / review D4: shared ACL/mode helper.
+    assertRestricted(this.authPath!, AUTH_FILE_MODE);
   },
 );
 

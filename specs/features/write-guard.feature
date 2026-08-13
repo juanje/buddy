@@ -63,6 +63,12 @@ Feature: Heading-snapshot guard (FR-GUARD-01)
     When the agent writes the file without frontmatter
     Then the file is restored to its pre-write content
 
+  # NFR-PORT-06 — Git for Windows CRLF checkout must not disarm FR-GUARD-01
+  Scenario: A write that strips CRLF frontmatter is reverted
+    Given a brain file "agent_brain/deferred.md" with CRLF frontmatter and headings "Deferred Items"
+    When the agent writes the file without frontmatter
+    Then the file is restored to its pre-write content
+
   Scenario: A write that preserves frontmatter is allowed
     Given a brain file "agent_brain/deferred.md" with frontmatter and headings "Deferred Items"
     When the agent writes the file keeping frontmatter and all headings

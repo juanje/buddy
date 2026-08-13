@@ -18,11 +18,17 @@ import {
   PROTECTED_DIRS,
   USER_MUTABLE_DIRS,
 } from "../shared/defaults";
+import { windowsFilenameIssue } from "../shared/filename-safety";
 import { expandHome } from "../shared/path-utils";
 import { containedRelPath, isContained } from "./containment";
 import { gitClient } from "./git";
 import { evaluateToolCall } from "./permissions";
 import { BRAIN_SUBDIRS, dirPrefix } from "../shared/brain-paths";
+
+function assertLegalFilename(absPath: string): void {
+  const issue = windowsFilenameIssue(absPath);
+  if (issue) throw new FileToolError(issue);
+}
 
 export class FileToolError extends Error {}
 
@@ -94,7 +100,9 @@ export function validateCopyDestination(
   rawPath: string,
   home: string = homedir(),
 ): ResolvedWorkspacePath {
-  const resolved = assertInsideRoot(rootDir, resolveInputPath(rootDir, rawPath, home));
+  const abs = resolveInputPath(rootDir, rawPath, home);
+  assertLegalFilename(abs); // NFR-SEC-22
+  const resolved = assertInsideRoot(rootDir, abs);
   if (!isUserMutablePath(resolved.relPath)) {
     throw new FileToolError(`Copy destination is not allowed: ${resolved.relPath}`);
   }
@@ -118,7 +126,9 @@ export function validateMoveDestination(
   rawPath: string,
   home: string = homedir(),
 ): ResolvedWorkspacePath {
-  const resolved = assertInsideRoot(rootDir, resolveInputPath(rootDir, rawPath, home));
+  const abs = resolveInputPath(rootDir, rawPath, home);
+  assertLegalFilename(abs); // NFR-SEC-22
+  const resolved = assertInsideRoot(rootDir, abs);
   if (isProtectedPath(resolved.relPath)) {
     throw new FileToolError(`Move destination is not allowed: ${resolved.relPath}`);
   }

@@ -174,6 +174,26 @@ describe("createHebbianGuard", () => {
     expect(guard.restore(rel)).toBe(false);
     expect(read(rel)).toContain("access_count: 9");
   });
+
+  // NFR-PORT-06 / FR-HEBB-06 — CRLF checkout (Git for Windows) must not disarm
+  // the guard. An LF-only `startsWith("---\n")` made capture/restore no-ops.
+  it("restores counters when the file uses CRLF frontmatter delimiters", () => {
+    const rel = "user/inbox.md";
+    const crlfOriginal = ORIGINAL.replaceAll("\n", "\r\n");
+    write(rel, crlfOriginal);
+    const guard = createHebbianGuard(root);
+
+    guard.capture(rel);
+    write(
+      rel,
+      crlfOriginal
+        .replace("access_count: 7", "access_count: 1")
+        .replace("last_accessed: 2026-07-26", "last_accessed: 2026-07-29"),
+    );
+    expect(guard.restore(rel)).toBe(true);
+    expect(read(rel)).toContain("access_count: 7");
+    expect(read(rel)).toContain("last_accessed: 2026-07-26");
+  });
 });
 
 // ---------------------------------------------------------------------------

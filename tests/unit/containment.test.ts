@@ -7,11 +7,17 @@
 // check that is never reached is indistinguishable from one that is absent.
 
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { execFileSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { containedRelPath, isContained, realPathOrNearest } from "../../backends/containment";
+import {
+  containedRelPath,
+  isContained,
+  realPathOrNearest,
+  stripWin32ExtendedPrefix,
+} from "../../backends/containment";
 import { validateCopyDestination, validateMoveDestination, FileToolError } from "../../backends/file-tools";
 import { readViewableFile, ViewableFileError } from "../../backends/viewable-file";
 import { evaluateToolCall } from "../../backends/permissions";
@@ -143,5 +149,72 @@ describe("enforcement points resolve symlinks", () => {
         { path: approved, type: "directory" },
       ]),
     ).toBe(false);
+  });
+});
+
+describe("stripWin32ExtendedPrefix", () => {
+  it("strips \\\\?\\ and \\\\?\\UNC\\ prefixes", () => {
+    expect(stripWin32ExtendedPrefix("\\\\?\\C:\\Users\\x")).toBe("C:\\Users\\x");
+    expect(stripWin32ExtendedPrefix("\\\\?\\UNC\\server\\share\\a")).toBe("\\\\server\\share\\a");
+    expect(stripWin32ExtendedPrefix("C:\\plain")).toBe("C:\\plain");
+  });
+});
+
+// Spike A5 / NFR-SEC-15: Windows path shapes realpathSync has never been
+// exercised against in CI. Junctions need no privilege; the rest are spelling.
+describe.runIf(process.platform === "win32")("Windows path shapes (A5)", () => {
+  it("rejects a directory junction inside the root that points outside", () => {
+    const junc = join(root, "user", "junc");
+    symlinkSync(outside, junc, "junction");
+    expect(isContained(join(junc, "secret.md"), root)).toBe(false);
+    expect(containedRelPath(root, join(junc, "secret.md"))).toBeNull();
+  });
+
+  it("accepts a file when either side is spelled with the \\\\?\\ prefix", () => {
+    writeFileSync(join(root, "user", "notes.md"), "notes\n");
+    const extRoot = `\\\\?\\${root}`;
+    const extFile = `\\\\?\\${join(root, "user", "notes.md")}`;
+    expect(isContained(extFile, root)).toBe(true);
+    expect(isContained(join(root, "user", "notes.md"), extRoot)).toBe(true);
+    expect(isContained(extFile, extRoot)).toBe(true);
+    expect(containedRelPath(root, extFile)).toBe("user/notes.md");
+  });
+
+  it("rejects an outside path even when spelled with \\\\?\\", () => {
+    expect(isContained(`\\\\?\\${join(outside, "secret.md")}`, root)).toBe(false);
+  });
+
+  it("accepts a path reached via an 8.3 short name when the volume has one", () => {
+    writeFileSync(join(root, "user", "notes.md"), "notes\n");
+    let short: string;
+    try {
+      short = execFileSync(
+        "powershell.exe",
+        [
+          "-NoProfile",
+          "-Command",
+          `(New-Object -ComObject Scripting.FileSystemObject).GetFolder('${root.replace(/'/g, "''")}').ShortPath`,
+        ],
+        { encoding: "utf8" },
+      ).trim();
+    } catch {
+      return; // COM unavailable — skip rather than fail the suite
+    }
+    if (!short || short.toLowerCase() === root.toLowerCase()) return;
+    expect(isContained(join(short, "user", "notes.md"), root)).toBe(true);
+  });
+
+  it("judges per-drive relative paths against the drive's current directory", () => {
+    writeFileSync(join(root, "user", "notes.md"), "notes\n");
+    const prev = process.cwd();
+    const drive = root.slice(0, 2); // e.g. C:
+    try {
+      process.chdir(join(root, "user"));
+      // `D:notes.md` resolves against the current directory on D:, not D:\.
+      expect(isContained(`${drive}notes.md`, root)).toBe(true);
+      expect(isContained(`${drive}..\\..\\elsewhere\\secret.md`, root)).toBe(false);
+    } finally {
+      process.chdir(prev);
+    }
   });
 });

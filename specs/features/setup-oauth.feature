@@ -19,6 +19,11 @@ Feature: OAuth provider login (FR-SETUP-05)
     And an auth URL event is received
     Then the auth URL is available for browser open
 
+  Scenario: OpenAI device-code login surfaces the user code (NFR-PORT-10)
+    Given the user selects the "openai" provider
+    When a device code event is received with code "ABCD-EFGH"
+    Then the wizard shows the device code "ABCD-EFGH"
+
   Scenario: Cancelling the sign-in is not an error
     Given the user selects the "openai" provider
     When they start OAuth login and cancel it

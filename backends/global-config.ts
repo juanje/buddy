@@ -10,6 +10,7 @@ import {
   GLOBAL_CONFIG_DIR_NAME,
   LEGACY_CONFIG_PATH_ENV,
 } from "../shared/defaults";
+import { applyRestrictiveAcl } from "./secure-perms";
 
 /**
  * The one resolver for the global config directory (NFR-CONFIG-05).
@@ -77,6 +78,7 @@ export function globalConfigPath(): string {
 export function buddyAgentDir(): string {
   const dir = join(globalConfigDir(), "agent");
   mkdirSync(dir, { recursive: true, mode: CONFIG_DIR_MODE }); // NFR-SEC-17
+  applyRestrictiveAcl(dir); // NFR-SEC-17 on Windows (chmod is a no-op there)
   return dir;
 }
 
@@ -122,6 +124,11 @@ export function buddyModelsStorePath(): string {
 export function ensureConfigDirMode(dir: string = globalConfigDir()): void {
   try {
     mkdirSync(dir, { recursive: true, mode: CONFIG_DIR_MODE });
+    if (process.platform === "win32") {
+      // NFR-SEC-17 amend (spike A1): POSIX mode bits do not protect NTFS.
+      applyRestrictiveAcl(dir);
+      return;
+    }
     const current = statSync(dir).mode & 0o777;
     if ((current & ~CONFIG_DIR_MODE) !== 0) chmodSync(dir, CONFIG_DIR_MODE);
   } catch {

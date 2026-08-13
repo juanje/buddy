@@ -256,6 +256,7 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
     if (!id) return;
     oauthLoggingIn.set(true);
     oauthError.set(undefined);
+    oauthPrompt.set(undefined);
     try {
       const result = await worker.loginOAuth(id);
       if (result.success) {
@@ -266,11 +267,12 @@ export function createSetupController(worker: SetupWorkerAPI): SetupController {
       }
     } finally {
       oauthLoggingIn.set(false);
+      oauthPrompt.set(undefined);
     }
   }
 
   function handleOAuthEvent(event: OAuthUIEvent): void {
-    if (event.type === "prompt") {
+    if (event.type === "prompt" || event.type === "device_code") {
       oauthPrompt.set(event);
     } else if (event.type === "error") {
       oauthError.set(event.message);

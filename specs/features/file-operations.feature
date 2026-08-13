@@ -67,3 +67,14 @@ Feature: File operations tools
     Given a file "user/inbox.md" with content "stay"
     When move_file is called with source "user/inbox.md" and destination "/tmp/outside.md"
     Then the file tool returns an error containing "not allowed"
+
+  # NFR-SEC-22 — Windows illegal names (spike A4): loud failure, no ADS / NUL discard
+  Scenario: Reject copy destination with a colon in the filename
+    Given an external file "/tmp/buddy-external.txt" with content "external content"
+    When copy_file is called with source "/tmp/buddy-external.txt" and destination "user/Reunión: plan.md"
+    Then the file tool returns an error containing "alternate data stream"
+
+  Scenario: Reject move destination that is a reserved device name
+    Given a file "user/old-name.md" with content "move me"
+    When move_file is called with source "user/old-name.md" and destination "user/NUL.md"
+    Then the file tool returns an error containing "Reserved Windows device"

@@ -11,7 +11,7 @@
 // a local account needs.
 
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { chmodSync, mkdirSync, mkdtempSync, rmSync, statSync } from "node:fs";
+import { chmodSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -19,6 +19,7 @@ import { writeStateFile } from "../../backends/state-file";
 import { addAllowedPath, allowedPathsFile } from "../../backends/allowed-paths";
 import { ensureConfigDirMode } from "../../backends/global-config";
 import { AUTH_FILE_MODE, CONFIG_DIR_MODE, STATE_FILE_MODE } from "../../shared/defaults";
+import { assertRestricted } from "../support/assert-restricted";
 
 let base: string;
 
@@ -30,24 +31,22 @@ afterEach(() => {
   rmSync(base, { recursive: true, force: true });
 });
 
-const modeOf = (path: string) => statSync(path).mode & 0o777;
-
 describe("state files are created restrictively", () => {
   it("writes a state file 0600 by default", () => {
     const path = join(base, "conf", "config.json");
     writeStateFile(path, { rootDir: "/somewhere" });
-    expect(modeOf(path)).toBe(STATE_FILE_MODE);
+    assertRestricted(path, STATE_FILE_MODE);
   });
 
   it("creates the directory it needs at 0700", () => {
     writeStateFile(join(base, "conf", "config.json"), {});
-    expect(modeOf(join(base, "conf"))).toBe(CONFIG_DIR_MODE);
+    assertRestricted(join(base, "conf"), CONFIG_DIR_MODE);
   });
 
   it("still honours an explicit mode", () => {
     const path = join(base, "conf", "auth.json");
     writeStateFile(path, {}, { mode: AUTH_FILE_MODE });
-    expect(modeOf(path)).toBe(AUTH_FILE_MODE);
+    assertRestricted(path, AUTH_FILE_MODE);
   });
 
   it("keeps the mode across the rewrite of an existing file", () => {
@@ -56,14 +55,14 @@ describe("state files are created restrictively", () => {
     const path = join(base, "conf", "usage.json");
     writeStateFile(path, { a: 1 });
     writeStateFile(path, { a: 2 });
-    expect(modeOf(path)).toBe(STATE_FILE_MODE);
+    assertRestricted(path, STATE_FILE_MODE);
   });
 
   it("protects allowed-paths.json, which names the user's private directories", () => {
     const dir = join(base, "buddy-config");
     addAllowedPath(dir, { path: join(base, "Documents"), type: "directory" });
-    expect(modeOf(allowedPathsFile(dir))).toBe(STATE_FILE_MODE);
-    expect(modeOf(dir)).toBe(CONFIG_DIR_MODE);
+    assertRestricted(allowedPathsFile(dir), STATE_FILE_MODE);
+    assertRestricted(dir, CONFIG_DIR_MODE);
   });
 });
 
@@ -71,7 +70,7 @@ describe("ensureConfigDirMode", () => {
   it("creates the config directory at 0700", () => {
     const dir = join(base, "fresh");
     ensureConfigDirMode(dir);
-    expect(modeOf(dir)).toBe(CONFIG_DIR_MODE);
+    assertRestricted(dir, CONFIG_DIR_MODE);
   });
 
   it("narrows a directory that already exists too permissively", () => {
@@ -79,11 +78,11 @@ describe("ensureConfigDirMode", () => {
     // and nothing else would ever rewrite the mode.
     const dir = join(base, "legacy");
     mkdirSync(dir);
-    chmodSync(dir, 0o755);
+    if (process.platform !== "win32") chmodSync(dir, 0o755);
 
     ensureConfigDirMode(dir);
 
-    expect(modeOf(dir)).toBe(CONFIG_DIR_MODE);
+    assertRestricted(dir, CONFIG_DIR_MODE);
   });
 
   it("does not throw when the directory cannot be touched", () => {

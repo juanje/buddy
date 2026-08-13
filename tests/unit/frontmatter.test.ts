@@ -6,7 +6,21 @@
 
 import { describe, expect, it } from "vitest";
 
-import { parseFrontmatter, splitFrontmatter } from "../../shared/frontmatter";
+import {
+  hasFrontmatterBlock,
+  matchFrontmatterBlock,
+  parseFrontmatter,
+  splitFrontmatter,
+} from "../../shared/frontmatter";
+
+describe("hasFrontmatterBlock / matchFrontmatterBlock (NFR-PORT-06)", () => {
+  it("accepts LF and CRLF openers", () => {
+    expect(hasFrontmatterBlock("---\nsummary: x\n---\n\nBody")).toBe(true);
+    expect(hasFrontmatterBlock("---\r\nsummary: x\r\n---\r\n\r\nBody")).toBe(true);
+    expect(hasFrontmatterBlock("# No frontmatter\n")).toBe(false);
+    expect(matchFrontmatterBlock("---\r\nsummary: x\r\n---\r\n")?.[1]).toContain("summary: x");
+  });
+});
 
 describe("parseFrontmatter", () => {
   it("parses yaml frontmatter fields", () => {

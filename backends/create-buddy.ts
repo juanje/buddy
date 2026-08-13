@@ -2,14 +2,15 @@
 // Pure file operations + git: NO LLM call happens here by design. The wizard
 // collects personalization in a form; USER.md is populated from that data.
 
-import { cpSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { simpleGit } from "simple-git";
 
 import type { SetupConfig } from "../shared/api";
 import { DEFAULT_LANGUAGE, DEFAULT_MONTHLY_BUDGET, GIT_USER_EMAIL, GIT_USER_NAME } from "../shared/defaults";
 import { getEmbeddedAssets } from "./embedded-assets";
+import { ensureDirectory } from "./ensure-directory";
+import { gitClient } from "./git";
 import { writeStateFile } from "./state-file";
 import { writePiSettings } from "../shared/pi-settings";
 import { userProfilePath } from "./brain-paths";
@@ -25,6 +26,10 @@ export function defaultTemplatesDir(): string {
  * templates/ on disk (dev).
  */
 export function copyTemplates(targetDir: string, templatesDir?: string): void {
+  // NFR-PORT-11: adopt an existing empty home (incl. Explorer ReadOnly) before
+  // cpSync / per-file mkdir — Bun's recursive mkdir throws EEXIST on Windows.
+  ensureDirectory(targetDir);
+
   if (templatesDir) {
     cpSync(templatesDir, targetDir, { recursive: true });
     return;
@@ -34,7 +39,7 @@ export function copyTemplates(targetDir: string, templatesDir?: string): void {
   if (embedded) {
     for (const [path, content] of Object.entries(embedded.templates)) {
       const target = join(targetDir, path);
-      mkdirSync(dirname(target), { recursive: true });
+      ensureDirectory(dirname(target));
       writeFileSync(target, content, "utf8");
     }
     return;
@@ -80,7 +85,13 @@ export async function createBuddyInstance(options: CreateBuddyOptions): Promise<
   const { config, configPath } = options;
   const root = config.rootDir;
 
+  // FR-SETUP-04/08 + NFR-PORT-11: ok-empty homes must succeed, including
+  // Windows folders that already exist (Explorer often marks them ReadOnly).
+  ensureDirectory(root);
   copyTemplates(root, options.templatesDir);
+  // NFR-PORT-08: even if a custom templatesDir omits it, new instances must not
+  // inherit Git for Windows CRLF defaults alone.
+  ensureTextEolAttributes(root);
 
   if (config.name?.trim()) {
     writeFileSync(userProfilePath(root), buildUserProfile(config));
@@ -92,7 +103,7 @@ export async function createBuddyInstance(options: CreateBuddyOptions): Promise<
 
   // Git identity is repo-local: the target user may have no global git
   // config, and setup must never fail on that (NFR: git invisible).
-  const git = simpleGit(root);
+  const git = gitClient(root);
   await git.init();
   await git.addConfig("user.name", GIT_USER_NAME);
   await git.addConfig("user.email", GIT_USER_EMAIL);
@@ -118,6 +129,7 @@ export function adoptBuddyInstance(options: Pick<CreateBuddyOptions, "config" | 
   }
 
   ensureRuntimeStateIgnored(config.rootDir);
+  ensureTextEolAttributes(config.rootDir);
   markConfigured(config, configPath);
 }
 
@@ -130,12 +142,27 @@ export function adoptBuddyInstance(options: Pick<CreateBuddyOptions, "config" | 
  * auto-commit fails silently for the life of the install.
  */
 export async function ensureGitRepository(rootDir: string): Promise<boolean> {
-  if (existsSync(join(rootDir, ".git"))) return false;
-  const git = simpleGit(rootDir);
-  await git.init();
-  await git.addConfig("user.name", GIT_USER_NAME);
-  await git.addConfig("user.email", GIT_USER_EMAIL);
-  return true;
+  const git = gitClient(rootDir);
+  // Spike E / review D8: an adopted clone may already have `.git` but no *local*
+  // identity. Global config (if any) is not enough for a portable Buddy home —
+  // set local name/email when the repo has none.
+  if (!existsSync(join(rootDir, ".git"))) {
+    await git.init();
+    await git.addConfig("user.name", GIT_USER_NAME);
+    await git.addConfig("user.email", GIT_USER_EMAIL);
+    return true;
+  }
+  let localName: string | undefined;
+  try {
+    localName = (await git.getConfig("user.name", "local")).value;
+  } catch {
+    localName = undefined;
+  }
+  if (!localName) {
+    await git.addConfig("user.name", GIT_USER_NAME);
+    await git.addConfig("user.email", GIT_USER_EMAIL);
+  }
+  return false;
 }
 
 /**
@@ -168,6 +195,42 @@ export function ensureRuntimeStateIgnored(rootDir: string): void {
   writeFileSync(
     gitignorePath,
     `${current}${needsNewline ? "\n" : ""}${header}${absent.join("\n")}\n`,
+    "utf8",
+  );
+}
+
+/** Canonical `.gitattributes` body for a new Buddy instance (NFR-PORT-08). */
+export const BUDDY_GITATTRIBUTES = `\
+# NFR-PORT-08 — keep text LF so a Buddy memory repo stays portable when created
+# under Git for Windows (core.autocrlf=true). Binary files stay untouched.
+* text=auto eol=lf
+*.md text eol=lf
+*.json text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+`;
+
+/**
+ * Ensure `.gitattributes` forces LF for text (NFR-PORT-08).
+ *
+ * New installs get the file from `templates/`; this covers adopt and any
+ * templatesDir that omitted it. Does not overwrite a file that already has the
+ * `eol=lf` policy — the user's repo may already be deliberate.
+ */
+export function ensureTextEolAttributes(rootDir: string): void {
+  const path = join(rootDir, ".gitattributes");
+  let current = "";
+  try {
+    current = readFileSync(path, "utf8");
+  } catch {
+    writeFileSync(path, BUDDY_GITATTRIBUTES, "utf8");
+    return;
+  }
+  if (/eol\s*=\s*lf/i.test(current)) return;
+  const needsNewline = current !== "" && !current.endsWith("\n");
+  writeFileSync(
+    path,
+    `${current}${needsNewline ? "\n" : ""}\n# Added by Buddy (NFR-PORT-08)\n* text=auto eol=lf\n`,
     "utf8",
   );
 }

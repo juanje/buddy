@@ -80,6 +80,17 @@ describe("frontmatterProblem", () => {
     // positives: articles use `---` as a separator.
     expect(frontmatterProblem(`${HEALTHY}\nSome prose.\n\n---\n\nMore prose.\n`)).toBeNull();
   });
+
+  it("accepts CRLF frontmatter the same as LF (review B2 / NFR-PORT-06)", () => {
+    const crlfHealthy = HEALTHY.replaceAll("\n", "\r\n");
+    expect(frontmatterProblem(crlfHealthy)).toBeNull();
+
+    const crlfStacked = SECOND_BLOCK.replaceAll("\n", "\r\n");
+    expect(frontmatterProblem(crlfStacked)).toMatch(/second frontmatter block/i);
+
+    const crlfDup = DUPLICATE_KEY.replaceAll("\n", "\r\n");
+    expect(frontmatterProblem(crlfDup)).toMatch(/created/);
+  });
 });
 
 describe("assertNoNewBrainDamage", () => {

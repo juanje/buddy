@@ -1,6 +1,9 @@
 // tests/unit/post-consolidation-validation.test.ts — FR-GUARD-03 unit tests.
 
-import { describe, expect, it } from "vitest";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, describe, expect, it } from "vitest";
 
 import {
   findBrokenLinks,
@@ -8,6 +11,19 @@ import {
   slugifyFilename,
   stripBrokenLink,
 } from "../../backends/post-consolidation-validation";
+
+const tmpRoots: string[] = [];
+
+afterEach(() => {
+  while (tmpRoots.length > 0) rmSync(tmpRoots.pop()!, { recursive: true, force: true });
+});
+
+function liveRoot(): string {
+  const root = mkdtempSync(join(tmpdir(), "buddy-pcv-"));
+  tmpRoots.push(root);
+  mkdirSync(join(root, "agent_brain", "concepts"), { recursive: true });
+  return root;
+}
 
 describe("isValidBrainFilename", () => {
   it("accepts lowercase kebab paths", () => {
@@ -32,9 +48,8 @@ describe("slugifyFilename", () => {
 });
 
 describe("findBrokenLinks", () => {
-  const root = "/tmp/root";
-
   it("finds missing relative targets", () => {
+    const root = liveRoot();
     const content = "See [missing](ghost.md) for details.";
     const broken = findBrokenLinks(content, "agent_brain/concepts/index.md", root);
     expect(broken).toHaveLength(1);
@@ -43,15 +58,24 @@ describe("findBrokenLinks", () => {
   });
 
   it("ignores external links", () => {
+    const root = liveRoot();
     const content = "See [site](https://example.com) for details.";
+    expect(findBrokenLinks(content, "agent_brain/concepts/index.md", root)).toHaveLength(0);
+  });
+
+  it("ignores escape links outside the buddy root (review D7)", () => {
+    const root = liveRoot();
+    writeFileSync(join(root, "agent_brain", "concepts", "index.md"), "# idx\n");
+    const content = "See [escape](../../../../Windows/System32/drivers/etc/hosts) out.";
     expect(findBrokenLinks(content, "agent_brain/concepts/index.md", root)).toHaveLength(0);
   });
 });
 
 describe("stripBrokenLink", () => {
   it("removes link syntax and keeps display text", () => {
+    const root = liveRoot();
     const content = "See [missing](ghost.md) here.";
-    const [link] = findBrokenLinks(content, "agent_brain/x.md", "/tmp/root");
+    const [link] = findBrokenLinks(content, "agent_brain/x.md", root);
     expect(link).toBeDefined();
     expect(stripBrokenLink(content, link!)).toBe("See missing here.");
   });

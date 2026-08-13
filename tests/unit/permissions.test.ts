@@ -5,7 +5,12 @@ import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { evaluateToolCall, createPermissionGate } from "../../backends/permissions";
+import {
+  evaluateToolCall,
+  createPermissionGate,
+  isDenylistedPath,
+  windowsDenylistRoots,
+} from "../../backends/permissions";
 import { DENYLIST_BASENAMES, DENYLIST_HOME_DIRS } from "../../shared/defaults";
 
 // A real directory, not a fabricated "/home/u". Containment resolves symlinks
@@ -98,6 +103,65 @@ describe("evaluateToolCall", () => {
       expect(decision.action, path).toBe("deny");
     }
   });
+
+  // NFR-SEC-04 / FR-PERM-04 (spike A2) — capitalisation must not open a hole.
+  it("denies denylist basenames regardless of letter case", () => {
+    const cased = [
+      `${AB}/secrets/.ENV`,
+      `${AB}/secrets/.Env`,
+      `${AB}/secrets/Auth.json`,
+      `${AB}/secrets/AUTH.JSON`,
+      `${HOME}/project/.eNv`,
+    ];
+    for (const path of cased) {
+      expect(isDenylistedPath(path, HOME), path).toBe(true);
+      expect(evaluate("read", { path }).action, path).toBe("deny");
+    }
+  });
+
+  // NFR-SEC-21 / spike A3 — Windows GnuPG + Credential Manager (not ~/.gnupg).
+  it("denies Windows AppData gnupg and Credential Manager paths", () => {
+    const appdata = join(HOME, "AppData", "Roaming");
+    const local = join(HOME, "AppData", "Local");
+    mkdirSync(join(appdata, "gnupg", "private-keys-v1.d"), { recursive: true });
+    mkdirSync(join(appdata, "Microsoft", "Credentials"), { recursive: true });
+    mkdirSync(join(local, "Microsoft", "Credentials"), { recursive: true });
+
+    const env = { APPDATA: appdata, LOCALAPPDATA: local };
+    expect(windowsDenylistRoots(env)).toEqual([
+      join(appdata, "gnupg"),
+      join(appdata, "Microsoft", "Credentials"),
+      join(local, "Microsoft", "Credentials"),
+    ]);
+
+    const secrets = [
+      join(appdata, "gnupg", "private-keys-v1.d", "key"),
+      join(appdata, "Microsoft", "Credentials", "blob"),
+      join(local, "Microsoft", "Credentials", "blob"),
+    ];
+    for (const path of secrets) {
+      expect(isDenylistedPath(path, HOME, env), path).toBe(true);
+    }
+    // Without AppData env (POSIX-like), those absolute paths are not denylisted
+    // by the Windows roots — only basename / ~/.gnupg rules apply.
+    expect(isDenylistedPath(secrets[0], HOME, {})).toBe(false);
+
+    // Production path: evaluateToolCall reads process.env.
+    const prevApp = process.env.APPDATA;
+    const prevLocal = process.env.LOCALAPPDATA;
+    process.env.APPDATA = appdata;
+    process.env.LOCALAPPDATA = local;
+    try {
+      for (const path of secrets) {
+        expect(evaluateToolCall("read", { path }, AB, HOME).action, path).toBe("deny");
+      }
+    } finally {
+      if (prevApp === undefined) delete process.env.APPDATA;
+      else process.env.APPDATA = prevApp;
+      if (prevLocal === undefined) delete process.env.LOCALAPPDATA;
+      else process.env.LOCALAPPDATA = prevLocal;
+    }
+  });
 });
 
 describe("createPermissionGate sessionAllowedPaths", () => {
@@ -116,7 +180,11 @@ describe("createPermissionGate sessionAllowedPaths", () => {
   });
 
   it("denies reads for denylist paths even when sessionAllowedPaths includes them", async () => {
-    const allowed = new Set(["/anywhere/project/.env"]);
+    // Use a real absolute path — `resolve` on Windows rewrites `/anywhere/...`
+    // to a drive-rooted form, which made a POSIX-literal reason assertion fail
+    // without testing the denylist property.
+    const envPath = join(HOME, "project", ".env");
+    const allowed = new Set([envPath]);
     const gate = createPermissionGate(
       AB,
       async () => {
@@ -125,10 +193,8 @@ describe("createPermissionGate sessionAllowedPaths", () => {
       HOME,
       { sessionAllowedPaths: allowed },
     );
-    const outcome = await gate.check("read", { path: "/anywhere/project/.env" });
-    expect(outcome).toEqual({
-      block: true,
-      reason: "Access to /anywhere/project/.env is not allowed.",
-    });
+    const outcome = await gate.check("read", { path: envPath });
+    expect(outcome?.block).toBe(true);
+    expect(outcome?.reason).toMatch(/\.env/);
   });
 });

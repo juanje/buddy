@@ -10,13 +10,15 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 
 import { addAllowedPath, loadAllowedPaths } from "../../backends/allowed-paths";
 import { bootRefreshIfNeeded } from "../../backends/boot-refresh";
 import { configureProviderKey } from "../../backends/provider-auth";
 import { recordUsageToFile } from "../../backends/usage-tracker";
 import { StateFileUnreadableError } from "../../backends/state-file";
+import { AUTH_FILE_MODE } from "../../shared/defaults";
+import { assertRestricted } from "../support/assert-restricted";
 
 let dir: string;
 const CORRUPT = "{ this is not json";
@@ -63,16 +65,19 @@ describe("auth.json", () => {
       authPath: authPath(),
       probe: async () => ({ ok: true }),
     });
-    const { statSync } = await import("node:fs");
-    expect(statSync(authPath()).mode & 0o777).toBe(0o600);
+    assertRestricted(authPath(), AUTH_FILE_MODE);
   });
 });
 
 describe("allowed-paths.json", () => {
   it("keeps previously approved paths when adding one", () => {
+    // On Windows, absolute Unix-looking paths resolve under the drive root
+    // (e.g. `/tmp/one` → `D:\tmp\one`). Compare against the resolved form.
+    const one = resolve("/tmp/one");
+    const two = resolve("/tmp/two");
     addAllowedPath(dir, { path: "/tmp/one", type: "directory" });
     addAllowedPath(dir, { path: "/tmp/two", type: "file" });
-    expect(loadAllowedPaths(dir).map((e) => e.path).sort()).toEqual(["/tmp/one", "/tmp/two"]);
+    expect(loadAllowedPaths(dir).map((e) => e.path).sort()).toEqual([one, two].sort());
   });
 
   it("refuses to add into an unreadable file instead of wiping approvals", () => {
