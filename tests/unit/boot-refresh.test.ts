@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { bootRefreshIfNeeded } from "../../backends/boot-refresh";
+import { bootDeployDocs, bootRefreshIfNeeded } from "../../backends/boot-refresh";
 import { bundledPromptsDir } from "../../backends/deploy-bundled-content";
 
 describe("boot refresh", () => {
@@ -30,6 +30,8 @@ describe("boot refresh", () => {
     expect(refreshed).toBe(true);
     const bundled = readFileSync(join(bundledPromptsDir(), "agents-base.md"), "utf8");
     expect(readFileSync(join(configDir, "prompts", "agents-base.md"), "utf8")).toBe(bundled);
+    expect(existsSync(join(configDir, "docs", "index.md"))).toBe(false);
+    bootDeployDocs(configDir);
     expect(existsSync(join(configDir, "docs", "index.md"))).toBe(true);
     const config = JSON.parse(readFileSync(join(configDir, "config.json"), "utf8")) as {
       last_app_version?: string;
@@ -61,6 +63,8 @@ describe("boot refresh", () => {
     expect(refreshed).toBe(true);
     expect(existsSync(join(configDir, "config.json"))).toBe(true);
     expect(existsSync(join(configDir, "prompts", "agents-base.md"))).toBe(true);
+    expect(existsSync(join(configDir, "docs", "index.md"))).toBe(false);
+    bootDeployDocs(configDir);
     expect(existsSync(join(configDir, "docs", "index.md"))).toBe(true);
     const config = JSON.parse(readFileSync(join(configDir, "config.json"), "utf8")) as {
       last_app_version?: string;

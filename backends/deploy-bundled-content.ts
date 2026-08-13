@@ -26,7 +26,9 @@ function deployMarkdownFiles(
   if (embeddedFiles) {
     for (const [name, content] of Object.entries(embeddedFiles)) {
       if (!name.endsWith(".md")) continue;
-      writeFileSync(join(targetDir, name), content, "utf8");
+      const filePath = join(targetDir, name);
+      mkdirSync(dirname(filePath), { recursive: true });
+      writeFileSync(filePath, content, "utf8");
     }
     return;
   }
@@ -39,14 +41,23 @@ function deployMarkdownFiles(
 
 /** Overwrite ~/.buddy/prompts/ and ~/.buddy/docs/ from bundled/embedded sources. Idempotent. */
 export function deployBundledGlobalContent(configDir: string): void {
-  const embedded = getEmbeddedAssets();
+  deployBundledPrompts(configDir);
+  deployBundledDocs(configDir);
+}
 
+/** Deploy prompts only — needed before session creation (system prompt assembly). */
+export function deployBundledPrompts(configDir: string): void {
+  const embedded = getEmbeddedAssets();
   deployMarkdownFiles(
     bundledPromptsDir(),
     join(configDir, "prompts"),
     embedded?.prompts,
   );
+}
 
+/** Deploy docs only — can run after RPC channel is up (read on demand by the agent). */
+export function deployBundledDocs(configDir: string): void {
+  const embedded = getEmbeddedAssets();
   deployMarkdownFiles(
     bundledDocsDir(),
     join(configDir, "docs"),

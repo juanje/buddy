@@ -61,7 +61,7 @@ import { writePiSettings } from "../shared/pi-settings";
 import { createWorkerCore } from "./worker-core";
 import { startHeartbeat, type HeartbeatHandle } from "./heartbeat";
 import { ensureConfigDirMode, globalConfigDir, globalConfigPath } from "./global-config";
-import { bootRefreshIfNeeded } from "./boot-refresh";
+import { bootDeployDocs, bootRefreshIfNeeded } from "./boot-refresh";
 import { pruneSessionArtifacts } from "./session-log-prune";
 import { createUsageTracker, resolveMonthlyBudget, type UsageTracker } from "./usage-tracker";
 import { createPromptQueue } from "./prompt-queue";
@@ -96,7 +96,7 @@ export interface WorkerDeps {
 export async function main(deps: WorkerDeps = {}): Promise<void> {
   const configDir = globalConfigDir();
   ensureConfigDirMode(configDir); // NFR-SEC-17, before anything is written into it
-  bootRefreshIfNeeded(configDir);
+  const needsRefresh = bootRefreshIfNeeded(configDir);
   await alignHttpDispatcherWithPi();
 
   // Started, not awaited. Building the runtime fetches the remote model
@@ -361,6 +361,11 @@ export async function main(deps: WorkerDeps = {}): Promise<void> {
   });
 
   frontend = channel.getAPI();
+
+  // Deploy docs after the RPC channel is up — docs are read on demand by the
+  // agent, not needed for session creation. Prompts were already deployed in
+  // bootRefreshIfNeeded (needed for system prompt assembly).
+  if (needsRefresh) bootDeployDocs(configDir);
 
   if (!setupState.firstRun) {
     await startSession(setupState.config.rootDir);

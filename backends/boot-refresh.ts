@@ -3,7 +3,7 @@
 import { join } from "node:path";
 
 import { APP_VERSION } from "./app-version";
-import { deployBundledGlobalContent } from "./deploy-bundled-content";
+import { deployBundledDocs, deployBundledPrompts } from "./deploy-bundled-content";
 import { CONFIG_FILE_NAME } from "../shared/defaults";
 import { readStateFile, updateStateFile, StateFileUnreadableError } from "./state-file";
 
@@ -13,8 +13,10 @@ interface BuddyConfigRecord {
 }
 
 /**
- * Deploy bundled ~/.buddy/ content when app semver changes (or on fresh install).
- * Single boot-time gate for prompts, docs, and future one-shot migrations.
+ * Check whether a boot refresh is due. Returns true when the app version
+ * changed (or the config is unreadable). Does NOT deploy docs — that can
+ * wait until after the RPC channel is up. Prompts are deployed here because
+ * the session needs them for system prompt assembly.
  *
  * NFR-REL-08: an unreadable config is left untouched. The previous version
  * treated any read failure as an empty config and then wrote `{last_app_version}`
@@ -33,20 +35,25 @@ export function bootRefreshIfNeeded(
     current = readStateFile<BuddyConfigRecord>(configPath);
   } catch (error) {
     if (!(error instanceof StateFileUnreadableError)) throw error;
-    // Deploying bundled content is idempotent and safe, so still do it; but do
-    // not record the version, because that would mean rewriting the file we
-    // could not read.
     console.error(`[boot-refresh] config unreadable, leaving it untouched: ${configPath}`);
-    deployBundledGlobalContent(configDir);
+    deployBundledPrompts(configDir);
     return true;
   }
 
   if (current?.last_app_version === appVersion) return false;
 
-  deployBundledGlobalContent(configDir);
+  deployBundledPrompts(configDir);
   updateStateFile<BuddyConfigRecord>(configPath, (config) => ({
     ...(config ?? {}),
     last_app_version: appVersion,
   }));
   return true;
+}
+
+/**
+ * Deploy docs separately — safe to call after the RPC channel is up.
+ * Only runs when `bootRefreshIfNeeded` returned true (version changed).
+ */
+export function bootDeployDocs(configDir: string): void {
+  deployBundledDocs(configDir);
 }
