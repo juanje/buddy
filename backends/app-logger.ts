@@ -14,6 +14,7 @@ export type AppLogEvent =
   | { event: "reflect_complete"; session: string; mode: string; logPath?: string }
   | { event: "reflect_skipped"; session: string; mode: string; reason: string }
   | { event: "reflect_error"; session: string; mode: string; message: string }
+  | { event: "reflect_retry"; session: string; mode: string; attempt: number; delayMs: number }
   | { event: "consolidation_start"; depth: number }
   | { event: "consolidation_complete"; depth: number }
   | { event: "consolidation_error"; depth: number; error: string; failureCount?: number }

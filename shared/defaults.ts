@@ -114,6 +114,19 @@ export const REFLECT_CHILD_ENV_VALUE = "1";
  */
 export const REFLECT_CHILD_TIMEOUT_MS = 5 * 60 * 1000;
 /**
+ * Backoff delays between reflect prompt retries when the provider returns a
+ * retryable error (429, overloaded). Three retries across ~3 minutes fit
+ * inside REFLECT_CHILD_TIMEOUT_MS.
+ */
+export const REFLECT_RETRY_DELAYS_MS = [30_000, 60_000, 90_000] as const;
+
+const REFLECT_RETRYABLE_PATTERNS = [/429/i, /rate.limit/i, /overloaded/i, /529/i, /too many/i];
+
+/** Whether a reflect provider error is worth waiting and retrying. */
+export function isRetryableReflectError(message: string): boolean {
+  return REFLECT_RETRYABLE_PATTERNS.some((pattern) => pattern.test(message));
+}
+/**
  * Retention for forked session files in `.buddy/reflect-sessions/`
  * (NFR-MAINT-02). Each holds a full conversation transcript; they are kept only
  * as a manual-recovery window for a reflect that failed.

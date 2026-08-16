@@ -34,9 +34,16 @@ function errored(message = "429: rate limit exceeded") {
 }
 
 function mockSession(eventsOnPrompt: AgentEvent[]) {
+  mockSessionSequence([eventsOnPrompt]);
+}
+
+function mockSessionSequence(responses: AgentEvent[][]) {
+  let callIndex = 0;
   sessionPromptMock.mockImplementation(async () => {
+    const events = responses[callIndex] ?? [];
+    callIndex += 1;
     if (capturedSubscribe) {
-      for (const event of eventsOnPrompt) capturedSubscribe(event);
+      for (const event of events) capturedSubscribe(event);
     }
   });
   createAgentSessionMock.mockResolvedValue({
@@ -224,12 +231,28 @@ describe("reflect-child API error propagation (Bug 2)", () => {
     expect(logEvents.some((entry) => entry.event === "reflect_skipped")).toBe(false);
   });
 
-  it("preserves rate-limit detail in reflect_error for debugging", async () => {
-    mockSession(errored("429: rate limit exceeded — retry after 30s"));
+  it("preserves rate-limit detail in reflect_error when all retries are exhausted", async () => {
+    vi.useFakeTimers();
+    mockSessionSequence([
+      errored("429: rate limit exceeded — retry after 30s"),
+      errored("429: rate limit exceeded — retry after 30s"),
+      errored("429: rate limit exceeded — retry after 30s"),
+      errored("429: rate limit exceeded — retry after 30s"),
+    ]);
 
-    await expect(
-      runReflect(rootDir, forkFile, "session-end", "sess9999", "2026-08-16", "01:00", "02:00"),
-    ).rejects.toThrow(/rate limit/);
+    const runPromise = runReflect(
+      rootDir,
+      forkFile,
+      "session-end",
+      "sess9999",
+      "2026-08-16",
+      "01:00",
+      "02:00",
+    );
+    const expectation = expect(runPromise).rejects.toThrow(/rate limit/);
+
+    await vi.runAllTimersAsync();
+    await expectation;
 
     const errorLog = logEvents.find((entry) => entry.event === "reflect_error");
     expect(errorLog).toMatchObject({
@@ -239,5 +262,99 @@ describe("reflect-child API error propagation (Bug 2)", () => {
     });
     expect(String(errorLog?.message)).toContain("429");
     expect(String(errorLog?.message)).toContain("rate limit");
+    expect(logEvents.filter((entry) => entry.event === "reflect_retry")).toHaveLength(3);
+    vi.useRealTimers();
+  });
+});
+
+describe("reflect-child retry backoff", () => {
+  let rootDir: string;
+  let forkFile: string;
+
+  beforeEach(() => {
+    rootDir = mkdtempSync(join(tmpdir(), "reflect-child-retry-"));
+    mkdirSync(join(rootDir, ".buddy", "reflect-sessions"), { recursive: true });
+    mkdirSync(join(rootDir, "logs"), { recursive: true });
+    forkFile = join(rootDir, ".buddy", "reflect-sessions", "2026-08-16-test.jsonl");
+    writeFileSync(forkFile, "{}");
+    logEvents.length = 0;
+    createAgentSessionMock.mockReset();
+    sessionPromptMock.mockReset();
+    modelRuntimeMock.getModel.mockReturnValue({ id: "claude-haiku-4-5", provider: "anthropic" });
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    if (rootDir && existsSync(rootDir)) rmSync(rootDir, { recursive: true, force: true });
+  });
+
+  it("retries after a retryable error and completes on the next attempt", async () => {
+    mockSessionSequence([
+      errored("429: rate limit exceeded"),
+      completedReflect("### Context\n\nRecovered after retry."),
+    ]);
+
+    const runPromise = runReflect(
+      rootDir,
+      forkFile,
+      "session-end",
+      "abc12345",
+      "2026-08-16",
+      "14:30",
+      "15:45",
+    );
+
+    await vi.runAllTimersAsync();
+    await runPromise;
+
+    expect(sessionPromptMock).toHaveBeenCalledTimes(2);
+    expect(logEvents.filter((entry) => entry.event === "reflect_retry")).toHaveLength(1);
+    expect(logEvents.some((entry) => entry.event === "reflect_complete")).toBe(true);
+    expect(logEvents.some((entry) => entry.event === "reflect_error")).toBe(false);
+  });
+
+  it("does not wait before throwing a non-retryable error", async () => {
+    const setTimeoutSpy = vi.spyOn(globalThis, "setTimeout");
+    mockSession(errored("401: Invalid API key"));
+
+    await expect(
+      runReflect(rootDir, forkFile, "session-end", "abc12345", "2026-08-16", "14:30", "15:45"),
+    ).rejects.toThrow(/401/);
+
+    expect(sessionPromptMock).toHaveBeenCalledOnce();
+    const retryDelays = setTimeoutSpy.mock.calls
+      .map((call) => call[1])
+      .filter((delay): delay is number => delay === 30_000 || delay === 60_000 || delay === 90_000);
+    expect(retryDelays).toHaveLength(0);
+    setTimeoutSpy.mockRestore();
+  });
+
+  it("logs reflect_error with the last retryable error after exhausting retries", async () => {
+    mockSessionSequence([
+      errored("429: first rate limit"),
+      errored("429: second rate limit"),
+      errored("429: third rate limit"),
+      errored("429: final rate limit"),
+    ]);
+
+    const runPromise = runReflect(
+      rootDir,
+      forkFile,
+      "session-end",
+      "abc12345",
+      "2026-08-16",
+      "14:30",
+      "15:45",
+    );
+    const expectation = expect(runPromise).rejects.toThrow(/final rate limit/);
+
+    await vi.runAllTimersAsync();
+    await expectation;
+
+    expect(sessionPromptMock).toHaveBeenCalledTimes(4);
+    expect(logEvents.filter((entry) => entry.event === "reflect_retry")).toHaveLength(3);
+    const errorLog = logEvents.find((entry) => entry.event === "reflect_error");
+    expect(String(errorLog?.message)).toContain("final rate limit");
   });
 });

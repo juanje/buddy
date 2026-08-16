@@ -22,10 +22,12 @@ import { buddyAgentDir, globalConfigDir } from "./global-config";
 import type { AgentEvent } from "../shared/api";
 import {
   GIT_COMMIT_PREFIX,
+  isRetryableReflectError,
   LOCK_MAX_RETRIES,
   LOCK_RETRY_MS,
   REFLECT_ARGV_FLAG,
   REFLECT_CHILD_TIMEOUT_MS,
+  REFLECT_RETRY_DELAYS_MS,
   REFLECT_SESSIONS_DIR,
 } from "../shared/defaults";
 import { logEvent } from "./app-logger";
@@ -52,6 +54,18 @@ async function acquireLockWithRetry(rootDir: string): Promise<boolean> {
     await new Promise((r) => setTimeout(r, LOCK_RETRY_MS));
   }
   return false;
+}
+
+function findAssistantErrorMessage(events: AgentEvent[]): string | undefined {
+  const failedMessage = events.find(
+    (event) => event.type === "message_end"
+      && (event as { message?: { stopReason?: string } }).message?.stopReason === "error",
+  ) as { message?: { errorMessage?: string } } | undefined;
+  return failedMessage?.message?.errorMessage;
+}
+
+async function sleep(ms: number): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 export async function runReflect(
@@ -110,17 +124,40 @@ export async function runReflect(
   const unsub = session.subscribe((event) => events.push(event));
 
   try {
-    await session.prompt(buildReflectUserPrompt(mode));
+    let lastError: Error | undefined;
 
-    recordSessionUsage(globalConfigDir(), events);
+    for (let attempt = 0; attempt <= REFLECT_RETRY_DELAYS_MS.length; attempt++) {
+      if (attempt > 0) {
+        const delayMs = REFLECT_RETRY_DELAYS_MS[attempt - 1];
+        logEvent(rootDir, {
+          event: "reflect_retry",
+          session: logSessionId,
+          mode,
+          attempt,
+          delayMs,
+        });
+        await sleep(delayMs);
+        events.length = 0;
+      }
 
-    const failedMessage = events.find(
-      (event) => event.type === "message_end"
-        && (event as { message?: { stopReason?: string } }).message?.stopReason === "error",
-    ) as { message?: { errorMessage?: string } } | undefined;
+      await session.prompt(buildReflectUserPrompt(mode));
+      recordSessionUsage(globalConfigDir(), events);
 
-    if (failedMessage?.message?.errorMessage) {
-      throw new Error(failedMessage.message.errorMessage);
+      const errorMessage = findAssistantErrorMessage(events);
+      if (errorMessage) {
+        if (isRetryableReflectError(errorMessage) && attempt < REFLECT_RETRY_DELAYS_MS.length) {
+          lastError = new Error(errorMessage);
+          continue;
+        }
+        throw new Error(errorMessage);
+      }
+
+      lastError = undefined;
+      break;
+    }
+
+    if (lastError) {
+      throw lastError;
     }
 
     // Commit agent writes immediately — before lock, before finalization.
