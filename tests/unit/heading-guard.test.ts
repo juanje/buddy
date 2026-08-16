@@ -1,4 +1,4 @@
-// tests/unit/heading-guard.test.ts — FR-GUARD-01: heading-snapshot guard.
+// tests/unit/heading-guard.test.ts — FR-GUARD-01 / FR-GUARD-01b: heading-snapshot guard.
 
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -66,7 +66,7 @@ describe("heading guard", () => {
     expect(readFileSync(filePath, "utf8")).toBe(newContent);
   });
 
-  it("does not guard files outside agent_brain and logs", () => {
+  it("does not guard files outside the protected list", () => {
     const guard = setup();
     const filePath = join(dir, "user", "notes.md");
     mkdirSync(join(dir, "user"), { recursive: true });
@@ -79,6 +79,133 @@ describe("heading guard", () => {
 
     expect(result.reverted).toBe(false);
     expect(readFileSync(filePath, "utf8")).toBe("No headings at all.\n");
+  });
+
+  it("allows restructuring agent_brain/projects/ files", () => {
+    const guard = setup();
+    const filePath = join(dir, "agent_brain", "projects", "buddy", "bugs.md");
+    mkdirSync(join(dir, "agent_brain", "projects", "buddy"), { recursive: true });
+    const original = "## BUG-01\n\nFirst.\n\n## BUG-02\n\nSecond.\n";
+    writeFileSync(filePath, original, "utf8");
+
+    guard.capture(filePath);
+    const newContent = "## BUG-01\n\nFirst.\n";
+    writeFileSync(filePath, newContent, "utf8");
+    const result = guard.check(filePath);
+
+    expect(result.reverted).toBe(false);
+    expect(readFileSync(filePath, "utf8")).toBe(newContent);
+  });
+
+  it("allows restructuring agent_brain/concepts/ (non-index) files", () => {
+    const guard = setup();
+    const filePath = join(dir, "agent_brain", "concepts", "some-concept.md");
+    mkdirSync(join(dir, "agent_brain", "concepts"), { recursive: true });
+    const original = "## Summary\n\nOld.\n\n## Examples\n\nMore.\n";
+    writeFileSync(filePath, original, "utf8");
+
+    guard.capture(filePath);
+    const newContent = "## Summary\n\nOld.\n";
+    writeFileSync(filePath, newContent, "utf8");
+    const result = guard.check(filePath);
+
+    expect(result.reverted).toBe(false);
+    expect(readFileSync(filePath, "utf8")).toBe(newContent);
+  });
+
+  it("allows restructuring agent_brain/skills/ files", () => {
+    const guard = setup();
+    const filePath = join(dir, "agent_brain", "skills", "process-conversation.md");
+    mkdirSync(join(dir, "agent_brain", "skills"), { recursive: true });
+    const original = "## Procedure\n\nSteps.\n\n## Quality\n\nChecks.\n";
+    writeFileSync(filePath, original, "utf8");
+
+    guard.capture(filePath);
+    const newContent = "## Procedure\n\nSteps.\n";
+    writeFileSync(filePath, newContent, "utf8");
+    const result = guard.check(filePath);
+
+    expect(result.reverted).toBe(false);
+    expect(readFileSync(filePath, "utf8")).toBe(newContent);
+  });
+
+  it("allows restructuring agent_brain/ideas/ (non-index) files", () => {
+    const guard = setup();
+    const filePath = join(dir, "agent_brain", "ideas", "2026-08-16_test-idea.md");
+    mkdirSync(join(dir, "agent_brain", "ideas"), { recursive: true });
+    const original = "## Core idea\n\nSeed.\n\n## Notes\n\nMore.\n";
+    writeFileSync(filePath, original, "utf8");
+
+    guard.capture(filePath);
+    const newContent = "## Core idea\n\nSeed.\n";
+    writeFileSync(filePath, newContent, "utf8");
+    const result = guard.check(filePath);
+
+    expect(result.reverted).toBe(false);
+    expect(readFileSync(filePath, "utf8")).toBe(newContent);
+  });
+
+  it("allows restructuring agent_brain/identity/ files other than USER.md and SOUL.md", () => {
+    const guard = setup();
+    const filePath = join(dir, "agent_brain", "identity", "family.md");
+    mkdirSync(join(dir, "agent_brain", "identity"), { recursive: true });
+    const original = "## Context\n\nFamily.\n\n## Care\n\nNotes.\n";
+    writeFileSync(filePath, original, "utf8");
+
+    guard.capture(filePath);
+    const newContent = "## Context\n\nFamily.\n";
+    writeFileSync(filePath, newContent, "utf8");
+    const result = guard.check(filePath);
+
+    expect(result.reverted).toBe(false);
+    expect(readFileSync(filePath, "utf8")).toBe(newContent);
+  });
+
+  it("allows restructuring logs/archive/ files", () => {
+    const guard = setup();
+    const filePath = join(dir, "logs", "archive", "2026-07", "2026-07-08.md");
+    mkdirSync(join(dir, "logs", "archive", "2026-07"), { recursive: true });
+    const original = "## Day summary\n\nContent.\n\n## Lessons\n\nLearned.\n";
+    writeFileSync(filePath, original, "utf8");
+
+    guard.capture(filePath);
+    const newContent = "## Day summary\n\nContent.\n";
+    writeFileSync(filePath, newContent, "utf8");
+    const result = guard.check(filePath);
+
+    expect(result.reverted).toBe(false);
+    expect(readFileSync(filePath, "utf8")).toBe(newContent);
+  });
+
+  it("still guards AGENTS.md at root", () => {
+    const guard = setup();
+    const filePath = join(dir, "AGENTS.md");
+    const original = "## Active context\n\nHot.\n\n## Where to find things\n\nMap.\n";
+    writeFileSync(filePath, original, "utf8");
+
+    guard.capture(filePath);
+    writeFileSync(filePath, "## Where to find things\n\nMap.\n", "utf8");
+    const result = guard.check(filePath);
+
+    expect(result.reverted).toBe(true);
+    expect(result.lostHeadings).toEqual(["Active context"]);
+    expect(readFileSync(filePath, "utf8")).toBe(original);
+  });
+
+  it("still guards user/inbox.md", () => {
+    const guard = setup();
+    const filePath = join(dir, "user", "inbox.md");
+    mkdirSync(join(dir, "user"), { recursive: true });
+    const original = "## Capture\n\nIn.\n\n## Next Actions\n\nDo.\n";
+    writeFileSync(filePath, original, "utf8");
+
+    guard.capture(filePath);
+    writeFileSync(filePath, "## Next Actions\n\nDo.\n", "utf8");
+    const result = guard.check(filePath);
+
+    expect(result.reverted).toBe(true);
+    expect(result.lostHeadings).toEqual(["Capture"]);
+    expect(readFileSync(filePath, "utf8")).toBe(original);
   });
 
   it("guards log files", () => {
@@ -99,7 +226,7 @@ describe("heading guard", () => {
 
   it("consumes the snapshot on check (one capture, one check)", () => {
     const guard = setup();
-    const filePath = join(dir, "agent_brain", "test.md");
+    const filePath = join(dir, "agent_brain", "observations.md");
     mkdirSync(join(dir, "agent_brain"), { recursive: true });
     writeFileSync(filePath, "## A\n\nContent.\n", "utf8");
 

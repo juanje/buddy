@@ -3,7 +3,7 @@
 
 // The buddy directory layout lives in ./brain-paths.ts. The lists below derive
 // from it rather than respelling the paths, so the two cannot disagree.
-import { BRAIN, BRAIN_DIR, BRAIN_SUBDIRS, DOWNLOADS_DIR, LOGS_DIR, USER_DIR } from "./brain-paths";
+import { BRAIN, BRAIN_DIR, BRAIN_SUBDIRS, DOWNLOADS_DIR, LOGS_DIR, LOGS_INDEX, USER_DIR, indexRelPath } from "./brain-paths";
 
 // --- Operational defaults (NFR-CONFIG-01) ---
 export const LOCK_STALE_MS = 60 * 60 * 1000;
@@ -239,6 +239,26 @@ export const USER_MUTABLE_DIRS = [USER_DIR, DOWNLOADS_DIR] as const;
 export const PROTECTED_DIRS = [BRAIN_DIR, LOGS_DIR] as const;
 /** Root identity files that must never be deleted or moved (FR-DELETE-01). */
 export const IDENTITY_ROOT_FILES = ["AGENTS.md", "SOUL.md", "USER.md", "CLAUDE.md"] as const;
+
+/**
+ * FR-GUARD-01b: buddy-root-relative paths where heading/frontmatter loss
+ * triggers revert. Daily logs (`logs/YYYY-MM-DD.md`) are matched separately.
+ */
+export const PROTECTED_FILES = [
+  "AGENTS.md",
+  BRAIN.user,
+  BRAIN.soul,
+  BRAIN.observations,
+  BRAIN.deferred,
+  indexRelPath(BRAIN_SUBDIRS.concepts),
+  indexRelPath(BRAIN_SUBDIRS.projects),
+  indexRelPath(BRAIN_SUBDIRS.ideas),
+  LOGS_INDEX,
+  `${USER_DIR}/inbox.md`,
+] as const;
+
+/** Daily log path pattern for heading guard (logs/YYYY-MM-DD.md, not archive). */
+export const HEADING_GUARD_DAILY_LOG_RE = /^logs\/\d{4}-\d{2}-\d{2}\.md$/;
 
 /**
  * Directories an agent-authored link may point into (FR-CHAT-11). Everything

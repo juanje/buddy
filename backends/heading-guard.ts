@@ -1,14 +1,15 @@
-// backends/heading-guard.ts — FR-GUARD-01: heading-snapshot guard.
+// backends/heading-guard.ts — FR-GUARD-01 / FR-GUARD-01b: heading-snapshot guard.
 //
 // Captures headings (`#`/`##`) and frontmatter presence before a write/edit,
 // restores the file if any heading disappeared or frontmatter was stripped.
 // Same capture/check pattern as hebbian-guard.ts.
+// FR-GUARD-01b: denylist scope — only protected files (see PROTECTED_FILES).
 
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
+import { HEADING_GUARD_DAILY_LOG_RE, PROTECTED_FILES } from "../shared/defaults";
 import { toBuddyRelPath } from "../shared/path-utils";
-import { BRAIN_DIR, LOGS_DIR } from "../shared/brain-paths";
 
 export interface HeadingGuardResult {
   reverted: boolean;
@@ -33,8 +34,9 @@ function hasFrontmatter(content: string): boolean {
   return content.startsWith("---\n") && content.indexOf("\n---", 4) >= 0;
 }
 
-function isGuardedPath(relPath: string): boolean {
-  return relPath.startsWith(`${BRAIN_DIR}/`) || relPath.startsWith(`${LOGS_DIR}/`);
+function isProtectedFile(relPath: string): boolean {
+  if ((PROTECTED_FILES as readonly string[]).includes(relPath)) return true;
+  return HEADING_GUARD_DAILY_LOG_RE.test(relPath);
 }
 
 export function createHeadingGuard(rootDir: string): HeadingGuard {
@@ -43,7 +45,7 @@ export function createHeadingGuard(rootDir: string): HeadingGuard {
   return {
     capture(path: string) {
       const relPath = toBuddyRelPath(rootDir, path);
-      if (!relPath || !isGuardedPath(relPath)) return;
+      if (!relPath || !isProtectedFile(relPath)) return;
       const absPath = resolve(rootDir, relPath);
       if (!existsSync(absPath)) return;
       let content: string;
