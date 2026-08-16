@@ -2582,16 +2582,15 @@ result — the LLM then follows the procedure.
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-DELETE-01 | Restricted file deletion tool for user workspace | 2 ✓ |
+| FR-DELETE-01 | File deletion with protected-file denylist | 2 ✓ |
+| FR-DELETE-02 | Brain file deletion for non-protected paths | 2 |
 
-**FR-DELETE-01 — Restricted file deletion**
+**FR-DELETE-01 — File deletion with protected-file denylist**
 
 - **Given** the user asks the agent to remove a file (or the agent proposes removal)
 - **When** the LLM invokes the `delete_file` tool with a path
-- **Then** the worker validates the path against the allowed scope:
-  - `rootDir/user/` — allowed
-  - `rootDir/downloads/` — allowed
-  - Everything else — denied (hard block, no override)
+- **Then** the worker validates the path against a **denylist** of protected structural files (see `PROTECTED_FILES` in `shared/defaults.ts`, same list as FR-GUARD-01b)
+- **And** paths inside `rootDir` that are not protected may be deleted (including non-protected `agent_brain/` files)
 - **And** a confirmation prompt appears in chat before execution (same pattern as FR-PERM-07): shows the file path, asks "Allow" / "Deny"
 - **And** on confirmation:
   - If the file is tracked by git: `git rm` (stages deletion for next auto-commit)
@@ -2601,16 +2600,23 @@ result — the LLM then follows the procedure.
 
 **Denied paths (hardcoded, no override):**
 
-- `agent_brain/` — memory is never deleted; depth and archiving are the cooling mechanism
-- `logs/` — episodic memory; archived by consolidation, never removed
-- `AGENTS.md`, `SOUL.md`, `USER.md` — identity/behavioral files
+- Protected structural files (`PROTECTED_FILES`) — indexes, identity hubs (USER.md, SOUL.md), observations, deferred, inbox, AGENTS.md
+- `logs/` — all episodic logs; archived by consolidation, never removed via delete
 - Any path outside `rootDir` — Zone 2/3 deletion is never permitted
+
+**FR-DELETE-02 — Brain file deletion**
+
+- **Given** a file under `agent_brain/` that is not on the protected denylist
+- **When** the LLM invokes `delete_file` with that path and the user confirms
+- **Then** the file is deleted via `git rm` or `fs.unlink` as usual
+- **Rationale:** Memory cooling is link-distance and hierarchy depth, not deletion prevention. Pruning consolidation does not delete files; structural hubs stay protected by the denylist.
 
 **Acceptance criteria:**
 
 - [x] Tool `delete_file` registered as Pi custom tool (single string parameter: `path`)
-- [x] Paths inside `user/` and `downloads/` are accepted
-- [x] Paths inside `agent_brain/`, `logs/`, or identity files are rejected with error message
+- [x] Paths inside `user/` and `downloads/` are accepted (except protected files such as `user/inbox.md`)
+- [x] Non-protected `agent_brain/` paths are accepted
+- [x] Protected files and all of `logs/` are rejected with error message
 - [x] Paths outside `rootDir` are rejected with error message
 - [x] User confirmation prompt shown before any deletion executes
 - [x] Tracked files removed via `git rm`; untracked via `fs.unlink`
@@ -2630,6 +2636,7 @@ result — the LLM then follows the procedure.
 |----|-------------|-------|
 | FR-FILE-01 | Copy file from external path into user workspace | 2 ✓ |
 | FR-FILE-02 | Move/rename file within rootDir | 2 ✓ |
+| FR-FILE-03 | Brain moves with inline link rewriting | 2 |
 
 **FR-FILE-01 — Copy file into workspace**
 
@@ -2649,12 +2656,21 @@ result — the LLM then follows the procedure.
 - **When** the LLM invokes the `move_file` tool with source and destination paths
 - **Then** the worker validates:
   - Both source and destination are inside `rootDir`
-  - Source is NOT in `agent_brain/`, `logs/`, or an identity file (those use `relocate_brain_file` in consolidation only)
+  - Source is NOT a protected file (see `PROTECTED_FILES`) and NOT under `logs/`
+  - Destination is NOT a protected file and NOT under `logs/`
   - Destination directory is created if absent
 - **And** the file is moved via `git mv` (preserving history) if tracked, or `fs.rename` if untracked
 - **And** the auto-commit (FR-GIT-01) includes the move
-- **Denied paths (source):** `agent_brain/`, `logs/`, `AGENTS.md`, `SOUL.md`, `USER.md` — same as FR-DELETE-01.
-- **Note:** This tool does NOT rewrite markdown links. For `agent_brain/` moves with link rewriting, use `relocate_brain_file` (FR-CONSOL-07, consolidation-only).
+
+**FR-FILE-03 — Brain moves with inline link rewriting**
+
+- **Given** `move_file` source is inside `agent_brain/`
+- **When** the move completes successfully
+- **Then** all markdown links across the repo pointing at the old path are rewritten to the new path (same logic as `relocate_brain_file`, FR-CONSOL-07)
+- **And** the tool result lists which files had links updated (or states that none were found)
+- **Note:** `relocate_brain_file` remains registered for consolidation backward compatibility but is redundant with `move_file` for brain paths.
+
+**Denied paths (source/destination):** protected files (`PROTECTED_FILES`), all of `logs/`, paths outside `rootDir`.
 
 **Acceptance criteria (both):**
 

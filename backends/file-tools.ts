@@ -1,4 +1,4 @@
-// backends/file-tools.ts — FR-DELETE-01, FR-FILE-01, FR-FILE-02 file operation tools.
+// backends/file-tools.ts — FR-DELETE-01/02, FR-FILE-01/02/03 file operation tools.
 
 import {
   copyFileSync,
@@ -14,15 +14,17 @@ import { Type } from "typebox";
 import { defineTool, type ToolDefinition } from "@earendil-works/pi-coding-agent";
 
 import {
+  HEADING_GUARD_DAILY_LOG_RE,
   IDENTITY_ROOT_FILES,
-  PROTECTED_DIRS,
+  PROTECTED_FILES,
   USER_MUTABLE_DIRS,
 } from "../shared/defaults";
+import { BRAIN_PREFIX, LOGS_DIR } from "../shared/brain-paths";
 import { expandHome } from "../shared/path-utils";
+import { rewriteBrokenLinks } from "./consolidation-relocate";
 import { containedRelPath, isContained } from "./containment";
 import { gitClient } from "./git";
 import { evaluateToolCall } from "./permissions";
-import { BRAIN_SUBDIRS, dirPrefix } from "../shared/brain-paths";
 
 export class FileToolError extends Error {}
 
@@ -47,18 +49,15 @@ function isAbsolutePath(path: string): boolean {
   return path.startsWith("/") || /^[A-Za-z]:[\\/]/.test(path);
 }
 
-function isIdentityPath(relPath: string): boolean {
+/** FR-DELETE-02 / FR-FILE-03: denylist for delete/move (same structural hubs as heading guard + all logs/). */
+export function isFileOpProtected(relPath: string): boolean {
+  if ((PROTECTED_FILES as readonly string[]).includes(relPath)) return true;
+  if (HEADING_GUARD_DAILY_LOG_RE.test(relPath)) return true;
+  if (relPath === LOGS_DIR || relPath.startsWith(`${LOGS_DIR}/`)) return true;
   if (IDENTITY_ROOT_FILES.includes(relPath as (typeof IDENTITY_ROOT_FILES)[number])) {
     return true;
   }
-  return relPath.startsWith(dirPrefix(BRAIN_SUBDIRS.identity));
-}
-
-function isProtectedPath(relPath: string): boolean {
-  if (isIdentityPath(relPath)) return true;
-  return PROTECTED_DIRS.some(
-    (dir) => relPath === dir || relPath.startsWith(`${dir}/`),
-  );
+  return false;
 }
 
 function isUserMutablePath(relPath: string): boolean {
@@ -83,7 +82,7 @@ export function validateDeletablePath(
   home: string = homedir(),
 ): ResolvedWorkspacePath {
   const resolved = assertInsideRoot(rootDir, resolveInputPath(rootDir, rawPath, home));
-  if (isProtectedPath(resolved.relPath) || !isUserMutablePath(resolved.relPath)) {
+  if (isFileOpProtected(resolved.relPath)) {
     throw new FileToolError(`Deletion is not allowed for path: ${resolved.relPath}`);
   }
   return resolved;
@@ -107,7 +106,7 @@ export function validateMoveSource(
   home: string = homedir(),
 ): ResolvedWorkspacePath {
   const resolved = assertInsideRoot(rootDir, resolveInputPath(rootDir, rawPath, home));
-  if (isProtectedPath(resolved.relPath) || !isUserMutablePath(resolved.relPath)) {
+  if (isFileOpProtected(resolved.relPath)) {
     throw new FileToolError(`Move source is not allowed: ${resolved.relPath}`);
   }
   return resolved;
@@ -119,7 +118,7 @@ export function validateMoveDestination(
   home: string = homedir(),
 ): ResolvedWorkspacePath {
   const resolved = assertInsideRoot(rootDir, resolveInputPath(rootDir, rawPath, home));
-  if (isProtectedPath(resolved.relPath)) {
+  if (isFileOpProtected(resolved.relPath)) {
     throw new FileToolError(`Move destination is not allowed: ${resolved.relPath}`);
   }
   return resolved;
@@ -241,7 +240,15 @@ export async function moveWorkspaceFile(
     renameSync(srcAbs, destAbs);
   }
 
-  return `Moved ${srcRel} → ${destRel}.`;
+  let message = `Moved ${srcRel} → ${destRel}.`;
+  if (srcRel.startsWith(BRAIN_PREFIX)) {
+    const rewrittenLinks = rewriteBrokenLinks(rootDir, srcRel, destRel);
+    message += rewrittenLinks.length > 0
+      ? ` Updated links in: ${rewrittenLinks.join(", ")}.`
+      : " No links to update.";
+  }
+
+  return message;
 }
 
 export function buildFileTools(rootDir: string, options?: FileToolOptions): ToolDefinition[] {
@@ -263,10 +270,10 @@ export function buildFileTools(rootDir: string, options?: FileToolOptions): Tool
       name: "delete_file",
       label: "Delete file",
       description:
-        "Delete a file from user/ or downloads/. Requires user confirmation. Cannot delete brain memory, logs, or identity files.",
+        "Delete a file. Cannot delete protected structural files (indexes, identity, observations, deferred, inbox) or logs. Requires user confirmation.",
       parameters: Type.Object({
         path: Type.String({
-          description: "Path to the file to delete (relative to workspace, in user/ or downloads/)",
+          description: "Path to the file to delete (relative to workspace)",
         }),
       }),
       async execute(_callId, args) {
@@ -312,7 +319,7 @@ export function buildFileTools(rootDir: string, options?: FileToolOptions): Tool
       name: "move_file",
       label: "Move file",
       description:
-        "Move or rename a file within the workspace (user/ or downloads/). Does not rewrite markdown links.",
+        "Move or rename a file within the workspace. Cannot move protected structural files or logs. When moving brain files, all markdown links to the old path are rewritten automatically.",
       parameters: Type.Object({
         source: Type.String({ description: "Current file path inside the workspace" }),
         destination: Type.String({ description: "New file path inside the workspace" }),

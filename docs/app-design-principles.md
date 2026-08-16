@@ -90,8 +90,8 @@ decision:
 
 - `fetch_url` — web→markdown, PDF→text, image→file (FR-NET-01)
 - `copy_file` — byte-for-byte copy from external paths into workspace (FR-FILE-01)
-- `move_file` — rename/move within workspace, uses git mv for tracked files (FR-FILE-02)
-- `delete_file` — restricted to `user/`/`downloads/`, user confirmation required (FR-DELETE-01)
+- `move_file` — rename/move within workspace, uses git mv for tracked files; rewrites brain links inline (FR-FILE-02/03)
+- `delete_file` — protected structural files and `logs/` blocked; user confirmation required (FR-DELETE-01/02)
 - `process_conversation`, `triage_inbox` — procedural skills loaded from `~/.buddy/prompts/` (FR-SKILL)
 - `relocate_brain_file` — consolidation-only, moves files with link rewriting (FR-CONSOL-07)
 
@@ -140,7 +140,12 @@ Memory consolidation modeled on how brains work:
 - **Encoding** — capture during experience (reflect)
 - **Consolidation** — organize during rest (daily)
 - **Calibration** — adjust strength over time (weekly)
-- **Pruning** — forget what's no longer relevant (monthly)
+- **Pruning** — reduce prominence of what's no longer relevant (monthly)
+
+Pruning creates deeper hierarchical structure (link-distance cooling), not
+file deletion. Deletion is available as a tool for explicit reorganization,
+but is not part of the consolidation pruning process. Structural hubs
+(indexes, identity, observations, deferred) stay protected by a denylist.
 
 The number of cycles or their names may change; the principle of
 **progressive consolidation with increasing time horizons** stays.
