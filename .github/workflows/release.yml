@@ -31,6 +31,8 @@ jobs:
 
     runs-on: ${{ matrix.platform }}
     name: Build (${{ matrix.label }})
+    env:
+      APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
 
     steps:
       - uses: actions/checkout@v7
@@ -95,18 +97,36 @@ jobs:
           BUDDY_BUILD_TARGET: ${{ matrix.rust_target || '' }}
         run: bash scripts/build-worker.sh
 
-      # Ad-hoc sign on macOS when no Developer ID certificate is configured.
-      # Without any signature, Gatekeeper shows the non-bypassable "damaged"
-      # error. Ad-hoc signing (identity "-") downgrades this to the
-      # bypassable "unidentified developer" warning (right-click → Open).
-      # When APPLE_SIGNING_IDENTITY is set via repo secrets, Tauri uses
-      # the real certificate instead and this default has no effect.
+      # Import the Developer ID certificate into a temporary keychain so
+      # codesign can find it during the Tauri build. When the secrets are
+      # absent (fork, PR), the step is skipped and Tauri falls back to
+      # ad-hoc signing via APPLE_SIGNING_IDENTITY: "-".
+      - name: Import Apple Developer certificate
+        if: startsWith(matrix.platform, 'macos') && env.APPLE_CERTIFICATE != ''
+        env:
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+        run: |
+          echo "$APPLE_CERTIFICATE" | base64 --decode > certificate.p12
+          KEYCHAIN_PASSWORD="$(openssl rand -hex 12)"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+          security set-keychain-settings -t 3600 -u build.keychain
+          security import certificate.p12 -k build.keychain \
+            -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: \
+            -s -k "$KEYCHAIN_PASSWORD" build.keychain
+          rm -f certificate.p12
+
       - name: Build app with Tauri
         uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           APPIMAGE_EXTRACT_AND_RUN: '1'
           APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY || '-' }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         with:
           tagName: v__VERSION__
           releaseName: 'Buddy v__VERSION__'
