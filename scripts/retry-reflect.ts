@@ -1,10 +1,13 @@
 // scripts/retry-reflect.ts — Retry a failed session-end reflect from its saved fork.
 //
 // Usage:
-//   npx tsx scripts/retry-reflect.ts <rootDir> [forked-session-file]
+//   npx tsx scripts/retry-reflect.ts <rootDir> [forked-session-file] [--force-model]
 //
 // If forked-session-file is omitted, uses the most recent .jsonl in
 // <rootDir>/.buddy/reflect-sessions/.
+//
+// --force-model: resolve model from config instead of inheriting from the fork.
+//   Workaround for multi-provider sessions where model resolution fails.
 //
 // This replays the same codepath as reflect-child.ts runReflect() for
 // session-end mode, using the real brain directory and auth credentials.
@@ -58,13 +61,18 @@ function extractSessionDate(forkFile: string): string {
 }
 
 async function main(): Promise<void> {
-  const args = process.argv.slice(2);
+  const rawArgs = process.argv.slice(2);
+  const forceModel = rawArgs.includes("--force-model");
+  const args = rawArgs.filter((a) => a !== "--force-model");
 
   if (args.length === 0 || args[0] === "--help") {
-    console.log(`Usage: npx tsx scripts/retry-reflect.ts <rootDir> [forked-session-file]
+    console.log(`Usage: npx tsx scripts/retry-reflect.ts <rootDir> [forked-session-file] [--force-model]
 
 Re-runs the session-end reflect using the saved fork file.
-If no fork file is specified, uses the most recent one.`);
+If no fork file is specified, uses the most recent one.
+
+Options:
+  --force-model   Resolve model from config (workaround for multi-provider forks)`);
     process.exit(0);
   }
 
@@ -89,7 +97,7 @@ If no fork file is specified, uses the most recent one.`);
   console.log(`Root dir:     ${rootDir}`);
   console.log(`Fork file:    ${forkedSessionFile}`);
   console.log(`Session date: ${sessionDate}`);
-  console.log(`Mode:         session-end (retry)\n`);
+  console.log(`Mode:         session-end (retry${forceModel ? ", forced model" : ""})\n`);
 
   await alignHttpDispatcherWithPi();
 
@@ -105,6 +113,26 @@ If no fork file is specified, uses the most recent one.`);
 
   const modelRuntime = await createBuddyModelRuntime();
 
+  let model: { id: string } | undefined;
+  if (forceModel) {
+    const provider = readPiProvider(rootDir);
+    const fastModelId = fastModelForProvider(provider);
+    const available = await modelRuntime.getAvailable(provider);
+    const defaultModelId = fastModelId ?? "claude-sonnet-4-6";
+    model = available.find((m) => m.id === defaultModelId);
+    if (!model) model = available.find((m) => m.id.includes("sonnet"));
+    if (!model && available.length > 0) model = available[0];
+
+    console.log(`Provider:     ${provider}`);
+    console.log(`Model:        ${model?.id ?? "NONE RESOLVED"}`);
+    console.log(`Available:    ${available.length} models\n`);
+
+    if (!model) {
+      console.error("Could not resolve any model. Check auth and models-store.");
+      process.exit(1);
+    }
+  }
+
   console.log("Creating agent session...");
 
   const { session } = await createAgentSession({
@@ -114,6 +142,7 @@ If no fork file is specified, uses the most recent one.`);
     sessionManager: sm,
     noTools: "all",
     modelRuntime,
+    ...(model && { model, thinkingLevel: "minimal" as const }),
   });
 
   const events: AgentEvent[] = [];
@@ -167,7 +196,17 @@ If no fork file is specified, uses the most recent one.`);
         releaseLock(rootDir);
       }
     } else {
+      const eventTypes = events.map((e) => e.type);
+      const errorEvents = events.filter((e) => (e as any).isError || e.type === "error");
       console.error("\nReflect produced empty output.");
+      console.error(`Event count: ${events.length}`);
+      console.error(`Event types: ${[...new Set(eventTypes)].join(", ")}`);
+      if (errorEvents.length > 0) {
+        console.error(`Error events: ${JSON.stringify(errorEvents.slice(0, 3), null, 2)}`);
+      }
+      for (const ev of events) {
+        console.error(`  [${ev.type}] ${JSON.stringify(ev).slice(0, 300)}`);
+      }
     }
   } catch (err) {
     logEvent(rootDir, {
