@@ -78,7 +78,7 @@ Idea file format, File metadata, Active context, Where to find things, Skills, R
 ### What stays from current templates/CLAUDE.md
 
 **Core behavior section (all 7 rules):**
-1. Listen and capture (routing: user acts → user/, agent learns → agent_brain/)
+1. Listen and capture (routing: user artifacts → `user/`; agent operational knowledge → `agent_brain/`; bifurcate when both)
 2. Confirm what you captured
 3. Present options with reasoning for decisions (user owns decisions)
 4. Don't reorganize proactively

@@ -168,22 +168,28 @@ Never load everything into context. Navigate by layers:
 
 ### 5. Separation of concerns
 
-Two owners, three destinations:
+Two owners, multiple destinations — the test is **whose content is this**, not topic:
 
 | Question | Destination | Examples |
 |----------|-------------|---------|
-| Will the **agent** need this to be a better assistant? | `agent_brain/` | User preferences, project decisions, patterns observed, lessons about how to assist this user |
-| Will the **user** want to find and build on this? | `user/wiki/` | Ideas, concepts, reflections, document summaries, brainstorming output, reference knowledge |
-| Will the **user** act on this? | `user/inbox.md` / `user/projects/` | Tasks, reminders, multi-step outcomes (GTD) |
+| Is this a **user artifact** — something they produce, consult, or act on? | `user/` | Plans, specs, bugs, roadmaps, drafts, documents, project files, reference notes |
+| Is this **user knowledge** they want to build on? | `user/wiki/` | Ideas, concepts, reflections, document summaries, interconnected reference |
+| Is this an **actionable item**? | `user/inbox.md` / `user/projects/` | Tasks, reminders, multi-step outcomes (GTD) |
+| Is this **agent operational knowledge** — what makes the assistant better at helping this user? | `agent_brain/` | Patterns observed, preferences learned, lessons about how to assist, project navigation context |
 
-The test is **ownership, not topic.** A concept about "complex systems" could
-go either way: if the agent learned it to understand the user's writing better
-→ `agent_brain/`. If the user shared it as knowledge they want to keep →
-`user/wiki/`. The distinction is *who needs it and why*.
+**Disambiguation when unclear:**
+1. Would the user need this without the agent (Obsidian, notebook, email to a colleague)? → `user/`
+2. Would a new agent need this to be equally helpful? → `agent_brain/`
+3. **Both?** Bifurcate: artifacts/docs → `user/`; derived operational insights → `agent_brain/` (during reflect/consolidation)
+
+**What `agent_brain/projects/` is:** operational context about how to assist on a project (patterns, preferences, mistakes to avoid) — not the project's plans, specs, bugs, or deliverables. Those belong in `user/projects/` or `user/`.
+
+A concept about "complex systems" illustrates ownership, not topic: if the agent learned it to understand the user's writing better → `agent_brain/concepts/`. If the user shared it as knowledge they want to keep → `user/wiki/`.
 
 **Operational rules:**
 - "Save this" from the user → `wiki_file` (when wiki is enabled), unless
   clearly a task (→ inbox) or explicitly directed elsewhere.
+- User project artifacts (plans, bugs, roadmaps) → `user/projects/` or `user/`, never `agent_brain/projects/` for the artifact itself.
 - Agent self-improvement → `agent_brain/`, captured during reflect and
   consolidation. The user does not direct this.
 - Drafts and work-in-progress documents stay in `user/` as files — they are
@@ -309,7 +315,7 @@ sometimes forgets or misapplies. In the app, they become **enforced behavior**:
 | Track file access (Hebbian) | Rule: "increment access_count when you consult" | Worker intercepts read tool calls, updates frontmatter |
 | Commit after captures | Rule: "commit regularly" | Worker auto-commits after agent write operations |
 | Don't read files preemptively | Rule: "access on demand when trigger matches" | Context budget managed by code; agent gets summary, drills on request |
-| Route captures correctly | Rule: "user acts → user/, agent learns → agent_brain/" | Routing validated by permission layer; agent proposes, code verifies path |
+| Route captures correctly | Rule: "whose content? user artifacts → user/, agent operational knowledge → agent_brain/" | Routing validated by permission layer; agent proposes, code verifies path |
 | Session indexing | Rule: "update logs/index.md" | Worker writes index entry automatically on session end and reflect complete |
 | Maintenance scheduling | Hook checks thresholds on session start | Heartbeat with usage-based counters (not calendar) |
 | Deferred item surfacing | Hook injects at session start | Worker checks on start + heartbeat interval |

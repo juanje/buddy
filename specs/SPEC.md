@@ -1854,7 +1854,7 @@ detailed specification: [specs/BRAIN-SPEC.md](BRAIN-SPEC.md).
 
 - **Given** a fresh buddy instance with only the template content
 - **When** the user talks to the agent about tasks, ideas, decisions
-- **Then** the agent routes captures per NFR-ROUTE-01 (from agents-base.md): user knowledge → `wiki_file`, actionable items → `user/inbox.md` / `user/projects/`, agent learning → `agent_brain/`
+- **Then** the agent routes captures per NFR-ROUTE-01 (from agents-base.md): user artifacts and project content → `user/` / `user/projects/`; user knowledge → `wiki_file`; agent operational knowledge → `agent_brain/` during reflect/consolidation
 - **And** retrieval follows NFR-ROUTE-02: `wiki_search` for user knowledge, `agent_brain/` navigation for agent context, logs for conversation history
 - **And** the agent writes to files and commits without being reminded
 - **And** the agent uses progressive disclosure (reads indexes before files)
@@ -3123,13 +3123,22 @@ deliberately withdrawn — a scenario asserting it stays withdrawn.
 
 | ID | Requirement |
 |----|-------------|
-| NFR-ROUTE-01 | The agent routes captured information to one of three destinations based on **ownership**, not topic. The rule is declared in `agents-base.md` (FR-PROMPT-03) and produces deterministic behavior for the common cases: user knowledge → `user/wiki/`, actionable items → `user/inbox.md` / `user/projects/`, agent self-improvement → `agent_brain/`. The agent does not ask "where should I save this?" unless the input is genuinely ambiguous (e.g. a document that contains both tasks and reference knowledge). |
-| NFR-ROUTE-02 | The routing rule applies symmetrically to **retrieval**. `wiki_search` is for the user's second brain; the agent does not use it to look up its own operational knowledge. When the user asks "what do I know about X?", the agent searches the wiki. When the agent needs context about how to assist this user (preferences, past decisions, project history), it navigates `agent_brain/` through indexes and progressive disclosure. When the user asks about past conversations, the agent reads logs. |
+| NFR-ROUTE-01 | The agent routes captured information based on **ownership**, not topic. The rule is declared in `agents-base.md` (FR-PROMPT-03): user artifacts (plans, docs, bugs, roadmaps, drafts) → `user/` or `user/projects/`; interconnected user knowledge → `user/wiki/`; actionable items → `user/inbox.md` / `user/projects/`; agent operational knowledge (patterns, preferences, lessons about how to assist, project navigation context) → `agent_brain/` during reflect and consolidation. When content serves both, bifurcate: artifacts to `user/`, derived operational insights to `agent_brain/`. `agent_brain/projects/` holds how to assist on a project, not the project's deliverables. The agent does not ask "where should I save this?" unless the input is genuinely ambiguous. |
+| NFR-ROUTE-02 | The routing rule applies symmetrically to **retrieval**. `wiki_search` is for the user's second brain; the agent does not use it to look up its own operational knowledge. When the user asks "what do I know about X?", the agent searches the wiki or navigates `user/`. When the agent needs context about how to assist this user (preferences, operational project context, patterns learned), it navigates `agent_brain/` through indexes and progressive disclosure. When the user asks about past conversations, the agent reads logs. |
 
 **The test is ownership, not topic.** A concept about "complex systems" could
 live in either space: if the agent learned it to understand the user's writing
 → `agent_brain/concepts/`. If the user shared it as knowledge they want to keep
 → `user/wiki/`. The distinction is *who needs it and why*.
+
+**Bifurcation.** A design session about Buddy may produce a sprint plan (user
+artifact → `user/projects/buddy/`) and a lesson that this user prefers
+Spec→BDD→TDD (agent operational knowledge → `agent_brain/projects/agentic-buddy/`
+or a concept). Same conversation, two destinations.
+
+**What `agent_brain/projects/` is.** Operational context for assisting on a
+project — patterns, preferences, navigation, mistakes to avoid — not plans,
+specs, bugs, or roadmaps. Those are user artifacts in `user/projects/` or `user/`.
 
 **Why this is an NFR, not an FR.** Routing is not a feature the user sees — it
 is a behavioral property that crosses every feature involving capture or
