@@ -6,6 +6,7 @@
   import PermissionCard from "./PermissionCard.svelte";
   import ToolActivity from "./ToolActivity.svelte";
   import WelcomeBanner from "./WelcomeBanner.svelte";
+  import DeferredBanner from "./DeferredBanner.svelte";
   import FileViewer from "./FileViewer.svelte";
   import { routeLocalLinkClick } from "./local-link-handler";
   import type { FileViewerController } from "./file-viewer-controller";
@@ -35,6 +36,12 @@
   const showScrollButton = $derived(scroll.showScrollButton);
 
   let container: HTMLDivElement | undefined = $state();
+  let deferredDismissed = $state(false);
+
+  // Reset dismissed state when new items arrive (e.g. mid-session heartbeat).
+  $effect(() => {
+    if (deferredItems.length > 0) deferredDismissed = false;
+  });
 
   export function scrollToLatest() {
     if (container) container.scrollTop = container.scrollHeight - container.clientHeight;
@@ -75,12 +82,16 @@
 </script>
 
 <div class="chat-wrap">
+  {#if !deferredDismissed}
+    <DeferredBanner
+      items={deferredItems}
+      onDismiss={() => { controller.dismissWelcome(); deferredDismissed = true; }}
+    />
+  {/if}
   <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
   <div class="chat" bind:this={container} onscroll={handleScroll} onclick={handleChatClick}>
     <WelcomeBanner
-      {deferredItems}
-      visible={$welcomeVisible}
-      onDismiss={() => controller.dismissWelcome()}
+      visible={$welcomeVisible && deferredItems.length === 0}
     />
     {#each $messages as message (message.id)}
       {#if message.role === "tool-activity"}

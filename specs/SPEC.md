@@ -2583,7 +2583,7 @@ result — the LLM then follows the procedure.
 | ID | Description | Phase |
 |----|-------------|-------|
 | FR-DELETE-01 | File deletion with protected-file denylist | 2 ✓ |
-| FR-DELETE-02 | Brain file deletion for non-protected paths | 2 |
+| FR-DELETE-02 | Brain file deletion for non-protected paths | 2 ✓ |
 
 **FR-DELETE-01 — File deletion with protected-file denylist**
 
@@ -2636,7 +2636,7 @@ result — the LLM then follows the procedure.
 |----|-------------|-------|
 | FR-FILE-01 | Copy file from external path into user workspace | 2 ✓ |
 | FR-FILE-02 | Move/rename file within rootDir | 2 ✓ |
-| FR-FILE-03 | Brain moves with inline link rewriting | 2 |
+| FR-FILE-03 | Brain moves with inline link rewriting | 2 ✓ |
 
 **FR-FILE-01 — Copy file into workspace**
 
