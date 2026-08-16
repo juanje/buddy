@@ -12,7 +12,6 @@
 import {
   createAgentSession,
   DefaultResourceLoader,
-  ModelRuntime,
   SessionManager,
 } from "@earendil-works/pi-coding-agent";
 
@@ -29,9 +28,8 @@ import {
   REFLECT_CHILD_TIMEOUT_MS,
   REFLECT_SESSIONS_DIR,
 } from "../shared/defaults";
-import { fastModelForProvider } from "../shared/model-catalog";
-import { readPiProvider } from "../shared/pi-settings";
 import { logEvent } from "./app-logger";
+import { resolveFastTierModel } from "./fast-model";
 import { commitAll } from "./git";
 import { acquireLock, releaseLock } from "./maintenance";
 import { alignHttpDispatcherWithPi } from "./pi-http-dispatcher";
@@ -48,23 +46,6 @@ import { clearSessionPersistence } from "./crash-recovery";
 import { buildReflectUserPrompt, extractObservationsSection } from "./reflect-prompts";
 import { recordSessionUsage } from "./usage-tracker";
 
-async function resolveFastModelOptions(rootDir: string, modelRuntime: ModelRuntime): Promise<{
-  model?: Awaited<ReturnType<ModelRuntime["getModel"]>>;
-  thinkingLevel: "minimal";
-}> {
-  const provider = readPiProvider(rootDir);
-  const fastModelId = fastModelForProvider(provider);
-  if (!fastModelId) return { thinkingLevel: "minimal" };
-
-  let model = modelRuntime.getModel(provider, fastModelId);
-  if (!model) {
-    const available = await modelRuntime.getAvailable(provider);
-    model = available.find((entry) => entry.id === fastModelId);
-  }
-  if (!model) return { thinkingLevel: "minimal" };
-  return { model, thinkingLevel: "minimal" };
-}
-
 async function acquireLockWithRetry(rootDir: string): Promise<boolean> {
   for (let i = 0; i < LOCK_MAX_RETRIES; i++) {
     if (acquireLock(rootDir)) return true;
@@ -73,7 +54,7 @@ async function acquireLockWithRetry(rootDir: string): Promise<boolean> {
   return false;
 }
 
-async function runReflect(
+export async function runReflect(
   rootDir: string,
   forkedSessionFile: string,
   mode: string,
@@ -113,7 +94,7 @@ async function runReflect(
 
   const modelRuntime = await createBuddyModelRuntime();
 
-  const fastModelOptions = isCheckpoint ? await resolveFastModelOptions(rootDir, modelRuntime) : {};
+  const fastModelOptions = await resolveFastTierModel(rootDir, modelRuntime, "minimal");
 
   const { session } = await createAgentSession({
     cwd: rootDir,
@@ -132,6 +113,15 @@ async function runReflect(
     await session.prompt(buildReflectUserPrompt(mode));
 
     recordSessionUsage(globalConfigDir(), events);
+
+    const failedMessage = events.find(
+      (event) => event.type === "message_end"
+        && (event as { message?: { stopReason?: string } }).message?.stopReason === "error",
+    ) as { message?: { errorMessage?: string } } | undefined;
+
+    if (failedMessage?.message?.errorMessage) {
+      throw new Error(failedMessage.message.errorMessage);
+    }
 
     // Commit agent writes immediately — before lock, before finalization.
     await commitAll(rootDir, `${GIT_COMMIT_PREFIX} reflect ${mode} (agent writes)`);
@@ -288,4 +278,6 @@ async function main(): Promise<void> {
   }
 }
 
-main();
+if (process.env.VITEST !== "true" && process.env.VITEST !== "1") {
+  main();
+}
