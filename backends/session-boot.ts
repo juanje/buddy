@@ -30,6 +30,7 @@ import { buildShowFileTools } from "./show-file-tool";
 import { buildWikiTools } from "./wiki-tools";
 import { SessionLifecycle } from "./session-lifecycle";
 import { installEditRecoveryHook } from "./edit-recovery";
+import { installHeadingGuardHook } from "./heading-guard";
 import { persistLiveSession } from "./crash-recovery";
 import { ensureUserMdSectionsOnDisk, migrateAgentsMdIfNeeded } from "./brain-migration";
 import { createWorkerCore, type PiSessionLike, type WorkerCore } from "./worker-core";
@@ -243,6 +244,7 @@ export async function bootSession(
     const blocked = await gate.check(ctx.toolCall.name, ctx.args);
     return blocked ?? prior;
   };
+  installHeadingGuardHook(session, rootDir, lifecycle.tracker.sessionId);
   installEditRecoveryHook(session);
 
   const sessionLike = asPiSessionLike(session);

@@ -7,7 +7,6 @@ import { logEvent } from "./app-logger";
 import { markReflectPending } from "./crash-recovery";
 import { commitAll } from "./git";
 import { createHebbianTracker, isFileConsultation, type HebbianTracker } from "./hebbian";
-import { createHeadingGuard, type HeadingGuard } from "./heading-guard";
 import { createHebbianGuard, type HebbianGuard } from "./hebbian-guard";
 import { spawnReflectChild, type SpawnReflectFn, type SpawnReflectOptions } from "./reflect-spawn";
 import { SessionTracker } from "./session-tracker";
@@ -29,8 +28,6 @@ export class SessionLifecycle {
   readonly hebbianTracker: HebbianTracker;
   /** FR-HEBB-06: keeps a whole-file rewrite from resetting the counters. */
   private readonly hebbianGuard: HebbianGuard;
-  /** FR-GUARD-01: reverts writes that destroy section headings. */
-  private readonly headingGuard: HeadingGuard;
   private readonly rootDir: string;
   private sessionFile: string | undefined;
   private readonly spawnReflect: SpawnReflectFn;
@@ -45,7 +42,6 @@ export class SessionLifecycle {
     this.tracker = new SessionTracker(options.sessionId);
     this.hebbianTracker = options.hebbianTracker ?? createHebbianTracker(options.rootDir);
     this.hebbianGuard = createHebbianGuard(options.rootDir);
-    this.headingGuard = createHeadingGuard(options.rootDir);
     this.spawnReflect = options.spawnReflect ?? spawnReflectChild;
     this.onSessionComplete = options.onSessionComplete;
     this.isBudgetNearLimit = options.isBudgetNearLimit;
@@ -73,7 +69,6 @@ export class SessionLifecycle {
       const info = extractToolInfo(event);
       if ((info?.name === "write" || info?.name === "edit") && info.path) {
         this.hebbianGuard.capture(info.path);
-        this.headingGuard.capture(info.path);
       }
     }
 
@@ -99,15 +94,6 @@ export class SessionLifecycle {
       if (event.isError !== true) {
         if ((name === "write" || name === "edit") && path) {
           this.hebbianGuard.restore(path);
-          const headingResult = this.headingGuard.check(path);
-          if (headingResult.reverted) {
-            logEvent(this.rootDir, {
-              event: "heading_guard_revert",
-              session: this.tracker.sessionId,
-              path,
-              lostHeadings: headingResult.lostHeadings,
-            });
-          }
         }
         if (isFileConsultation(name, path, this.rootDir)) this.hebbianTracker.trackAccess(path!);
       }
