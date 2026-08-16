@@ -1353,29 +1353,61 @@ drown the signal it is meant to measure.
 | ID | Description | Phase |
 |----|-------------|-------|
 | FR-GUARD-01 | Heading-snapshot guard prevents structural destruction | 2 ✓ |
+| FR-GUARD-01b | Denylist scope — only protected files, not all brain/logs | 2 ✓ |
+| FR-GUARD-01c | Tool result enrichment on revert (model sees feedback) | 2 ✓ |
 | FR-GUARD-02 | Edit-failure recovery hints and prompt rule | 2 ✓ |
 | FR-GUARD-03 | Post-consolidation filename validation and broken-link repair | 2 ✓ |
 
 **FR-GUARD-01 — Heading-snapshot guard**
 
-- **Given** the agent calls `write` or `edit` on a file inside `agent_brain/`
-  or `logs/`
+- **Given** the agent calls `write` or `edit` on a **protected file**
 - **When** the tool call completes without error
 - **Then** the guard compares the set of `#` and `##` headings before and after
 - **And** if any heading present before the write is missing after it, the
-  file is restored to its pre-write content and the tool result is replaced
-  with an error explaining which headings were lost
+  file is restored to its pre-write content and the tool result is enriched
+  with a message explaining which headings were lost and that the write was
+  reverted
 - **And** if the file had a frontmatter block (`---` delimited) before the
   write and the frontmatter is missing or empty after it, the file is
-  restored to its pre-write content
+  restored to its pre-write content and the tool result is enriched
 - **And** the guard fires in both the chat session and the maintenance session
+
+**FR-GUARD-01b — Denylist scope (protected files only)**
+
+The guard does NOT apply to all `agent_brain/` and `logs/` — only to a
+specific denylist of structurally important files:
+
+- `AGENTS.md` (root)
+- `agent_brain/identity/USER.md`, `agent_brain/identity/SOUL.md`
+- `agent_brain/observations.md`, `agent_brain/deferred.md`
+- `agent_brain/concepts/index.md`, `agent_brain/projects/index.md`,
+  `agent_brain/ideas/index.md`
+- `logs/index.md`
+- `logs/YYYY-MM-DD.md` (daily logs — pattern match, excludes archive)
+- `user/inbox.md`
+
+Everything else (project docs, individual concepts, ideas, skills, other
+identity files, `logs/archive/`) is unprotected and can be restructured
+freely. Exported as `PROTECTED_FILES` from `shared/defaults.ts`.
+
+**FR-GUARD-01c — Tool result enrichment**
+
+When a revert fires, the tool result seen by the model is enriched with a
+warning message (e.g. "⚠️ Write reverted: the change removed protected
+section heading(s)…"). This ensures the model knows the file was NOT
+modified and can retry without repeating the structural violation. Before
+this, reverts were silent — the model believed the write succeeded.
+
+Implemented via `afterToolCall` hook (`installHeadingGuardHook`) which runs
+before the result reaches the model, unlike the event stream which fires
+after.
 
 **What it does not do:**
 
 - It does not block new headings being added — only disappearance is a fault.
 - It does not protect heading *order* — reordering is a legitimate edit.
-- It does not protect files outside `agent_brain/` and `logs/` — user files
-  are the user's to restructure.
+- It does not protect files outside the denylist — project docs, concepts,
+  skills, and archive logs are the agent's to restructure.
 - It does not apply when the tool call failed (`isError: true`) — a failed
   call changed nothing, and restoring would overwrite the current state.
 
