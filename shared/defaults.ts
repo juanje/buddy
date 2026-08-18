@@ -187,6 +187,14 @@ export const HEBBIAN_RECENT_DAYS = 7;
 export const HEBBIAN_DEMOTION_MIN_SESSIONS = 3;
 export const RIPE_OBSERVATION_MIN_SEEN = 2;
 
+/** Observation hygiene thresholds (FR-CONSOL-17). */
+export const OBSERVATION_RESOLVED_STALE_DAYS = 60;
+export const OBSERVATION_SEEN_ONCE_STALE_DAYS = 90;
+
+/** Depth-2/3 calendar fallbacks when run-count thresholds are not met (FR-CONSOL-25). */
+export const DEPTH2_CALENDAR_DAYS = 7;
+export const DEPTH3_CALENDAR_DAYS = 30;
+
 /** Required YAML frontmatter keys on agent_brain/ files (NFR-FORMAT-01). */
 export const REQUIRED_BRAIN_FRONTMATTER = ["summary", "created"] as const;
 /** Files exempt from frontmatter requirement (always-injected at session start). */

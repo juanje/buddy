@@ -68,7 +68,7 @@ export function buildAgentToolset(
   rootDir: string,
   deps: AgentToolsetDeps,
 ): { names: string[]; customTools: ToolDefinition[] } {
-  const skillTools = buildSkillTools(join(globalConfigDir(), "prompts"));
+  const skillTools = buildSkillTools(join(globalConfigDir(), "prompts"), { rootDir });
   const fetchTools = buildFetchTools(rootDir);
   const fileTools = buildFileTools(rootDir, {
     confirmDelete: (absPath) =>

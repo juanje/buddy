@@ -14,11 +14,14 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import {
   computeHebbianReport,
+  computeStaleObservations,
   extractDaySummaryKeyThemes,
   extractRipeObservations,
   findDatedInboxItems,
   findUpcomingReminders,
   formatRipeObservationsBlock,
+  parseObservations,
+  removeObservationEntries,
   relocateBrainFile,
   rewriteBrokenLinks,
   rotateLogs,
@@ -323,6 +326,34 @@ date: 2026-07-23
       await expect(
         relocateBrainFile(dir, "agent_brain/missing.md", "agent_brain/x/y.md"),
       ).rejects.toThrow(/does not exist/);
+    });
+  });
+
+  describe("observation hygiene", () => {
+    it("parses observations and flags stale entries", () => {
+      setupRoot();
+      const content = `## Skill candidates
+
+- **2026-05-01:** Missing skill → references [skill](skills/missing-skill.md) (seen: 1)
+- **2026-04-01:** Old resolved → **resolved 2026-04-02** (seen: 2)
+`;
+      const parsed = parseObservations(content);
+      expect(parsed).toHaveLength(2);
+      const stale = computeStaleObservations(parsed, dir, new Date("2026-08-17T12:00:00Z"));
+      expect(stale.nonExistentPaths).toHaveLength(1);
+      expect(stale.resolvedOlderThan60d).toHaveLength(1);
+    });
+
+    it("removes observation entries by line range", () => {
+      const content = `## Skill candidates
+
+- **2026-05-01:** Keep me (seen: 1)
+- **2026-05-02:** Remove me (seen: 1)
+`;
+      const parsed = parseObservations(content);
+      const updated = removeObservationEntries(content, [parsed[1]!]);
+      expect(updated).toContain("Keep me");
+      expect(updated).not.toContain("Remove me");
     });
   });
 });

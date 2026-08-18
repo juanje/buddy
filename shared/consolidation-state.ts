@@ -10,13 +10,29 @@ import {
   CONSOLIDATION_LOG_PATH,
   CONSOLIDATION_RETRY_CEILING,
   CONSOLIDATION_STATE_PATH,
+  DEPTH2_CALENDAR_DAYS,
+  DEPTH3_CALENDAR_DAYS,
 } from "./defaults";
-import { MS_PER_HOUR, toLocalIsoStamp } from "./dates";
+import { MS_PER_DAY, MS_PER_HOUR, toLocalIsoStamp } from "./dates";
 
 /** Consecutive-failure tracking for one depth (FR-CONSOL-09). */
 export interface DepthFailureState {
   count: number;
   lastFailureAt: string;
+}
+
+export interface SkillUsageEntry {
+  lastInvoked: string;
+  invokedThisPeriod: number;
+  totalInvocations: number;
+}
+
+export interface Depth2Snapshot {
+  capturedAt: string;
+  userMdHash: string;
+  agentsMdHash: string;
+  rightNowContent: string;
+  userMdContent?: string;
 }
 
 export interface ConsolidationState {
@@ -26,6 +42,10 @@ export interface ConsolidationState {
   lastDepth1: string | null;
   lastDepth2: string | null;
   lastDepth3: string | null;
+  /** Per-skill invocation tracking (FR-CONSOL-18). */
+  skillUsage?: Record<string, SkillUsageEntry>;
+  /** Snapshot after each depth-2 for weekly diffing (FR-CONSOL-19). */
+  lastDepth2Snapshot?: Depth2Snapshot;
   /** Path to the live Pi session file (FR-REFLECT-05). */
   liveSessionFile?: string | null;
   /** True when session-end reflect was requested but may not have completed. */
@@ -44,8 +64,8 @@ export interface ConsolidationLogEntry {
 
 export const CONSOLIDATION_THRESHOLDS = {
   depth1: { sessions: 3, maxHours: 24 },
-  depth2: { depth1Runs: 5 },
-  depth3: { depth2Runs: 4 },
+  depth2: { depth1Runs: 3, calendarDays: DEPTH2_CALENDAR_DAYS },
+  depth3: { depth2Runs: 4, calendarDays: DEPTH3_CALENDAR_DAYS },
 } as const;
 
 export function defaultConsolidationState(): ConsolidationState {
@@ -117,6 +137,15 @@ function hoursSince(isoTimestamp: string | null, now: Date): number {
   }
 }
 
+function daysSince(isoTimestamp: string | null, now: Date): number {
+  if (!isoTimestamp) return Infinity;
+  try {
+    return (now.getTime() - new Date(isoTimestamp).getTime()) / MS_PER_DAY;
+  } catch {
+    return Infinity;
+  }
+}
+
 /**
  * Depth-1 uses a hybrid trigger: fires when EITHER the session count threshold
  * is met OR enough hours have elapsed since the last run (with at least 1 session
@@ -124,19 +153,34 @@ function hoursSince(isoTimestamp: string | null, now: Date): number {
  * the user has few but long sessions.
  */
 export function isDepthDue(depth: 1 | 2 | 3, state: ConsolidationState, now?: Date): boolean {
+  const at = now ?? new Date();
   switch (depth) {
     case 1: {
       const sessionsDue = state.sessionsSinceLastDepth1 >= CONSOLIDATION_THRESHOLDS.depth1.sessions;
       const timeDue =
         state.lastDepth1 !== null &&
         state.sessionsSinceLastDepth1 > 0 &&
-        hoursSince(state.lastDepth1, now ?? new Date()) >= CONSOLIDATION_THRESHOLDS.depth1.maxHours;
+        hoursSince(state.lastDepth1, at) >= CONSOLIDATION_THRESHOLDS.depth1.maxHours;
       return sessionsDue || timeDue;
     }
-    case 2:
-      return state.depth1RunsSinceLastDepth2 >= CONSOLIDATION_THRESHOLDS.depth2.depth1Runs;
-    case 3:
-      return state.depth2RunsSinceLastDepth3 >= CONSOLIDATION_THRESHOLDS.depth3.depth2Runs;
+    case 2: {
+      const runsDue =
+        state.depth1RunsSinceLastDepth2 >= CONSOLIDATION_THRESHOLDS.depth2.depth1Runs;
+      const calendarDue =
+        state.lastDepth2 !== null &&
+        state.depth1RunsSinceLastDepth2 > 0 &&
+        daysSince(state.lastDepth2, at) >= CONSOLIDATION_THRESHOLDS.depth2.calendarDays;
+      return runsDue || calendarDue;
+    }
+    case 3: {
+      const runsDue =
+        state.depth2RunsSinceLastDepth3 >= CONSOLIDATION_THRESHOLDS.depth3.depth2Runs;
+      const calendarDue =
+        state.lastDepth3 !== null &&
+        state.depth2RunsSinceLastDepth3 > 0 &&
+        daysSince(state.lastDepth3, at) >= CONSOLIDATION_THRESHOLDS.depth3.calendarDays;
+      return runsDue || calendarDue;
+    }
   }
 }
 
@@ -233,6 +277,7 @@ export function advanceCounters(state: ConsolidationState, depth: 1 | 2 | 3, now
       state.depth1RunsSinceLastDepth2 = 0;
       state.depth2RunsSinceLastDepth3 += 1;
       state.lastDepth2 = timestamp;
+      resetSkillUsagePeriod(state);
       break;
     case 3:
       state.depth2RunsSinceLastDepth3 = 0;
@@ -244,4 +289,13 @@ export function advanceCounters(state: ConsolidationState, depth: 1 | 2 | 3, now
 /** Increment session counter after an interactive session ends (FR-CONSOL-01). */
 export function incrementSessionCounter(state: ConsolidationState): void {
   state.sessionsSinceLastDepth1 += 1;
+}
+
+function resetSkillUsagePeriod(state: ConsolidationState): void {
+  if (!state.skillUsage) return;
+  for (const name of Object.keys(state.skillUsage)) {
+    const entry = state.skillUsage[name];
+    if (!entry) continue;
+    state.skillUsage[name] = { ...entry, invokedThisPeriod: 0 };
+  }
 }

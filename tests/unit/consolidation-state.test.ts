@@ -46,7 +46,7 @@ describe("consolidation state", () => {
     state.sessionsSinceLastDepth1 = 3;
     expect(determineTargetDepth(state)).toBe(1);
 
-    state.depth1RunsSinceLastDepth2 = 5;
+    state.depth1RunsSinceLastDepth2 = 3;
     expect(determineTargetDepth(state)).toBe(2);
 
     state.depth2RunsSinceLastDepth3 = 4;
@@ -120,6 +120,22 @@ describe("consolidation state", () => {
     expect(isDepthDue(1, state)).toBe(false);
     state.sessionsSinceLastDepth1 = 3;
     expect(isDepthDue(1, state)).toBe(true);
+  });
+
+  it("depth-2 fires on calendar threshold with at least one depth-1 run", () => {
+    const state = defaultConsolidationState();
+    const now = new Date("2026-08-17T12:00:00Z");
+    state.lastDepth2 = "2026-08-01T10:00:00Z";
+    state.depth1RunsSinceLastDepth2 = 1;
+    expect(isDepthDue(2, state, now)).toBe(true);
+  });
+
+  it("depth-3 fires on calendar threshold with at least one depth-2 run", () => {
+    const state = defaultConsolidationState();
+    const now = new Date("2026-09-17T12:00:00Z");
+    state.lastDepth3 = "2026-08-01T10:00:00Z";
+    state.depth2RunsSinceLastDepth3 = 1;
+    expect(isDepthDue(3, state, now)).toBe(true);
   });
 
   it("appends consolidation log entries", () => {

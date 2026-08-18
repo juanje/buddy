@@ -5,6 +5,12 @@ import { join } from "node:path";
 import { Type } from "typebox";
 import { defineTool, type ToolDefinition } from "@earendil-works/pi-coding-agent";
 
+import {
+  loadConsolidationState,
+  saveConsolidationState,
+} from "../shared/consolidation-state";
+import { recordSkillInvocation } from "./skill-usage-tracking";
+
 interface SkillDescriptor {
   name: string;
   label: string;
@@ -30,7 +36,11 @@ const SKILL_REGISTRY: SkillDescriptor[] = [
 ];
 
 /** Register skill tools for prompts deployed under ~/.buddy/prompts/. */
-export function buildSkillTools(promptsDir: string): ToolDefinition[] {
+export function buildSkillTools(
+  promptsDir: string,
+  options?: { rootDir?: string },
+): ToolDefinition[] {
+  const rootDir = options?.rootDir;
   return SKILL_REGISTRY.filter((skill) =>
     existsSync(join(promptsDir, skill.promptFile)),
   ).map((skill) =>
@@ -41,6 +51,11 @@ export function buildSkillTools(promptsDir: string): ToolDefinition[] {
       parameters: Type.Object({}),
       async execute() {
         const content = readFileSync(join(promptsDir, skill.promptFile), "utf8");
+        if (rootDir) {
+          const state = loadConsolidationState(rootDir);
+          const updated = recordSkillInvocation(state, skill.name);
+          saveConsolidationState(rootDir, updated);
+        }
         return {
           content: [{ type: "text", text: content }],
           details: {},
