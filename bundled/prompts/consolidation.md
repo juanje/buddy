@@ -117,10 +117,13 @@ The satellite file carries the depth; USER.md carries the working summary. This 
 Invoke the `triage_inbox` tool and follow its procedure. Process
 `user/inbox.md` — the goal is to empty the Capture section every day.
 
-After the inbox triage, do a quick scan of the rest of `user/`:
-- Any items that need attention or follow-up?
-- Any completed items in context lists that should be removed?
-- Don't do a full review — that's for weekly and monthly consolidation.
+After the inbox triage, act on items flagged in the "Daily coherence data"
+block (inbox items matched against today's log):
+- If the log confirms an item is **done** → remove it from inbox.
+- If the log says it is **parked or deferred** → remove from inbox (the log
+  already documents the decision; do not duplicate it to `deferred.md`).
+- If an item is **stale and irrelevant to this instance** → remove it. Not
+  everything that leaves the inbox needs a decision trail.
 
 If purely informational findings, note them in today's log under Decisions.
 
@@ -132,10 +135,20 @@ are user-facing messages (banner, OS notifications), not agent knowledge.
 
 **5a. Items needing user attention** (from triage above):
 
-If anything from step 4 needs user input (stale items, ambiguous
-classifications, items that can't be routed without input), write to
+If anything from step 4 needs user input (ambiguous classifications, items
+that genuinely can't be routed without input), write to
 `agent_brain/deferred.md`:
 `- **decision** (YYYY-MM-DD, daily): [description].`
+
+**Do not move inbox items to deferred in bulk.** Deferred is for items that
+genuinely need a user decision at the next session start — not a holding pen
+for everything removed from inbox. If an item is stale and irrelevant, remove
+it silently. If it was resolved or parked in the log, it's already documented
+there — do not create a deferred item for it.
+
+**Important:** If you removed or resolved an item from inbox in step 4, it is
+done — do not re-create it as a deferred. Your context may still show the old
+inbox content from before your edit; trust your edits, not stale read results.
 
 Don't wait for user interaction — act or defer.
 
@@ -286,18 +299,26 @@ data before acting.
 Update the `### Right now` section of Active context in AGENTS.md. This
 step always runs — it derives from today's logs, not from Hebbian data.
 
-Read the day's log and extract the current state the agent should know at
-the next session start, without opening any file. Volatile facts that
-change every few days:
+Read the day's log and the current "Right now" content.
 
+**Daily (depth 1): add and update only — never remove.**
+- If today's log **updates the status** of an existing item → rewrite that bullet.
+- If today's log introduces a **new volatile fact** → add a bullet.
+- Do not remove items even if today's log does not mention them — a single
+  day of silence is not evidence that a project ended.
+
+**Weekly (depth 2): full review — may remove.**
+- Review the week's logs. Items not referenced in any log this week may be
+  removed — a full week of silence is sufficient evidence.
+
+Content for bullets — volatile facts that change every few days:
 - Current situation (vacation, sick, deadline week, travel)
 - Most immediate next actions (1-3 items, with dates if known)
 - Health or personal context affecting daily activity
 - Constraints or blockers
 
-Keep it to 3-5 bullet points. This is the scratchpad of working memory —
-not a task list, not a log. **Replace the full contents each time; don't
-append.**
+Keep it to 3-7 bullet points. This is the scratchpad of working memory —
+not a task list, not a log.
 
 #### 9b. Hebbian file promotions
 
@@ -391,55 +412,88 @@ If no health block is present, the brain structure is healthy — skip this step
 Do not report on this step. Repairing metadata is maintenance, not something
 learned; it belongs in the files you fixed and nowhere else.
 
+#### 10. Coherence reconciliation
+
+Review the "Daily coherence data" block in the prompt header. For each flagged item:
+- If today's log confirms a stale "Right now" item is superseded → update the source.
+- If a deferred item appears resolved in today's log → remove it from `deferred.md`.
+- If an inbox item appears resolved or parked in today's log → remove or update it in `user/inbox.md` (move from Waiting For to done, remove from Next Actions if completed, etc.).
+- If ambiguous → write a `decision` item to `deferred.md`.
+- Log each reconciliation in today's log under `### Reconciled`.
+
+Do not scan files yourself for contradictions — the worker already did.
+
 ---
 
 ### Depth extensions
 
 The steps above run at every depth. The following steps run ONLY at the
-specified depth.
+specified depth. **Use the pre-computed blocks in the prompt header** — do not
+re-scan `observations.md`, git history, or directory roots yourself.
 
 #### Depth 2 — Weekly calibration (run after all daily steps)
 
-1. **Write weekly journal** — `user/journal/YYYY/weekly/WNN.md`. Cover the full
-   week: what happened (day-by-day summary), patterns/evolution, personal note,
-   looking ahead (3-6 forward items). Tone: agent's synthesis of the week's arc.
+**W1. Weekly journal** — write or update `user/journal/YYYY/weekly/WNN.md` from
+this week's logs. If the file already exists (from a previous depth-2 run this
+week), **extend it** with new days — do not rewrite or discard content already
+covering earlier days. Cover the week's arc, patterns, personal note, and
+looking ahead.
 
-2. **Review ideas lifecycle** — scan `agent_brain/ideas/` for files with
-   `status: developing`. If enough material has accumulated (from logs, concepts,
-   or sessions), advance to `ready`. If stale (no new input in 2+ weeks), note
-   it but don't force advancement.
+**W2. Weekly themes and concept evolution** — review "Weekly diff since last
+depth-2" and file-change activity:
+1. Themes appearing across multiple days but not captured anywhere → note as observation seed.
+2. Hot concepts referenced this week: read each; update if the week evolved the concept.
+3. Projects referenced this week: does status match reality?
 
-3. **Extract cross-domain principles** — review `## Preferences` in USER.md. When three or more preferences or behaviors share an underlying pattern, distill it into a one-line principle in `## Principles`. Each principle must cite which preferences support it. Only add principles with strong evidence — if the connection feels forced, skip it. Remove principles that lost their supporting preferences.
+**W3. Cross-domain principles** — review `## Preferences` in USER.md. When three
+or more preferences share an underlying pattern, distill a one-line principle in
+`## Principles` citing supporting preferences. Remove principles that lost support.
+
+**W4. Observation hygiene** — review the "Stale observations" block:
+1. **Resolved >60d:** remove from active sections (worker listed them).
+2. **Seen:1 >90d:** compress to a count note (worker listed them).
+3. **Non-existent paths:** already auto-removed by the runner; verify no false positives remain.
+4. **Semantic dedup (LLM):** merge remaining entries describing the same pattern.
+
+**W5. Coherence check (inter-day)** — review weekly diff and coherence-related flags:
+1. For each USER.md change since last depth-2 → verify it still reflects reality.
+2. For inbox items flagged as completed → remove or archive.
+3. **Right now pruning:** review each bullet — if it was not referenced in any
+   log this week, remove it. This is where items leave working memory.
+4. Log reconciliations in the weekly journal under "Reconciled this week."
+
+**W6. Skill improvement** — review "Skill usage this week":
+1. For skills invoked this period → check logs for corrections or friction; read and enrich the skill if needed.
+2. **Do not change AGENTS.md skill listing** — skills stay permanently visible (append-only when new skills are created).
+
+**W7. Grouping** — review "Grouping candidates":
+1. When 3+ files share a domain → create subdirectory + `index.md` hub.
+2. Use `relocate_brain_file` once per file.
 
 #### Depth 3 — Monthly review (run after weekly steps)
 
-1. **Review concept directory for grouping** — scan `agent_brain/concepts/` and
-   other flat directories. If 3+ files at the same level share a clear thematic
-   cluster (cross-references, shared domain, complementary aspects of one topic):
-   - Create a subdirectory named after the cluster theme
-   - Use the `relocate_brain_file` tool to move each file (it handles git mv +
-     link rewrites automatically). Call it once per file.
-   - Create an `index.md` hub linking them with brief descriptions
-   - Update `concepts/index.md` to reflect the new structure
-   - Update any incoming links from other files
+**M1. Monthly journal** — write `user/journal/YYYY/MM.md` synthesizing the month.
 
-   This is essential for progressive disclosure — flat accumulation degrades
-   discoverability. The user will not ask for this; it must happen proactively.
+**M2. Structural review** — review brain metrics and directory shape:
+1. Concept hierarchy — are subdirectories coherent? Should any split?
+2. Project lifecycle — projects with no log references in 30+ days: completed, paused, or abandoned?
+3. Oversized files — propose splits only when discoverability would improve.
 
-2. **Observation hygiene** — remove resolved observations older than 60 days
-   from the active section (they're already tracked in the Resolved section or
-   in the artifacts they produced). Compress stale single-occurrence entries
-   older than 90 days into a count note.
+**M3. Coherence check (inter-period)** — review "Monthly coherence flags":
+1. Principles vs behavior — flag for user input when journals contradict USER.md principles.
+2. Stale "Right now" items → verify and update or remove.
+3. Stuck ideas → note as needs attention or advance status.
+4. Sample 3–5 concepts across domains; verify claims match recent experience.
 
-3. **Unused skills review** — identify skills in `agent_brain/skills/` not
-   accessed in 3+ months (use Hebbian data). Propose archival to
-   `agent_brain/archive/` — don't archive without noting.
+**M4. Brain health synthesis** — review the monthly metrics block. Add a brief
+status note to the monthly journal (not a separate file): growth trajectory,
+observation turnover, and cooling vs neglected knowledge areas.
 
 ---
 
 ### Finalize
 
-#### 10. Done
+#### 11. Done
 
 All file changes are committed automatically when the consolidation cycle ends.
 No manual action needed — just finish writing and the system persists everything.

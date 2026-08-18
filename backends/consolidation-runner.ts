@@ -29,14 +29,27 @@ import { isoWeekLabel, toIsoDay, toLocalIsoStamp } from "../shared/dates";
 import type { BrainHealthReport } from "./brain-health";
 import {
   computeBrainHealthReport,
+  computeDailyCoherence,
   computeHebbianReport,
+  computeMonthlyCoherenceFlags,
+  computeMonthlyMetrics,
+  computeWeeklyDiff,
+  detectGroupingCandidates,
   extractRipeObservations,
   findUpcomingReminders,
   formatBrainHealthReportBlock,
+  formatDailyCoherenceBlock,
+  formatGroupingCandidatesBlock,
   formatHebbianReportBlock,
+  formatMonthlyMetricsBlock,
   formatRipeObservationsBlock,
+  formatSkillUsageBlock,
+  formatStaleObservationsBlock,
   formatUpcomingRemindersBlock,
+  formatWeeklyDiffBlock,
   rotateLogs,
+  runObservationHygiene,
+  snapshotForDiff,
   updateLogsIndexFromDaySummary,
 } from "./consolidation-mechanics";
 import { logEvent } from "./app-logger";
@@ -216,26 +229,53 @@ function readConsolidationSkill(): string {
   }
 }
 
-export function buildConsolidationPrompt(
+export async function buildConsolidationPrompt(
   rootDir: string,
   depth: number,
   now: Date = new Date(),
-): string {
+  state?: ConsolidationState,
+): Promise<string> {
   const skill = readConsolidationSkill();
   const date = toIsoDay(now);
   const lang = resolveInstanceLanguage();
+  const consolidationState = state ?? loadConsolidationState(rootDir);
   const hebbianBlock = formatHebbianReportBlock(computeHebbianReport(rootDir, now));
   const remindersBlock = formatUpcomingRemindersBlock(findUpcomingReminders(rootDir, date));
   const healthBlock = formatBrainHealthReportBlock(computeBrainHealthReport(rootDir));
   const ripeBlock = formatRipeObservationsBlock(extractRipeObservations(rootDir));
+  const coherenceBlock = formatDailyCoherenceBlock(computeDailyCoherence(rootDir, now));
+
+  const blocks = [
+    `Date: ${date}`,
+    `User language: ${lang === "es" ? "Spanish" : "English"}`,
+    remindersBlock,
+    coherenceBlock,
+    hebbianBlock,
+    healthBlock || undefined,
+    ripeBlock,
+  ].filter(Boolean);
+
+  if (depth >= 2) {
+    const hygiene = runObservationHygiene(rootDir, now);
+    blocks.push(formatStaleObservationsBlock(hygiene.stale));
+    blocks.push(formatSkillUsageBlock(consolidationState.skillUsage));
+    const weeklyDiff = await computeWeeklyDiff(
+      rootDir,
+      consolidationState.lastDepth2Snapshot,
+      consolidationState.lastDepth2,
+    );
+    blocks.push(formatWeeklyDiffBlock(weeklyDiff));
+    blocks.push(formatGroupingCandidatesBlock(detectGroupingCandidates(rootDir)));
+  }
+
+  if (depth >= 3) {
+    const metrics = computeMonthlyMetrics(rootDir, consolidationState, now);
+    const flags = computeMonthlyCoherenceFlags(rootDir, consolidationState, now);
+    blocks.push(formatMonthlyMetricsBlock(metrics, flags));
+  }
 
   return (
-    `Date: ${date}\n` +
-    `User language: ${lang === "es" ? "Spanish" : "English"}\n\n` +
-    `${remindersBlock}\n\n` +
-    `${hebbianBlock}\n\n` +
-    (healthBlock ? `${healthBlock}\n\n` : "") +
-    `${ripeBlock}\n\n` +
+    `${blocks.join("\n\n")}\n\n` +
     `Run consolidation at depth ${depth}.\n\n` +
     `Follow the procedure below. Do not run git commands — the runner commits after you finish.\n\n` +
     skill
@@ -279,7 +319,7 @@ async function openRealMaintenanceSession(config: {
   await resourceLoader.reload();
 
   const promptsDir = join(globalConfigDir(), "prompts");
-  const skillTools = buildSkillTools(promptsDir);
+  const skillTools = buildSkillTools(promptsDir, { rootDir });
   const consolTools = buildConsolidationTools(rootDir);
 
   const { session } = await createAgentSession({
@@ -524,7 +564,7 @@ export async function runConsolidation(options: RunConsolidationOptions): Promis
         ensureUserMdSectionsOnDisk(rootDir);
         logEvent(rootDir, { event: "consolidation_start", depth });
         const healthBefore = computeBrainHealthReport(rootDir);
-        await depthSession.prompt(buildConsolidationPrompt(rootDir, depth, now));
+        await depthSession.prompt(await buildConsolidationPrompt(rootDir, depth, now, state));
         assertNoNewBrainDamage(healthBefore, computeBrainHealthReport(rootDir));
         if (depth === 1) {
           updateLogsIndexFromDaySummary(rootDir, date);
@@ -537,6 +577,9 @@ export async function runConsolidation(options: RunConsolidationOptions): Promis
           status: "success",
         });
         advanceCounters(state, depth, now);
+        if (depth === 2) {
+          state.lastDepth2Snapshot = snapshotForDiff(rootDir, now);
+        }
         completedDepths.push(depth);
         saveConsolidationState(rootDir, state);
         logEvent(rootDir, { event: "consolidation_complete", depth });

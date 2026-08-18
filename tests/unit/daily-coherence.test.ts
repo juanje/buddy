@@ -68,4 +68,19 @@ describe("daily coherence", () => {
     const result = computeDailyCoherence(dir, new Date("2026-08-17T12:00:00Z"));
     expect(formatDailyCoherenceBlock(result)).toContain("Daily coherence data");
   });
+
+  it("includes current Right now items in coherence block with preservation directive", () => {
+    dir = mkdtempSync(join(tmpdir(), "buddy-coherence-"));
+    mkdirSync(join(dir, "agent_brain"), { recursive: true });
+    writeFileSync(
+      join(dir, "AGENTS.md"),
+      "## Active context\n\n### Right now\n- Active project X\n- Pending task Y\n",
+    );
+
+    const result = computeDailyCoherence(dir, new Date("2026-08-17T12:00:00Z"));
+    const block = formatDailyCoherenceBlock(result);
+    expect(block).toContain("preserve all at depth 1");
+    expect(block).toContain("Active project X");
+    expect(block).toContain("Pending task Y");
+  });
 });

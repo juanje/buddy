@@ -146,6 +146,9 @@ Pruning creates deeper hierarchical structure (link-distance cooling), not
 file deletion. Deletion is available as a tool for explicit reorganization,
 but is not part of the consolidation pruning process. Structural hubs
 (indexes, identity, observations, deferred) stay protected by a denylist.
+**Skills in AGENTS.md are not subject to Hebbian demotion** — the agent cannot
+discover skills it does not already know about; the list is append-only and
+improves via friction detection, not visibility games.
 
 The number of cycles or their names may change; the principle of
 **progressive consolidation with increasing time horizons** stays.
@@ -370,20 +373,19 @@ depth 1 — Daily (after enough sessions):
   - Hebbian adjustments (hot files)
   - Check deferred queue
 
-depth 2 — Weekly (after enough depth-1 runs):
+depth 2 — Weekly (after enough depth-1 runs or 7 calendar days):
   - Run depth 1 if needed (cascade)
-  - Weekly synthesis
-  - Broader Hebbian calibration
-  - Review ideas lifecycle
-  - Link hygiene
-  - Generalization pass
+  - Weekly journal + themes/evolution
+  - Observation hygiene (pre-computed stale list)
+  - Coherence reconciliation (USER.md diff, inbox completion flags)
+  - Skill improvement from usage/friction (no visibility changes)
+  - Grouping candidates review
 
-depth 3 — Monthly (after enough depth-2 runs):
+depth 3 — Monthly (after enough depth-2 runs or 30 calendar days):
   - Run depth 2 if needed (cascade)
-  - Archive old logs
   - Monthly journal synthesis
-  - Depth reorganization
-  - Prune unused skills
+  - Structural review + monthly metrics
+  - Inter-period coherence flags
   - Identity evolution (observation → rule → character)
 ```
 
@@ -407,6 +409,9 @@ checks if daily ran and does it first" — that's worker logic now.
 - Prune `.buddy/logs/*.jsonl` older than retention threshold (NFR-MAINT-01)
 - Brain health scan (`computeBrainHealthReport()`, FR-BRAIN-07) before consolidation
 - Extract ripe observations (seen 2+) from `observations.md` and inject into prompt header
+- Pre-compute stale observations, weekly diff, daily coherence, skill usage, grouping candidates, monthly metrics (FR-CONSOL-17..20, 22..23)
+- Auto-remove observations referencing non-existent paths before weekly consolidation
+- Snapshot USER.md and "Right now" after each depth-2 for next-cycle diffing
 - Update `logs/index.md` entry from Day summary Key themes after depth-1 consolidation
 
 ### What the LLM handles (judgment, uses tokens)
@@ -415,7 +420,7 @@ checks if daily ran and does it first" — that's worker logic now.
 - Write synthesis (summaries, journal entries)
 - Decide what observations to promote
 - Create new concepts/skills from patterns
-- Evaluate what to demote/prune
+- Reconcile coherence flags and enrich skills on friction (skills stay listed in AGENTS.md)
 - Make connections between ideas
 
 ---

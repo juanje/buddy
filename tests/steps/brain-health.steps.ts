@@ -148,9 +148,9 @@ When("the brain health report is computed", function (this: BrainHealthWorld) {
   this.healthBlock = formatBrainHealthReportBlock(this.report);
 });
 
-When("the consolidation prompt is built for depth {int}", function (this: BrainHealthWorld, depth: number) {
+When("the consolidation prompt is built for depth {int}", async function (this: BrainHealthWorld, depth: number) {
   if (!this.buddyDir) throw new Error("buddy root not initialized");
-  this.prompt = buildConsolidationPrompt(this.buddyDir, depth, new Date("2026-07-22T12:00:00Z"));
+  this.prompt = await buildConsolidationPrompt(this.buddyDir, depth, new Date("2026-07-22T12:00:00Z"));
 });
 
 Then(

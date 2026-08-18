@@ -368,7 +368,7 @@ async function main(): Promise<void> {
   }
 
   if (dryRun) {
-    const preview = buildConsolidationPrompt(testDir, depth, now);
+    const preview = await buildConsolidationPrompt(testDir, depth, now);
     console.log(`\n--- Prompt preview (depth ${depth}, first 1200 chars) ---\n`);
     console.log(preview.slice(0, 1200));
     if (preview.length > 1200) console.log("\n... (truncated)");

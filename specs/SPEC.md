@@ -953,14 +953,22 @@ Fork bomb defense:
 | FR-CONSOL-14 | The daily log records maintenance only when notable | 2 ✓ |
 | FR-CONSOL-15 | The maintenance session's model is chosen per depth | 2 ✓ |
 | FR-CONSOL-16 | Each cascade depth runs in its own session | 2 ✓ |
+| FR-CONSOL-17 | Observation hygiene pre-computation | 2 ✓ |
+| FR-CONSOL-18 | Skill invocation tracking (improvement detection) | 2 ✓ |
+| FR-CONSOL-19 | Weekly diff + snapshot | 2 ✓ |
+| FR-CONSOL-20 | Daily coherence detection | 2 ✓ |
+| FR-CONSOL-22 | Grouping candidates detection | 2 ✓ |
+| FR-CONSOL-23 | Monthly metrics computation | 2 ✓ |
+| FR-CONSOL-24 | Consolidation prompt rewrite (depth rebalance) | 2 ✓ |
+| FR-CONSOL-25 | Scheduler threshold update | 2 ✓ |
 
 **Consolidation depths:**
 
 | Depth | Name | Trigger | Input | Output |
 |-------|------|---------|-------|--------|
-| 1 | Daily synthesis | N sessions since last depth-1 (default 3) | Daily log (`logs/YYYY-MM-DD.md`) with raw session blocks | Day summary + journal + inbox triage + knowledge extraction. No file merge needed — daily log already exists. |
-| 2 | Weekly calibration | N depth-1 runs since last depth-2 (default 5) | Daily logs from the week | Pattern extraction, observation updates, active-context reconciliation |
-| 3 | Monthly pruning | N depth-2 runs since last depth-3 (default 3) | Weekly summaries + knowledge files | Stale observation cleanup, idea/concept promotion/demotion, archive candidates |
+| 1 | Daily synthesis | N sessions since last depth-1 (default 3) OR 24h with ≥1 session | Daily log (`logs/YYYY-MM-DD.md`) with raw session blocks | Day summary + journal + inbox triage + coherence reconciliation + knowledge extraction |
+| 2 | Weekly calibration | N depth-1 runs since last depth-2 (default 3) OR 7 calendar days with ≥1 depth-1 run | Pre-computed weekly blocks + week's logs | Weekly journal, themes/evolution, observation hygiene, coherence, skill improvement, grouping |
+| 3 | Monthly review | N depth-2 runs since last depth-3 (default 4) OR 30 calendar days with ≥1 depth-2 run | Monthly metrics block + structural review | Monthly journal, structural review, inter-period coherence, brain metrics synthesis |
 
 **Why daily-append:** Reflect writes session blocks directly to `logs/YYYY-MM-DD.md` at session end (one file per calendar day, multiple `## Session` blocks). Consolidation enriches that file — it does not merge separate session files. `logs/archive/YYYY-MM/` holds **old daily files** after log rotation (28+ daily logs in root), not per-session cleanup.
 
@@ -1209,6 +1217,72 @@ tool results, system messages. By depth 3 the effective window is exhausted,
 and local models produce 0 tool calls (observed: 42+ turns accumulated,
 0 actions at depth 3; isolated depth 3 produced 17 tool calls). Creating a
 fresh session per depth gives each depth the full window.
+
+**FR-CONSOL-17 — Observation hygiene pre-computation**
+
+- **Given** `observations.md` contains entries with dates, seen counts, resolved markers, and markdown links
+- **When** consolidation runs at depth ≥ 2
+- **Then** the worker parses observations into typed entries
+- **And** entries referencing paths that do not exist in this instance are auto-removed before the prompt
+- **And** resolved entries older than 60 days and seen:1 entries older than 90 days are listed in a prompt header block for LLM confirmation
+
+**FR-CONSOL-18 — Skill invocation tracking**
+
+- **Given** a skill tool is invoked in an interactive session
+- **When** the tool executes successfully
+- **Then** `consolidation-state.json` records `lastInvoked`, increments `invokedThisPeriod`, and increments `totalInvocations`
+- **And** `invokedThisPeriod` resets to 0 after each depth-2 run
+- **And** depth ≥ 2 prompts include a "Skill usage this week" block for friction review (not visibility management)
+
+**FR-CONSOL-19 — Weekly diff and snapshot**
+
+- **Given** consolidation completes at depth 2
+- **When** counters advance
+- **Then** the worker snapshots USER.md hash/content and AGENTS.md "Right now" text into `lastDepth2Snapshot`
+- **And** before depth ≥ 2 runs, the prompt includes a weekly diff block (USER.md diff, Right now diff, git activity since `lastDepth2`)
+
+**FR-CONSOL-20 — Daily coherence detection**
+
+- **Given** consolidation runs at any depth
+- **When** the prompt is built
+- **Then** the worker injects a "Daily coherence data" block with decision keywords from today's log
+- **And** flags potential "Right now" staleness when log keywords overlap with completion language
+- **And** flags deferred items whose subjects appear resolved in today's log
+- **And** flags inbox items (Waiting For, Next Actions, context lists) whose subjects appear resolved or parked in today's log
+- **And** lists the current "Right now" items with a preservation directive (daily adds/updates only; removal is a depth-2 responsibility)
+
+**FR-CONSOL-22 — Grouping candidates detection**
+
+- **Given** consolidation runs at depth ≥ 2
+- **When** the prompt is built
+- **Then** the worker lists directories with 3+ ungrouped root-level files sharing a keyword in frontmatter summaries
+
+**FR-CONSOL-23 — Monthly metrics computation**
+
+- **Given** consolidation runs at depth 3
+- **When** the prompt is built
+- **Then** the worker injects file counts by category, observation totals, and monthly coherence flags (stale Right now, stale deferred, stuck ideas)
+
+**FR-CONSOL-24 — Consolidation prompt rewrite**
+
+- **Given** the bundled `consolidation.md` skill
+- **When** depth extensions run
+- **Then** daily step 10 reconciles only worker-flagged coherence items (including inbox flags)
+- **And** step 9a at depth 1 may only add or update "Right now" items — never remove
+- **And** step W5 at depth 2 may remove "Right now" items not referenced in any log that week
+- **And** step 4 acts on inbox flags: resolved items are removed, parked items are removed (not moved to deferred)
+- **And** step 5a writes to deferred only items genuinely needing a user decision — not bulk inbox transfers
+- **And** depth 2 follows W1–W7 using pre-computed blocks (not file scans)
+- **And** depth 3 follows M1–M4 with metrics/structural review
+- **And** observation hygiene and grouping run at depth 2, not depth 3
+- **And** skills remain permanently listed in AGENTS.md (no archival/demotion)
+
+**FR-CONSOL-25 — Scheduler threshold update**
+
+- **Given** consolidation counters in `consolidation-state.json`
+- **When** depth due-ness is evaluated
+- **Then** depth 2 is due at ≥3 depth-1 runs OR ≥7 calendar days since `lastDepth2` (with ≥1 depth-1 run pending)
+- **And** depth 3 is due at ≥4 depth-2 runs OR ≥30 calendar days since `lastDepth3` (with ≥1 depth-2 run pending)
 
 | ID | Description | Phase |
 |----|-------------|-------|

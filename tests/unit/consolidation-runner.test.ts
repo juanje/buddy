@@ -38,9 +38,9 @@ describe("consolidation runner", () => {
     writeFileSync(join(dir, "notes.txt"), "hello\n");
   }
 
-  it("builds consolidation prompt from the global skill file", () => {
+  it("builds consolidation prompt from the global skill file", async () => {
     setupBuddyDir();
-    const prompt = buildConsolidationPrompt(dir, 1, new Date("2026-07-22T12:00:00Z"));
+    const prompt = await buildConsolidationPrompt(dir, 1, new Date("2026-07-22T12:00:00Z"));
     expect(prompt).toContain("Date:");
     expect(prompt).toContain("User language:");
     expect(prompt).toContain("Run consolidation at depth 1");
@@ -48,20 +48,20 @@ describe("consolidation runner", () => {
     expect(prompt).toContain("Do not run git commands");
     expect(prompt).toContain("Hebbian promotion data (pre-computed):");
     expect(prompt).toContain("Upcoming items (within 24h of run date):");
-    expect(prompt).toContain("Ripe observations (Step 7 — act on each):");
+    expect(prompt).toContain("Daily coherence data:");
   });
 
-  it("includes brain health block when issues exist", () => {
+  it("includes brain health block when issues exist", async () => {
     setupBuddyDir();
     mkdirSync(join(dir, "agent_brain", "concepts"), { recursive: true });
     writeFileSync(join(dir, "agent_brain", "concepts", "stale.md"), "# Missing frontmatter\n");
 
-    const prompt = buildConsolidationPrompt(dir, 1, new Date("2026-07-22T12:00:00Z"));
+    const prompt = await buildConsolidationPrompt(dir, 1, new Date("2026-07-22T12:00:00Z"));
     expect(prompt).toContain("Brain health (pre-computed):");
     expect(prompt).toContain("agent_brain/concepts/stale.md");
   });
 
-  it("omits brain health block when brain is healthy", () => {
+  it("omits brain health block when brain is healthy", async () => {
     setupBuddyDir();
     mkdirSync(join(dir, "agent_brain", "identity"), { recursive: true });
     writeFileSync(
@@ -81,8 +81,17 @@ describe("consolidation runner", () => {
       "---\nsummary: Observations\ncreated: 2026-07-01\n---\n\n# Observations\n",
     );
 
-    const prompt = buildConsolidationPrompt(dir, 1, new Date("2026-07-22T12:00:00Z"));
+    const prompt = await buildConsolidationPrompt(dir, 1, new Date("2026-07-22T12:00:00Z"));
     expect(prompt).not.toContain("Brain health (pre-computed):");
+  });
+
+  it("includes weekly blocks at depth 2", async () => {
+    setupBuddyDir();
+    const prompt = await buildConsolidationPrompt(dir, 2, new Date("2026-07-22T12:00:00Z"));
+    expect(prompt).toContain("Stale observations");
+    expect(prompt).toContain("Skill usage this week");
+    expect(prompt).toContain("Weekly diff since last depth-2");
+    expect(prompt).toContain("Grouping candidates");
   });
 
   it("runs cascade depths, commits, and advances counters", async () => {
@@ -120,6 +129,7 @@ describe("consolidation runner", () => {
     expect(loadConsolidationState(dir).lastDepth2).toBe(
       toLocalIsoStamp(new Date("2026-07-22T12:00:00Z")),
     );
+    expect(loadConsolidationState(dir).lastDepth2Snapshot?.rightNowContent).toBeDefined();
 
     const log = loadConsolidationLog(dir);
     expect(log).toHaveLength(2);

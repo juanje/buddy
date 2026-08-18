@@ -172,7 +172,7 @@ Given("the user is streaming", function (this: ConsolidationWorld) {
 Given("depth 2 consolidation is due", function (this: ConsolidationWorld) {
   const state = defaultConsolidationState();
   state.sessionsSinceLastDepth1 = 3;
-  state.depth1RunsSinceLastDepth2 = 5;
+  state.depth1RunsSinceLastDepth2 = 3;
   saveConsolidationState(this.buddyDir!, state);
 });
 
@@ -211,7 +211,7 @@ Then("a success entry is appended to the consolidation log", function (this: Con
 Given("depth 3 consolidation is due", function (this: ConsolidationWorld) {
   const state = defaultConsolidationState();
   state.sessionsSinceLastDepth1 = 3;
-  state.depth1RunsSinceLastDepth2 = 5;
+  state.depth1RunsSinceLastDepth2 = 3;
   state.depth2RunsSinceLastDepth3 = 4;
   saveConsolidationState(this.buddyDir!, state);
 });
@@ -275,7 +275,7 @@ When(
   async function (this: ConsolidationWorld, depth: number) {
     const state = loadConsolidationState(this.buddyDir!);
     state.sessionsSinceLastDepth1 = 3;
-    if (depth >= 2) state.depth1RunsSinceLastDepth2 = 5;
+    if (depth >= 2) state.depth1RunsSinceLastDepth2 = 3;
     if (depth >= 3) state.depth2RunsSinceLastDepth3 = 4;
     saveConsolidationState(this.buddyDir!, state);
     await this.heartbeat!.tick();

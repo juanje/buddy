@@ -14,6 +14,7 @@ Nothing in the backlog starts until the MVP is considered finished.
 | Item | State | Note |
 |------|-------|------|
 | FR-CHAT-18 — export to PDF from the viewer | **blocked on a spike** | Whether `window.print()` works in the Tauri webview decides between an afternoon and several days of per-platform Rust. WKWebView has historically not implemented it. Measure on macOS and Linux before designing further. |
+| FR-CONSOL-17..25 — consolidation depth redesign | **shipped (pending release tag)** | Worker pre-computation blocks (observation hygiene, skill usage, weekly diff, daily coherence, grouping, monthly metrics), prompt rewrite (W1–W7 / M1–M4), scheduler thresholds (3 depth-1 / 7d depth-2; 4 depth-2 / 30d depth-3). Manual depth-2 validation on personal-buddy still recommended before tagging. |
 
 ## Open
 
