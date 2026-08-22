@@ -19,8 +19,8 @@ export interface ModelChoice {
 const CATALOG: Record<string, ModelChoice[]> = {
   anthropic: [
     { id: "claude-haiku-4-5", label: "Claude Haiku", tier: "fast" },
-    { id: "claude-sonnet-5", label: "Claude Sonnet", tier: "balanced", recommended: true },
-    { id: "claude-opus-4-8", label: "Claude Opus", tier: "powerful" },
+    { id: "claude-sonnet-4.6", label: "Claude Sonnet", tier: "balanced", recommended: true },
+    { id: "claude-opus-4-6", label: "Claude Opus", tier: "powerful" },
   ],
   openai: [
     { id: "gpt-5.6-luna", label: "GPT-5.6 Luna", tier: "fast" },
