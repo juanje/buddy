@@ -1,13 +1,14 @@
 // scripts/retry-reflect.ts — Retry a failed session-end reflect from its saved fork.
 //
 // Usage:
-//   npx tsx scripts/retry-reflect.ts <rootDir> [forked-session-file] [--force-model]
+//   npx tsx scripts/retry-reflect.ts <rootDir> [forked-session-file] [--fresh]
 //
 // If forked-session-file is omitted, uses the most recent .jsonl in
 // <rootDir>/.buddy/reflect-sessions/.
 //
-// --force-model: resolve model from config instead of inheriting from the fork.
-//   Workaround for multi-provider sessions where model resolution fails.
+// --fresh: use the configured provider's fast-tier model instead of inheriting
+//   from the fork. Same model reflect-child uses in production. Useful when the
+//   fork's provider has no credits or the fork is multi-provider.
 //
 // This replays the same codepath as reflect-child.ts runReflect() for
 // session-end mode, using the real brain directory and auth credentials.
@@ -22,8 +23,7 @@ import {
 } from "@earendil-works/pi-coding-agent";
 
 import { GIT_COMMIT_PREFIX, REFLECT_SESSIONS_DIR } from "../shared/defaults";
-import { fastModelForPiProvider } from "../shared/model-catalog";
-import { readPiProvider } from "../shared/pi-settings";
+import { resolveFastTierModel } from "../backends/fast-model";
 import { logEvent } from "../backends/app-logger";
 import { commitAll } from "../backends/git";
 import { acquireLock, releaseLock } from "../backends/maintenance";
@@ -62,17 +62,18 @@ function extractSessionDate(forkFile: string): string {
 
 async function main(): Promise<void> {
   const rawArgs = process.argv.slice(2);
-  const forceModel = rawArgs.includes("--force-model");
-  const args = rawArgs.filter((a) => a !== "--force-model");
+  const fresh = rawArgs.includes("--fresh") || rawArgs.includes("--force-model");
+  const args = rawArgs.filter((a) => a !== "--fresh" && a !== "--force-model");
 
   if (args.length === 0 || args[0] === "--help") {
-    console.log(`Usage: npx tsx scripts/retry-reflect.ts <rootDir> [forked-session-file] [--force-model]
+    console.log(`Usage: npx tsx scripts/retry-reflect.ts <rootDir> [forked-session-file] [--fresh]
 
 Re-runs the session-end reflect using the saved fork file.
 If no fork file is specified, uses the most recent one.
 
 Options:
-  --force-model   Resolve model from config (workaround for multi-provider forks)`);
+  --fresh         Use configured provider's fast-tier model (same as production reflect)
+  --force-model   Alias for --fresh (deprecated)`);
     process.exit(0);
   }
 
@@ -97,7 +98,7 @@ Options:
   console.log(`Root dir:     ${rootDir}`);
   console.log(`Fork file:    ${forkedSessionFile}`);
   console.log(`Session date: ${sessionDate}`);
-  console.log(`Mode:         session-end (retry${forceModel ? ", forced model" : ""})\n`);
+  console.log(`Mode:         session-end (retry${fresh ? ", fresh provider" : ""})\n`);
 
   await alignHttpDispatcherWithPi();
 
@@ -113,24 +114,17 @@ Options:
 
   const modelRuntime = await createBuddyModelRuntime();
 
-  let model: { id: string } | undefined;
-  if (forceModel) {
-    const provider = readPiProvider(rootDir);
-    const fastModelId = fastModelForPiProvider(provider);
-    const available = await modelRuntime.getAvailable(provider);
-    const defaultModelId = fastModelId ?? "claude-sonnet-4-6";
-    model = available.find((m) => m.id === defaultModelId);
-    if (!model) model = available.find((m) => m.id.includes("sonnet"));
-    if (!model && available.length > 0) model = available[0];
+  const freshModelOptions = fresh
+    ? await resolveFastTierModel(rootDir, modelRuntime, "minimal")
+    : {};
 
-    console.log(`Provider:     ${provider}`);
-    console.log(`Model:        ${model?.id ?? "NONE RESOLVED"}`);
-    console.log(`Available:    ${available.length} models\n`);
-
-    if (!model) {
-      console.error("Could not resolve any model. Check auth and models-store.");
+  if (fresh) {
+    const modelId = freshModelOptions.model?.id;
+    if (!modelId) {
+      console.error("Could not resolve fast-tier model for the configured provider. Check auth and provider settings.");
       process.exit(1);
     }
+    console.log(`Model:        ${modelId} (fast tier)\n`);
   }
 
   console.log("Creating agent session...");
@@ -142,7 +136,7 @@ Options:
     sessionManager: sm,
     noTools: "all",
     modelRuntime,
-    ...(model && { model, thinkingLevel: "minimal" as const }),
+    ...freshModelOptions,
   });
 
   const events: AgentEvent[] = [];
