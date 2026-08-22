@@ -18,10 +18,29 @@ describe("listModelsForProvider", () => {
     expect(models).toHaveLength(2);
     expect(models[0]).toMatchObject({ id: "gpt-live-1", label: "GPT Live", provider: "openai" });
     const recommended = recommendedModelFor("openai")?.id;
+    expect(recommended).toBe("gpt-5.6-terra");
     if (recommended) {
       const flagged = models.find((m) => m.id === recommended);
       if (flagged) expect(flagged.recommended).toBe(true);
     }
+  });
+
+  it("flags GPT-5.6 Terra as recommended on a live Codex list", async () => {
+    const runtime = {
+      getAvailable: async () => [
+        { id: "gpt-5.6-luna", name: "Luna" },
+        { id: "gpt-5.6-terra", name: "Terra" },
+        { id: "gpt-5.6-sol", name: "Sol" },
+        { id: "gpt-5.3-codex-spark", name: "Spark" },
+      ],
+    };
+    const models = await listModelsForProvider(runtime, "openai");
+    expect(models.find((m) => m.recommended)?.id).toBe("gpt-5.6-terra");
+  });
+
+  it("openai fallback catalog is the GPT-5.6 Codex family", async () => {
+    const models = await listModelsForProvider({ getAvailable: async () => [] }, "openai");
+    expect(models.map((m) => m.id)).toEqual(["gpt-5.6-luna", "gpt-5.6-terra", "gpt-5.6-sol"]);
   });
 
   it("falls back to the curated catalog when live list is empty", async () => {

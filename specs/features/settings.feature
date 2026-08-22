@@ -38,8 +38,8 @@ Feature: Settings UI (FR-SETTINGS-02)
     Given the settings panel is open
     When I add provider "openai" in settings
     Then provider "openai" was authenticated in settings
-    And the settings model list includes "gpt-5"
-    When I switch settings model to "gpt-5" on provider "openai"
+    And the settings model list includes "gpt-5.6-terra"
+    When I switch settings model to "gpt-5.6-terra" on provider "openai"
     Then the settings show provider "openai"
-    And the settings show model "gpt-5"
-    And changeModel was called with provider "openai" and model "gpt-5"
+    And the settings show model "gpt-5.6-terra"
+    And changeModel was called with provider "openai" and model "gpt-5.6-terra"

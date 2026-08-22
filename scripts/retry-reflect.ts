@@ -22,7 +22,7 @@ import {
 } from "@earendil-works/pi-coding-agent";
 
 import { GIT_COMMIT_PREFIX, REFLECT_SESSIONS_DIR } from "../shared/defaults";
-import { fastModelForProvider } from "../shared/model-catalog";
+import { fastModelForPiProvider } from "../shared/model-catalog";
 import { readPiProvider } from "../shared/pi-settings";
 import { logEvent } from "../backends/app-logger";
 import { commitAll } from "../backends/git";
@@ -116,7 +116,7 @@ Options:
   let model: { id: string } | undefined;
   if (forceModel) {
     const provider = readPiProvider(rootDir);
-    const fastModelId = fastModelForProvider(provider);
+    const fastModelId = fastModelForPiProvider(provider);
     const available = await modelRuntime.getAvailable(provider);
     const defaultModelId = fastModelId ?? "claude-sonnet-4-6";
     model = available.find((m) => m.id === defaultModelId);

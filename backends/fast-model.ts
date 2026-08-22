@@ -2,7 +2,7 @@
 
 import type { ModelRuntime } from "@earendil-works/pi-coding-agent";
 
-import { fastModelForProvider } from "../shared/model-catalog";
+import { fastModelForPiProvider } from "../shared/model-catalog";
 import { readPiProvider } from "../shared/pi-settings";
 
 export type FastModelThinkingLevel = "off" | "minimal";
@@ -19,7 +19,7 @@ export async function resolveFastTierModel(
   thinkingLevel: FastModelThinkingLevel = "off",
 ): Promise<FastModelOptions> {
   const provider = readPiProvider(rootDir);
-  const fastId = fastModelForProvider(provider);
+  const fastId = fastModelForPiProvider(provider);
   if (!fastId) return { thinkingLevel };
   let model = modelRuntime.getModel(provider, fastId);
   if (!model) {

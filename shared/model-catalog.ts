@@ -1,8 +1,11 @@
 // shared/model-catalog.ts — curated model choices per provider (FR-SETUP-05).
 // A hand-picked v1 catalog (not a live provider query): the target user needs
-// three understandable choices, not fifty ids. Ids must match Pi's model
-// catalog for the provider. "custom" has no catalog — the user types the id
-// their OpenAI-compatible server exposes.
+// three understandable choices, not fifty ids. Keys are Buddy wizard ids
+// (`openai`, not Pi's `openai-codex`). Ids must match Pi's catalog for that
+// provider's runtime (OpenAI → openai-codex GPT-5.6 family). "custom" has no
+// catalog — the user types the id their OpenAI-compatible server exposes.
+
+import { fromPiProviderId } from "./provider-mapping";
 
 export type ModelTier = "fast" | "balanced" | "powerful";
 
@@ -20,9 +23,9 @@ const CATALOG: Record<string, ModelChoice[]> = {
     { id: "claude-opus-4-8", label: "Claude Opus", tier: "powerful" },
   ],
   openai: [
-    { id: "gpt-5-mini", label: "GPT-5 mini", tier: "fast" },
-    { id: "gpt-5", label: "GPT-5", tier: "balanced", recommended: true },
-    { id: "gpt-5-pro", label: "GPT-5 Pro", tier: "powerful" },
+    { id: "gpt-5.6-luna", label: "GPT-5.6 Luna", tier: "fast" },
+    { id: "gpt-5.6-terra", label: "GPT-5.6 Terra", tier: "balanced", recommended: true },
+    { id: "gpt-5.6-sol", label: "GPT-5.6 Sol", tier: "powerful" },
   ],
   google: [
     { id: "gemini-3.5-flash", label: "Gemini Flash", tier: "fast", recommended: true },
@@ -50,6 +53,11 @@ export function defaultModelForProvider(provider: string): string | undefined {
 /** Fast-tier model id for checkpoint reflect and other lightweight tasks. */
 export function fastModelForProvider(provider: string): string | undefined {
   return modelChoicesFor(provider)?.find((c) => c.tier === "fast")?.id;
+}
+
+/** Fast-tier id when the caller has a Pi provider id (`openai-codex`, etc.). */
+export function fastModelForPiProvider(piProviderId: string): string | undefined {
+  return fastModelForProvider(fromPiProviderId(piProviderId) ?? piProviderId);
 }
 
 /** Model id for consolidation at a given depth (FR-CONSOL-15). */
