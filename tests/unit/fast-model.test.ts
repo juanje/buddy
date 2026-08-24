@@ -18,7 +18,7 @@ function runtimeWith(
       models.find((m) => m.provider === provider && m.id === id),
     getAvailable: async (provider?: string) =>
       models.filter((m) => !provider || m.provider === provider),
-  } as ModelRuntime;
+  } as unknown as ModelRuntime;
 }
 
 describe("resolveFastTierModel", () => {

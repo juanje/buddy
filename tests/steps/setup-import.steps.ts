@@ -209,7 +209,7 @@ Then(
     const settings = JSON.parse(readFileSync(join(this.buddyDir!, ".pi", "settings.json"), "utf8"));
     assert.deepEqual(settings, {
       defaultProvider: "anthropic",
-      defaultModel: "claude-sonnet-5",
+      defaultModel: "claude-sonnet-4.6",
     });
   },
 );

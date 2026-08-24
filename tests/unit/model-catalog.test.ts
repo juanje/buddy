@@ -37,7 +37,7 @@ describe("model catalog", () => {
   });
 
   it("exposes default and fast tier ids per provider", () => {
-    expect(defaultModelForProvider("anthropic")).toBe("claude-sonnet-5");
+    expect(defaultModelForProvider("anthropic")).toBe("claude-sonnet-4.6");
     expect(fastModelForProvider("anthropic")).toBe("claude-haiku-4-5");
     expect(fastModelForProvider("openai")).toBe("gpt-5.6-luna");
     expect(defaultModelForProvider("openai")).toBe("gpt-5.6-terra");
@@ -56,7 +56,7 @@ describe("model catalog", () => {
   it("resolves model id by consolidation depth (FR-CONSOL-15)", () => {
     expect(modelForDepth("anthropic", 1)).toBe("claude-haiku-4-5");
     expect(modelForDepth("anthropic", 2)).toBe("claude-haiku-4-5");
-    expect(modelForDepth("anthropic", 3)).toBe("claude-sonnet-5");
+    expect(modelForDepth("anthropic", 3)).toBe("claude-sonnet-4.6");
     expect(modelForDepth("openai", 1)).toBe("gpt-5.6-luna");
     expect(modelForDepth("openai", 3)).toBe("gpt-5.6-terra");
     expect(modelForDepth("custom", 1)).toBeUndefined();
