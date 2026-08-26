@@ -180,6 +180,10 @@
               body: strings.maintenancePausedBody,
             });
           },
+          onAuthError(event) {
+            devLog(`auth error: ${event.message}`);
+            controller?.handleAuthError(event);
+          },
           onBudgetAlert(status: BudgetStatus) {
             devLog(`budget alert: ${status.level}`);
             budgetBlocked = status.level === "exceeded";
@@ -354,6 +358,7 @@
         {deferredItems}
         rootDir={appConfig?.rootDir ?? ""}
         fileViewer={fileViewerController}
+        onOpenSettings={() => settingsController?.openSettings()}
       />
       {#if settingsController}
         <button

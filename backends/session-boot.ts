@@ -20,6 +20,7 @@ import { createPermissionGate, isDenylistedPath, type PermissionRequest } from "
 import type { AllowedEntry } from "./allowed-paths";
 import { extractPdfText } from "./pdf-extract";
 import { assembleSessionContext, assembleSystemPrompt } from "./prompt";
+import { findRecentAuthErrorInLogs } from "./auth-error";
 import { injectSessionContext } from "./context-injection";
 import { buddyAgentDir, globalConfigDir } from "./global-config";
 import { buddySessionsDir } from "./session-paths";
@@ -268,7 +269,17 @@ export async function bootSession(
   const core = createWorkerCore(sessionLike, context.frontend, {
     lifecycle,
     usageTracker: context.usageTracker,
+    rootDir,
   });
+
+  const bootAuthError = findRecentAuthErrorInLogs(rootDir);
+  if (bootAuthError) {
+    try {
+      context.frontend.onAuthError(bootAuthError);
+    } catch (err) {
+      console.error("[session-boot] onAuthError RPC failed:", err);
+    }
+  }
 
   return { core, lifecycle };
 }

@@ -7,6 +7,8 @@
 import type { AgentEvent, ChatWorkerAPI, FrontendAPI, PromptOptions } from "../shared/api";
 import type { SessionLifecycle } from "./session-lifecycle";
 import type { UsageTracker } from "./usage-tracker";
+import { extractAuthErrorFromEvents, toAuthErrorEvent } from "./auth-error";
+import { logEvent } from "./app-logger";
 
 /**
  * What the session core itself implements. Permission resolution lives in
@@ -35,6 +37,8 @@ export interface PiSessionLike {
 export interface WorkerCoreOptions {
   lifecycle?: SessionLifecycle;
   usageTracker?: UsageTracker;
+  /** Buddy root dir for auth_error app log events (FR-AUTH-02). */
+  rootDir?: string;
 }
 
 export interface WorkerCore {
@@ -50,9 +54,28 @@ export function createWorkerCore(
 ): WorkerCore {
   const lifecycle = options?.lifecycle;
   const usageTracker = options?.usageTracker;
+  const rootDir = options?.rootDir;
   const unsubscribe = session.subscribe((event) => {
     usageTracker?.recordFromEvent(event);
     void lifecycle?.handleEvent(event);
+    if (event.type === "message_end") {
+      const authMessage = extractAuthErrorFromEvents([event]);
+      if (authMessage) {
+        const authError = toAuthErrorEvent(authMessage);
+        if (rootDir) {
+          logEvent(rootDir, {
+            event: "auth_error",
+            provider: authError.provider,
+            message: authError.message,
+          });
+        }
+        try {
+          frontend.onAuthError(authError);
+        } catch (err) {
+          console.error("[worker-core] onAuthError RPC failed:", err);
+        }
+      }
+    }
     frontend.onAgentEvent(event);
   });
 

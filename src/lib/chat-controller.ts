@@ -12,9 +12,11 @@ import type {
   AgentEvent,
   AllowedPathPersist,
   AssistantMessageEventLike,
+  AuthErrorEvent,
   ChatWorkerAPI,
   PermissionRequest,
   PromptOptions,
+  SetupProviderId,
 } from "../../shared/api";
 import { extractToolInfo } from "../../shared/pi-events";
 import { classifyAttachments, type RejectedAttachment } from "./attachment-classifier";
@@ -44,6 +46,13 @@ export interface PermissionCard {
   verdict?: "allowed" | "denied";
 }
 
+/** Auth failure card shown inline in chat (FR-AUTH-02). */
+export interface AuthErrorCard {
+  id: number;
+  provider: SetupProviderId;
+  message: string;
+}
+
 export interface ChatController {
   /** Message transcript (user + assistant bubbles). */
   messages: Readable<ChatMessage[]>;
@@ -69,6 +78,8 @@ export interface ChatController {
   streamingBubbleId: Readable<number | null>;
   /** Permission questions shown inline in the chat (FR-PERM-07). */
   permissions: Readable<PermissionCard[]>;
+  /** Auth failure cards shown inline in the chat (FR-AUTH-02). */
+  authErrors: Readable<AuthErrorCard[]>;
   /** Welcome banner visible until the first user message (FR-DEFERRED-01 visual). */
   welcomeVisible: Readable<boolean>;
 
@@ -96,6 +107,10 @@ export interface ChatController {
   dismissWelcome(): void;
   /** Re-show the deferred banner when mid-session items come due (FR-DEFERRED-03). */
   showDeferredBanner(): void;
+  /** Surface a provider auth failure as an inline card (FR-AUTH-02). */
+  handleAuthError(event: AuthErrorEvent): void;
+  /** Remove an auth error card from the chat. */
+  dismissAuthError(id: number): void;
 }
 
 export function createChatController(worker: ChatWorkerAPI): ChatController {
@@ -308,6 +323,7 @@ export function createChatController(worker: ChatWorkerAPI): ChatController {
   }
 
   const permissions = writable<PermissionCard[]>([]);
+  const authErrors = writable<AuthErrorCard[]>([]);
 
   function handlePermissionRequest(request: PermissionRequest): void {
     permissions.update((cards) => [...cards, { request }]);
@@ -330,6 +346,17 @@ export function createChatController(worker: ChatWorkerAPI): ChatController {
     permissions.update((cards) => cards.filter((card) => card.request.id !== id));
   }
 
+  function handleAuthError(event: AuthErrorEvent): void {
+    authErrors.update((cards) => {
+      if (cards.some((c) => c.provider === event.provider)) return cards;
+      return [...cards, { id: nextId++, provider: event.provider, message: event.message }];
+    });
+  }
+
+  function dismissAuthError(id: number): void {
+    authErrors.update((cards) => cards.filter((card) => card.id !== id));
+  }
+
   return {
     messages,
     input,
@@ -343,6 +370,7 @@ export function createChatController(worker: ChatWorkerAPI): ChatController {
     typingIndicator,
     streamingBubbleId: { subscribe: streamingBubbleIdStore.subscribe } as Readable<number | null>,
     permissions,
+    authErrors,
     welcomeVisible,
     send,
     abort,
@@ -356,5 +384,7 @@ export function createChatController(worker: ChatWorkerAPI): ChatController {
     dismissPermission,
     dismissWelcome,
     showDeferredBanner,
+    handleAuthError,
+    dismissAuthError,
   };
 }

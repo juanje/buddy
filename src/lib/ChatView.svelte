@@ -4,6 +4,7 @@
   import type { DeferredItemView } from "../../shared/api";
   import MessageBubble from "./MessageBubble.svelte";
   import PermissionCard from "./PermissionCard.svelte";
+  import AuthErrorCard from "./AuthErrorCard.svelte";
   import ToolActivity from "./ToolActivity.svelte";
   import WelcomeBanner from "./WelcomeBanner.svelte";
   import DeferredBanner from "./DeferredBanner.svelte";
@@ -18,12 +19,14 @@
     deferredItems = [],
     rootDir = "",
     fileViewer,
+    onOpenSettings,
   }: {
     controller: ChatController;
     scroll: ScrollController;
     deferredItems?: DeferredItemView[];
     rootDir?: string;
     fileViewer?: FileViewerController;
+    onOpenSettings?: () => void;
   } = $props();
 
   // $derived (not plain destructuring) so the stores track prop reassignment;
@@ -32,6 +35,7 @@
   const typingIndicator = $derived(controller.typingIndicator);
   const streamingBubbleId = $derived(controller.streamingBubbleId);
   const permissions = $derived(controller.permissions);
+  const authErrors = $derived(controller.authErrors);
   const welcomeVisible = $derived(controller.welcomeVisible);
   const showScrollButton = $derived(scroll.showScrollButton);
 
@@ -105,6 +109,13 @@
         {card}
         onRespond={(id, allow, persist) => controller.respondPermission(id, allow, persist)}
         onDismiss={(id) => controller.dismissPermission(id)}
+      />
+    {/each}
+    {#each $authErrors as card (card.id)}
+      <AuthErrorCard
+        {card}
+        onOpenSettings={() => onOpenSettings?.()}
+        onDismiss={() => controller.dismissAuthError(card.id)}
       />
     {/each}
     {#if $typingIndicator}

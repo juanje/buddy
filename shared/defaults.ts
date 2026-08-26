@@ -126,6 +126,21 @@ const REFLECT_RETRYABLE_PATTERNS = [/429/i, /rate.limit/i, /overloaded/i, /529/i
 export function isRetryableReflectError(message: string): boolean {
   return REFLECT_RETRYABLE_PATTERNS.some((pattern) => pattern.test(message));
 }
+
+const AUTH_ERROR_PATTERNS = [
+  /OAuth refresh failed/i,
+  /invalid_grant/i,
+  /No API key found/i,
+  /refresh token expired/i,
+  /401.*auth/i,
+  /authentication failed/i,
+  /invalid.*token/i,
+];
+
+/** Whether a provider error indicates expired or missing credentials (FR-AUTH-02). */
+export function isAuthError(message: string): boolean {
+  return AUTH_ERROR_PATTERNS.some((pattern) => pattern.test(message));
+}
 /**
  * Retention for forked session files in `.buddy/reflect-sessions/`
  * (NFR-MAINT-02). Each holds a full conversation transcript; they are kept only

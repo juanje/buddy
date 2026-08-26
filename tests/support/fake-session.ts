@@ -91,6 +91,14 @@ export class FakeSession implements PiSessionLike {
     });
   }
 
+  /** Emit a provider auth failure (FR-AUTH-02). */
+  emitAuthError(errorMessage: string): void {
+    this.emit({
+      type: "message_end",
+      message: { role: "assistant", stopReason: "error", errorMessage },
+    });
+  }
+
   endStreaming(): void {
     this.streaming = false;
     this.emit({ type: "agent_end", messages: [], willRetry: false });

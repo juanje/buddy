@@ -99,6 +99,7 @@ export class BuddyWorld extends World {
         onBudgetAlert: () => {},
     onMaintenancePaused: () => {},
     onSessionReady: () => {},
+    onAuthError: (event) => controllerRef?.handleAuthError(event),
       },
       { lifecycle: this.lifecycle },
     );
