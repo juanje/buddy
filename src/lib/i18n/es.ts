@@ -105,6 +105,11 @@ export type LocaleStrings = {
   locationBrowse: string;
   locationBrowseTitle: string;
   settingsAuthRequired: string;
+  settingsTokenExpired: string;
+  authErrorCardTitle: string;
+  authErrorCardBody: string;
+  authErrorCardOpenSettings: string;
+  authErrorCardDismiss: string;
   settingsUsage: string;
   settingsUsageLoading: string;
   settingsUsageUnavailable: string;
@@ -240,6 +245,11 @@ export const es: LocaleStrings = {
   settingsProviderAdded: "Proveedor añadido — sus modelos ya están disponibles",
   settingsGearTooltip: "Ajustes",
   settingsAuthRequired: "Inicia sesión en {provider} para gestionar modelos",
+  settingsTokenExpired: "Token caducado — Iniciar sesión",
+  authErrorCardTitle: "Sesión caducada",
+  authErrorCardBody: "Tu sesión con {provider} ha caducado. Ve a Ajustes para volver a iniciar sesión.",
+  authErrorCardOpenSettings: "Ir a Ajustes",
+  authErrorCardDismiss: "Cerrar",
   settingsUsage: "Uso",
   settingsUsageLoading: "Cargando uso…",
   settingsUsageUnavailable: "Datos de uso no disponibles",

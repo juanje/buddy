@@ -104,6 +104,26 @@ export function readStoredCredential(piProviderId: string): string | undefined {
 }
 
 /**
+ * Remove a provider's credential from Buddy's auth store (FR-AUTH-01).
+ * Used when OAuth refresh fails and re-login is required.
+ */
+export function purgeStaleCredential(
+  piProviderId: string,
+  authPath: string = defaultAuthPath(),
+): void {
+  updateStateFile<Record<string, unknown>>(
+    authPath,
+    (current) => {
+      if (!current || !(piProviderId in current)) return current ?? {};
+      const next = { ...current };
+      delete next[piProviderId];
+      return next;
+    },
+    { mode: AUTH_FILE_MODE },
+  );
+}
+
+/**
  * The only way to build a ModelRuntime (NFR-SEC-14a).
  *
  * Every session must resolve credentials from buddy's own store. Commit

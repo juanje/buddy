@@ -56,6 +56,7 @@ export interface SettingsController {
   authError: Readable<string | undefined>;
   authShowApiKey: Readable<boolean>;
   unauthenticatedProviders: Readable<SettingsProviderId[]>;
+  reauthProviders: Readable<SettingsProviderId[]>;
   providerAddedNotice: Readable<boolean>;
   usage: Readable<UsageReport | undefined>;
   usageLoading: Readable<boolean>;
@@ -113,15 +114,25 @@ function toDisplay(config: SetupConfig, version: string): SettingsDisplayConfig 
 
 async function loadAuthenticatedModels(
   worker: SettingsWorkerAPI,
-): Promise<{ models: ModelInfo[]; unauthenticated: SettingsProviderId[] }> {
+): Promise<{
+  models: ModelInfo[];
+  unauthenticated: SettingsProviderId[];
+  reauth: SettingsProviderId[];
+}> {
   const status = await worker.getAuthStatus();
+  const reauth = status.providers
+    .filter((p) => p.needsReauth)
+    .map((p) => p.buddyProvider)
+    .filter((p): p is SettingsProviderId => p !== "custom");
   const authed = new Set(
     status.providers.filter((p) => p.hasAuth).map((p) => p.buddyProvider),
   );
-  const unauthenticated = ADD_PROVIDER_CANDIDATES.filter((p) => !authed.has(p));
+  const unauthenticated = ADD_PROVIDER_CANDIDATES.filter(
+    (p) => !authed.has(p) || reauth.includes(p),
+  );
   const providers = [...authed].filter((p): p is SettingsProviderId => p !== "custom");
   const lists = await Promise.all(providers.map((provider) => worker.listModels(provider)));
-  return { models: lists.flat(), unauthenticated };
+  return { models: lists.flat(), unauthenticated, reauth };
 }
 
 export function createSettingsController(options: {
@@ -140,6 +151,7 @@ export function createSettingsController(options: {
   const authError = writable<string | undefined>(undefined);
   const authShowApiKey = writable(false);
   const unauthenticatedProviders = writable<SettingsProviderId[]>([]);
+  const reauthProviders = writable<SettingsProviderId[]>([]);
   const providerAddedNotice = writable(false);
   const usage = writable<UsageReport | undefined>(undefined);
   const usageLoading = writable(false);
@@ -162,6 +174,7 @@ export function createSettingsController(options: {
       const result = await loadAuthenticatedModels(options.worker);
       models.set(result.models);
       unauthenticatedProviders.set(result.unauthenticated);
+      reauthProviders.set(result.reauth);
     } finally {
       loadingModels.set(false);
     }
@@ -174,6 +187,7 @@ export function createSettingsController(options: {
       return [...without, ...newModels];
     });
     unauthenticatedProviders.update((list) => list.filter((p) => p !== provider));
+    reauthProviders.update((list) => list.filter((p) => p !== provider));
   }
 
   return {
@@ -187,6 +201,7 @@ export function createSettingsController(options: {
     authError,
     authShowApiKey,
     unauthenticatedProviders,
+    reauthProviders,
     providerAddedNotice,
     usage,
     usageLoading,

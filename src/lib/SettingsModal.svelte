@@ -19,6 +19,7 @@
   const authError = $derived(controller.authError);
   const authShowApiKey = $derived(controller.authShowApiKey);
   const unauthenticatedProviders = $derived(controller.unauthenticatedProviders);
+  const reauthProviders = $derived(controller.reauthProviders);
   const providerAddedNotice = $derived(controller.providerAddedNotice);
   const usage = $derived(controller.usage);
   const usageLoading = $derived(controller.usageLoading);
@@ -38,6 +39,9 @@
     !$loadingModels &&
       !authenticatedProviders.includes($config.provider) &&
       $unauthenticatedProviders.includes($config.provider),
+  );
+  const currentProviderNeedsReauth = $derived(
+    !$loadingModels && $reauthProviders.includes($config.provider),
   );
 
   function onBackdropClick(event: MouseEvent) {
@@ -141,7 +145,16 @@
             {:else}
               {providerLabel($config.provider, $t)}
             {/if}
-            {#if currentProviderNeedsAuth && !$addingProvider}
+            {#if currentProviderNeedsReauth && !$addingProvider}
+              <p class="auth-required expired">{$t.settingsTokenExpired}</p>
+              <button
+                type="button"
+                class="link"
+                onclick={() => controller.startAddProvider($config.provider)}
+              >
+                {$t.oauthSignIn}
+              </button>
+            {:else if currentProviderNeedsAuth && !$addingProvider}
               <p class="auth-required">
                 {$t.settingsAuthRequired.replace(
                   "{provider}",
@@ -176,6 +189,9 @@
                   onclick={() => controller.selectAuthProvider(p)}
                 >
                   {providerLabel(p, $t)}
+                  {#if $reauthProviders.includes(p)}
+                    <span class="expired-tag">{$t.settingsTokenExpired}</span>
+                  {/if}
                 </button>
               {/each}
             </div>

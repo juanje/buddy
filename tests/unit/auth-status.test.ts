@@ -91,4 +91,14 @@ describe("buildAuthStatus", () => {
     const status = buildAuthStatus(fakeRuntime({ anthropic: { configured: true } }), NO_STORED);
     expect(status.providers.length).toBeGreaterThan(1);
   });
+
+  it("marks needsReauth providers as unauthenticated", () => {
+    const status = buildAuthStatus(fakeRuntime({}), {
+      readCredential: (id) => (id === "anthropic" ? '{"type":"oauth"}' : undefined),
+      needsReauthProviders: new Set(["anthropic"]),
+    });
+    const anthropic = status.providers.find((p) => p.piProviderId === "anthropic");
+    expect(anthropic?.needsReauth).toBe(true);
+    expect(anthropic?.hasAuth).toBe(false);
+  });
 });

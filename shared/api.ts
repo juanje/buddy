@@ -124,10 +124,18 @@ export interface AuthProviderStatus {
   buddyProvider: SetupProviderId;
   hasAuth: boolean;
   authType?: "api_key" | "oauth";
+  /** OAuth credential exists but probe failed — user must re-login (FR-AUTH-01). */
+  needsReauth?: boolean;
 }
 
 export interface AuthStatusResult {
   providers: AuthProviderStatus[];
+}
+
+/** Auth failure surfaced to the chat UI (FR-AUTH-02). */
+export interface AuthErrorEvent {
+  provider: SetupProviderId;
+  message: string;
 }
 
 /** Events forwarded from worker during OAuth login (FR-SETUP-05). */
@@ -295,4 +303,6 @@ export interface FrontendAPI {
    * organized, rather than discovering it much later.
    */
   onMaintenancePaused(info: MaintenancePausedInfo): void;
+  /** Provider auth failure — inline card in chat (FR-AUTH-02). */
+  onAuthError(event: AuthErrorEvent): void;
 }

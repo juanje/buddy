@@ -22,11 +22,14 @@ import { readStoredCredential } from "./provider-auth";
 export interface AuthStatusDeps {
   /** Buddy's own record of a stored credential. Injected for tests. */
   readCredential?: (piProviderId: string) => string | undefined;
+  /** Pi provider ids that failed OAuth health check (FR-AUTH-01). */
+  needsReauthProviders?: ReadonlySet<string>;
 }
 
 /** The setup wizard's and Settings' view of auth state for every provider. */
 export function buildAuthStatus(runtime: ModelRuntime, deps: AuthStatusDeps = {}): AuthStatusResult {
   const readCredential = deps.readCredential ?? readStoredCredential;
+  const needsReauthProviders = deps.needsReauthProviders ?? new Set<string>();
 
   const providers = WIZARD_PI_PROVIDERS.map((piProviderId) => {
     const buddyProvider = fromPiProviderId(piProviderId);
@@ -35,12 +38,14 @@ export function buildAuthStatus(runtime: ModelRuntime, deps: AuthStatusDeps = {}
     // own store does not (runtime API keys, environment variables), so it is
     // never overruled — only supplemented when it has not caught up.
     const stored = status.configured ? undefined : readCredential(piProviderId);
-    const hasAuth = status.configured || stored !== undefined;
+    const needsReauth = needsReauthProviders.has(piProviderId);
+    const hasAuth = !needsReauth && (status.configured || stored !== undefined);
 
     return {
       piProviderId,
       buddyProvider: buddyProvider ?? ("openai" as SetupConfig["provider"]),
       hasAuth,
+      needsReauth: needsReauth || undefined,
       authType: hasAuth ? authTypeOf(runtime, piProviderId, status.configured, stored) : undefined,
     };
   }).filter((p) => p.buddyProvider);

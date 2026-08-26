@@ -1756,7 +1756,35 @@ does not know them, and orders their profile overwritten.
 - **When** an index entry already exists (e.g. curated Key themes from consolidation), reflect does **not** overwrite it — only explicit description updates (consolidation) replace an existing entry
 - **And** maintenance entries never downgrade an existing active entry
 
-### 3.12 Settings / Configuration (FR-SETTINGS)
+### 3.12 Authentication lifecycle (FR-AUTH)
+
+| ID | Description | Phase |
+|----|-------------|-------|
+| FR-AUTH-01 | Detect expired OAuth + show re-login in UI | 3 ✓ |
+| FR-AUTH-02 | Surface auth failure to user in active session | 3 ✓ |
+
+**FR-AUTH-01 — Detect expired OAuth and offer re-login**
+
+- **Given** the user has a configured OAuth provider in `~/.buddy/auth.json`
+- **When** the session boots
+- **Then** the worker probes the provider with a model-listing call
+- **And** if the probe returns "OAuth refresh failed" or "invalid_grant"
+- **Then** the stale auth entry is removed from `auth.json`
+- **And** `getAuthStatus()` reports the provider as `needsReauth: true`
+- **And** Settings shows "Token expired — Sign in" for that provider (same flow as adding a new provider)
+
+**FR-AUTH-02 — Surface auth failure in active session**
+
+- **Given** the user is in an active chat session
+- **When** a prompt returns `stopReason: "error"` with an auth-related message
+- **Then** the chat shows an inline error card: "Session expired — go to Settings"
+- **And** an `auth_error` app log event is recorded
+- **Given** a background process (reflect/consolidation) failed with an auth error
+- **When** the next session boots
+- **Then** the same inline error card appears before the first prompt
+- **And** clicking the card opens Settings
+
+### 3.13 Settings / Configuration (FR-SETTINGS)
 
 | ID | Description | Phase |
 |----|-------------|-------|

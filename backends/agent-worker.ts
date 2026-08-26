@@ -38,6 +38,7 @@ import {
   validateLocation,
 } from "./location";
 import { buildAuthStatus } from "./auth-status";
+import { runOAuthHealthChecks } from "./auth-health";
 import { listModelsForProvider } from "./model-listing";
 import { resolveSessionModel } from "./model-switch";
 import { OAuthService } from "./oauth-service";
@@ -58,6 +59,7 @@ import { recoverStaleSession } from "./crash-recovery";
 import { spawnReflectChild } from "./reflect-spawn";
 import { detectFirstRun, updateAppConfig } from "./setup";
 import { writePiSettings } from "../shared/pi-settings";
+import { toPiProviderId } from "../shared/provider-mapping";
 import { createWorkerCore } from "./worker-core";
 import { startHeartbeat, type HeartbeatHandle } from "./heartbeat";
 import { ensureConfigDirMode, globalConfigDir, globalConfigPath } from "./global-config";
@@ -134,6 +136,8 @@ export async function main(deps: WorkerDeps = {}): Promise<void> {
 
   let oauthService: OAuthService | undefined;
   let usageTracker: UsageTracker | undefined;
+  /** Pi provider ids that failed OAuth health check at boot (FR-AUTH-01). */
+  let reauthProviders = new Set<string>();
 
   function getBudgetLimit(): number | null {
     if (setupState.firstRun) return null;
@@ -195,11 +199,14 @@ export async function main(deps: WorkerDeps = {}): Promise<void> {
     recoverStaleSession(rootDir, spawnReflectChild);
     pruneSessionArtifacts(rootDir);
 
+    const runtime = await modelRuntimeReady;
+    reauthProviders = await runOAuthHealthChecks(runtime);
+
     const booted = await bootSession(
       rootDir,
       {
         frontend,
-        modelRuntime: await modelRuntimeReady,
+        modelRuntime: runtime,
         sessionAllowedPaths,
         persistentAllowedPaths: () => persistentAllowedPaths,
         usageTracker: ensureUsageTracker(),
@@ -271,7 +278,11 @@ export async function main(deps: WorkerDeps = {}): Promise<void> {
         return configureProviderKey(provider, apiKey, { baseUrl });
       },
       async loginOAuth(provider) {
-        return (await ensureOAuthService()).login(provider);
+        const result = await (await ensureOAuthService()).login(provider);
+        if (result.success) {
+          reauthProviders.delete(toPiProviderId(provider));
+        }
+        return result;
       },
       async answerOAuthPrompt(requestId, value) {
         (await ensureOAuthService()).answerPrompt(requestId, value);
@@ -283,7 +294,7 @@ export async function main(deps: WorkerDeps = {}): Promise<void> {
         return listModelsForProvider(await modelRuntimeReady, provider);
       },
       async getAuthStatus() {
-        return buildAuthStatus(await modelRuntimeReady);
+        return buildAuthStatus(await modelRuntimeReady, { needsReauthProviders: reauthProviders });
       },
       async runSetup(config, mode = "create") {
         // FR-SETUP-11: the wizard gates on this too, but the worker decides.
