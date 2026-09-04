@@ -6,6 +6,7 @@
   import { dirname } from "../utils/path";
   import { t } from "./i18n";
   import type { PermissionCard } from "./chat-controller";
+  import { shouldOfferPersistentPermission } from "./permission-persistent-options";
 
   let {
     card,
@@ -35,7 +36,7 @@
         : strings.permissionOpRead,
   );
   const showPath = $derived(card.request.kind !== "identity-write");
-  const showPersistentOptions = $derived(card.request.kind === "outside");
+  const showPersistentOptions = $derived(shouldOfferPersistentPermission(card.request));
 
   function dismiss() {
     onDismiss(card.request.id);

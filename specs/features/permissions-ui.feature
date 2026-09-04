@@ -29,3 +29,8 @@ Feature: Permission prompt in chat (FR-PERM-07)
   Scenario: The rest of the UI stays interactive while waiting
     When the agent requests "read" access to "/tmp/notes.txt"
     Then the permission card does not block the chat input
+
+  Scenario: Write operations do not offer "Allow always"
+    When the agent requests "write" access to "/home/u/Documents/cv.md"
+    Then a permission card shows the "write" operation and that path
+    And the card does not offer allow-always actions

@@ -776,6 +776,7 @@ Fork bomb defense:
 | FR-PERM-04 | Hardcoded denylist | 1 ✓ |
 | FR-PERM-05 | Implicit permission from user messages | rejected |
 | FR-PERM-06 | Zone 2: user-designated paths | 1 ✓ |
+| FR-PERM-06b | "Allow always" only for outside reads | 1 |
 | FR-PERM-07 | Permission prompt in chat | 1 ✓ |
 
 **FR-PERM-01 — Zone 1: buddy home**
@@ -818,11 +819,21 @@ Fork bomb defense:
 - **Then** read access is granted silently
 - **And** write access still requires per-operation confirmation
 
+**FR-PERM-06b — "Allow always" only for outside reads**
+
+- **Given** the permission prompt is for an outside-path **read**
+- **When** the card is shown
+- **Then** it offers "Allow always" for the file and for its parent folder
+- **Given** the permission prompt is for an outside-path **write**
+- **When** the card is shown
+- **Then** it does **not** offer "Allow always" (only "Allow once" and "Deny") — persistent approval applies to reads only (FR-PERM-06)
+
 **FR-PERM-07 — Permission prompt in chat**
 
 - **Given** a permission check requires user input
 - **When** the prompt appears
 - **Then** it shows the operation (read/write), the path, and action buttons
+- **And** persistent "Allow always" actions appear only for outside **read** requests (FR-PERM-06b)
 - **And** the rest of the UI remains interactive while the agent waits
 
 ### 3.6 File Ingest (FR-INGEST)

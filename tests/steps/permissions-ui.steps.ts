@@ -7,6 +7,7 @@ import assert from "node:assert/strict";
 import { get } from "svelte/store";
 
 import type { BuddyWorld } from "../support/world";
+import { shouldOfferPersistentPermission } from "../../src/lib/permission-persistent-options";
 
 let nextRequestId = 100;
 
@@ -45,6 +46,11 @@ Then("the card offers allow-once and deny actions", function (this: BuddyWorld) 
   // Unresolved card = actions available; the view renders buttons for it.
   const cards = get(this.controller.permissions);
   assert.equal(cards[0].verdict, undefined);
+});
+
+Then("the card does not offer allow-always actions", function (this: BuddyWorld) {
+  const req = get(this.controller.permissions)[0].request;
+  assert.equal(shouldOfferPersistentPermission(req), false);
 });
 
 Then("the worker receives an allow verdict for that request", function (this: BuddyWorld) {
