@@ -1,4 +1,4 @@
-// backends/auth-error.ts — Auth error detection for chat and boot (FR-AUTH-02).
+// backends/auth-error.ts — Auth error detection for chat and boot (FR-AUTH-02, FR-AUTH-02b).
 
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -6,7 +6,7 @@ import { join } from "node:path";
 import type { AgentEvent, AuthErrorEvent, SetupProviderId } from "../shared/api";
 import { APP_LOGS_DIR, isAuthError } from "../shared/defaults";
 import { toIsoDay } from "../shared/dates";
-import { fromPiProviderId } from "../shared/provider-mapping";
+import { fromPiProviderId, toPiProviderId } from "../shared/provider-mapping";
 
 interface ObservedMessage {
   role?: string;
@@ -70,4 +70,13 @@ export function findRecentAuthErrorInLogs(rootDir: string, now = new Date()): Au
     latest = toAuthErrorEvent(message);
   }
   return latest;
+}
+
+/** Whether a boot-time auth card should be shown (FR-AUTH-02b). */
+export function shouldEmitBootAuthCard(
+  bootAuthError: AuthErrorEvent | undefined,
+  reauthProviders: ReadonlySet<string> | undefined,
+): bootAuthError is AuthErrorEvent {
+  if (!bootAuthError) return false;
+  return reauthProviders?.has(toPiProviderId(bootAuthError.provider)) ?? false;
 }

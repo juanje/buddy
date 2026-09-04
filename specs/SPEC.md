@@ -1762,6 +1762,7 @@ does not know them, and orders their profile overwritten.
 |----|-------------|-------|
 | FR-AUTH-01 | Detect expired OAuth + show re-login in UI | 3 ✓ |
 | FR-AUTH-02 | Surface auth failure to user in active session | 3 ✓ |
+| FR-AUTH-02b | Boot auth card gated on health check | 3 ✓ |
 
 **FR-AUTH-01 — Detect expired OAuth and offer re-login**
 
@@ -1783,6 +1784,15 @@ does not know them, and orders their profile overwritten.
 - **When** the next session boots
 - **Then** the same inline error card appears before the first prompt
 - **And** clicking the card opens Settings
+
+**FR-AUTH-02b — Boot auth card gated on health check**
+
+- **Given** a background process logged an auth error since the last session
+- **When** the next session boots and `runOAuthHealthChecks` reports the provider as healthy
+- **Then** the boot-time auth error card does **not** appear (stale log entry)
+- **Given** the same background auth error log exists
+- **When** the next session boots and the provider is in `reauthProviders`
+- **Then** the boot-time auth error card appears before the first prompt
 
 ### 3.13 Settings / Configuration (FR-SETTINGS)
 

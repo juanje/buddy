@@ -20,7 +20,7 @@ import { createPermissionGate, isDenylistedPath, type PermissionRequest } from "
 import type { AllowedEntry } from "./allowed-paths";
 import { extractPdfText } from "./pdf-extract";
 import { assembleSessionContext, assembleSystemPrompt } from "./prompt";
-import { findRecentAuthErrorInLogs } from "./auth-error";
+import { findRecentAuthErrorInLogs, shouldEmitBootAuthCard } from "./auth-error";
 import { injectSessionContext } from "./context-injection";
 import { buddyAgentDir, globalConfigDir } from "./global-config";
 import { buddySessionsDir } from "./session-paths";
@@ -94,6 +94,8 @@ export interface BootSessionOptions {
   about?: string;
   onSessionComplete?: (hadActivity: boolean) => void;
   isBudgetNearLimit?: () => boolean;
+  /** Pi provider ids that failed OAuth health check at boot (FR-AUTH-02b). */
+  reauthProviders?: ReadonlySet<string>;
 }
 
 /** Map Pi AgentSession to the structural subset the worker core needs. */
@@ -273,7 +275,7 @@ export async function bootSession(
   });
 
   const bootAuthError = findRecentAuthErrorInLogs(rootDir);
-  if (bootAuthError) {
+  if (shouldEmitBootAuthCard(bootAuthError, options?.reauthProviders)) {
     try {
       context.frontend.onAuthError(bootAuthError);
     } catch (err) {

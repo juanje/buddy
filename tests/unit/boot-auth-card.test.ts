@@ -1,11 +1,11 @@
-// tests/unit/boot-auth-card.test.ts — FR-AUTH-02 boot-time auth error scan.
+// tests/unit/boot-auth-card.test.ts — FR-AUTH-02/02b boot-time auth error scan.
 
 import { describe, expect, it } from "vitest";
 import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { findRecentAuthErrorInLogs } from "../../backends/auth-error";
+import { findRecentAuthErrorInLogs, shouldEmitBootAuthCard } from "../../backends/auth-error";
 import { logEvent } from "../../backends/app-logger";
 
 describe("findRecentAuthErrorInLogs", () => {
@@ -67,5 +67,31 @@ describe("findRecentAuthErrorInLogs", () => {
 
     expect(findRecentAuthErrorInLogs(rootDir, now)).toBeUndefined();
     rmSync(dir, { recursive: true, force: true });
+  });
+});
+
+describe("shouldEmitBootAuthCard (FR-AUTH-02b)", () => {
+  const authError = { provider: "anthropic" as const, message: "OAuth refresh failed for anthropic" };
+
+  it("emits when the provider is in reauthProviders", () => {
+    expect(shouldEmitBootAuthCard(authError, new Set(["anthropic"]))).toBe(true);
+  });
+
+  it("skips when reauthProviders is empty (health check passed)", () => {
+    expect(shouldEmitBootAuthCard(authError, new Set())).toBe(false);
+  });
+
+  it("skips when reauthProviders is undefined", () => {
+    expect(shouldEmitBootAuthCard(authError, undefined)).toBe(false);
+  });
+
+  it("skips when boot auth error is undefined", () => {
+    expect(shouldEmitBootAuthCard(undefined, new Set(["anthropic"]))).toBe(false);
+  });
+
+  it("maps openai buddy provider to openai-codex pi id", () => {
+    const openaiError = { provider: "openai" as const, message: "OAuth refresh failed for openai" };
+    expect(shouldEmitBootAuthCard(openaiError, new Set(["openai-codex"]))).toBe(true);
+    expect(shouldEmitBootAuthCard(openaiError, new Set(["openai"]))).toBe(false);
   });
 });

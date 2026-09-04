@@ -28,5 +28,12 @@ Feature: OAuth token expiry detection (FR-AUTH-01)
 
   Scenario: Background auth failure surfaces at next boot
     Given a reflect failed with auth error "OAuth refresh failed for anthropic"
+    And anthropic still needs re-authentication at boot
     When the app boots after a background auth failure
     Then the chat shows an auth error card before the first prompt
+
+  Scenario: Stale auth failure does not surface when health check passed
+    Given a reflect failed with auth error "OAuth refresh failed for anthropic"
+    And the OAuth health check reports "anthropic" is healthy
+    When the app boots after a background auth failure
+    Then the chat does not show an auth error card

@@ -220,6 +220,7 @@ export async function main(deps: WorkerDeps = {}): Promise<void> {
       },
       {
         ...options,
+        reauthProviders,
         onSessionComplete: (hadActivity) => heartbeat?.incrementSessionCounter(hadActivity),
         isBudgetNearLimit: () => ensureUsageTracker().isBudgetNearLimit(),
       },

@@ -9,7 +9,7 @@ import { get } from "svelte/store";
 
 import { buildAuthStatus } from "../../backends/auth-status";
 import { runOAuthHealthChecks } from "../../backends/auth-health";
-import { findRecentAuthErrorInLogs } from "../../backends/auth-error";
+import { findRecentAuthErrorInLogs, shouldEmitBootAuthCard } from "../../backends/auth-error";
 import { logEvent } from "../../backends/app-logger";
 import { purgeStaleCredential } from "../../backends/provider-auth";
 import { updateStateFile } from "../../backends/state-file";
@@ -257,6 +257,24 @@ Given(
       mode: "session_end",
       message,
     });
+    this.bootAuthErrorEmitted = false;
+  },
+);
+
+Given("anthropic still needs re-authentication at boot", function (this: AuthExpiryWorld) {
+  this.needsReauthProviders = new Set(["anthropic"]);
+});
+
+Given(
+  "the OAuth health check reports {string} is healthy",
+  function (this: AuthExpiryWorld, provider: string) {
+    const piId = toPiProviderId(provider as SetupConfig["provider"]);
+    if (!this.needsReauthProviders) {
+      this.needsReauthProviders = new Set();
+    } else {
+      this.needsReauthProviders = new Set(this.needsReauthProviders);
+    }
+    this.needsReauthProviders.delete(piId);
   },
 );
 
@@ -264,8 +282,12 @@ When("the app boots after a background auth failure", function (this: AuthExpiry
   this.connect(this.rootDir, { force: true });
   const bootError = findRecentAuthErrorInLogs(this.rootDir!);
   assert.ok(bootError);
-  this.controller.handleAuthError(bootError);
-  this.bootAuthErrorEmitted = true;
+  const reauthProviders =
+    this.needsReauthProviders ?? new Set([toPiProviderId(bootError.provider)]);
+  if (shouldEmitBootAuthCard(bootError, reauthProviders)) {
+    this.controller.handleAuthError(bootError);
+    this.bootAuthErrorEmitted = true;
+  }
 });
 
 Then("the chat shows an auth error card before the first prompt", function (this: AuthExpiryWorld) {
@@ -274,4 +296,10 @@ Then("the chat shows an auth error card before the first prompt", function (this
   assert.ok(cards.length >= 1);
   const userMessages = get(this.controller.messages).filter((m) => m.role === "user");
   assert.equal(userMessages.length, 0);
+});
+
+Then("the chat does not show an auth error card", function (this: AuthExpiryWorld) {
+  assert.equal(this.bootAuthErrorEmitted, false);
+  const cards = get(this.controller.authErrors);
+  assert.equal(cards.length, 0);
 });
