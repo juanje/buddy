@@ -7,12 +7,14 @@ import { dirname, join } from "node:path";
 import { tmpdir } from "node:os";
 
 import { runPostConsolidationValidation } from "../../backends/post-consolidation-validation";
+import { rotateLogs } from "../../backends/consolidation-helpers";
 
 interface PostConsolWorld {
   tmpDir?: string;
   newFiles?: string[];
   touchedFiles?: string[];
   result?: ReturnType<typeof runPostConsolidationValidation>;
+  archivedLogPath?: string;
 }
 
 After(function (this: PostConsolWorld) {
@@ -125,3 +127,39 @@ Then(
     assert.ok(content.includes(text), `expected "${text}" in:\n${content}`);
   },
 );
+
+Given(
+  "a log file {string} with link {string}",
+  function (this: PostConsolWorld, relPath: string, linkMarkdown: string) {
+    const root = ensureWorld.call(this);
+    mkdirSync(join(root, "agent_brain", "concepts"), { recursive: true });
+    writeRel(root, "agent_brain/concepts/foo.md", "# Foo\n");
+    writeRel(root, relPath, `# Log\nSee ${linkMarkdown}\n`);
+
+    for (let i = 2; i <= 30; i += 1) {
+      const day = String(i).padStart(2, "0");
+      writeRel(root, `logs/2026-07-${day}.md`, "# log\n");
+    }
+  },
+);
+
+When(
+  "log rotation archives the file to {string}",
+  function (this: PostConsolWorld, archiveDir: string) {
+    const root = ensureWorld.call(this);
+    rotateLogs(root, "2026-07-30");
+    this.archivedLogPath = join(archiveDir, "2026-07-01.md");
+  },
+);
+
+Then("the archived file contains {string}", function (this: PostConsolWorld, text: string) {
+  assert.ok(this.tmpDir && this.archivedLogPath);
+  const content = readFileSync(join(this.tmpDir, this.archivedLogPath), "utf8");
+  assert.ok(content.includes(text), `expected "${text}" in:\n${content}`);
+});
+
+Then("the archived file does not contain {string}", function (this: PostConsolWorld, text: string) {
+  assert.ok(this.tmpDir && this.archivedLogPath);
+  const content = readFileSync(join(this.tmpDir, this.archivedLogPath), "utf8");
+  assert.ok(!content.includes(text), `did not expect "${text}" in:\n${content}`);
+});

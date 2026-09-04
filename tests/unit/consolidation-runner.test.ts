@@ -417,4 +417,42 @@ describe("consolidation runner", () => {
     // Archived files should still exist in archive/
     expect(existsSync(join(logsDir, "archive", "2026-06", "2026-06-01.md"))).toBe(true);
   });
+
+  it("log rotation preserves relative links through post-validation", async () => {
+    setupBuddyDir();
+    await initTestGitRepo(dir);
+    const logsDir = join(dir, "logs");
+    mkdirSync(logsDir, { recursive: true });
+    mkdirSync(join(dir, "agent_brain", "concepts"), { recursive: true });
+    writeFileSync(join(dir, "agent_brain", "concepts", "foo.md"), "# Foo\n");
+
+    for (let i = 1; i <= 30; i++) {
+      const day = String(i).padStart(2, "0");
+      const body =
+        i === 1
+          ? "# Log\nSee [concept](../agent_brain/concepts/foo.md)\n"
+          : `# ${day}\n`;
+      writeFileSync(join(logsDir, `2026-06-${day}.md`), body);
+    }
+    writeFileSync(join(logsDir, "index.md"), "# Sessions index\n");
+    const { simpleGit } = await import("simple-git");
+    await simpleGit(dir).add("-A").commit("seed");
+
+    const state = loadConsolidationState(dir);
+    state.sessionsSinceLastDepth1 = 3;
+
+    await runConsolidation({
+      rootDir: dir,
+      targetDepth: 1,
+      modelRuntime: {} as never,
+      state,
+      createSession: async () => ({ prompt: async () => {}, dispose: () => {} }),
+      now: new Date("2026-07-22T12:00:00Z"),
+    });
+
+    const archived = readFileSync(join(logsDir, "archive", "2026-06", "2026-06-01.md"), "utf8");
+    expect(archived).toContain("[concept](");
+    expect(archived).toContain("agent_brain/concepts/foo.md");
+    expect(archived).not.toMatch(/See concept\n/);
+  });
 });

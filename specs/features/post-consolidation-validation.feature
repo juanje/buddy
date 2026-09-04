@@ -45,3 +45,9 @@ Feature: Post-consolidation validation (FR-GUARD-03)
     And an untouched file "user/notes.md" containing "[also broken](ghost.md)"
     When post-consolidation validation runs on the touched files
     Then "user/notes.md" still contains "[also broken](ghost.md)"
+
+  Scenario: Log rotation rewrites relative links for the new depth
+    Given a log file "logs/2026-07-01.md" with link "[concept](../agent_brain/concepts/foo.md)"
+    When log rotation archives the file to "logs/archive/2026-07/"
+    Then the archived file contains "[concept](../../../agent_brain/concepts/foo.md)"
+    And the archived file does not contain "[concept](../agent_brain/concepts/foo.md)"

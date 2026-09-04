@@ -9,7 +9,7 @@ import {
   renameSync,
   writeFileSync,
 } from "node:fs";
-import { join } from "node:path";
+import { join, relative, resolve } from "node:path";
 
 import { addDays } from "../shared/dates";
 import { LOG_ROTATION_THRESHOLD } from "../shared/defaults";
@@ -17,6 +17,28 @@ import { updateLogsIndexEntry } from "./reflect";
 import { dailyLogPath, logsDirPath } from "./brain-paths";
 
 const DATE_MARKER_RE = /\b(\d{4}-\d{2}-\d{2})\b/;
+const MARKDOWN_LINK = /\[([^\]]*)\]\(([^)]+)\)/g;
+
+/** Rewrite relative markdown links when a log moves deeper in the tree (FR-CONSOL-26). */
+export function rewriteLinksForArchive(
+  content: string,
+  oldDir: string,
+  newDir: string,
+): string {
+  return content.replace(MARKDOWN_LINK, (full, display: string, target: string) => {
+    const trimmed = target.trim();
+    if (!trimmed || /^https?:\/\//i.test(trimmed) || trimmed.startsWith("#")) return full;
+
+    const hashIndex = trimmed.indexOf("#");
+    const pathPart = hashIndex === -1 ? trimmed : trimmed.slice(0, hashIndex);
+    const anchor = hashIndex === -1 ? "" : trimmed.slice(hashIndex);
+    if (!pathPart) return full;
+
+    const resolved = resolve(oldDir, pathPart);
+    const newRel = relative(newDir, resolved).replace(/\\/g, "/");
+    return `[${display}](${newRel}${anchor})`;
+  });
+}
 
 export interface UpcomingReminder {
   source: "inbox" | "active-context";
@@ -45,6 +67,11 @@ export function rotateLogs(rootDir: string, targetDate: string): { archived: str
     mkdirSync(archiveDir, { recursive: true });
 
     renameSync(join(logsDir, file), join(archiveDir, file));
+
+    const archivedPath = join(archiveDir, file);
+    const content = readFileSync(archivedPath, "utf8");
+    const rewritten = rewriteLinksForArchive(content, logsDir, archiveDir);
+    if (rewritten !== content) writeFileSync(archivedPath, rewritten);
 
     const indexPath = join(logsDir, "index.md");
     if (existsSync(indexPath)) {

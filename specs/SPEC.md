@@ -961,6 +961,7 @@ Fork bomb defense:
 | FR-CONSOL-23 | Monthly metrics computation | 2 ✓ |
 | FR-CONSOL-24 | Consolidation prompt rewrite (depth rebalance) | 2 ✓ |
 | FR-CONSOL-25 | Scheduler threshold update | 2 ✓ |
+| FR-CONSOL-26 | Log rotation preserves relative links | 2 ✓ |
 
 **Consolidation depths:**
 
@@ -1283,6 +1284,13 @@ fresh session per depth gives each depth the full window.
 - **When** depth due-ness is evaluated
 - **Then** depth 2 is due at ≥3 depth-1 runs OR ≥7 calendar days since `lastDepth2` (with ≥1 depth-1 run pending)
 - **And** depth 3 is due at ≥4 depth-2 runs OR ≥30 calendar days since `lastDepth3` (with ≥1 depth-2 run pending)
+
+**FR-CONSOL-26 — Log rotation preserves relative links**
+
+- **Given** a daily log in `logs/` contains relative markdown links to brain files
+- **When** `rotateLogs()` archives the file to `logs/archive/YYYY-MM/`
+- **Then** each relative link is rewritten so it still resolves from the archive directory
+- **And** post-consolidation link repair does not strip those links to plain text
 
 | ID | Description | Phase |
 |----|-------------|-------|

@@ -24,6 +24,7 @@ import {
   removeObservationEntries,
   relocateBrainFile,
   rewriteBrokenLinks,
+  rewriteLinksForArchive,
   rotateLogs,
   updateLogsIndexFromDaySummary,
 } from "../../backends/consolidation-mechanics";
@@ -78,6 +79,65 @@ describe("consolidation mechanics", () => {
       expect(existsSync(join(logsDir, "archive", "2026-07", "2026-07-01.md"))).toBe(true);
       expect(existsSync(join(logsDir, "monthly_2026-07.md"))).toBe(true);
       expect(existsSync(join(logsDir, "index.md"))).toBe(true);
+    });
+
+    it("rewrites relative links in archived logs", () => {
+      setupRoot();
+      mkdirSync(join(dir, "agent_brain", "concepts"), { recursive: true });
+      writeFileSync(join(dir, "agent_brain", "concepts", "foo.md"), "# Foo\n");
+
+      const logsDir = join(dir, "logs");
+      mkdirSync(logsDir, { recursive: true });
+      writeFileSync(
+        join(logsDir, "2026-07-01.md"),
+        "# Log\nSee [concept](../agent_brain/concepts/foo.md)\n",
+      );
+      for (let i = 2; i <= 30; i += 1) {
+        const day = String(i).padStart(2, "0");
+        writeFileSync(join(logsDir, `2026-07-${day}.md`), "# log\n");
+      }
+
+      rotateLogs(dir, "2026-07-30");
+
+      const archived = readFileSync(join(logsDir, "archive", "2026-07", "2026-07-01.md"), "utf8");
+      expect(archived).toContain("[concept](../../../agent_brain/concepts/foo.md)");
+      expect(archived).not.toContain("[concept](../agent_brain/concepts/foo.md)");
+    });
+  });
+
+  describe("rewriteLinksForArchive", () => {
+    it("rewrites relative paths for a deeper archive directory", () => {
+      setupRoot();
+      const logsDir = join(dir, "logs");
+      const archiveDir = join(logsDir, "archive", "2026-07");
+      mkdirSync(archiveDir, { recursive: true });
+
+      const content = "See [concept](../agent_brain/concepts/foo.md) and [site](https://example.com).";
+      const rewritten = rewriteLinksForArchive(content, logsDir, archiveDir);
+      expect(rewritten).toContain("[concept](../../../agent_brain/concepts/foo.md)");
+      expect(rewritten).toContain("[site](https://example.com)");
+    });
+
+    it("preserves anchor fragments", () => {
+      setupRoot();
+      const logsDir = join(dir, "logs");
+      const archiveDir = join(logsDir, "archive", "2026-07");
+      mkdirSync(archiveDir, { recursive: true });
+
+      const rewritten = rewriteLinksForArchive(
+        "[section](../agent_brain/concepts/foo.md#heading)",
+        logsDir,
+        archiveDir,
+      );
+      expect(rewritten).toBe("[section](../../../agent_brain/concepts/foo.md#heading)");
+    });
+
+    it("leaves hash-only links unchanged", () => {
+      setupRoot();
+      const logsDir = join(dir, "logs");
+      const archiveDir = join(logsDir, "archive", "2026-07");
+      const input = "Jump to [top](#summary)";
+      expect(rewriteLinksForArchive(input, logsDir, archiveDir)).toBe(input);
     });
   });
 
