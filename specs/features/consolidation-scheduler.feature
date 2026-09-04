@@ -187,3 +187,9 @@ Feature: Consolidation scheduler (FR-CONSOL-01/02/04/05/06/08/09, FR-COST-05, FR
     Then only depth 1 runs
     And depth 1 counters are persisted
     And a budget-stopped entry is appended to the consolidation log
+
+  Scenario: Late reflect content is surfaced in the consolidation prompt
+    Given the last depth-1 ran at "2026-09-02T17:00"
+    And a reflect appended to "logs/2026-09-02.md" at "2026-09-03T01:16"
+    When the consolidation prompt is built for "2026-09-04"
+    Then the prompt contains "Pending logs" with "2026-09-02"

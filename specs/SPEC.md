@@ -962,6 +962,7 @@ Fork bomb defense:
 | FR-CONSOL-24 | Consolidation prompt rewrite (depth rebalance) | 2 ✓ |
 | FR-CONSOL-25 | Scheduler threshold update | 2 ✓ |
 | FR-CONSOL-26 | Log rotation preserves relative links | 2 ✓ |
+| FR-CONSOL-27 | Pending logs detection for late reflects | 2 ✓ |
 
 **Consolidation depths:**
 
@@ -1291,6 +1292,13 @@ fresh session per depth gives each depth the full window.
 - **When** `rotateLogs()` archives the file to `logs/archive/YYYY-MM/`
 - **Then** each relative link is rewritten so it still resolves from the archive directory
 - **And** post-consolidation link repair does not strip those links to plain text
+
+**FR-CONSOL-27 — Pending logs detection**
+
+- **Given** a daily log in `logs/` was updated after the last depth-1 consolidation (`last_updated` frontmatter > `lastDepth1`)
+- **When** the runner builds the consolidation prompt
+- **Then** a "Pending logs" block lists each such log file (excluding today's date)
+- **And** the consolidation procedure reads pending logs before today's log
 
 | ID | Description | Phase |
 |----|-------------|-------|

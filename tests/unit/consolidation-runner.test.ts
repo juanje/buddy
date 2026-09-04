@@ -94,6 +94,21 @@ describe("consolidation runner", () => {
     expect(prompt).toContain("Grouping candidates");
   });
 
+  it("includes pending logs in the prompt when reflect content is newer than last depth-1", async () => {
+    setupBuddyDir();
+    mkdirSync(join(dir, "logs"), { recursive: true });
+    writeFileSync(
+      join(dir, "logs", "2026-09-02.md"),
+      "---\ndate: 2026-09-02\nlast_updated: 2026-09-03T01:16\n---\n\n# Log\n",
+    );
+    const state = loadConsolidationState(dir);
+    state.lastDepth1 = "2026-09-02T17:00";
+
+    const prompt = await buildConsolidationPrompt(dir, 1, new Date("2026-09-04T12:00:00"), state);
+    expect(prompt).toContain("Pending logs");
+    expect(prompt).toContain("logs/2026-09-02.md");
+  });
+
   it("runs cascade depths, commits, and advances counters", async () => {
     setupBuddyDir();
     await initTestGitRepo(dir);

@@ -18,7 +18,9 @@ import {
   extractDaySummaryKeyThemes,
   extractRipeObservations,
   findDatedInboxItems,
+  findPendingLogs,
   findUpcomingReminders,
+  formatPendingLogsBlock,
   formatRipeObservationsBlock,
   parseObservations,
   removeObservationEntries,
@@ -138,6 +140,72 @@ describe("consolidation mechanics", () => {
       const archiveDir = join(logsDir, "archive", "2026-07");
       const input = "Jump to [top](#summary)";
       expect(rewriteLinksForArchive(input, logsDir, archiveDir)).toBe(input);
+    });
+  });
+
+  describe("findPendingLogs", () => {
+    it("returns dates of logs updated after last depth-1", () => {
+      setupRoot();
+      const logsDir = join(dir, "logs");
+      mkdirSync(logsDir, { recursive: true });
+      writeFileSync(
+        join(logsDir, "2026-09-02.md"),
+        "---\ndate: 2026-09-02\nlast_updated: 2026-09-03T01:16\n---\n\n# Log\n",
+      );
+      writeFileSync(
+        join(logsDir, "2026-09-01.md"),
+        "---\ndate: 2026-09-01\nlast_updated: 2026-09-01T10:00\n---\n\n# Log\n",
+      );
+
+      expect(findPendingLogs(dir, "2026-09-02T17:00", "2026-09-04")).toEqual(["2026-09-02"]);
+    });
+
+    it("excludes today's date", () => {
+      setupRoot();
+      const logsDir = join(dir, "logs");
+      mkdirSync(logsDir, { recursive: true });
+      writeFileSync(
+        join(logsDir, "2026-09-04.md"),
+        "---\ndate: 2026-09-04\nlast_updated: 2026-09-04T12:00\n---\n\n# Log\n",
+      );
+
+      expect(findPendingLogs(dir, "2026-09-02T17:00", "2026-09-04")).toEqual([]);
+    });
+
+    it("returns empty when all logs are older than last depth-1", () => {
+      setupRoot();
+      const logsDir = join(dir, "logs");
+      mkdirSync(logsDir, { recursive: true });
+      writeFileSync(
+        join(logsDir, "2026-09-02.md"),
+        "---\ndate: 2026-09-02\nlast_updated: 2026-09-02T16:00\n---\n\n# Log\n",
+      );
+
+      expect(findPendingLogs(dir, "2026-09-02T17:00", "2026-09-04")).toEqual([]);
+    });
+
+    it("returns empty when lastDepth1 is null", () => {
+      setupRoot();
+      const logsDir = join(dir, "logs");
+      mkdirSync(logsDir, { recursive: true });
+      writeFileSync(
+        join(logsDir, "2026-09-02.md"),
+        "---\ndate: 2026-09-02\nlast_updated: 2026-09-03T01:16\n---\n\n# Log\n",
+      );
+
+      expect(findPendingLogs(dir, null, "2026-09-04")).toEqual([]);
+    });
+  });
+
+  describe("formatPendingLogsBlock", () => {
+    it("lists pending log paths", () => {
+      const block = formatPendingLogsBlock(["2026-09-02"]);
+      expect(block).toContain("Pending logs");
+      expect(block).toContain("logs/2026-09-02.md");
+    });
+
+    it("reports none when empty", () => {
+      expect(formatPendingLogsBlock([])).toContain("none");
     });
   });
 

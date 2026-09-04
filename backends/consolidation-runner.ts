@@ -42,11 +42,13 @@ import {
   formatGroupingCandidatesBlock,
   formatHebbianReportBlock,
   formatMonthlyMetricsBlock,
+  formatPendingLogsBlock,
   formatRipeObservationsBlock,
   formatSkillUsageBlock,
   formatStaleObservationsBlock,
   formatUpcomingRemindersBlock,
   formatWeeklyDiffBlock,
+  findPendingLogs,
   rotateLogs,
   runObservationHygiene,
   snapshotForDiff,
@@ -239,6 +241,9 @@ export async function buildConsolidationPrompt(
   const date = toIsoDay(now);
   const lang = resolveInstanceLanguage();
   const consolidationState = state ?? loadConsolidationState(rootDir);
+  const pendingBlock = formatPendingLogsBlock(
+    findPendingLogs(rootDir, consolidationState.lastDepth1, date),
+  );
   const hebbianBlock = formatHebbianReportBlock(computeHebbianReport(rootDir, now));
   const remindersBlock = formatUpcomingRemindersBlock(findUpcomingReminders(rootDir, date));
   const healthBlock = formatBrainHealthReportBlock(computeBrainHealthReport(rootDir));
@@ -248,6 +253,7 @@ export async function buildConsolidationPrompt(
   const blocks = [
     `Date: ${date}`,
     `User language: ${lang === "es" ? "Spanish" : "English"}`,
+    pendingBlock,
     remindersBlock,
     coherenceBlock,
     hebbianBlock,

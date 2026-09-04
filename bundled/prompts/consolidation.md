@@ -39,6 +39,10 @@ mature observations).
 
 #### 1. Replay the day
 
+Check the "Pending logs" block in the prompt header. If it lists log files,
+read each one — they contain session blocks that were not included in the
+previous consolidation.
+
 Read `logs/YYYY-MM-DD.md` (today's date). The log contains session blocks
 appended by reflect at session end — one or more `## Session HH:MM–HH:MM`
 sections with Decisions, Lessons, Context, and related sections. Read it as

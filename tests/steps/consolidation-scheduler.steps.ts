@@ -4,11 +4,12 @@ import { Given, When, Then, After } from "@cucumber/cucumber";
 import assert from "node:assert/strict";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 
 import { acquireLock, releaseLock } from "../../backends/maintenance";
 import { startHeartbeat } from "../../backends/heartbeat";
 import {
+  buildConsolidationPrompt,
   createMaintenancePermissionPolicy,
   runConsolidation,
 } from "../../backends/consolidation-runner";
@@ -53,6 +54,8 @@ interface ConsolidationWorld extends BuddyWorld {
   sessionLifecycle?: SessionLifecycleEvent[];
   /** FR-CONSOL-15: depths passed to createSession. */
   sessionDepths?: number[];
+  /** FR-CONSOL-27: last built consolidation prompt. */
+  builtPrompt?: string;
 }
 
 After(function (this: ConsolidationWorld) {
@@ -422,3 +425,50 @@ Then("the refusal is recorded in the run journal", function (this: Consolidation
     "a refused outside-workspace access must be recorded, not silently dropped",
   );
 });
+
+Given(
+  "the last depth-1 ran at {string}",
+  function (this: ConsolidationWorld, lastDepth1: string) {
+    assert.ok(this.buddyDir);
+    const state = loadConsolidationState(this.buddyDir);
+    state.lastDepth1 = lastDepth1;
+    saveConsolidationState(this.buddyDir, state);
+  },
+);
+
+Given(
+  "a reflect appended to {string} at {string}",
+  function (this: ConsolidationWorld, relPath: string, lastUpdated: string) {
+    assert.ok(this.buddyDir);
+    const abs = join(this.buddyDir, relPath);
+    mkdirSync(dirname(abs), { recursive: true });
+    const dateMatch = relPath.match(/(\d{4}-\d{2}-\d{2})/);
+    const date = dateMatch?.[1] ?? "2026-01-01";
+    writeFileSync(
+      abs,
+      `---\ndate: ${date}\nlast_updated: ${lastUpdated}\n---\n\n# Log — ${date}\n\n## Session 01:00–02:00\n\n### Context\n\nLate reflect content.\n`,
+    );
+  },
+);
+
+When(
+  "the consolidation prompt is built for {string}",
+  async function (this: ConsolidationWorld, isoDay: string) {
+    assert.ok(this.buddyDir);
+    this.builtPrompt = await buildConsolidationPrompt(
+      this.buddyDir,
+      1,
+      new Date(`${isoDay}T12:00:00`),
+      loadConsolidationState(this.buddyDir),
+    );
+  },
+);
+
+Then(
+  "the prompt contains {string} with {string}",
+  function (this: ConsolidationWorld, fragment: string, date: string) {
+    assert.ok(this.builtPrompt, "expected a built consolidation prompt");
+    assert.ok(this.builtPrompt.includes(fragment), `expected "${fragment}" in prompt`);
+    assert.ok(this.builtPrompt.includes(date), `expected "${date}" in prompt`);
+  },
+);

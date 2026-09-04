@@ -52,6 +52,53 @@ function listLogFiles(logsDir: string): string[] {
     .sort();
 }
 
+const LAST_UPDATED_RE = /^last_updated:\s*(\S+)/m;
+
+function parseLastUpdated(content: string): string | null {
+  const match = content.match(LAST_UPDATED_RE);
+  return match?.[1] ?? null;
+}
+
+/** Log dates with reflect content newer than the last depth-1 run (FR-CONSOL-27). */
+export function findPendingLogs(
+  rootDir: string,
+  lastDepth1: string | null,
+  today: string,
+): string[] {
+  if (!lastDepth1) return [];
+
+  const logsDir = logsDirPath(rootDir);
+  if (!existsSync(logsDir)) return [];
+
+  const pending: string[] = [];
+  for (const file of listLogFiles(logsDir)) {
+    const dateMatch = file.match(/^(\d{4}-\d{2}-\d{2})\.md$/);
+    if (!dateMatch) continue;
+
+    const logDate = dateMatch[1];
+    if (logDate === today) continue;
+
+    const content = readFileSync(join(logsDir, file), "utf8");
+    const lastUpdated = parseLastUpdated(content);
+    if (!lastUpdated) continue;
+    if (lastUpdated > lastDepth1) pending.push(logDate);
+  }
+
+  return pending.sort();
+}
+
+export function formatPendingLogsBlock(pendingDates: string[]): string {
+  if (pendingDates.length === 0) {
+    return "Pending logs: none (today's log is current).";
+  }
+
+  const lines = [
+    "Pending logs (unconsolidated content since last depth-1):",
+    ...pendingDates.map((date) => `- logs/${date}.md`),
+  ];
+  return lines.join("\n");
+}
+
 export function rotateLogs(rootDir: string, targetDate: string): { archived: string[] } {
   const logsDir = logsDirPath(rootDir);
   const files = listLogFiles(logsDir);
