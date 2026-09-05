@@ -6,6 +6,8 @@ import { join } from "node:path";
 
 import {
   APP_LOGS_DIR,
+  CONNECTOR_ENTITY_RETENTION_DAYS,
+  CONNECTOR_THREAD_RETENTION_DAYS,
   REFLECT_FORK_RETENTION_DAYS,
   REFLECT_SESSIONS_DIR,
   SESSION_LOG_RETENTION_DAYS,
@@ -13,6 +15,7 @@ import {
   SESSIONS_DIR,
 } from "../shared/defaults";
 import { MS_PER_DAY } from "../shared/dates";
+import { pruneConnectorCache } from "./connectors/cache";
 
 function pruneOlderThan(
   dir: string,
@@ -83,6 +86,12 @@ export function pruneSessionArtifacts(rootDir: string, nowMs = Date.now()): numb
   return (
     pruneSessionLogs(rootDir, SESSION_LOG_RETENTION_DAYS, nowMs) +
     pruneLiveSessions(rootDir, SESSION_RETENTION_DAYS, nowMs) +
-    pruneReflectForks(rootDir, REFLECT_FORK_RETENTION_DAYS, nowMs)
+    pruneReflectForks(rootDir, REFLECT_FORK_RETENTION_DAYS, nowMs) +
+    pruneConnectorCache(
+      rootDir,
+      CONNECTOR_ENTITY_RETENTION_DAYS,
+      CONNECTOR_THREAD_RETENTION_DAYS,
+      nowMs,
+    )
   );
 }
