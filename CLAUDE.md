@@ -5,20 +5,89 @@ that gives non-technical users a personal assistant with persistent, file-based
 memory. Built feature by feature with BDD + TDD.
 
 **This file says how to work here. It does not say what is currently being
-worked on** — `specs/PROGRESS.md` owns that. A priority written in two places
-outlives its correction in one of them, which has happened here. Read PROGRESS
-before proposing work; nothing in this file declares what comes next.
+worked on** — `specs/progress.json` (via `npx tsx scripts/progress.ts current`)
+owns that. A priority written in two places outlives its correction in one of
+them, which has happened here. Run `progress.ts status` before proposing work;
+nothing in this file declares what comes next.
 
-## Process (strict, every feature)
+## Process
 
-1. Read `specs/PROGRESS.md` — current focus and open work
-2. Read the FR's acceptance criteria in `specs/SPEC.md`
-3. Write or verify the `.feature` file in `specs/features/` (Gherkin)
-4. Write step definitions in `tests/steps/` that make it executable
-5. Implement — TDD: red → green → refactor
-6. All tests pass before the next feature
-7. Update `PROGRESS.md`: what closed leaves the file, what opened enters it
-8. Commit referencing the FR-ID
+### Session start
+
+1. If the user names a specific feature to work on:
+   a. `npx tsx scripts/progress.ts status` — see all tracked features
+   b. If the feature is not listed → `add` it, then `focus` it
+   c. If listed but not the focus → `focus` it
+   d. Start the cycle from its current `cycle_step`
+2. If no feature is specified → `npx tsx scripts/progress.ts current`
+3. If `current_focus` is null and the user gave no direction → ask
+
+### Development cycle
+
+For each feature, strictly in order:
+
+    spec_review → bdd_red → implementing → bdd_green → done
+
+Advance between steps using `npx tsx scripts/progress.ts advance FR-xxx`.
+
+Full operational reference: `docs/METHODOLOGY.md`.
+
+### spec_review
+
+- If the FR does not exist in `specs/SPEC.md`, add it: title, description,
+  and an entry in the appropriate FR table.
+- If it exists, read and verify you understand the requirements.
+- Advance when the FR is in SPEC.md and you know what to build.
+
+### bdd_red
+
+- Write the `.feature` file in `specs/features/` with Gherkin scenarios
+  tagged `@FR-xxx`.
+- Write step definitions in `tests/steps/` with real assertions — not stubs,
+  not "pending" markers.
+- Run `npm run test:bdd` → confirm the scenario FAILS.
+  "Undefined step" is not red. The steps must execute and fail.
+- Advance when you have a scenario that runs and fails.
+
+### implementing
+
+The BDD scenario is red. Make it green through TDD.
+Repeat this loop until the BDD scenario passes AND the quality gate passes:
+
+1. Write ONE failing unit test for the next piece of logic needed
+2. Run `npm run test:unit` → confirm RED (if it passes, the test is not
+   driving anything — delete it or fix it)
+3. Write the MINIMUM code to make the test pass
+4. Run `npm run test:unit` → confirm GREEN
+5. Refactor if needed — tests stay green
+6. Back to 1
+
+### bdd_green
+
+Run the full quality gate:
+
+    npx tsc --noEmit && npx vite build && npm test
+
+ALL THREE must pass. `npm test` includes both unit and BDD.
+
+- If the BDD scenario passes AND the quality gate is green →
+  `npx tsx scripts/progress.ts done FR-xxx`
+- If anything fails → go back to implementing step 1.
+
+### done
+
+`done` is enforced by the CLI: it rejects the command if any scenario
+is not passing or has zero unit tests. You cannot override this.
+
+After done: commit referencing the FR-ID.
+
+### Do NOT
+
+- Write implementation code before a failing unit test
+- Write a test that already passes — it is not driving anything
+- Write more code than the current test demands
+- Skip running the test to confirm red or green
+- Treat a passing unit test as "done" — only BDD green + full quality gate = done
 
 ## Rules
 
@@ -129,7 +198,8 @@ something is already broken.
 
 | Need | File |
 |------|------|
-| What is open, what is next | `specs/PROGRESS.md` |
+| What is open, what is next | `specs/progress.json` + `npx tsx scripts/progress.ts` |
+| Development methodology | `docs/METHODOLOGY.md` |
 | An FR's acceptance criteria | `specs/SPEC.md` |
 | The test you must make pass | `specs/features/*.feature` |
 | The live frontend↔worker contract | `shared/api.ts` |
