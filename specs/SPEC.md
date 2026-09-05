@@ -3154,6 +3154,51 @@ Further context on local-model evaluation methodology and findings:
 - **Then** that domain's connector tool is not offered to the model
 - **And** configured domains register a connector tool at session boot
 
+### 3.25 Jira Connector (FR-JIRA)
+
+| ID | Description | Phase |
+|----|-------------|-------|
+| FR-JIRA-01 | REST client, dispatcher skeleton, help action | 4 ✓ |
+| FR-JIRA-02 | Read actions with entity/query cache | 4 ✓ |
+| FR-JIRA-03 | ADF renderer, issue_detail, epic_children | 4 ✓ |
+| FR-JIRA-04 | Settings Integrations Jira panel | 4 ✓ |
+| FR-JIRA-05 | Error handling and offline stale serve | 4 ✓ |
+
+**FR-JIRA-01 — REST client and dispatcher**
+
+- **Given** Jira credentials in `~/.buddy/integrations/jira.json`
+- **When** the agent calls `jira({ action: "help" })`
+- **Then** available read actions are listed
+- **And** unknown actions return an error suggesting `help`
+
+**FR-JIRA-02 — Read actions and cache**
+
+- **Given** a configured Jira integration
+- **When** read actions execute (`board`, `my_issues`, `issues_by_key`, `recent_changes`, `period_report`)
+- **Then** structured fields are cached under `.buddy/connections/jira/`
+- **And** `params.force: true` bypasses freshness checks
+
+**FR-JIRA-03 — Issue detail and ADF**
+
+- **Given** a configured Jira integration
+- **When** `issue_detail` or `epic_children` runs
+- **Then** ADF descriptions render as readable text
+- **And** issue links and parent epic are included
+
+**FR-JIRA-04 — Settings panel**
+
+- **Given** the Integrations settings tab
+- **When** the user saves Jira URL, email, and API token
+- **Then** credentials persist to `~/.buddy/integrations/jira.json`
+- **And** test connection probes `/rest/api/3/myself`
+
+**FR-JIRA-05 — Errors and offline**
+
+- **Given** HTTP failures or network errors during a read
+- **When** stale cache exists
+- **Then** stale data is served with structured `stale: true`
+- **And** auth errors map to actionable suggestions
+
 ---
 
 ## 4. Non-Functional Requirements

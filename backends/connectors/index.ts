@@ -4,7 +4,8 @@ import { Type } from "typebox";
 import { defineTool, type ToolDefinition } from "@earendil-works/pi-coding-agent";
 
 import { classifyConnectorAction } from "./actions";
-import { listConfiguredDomains } from "./credentials";
+import { listConfiguredDomains, readConnectorConfig } from "./credentials";
+import { buildJiraConnectorTool } from "./jira";
 
 /**
  * Minimal stub dispatcher per configured domain — proves registration flow
@@ -53,6 +54,11 @@ function buildStubConnectorTool(domain: string): ToolDefinition {
 }
 
 /** Register one Pi tool per configured integration domain (§8.3). */
-export function buildConnectorToolset(_rootDir: string): ToolDefinition[] {
-  return listConfiguredDomains().map((domain) => buildStubConnectorTool(domain));
+export function buildConnectorToolset(rootDir: string): ToolDefinition[] {
+  return listConfiguredDomains()
+    .filter((domain) => readConnectorConfig(domain)?.enabled !== false)
+    .map((domain) => {
+      if (domain === "jira") return buildJiraConnectorTool(rootDir);
+      return buildStubConnectorTool(domain);
+    });
 }
