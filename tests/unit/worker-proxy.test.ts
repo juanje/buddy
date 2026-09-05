@@ -39,6 +39,9 @@ const REQUIRES_WORKER: Array<[keyof WorkerAPI, unknown[]]> = [
   ["changeModel", ["openai", "gpt-5"]],
   ["getUsage", []],
   ["readViewableFile", ["user/a.md"]],
+  ["loadJiraConfig", []],
+  ["saveJiraConfig", [{}]],
+  ["testJiraConnection", [{}]],
 ];
 
 function fakeConnection() {
@@ -75,7 +78,7 @@ describe("createWorkerProxy", () => {
       // leave it silently untested — which is how the hand-written version
       // could have drifted from the interface without anyone noticing.
       const listed = new Set([...TOLERATED.map((t) => t[0]), ...REQUIRES_WORKER.map((r) => r[0])]);
-      expect(listed.size).toBe(21);
+      expect(listed.size).toBe(24);
     });
   });
 

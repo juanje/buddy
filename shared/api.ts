@@ -1,5 +1,9 @@
 // shared/api.ts — Type-safe contract between frontend and worker (kkrpc).
 
+import type { ConnectorConfig } from "./connector-types";
+
+export type { ConnectorConfig };
+
 /** Pi session event forwarded verbatim from worker to frontend. */
 export interface AgentEvent {
   type: string;
@@ -240,6 +244,12 @@ export interface WorkerAPI {
    * no filesystem access of its own (NFR-SEC-09).
    */
   readViewableFile(href: string): Promise<string>;
+  /** Load Jira integration config (FR-JIRA-04). */
+  loadJiraConfig(): Promise<ConnectorConfig | undefined>;
+  /** Persist Jira integration config (FR-JIRA-04). */
+  saveJiraConfig(config: ConnectorConfig): Promise<void>;
+  /** Probe Jira credentials (FR-JIRA-04). */
+  testJiraConnection(config: ConnectorConfig): Promise<{ ok: boolean; error?: string }>;
   shutdown(): Promise<void>;
 }
 

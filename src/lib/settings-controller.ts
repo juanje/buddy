@@ -4,6 +4,7 @@ import { get, writable, type Readable, type Writable } from "svelte/store";
 
 import type {
   AuthStatusResult,
+  ConnectorConfig,
   KeyCheck,
   ModelInfo,
   OAuthLoginResult,
@@ -26,6 +27,9 @@ export interface SettingsWorkerAPI {
     baseUrl?: string,
   ): Promise<KeyCheck>;
   getUsage(): Promise<UsageReport>;
+  loadJiraConfig(): Promise<ConnectorConfig | undefined>;
+  saveJiraConfig(config: ConnectorConfig): Promise<void>;
+  testJiraConnection(config: ConnectorConfig): Promise<{ ok: boolean; error?: string }>;
 }
 
 export interface SettingsDisplayConfig {
@@ -63,6 +67,11 @@ export interface SettingsController {
   providerAddedNotice: Readable<boolean>;
   usage: Readable<UsageReport | undefined>;
   usageLoading: Readable<boolean>;
+  jiraConfig: Readable<ConnectorConfig>;
+  jiraTesting: Readable<boolean>;
+  jiraTestStatus: Readable<"idle" | "ok" | "error">;
+  jiraTestError: Readable<string | undefined>;
+  jiraShowToken: Readable<boolean>;
   openSettings(): void;
   closeSettings(): void;
   setActiveTab(tab: SettingsTabId): void;
@@ -76,6 +85,10 @@ export interface SettingsController {
   submitAuthApiKey(apiKey: string, baseUrl?: string): Promise<void>;
   setAuthShowApiKey(show: boolean): void;
   setMonthlyBudget(amount: number | null): Promise<void>;
+  loadJiraIntegration(): Promise<void>;
+  saveJiraIntegration(config: ConnectorConfig): Promise<void>;
+  testJiraIntegration(config: ConnectorConfig): Promise<void>;
+  setJiraShowToken(show: boolean): void;
   formatCost(amount: number): string;
 }
 
@@ -160,6 +173,17 @@ export function createSettingsController(options: {
   const providerAddedNotice = writable(false);
   const usage = writable<UsageReport | undefined>(undefined);
   const usageLoading = writable(false);
+  const jiraConfig = writable<ConnectorConfig>({
+    enabled: false,
+    baseUrl: "",
+    email: "",
+    token: "",
+    issueKeyPatterns: [],
+  });
+  const jiraTesting = writable(false);
+  const jiraTestStatus = writable<"idle" | "ok" | "error">("idle");
+  const jiraTestError = writable<string | undefined>(undefined);
+  const jiraShowToken = writable(false);
   const lastModelByProvider = new Map<SettingsProviderId, string>();
 
   async function refreshUsage(): Promise<void> {
@@ -211,6 +235,11 @@ export function createSettingsController(options: {
     providerAddedNotice,
     usage,
     usageLoading,
+    jiraConfig,
+    jiraTesting,
+    jiraTestStatus,
+    jiraTestError,
+    jiraShowToken,
     openSettings() {
       const current = options.getConfig();
       config.set(toDisplay(current, options.version));
@@ -241,6 +270,9 @@ export function createSettingsController(options: {
     },
     setActiveTab(tab) {
       activeTab.set(tab);
+      if (tab === "integrations") {
+        void this.loadJiraIntegration();
+      }
     },
     async setLanguage(language) {
       setLocale(language);
@@ -344,6 +376,41 @@ export function createSettingsController(options: {
       options.onConfigChange(updated);
       config.update((current) => ({ ...current, monthlyBudget: amount }));
       await refreshUsage();
+    },
+    async loadJiraIntegration() {
+      const loaded = await options.worker.loadJiraConfig();
+      jiraConfig.set({
+        enabled: loaded?.enabled ?? false,
+        baseUrl: loaded?.baseUrl ?? "",
+        email: loaded?.email ?? "",
+        token: loaded?.token ?? "",
+        issueKeyPatterns: loaded?.issueKeyPatterns ?? [],
+      });
+      jiraTestStatus.set("idle");
+      jiraTestError.set(undefined);
+    },
+    async saveJiraIntegration(configToSave) {
+      await options.worker.saveJiraConfig(configToSave);
+      jiraConfig.set(configToSave);
+      jiraTestStatus.set("idle");
+    },
+    async testJiraIntegration(configToTest) {
+      jiraTesting.set(true);
+      jiraTestError.set(undefined);
+      try {
+        const result = await options.worker.testJiraConnection(configToTest);
+        if (result.ok) {
+          jiraTestStatus.set("ok");
+        } else {
+          jiraTestStatus.set("error");
+          jiraTestError.set(result.error ?? "Connection failed");
+        }
+      } finally {
+        jiraTesting.set(false);
+      }
+    },
+    setJiraShowToken(show) {
+      jiraShowToken.set(show);
     },
     formatCost: formatUsd,
   };

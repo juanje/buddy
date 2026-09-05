@@ -68,6 +68,11 @@ import { pruneSessionArtifacts } from "./session-log-prune";
 import { createUsageTracker, resolveMonthlyBudget, type UsageTracker } from "./usage-tracker";
 import { createPromptQueue } from "./prompt-queue";
 import { readViewableFile } from "./viewable-file";
+import {
+  loadJiraConfig,
+  saveJiraConfig,
+  testJiraConnectionFromConfig,
+} from "./connectors/settings";
 
 /**
  * Fire-and-forget notification to the frontend.
@@ -362,6 +367,15 @@ export async function main(deps: WorkerDeps = {}): Promise<void> {
           throw new Error("App is not configured");
         }
         return readViewableFile(setupState.config.rootDir, href);
+      },
+      async loadJiraConfig() {
+        return loadJiraConfig();
+      },
+      async saveJiraConfig(config) {
+        saveJiraConfig(config);
+      },
+      async testJiraConnection(config) {
+        return testJiraConnectionFromConfig(config);
       },
       async shutdown() {
         await core?.api.shutdown();

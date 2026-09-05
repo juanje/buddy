@@ -100,6 +100,19 @@ export type LocaleStrings = {
   settingsTabGeneral: string;
   settingsTabIntegrations: string;
   settingsIntegrationsEmpty: string;
+  settingsJiraTitle: string;
+  settingsJiraEnabled: string;
+  settingsJiraBaseUrl: string;
+  settingsJiraEmail: string;
+  settingsJiraToken: string;
+  settingsJiraShowToken: string;
+  settingsJiraHideToken: string;
+  settingsJiraKeyPatterns: string;
+  settingsJiraTestConnection: string;
+  settingsJiraTesting: string;
+  settingsJiraSave: string;
+  settingsJiraStatusConnected: string;
+  settingsJiraNextSessionNotice: string;
   settingsClose: string;
   settingsReadOnlyHint: string;
   settingsAddProvider: string;
@@ -245,6 +258,19 @@ export const es: LocaleStrings = {
   settingsTabGeneral: "General",
   settingsTabIntegrations: "Integraciones",
   settingsIntegrationsEmpty: "No hay integraciones configuradas.",
+  settingsJiraTitle: "Jira",
+  settingsJiraEnabled: "Activar Jira",
+  settingsJiraBaseUrl: "URL de Jira",
+  settingsJiraEmail: "Correo",
+  settingsJiraToken: "Token de API",
+  settingsJiraShowToken: "Mostrar token",
+  settingsJiraHideToken: "Ocultar token",
+  settingsJiraKeyPatterns: "Patrones de claves (separados por comas)",
+  settingsJiraTestConnection: "Probar conexión",
+  settingsJiraTesting: "Probando…",
+  settingsJiraSave: "Guardar",
+  settingsJiraStatusConnected: "Conectado",
+  settingsJiraNextSessionNotice: "Los cambios de integración aplican en la próxima sesión.",
   settingsClose: "Cerrar",
   settingsReadOnlyHint: "La carpeta de memoria se configura durante la instalación inicial.",
   settingsAddProvider: "Añadir proveedor",

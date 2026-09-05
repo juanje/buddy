@@ -1,11 +1,14 @@
 <script lang="ts">
+  import { get } from "svelte/store";
   import { t } from "./i18n";
   import ProviderAuthForm from "./ProviderAuthForm.svelte";
+  import JiraIntegrationPanel from "./JiraIntegrationPanel.svelte";
   import {
     providerLabel,
     type SettingsController,
     type SettingsProviderId,
   } from "./settings-controller";
+  import type { ConnectorConfig } from "../../shared/api";
 
   let { controller }: { controller: SettingsController } = $props();
 
@@ -24,6 +27,23 @@
   const usage = $derived(controller.usage);
   const usageLoading = $derived(controller.usageLoading);
   const activeTab = $derived(controller.activeTab);
+  const jiraConfig = $derived(controller.jiraConfig);
+  const jiraTesting = $derived(controller.jiraTesting);
+  const jiraTestStatus = $derived(controller.jiraTestStatus);
+  const jiraTestError = $derived(controller.jiraTestError);
+  const jiraShowToken = $derived(controller.jiraShowToken);
+
+  let jiraDraft = $state<ConnectorConfig>({
+    enabled: false,
+    baseUrl: "",
+    email: "",
+    token: "",
+    issueKeyPatterns: [],
+  });
+
+  $effect(() => {
+    jiraDraft = { ...get(jiraConfig), issueKeyPatterns: [...(get(jiraConfig).issueKeyPatterns ?? [])] };
+  });
 
   let apiKeyInput = $state("");
   let baseUrlInput = $state("");
@@ -306,7 +326,16 @@
 
       <p class="hint">{$t.settingsReadOnlyHint}</p>
       {:else}
-      <p class="integrations-empty">{$t.settingsIntegrationsEmpty}</p>
+      <JiraIntegrationPanel
+        bind:config={jiraDraft}
+        testing={$jiraTesting}
+        testStatus={$jiraTestStatus}
+        testError={$jiraTestError}
+        showToken={$jiraShowToken}
+        onToggleShowToken={(show) => controller.setJiraShowToken(show)}
+        onSave={() => controller.saveJiraIntegration(jiraDraft)}
+        onTest={() => controller.testJiraIntegration(jiraDraft)}
+      />
       {/if}
     </div>
   </div>

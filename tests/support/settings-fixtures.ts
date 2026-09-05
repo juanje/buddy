@@ -31,6 +31,9 @@ export function buildMockWorker(overrides: Partial<SettingsWorkerAPI> = {}): Set
     }),
     loginOAuth: async () => ({ success: true }),
     configureProviderKey: async () => ({ valid: true }),
+    loadJiraConfig: async () => undefined,
+    saveJiraConfig: async () => {},
+    testJiraConnection: async () => ({ ok: true }),
     ...overrides,
   };
 }

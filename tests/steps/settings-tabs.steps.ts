@@ -37,11 +37,13 @@ Then("the settings active tab is {string}", function (this: SettingsTabsWorld, t
   assert.equal(get(controller.activeTab), tab);
 });
 
-Then("the integrations tab shows the empty state", function (this: SettingsTabsWorld) {
+Then("the integrations tab shows the Jira panel", function (this: SettingsTabsWorld) {
   const controller = ensureSettings.call(this);
   assert.equal(get(controller.activeTab), "integrations");
+  const src = readFileSync(join(ROOT, "src/lib/SettingsModal.svelte"), "utf8");
+  assert.match(src, /JiraIntegrationPanel/);
   const strings = get(t);
-  assert.ok(strings.settingsIntegrationsEmpty.length > 0);
+  assert.ok(strings.settingsJiraTitle.length > 0);
 });
 
 Then("the settings version field is not shown", function () {

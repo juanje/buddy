@@ -23,11 +23,11 @@ Feature: Settings tab system
     And the settings show model "claude-sonnet-5"
     And the settings show directory "/tmp/buddy-test"
 
-  Scenario: Integrations tab shows empty state
+  Scenario: Integrations tab shows Jira configuration panel
     Given the settings panel is open
     When I switch to the integrations settings tab
     Then the settings active tab is "integrations"
-    And the integrations tab shows the empty state
+    And the integrations tab shows the Jira panel
 
   Scenario: Switching back to General preserves configuration
     Given the settings panel is open
