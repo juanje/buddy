@@ -92,6 +92,49 @@ describe("the model chosen per provider survives closing Settings", () => {
   });
 });
 
+describe("settings tab navigation (FR-SETTINGS-08)", () => {
+  it("defaults to the general tab when settings open", () => {
+    const config: SetupConfig = {
+      rootDir: "/tmp/buddy",
+      provider: "anthropic",
+      model: "claude-sonnet-5",
+      language: "es",
+    };
+    const controller = createSettingsController({
+      worker: mockWorker({}),
+      getConfig: () => config,
+      onConfigChange: () => {},
+      version: "0.1.0-test",
+    });
+
+    controller.openSettings();
+    expect(get(controller.activeTab)).toBe("general");
+  });
+
+  it("switches tabs and resets to general on reopen", () => {
+    const config: SetupConfig = {
+      rootDir: "/tmp/buddy",
+      provider: "anthropic",
+      model: "claude-sonnet-5",
+      language: "es",
+    };
+    const controller = createSettingsController({
+      worker: mockWorker({}),
+      getConfig: () => config,
+      onConfigChange: () => {},
+      version: "0.1.0-test",
+    });
+
+    controller.openSettings();
+    controller.setActiveTab("integrations");
+    expect(get(controller.activeTab)).toBe("integrations");
+
+    controller.closeSettings();
+    controller.openSettings();
+    expect(get(controller.activeTab)).toBe("general");
+  });
+});
+
 describe("createSettingsController", () => {
   it("opens, changes language, and persists via worker", async () => {
     let config: SetupConfig = {

@@ -23,6 +23,7 @@
   const providerAddedNotice = $derived(controller.providerAddedNotice);
   const usage = $derived(controller.usage);
   const usageLoading = $derived(controller.usageLoading);
+  const activeTab = $derived(controller.activeTab);
 
   let apiKeyInput = $state("");
   let baseUrlInput = $state("");
@@ -121,6 +122,30 @@
         </button>
       </header>
 
+      <div class="tabs" role="tablist" aria-label={$t.settingsTitle}>
+        <button
+          type="button"
+          role="tab"
+          class="tab"
+          class:active={$activeTab === "general"}
+          aria-selected={$activeTab === "general"}
+          onclick={() => controller.setActiveTab("general")}
+        >
+          {$t.settingsTabGeneral}
+        </button>
+        <button
+          type="button"
+          role="tab"
+          class="tab"
+          class:active={$activeTab === "integrations"}
+          aria-selected={$activeTab === "integrations"}
+          onclick={() => controller.setActiveTab("integrations")}
+        >
+          {$t.settingsTabIntegrations}
+        </button>
+      </div>
+
+      {#if $activeTab === "general"}
       <dl class="fields">
         <div class="field">
           <dt>{$t.settingsLanguage}</dt>
@@ -277,13 +302,12 @@
           <dt>{$t.settingsDirectory}</dt>
           <dd class="path">{$config.rootDir}</dd>
         </div>
-        <div class="field">
-          <dt>{$t.settingsVersion}</dt>
-          <dd>{$config.version}</dd>
-        </div>
       </dl>
 
       <p class="hint">{$t.settingsReadOnlyHint}</p>
+      {:else}
+      <p class="integrations-empty">{$t.settingsIntegrationsEmpty}</p>
+      {/if}
     </div>
   </div>
 {/if}
@@ -333,6 +357,35 @@
   .close:hover {
     color: var(--fg);
     background: var(--bg-secondary);
+  }
+  .tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .tab {
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    font: inherit;
+    font-size: 14px;
+    padding: 8px 12px;
+    margin-bottom: -1px;
+    border-bottom: 2px solid transparent;
+  }
+  .tab:hover {
+    color: var(--fg);
+  }
+  .tab.active {
+    color: var(--fg);
+    border-bottom-color: var(--accent);
+  }
+  .integrations-empty {
+    margin: 0;
+    font-size: 14px;
+    color: var(--muted);
   }
   .fields {
     margin: 0;

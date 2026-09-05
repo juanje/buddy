@@ -45,8 +45,11 @@ export type SettingsProviderId = SetupConfig["provider"];
 
 const ADD_PROVIDER_CANDIDATES: SettingsProviderId[] = ["openai", "anthropic", "google"];
 
+export type SettingsTabId = "general" | "integrations";
+
 export interface SettingsController {
   open: Readable<boolean>;
+  activeTab: Readable<SettingsTabId>;
   config: Readable<SettingsDisplayConfig>;
   models: Readable<ModelInfo[]>;
   loadingModels: Readable<boolean>;
@@ -62,6 +65,7 @@ export interface SettingsController {
   usageLoading: Readable<boolean>;
   openSettings(): void;
   closeSettings(): void;
+  setActiveTab(tab: SettingsTabId): void;
   setLanguage(language: AppLocale): Promise<void>;
   setModel(provider: SettingsProviderId, model: string): Promise<void>;
   getLastModelForProvider(provider: SettingsProviderId): string | undefined;
@@ -142,6 +146,7 @@ export function createSettingsController(options: {
   version: string;
 }): SettingsController {
   const open: Writable<boolean> = writable(false);
+  const activeTab: Writable<SettingsTabId> = writable("general");
   const config = writable<SettingsDisplayConfig>(toDisplay(options.getConfig(), options.version));
   const models = writable<ModelInfo[]>([]);
   const loadingModels = writable(false);
@@ -192,6 +197,7 @@ export function createSettingsController(options: {
 
   return {
     open,
+    activeTab,
     config,
     models,
     loadingModels,
@@ -222,6 +228,7 @@ export function createSettingsController(options: {
       authError.set(undefined);
       authShowApiKey.set(false);
       providerAddedNotice.set(false);
+      activeTab.set("general");
       open.set(true);
       void refreshModels();
       void refreshUsage();
@@ -231,6 +238,9 @@ export function createSettingsController(options: {
       addingProvider.set(false);
       authProvider.set(undefined);
       authError.set(undefined);
+    },
+    setActiveTab(tab) {
+      activeTab.set(tab);
     },
     async setLanguage(language) {
       setLocale(language);

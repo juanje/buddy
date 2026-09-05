@@ -1836,6 +1836,8 @@ does not know them, and orders their profile overwritten.
 | FR-SETTINGS-03 | Model switching from UI | 3 ✓ |
 | FR-SETTINGS-04 | Language switching from settings | 3 ✓ |
 | FR-SETTINGS-05 | Settings access from UI (gear icon + menu) | 3 ✓ |
+| FR-SETTINGS-08 | Settings tab system (General + Integrations) | 4 ✓ |
+| FR-SETTINGS-09 | Remove Version from Settings modal | 4 ✓ |
 
 **FR-SETTINGS-01 — Pi settings**
 
@@ -1873,6 +1875,19 @@ does not know them, and orders their profile overwritten.
 - **When** they click the gear icon (floating, bottom-right area near the input bar) or select Settings from the native app menu (macOS: Buddy → Settings… / Cmd+,)
 - **Then** the settings modal opens
 - **Implementation:** Three entry points: (1) keyboard shortcut Cmd/Ctrl+, (2) floating gear icon (cog SVG, subtle border, visible on hover), (3) native macOS "Settings…" menu item under the Buddy submenu with Cmd+, accelerator. The menu emits a `menu-settings` Tauri event that the frontend listens for.
+
+**FR-SETTINGS-08 — Settings tab system**
+
+- **Given** the user opens settings
+- **When** the settings modal appears
+- **Then** the General tab is selected by default and shows language, provider, model, usage/budget, and memory folder
+- **And** an Integrations tab is available with an empty-state placeholder until connectors are configured (service connectors Sprint 1+)
+
+**FR-SETTINGS-09 — Remove Version from Settings modal**
+
+- **Given** the user opens settings
+- **When** the General tab is visible
+- **Then** the Version field is not shown in the modal (version remains available in the About window)
 
 ### 3.13 Cost Visibility (FR-COST)
 

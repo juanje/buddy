@@ -17,6 +17,39 @@
       "scenarios": []
     },
     {
+      "id": "FR-SETTINGS-08",
+      "title": "Settings tab system (General + Integrations)",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Settings opens on General tab by default",
+          "bdd": "pass",
+          "unit_tests": 2
+        },
+        {
+          "name": "General tab shows current configuration fields",
+          "bdd": "pass",
+          "unit_tests": 2
+        },
+        {
+          "name": "Integrations tab shows empty state",
+          "bdd": "pass",
+          "unit_tests": 2
+        },
+        {
+          "name": "Switching back to General preserves configuration",
+          "bdd": "pass",
+          "unit_tests": 2
+        },
+        {
+          "name": "Version field is not shown in Settings",
+          "bdd": "pass",
+          "unit_tests": 2
+        }
+      ]
+    },
+    {
       "id": "FR-SESSION-06",
       "title": "Mid-session date correction",
       "status": "done",

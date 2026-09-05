@@ -97,6 +97,9 @@ export type LocaleStrings = {
   settingsModel: string;
   settingsDirectory: string;
   settingsVersion: string;
+  settingsTabGeneral: string;
+  settingsTabIntegrations: string;
+  settingsIntegrationsEmpty: string;
   settingsClose: string;
   settingsReadOnlyHint: string;
   settingsAddProvider: string;
@@ -239,6 +242,9 @@ export const es: LocaleStrings = {
   settingsModel: "Modelo",
   settingsDirectory: "Carpeta de memoria",
   settingsVersion: "Versión",
+  settingsTabGeneral: "General",
+  settingsTabIntegrations: "Integraciones",
+  settingsIntegrationsEmpty: "No hay integraciones configuradas.",
   settingsClose: "Cerrar",
   settingsReadOnlyHint: "La carpeta de memoria se configura durante la instalación inicial.",
   settingsAddProvider: "Añadir proveedor",
