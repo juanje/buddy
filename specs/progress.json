@@ -1,0 +1,20 @@
+{
+  "current_focus": null,
+  "features": [
+    {
+      "id": "FR-CHAT-18",
+      "title": "Export to PDF from viewer",
+      "status": "blocked",
+      "cycle_step": "spec_review",
+      "scenarios": [],
+      "note": "Spike: does window.print() work in the Tauri webview?"
+    },
+    {
+      "id": "FR-PERM-06b",
+      "title": "Allow always only for outside reads",
+      "status": "pending",
+      "cycle_step": "spec_review",
+      "scenarios": []
+    }
+  ]
+}
