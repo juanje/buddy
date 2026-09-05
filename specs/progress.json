@@ -33,7 +33,7 @@
           "unit_tests": 2
         },
         {
-          "name": "Integrations tab shows empty state",
+          "name": "Integrations tab shows Jira configuration panel",
           "bdd": "pass",
           "unit_tests": 2
         },
@@ -141,6 +141,81 @@
           "name": "Connector tool visible when integration is configured",
           "bdd": "pass",
           "unit_tests": 2
+        }
+      ]
+    },
+    {
+      "id": "FR-JIRA-01",
+      "title": "REST client, dispatcher skeleton, help action",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Jira help lists available actions",
+          "bdd": "pass",
+          "unit_tests": 7
+        },
+        {
+          "name": "Unknown jira action returns error with help suggestion",
+          "bdd": "pass",
+          "unit_tests": 7
+        }
+      ]
+    },
+    {
+      "id": "FR-JIRA-02",
+      "title": "Read actions with entity/query cache",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Jira board returns current sprint issues",
+          "bdd": "pass",
+          "unit_tests": 7
+        },
+        {
+          "name": "Force refresh bypasses fresh cache",
+          "bdd": "pass",
+          "unit_tests": 7
+        }
+      ]
+    },
+    {
+      "id": "FR-JIRA-03",
+      "title": "ADF renderer, issue_detail, epic_children",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Issue detail includes description text",
+          "bdd": "pass",
+          "unit_tests": 5
+        }
+      ]
+    },
+    {
+      "id": "FR-JIRA-04",
+      "title": "Settings Integrations Jira panel",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Saving Jira config persists to credential file",
+          "bdd": "pass",
+          "unit_tests": 3
+        }
+      ]
+    },
+    {
+      "id": "FR-JIRA-05",
+      "title": "Error handling and offline stale serve",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Offline jira read serves stale cache with warning",
+          "bdd": "pass",
+          "unit_tests": 7
         }
       ]
     }
