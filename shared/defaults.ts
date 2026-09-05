@@ -242,7 +242,13 @@ export const FETCH_TIMEOUT_MS = 15_000;
 export const PROVIDER_REQUEST_TIMEOUT_MS = 10_000;
 
 // --- Security constants (NFR-CONFIG-03) ---
-export const DENYLIST_HOME_DIRS = [".ssh", ".gnupg", ".aws"];
+export const DENYLIST_HOME_DIRS = [".ssh", ".gnupg", ".aws", ".buddy/integrations"];
+/** Gitignored connector cache under the instance root (service-connectors §3.3). */
+export const CONNECTIONS_DIR = ".buddy/connections";
+/** Entity cache retention (service-connectors §9 Q4). */
+export const CONNECTOR_ENTITY_RETENTION_DAYS = 7;
+/** Thread/query markdown cache retention (Slack §9 Q4). */
+export const CONNECTOR_THREAD_RETENTION_DAYS = 1;
 export const DENYLIST_BASENAMES = [".env", "auth.json"];
 export const WRITE_TOOLS = new Set(["write", "edit"]);
 export const READ_TOOLS = new Set(["read", "ls", "find", "grep"]);

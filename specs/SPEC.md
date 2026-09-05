@@ -3115,6 +3115,45 @@ Further context on local-model evaluation methodology and findings:
 - **And** when the endpoint goes down mid-session, the chat shows a recoverable error (not a silent hang) with guidance: "Check that your local model server is running at [url]"
 - **And** the error is distinguishable from an API key rejection — "connection refused" vs "401 unauthorized" are different user actions (start the server vs fix the key)
 
+### 3.24 Service Connectors (FR-CONN)
+
+| ID | Description | Phase |
+|----|-------------|-------|
+| FR-CONN-01 | Credential storage and integrations denylist | 4 ✓ |
+| FR-CONN-02 | Cache engine (entity/query/thread stores, staleness, force, pruning) | 4 ✓ |
+| FR-CONN-03 | Containment, action classification, permission gate extension | 4 ✓ |
+| FR-CONN-04 | Conditional connector tool registration | 4 ✓ |
+
+**FR-CONN-01 — Credential storage and denylist**
+
+- **Given** an integration is configured for a domain
+- **When** credentials are persisted
+- **Then** they are stored under `~/.buddy/integrations/<domain>.json` with mode `0600`
+- **And** agent file tools cannot read integration credential files (directory denylist)
+
+**FR-CONN-02 — Cache engine**
+
+- **Given** a connector caches API results under `.buddy/connections/`
+- **When** an entry's `synced_at` is within its `stale_after` budget
+- **Then** the cache is considered fresh unless `force` is true
+- **And** stale entries are flagged with structured `stale` + `synced_at` on `ConnectorResult`
+- **And** expired cache files are pruned on the heartbeat retention pass
+
+**FR-CONN-03 — Containment and permission gate**
+
+- **Given** connector cache write functions
+- **When** a write targets a path outside `.buddy/connections/`
+- **Then** the write is refused
+- **And** connector tool calls classify actions via a declarative table (fail-closed)
+- **And** write actions require user confirmation through the permission gate
+
+**FR-CONN-04 — Conditional tool registration**
+
+- **Given** no integration config exists for a domain
+- **When** a session starts
+- **Then** that domain's connector tool is not offered to the model
+- **And** configured domains register a connector tool at session boot
+
 ---
 
 ## 4. Non-Functional Requirements

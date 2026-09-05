@@ -89,6 +89,7 @@ describe("evaluateToolCall", () => {
   it("denies the hardcoded denylist silently, wherever it appears", () => {
     const denylistPaths = [
       ...DENYLIST_HOME_DIRS.map((dir) => `${HOME}/${dir}/secret`),
+      `${HOME}/.buddy/integrations/jira.json`,
       `/anywhere/project/${DENYLIST_BASENAMES[0]}`,
       `${AB}/secrets/${DENYLIST_BASENAMES[1]}`,
       `~/${DENYLIST_HOME_DIRS[0]}/config`,
