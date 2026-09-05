@@ -20,6 +20,7 @@ import { createPermissionGate, isDenylistedPath, type PermissionRequest } from "
 import type { AllowedEntry } from "./allowed-paths";
 import { extractPdfText } from "./pdf-extract";
 import { assembleSessionContext, assembleSystemPrompt } from "./prompt";
+import { createDateGuardExtension } from "./date-guard";
 import { findRecentAuthErrorInLogs, shouldEmitBootAuthCard } from "./auth-error";
 import { injectSessionContext } from "./context-injection";
 import { buddyAgentDir, globalConfigDir } from "./global-config";
@@ -188,12 +189,14 @@ export async function bootSession(
 
   context.sessionAllowedPaths.clear();
 
-  const { prompt } = assembleSystemPrompt(rootDir);
-  const sessionContext = assembleSessionContext(rootDir);
+  const sessionStart = new Date();
+  const { prompt } = assembleSystemPrompt(rootDir, sessionStart);
+  const sessionContext = assembleSessionContext(rootDir, sessionStart);
   const resourceLoader = new DefaultResourceLoader({
     cwd: rootDir,
     agentDir: buddyAgentDir(), // NFR-SEC-19
     systemPromptOverride: () => prompt,
+    extensionFactories: [createDateGuardExtension(sessionStart)],
   });
   await resourceLoader.reload();
 

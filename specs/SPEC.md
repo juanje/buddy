@@ -622,6 +622,7 @@ platform-specific install instructions is shown and setup cannot continue.
 | FR-SESSION-01 | Fresh session on every launch | 1 ✓ |
 | FR-SESSION-02 | (removed — every launch is inherently fresh) | — |
 | FR-SESSION-03 | Session end on app close | 1 ✓ |
+| FR-SESSION-06 | Mid-session date correction | 2 ✓ |
 
 **FR-SESSION-01 — Fresh session on every launch**
 
@@ -640,6 +641,11 @@ platform-specific install instructions is shown and setup cannot continue.
 - **When** the shutdown sequence runs
 - **Then** session metadata (sessionId, start/end times, calendar date) is passed to the reflect child via spawn args
 - **And** a background reflect child is spawned with the forked session file (FR-REFLECT-02)
+
+**FR-SESSION-06 — Mid-session date correction**
+
+When a session spans more than one calendar day, the system prompt must reflect
+the current date on each user turn, not the session start date. Fixes #4.
 
 ### 3.4 Reflect (FR-REFLECT)
 
