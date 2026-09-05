@@ -15,6 +15,24 @@
       "status": "pending",
       "cycle_step": "spec_review",
       "scenarios": []
+    },
+    {
+      "id": "FR-SESSION-06",
+      "title": "Mid-session date correction",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "System prompt reflects current date after day rollover",
+          "bdd": "pass",
+          "unit_tests": 7
+        },
+        {
+          "name": "System prompt unchanged within the same day",
+          "bdd": "pass",
+          "unit_tests": 7
+        }
+      ]
     }
   ]
 }

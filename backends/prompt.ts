@@ -13,7 +13,7 @@ import { defaultTemplatesDir } from "./create-buddy";
 import { dailyLogPath, deferredPath, logsDirPath, logsIndexPath, soulPath, userProfilePath } from "./brain-paths";
 import { BRAIN } from "../shared/brain-paths";
 
-function formatPlainDate(d: Date): string {
+export function formatPlainDate(d: Date): string {
   return d.toLocaleDateString("en-GB", {
     weekday: "long",
     day: "numeric",
@@ -22,7 +22,7 @@ function formatPlainDate(d: Date): string {
   });
 }
 
-function formatPlainTime(d: Date): string {
+export function formatPlainTime(d: Date): string {
   return d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
 }
 
