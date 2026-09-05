@@ -18,6 +18,7 @@ import { isPathPersistentlyAllowed } from "./allowed-paths";
 import { DENYLIST_BASENAMES, DENYLIST_HOME_DIRS, READ_TOOLS, WRITE_TOOLS } from "../shared/defaults";
 import { pathArgsOf } from "../shared/tool-paths";
 import { expandHome } from "../shared/path-utils";
+import { classifyConnectorAction, isConnectorTool } from "./connectors/actions";
 import { isContained } from "./containment";
 import { globalConfigDir } from "./global-config";
 import { identityDirPath } from "./brain-paths";
@@ -39,6 +40,12 @@ export type PermissionDecision =
 const IDENTITY_FILES = ["SOUL.md"];
 /** Agent-managed config paths that must never be modified by the agent (NFR-SEC-06). */
 const PROTECTED_CONFIG_RELPATHS = [join(".pi", "settings.json")];
+
+function connectorActionFromArgs(args: unknown): string | undefined {
+  if (!args || typeof args !== "object" || !("action" in args)) return undefined;
+  const action = (args as { action: unknown }).action;
+  return typeof action === "string" ? action : undefined;
+}
 
 export function isDenylistedPath(absPath: string, home: string = homedir()): boolean {
   if (DENYLIST_BASENAMES.includes(basename(absPath))) return true;
@@ -67,6 +74,29 @@ export function evaluateToolCall(
   home: string = homedir(),
   configDir: string = globalConfigDir(),
 ): PermissionDecision {
+  if (isConnectorTool(toolName)) {
+    const action = connectorActionFromArgs(args);
+    if (!action) {
+      return { action: "deny", reason: "Connector calls require an action argument." };
+    }
+    const classification = classifyConnectorAction(toolName, action);
+    if (classification === "deny") {
+      return {
+        action: "deny",
+        reason: `Unknown or disallowed connector action '${action}' for ${toolName}.`,
+      };
+    }
+    if (classification === "write") {
+      return {
+        action: "ask",
+        kind: "outside",
+        op: "write",
+        path: `${toolName}:${action}`,
+      };
+    }
+    return { action: "allow" };
+  }
+
   const op: PermissionOp | undefined = WRITE_TOOLS.has(toolName)
     ? "write"
     : READ_TOOLS.has(toolName)
