@@ -13,6 +13,7 @@
 // which is indistinguishable from a model that chose not to call it.
 
 import { mkdtempSync, rmSync } from "node:fs";
+import { writeConnectorConfig } from "../../backends/connectors/credentials";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -77,5 +78,16 @@ describe("the toolset a user session is given", () => {
   it("names no tool twice", () => {
     const { names } = toolset();
     expect(new Set(names).size).toBe(names.length);
+  });
+
+  it("does not offer connector tools when no integrations are configured (FR-CONN-04)", () => {
+    expect(toolset().names).not.toContain("jira");
+  });
+
+  it("offers connector tools for configured integrations (FR-CONN-04)", () => {
+    writeConnectorConfig("jira", { enabled: true, baseUrl: "https://jira.example.com" });
+    const { names, customTools } = toolset();
+    expect(names).toContain("jira");
+    expect(customTools.map((tool) => tool.name)).toContain("jira");
   });
 });

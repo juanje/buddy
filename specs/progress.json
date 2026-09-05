@@ -66,6 +66,83 @@
           "unit_tests": 7
         }
       ]
+    },
+    {
+      "id": "FR-CONN-01",
+      "title": "Connector types, credential storage, integrations denylist",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Credential file is denylisted from agent reads",
+          "bdd": "pass",
+          "unit_tests": 4
+        }
+      ]
+    },
+    {
+      "id": "FR-CONN-02",
+      "title": "Cache engine (staleness, force, pruning)",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Fresh cache entry is not stale",
+          "bdd": "pass",
+          "unit_tests": 8
+        },
+        {
+          "name": "Force refresh bypasses fresh cache",
+          "bdd": "pass",
+          "unit_tests": 8
+        },
+        {
+          "name": "Expired cache entry is stale",
+          "bdd": "pass",
+          "unit_tests": 8
+        }
+      ]
+    },
+    {
+      "id": "FR-CONN-03",
+      "title": "Containment, action classification, permission gate",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Connector write to user is refused",
+          "bdd": "pass",
+          "unit_tests": 8
+        },
+        {
+          "name": "Unknown connector action is denied",
+          "bdd": "pass",
+          "unit_tests": 8
+        },
+        {
+          "name": "Connector write action requires confirmation",
+          "bdd": "pass",
+          "unit_tests": 8
+        }
+      ]
+    },
+    {
+      "id": "FR-CONN-04",
+      "title": "Conditional connector tool registration",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Connector tool not visible when not configured",
+          "bdd": "pass",
+          "unit_tests": 2
+        },
+        {
+          "name": "Connector tool visible when integration is configured",
+          "bdd": "pass",
+          "unit_tests": 2
+        }
+      ]
     }
   ]
 }

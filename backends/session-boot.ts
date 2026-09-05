@@ -27,6 +27,7 @@ import { buddyAgentDir, globalConfigDir } from "./global-config";
 import { buddySessionsDir } from "./session-paths";
 import { buildSkillTools } from "./skill-tools";
 import { buildFetchTools } from "./fetch-url";
+import { buildConnectorToolset } from "./connectors/index";
 import { buildFileTools } from "./file-tools";
 import { buildShowFileTools } from "./show-file-tool";
 import { buildWikiTools } from "./wiki-tools";
@@ -81,8 +82,16 @@ export function buildAgentToolset(
   });
   const showFileTools = buildShowFileTools({ rootDir, showFile: deps.showFile });
   const wikiTools = buildWikiTools(rootDir);
+  const connectorTools = buildConnectorToolset(rootDir);
 
-  const customTools = [...skillTools, ...fetchTools, ...fileTools, ...showFileTools, ...wikiTools];
+  const customTools = [
+    ...skillTools,
+    ...fetchTools,
+    ...fileTools,
+    ...showFileTools,
+    ...wikiTools,
+    ...connectorTools,
+  ];
   return {
     names: [...AGENT_TOOLS, ...customTools.map((tool) => tool.name)],
     customTools,
