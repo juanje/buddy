@@ -1,9 +1,9 @@
 # NFR-PORT-02 — CLAUDE.md fallback for imported instances
 
 Feature: System prompt falls back to CLAUDE.md
-  As a user with an existing buddy instance created in Cursor
+  As a user importing an existing instance that uses CLAUDE.md
   I want the app to read CLAUDE.md when AGENTS.md is absent
-  So that my agent keeps its rules regardless of which tool created it
+  So that my agent keeps its rules regardless of the file naming convention
 
   Background:
     Given a buddy directory with identity files

@@ -34,9 +34,10 @@ developer tool.
 - Capture includes handing files over: drag & drop onto the chat window or
   an attach button is the natural gesture (not typing file paths)
 
-Power users (developers) may continue with buddy in Cursor/Claude Code for their
-code-centric workflows. The app serves the personal-assistant use case
-independently of coding.
+Power users (developers) use separate coding tools (Cursor, Claude Code, etc.)
+for their code-centric workflows. Buddy serves the personal-assistant use case
+independently — it is not designed to double as a coding environment, and its
+directory is not intended to be opened in a code editor as a working instance.
 
 ### buddy IS
 
@@ -123,8 +124,10 @@ files that get loaded into every future session.
 
 ## Principles that survive (harness-independent)
 
-These are validated through months of daily use. They work regardless of
-whether the harness is Cursor, Claude Code, Pi, or a custom app.
+These are validated through months of daily use. The underlying patterns
+(file-based memory, progressive consolidation, Hebbian reinforcement) are
+harness-independent — they were developed in editor-based agents before
+the app existed.
 
 ### 1. File-based memory
 
@@ -288,9 +291,11 @@ maintained by code, not by the LLM).
 - **Canonical brain file frontmatter:** `summary` (one-line progressive-disclosure hint), `created`, `last_accessed`, `access_count` — see NFR-FORMAT-01. `summary` is structural metadata for indexes and search, not a Hebbian field. **Exception:** `identity/SOUL.md` and `identity/USER.md` carry no frontmatter — they are always-injected at session start and never discovered through indexes or search.
 - The system remains fully functional if you move it to another tool that reads markdown files
 
-**Portability test:** "Can I take this directory, open it in Cursor with the
-CLAUDE.md rules, and keep working?" — must always be YES. The app adds
-convenience (scheduler, notifications, UI) but is never required.
+**Portability test:** "Can I read, understand, and edit every file in this
+directory with a plain text editor?" — must always be YES. The data is
+never locked in: no proprietary formats, no binary state, no cloud
+dependency. The app adds the runtime (scheduler, notifications, UI,
+Hebbian tracking, consolidation) but the user's data stands alone.
 
 ---
 
@@ -556,11 +561,10 @@ that mention git commands or bash are overridden by the base's explicit "No
 bash, git is automatic" declaration — the LLM follows the most specific/earliest
 constraint.
 
-**Backward compatibility:** `AGENTS.md` stays in rootDir. It contains
-instance-specific state (active context, navigation, learned rules) that allow
-any AI editor (Cursor, Claude Code) to operate on the repo with basic
-functionality. Core behavioral rules live in `agents-base.md` and are only
-available when the app assembles the full system prompt.
+**Instance state:** `AGENTS.md` stays in rootDir. It contains
+instance-specific state (active context, navigation, learned rules).
+Core behavioral rules live in `agents-base.md` and are only available
+when the app assembles the full system prompt.
 
 **Platform artifacts:** `.cursor/`, `.codex/`, `.claude/` are irrelevant to
 the app and ignored. They may exist in imported instances — the app doesn't
@@ -679,10 +683,9 @@ user need on day one to get value?
    spawns a maintenance session via `SessionManager`, runs consolidation, then
    disposes it. If the user is streaming, consolidation defers until idle.
 
-3. **Backward compatibility:** AGENTS.md stays in the repo. Minimal but
-   functional — a user who opens the repo in Cursor/Claude Code gets basic buddy
-behavior. The app adds the full experience (scheduler, notifications,
-   Hebbian tracking, etc.) but the repo is self-contained.
+3. **Data portability:** All memory state lives in human-readable markdown
+   files in a git repo. The user can read, edit, back up, or migrate their
+   data without the app. The app provides the runtime; the data stands alone.
 
 4. **Observations format:** Keep as one flat file with structured markdown
    sections. Splitting into per-observation files adds complexity without clear

@@ -3152,7 +3152,7 @@ Further context on local-model evaluation methodology and findings:
 | ID | Requirement |
 |----|-------------|
 | NFR-PORT-01 | All memory state is in human-readable files (markdown + YAML frontmatter) — no SQLite, no binary formats |
-| NFR-PORT-02 | The buddy repo works in Cursor or Claude Code with basic functionality via AGENTS.md as fallback |
+| NFR-PORT-02 | All user and agent data is readable and editable with any plain text editor. The app provides the runtime; the data is never locked in. |
 | NFR-PORT-03 | The app may structurally migrate AGENTS.md on boot (one-time, with backup to `.buddy/migrations/`). User customizations (active context, navigation, learned rules) are preserved. Core instructions that moved to agents-base.md are removed. |
 | NFR-PORT-04 | Platform artifacts (`.cursor/`, `.codex/`, `.claude/`) in imported instances are ignored |
 | NFR-PORT-05 | Core app prompts live in `~/.buddy/prompts/`, not inside rootDir. On any app semver change (major, minor, or patch), bundled content overwrites `~/.buddy/prompts/` and `~/.buddy/docs/` (see NFR-MIGRATE-06). User content in rootDir is never touched. |
@@ -3413,7 +3413,7 @@ buddy remembers the conversation, knows their name, surfaces any pending reminde
 | **Zone 3** | Trust zone: everything else — all access requires user confirmation |
 | **Denylist** | Hardcoded paths never accessible by the agent (`~/.ssh/`, `~/.gnupg/`, etc.) |
 | **agents-base.md** | Universal system prompt base (`~/.buddy/prompts/agents-base.md`) — defines tool capabilities, automatic behaviors, and agent limits. App-managed, updated with the app. |
-| **AGENTS.md** | Instance-specific behavioral rules in rootDir — skills, routing conventions, active context. Works as a standalone fallback when the repo is opened in Cursor or Claude Code |
+| **AGENTS.md** | Instance-specific behavioral rules in rootDir — routing conventions, active context, learned rules. Contains instance state only; core behavioral rules live in `agents-base.md` (app-managed). |
 | **SOUL.md** | Agent character definition — stable, rarely modified, changes require user confirmation |
 | **USER.md** | User profile — updated as the agent learns about the user. Zone 1 (silent allow); only SOUL.md requires confirmation |
 | **Deferred queue** | Items in `agent_brain/deferred.md` with dates — parsed by code, surfaced by heartbeat or on app start |
