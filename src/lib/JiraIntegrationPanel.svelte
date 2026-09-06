@@ -1,5 +1,9 @@
 <script lang="ts">
   import type { ConnectorConfig } from "../../shared/api";
+  import {
+    parseProjectPrefixInput,
+    patternsToDisplayText,
+  } from "../../shared/jira-patterns";
   import { t } from "./i18n";
 
   let {
@@ -28,18 +32,50 @@
     onToggleShowToken: (show: boolean) => void;
   } = $props();
 
-  let patternsText = $state((config.issueKeyPatterns ?? []).join(", "));
+  let patternsText = $state(patternsToDisplayText(config.issueKeyPatterns ?? []));
+  let savedNotice = $state(false);
+  let savedNoticeTimer: ReturnType<typeof setTimeout> | undefined;
 
   $effect(() => {
-    patternsText = (config.issueKeyPatterns ?? []).join(", ");
+    patternsText = patternsToDisplayText(config.issueKeyPatterns ?? []);
   });
 
+  function dismissSavedNotice() {
+    savedNotice = false;
+    if (savedNoticeTimer) {
+      clearTimeout(savedNoticeTimer);
+      savedNoticeTimer = undefined;
+    }
+  }
+
+  function showSavedNotice() {
+    dismissSavedNotice();
+    savedNotice = true;
+    savedNoticeTimer = setTimeout(() => {
+      savedNotice = false;
+      savedNoticeTimer = undefined;
+    }, 8000);
+  }
+
   function onPatternsInput(value: string) {
+    dismissSavedNotice();
     patternsText = value;
-    config.issueKeyPatterns = value
-      .split(",")
-      .map((p) => p.trim())
-      .filter(Boolean);
+    config.issueKeyPatterns = parseProjectPrefixInput(value);
+  }
+
+  async function handleSave() {
+    dismissSavedNotice();
+    await onSave();
+    showSavedNotice();
+  }
+
+  function handleTest() {
+    dismissSavedNotice();
+    void onTest();
+  }
+
+  function handleFieldInput() {
+    dismissSavedNotice();
   }
 </script>
 
@@ -47,7 +83,7 @@
   <div class="panel-header">
     <h3>{$t.settingsJiraTitle}</h3>
     <label class="toggle">
-      <input type="checkbox" bind:checked={config.enabled} />
+      <input type="checkbox" bind:checked={config.enabled} onchange={handleFieldInput} />
       {$t.settingsJiraEnabled}
     </label>
   </div>
@@ -55,15 +91,26 @@
   {#if config.enabled}
     <label class="field">
       <span>{$t.settingsJiraBaseUrl}</span>
-      <input type="text" bind:value={config.baseUrl} spellcheck="false" placeholder="https://your-org.atlassian.net" />
+      <input
+        type="text"
+        bind:value={config.baseUrl}
+        oninput={handleFieldInput}
+        spellcheck="false"
+        placeholder="https://your-org.atlassian.net"
+      />
     </label>
     <label class="field">
       <span>{$t.settingsJiraEmail}</span>
-      <input type="email" bind:value={config.email} spellcheck="false" />
+      <input type="email" bind:value={config.email} oninput={handleFieldInput} spellcheck="false" />
     </label>
     <label class="field">
       <span>{$t.settingsJiraToken}</span>
-      <input type={showToken ? "text" : "password"} bind:value={config.token} spellcheck="false" />
+      <input
+        type={showToken ? "text" : "password"}
+        bind:value={config.token}
+        oninput={handleFieldInput}
+        spellcheck="false"
+      />
     </label>
     <button type="button" class="link" onclick={() => onToggleShowToken(!showToken)}>
       {showToken ? $t.settingsJiraHideToken : $t.settingsJiraShowToken}
@@ -75,26 +122,28 @@
         value={patternsText}
         oninput={(e) => onPatternsInput(e.currentTarget.value)}
         spellcheck="false"
-        placeholder="PROJ-\\d+"
+        placeholder="PROJ, TEAM"
       />
     </label>
 
     <div class="actions">
-      <button type="button" class="secondary" onclick={onTest} disabled={testing}>
+      <button type="button" class="secondary" onclick={handleTest} disabled={testing}>
         {testing ? $t.settingsJiraTesting : $t.settingsJiraTestConnection}
       </button>
-      <button type="button" class="primary" onclick={onSave}>
+      <button type="button" class="primary" onclick={handleSave}>
         {$t.settingsJiraSave}
       </button>
     </div>
+
+    {#if savedNotice}
+      <p class="status ok">{$t.settingsJiraSaved}</p>
+    {/if}
 
     {#if testStatus === "ok"}
       <p class="status ok">{$t.settingsJiraStatusConnected}</p>
     {:else if testStatus === "error" && testError}
       <p class="status error">{testError}</p>
     {/if}
-
-    <p class="hint">{$t.settingsJiraNextSessionNotice}</p>
   {/if}
 </section>
 
@@ -183,10 +232,5 @@
   .status.error {
     background: var(--error-bg);
     color: var(--error-fg);
-  }
-  .hint {
-    margin: 0;
-    font-size: 13px;
-    color: var(--muted);
   }
 </style>

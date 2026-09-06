@@ -42,6 +42,8 @@ export const TOOL_PATH_ARGS: Record<string, readonly string[]> = {
   fetch_url: [],
   wiki_search: [],
   wiki_file: [],
+  // Connectors take no filesystem paths.
+  jira: [],
 };
 
 /**

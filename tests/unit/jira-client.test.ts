@@ -22,17 +22,18 @@ describe("jira client (FR-JIRA-01/05)", () => {
     expect(normalizeJiraBaseUrl("https://jira.example.com/")).toBe("https://jira.example.com");
   });
 
-  it("maps HTTP status codes to ConnectorError", () => {
-    expect(mapJiraHttpError(401).code).toBe(401);
+  it("maps HTTP status codes to ConnectorError suggestion keys", () => {
+    expect(mapJiraHttpError(401).suggestion).toBe("jiraError401");
     expect(mapJiraHttpError(403).recoverable).toBe(false);
-    expect(mapJiraHttpError(404).suggestion).toContain("deleted");
-    expect(mapJiraHttpError(429).recoverable).toBe(true);
-    expect(mapJiraHttpError(503).recoverable).toBe(true);
+    expect(mapJiraHttpError(404).suggestion).toBe("jiraError404");
+    expect(mapJiraHttpError(429).suggestion).toBe("jiraError429");
+    expect(mapJiraHttpError(503).suggestion).toBe("jiraError5xx");
   });
 
-  it("maps network timeout to recoverable error", () => {
+  it("maps network timeout to recoverable error key", () => {
     const err = mapNetworkError(Object.assign(new Error("timeout"), { name: "TimeoutError" }));
     expect(err.recoverable).toBe(true);
+    expect(err.suggestion).toBe("jiraErrorTimeout");
   });
 
   it("searchJql sends auth header and parses response", async () => {

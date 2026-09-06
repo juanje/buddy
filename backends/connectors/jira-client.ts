@@ -36,7 +36,7 @@ export function mapJiraHttpError(status: number, retryAfter?: string | null): Co
       error: "Jira authentication failed",
       code: 401,
       recoverable: false,
-      suggestion: "Check your API token in Settings → Integrations → Jira.",
+      suggestion: "jiraError401",
     };
   }
   if (status === 403) {
@@ -44,7 +44,7 @@ export function mapJiraHttpError(status: number, retryAfter?: string | null): Co
       error: "Insufficient Jira permissions",
       code: 403,
       recoverable: false,
-      suggestion: "Check your Jira permissions for this account.",
+      suggestion: "jiraError403",
     };
   }
   if (status === 404) {
@@ -52,7 +52,7 @@ export function mapJiraHttpError(status: number, retryAfter?: string | null): Co
       error: "Jira resource not found",
       code: 404,
       recoverable: false,
-      suggestion: "The issue may have been deleted or moved.",
+      suggestion: "jiraError404",
     };
   }
   if (status === 429) {
@@ -62,7 +62,7 @@ export function mapJiraHttpError(status: number, retryAfter?: string | null): Co
         : "Jira rate limit exceeded",
       code: 429,
       recoverable: true,
-      suggestion: "Wait and try again, or reduce the frequency of requests.",
+      suggestion: "jiraError429",
     };
   }
   if (status >= 500) {
@@ -70,14 +70,14 @@ export function mapJiraHttpError(status: number, retryAfter?: string | null): Co
       error: `Jira server error (HTTP ${status})`,
       code: status,
       recoverable: true,
-      suggestion: "Jira may be down — try again later.",
+      suggestion: "jiraError5xx",
     };
   }
   return {
     error: `Jira request failed (HTTP ${status})`,
     code: status,
     recoverable: false,
-    suggestion: "Check the Jira URL and credentials in Settings.",
+    suggestion: "jiraErrorGeneric",
   };
 }
 
@@ -87,14 +87,14 @@ export function mapNetworkError(err: unknown): ConnectorError {
       error: "Jira did not respond in time",
       code: 0,
       recoverable: true,
-      suggestion: "Check your network connection and try again.",
+      suggestion: "jiraErrorTimeout",
     };
   }
   return {
     error: err instanceof Error ? err.message : String(err),
     code: 0,
     recoverable: true,
-    suggestion: "Check your network connection and Jira URL.",
+    suggestion: "jiraErrorNetwork",
   };
 }
 
@@ -154,7 +154,7 @@ export function createJiraClient(config: ConnectorConfig, options?: JiraClientOp
       error: "Jira integration is not configured",
       code: 0,
       recoverable: false,
-      suggestion: "Configure Jira in Settings → Integrations.",
+      suggestion: "jiraErrorNotConfigured",
     });
   }
 

@@ -12,8 +12,10 @@ import type {
   UsageReport,
 } from "../../shared/api";
 import { DEFAULT_MONTHLY_BUDGET } from "../../shared/defaults";
-import { getLocale, setLocale, type AppLocale } from "./i18n";
+import { resolveJiraErrorSuggestion } from "../../shared/jira-error-suggestions";
+import { getLocale, setLocale, t, type AppLocale } from "./i18n";
 import { isApiKeyOnlyProvider } from "./provider-setup";
+import { jiraErrorMessagesFromLocale } from "../../backends/connectors/jira-result";
 
 export interface SettingsWorkerAPI {
   updateConfig(patch: Partial<Pick<SetupConfig, "language" | "monthlyBudget">>): Promise<void>;
@@ -43,6 +45,12 @@ export interface SettingsDisplayConfig {
 
 function formatUsd(amount: number): string {
   return amount.toFixed(2);
+}
+
+function resolveJiraTestError(error: string | undefined): string | undefined {
+  if (!error) return undefined;
+  const messages = jiraErrorMessagesFromLocale(get(t));
+  return resolveJiraErrorSuggestion(error, messages);
 }
 
 export type SettingsProviderId = SetupConfig["provider"];
@@ -403,7 +411,7 @@ export function createSettingsController(options: {
           jiraTestStatus.set("ok");
         } else {
           jiraTestStatus.set("error");
-          jiraTestError.set(result.error ?? "Connection failed");
+          jiraTestError.set(resolveJiraTestError(result.error) ?? "Connection failed");
         }
       } finally {
         jiraTesting.set(false);

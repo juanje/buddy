@@ -111,8 +111,17 @@ export type LocaleStrings = {
   settingsJiraTestConnection: string;
   settingsJiraTesting: string;
   settingsJiraSave: string;
+  settingsJiraSaved: string;
   settingsJiraStatusConnected: string;
-  settingsJiraNextSessionNotice: string;
+  jiraError401: string;
+  jiraError403: string;
+  jiraError404: string;
+  jiraError429: string;
+  jiraError5xx: string;
+  jiraErrorNetwork: string;
+  jiraErrorTimeout: string;
+  jiraErrorGeneric: string;
+  jiraErrorNotConfigured: string;
   settingsClose: string;
   settingsReadOnlyHint: string;
   settingsAddProvider: string;
@@ -265,12 +274,21 @@ export const es: LocaleStrings = {
   settingsJiraToken: "Token de API",
   settingsJiraShowToken: "Mostrar token",
   settingsJiraHideToken: "Ocultar token",
-  settingsJiraKeyPatterns: "Patrones de claves (separados por comas)",
+  settingsJiraKeyPatterns: "Prefijos de proyecto (separados por comas)",
   settingsJiraTestConnection: "Probar conexión",
   settingsJiraTesting: "Probando…",
   settingsJiraSave: "Guardar",
+  settingsJiraSaved: "Guardado. Reinicia la sesión para activar Jira.",
   settingsJiraStatusConnected: "Conectado",
-  settingsJiraNextSessionNotice: "Los cambios de integración aplican en la próxima sesión.",
+  jiraError401: "Comprueba tu token de API en Ajustes → Integraciones → Jira.",
+  jiraError403: "Comprueba los permisos de Jira de esta cuenta.",
+  jiraError404: "La incidencia puede haber sido eliminada o movida.",
+  jiraError429: "Espera e inténtalo de nuevo, o reduce la frecuencia de peticiones.",
+  jiraError5xx: "Jira puede estar caído — inténtalo más tarde.",
+  jiraErrorNetwork: "Comprueba tu conexión de red y la URL de Jira.",
+  jiraErrorTimeout: "Comprueba tu conexión de red e inténtalo de nuevo.",
+  jiraErrorGeneric: "Comprueba la URL de Jira y las credenciales en Ajustes.",
+  jiraErrorNotConfigured: "Configura Jira en Ajustes → Integraciones.",
   settingsClose: "Cerrar",
   settingsReadOnlyHint: "La carpeta de memoria se configura durante la instalación inicial.",
   settingsAddProvider: "Añadir proveedor",
