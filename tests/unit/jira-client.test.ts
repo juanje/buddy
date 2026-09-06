@@ -76,4 +76,23 @@ describe("jira client (FR-JIRA-01/05)", () => {
     );
     expect(result.ok).toBe(true);
   });
+
+  it("searchUsers queries the user search endpoint", async () => {
+    const fetchImpl = async (url: string) => {
+      if (url.includes("/user/search")) {
+        return new Response(
+          JSON.stringify([{ accountId: "abc", displayName: "Test User" }]),
+          { status: 200, headers: { "content-type": "application/json" } },
+        );
+      }
+      return new Response("", { status: 404 });
+    };
+    const client = createJiraClient(
+      { baseUrl: "https://jira.example.com", email: "a@b.com", token: "tok" },
+      { fetchImpl },
+    );
+    const users = await client.searchUsers("test");
+    expect(users).toHaveLength(1);
+    expect(users[0]?.accountId).toBe("abc");
+  });
 });

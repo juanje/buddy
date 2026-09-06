@@ -107,12 +107,20 @@ export function isNetworkError(err: unknown): boolean {
   return false;
 }
 
+export interface JiraUser {
+  accountId: string;
+  displayName?: string;
+  emailAddress?: string;
+  active?: boolean;
+}
+
 export interface JiraClient {
   baseUrl: string;
   request<T>(path: string, init?: RequestInit): Promise<T>;
   searchJql(jql: string, fields: string[], maxResults?: number): Promise<JiraSearchResponse>;
   getIssue(issueKey: string, fields?: string[]): Promise<JiraIssue>;
   getComments(issueKey: string): Promise<JiraCommentsResponse>;
+  searchUsers(query: string): Promise<JiraUser[]>;
 }
 
 export interface JiraSearchResponse {
@@ -204,6 +212,10 @@ export function createJiraClient(config: ConnectorConfig, options?: JiraClientOp
       return request<JiraCommentsResponse>(
         `/rest/api/3/issue/${encodeURIComponent(issueKey)}/comment`,
       );
+    },
+    async searchUsers(query: string) {
+      const params = new URLSearchParams({ query, maxResults: "5" });
+      return request<JiraUser[]>(`/rest/api/3/user/search?${params}`);
     },
   };
 }

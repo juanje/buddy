@@ -23,6 +23,41 @@ import {
 import { readConnectorConfig } from "./credentials";
 import { connectorResultFromError } from "./jira-result";
 
+/**
+ * Resolve a display name or partial match to a Jira accountId.
+ * Returns `currentUser()` unchanged (JQL function, not a user reference).
+ */
+async function resolveAssignee(
+  client: JiraClient,
+  input: string,
+): Promise<{ accountId: string; display: string } | { error: string }> {
+  if (!input || input === "currentUser()") {
+    return { accountId: "currentUser()", display: "currentUser()" };
+  }
+  try {
+    const users = await client.searchUsers(input);
+    if (users.length === 0) {
+      return { error: `No Jira user found matching "${input}".` };
+    }
+    if (users.length === 1 || users[0]!.displayName?.toLowerCase() === input.toLowerCase()) {
+      return { accountId: users[0]!.accountId, display: users[0]!.displayName ?? input };
+    }
+    const options = users
+      .map((u) => `- ${u.displayName ?? "?"} (${u.accountId})`)
+      .join("\n");
+    return {
+      error: `Multiple users match "${input}". Be more specific:\n${options}`,
+    };
+  } catch {
+    return { error: `Could not search for user "${input}" — check your Jira permissions.` };
+  }
+}
+
+/** Format a resolved accountId for JQL (quoted for account IDs, bare for currentUser). */
+function assigneeJql(accountId: string): string {
+  return accountId === "currentUser()" ? accountId : `"${accountId}"`;
+}
+
 export const JIRA_DOMAIN = "jira";
 
 export const FRESHNESS = {
@@ -191,7 +226,7 @@ export function jiraHelpText(): string {
 |--------|--------|-------------|
 | help | — | List actions |
 | board | assignee?, force? | Open sprint issues |
-| my_issues | force? | Your open issues |
+| my_issues | assignee?, force? | Open issues (yours by default, or for a named person) |
 | issue_detail | key (required), force? | Full issue with description/comments |
 | issues_by_key | keys[] (required), force? | Bulk status for keys |
 | epic_children | epicKey or key (required), force? | Children of an epic |
@@ -269,10 +304,20 @@ export async function executeJiraAction(
 
   switch (action) {
     case "board": {
-      const assignee = params.assignee ?? "currentUser()";
-      const jql = `sprint in openSprints() AND assignee = ${assignee} ORDER BY rank`;
-      return serveCachedOrFetch(rootDir, "board", force, () =>
-        refreshIssues(client, rootDir, jql, "board", FRESHNESS.board, [
+      const assigneeInput = params.assignee ?? "currentUser()";
+      const resolved = await resolveAssignee(client, assigneeInput);
+      if ("error" in resolved) {
+        return connectorResultFromError({
+          error: resolved.error,
+          code: 0,
+          recoverable: false,
+          suggestion: "jiraErrorGeneric",
+        });
+      }
+      const jql = `sprint in openSprints() AND assignee = ${assigneeJql(resolved.accountId)} ORDER BY rank`;
+      const queryId = resolved.accountId === "currentUser()" ? "board" : `board_${resolved.accountId}`;
+      return serveCachedOrFetch(rootDir, queryId, force, () =>
+        refreshIssues(client, rootDir, jql, queryId, FRESHNESS.board, [
           "summary",
           "status",
           "assignee",
@@ -283,9 +328,20 @@ export async function executeJiraAction(
       );
     }
     case "my_issues": {
-      const jql = "assignee = currentUser() AND statusCategory != Done ORDER BY updated DESC";
-      return serveCachedOrFetch(rootDir, "my_issues", force, () =>
-        refreshIssues(client, rootDir, jql, "my_issues", FRESHNESS.myIssues, [
+      const assigneeInput = params.assignee ?? "currentUser()";
+      const resolved = await resolveAssignee(client, assigneeInput);
+      if ("error" in resolved) {
+        return connectorResultFromError({
+          error: resolved.error,
+          code: 0,
+          recoverable: false,
+          suggestion: "jiraErrorGeneric",
+        });
+      }
+      const jql = `assignee = ${assigneeJql(resolved.accountId)} AND statusCategory != Done ORDER BY updated DESC`;
+      const queryId = resolved.accountId === "currentUser()" ? "my_issues" : `issues_${resolved.accountId}`;
+      return serveCachedOrFetch(rootDir, queryId, force, () =>
+        refreshIssues(client, rootDir, jql, queryId, FRESHNESS.myIssues, [
           "summary",
           "status",
           "assignee",
@@ -316,9 +372,23 @@ export async function executeJiraAction(
           suggestion: "Use params.start and params.end (YYYY-MM-DD).",
         });
       }
-      const userClause = params.username ? ` AND assignee = "${params.username}"` : "";
+      let userClause = "";
+      let usernameKey = "all";
+      if (params.username) {
+        const resolved = await resolveAssignee(client, params.username);
+        if ("error" in resolved) {
+          return connectorResultFromError({
+            error: resolved.error,
+            code: 0,
+            recoverable: false,
+            suggestion: "jiraErrorGeneric",
+          });
+        }
+        userClause = ` AND assignee = ${assigneeJql(resolved.accountId)}`;
+        usernameKey = resolved.accountId;
+      }
       const jql = `resolutiondate >= "${params.start}" AND resolutiondate <= "${params.end}"${userClause} ORDER BY resolutiondate DESC`;
-      const queryId = `period_${params.start}_${params.end}_${params.username ?? "all"}`;
+      const queryId = `period_${params.start}_${params.end}_${usernameKey}`;
       return serveCachedOrFetch(rootDir, queryId, force, () =>
         refreshIssues(client, rootDir, jql, queryId, FRESHNESS.periodReport, [
           "summary",

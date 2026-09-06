@@ -35,6 +35,14 @@ function mockFetch(body: unknown, status = 200) {
         headers: { "content-type": "application/json" },
       });
     }
+    if (url.includes("/user/search")) {
+      return new Response(
+        JSON.stringify([
+          { accountId: "abc123", displayName: "Ozan Unsal", active: true },
+        ]),
+        { status: 200, headers: { "content-type": "application/json" } },
+      );
+    }
     if (url.includes("/search/jql")) {
       return new Response(JSON.stringify(body), {
         status,
@@ -194,5 +202,68 @@ describe("jira actions (FR-JIRA-02/03/05)", () => {
     });
     expect(line).toContain("PROJ-1");
     expect(line).toContain("Bug");
+  });
+
+  it("board resolves assignee name to accountId", async () => {
+    const calls: string[] = [];
+    const fetchImpl = async (url: string, init?: RequestInit) => {
+      calls.push(url);
+      return mockFetch({
+        issues: [
+          {
+            key: "PROJ-5",
+            fields: {
+              summary: "Ozan task",
+              status: { name: "Open" },
+              assignee: { displayName: "Ozan Unsal" },
+              updated: "2026-09-06T10:00:00Z",
+            },
+          },
+        ],
+      })(url, init);
+    };
+    const result = await executeJiraAction(
+      rootDir, "board", { assignee: "Ozan" }, { fetchImpl, config },
+    );
+    expect(result.data).toContain("PROJ-5");
+    const jqlCall = calls.find((c) => c.includes("/search/jql"));
+    expect(jqlCall).toBeDefined();
+  });
+
+  it("my_issues accepts assignee to query another person", async () => {
+    const fetchImpl = mockFetch({
+      issues: [
+        {
+          key: "PROJ-7",
+          fields: {
+            summary: "Ozan open issue",
+            status: { name: "To Do" },
+            assignee: { displayName: "Ozan Unsal" },
+            updated: "2026-09-06T10:00:00Z",
+          },
+        },
+      ],
+    });
+    const result = await executeJiraAction(
+      rootDir, "my_issues", { assignee: "Ozan" }, { fetchImpl, config },
+    );
+    expect(result.data).toContain("PROJ-7");
+  });
+
+  it("returns error when no user matches", async () => {
+    const fetchImpl = async (url: string) => {
+      if (url.includes("/user/search")) {
+        return new Response(JSON.stringify([]), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        });
+      }
+      return mockFetch({ issues: [] })(url);
+    };
+    const result = await executeJiraAction(
+      rootDir, "board", { assignee: "nobody" }, { fetchImpl, config },
+    );
+    expect(result.error).toBeDefined();
+    expect(result.error!.error).toContain("No Jira user found");
   });
 });
