@@ -91,6 +91,7 @@ How it works in practice:
 
 - Change your language, AI provider, or model anytime from Settings (gear icon or Cmd/Ctrl+,).
 - Add additional AI providers without going through setup again.
+- Configure [external service connectors](connectors.md) in the **Integrations** tab — connect Jira and other services so Buddy can read your project data.
 
 ### Organize files
 

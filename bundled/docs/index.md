@@ -11,6 +11,7 @@ Read this index first, then open only the page you need.
 - [privacy.md](privacy.md) — Where your data lives, what leaves your machine, and how file access permissions work.
 - [cost-and-budget.md](cost-and-budget.md) — How API costs work, what you see in Settings, and how to control spending.
 - [wiki.md](wiki.md) — Your second brain: how the personal knowledge base works, what goes in it, and how pages connect.
+- [connectors.md](connectors.md) — External service integrations: what connectors do, how to set them up, and which services are available.
 
 ## Going deeper
 
