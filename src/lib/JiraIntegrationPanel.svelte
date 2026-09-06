@@ -35,7 +35,7 @@
   let patternsText = $state(patternsToDisplayText(config.issueKeyPatterns ?? []));
   let savedNotice = $state<"saved" | "restart" | false>(false);
   let savedNoticeTimer: ReturnType<typeof setTimeout> | undefined;
-  let enabledAtLoad = $state(config.enabled);
+  let enabledToggled = $state(false);
 
   $effect(() => {
     patternsText = patternsToDisplayText(config.issueKeyPatterns ?? []);
@@ -65,11 +65,10 @@
   }
 
   async function handleSave() {
-    const enabledChanged = config.enabled !== enabledAtLoad;
     dismissSavedNotice();
     await onSave();
-    showSavedNotice(enabledChanged);
-    enabledAtLoad = config.enabled;
+    showSavedNotice(enabledToggled);
+    enabledToggled = false;
   }
 
   function handleTest() {
@@ -80,13 +79,18 @@
   function handleFieldInput() {
     dismissSavedNotice();
   }
+
+  function handleToggleEnabled() {
+    dismissSavedNotice();
+    enabledToggled = true;
+  }
 </script>
 
 <section class="integration-panel">
   <div class="panel-header">
     <h3>{$t.settingsJiraTitle}</h3>
     <label class="toggle">
-      <input type="checkbox" bind:checked={config.enabled} onchange={handleFieldInput} />
+      <input type="checkbox" bind:checked={config.enabled} onchange={handleToggleEnabled} />
       {$t.settingsJiraEnabled}
     </label>
   </div>
@@ -144,6 +148,9 @@
       <button type="button" class="secondary" onclick={handleTest} disabled={testing}>
         {testing ? $t.settingsJiraTesting : $t.settingsJiraTestConnection}
       </button>
+      <button type="button" class="primary" onclick={handleSave}>
+        {$t.settingsJiraSave}
+      </button>
     </div>
 
     {#if testStatus === "ok"}
@@ -151,18 +158,25 @@
     {:else if testStatus === "error" && testError}
       <p class="status error">{testError}</p>
     {/if}
+
+    {#if savedNotice === "restart"}
+      <p class="status ok">{$t.settingsJiraRestart}</p>
+    {:else if savedNotice === "saved"}
+      <p class="status ok">{$t.settingsJiraSaved}</p>
+    {/if}
   {/if}
 
-  <div class="actions">
-    <button type="button" class="primary" onclick={handleSave}>
-      {$t.settingsJiraSave}
-    </button>
-  </div>
-
-  {#if savedNotice === "restart"}
-    <p class="status ok">{$t.settingsJiraRestart}</p>
-  {:else if savedNotice === "saved"}
-    <p class="status ok">{$t.settingsJiraSaved}</p>
+  {#if !config.enabled}
+    <div class="actions">
+      <button type="button" class="primary" onclick={handleSave}>
+        {$t.settingsJiraSave}
+      </button>
+    </div>
+    {#if savedNotice === "restart"}
+      <p class="status ok">{$t.settingsJiraRestart}</p>
+    {:else if savedNotice === "saved"}
+      <p class="status ok">{$t.settingsJiraSaved}</p>
+    {/if}
   {/if}
 </section>
 

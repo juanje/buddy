@@ -279,7 +279,7 @@ export const es: LocaleStrings = {
   settingsJiraHideToken: "Ocultar token",
   settingsJiraKeyPatterns: "Prefijos de proyecto (separados por comas)",
   settingsJiraBoardId: "ID del tablero (opcional)",
-  settingsJiraBoardIdHint: "Para la acción team_board — encuentra el ID en Jira → Tableros → Ver configuración del tablero.",
+  settingsJiraBoardIdHint: "Encuéntralo en Jira → Tableros → Configuración del tablero.",
   settingsJiraTestConnection: "Probar conexión",
   settingsJiraTesting: "Probando…",
   settingsJiraSave: "Guardar",
