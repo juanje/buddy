@@ -112,6 +112,7 @@ export type LocaleStrings = {
   settingsJiraTesting: string;
   settingsJiraSave: string;
   settingsJiraSaved: string;
+  settingsJiraRestart: string;
   settingsJiraStatusConnected: string;
   jiraError401: string;
   jiraError403: string;
@@ -278,7 +279,8 @@ export const es: LocaleStrings = {
   settingsJiraTestConnection: "Probar conexión",
   settingsJiraTesting: "Probando…",
   settingsJiraSave: "Guardar",
-  settingsJiraSaved: "Guardado. Reinicia la sesión para activar Jira.",
+  settingsJiraSaved: "Guardado.",
+  settingsJiraRestart: "Guardado. Reinicia la sesión para activar el cambio.",
   settingsJiraStatusConnected: "Conectado",
   jiraError401: "Comprueba tu token de API en Ajustes → Integraciones → Jira.",
   jiraError403: "Comprueba los permisos de Jira de esta cuenta.",

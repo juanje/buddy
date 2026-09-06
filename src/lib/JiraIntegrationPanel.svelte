@@ -33,11 +33,16 @@
   } = $props();
 
   let patternsText = $state(patternsToDisplayText(config.issueKeyPatterns ?? []));
-  let savedNotice = $state(false);
+  let savedNotice = $state<"saved" | "restart" | false>(false);
   let savedNoticeTimer: ReturnType<typeof setTimeout> | undefined;
+  let enabledAtLoad = $state(config.enabled);
 
   $effect(() => {
     patternsText = patternsToDisplayText(config.issueKeyPatterns ?? []);
+  });
+
+  $effect(() => {
+    enabledAtLoad = config.enabled;
   });
 
   function dismissSavedNotice() {
@@ -48,9 +53,9 @@
     }
   }
 
-  function showSavedNotice() {
+  function showSavedNotice(enabledChanged: boolean) {
     dismissSavedNotice();
-    savedNotice = true;
+    savedNotice = enabledChanged ? "restart" : "saved";
     savedNoticeTimer = setTimeout(() => {
       savedNotice = false;
       savedNoticeTimer = undefined;
@@ -64,9 +69,11 @@
   }
 
   async function handleSave() {
+    const enabledChanged = config.enabled !== enabledAtLoad;
     dismissSavedNotice();
     await onSave();
-    showSavedNotice();
+    showSavedNotice(enabledChanged);
+    enabledAtLoad = config.enabled;
   }
 
   function handleTest() {
@@ -135,7 +142,9 @@
       </button>
     </div>
 
-    {#if savedNotice}
+    {#if savedNotice === "restart"}
+      <p class="status ok">{$t.settingsJiraRestart}</p>
+    {:else if savedNotice === "saved"}
       <p class="status ok">{$t.settingsJiraSaved}</p>
     {/if}
 
