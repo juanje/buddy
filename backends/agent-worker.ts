@@ -281,7 +281,12 @@ export async function main(deps: WorkerDeps = {}): Promise<void> {
         return validateLocation(path);
       },
       async configureProviderKey(provider, apiKey, baseUrl) {
-        return configureProviderKey(provider, apiKey, { baseUrl });
+        const result = await configureProviderKey(provider, apiKey, { baseUrl });
+        if (result.valid) {
+          const runtime = await modelRuntimeReady;
+          await runtime.setRuntimeApiKey(toPiProviderId(provider), apiKey);
+        }
+        return result;
       },
       async loginOAuth(provider) {
         const result = await (await ensureOAuthService()).login(provider);
