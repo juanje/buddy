@@ -33,9 +33,12 @@ function deployMarkdownFiles(
     return;
   }
 
-  for (const name of readdirSync(sourceDir)) {
+  for (const entry of readdirSync(sourceDir, { recursive: true })) {
+    const name = String(entry);
     if (!name.endsWith(".md")) continue;
-    cpSync(join(sourceDir, name), join(targetDir, name), { force: true });
+    const filePath = join(targetDir, name);
+    mkdirSync(dirname(filePath), { recursive: true });
+    cpSync(join(sourceDir, name), filePath, { force: true });
   }
 }
 
