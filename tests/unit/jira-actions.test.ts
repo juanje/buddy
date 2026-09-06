@@ -388,7 +388,9 @@ describe("jira team_board (FR-JIRA-08)", () => {
     );
     expect(result.data).toContain("PROJ-50");
     expect(result.data).toContain("Team backlog item");
-    expect(calls.some((u) => u.includes("/rest/agile/1.0/board/12345/issue"))).toBe(true);
+    const agileCall = calls.find((u) => u.includes("/rest/agile/1.0/board/12345/issue"));
+    expect(agileCall).toBeDefined();
+    expect(decodeURIComponent(agileCall!)).toContain("openSprints()");
   });
 
   it("passes status filter as jql to Agile API", async () => {

@@ -295,11 +295,11 @@ async function refreshBoardIssues(
   return { keys, syncedAt };
 }
 
-function buildTeamBoardJql(status?: string, assigneeAccountId?: string): string | undefined {
-  const clauses: string[] = [];
+function buildTeamBoardJql(status?: string, assigneeAccountId?: string): string {
+  const clauses: string[] = ["sprint in openSprints()"];
   if (status) clauses.push(`status="${status}"`);
   if (assigneeAccountId) clauses.push(`assignee = ${assigneeJql(assigneeAccountId)}`);
-  return clauses.length > 0 ? clauses.join(" AND ") : undefined;
+  return clauses.join(" AND ");
 }
 
 function teamBoardQueryId(boardId: string, status?: string, assigneeAccountId?: string): string {

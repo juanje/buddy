@@ -120,6 +120,7 @@ Feature: Jira read-only connector
     When the jira connector runs action "team_board"
     Then the jira result includes "PROJ-50"
     And the jira result includes "Team backlog item"
+    And the agile board request JQL contains "openSprints()"
 
   @FR-JIRA-08
   Scenario: team_board without board ID returns configuration error
