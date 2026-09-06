@@ -135,6 +135,43 @@ describe("settings tab navigation (FR-SETTINGS-08)", () => {
   });
 });
 
+describe("Jira config loads when switching to integrations tab", () => {
+  it("updates jiraConfig store after setActiveTab('integrations')", async () => {
+    const savedConfig = {
+      enabled: true,
+      baseUrl: "https://jira.example.com",
+      email: "user@example.com",
+      token: "secret",
+      issueKeyPatterns: ["PROJ-\\d+"],
+    };
+
+    const controller = createSettingsController({
+      worker: mockWorker({
+        loadJiraConfig: async () => savedConfig,
+      }),
+      getConfig: () => ({
+        rootDir: "/tmp/buddy",
+        provider: "anthropic",
+        model: "claude-sonnet-5",
+      }),
+      onConfigChange: () => {},
+      version: "0.0.0-test",
+    });
+
+    controller.openSettings();
+    controller.setActiveTab("integrations");
+    // loadJiraIntegration is async — let it settle
+    await new Promise((r) => setTimeout(r, 0));
+
+    const loaded = get(controller.jiraConfig);
+    expect(loaded.enabled).toBe(true);
+    expect(loaded.baseUrl).toBe("https://jira.example.com");
+    expect(loaded.email).toBe("user@example.com");
+    expect(loaded.token).toBe("secret");
+    expect(loaded.issueKeyPatterns).toEqual(["PROJ-\\d+"]);
+  });
+});
+
 describe("createSettingsController", () => {
   it("opens, changes language, and persists via worker", async () => {
     let config: SetupConfig = {

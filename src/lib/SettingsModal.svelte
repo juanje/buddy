@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { get } from "svelte/store";
   import { t } from "./i18n";
   import ProviderAuthForm from "./ProviderAuthForm.svelte";
   import JiraIntegrationPanel from "./JiraIntegrationPanel.svelte";
@@ -42,7 +41,8 @@
   });
 
   $effect(() => {
-    jiraDraft = { ...get(jiraConfig), issueKeyPatterns: [...(get(jiraConfig).issueKeyPatterns ?? [])] };
+    const loaded = $jiraConfig;
+    jiraDraft = { ...loaded, issueKeyPatterns: [...(loaded.issueKeyPatterns ?? [])] };
   });
 
   let apiKeyInput = $state("");
