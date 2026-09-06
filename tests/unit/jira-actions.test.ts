@@ -12,7 +12,13 @@ import {
   issueToCacheEntry,
   jiraHelpText,
 } from "../../backends/connectors/jira-actions";
-import { readEntityStore, readQueryStore, writeEntityStore, writeQueryStore } from "../../backends/connectors/cache";
+import {
+  readEntityStore,
+  readQueryStore,
+  readUserDirectory,
+  writeEntityStore,
+  writeQueryStore,
+} from "../../backends/connectors/cache";
 import { writeConnectorConfig } from "../../backends/connectors/credentials";
 
 let rootDir: string;
@@ -265,5 +271,57 @@ describe("jira actions (FR-JIRA-02/03/05)", () => {
     );
     expect(result.error).toBeDefined();
     expect(result.error!.error).toContain("No Jira user found");
+  });
+
+  it("caches resolved users in user directory", async () => {
+    const fetchImpl = mockFetch({ issues: [] });
+    await executeJiraAction(
+      rootDir, "board", { assignee: "Ozan" }, { fetchImpl, config },
+    );
+    const dir = readUserDirectory(rootDir, "jira");
+    expect(dir["ozan unsal"]).toBeDefined();
+    expect(dir["ozan unsal"]!.accountId).toBe("abc123");
+  });
+
+  it("resolves from local directory without API call", async () => {
+    // First call populates the directory
+    const apiCalls: string[] = [];
+    const trackingFetch = async (url: string, init?: RequestInit) => {
+      apiCalls.push(url);
+      return mockFetch({ issues: [] })(url, init);
+    };
+    await executeJiraAction(
+      rootDir, "board", { assignee: "Ozan" }, { fetchImpl: trackingFetch, config },
+    );
+    const firstCallCount = apiCalls.filter((u) => u.includes("/user/search")).length;
+    expect(firstCallCount).toBe(1);
+
+    // Second call should use cached directory
+    apiCalls.length = 0;
+    await executeJiraAction(
+      rootDir, "board", { assignee: "Ozan Unsal" }, { fetchImpl: trackingFetch, config },
+    );
+    const secondCallCount = apiCalls.filter((u) => u.includes("/user/search")).length;
+    expect(secondCallCount).toBe(0);
+  });
+
+  it("learns users passively from fetched issues", async () => {
+    const fetchImpl = mockFetch({
+      issues: [
+        {
+          key: "PROJ-10",
+          fields: {
+            summary: "Alice task",
+            status: { name: "Open" },
+            assignee: { accountId: "alice-id", displayName: "Alice Wonderland" },
+            updated: "2026-09-06T10:00:00Z",
+          },
+        },
+      ],
+    });
+    await executeJiraAction(rootDir, "my_issues", {}, { fetchImpl, config });
+    const dir = readUserDirectory(rootDir, "jira");
+    expect(dir["alice wonderland"]).toBeDefined();
+    expect(dir["alice wonderland"]!.accountId).toBe("alice-id");
   });
 });

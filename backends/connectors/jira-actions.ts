@@ -13,12 +13,18 @@ import {
 import {
   connectorResultFromCache,
   isCacheStale,
+  lookupUser,
   readEntityStore,
   readQueryStore,
+  readUserDirectory,
+  searchUserDirectory,
+  upsertUser,
   writeEntityStore,
   writeQueryStore,
+  writeUserDirectory,
   type EntityStore,
   type QueryStore,
+  type UserDirectory,
 } from "./cache";
 import { readConnectorConfig } from "./credentials";
 import { connectorResultFromError } from "./jira-result";
@@ -26,19 +32,55 @@ import { connectorResultFromError } from "./jira-result";
 /**
  * Resolve a display name or partial match to a Jira accountId.
  * Returns `currentUser()` unchanged (JQL function, not a user reference).
+ * Checks local user directory first; falls back to Jira API search.
  */
 async function resolveAssignee(
   client: JiraClient,
   input: string,
+  rootDir: string,
 ): Promise<{ accountId: string; display: string } | { error: string }> {
   if (!input || input === "currentUser()") {
     return { accountId: "currentUser()", display: "currentUser()" };
   }
+
+  const dir = readUserDirectory(rootDir, JIRA_DOMAIN);
+
+  // Exact match (case-insensitive)
+  const exact = lookupUser(dir, input);
+  if (exact) {
+    return { accountId: exact.accountId, display: exact.displayName };
+  }
+
+  // Partial match in local directory
+  const localMatches = searchUserDirectory(dir, input);
+  if (localMatches.length === 1) {
+    return { accountId: localMatches[0]!.accountId, display: localMatches[0]!.displayName };
+  }
+
+  // Multiple local matches — ask user to disambiguate without hitting API
+  if (localMatches.length > 1) {
+    const options = localMatches
+      .map((u) => `- ${u.displayName}`)
+      .join("\n");
+    return {
+      error: `Multiple users match "${input}" in the local directory. Be more specific:\n${options}`,
+    };
+  }
+
+  // No local match — search Jira API
   try {
     const users = await client.searchUsers(input);
     if (users.length === 0) {
       return { error: `No Jira user found matching "${input}".` };
     }
+
+    // Cache all returned users for future lookups
+    const updatedDir = users.reduce<UserDirectory>(
+      (d, u) => upsertUser(d, u.accountId, u.displayName ?? u.accountId),
+      { ...dir },
+    );
+    writeUserDirectory(rootDir, JIRA_DOMAIN, updatedDir);
+
     if (users.length === 1 || users[0]!.displayName?.toLowerCase() === input.toLowerCase()) {
       return { accountId: users[0]!.accountId, display: users[0]!.displayName ?? input };
     }
@@ -176,11 +218,29 @@ async function refreshIssues(
   const entityStore = readEntityStore(rootDir, JIRA_DOMAIN);
   const keys: string[] = [];
   const syncedAt = new Date().toISOString();
+
+  // Passive user directory learning: every issue assignee gets cached
+  const userDir = readUserDirectory(rootDir, JIRA_DOMAIN);
+  let userDirChanged = false;
+
   for (const issue of response.issues ?? []) {
     keys.push(issue.key);
     entityStore[issue.key] = issueToCacheEntry(issue, staleAfter);
+
+    const assignee = issue.fields.assignee as
+      | { accountId?: string; displayName?: string }
+      | undefined;
+    if (assignee?.accountId && assignee.displayName) {
+      const key = assignee.displayName.toLowerCase();
+      if (!userDir[key] || userDir[key].accountId !== assignee.accountId) {
+        upsertUser(userDir, assignee.accountId, assignee.displayName);
+        userDirChanged = true;
+      }
+    }
   }
+
   writeEntityStore(rootDir, JIRA_DOMAIN, entityStore);
+  if (userDirChanged) writeUserDirectory(rootDir, JIRA_DOMAIN, userDir);
   writeQueryStore(rootDir, JIRA_DOMAIN, queryId, {
     keys,
     synced_at: syncedAt,
@@ -305,7 +365,7 @@ export async function executeJiraAction(
   switch (action) {
     case "board": {
       const assigneeInput = params.assignee ?? "currentUser()";
-      const resolved = await resolveAssignee(client, assigneeInput);
+      const resolved = await resolveAssignee(client, assigneeInput, rootDir);
       if ("error" in resolved) {
         return connectorResultFromError({
           error: resolved.error,
@@ -329,7 +389,7 @@ export async function executeJiraAction(
     }
     case "my_issues": {
       const assigneeInput = params.assignee ?? "currentUser()";
-      const resolved = await resolveAssignee(client, assigneeInput);
+      const resolved = await resolveAssignee(client, assigneeInput, rootDir);
       if ("error" in resolved) {
         return connectorResultFromError({
           error: resolved.error,
@@ -375,7 +435,7 @@ export async function executeJiraAction(
       let userClause = "";
       let usernameKey = "all";
       if (params.username) {
-        const resolved = await resolveAssignee(client, params.username);
+        const resolved = await resolveAssignee(client, params.username, rootDir);
         if ("error" in resolved) {
           return connectorResultFromError({
             error: resolved.error,

@@ -69,6 +69,56 @@ function threadFilePath(rootDir: string, domain: string, threadId: string): stri
   return join(connectionsDir(rootDir, domain), "threads", `${threadId}.md`);
 }
 
+function userDirectoryPath(rootDir: string, domain: string): string {
+  return join(connectionsDir(rootDir, domain), "users.json");
+}
+
+export interface UserDirectoryEntry {
+  accountId: string;
+  displayName: string;
+  synced_at: string;
+}
+
+export type UserDirectory = Record<string, UserDirectoryEntry>;
+
+export function readUserDirectory(rootDir: string, domain: string): UserDirectory {
+  return readJsonFile<UserDirectory>(userDirectoryPath(rootDir, domain)) ?? {};
+}
+
+export function writeUserDirectory(rootDir: string, domain: string, dir: UserDirectory): void {
+  const path = userDirectoryPath(rootDir, domain);
+  assertCacheContainment(path, rootDir);
+  writeStateFile(path, dir);
+}
+
+/** Add or update a user entry. Key is lowercase displayName for case-insensitive lookup. */
+export function upsertUser(
+  dir: UserDirectory,
+  accountId: string,
+  displayName: string,
+): UserDirectory {
+  const key = displayName.toLowerCase();
+  dir[key] = { accountId, displayName, synced_at: new Date().toISOString() };
+  return dir;
+}
+
+/** Look up a user by display name (exact, case-insensitive). */
+export function lookupUser(
+  dir: UserDirectory,
+  query: string,
+): UserDirectoryEntry | undefined {
+  return dir[query.toLowerCase()];
+}
+
+/** Find all entries whose display name contains the query (case-insensitive). */
+export function searchUserDirectory(
+  dir: UserDirectory,
+  query: string,
+): UserDirectoryEntry[] {
+  const q = query.toLowerCase();
+  return Object.values(dir).filter((e) => e.displayName.toLowerCase().includes(q));
+}
+
 function readJsonFile<T>(path: string): T | undefined {
   if (!existsSync(path)) return undefined;
   return JSON.parse(readFileSync(path, "utf8")) as T;
