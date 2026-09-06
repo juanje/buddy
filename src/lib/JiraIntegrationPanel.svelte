@@ -95,6 +95,12 @@
     </label>
   </div>
 
+  {#if savedNotice === "restart"}
+    <p class="status ok">{$t.settingsJiraRestart}</p>
+  {:else if savedNotice === "saved"}
+    <p class="status ok">{$t.settingsJiraSaved}</p>
+  {/if}
+
   {#if config.enabled}
     <label class="field">
       <span>{$t.settingsJiraBaseUrl}</span>
@@ -158,12 +164,6 @@
     {:else if testStatus === "error" && testError}
       <p class="status error">{testError}</p>
     {/if}
-
-    {#if savedNotice === "restart"}
-      <p class="status ok">{$t.settingsJiraRestart}</p>
-    {:else if savedNotice === "saved"}
-      <p class="status ok">{$t.settingsJiraSaved}</p>
-    {/if}
   {/if}
 
   {#if !config.enabled}
@@ -172,11 +172,6 @@
         {$t.settingsJiraSave}
       </button>
     </div>
-    {#if savedNotice === "restart"}
-      <p class="status ok">{$t.settingsJiraRestart}</p>
-    {:else if savedNotice === "saved"}
-      <p class="status ok">{$t.settingsJiraSaved}</p>
-    {/if}
   {/if}
 </section>
 
