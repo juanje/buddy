@@ -41,10 +41,6 @@
     patternsText = patternsToDisplayText(config.issueKeyPatterns ?? []);
   });
 
-  $effect(() => {
-    enabledAtLoad = config.enabled;
-  });
-
   function dismissSavedNotice() {
     savedNotice = false;
     if (savedNoticeTimer) {
@@ -137,22 +133,25 @@
       <button type="button" class="secondary" onclick={handleTest} disabled={testing}>
         {testing ? $t.settingsJiraTesting : $t.settingsJiraTestConnection}
       </button>
-      <button type="button" class="primary" onclick={handleSave}>
-        {$t.settingsJiraSave}
-      </button>
     </div>
-
-    {#if savedNotice === "restart"}
-      <p class="status ok">{$t.settingsJiraRestart}</p>
-    {:else if savedNotice === "saved"}
-      <p class="status ok">{$t.settingsJiraSaved}</p>
-    {/if}
 
     {#if testStatus === "ok"}
       <p class="status ok">{$t.settingsJiraStatusConnected}</p>
     {:else if testStatus === "error" && testError}
       <p class="status error">{testError}</p>
     {/if}
+  {/if}
+
+  <div class="actions">
+    <button type="button" class="primary" onclick={handleSave}>
+      {$t.settingsJiraSave}
+    </button>
+  </div>
+
+  {#if savedNotice === "restart"}
+    <p class="status ok">{$t.settingsJiraRestart}</p>
+  {:else if savedNotice === "saved"}
+    <p class="status ok">{$t.settingsJiraSaved}</p>
   {/if}
 </section>
 
