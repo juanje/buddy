@@ -218,6 +218,57 @@
           "unit_tests": 7
         }
       ]
+    },
+    {
+      "id": "FR-JIRA-06",
+      "title": "Resolve display names to accountId for cross-user queries",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Board resolves assignee name to accountId",
+          "bdd": "pass",
+          "unit_tests": 3
+        },
+        {
+          "name": "Unknown assignee returns clear error",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Multiple user matches lists disambiguation options",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "my_issues accepts assignee for cross-user queries",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
+    },
+    {
+      "id": "FR-JIRA-07",
+      "title": "Local user directory with passive learning",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Resolved users are cached in the local directory",
+          "bdd": "pass",
+          "unit_tests": 3
+        },
+        {
+          "name": "Second lookup resolves from local directory without API call",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Issue assignees are passively learned into the directory",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
     }
   ]
 }

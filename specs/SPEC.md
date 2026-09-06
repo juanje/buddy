@@ -3163,6 +3163,8 @@ Further context on local-model evaluation methodology and findings:
 | FR-JIRA-03 | ADF renderer, issue_detail, epic_children | 4 ✓ |
 | FR-JIRA-04 | Settings Integrations Jira panel | 4 ✓ |
 | FR-JIRA-05 | Error handling and offline stale serve | 4 ✓ |
+| FR-JIRA-06 | Resolve display names to accountId for cross-user queries | 4 ✓ |
+| FR-JIRA-07 | Local user directory with passive learning | 4 ✓ |
 
 **FR-JIRA-01 — REST client and dispatcher**
 
@@ -3198,6 +3200,24 @@ Further context on local-model evaluation methodology and findings:
 - **When** stale cache exists
 - **Then** stale data is served with structured `stale: true`
 - **And** auth errors map to actionable suggestions
+
+**FR-JIRA-06 — Cross-user queries**
+
+- **Given** a configured Jira integration
+- **When** `board`, `my_issues` or `period_report` runs with an assignee/username parameter
+- **Then** the display name is resolved to a Jira `accountId` via `/rest/api/3/user/search`
+- **And** the JQL uses the `accountId`, not the display name
+- **And** when no user matches, a clear error is returned
+- **And** when multiple users match, options are listed for disambiguation
+
+**FR-JIRA-07 — User directory**
+
+- **Given** Jira queries have been executed
+- **When** a user resolution is needed
+- **Then** the local directory at `.buddy/connections/jira/users.json` is checked first
+- **And** API search results are cached in the directory for future lookups
+- **And** issue assignees from fetched issues are passively learned into the directory
+- **And** after the first session, most user lookups resolve locally with zero API calls
 
 ---
 

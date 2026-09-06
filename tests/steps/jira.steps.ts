@@ -8,7 +8,13 @@ import { join } from "node:path";
 
 import { executeJiraAction } from "../../backends/connectors/jira-actions";
 import { connectorResultToText } from "../../backends/connectors/jira-result";
-import { writeEntityStore, writeQueryStore } from "../../backends/connectors/cache";
+import {
+  readUserDirectory,
+  upsertUser,
+  writeEntityStore,
+  writeQueryStore,
+  writeUserDirectory,
+} from "../../backends/connectors/cache";
 import {
   connectorConfigPath,
   writeConnectorConfig,
@@ -27,6 +33,9 @@ interface JiraWorld extends BuddyWorld {
   searchIssues?: Array<{ key: string; summary: string }>;
   issueDescriptions?: Record<string, string>;
   networkDown?: boolean;
+  userSearchResults?: Record<string, Array<{ accountId: string; displayName: string }>>;
+  userSearchCalled?: boolean;
+  capturedJqlBodies?: string[];
 }
 
 function setupHome(this: JiraWorld): { home: string; configDir: string } {
@@ -53,7 +62,7 @@ function ensureRoot(this: JiraWorld): string {
 }
 
 function defaultFetch(this: JiraWorld) {
-  return async (url: string) => {
+  return async (url: string, init?: RequestInit) => {
     if (this.networkDown) {
       throw new TypeError("fetch failed");
     }
@@ -63,7 +72,20 @@ function defaultFetch(this: JiraWorld) {
         headers: { "content-type": "application/json" },
       });
     }
+    if (url.includes("/user/search")) {
+      this.userSearchCalled = true;
+      const queryParam = new URL(url).searchParams.get("query") ?? "";
+      const results = this.userSearchResults?.[queryParam.toLowerCase()] ?? [];
+      return new Response(JSON.stringify(results), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    }
     if (url.includes("/search/jql")) {
+      if (init?.body) {
+        this.capturedJqlBodies = this.capturedJqlBodies ?? [];
+        this.capturedJqlBodies.push(String(init.body));
+      }
       const issues = (this.searchIssues ?? []).map((item) => ({
         key: item.key,
         fields: {
@@ -242,4 +264,119 @@ Then('the jira credential file contains that base URL', function (this: JiraWorl
   assert.ok(existsSync(path));
   const raw = readFileSync(path, "utf8");
   assert.match(raw, /jira\.example\.com/);
+});
+
+// FR-JIRA-06 steps
+
+Given('jira user search for {string} returns {string} with accountId {string}', function (
+  this: JiraWorld, query: string, displayName: string, accountId: string,
+) {
+  this.userSearchResults = {
+    ...(this.userSearchResults ?? {}),
+    [query.toLowerCase()]: [{ accountId, displayName }],
+  };
+  this.fetchImpl = defaultFetch.call(this);
+});
+
+Given('jira user search for {string} returns no results', function (this: JiraWorld, query: string) {
+  this.userSearchResults = {
+    ...(this.userSearchResults ?? {}),
+    [query.toLowerCase()]: [],
+  };
+  this.fetchImpl = defaultFetch.call(this);
+});
+
+Given('jira user search for {string} returns multiple users', function (this: JiraWorld, query: string) {
+  this.userSearchResults = {
+    ...(this.userSearchResults ?? {}),
+    [query.toLowerCase()]: [
+      { accountId: "id-1", displayName: "Ozan Gunalp" },
+      { accountId: "id-2", displayName: "Ozan Unsal" },
+    ],
+  };
+  this.fetchImpl = defaultFetch.call(this);
+});
+
+Given('jira search returns issues with assignee {string} having accountId {string}', function (
+  this: JiraWorld, displayName: string, accountId: string,
+) {
+  this.searchIssues = [
+    { key: "PROJ-99", summary: "Passive learn task" },
+  ];
+  const baseFetch = defaultFetch.call(this);
+  this.fetchImpl = async (url: string, init?: RequestInit) => {
+    if (url.includes("/search/jql")) {
+      const issues = [{
+        key: "PROJ-99",
+        fields: {
+          summary: "Passive learn task",
+          status: { name: "Open" },
+          assignee: { accountId, displayName },
+          updated: new Date().toISOString(),
+        },
+      }];
+      return new Response(JSON.stringify({ issues }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    }
+    return baseFetch(url, init);
+  };
+});
+
+When('the jira connector runs action {string} for assignee {string}', async function (
+  this: JiraWorld, action: string, assignee: string,
+) {
+  const root = ensureRoot.call(this);
+  this.userSearchCalled = false;
+  this.jiraResult = await executeJiraAction(
+    root, action, { assignee },
+    { fetchImpl: this.fetchImpl ?? defaultFetch.call(this) },
+  );
+  this.jiraResultText = connectorResultToText(this.jiraResult);
+});
+
+Then('the jira result has error matching {string}', function (this: JiraWorld, text: string) {
+  assert.ok(this.jiraResult?.error, "Expected an error result");
+  assert.ok(
+    this.jiraResult.error.error.includes(text),
+    `Expected "${text}" in error: ${this.jiraResult.error.error}`,
+  );
+});
+
+// FR-JIRA-07 steps
+
+Then('the jira user directory contains {string}', function (this: JiraWorld, displayName: string) {
+  const root = ensureRoot.call(this);
+  const dir = readUserDirectory(root, "jira");
+  const entry = dir[displayName.toLowerCase()];
+  assert.ok(entry, `Expected "${displayName}" in user directory`);
+  assert.equal(entry.displayName, displayName);
+});
+
+Given('the jira user directory already has {string} with accountId {string}', function (
+  this: JiraWorld, displayName: string, accountId: string,
+) {
+  const root = ensureRoot.call(this);
+  const dir = readUserDirectory(root, "jira");
+  upsertUser(dir, accountId, displayName);
+  writeUserDirectory(root, "jira", dir);
+  this.userSearchCalled = false;
+});
+
+Then('jira user search API was not called', function (this: JiraWorld) {
+  assert.equal(this.userSearchCalled, false, "Expected no user search API call");
+});
+
+Then('the JQL sent to Jira contains {string}', function (this: JiraWorld, text: string) {
+  const bodies = this.capturedJqlBodies ?? [];
+  assert.ok(bodies.length > 0, "No JQL call was captured");
+  const found = bodies.some((b) => b.includes(text));
+  assert.ok(found, `Expected "${text}" in JQL body, got: ${bodies.join("; ")}`);
+});
+
+Then('the JQL sent to Jira does not contain {string}', function (this: JiraWorld, text: string) {
+  const bodies = this.capturedJqlBodies ?? [];
+  const found = bodies.some((b) => b.includes(text));
+  assert.ok(!found, `Did not expect "${text}" in JQL body, but found it in: ${bodies.join("; ")}`);
 });

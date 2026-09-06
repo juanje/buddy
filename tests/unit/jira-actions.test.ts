@@ -34,7 +34,7 @@ const config = {
 };
 
 function mockFetch(body: unknown, status = 200) {
-  return async (url: string) => {
+  return async (url: string, _init?: RequestInit) => {
     if (url.includes("/myself")) {
       return new Response(JSON.stringify({ accountId: "1" }), {
         status: 200,
@@ -210,10 +210,12 @@ describe("jira actions (FR-JIRA-02/03/05)", () => {
     expect(line).toContain("Bug");
   });
 
-  it("board resolves assignee name to accountId", async () => {
-    const calls: string[] = [];
+  it("board resolves assignee name to accountId in JQL", async () => {
+    const jqlBodies: string[] = [];
     const fetchImpl = async (url: string, init?: RequestInit) => {
-      calls.push(url);
+      if (url.includes("/search/jql") && init?.body) {
+        jqlBodies.push(String(init.body));
+      }
       return mockFetch({
         issues: [
           {
@@ -232,8 +234,9 @@ describe("jira actions (FR-JIRA-02/03/05)", () => {
       rootDir, "board", { assignee: "Ozan" }, { fetchImpl, config },
     );
     expect(result.data).toContain("PROJ-5");
-    const jqlCall = calls.find((c) => c.includes("/search/jql"));
-    expect(jqlCall).toBeDefined();
+    expect(jqlBodies.length).toBeGreaterThan(0);
+    expect(jqlBodies[0]).toContain("abc123");
+    expect(jqlBodies[0]).not.toContain("Ozan Unsal");
   });
 
   it("my_issues accepts assignee to query another person", async () => {
@@ -271,6 +274,28 @@ describe("jira actions (FR-JIRA-02/03/05)", () => {
     );
     expect(result.error).toBeDefined();
     expect(result.error!.error).toContain("No Jira user found");
+  });
+
+  it("lists options when multiple users match", async () => {
+    const fetchImpl = async (url: string, _init?: RequestInit) => {
+      if (url.includes("/user/search")) {
+        return new Response(
+          JSON.stringify([
+            { accountId: "id-1", displayName: "Ozan Gunalp" },
+            { accountId: "id-2", displayName: "Ozan Unsal" },
+          ]),
+          { status: 200, headers: { "content-type": "application/json" } },
+        );
+      }
+      return mockFetch({ issues: [] })(url);
+    };
+    const result = await executeJiraAction(
+      rootDir, "board", { assignee: "Ozan" }, { fetchImpl, config },
+    );
+    expect(result.error).toBeDefined();
+    expect(result.error!.error).toContain("Multiple users match");
+    expect(result.error!.error).toContain("Ozan Gunalp");
+    expect(result.error!.error).toContain("Ozan Unsal");
   });
 
   it("caches resolved users in user directory", async () => {

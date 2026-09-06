@@ -55,3 +55,60 @@ Feature: Jira read-only connector
     Given a buddy integrations directory
     When jira config is saved with base URL "https://jira.example.com"
     Then the jira credential file contains that base URL
+
+  @FR-JIRA-06
+  Scenario: Board resolves assignee name to accountId
+    Given a configured jira integration
+    And jira user search for "Ozan" returns "Ozan Unsal" with accountId "abc123"
+    And jira search returns issue "PROJ-5" titled "Ozan task"
+    When the jira connector runs action "board" for assignee "Ozan"
+    Then the jira result includes "PROJ-5"
+    And the JQL sent to Jira contains "abc123"
+    And the JQL sent to Jira does not contain "Ozan Unsal"
+
+  @FR-JIRA-06
+  Scenario: Unknown assignee returns clear error
+    Given a configured jira integration
+    And jira user search for "nobody" returns no results
+    When the jira connector runs action "board" for assignee "nobody"
+    Then the jira result has error matching "No Jira user found"
+
+  @FR-JIRA-06
+  Scenario: Multiple user matches lists disambiguation options
+    Given a configured jira integration
+    And jira user search for "Ozan" returns multiple users
+    When the jira connector runs action "board" for assignee "Ozan"
+    Then the jira result has error matching "Multiple users match"
+
+  @FR-JIRA-06
+  Scenario: my_issues accepts assignee for cross-user queries
+    Given a configured jira integration
+    And jira user search for "Ozan" returns "Ozan Unsal" with accountId "abc123"
+    And jira search returns issue "PROJ-8" titled "Ozan open issue"
+    When the jira connector runs action "my_issues" for assignee "Ozan"
+    Then the jira result includes "PROJ-8"
+    And the JQL sent to Jira contains "abc123"
+
+  @FR-JIRA-07
+  Scenario: Resolved users are cached in the local directory
+    Given a configured jira integration
+    And jira user search for "Ozan" returns "Ozan Unsal" with accountId "abc123"
+    And jira search returns issue "PROJ-5" titled "Cached task"
+    When the jira connector runs action "board" for assignee "Ozan"
+    Then the jira user directory contains "Ozan Unsal"
+
+  @FR-JIRA-07
+  Scenario: Second lookup resolves from local directory without API call
+    Given a configured jira integration
+    And the jira user directory already has "Ozan Unsal" with accountId "abc123"
+    And jira search returns issue "PROJ-6" titled "Cached lookup"
+    When the jira connector runs action "board" for assignee "Ozan Unsal"
+    Then the jira result includes "PROJ-6"
+    And jira user search API was not called
+
+  @FR-JIRA-07
+  Scenario: Issue assignees are passively learned into the directory
+    Given a configured jira integration
+    And jira search returns issues with assignee "Alice Wonderland" having accountId "alice-id"
+    When the jira connector runs action "my_issues"
+    Then the jira user directory contains "Alice Wonderland"
