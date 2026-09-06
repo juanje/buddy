@@ -118,6 +118,8 @@ export const en: LocaleStrings = {
   settingsJiraShowToken: "Show token",
   settingsJiraHideToken: "Hide token",
   settingsJiraKeyPatterns: "Project prefixes (comma-separated)",
+  settingsJiraBoardId: "Board ID (optional)",
+  settingsJiraBoardIdHint: "For the team_board action — find the ID in Jira → Boards → View board settings.",
   settingsJiraTestConnection: "Test connection",
   settingsJiraTesting: "Testing…",
   settingsJiraSave: "Save",

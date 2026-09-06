@@ -128,6 +128,17 @@
         placeholder="PROJ, TEAM"
       />
     </label>
+    <label class="field">
+      <span>{$t.settingsJiraBoardId}</span>
+      <input
+        type="text"
+        bind:value={config.boardId}
+        oninput={handleFieldInput}
+        spellcheck="false"
+        placeholder="12345"
+      />
+      <span class="hint">{$t.settingsJiraBoardIdHint}</span>
+    </label>
 
     <div class="actions">
       <button type="button" class="secondary" onclick={handleTest} disabled={testing}>
@@ -185,6 +196,11 @@
   .field span {
     font-size: 13px;
     color: var(--muted);
+  }
+  .field .hint {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.4;
   }
   .field input {
     width: 100%;

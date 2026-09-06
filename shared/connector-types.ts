@@ -12,6 +12,8 @@ export interface ConnectorConfig {
   cookie?: string;
   /** Issue key patterns for bulk refresh, e.g. ["VROOM-\\d+"]. */
   issueKeyPatterns?: string[];
+  /** Jira Agile board ID for team_board action. */
+  boardId?: string;
   [key: string]: unknown;
 }
 

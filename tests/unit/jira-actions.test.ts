@@ -350,3 +350,75 @@ describe("jira actions (FR-JIRA-02/03/05)", () => {
     expect(dir["alice wonderland"]!.accountId).toBe("alice-id");
   });
 });
+
+describe("jira team_board (FR-JIRA-08)", () => {
+  it("returns configuration error when boardId is missing", async () => {
+    const result = await executeJiraAction(rootDir, "team_board", {}, { config });
+    expect(result.error?.error).toMatch(/board ID/i);
+  });
+
+  it("fetches issues from configured board via Agile API", async () => {
+    const calls: string[] = [];
+    const fetchImpl = async (url: string, init?: RequestInit) => {
+      calls.push(url);
+      if (url.includes("/rest/agile/1.0/board/")) {
+        return new Response(
+          JSON.stringify({
+            issues: [{
+              key: "PROJ-50",
+              fields: {
+                summary: "Team backlog item",
+                status: { name: "Open" },
+                assignee: { displayName: "Alice" },
+                priority: { name: "Medium" },
+                updated: "2026-09-06T10:00:00Z",
+              },
+            }],
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        );
+      }
+      return mockFetch({ issues: [] })(url, init);
+    };
+    const result = await executeJiraAction(
+      rootDir,
+      "team_board",
+      {},
+      { fetchImpl, config: { ...config, boardId: "12345" } },
+    );
+    expect(result.data).toContain("PROJ-50");
+    expect(result.data).toContain("Team backlog item");
+    expect(calls.some((u) => u.includes("/rest/agile/1.0/board/12345/issue"))).toBe(true);
+  });
+
+  it("passes status filter as jql to Agile API", async () => {
+    const calls: string[] = [];
+    const fetchImpl = async (url: string, init?: RequestInit) => {
+      if (url.includes("/rest/agile/1.0/board/")) {
+        calls.push(url);
+        return new Response(
+          JSON.stringify({
+            issues: [{
+              key: "PROJ-51",
+              fields: {
+                summary: "New team item",
+                status: { name: "New" },
+                assignee: { displayName: "Alice" },
+                updated: "2026-09-06T10:00:00Z",
+              },
+            }],
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        );
+      }
+      return mockFetch({ issues: [] })(url, init);
+    };
+    await executeJiraAction(
+      rootDir,
+      "team_board",
+      { status: "New" },
+      { fetchImpl, config: { ...config, boardId: "12345" } },
+    );
+    expect(decodeURIComponent(calls[0] ?? "")).toContain('status="New"');
+  });
+});

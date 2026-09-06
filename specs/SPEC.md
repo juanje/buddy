@@ -3165,6 +3165,7 @@ Further context on local-model evaluation methodology and findings:
 | FR-JIRA-05 | Error handling and offline stale serve | 4 ✓ |
 | FR-JIRA-06 | Resolve display names to accountId for cross-user queries | 4 ✓ |
 | FR-JIRA-07 | Local user directory with passive learning | 4 ✓ |
+| FR-JIRA-08 | Team board action via Agile API with board ID from Settings | 4 ✓ |
 
 **FR-JIRA-01 — REST client and dispatcher**
 
@@ -3218,6 +3219,15 @@ Further context on local-model evaluation methodology and findings:
 - **And** API search results are cached in the directory for future lookups
 - **And** issue assignees from fetched issues are passively learned into the directory
 - **And** after the first session, most user lookups resolve locally with zero API calls
+
+**FR-JIRA-08 — Team board**
+
+- **Given** a configured Jira integration with `boardId` in Settings
+- **When** the agent calls `jira({ action: "team_board" })`
+- **Then** issues from that board are returned via the Agile REST API
+- **And** optional `params.status` filters by workflow status (e.g. `"New"`)
+- **And** optional `params.assignee` resolves to accountId and filters within the board
+- **And** when `boardId` is not configured, a clear error asks the user to set it in Settings → Integrations → Jira
 
 ---
 

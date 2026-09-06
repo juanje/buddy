@@ -104,6 +104,7 @@ export const JIRA_DOMAIN = "jira";
 
 export const FRESHNESS = {
   board: "15m",
+  teamBoard: "15m",
   myIssues: "15m",
   issueDetail: "30m",
   epicChildren: "1h",
@@ -115,6 +116,7 @@ export const FRESHNESS = {
 export interface JiraActionParams {
   force?: boolean;
   assignee?: string;
+  status?: string;
   days?: number;
   keys?: string[];
   key?: string;
@@ -250,6 +252,63 @@ async function refreshIssues(
   return { keys, syncedAt };
 }
 
+async function refreshBoardIssues(
+  client: JiraClient,
+  rootDir: string,
+  boardId: string,
+  jql: string | undefined,
+  queryId: string,
+  staleAfter: string,
+): Promise<{ keys: string[]; syncedAt: string }> {
+  const response = await client.getBoardIssues(boardId, jql);
+  const entityStore = readEntityStore(rootDir, JIRA_DOMAIN);
+  const keys: string[] = [];
+  const syncedAt = new Date().toISOString();
+
+  const userDir = readUserDirectory(rootDir, JIRA_DOMAIN);
+  let userDirChanged = false;
+
+  for (const issue of response.issues ?? []) {
+    keys.push(issue.key);
+    entityStore[issue.key] = issueToCacheEntry(issue, staleAfter);
+
+    const assignee = issue.fields.assignee as
+      | { accountId?: string; displayName?: string }
+      | undefined;
+    if (assignee?.accountId && assignee.displayName) {
+      const key = assignee.displayName.toLowerCase();
+      if (!userDir[key] || userDir[key].accountId !== assignee.accountId) {
+        upsertUser(userDir, assignee.accountId, assignee.displayName);
+        userDirChanged = true;
+      }
+    }
+  }
+
+  writeEntityStore(rootDir, JIRA_DOMAIN, entityStore);
+  if (userDirChanged) writeUserDirectory(rootDir, JIRA_DOMAIN, userDir);
+  writeQueryStore(rootDir, JIRA_DOMAIN, queryId, {
+    keys,
+    synced_at: syncedAt,
+    stale_after: staleAfter,
+    source: JIRA_DOMAIN,
+  });
+  return { keys, syncedAt };
+}
+
+function buildTeamBoardJql(status?: string, assigneeAccountId?: string): string | undefined {
+  const clauses: string[] = [];
+  if (status) clauses.push(`status="${status}"`);
+  if (assigneeAccountId) clauses.push(`assignee = ${assigneeJql(assigneeAccountId)}`);
+  return clauses.length > 0 ? clauses.join(" AND ") : undefined;
+}
+
+function teamBoardQueryId(boardId: string, status?: string, assigneeAccountId?: string): string {
+  const parts = [`team_board_${boardId}`];
+  if (status) parts.push(`status_${status}`);
+  if (assigneeAccountId) parts.push(`assignee_${assigneeAccountId}`);
+  return parts.join("_");
+}
+
 async function serveCachedOrFetch(
   rootDir: string,
   queryId: string,
@@ -286,6 +345,7 @@ export function jiraHelpText(): string {
 |--------|--------|-------------|
 | help | — | List actions |
 | board | assignee?, force? | Open sprint issues |
+| team_board | status?, assignee?, force? | Issues from configured team board (Agile API) |
 | my_issues | assignee?, force? | Open issues (yours by default, or for a named person) |
 | issue_detail | key (required), force? | Full issue with description/comments |
 | issues_by_key | keys[] (required), force? | Bulk status for keys |
@@ -385,6 +445,37 @@ export async function executeJiraAction(
           "duedate",
           "updated",
         ]),
+      );
+    }
+    case "team_board": {
+      const boardId = typeof config.boardId === "string" ? config.boardId.trim() : "";
+      if (!boardId) {
+        return connectorResultFromError({
+          error: "Team board ID is not configured",
+          code: 0,
+          recoverable: false,
+          suggestion: "Set the board ID in Settings → Integrations → Jira.",
+        });
+      }
+
+      let assigneeAccountId: string | undefined;
+      if (params.assignee) {
+        const resolved = await resolveAssignee(client, params.assignee, rootDir);
+        if ("error" in resolved) {
+          return connectorResultFromError({
+            error: resolved.error,
+            code: 0,
+            recoverable: false,
+            suggestion: "jiraErrorGeneric",
+          });
+        }
+        assigneeAccountId = resolved.accountId;
+      }
+
+      const jql = buildTeamBoardJql(params.status, assigneeAccountId);
+      const queryId = teamBoardQueryId(boardId, params.status, assigneeAccountId);
+      return serveCachedOrFetch(rootDir, queryId, force, () =>
+        refreshBoardIssues(client, rootDir, boardId, jql, queryId, FRESHNESS.teamBoard),
       );
     }
     case "my_issues": {

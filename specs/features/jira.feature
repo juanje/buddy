@@ -112,3 +112,35 @@ Feature: Jira read-only connector
     And jira search returns issues with assignee "Alice Wonderland" having accountId "alice-id"
     When the jira connector runs action "my_issues"
     Then the jira user directory contains "Alice Wonderland"
+
+  @FR-JIRA-08
+  Scenario: team_board returns issues from configured board
+    Given a configured jira integration with board ID "12345"
+    And jira team board returns issue "PROJ-50" titled "Team backlog item"
+    When the jira connector runs action "team_board"
+    Then the jira result includes "PROJ-50"
+    And the jira result includes "Team backlog item"
+
+  @FR-JIRA-08
+  Scenario: team_board without board ID returns configuration error
+    Given a configured jira integration
+    When the jira connector runs action "team_board"
+    Then the jira result has error matching "board ID"
+
+  @FR-JIRA-08
+  Scenario: team_board filters by status
+    Given a configured jira integration with board ID "12345"
+    And jira team board returns issue "PROJ-51" titled "New team item"
+    When the jira connector runs action "team_board" with status "New"
+    Then the jira result includes "PROJ-51"
+    And the agile board request JQL contains "New"
+
+  @FR-JIRA-08
+  Scenario: team_board filters by assignee using accountId
+    Given a configured jira integration with board ID "12345"
+    And the jira user directory already has "Ozan Unsal" with accountId "abc123"
+    And jira team board returns issue "PROJ-52" titled "Ozan team item"
+    When the jira connector runs action "team_board" for assignee "Ozan Unsal"
+    Then the jira result includes "PROJ-52"
+    And the agile board request JQL contains "abc123"
+    And jira user search API was not called

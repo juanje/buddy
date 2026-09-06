@@ -36,6 +36,8 @@ interface JiraWorld extends BuddyWorld {
   userSearchResults?: Record<string, Array<{ accountId: string; displayName: string }>>;
   userSearchCalled?: boolean;
   capturedJqlBodies?: string[];
+  capturedAgileUrls?: string[];
+  teamBoardIssues?: Array<{ key: string; summary: string }>;
 }
 
 function setupHome(this: JiraWorld): { home: string; configDir: string } {
@@ -77,6 +79,24 @@ function defaultFetch(this: JiraWorld) {
       const queryParam = new URL(url).searchParams.get("query") ?? "";
       const results = this.userSearchResults?.[queryParam.toLowerCase()] ?? [];
       return new Response(JSON.stringify(results), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    }
+    if (url.includes("/rest/agile/1.0/board/") && url.includes("/issue")) {
+      this.capturedAgileUrls = this.capturedAgileUrls ?? [];
+      this.capturedAgileUrls.push(url);
+      const issues = (this.teamBoardIssues ?? []).map((item) => ({
+        key: item.key,
+        fields: {
+          summary: item.summary,
+          status: { name: "Open" },
+          assignee: { displayName: "Alice" },
+          priority: { name: "Medium" },
+          updated: new Date().toISOString(),
+        },
+      }));
+      return new Response(JSON.stringify({ issues }), {
         status: 200,
         headers: { "content-type": "application/json" },
       });
@@ -205,6 +225,9 @@ Given("jira network is unavailable", function (this: JiraWorld) {
 
 When('the jira connector runs action {string}', async function (this: JiraWorld, action: string) {
   const root = ensureRoot.call(this);
+  if (action === "team_board") {
+    this.capturedAgileUrls = [];
+  }
   this.jiraResult = await executeJiraAction(root, action, {}, { fetchImpl: this.fetchImpl ?? defaultFetch.call(this) });
   this.jiraResultText = connectorResultToText(this.jiraResult);
 });
@@ -329,6 +352,9 @@ When('the jira connector runs action {string} for assignee {string}', async func
 ) {
   const root = ensureRoot.call(this);
   this.userSearchCalled = false;
+  if (action === "team_board") {
+    this.capturedAgileUrls = [];
+  }
   this.jiraResult = await executeJiraAction(
     root, action, { assignee },
     { fetchImpl: this.fetchImpl ?? defaultFetch.call(this) },
@@ -379,4 +405,49 @@ Then('the JQL sent to Jira does not contain {string}', function (this: JiraWorld
   const bodies = this.capturedJqlBodies ?? [];
   const found = bodies.some((b) => b.includes(text));
   assert.ok(!found, `Did not expect "${text}" in JQL body, but found it in: ${bodies.join("; ")}`);
+});
+
+// FR-JIRA-08 steps
+
+Given('a configured jira integration with board ID {string}', function (this: JiraWorld, boardId: string) {
+  const { configDir } = setupHome.call(this);
+  ensureRoot.call(this);
+  writeConnectorConfig(
+    "jira",
+    {
+      enabled: true,
+      baseUrl: "https://jira.example.com",
+      email: "user@example.com",
+      token: "secret",
+      boardId,
+    },
+    configDir,
+  );
+  this.fetchImpl = defaultFetch.call(this);
+  this.networkDown = false;
+});
+
+Given('jira team board returns issue {string} titled {string}', function (
+  this: JiraWorld, key: string, summary: string,
+) {
+  this.teamBoardIssues = [{ key, summary }];
+});
+
+When('the jira connector runs action "team_board" with status {string}', async function (
+  this: JiraWorld, status: string,
+) {
+  const root = ensureRoot.call(this);
+  this.capturedAgileUrls = [];
+  this.jiraResult = await executeJiraAction(
+    root, "team_board", { status },
+    { fetchImpl: this.fetchImpl ?? defaultFetch.call(this) },
+  );
+  this.jiraResultText = connectorResultToText(this.jiraResult);
+});
+
+Then('the agile board request JQL contains {string}', function (this: JiraWorld, text: string) {
+  const urls = this.capturedAgileUrls ?? [];
+  assert.ok(urls.length > 0, "No agile board API call was captured");
+  const found = urls.some((u) => decodeURIComponent(u).includes(text));
+  assert.ok(found, `Expected "${text}" in agile URL, got: ${urls.join("; ")}`);
 });

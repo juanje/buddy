@@ -393,6 +393,7 @@ export function createSettingsController(options: {
         email: loaded?.email ?? "",
         token: loaded?.token ?? "",
         issueKeyPatterns: loaded?.issueKeyPatterns ?? [],
+        boardId: loaded?.boardId ?? "",
       });
       jiraTestStatus.set("idle");
       jiraTestError.set(undefined);

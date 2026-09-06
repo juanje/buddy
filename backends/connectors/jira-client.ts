@@ -118,6 +118,7 @@ export interface JiraClient {
   baseUrl: string;
   request<T>(path: string, init?: RequestInit): Promise<T>;
   searchJql(jql: string, fields: string[], maxResults?: number): Promise<JiraSearchResponse>;
+  getBoardIssues(boardId: string, jql?: string): Promise<JiraSearchResponse>;
   getIssue(issueKey: string, fields?: string[]): Promise<JiraIssue>;
   getComments(issueKey: string): Promise<JiraCommentsResponse>;
   searchUsers(query: string): Promise<JiraUser[]>;
@@ -203,6 +204,15 @@ export function createJiraClient(config: ConnectorConfig, options?: JiraClientOp
         method: "POST",
         body: JSON.stringify({ jql, fields, maxResults }),
       });
+    },
+    async getBoardIssues(boardId: string, jql?: string) {
+      const params = new URLSearchParams();
+      if (jql) params.set("jql", jql);
+      const query = params.toString();
+      const path = `/rest/agile/1.0/board/${encodeURIComponent(boardId)}/issue${
+        query ? `?${query}` : ""
+      }`;
+      return request<JiraSearchResponse>(path);
     },
     async getIssue(issueKey: string, fields = DEFAULT_FIELDS) {
       const query = new URLSearchParams({ fields: fields.join(",") });

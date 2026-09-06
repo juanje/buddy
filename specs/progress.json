@@ -269,6 +269,34 @@
           "unit_tests": 1
         }
       ]
+    },
+    {
+      "id": "FR-JIRA-08",
+      "title": "Team board action via Agile API with board ID from Settings",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "team_board returns issues from configured board",
+          "bdd": "pass",
+          "unit_tests": 2
+        },
+        {
+          "name": "team_board without board ID returns configuration error",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "team_board filters by status",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "team_board filters by assignee using accountId",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
     }
   ]
 }

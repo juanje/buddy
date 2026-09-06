@@ -9,6 +9,7 @@ export const CONNECTOR_ACTIONS: Record<string, ActionTable> = {
   jira: {
     help: "read",
     board: "read",
+    team_board: "read",
     my_issues: "read",
     issue_detail: "read",
     issues_by_key: "read",

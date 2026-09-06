@@ -95,4 +95,24 @@ describe("jira client (FR-JIRA-01/05)", () => {
     expect(users).toHaveLength(1);
     expect(users[0]?.accountId).toBe("abc");
   });
+
+  it("getBoardIssues calls Agile API with optional jql filter", async () => {
+    const calls: string[] = [];
+    const fetchImpl = async (url: string) => {
+      calls.push(url);
+      return new Response(
+        JSON.stringify({ issues: [{ key: "PROJ-50", fields: { summary: "Team item" } }] }),
+        { status: 200, headers: { "content-type": "application/json" } },
+      );
+    };
+    const client = createJiraClient(
+      { baseUrl: "https://jira.example.com", email: "a@b.com", token: "tok" },
+      { fetchImpl },
+    );
+    const result = await client.getBoardIssues("12345", 'status="New"');
+    expect(result.issues[0]?.key).toBe("PROJ-50");
+    expect(calls[0]).toBe(
+      'https://jira.example.com/rest/agile/1.0/board/12345/issue?jql=status%3D%22New%22',
+    );
+  });
 });
