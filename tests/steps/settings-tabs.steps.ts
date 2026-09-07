@@ -50,3 +50,20 @@ Then("the settings version field is not shown", function () {
   const src = readFileSync(join(ROOT, "src/lib/SettingsModal.svelte"), "utf8");
   assert.doesNotMatch(src, /\$t\.settingsVersion/);
 });
+
+Then("integration panels are collapsed by default", function () {
+  const src = readFileSync(join(ROOT, "src/lib/IntegrationSection.svelte"), "utf8");
+  assert.match(src, /integration-section/);
+  assert.match(src, /open\s*=\s*\$bindable\(false\)/);
+});
+
+Then("the integration section shows active and inactive status labels", function () {
+  const modalSrc = readFileSync(join(ROOT, "src/lib/SettingsModal.svelte"), "utf8");
+  assert.match(modalSrc, /IntegrationSection/);
+  const sectionSrc = readFileSync(join(ROOT, "src/lib/IntegrationSection.svelte"), "utf8");
+  assert.match(sectionSrc, /settingsIntegrationActive/);
+  assert.match(sectionSrc, /settingsIntegrationInactive/);
+  const strings = get(t);
+  assert.ok(strings.settingsIntegrationActive.length > 0);
+  assert.ok(strings.settingsIntegrationInactive.length > 0);
+});

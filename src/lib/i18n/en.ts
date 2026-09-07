@@ -110,6 +110,8 @@ export const en: LocaleStrings = {
   settingsTabGeneral: "General",
   settingsTabIntegrations: "Integrations",
   settingsIntegrationsEmpty: "No integrations configured yet.",
+  settingsIntegrationActive: "Active",
+  settingsIntegrationInactive: "Inactive",
   settingsJiraTitle: "Jira",
   settingsJiraEnabled: "Enable Jira",
   settingsJiraBaseUrl: "Jira URL",

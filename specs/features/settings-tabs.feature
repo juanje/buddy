@@ -40,3 +40,15 @@ Feature: Settings tab system
   Scenario: Version field is not shown in Settings
     Given the settings panel is open
     Then the settings version field is not shown
+
+  @FR-SETTINGS-10
+  Scenario: Integration panels collapsed by default
+    Given the settings panel is open
+    When I switch to the integrations settings tab
+    Then integration panels are collapsed by default
+
+  @FR-SETTINGS-10
+  Scenario: Collapsed panel header shows active status
+    Given the settings panel is open
+    When I switch to the integrations settings tab
+    Then the integration section shows active and inactive status labels

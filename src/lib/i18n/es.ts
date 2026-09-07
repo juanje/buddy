@@ -100,6 +100,8 @@ export type LocaleStrings = {
   settingsTabGeneral: string;
   settingsTabIntegrations: string;
   settingsIntegrationsEmpty: string;
+  settingsIntegrationActive: string;
+  settingsIntegrationInactive: string;
   settingsJiraTitle: string;
   settingsJiraEnabled: string;
   settingsJiraBaseUrl: string;
@@ -270,6 +272,8 @@ export const es: LocaleStrings = {
   settingsTabGeneral: "General",
   settingsTabIntegrations: "Integraciones",
   settingsIntegrationsEmpty: "No hay integraciones configuradas.",
+  settingsIntegrationActive: "Activo",
+  settingsIntegrationInactive: "Inactivo",
   settingsJiraTitle: "Jira",
   settingsJiraEnabled: "Activar Jira",
   settingsJiraBaseUrl: "URL de Jira",

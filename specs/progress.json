@@ -297,6 +297,24 @@
           "unit_tests": 1
         }
       ]
+    },
+    {
+      "id": "FR-SETTINGS-10",
+      "title": "Collapsible integration panels",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Integration panels collapsed by default",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Collapsed panel header shows active status",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
     }
   ]
 }

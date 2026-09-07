@@ -2,6 +2,7 @@
   import { t } from "./i18n";
   import ProviderAuthForm from "./ProviderAuthForm.svelte";
   import JiraIntegrationPanel from "./JiraIntegrationPanel.svelte";
+  import IntegrationSection from "./IntegrationSection.svelte";
   import {
     providerLabel,
     type SettingsController,
@@ -326,16 +327,18 @@
 
       <p class="hint">{$t.settingsReadOnlyHint}</p>
       {:else}
-      <JiraIntegrationPanel
-        bind:config={jiraDraft}
-        testing={$jiraTesting}
-        testStatus={$jiraTestStatus}
-        testError={$jiraTestError}
-        showToken={$jiraShowToken}
-        onToggleShowToken={(show) => controller.setJiraShowToken(show)}
-        onSave={() => controller.saveJiraIntegration(jiraDraft)}
-        onTest={() => controller.testJiraIntegration(jiraDraft)}
-      />
+      <IntegrationSection title={$t.settingsJiraTitle} active={jiraDraft.enabled ?? false}>
+        <JiraIntegrationPanel
+          bind:config={jiraDraft}
+          testing={$jiraTesting}
+          testStatus={$jiraTestStatus}
+          testError={$jiraTestError}
+          showToken={$jiraShowToken}
+          onToggleShowToken={(show) => controller.setJiraShowToken(show)}
+          onSave={() => controller.saveJiraIntegration(jiraDraft)}
+          onTest={() => controller.testJiraIntegration(jiraDraft)}
+        />
+      </IntegrationSection>
       {/if}
     </div>
   </div>

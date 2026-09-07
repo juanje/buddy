@@ -1838,6 +1838,7 @@ does not know them, and orders their profile overwritten.
 | FR-SETTINGS-05 | Settings access from UI (gear icon + menu) | 3 ✓ |
 | FR-SETTINGS-08 | Settings tab system (General + Integrations) | 4 ✓ |
 | FR-SETTINGS-09 | Remove Version from Settings modal | 4 ✓ |
+| FR-SETTINGS-10 | Collapsible integration panels (collapsed by default, status visible) | 4 ✓ |
 
 **FR-SETTINGS-01 — Pi settings**
 
@@ -1888,6 +1889,14 @@ does not know them, and orders their profile overwritten.
 - **Given** the user opens settings
 - **When** the General tab is visible
 - **Then** the Version field is not shown in the modal (version remains available in the About window)
+
+**FR-SETTINGS-10 — Collapsible integration panels**
+
+- **Given** the user opens settings and switches to the Integrations tab
+- **When** integration panels are shown
+- **Then** each panel is collapsed by default (fields hidden, header visible)
+- **And** the collapsed header shows the connector name and an active/inactive status indicator
+- **And** clicking the header expands or collapses that panel without affecting other panels
 
 ### 3.13 Cost Visibility (FR-COST)
 
