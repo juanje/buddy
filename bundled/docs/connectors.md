@@ -26,5 +26,6 @@ When Buddy can't reach a service (network down, server error), it serves what it
 ## Available connectors
 
 - [Jira](connectors/jira.md) — project and issue tracking.
+- [Slack](connectors/slack.md) — team chat, threads, and DMs.
 
 More connectors are planned. If asked about a service that's not listed here, say so clearly.
