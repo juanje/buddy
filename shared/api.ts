@@ -250,6 +250,12 @@ export interface WorkerAPI {
   saveJiraConfig(config: ConnectorConfig): Promise<void>;
   /** Probe Jira credentials (FR-JIRA-04). */
   testJiraConnection(config: ConnectorConfig): Promise<{ ok: boolean; error?: string }>;
+  /** Load Slack integration config (FR-SLACK-01). */
+  loadSlackConfig(): Promise<ConnectorConfig | undefined>;
+  /** Persist Slack integration config (FR-SLACK-01). */
+  saveSlackConfig(config: ConnectorConfig): Promise<void>;
+  /** Probe Slack session credentials (FR-SLACK-01). */
+  testSlackConnection(config: ConnectorConfig): Promise<{ ok: boolean; error?: string }>;
   shutdown(): Promise<void>;
 }
 

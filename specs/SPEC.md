@@ -3238,6 +3238,40 @@ Further context on local-model evaluation methodology and findings:
 - **And** optional `params.assignee` resolves to accountId and filters within the board
 - **And** when `boardId` is not configured, a clear error asks the user to set it in Settings → Integrations → Jira
 
+### 3.26 Slack Connector (FR-SLACK)
+
+| ID | Description | Phase |
+|----|-------------|-------|
+| FR-SLACK-01 | Slack dispatcher, help action, session auth, Settings panel | 4 ✓ |
+| FR-SLACK-02 | Read actions (thread, channel_history, channels) with fetch-to-file | 4 ✓ |
+| FR-SLACK-03 | User ID resolution and channel directory | 4 ✓ |
+
+**FR-SLACK-01 — Dispatcher, auth, and Settings**
+
+- **Given** Slack session credentials (`xoxc` token + `xoxd` cookie) in `~/.buddy/integrations/slack.json`
+- **When** the agent calls `slack({ action: "help" })`
+- **Then** available read actions are listed
+- **And** unknown actions return an error suggesting `help`
+- **And** test connection probes `auth.test`
+- **And** the Integrations settings tab exposes xoxc/xoxd fields with extraction instructions
+
+**FR-SLACK-02 — Read actions and fetch-to-file**
+
+- **Given** a configured Slack integration
+- **When** `thread`, `channel_history`, or `channels` runs
+- **Then** content is written under `.buddy/connections/slack/`
+- **And** the tool result returns a file path and summary, not full message bodies
+- **And** `params.force: true` bypasses freshness checks
+- **And** pagination and rate limiting respect Slack API constraints
+
+**FR-SLACK-03 — User resolution and channel directory**
+
+- **Given** Slack messages contain opaque user IDs
+- **When** thread or channel history is rendered to markdown
+- **Then** `<@U…>` mentions resolve to `@DisplayName` before the agent reads the file
+- **And** resolved users are cached in `.buddy/connections/slack/users.json`
+- **And** `channels` populates a channel directory in the entity store
+
 ---
 
 ## 4. Non-Functional Requirements

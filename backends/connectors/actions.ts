@@ -22,10 +22,8 @@ export const CONNECTOR_ACTIONS: Record<string, ActionTable> = {
   slack: {
     help: "read",
     channels: "read",
-    mentions: "read",
     channel_history: "read",
     thread: "read",
-    search: "read",
     post_message: "write",
   },
 };

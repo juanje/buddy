@@ -13,9 +13,11 @@ import type {
 } from "../../shared/api";
 import { DEFAULT_MONTHLY_BUDGET } from "../../shared/defaults";
 import { resolveJiraErrorSuggestion } from "../../shared/jira-error-suggestions";
+import { resolveSlackErrorSuggestion } from "../../shared/slack-error-suggestions";
 import { getLocale, setLocale, t, type AppLocale } from "./i18n";
 import { isApiKeyOnlyProvider } from "./provider-setup";
 import { jiraErrorMessagesFromLocale } from "../../backends/connectors/jira-result";
+import { slackErrorMessagesFromLocale } from "../../backends/connectors/slack-result";
 
 export interface SettingsWorkerAPI {
   updateConfig(patch: Partial<Pick<SetupConfig, "language" | "monthlyBudget">>): Promise<void>;
@@ -32,6 +34,9 @@ export interface SettingsWorkerAPI {
   loadJiraConfig(): Promise<ConnectorConfig | undefined>;
   saveJiraConfig(config: ConnectorConfig): Promise<void>;
   testJiraConnection(config: ConnectorConfig): Promise<{ ok: boolean; error?: string }>;
+  loadSlackConfig(): Promise<ConnectorConfig | undefined>;
+  saveSlackConfig(config: ConnectorConfig): Promise<void>;
+  testSlackConnection(config: ConnectorConfig): Promise<{ ok: boolean; error?: string }>;
 }
 
 export interface SettingsDisplayConfig {
@@ -51,6 +56,12 @@ function resolveJiraTestError(error: string | undefined): string | undefined {
   if (!error) return undefined;
   const messages = jiraErrorMessagesFromLocale(get(t));
   return resolveJiraErrorSuggestion(error, messages);
+}
+
+function resolveSlackTestError(error: string | undefined): string | undefined {
+  if (!error) return undefined;
+  const messages = slackErrorMessagesFromLocale(get(t));
+  return resolveSlackErrorSuggestion(error, messages);
 }
 
 export type SettingsProviderId = SetupConfig["provider"];
@@ -80,6 +91,11 @@ export interface SettingsController {
   jiraTestStatus: Readable<"idle" | "ok" | "error">;
   jiraTestError: Readable<string | undefined>;
   jiraShowToken: Readable<boolean>;
+  slackConfig: Readable<ConnectorConfig>;
+  slackTesting: Readable<boolean>;
+  slackTestStatus: Readable<"idle" | "ok" | "error">;
+  slackTestError: Readable<string | undefined>;
+  slackShowSecrets: Readable<boolean>;
   openSettings(): void;
   closeSettings(): void;
   setActiveTab(tab: SettingsTabId): void;
@@ -97,6 +113,10 @@ export interface SettingsController {
   saveJiraIntegration(config: ConnectorConfig): Promise<void>;
   testJiraIntegration(config: ConnectorConfig): Promise<void>;
   setJiraShowToken(show: boolean): void;
+  loadSlackIntegration(): Promise<void>;
+  saveSlackIntegration(config: ConnectorConfig): Promise<void>;
+  testSlackIntegration(config: ConnectorConfig): Promise<void>;
+  setSlackShowSecrets(show: boolean): void;
   formatCost(amount: number): string;
 }
 
@@ -192,6 +212,15 @@ export function createSettingsController(options: {
   const jiraTestStatus = writable<"idle" | "ok" | "error">("idle");
   const jiraTestError = writable<string | undefined>(undefined);
   const jiraShowToken = writable(false);
+  const slackConfig = writable<ConnectorConfig>({
+    enabled: false,
+    token: "",
+    cookie: "",
+  });
+  const slackTesting = writable(false);
+  const slackTestStatus = writable<"idle" | "ok" | "error">("idle");
+  const slackTestError = writable<string | undefined>(undefined);
+  const slackShowSecrets = writable(false);
   const lastModelByProvider = new Map<SettingsProviderId, string>();
 
   async function refreshUsage(): Promise<void> {
@@ -248,6 +277,11 @@ export function createSettingsController(options: {
     jiraTestStatus,
     jiraTestError,
     jiraShowToken,
+    slackConfig,
+    slackTesting,
+    slackTestStatus,
+    slackTestError,
+    slackShowSecrets,
     openSettings() {
       const current = options.getConfig();
       config.set(toDisplay(current, options.version));
@@ -280,6 +314,7 @@ export function createSettingsController(options: {
       activeTab.set(tab);
       if (tab === "integrations") {
         void this.loadJiraIntegration();
+        void this.loadSlackIntegration();
       }
     },
     async setLanguage(language) {
@@ -420,6 +455,39 @@ export function createSettingsController(options: {
     },
     setJiraShowToken(show) {
       jiraShowToken.set(show);
+    },
+    async loadSlackIntegration() {
+      const loaded = await options.worker.loadSlackConfig();
+      slackConfig.set({
+        enabled: loaded?.enabled ?? false,
+        token: loaded?.token ?? "",
+        cookie: loaded?.cookie ?? "",
+      });
+      slackTestStatus.set("idle");
+      slackTestError.set(undefined);
+    },
+    async saveSlackIntegration(configToSave) {
+      await options.worker.saveSlackConfig(configToSave);
+      slackConfig.set(configToSave);
+      slackTestStatus.set("idle");
+    },
+    async testSlackIntegration(configToTest) {
+      slackTesting.set(true);
+      slackTestError.set(undefined);
+      try {
+        const result = await options.worker.testSlackConnection(configToTest);
+        if (result.ok) {
+          slackTestStatus.set("ok");
+        } else {
+          slackTestStatus.set("error");
+          slackTestError.set(resolveSlackTestError(result.error) ?? "Connection failed");
+        }
+      } finally {
+        slackTesting.set(false);
+      }
+    },
+    setSlackShowSecrets(show) {
+      slackShowSecrets.set(show);
     },
     formatCost: formatUsd,
   };

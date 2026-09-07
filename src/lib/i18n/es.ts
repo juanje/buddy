@@ -127,6 +127,28 @@ export type LocaleStrings = {
   jiraErrorTimeout: string;
   jiraErrorGeneric: string;
   jiraErrorNotConfigured: string;
+  settingsSlackTitle: string;
+  settingsSlackEnabled: string;
+  settingsSlackToken: string;
+  settingsSlackCookie: string;
+  settingsSlackShowSecrets: string;
+  settingsSlackHideSecrets: string;
+  settingsSlackExtractHint: string;
+  settingsSlackTestConnection: string;
+  settingsSlackTesting: string;
+  settingsSlackSave: string;
+  settingsSlackSaved: string;
+  settingsSlackRestart: string;
+  settingsSlackStatusConnected: string;
+  slackError401: string;
+  slackError403: string;
+  slackError404: string;
+  slackError429: string;
+  slackError5xx: string;
+  slackErrorNetwork: string;
+  slackErrorTimeout: string;
+  slackErrorGeneric: string;
+  slackErrorNotConfigured: string;
   settingsClose: string;
   settingsReadOnlyHint: string;
   settingsAddProvider: string;
@@ -299,6 +321,28 @@ export const es: LocaleStrings = {
   jiraErrorTimeout: "Comprueba tu conexión de red e inténtalo de nuevo.",
   jiraErrorGeneric: "Comprueba la URL de Jira y las credenciales en Ajustes.",
   jiraErrorNotConfigured: "Configura Jira en Ajustes → Integraciones.",
+  settingsSlackTitle: "Slack",
+  settingsSlackEnabled: "Activar Slack",
+  settingsSlackToken: "Token de sesión (xoxc)",
+  settingsSlackCookie: "Cookie de sesión (xoxd)",
+  settingsSlackShowSecrets: "Mostrar credenciales",
+  settingsSlackHideSecrets: "Ocultar credenciales",
+  settingsSlackExtractHint: "Extrae las credenciales de sesión con",
+  settingsSlackTestConnection: "Probar conexión",
+  settingsSlackTesting: "Probando…",
+  settingsSlackSave: "Guardar",
+  settingsSlackSaved: "Guardado.",
+  settingsSlackRestart: "Guardado. Reinicia la sesión para activar el cambio.",
+  settingsSlackStatusConnected: "Conectado",
+  slackError401: "Vuelve a extraer las credenciales en Ajustes → Integraciones → Slack.",
+  slackError403: "Comprueba los permisos de Slack de esta cuenta.",
+  slackError404: "El canal, hilo o usuario puede no existir o ser inaccesible.",
+  slackError429: "Espera e inténtalo de nuevo — Slack limita las peticiones.",
+  slackError5xx: "Slack puede estar caído — inténtalo más tarde.",
+  slackErrorNetwork: "Comprueba tu conexión de red.",
+  slackErrorTimeout: "Comprueba tu conexión de red e inténtalo de nuevo.",
+  slackErrorGeneric: "Comprueba las credenciales de Slack en Ajustes.",
+  slackErrorNotConfigured: "Configura Slack en Ajustes → Integraciones.",
   settingsClose: "Cerrar",
   settingsReadOnlyHint: "La carpeta de memoria se configura durante la instalación inicial.",
   settingsAddProvider: "Añadir proveedor",

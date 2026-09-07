@@ -6,6 +6,7 @@ import { defineTool, type ToolDefinition } from "@earendil-works/pi-coding-agent
 import { classifyConnectorAction } from "./actions";
 import { listConfiguredDomains, readConnectorConfig } from "./credentials";
 import { buildJiraConnectorTool } from "./jira";
+import { buildSlackConnectorTool } from "./slack";
 
 /**
  * Minimal stub dispatcher per configured domain — proves registration flow
@@ -59,6 +60,7 @@ export function buildConnectorToolset(rootDir: string): ToolDefinition[] {
     .filter((domain) => readConnectorConfig(domain)?.enabled !== false)
     .map((domain) => {
       if (domain === "jira") return buildJiraConnectorTool(rootDir);
+      if (domain === "slack") return buildSlackConnectorTool(rootDir);
       return buildStubConnectorTool(domain);
     });
 }

@@ -34,6 +34,9 @@ export function buildMockWorker(overrides: Partial<SettingsWorkerAPI> = {}): Set
     loadJiraConfig: async () => undefined,
     saveJiraConfig: async () => {},
     testJiraConnection: async () => ({ ok: true }),
+    loadSlackConfig: async () => undefined,
+    saveSlackConfig: async () => {},
+    testSlackConnection: async () => ({ ok: true }),
     ...overrides,
   };
 }

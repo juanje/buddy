@@ -2,6 +2,7 @@
   import { t } from "./i18n";
   import ProviderAuthForm from "./ProviderAuthForm.svelte";
   import JiraIntegrationPanel from "./JiraIntegrationPanel.svelte";
+  import SlackIntegrationPanel from "./SlackIntegrationPanel.svelte";
   import IntegrationSection from "./IntegrationSection.svelte";
   import {
     providerLabel,
@@ -32,6 +33,11 @@
   const jiraTestStatus = $derived(controller.jiraTestStatus);
   const jiraTestError = $derived(controller.jiraTestError);
   const jiraShowToken = $derived(controller.jiraShowToken);
+  const slackConfig = $derived(controller.slackConfig);
+  const slackTesting = $derived(controller.slackTesting);
+  const slackTestStatus = $derived(controller.slackTestStatus);
+  const slackTestError = $derived(controller.slackTestError);
+  const slackShowSecrets = $derived(controller.slackShowSecrets);
 
   let jiraDraft = $state<ConnectorConfig>({
     enabled: false,
@@ -44,6 +50,17 @@
   $effect(() => {
     const loaded = $jiraConfig;
     jiraDraft = { ...loaded, issueKeyPatterns: [...(loaded.issueKeyPatterns ?? [])] };
+  });
+
+  let slackDraft = $state<ConnectorConfig>({
+    enabled: false,
+    token: "",
+    cookie: "",
+  });
+
+  $effect(() => {
+    const loaded = $slackConfig;
+    slackDraft = { ...loaded };
   });
 
   let apiKeyInput = $state("");
@@ -327,6 +344,7 @@
 
       <p class="hint">{$t.settingsReadOnlyHint}</p>
       {:else}
+      <div class="integrations-tab">
       <IntegrationSection title={$t.settingsJiraTitle} active={jiraDraft.enabled ?? false}>
         <JiraIntegrationPanel
           bind:config={jiraDraft}
@@ -339,6 +357,19 @@
           onTest={() => controller.testJiraIntegration(jiraDraft)}
         />
       </IntegrationSection>
+      <IntegrationSection title={$t.settingsSlackTitle} active={slackDraft.enabled ?? false}>
+        <SlackIntegrationPanel
+          bind:config={slackDraft}
+          testing={$slackTesting}
+          testStatus={$slackTestStatus}
+          testError={$slackTestError}
+          showSecrets={$slackShowSecrets}
+          onToggleShowSecrets={(show) => controller.setSlackShowSecrets(show)}
+          onSave={() => controller.saveSlackIntegration(slackDraft)}
+          onTest={() => controller.testSlackIntegration(slackDraft)}
+        />
+      </IntegrationSection>
+      </div>
       {/if}
     </div>
   </div>
@@ -418,6 +449,10 @@
     margin: 0;
     font-size: 14px;
     color: var(--muted);
+  }
+  .integrations-tab {
+    display: grid;
+    gap: 12px;
   }
   .fields {
     margin: 0;

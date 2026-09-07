@@ -315,6 +315,80 @@
           "unit_tests": 1
         }
       ]
+    },
+    {
+      "id": "FR-SLACK-01",
+      "title": "Slack dispatcher, help, auth, Settings panel",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Slack help lists available actions",
+          "bdd": "pass",
+          "unit_tests": 6
+        },
+        {
+          "name": "Unknown slack action returns error with help suggestion",
+          "bdd": "pass",
+          "unit_tests": 6
+        },
+        {
+          "name": "Slack auth test validates xoxc/xoxd credentials",
+          "bdd": "pass",
+          "unit_tests": 6
+        }
+      ]
+    },
+    {
+      "id": "FR-SLACK-02",
+      "title": "Read actions with fetch-to-file",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Slack thread fetched to cache, agent reads locally",
+          "bdd": "pass",
+          "unit_tests": 4
+        },
+        {
+          "name": "Slack channel_history returns date-scoped messages",
+          "bdd": "pass",
+          "unit_tests": 4
+        },
+        {
+          "name": "Slack channels returns user channel list",
+          "bdd": "pass",
+          "unit_tests": 4
+        },
+        {
+          "name": "Force refresh re-fetches even when cache is fresh",
+          "bdd": "pass",
+          "unit_tests": 4
+        }
+      ]
+    },
+    {
+      "id": "FR-SLACK-03",
+      "title": "User resolution and channel directory",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "User IDs resolved to names before agent sees content",
+          "bdd": "pass",
+          "unit_tests": 4
+        },
+        {
+          "name": "Resolved users cached in local directory",
+          "bdd": "pass",
+          "unit_tests": 4
+        },
+        {
+          "name": "Channels action populates channel directory",
+          "bdd": "pass",
+          "unit_tests": 4
+        }
+      ]
     }
   ]
 }

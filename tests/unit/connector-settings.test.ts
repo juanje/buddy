@@ -7,8 +7,11 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import {
   loadJiraConfig,
+  loadSlackConfig,
   saveJiraConfig,
+  saveSlackConfig,
   testJiraConnectionFromConfig,
+  testSlackConnectionFromConfig,
 } from "../../backends/connectors/settings";
 import { connectorConfigPath } from "../../backends/connectors/credentials";
 
@@ -57,5 +60,24 @@ describe("connector settings (FR-JIRA-04)", () => {
     saveJiraConfig({ enabled: true, baseUrl: "https://x.atlassian.net", email: "u", token: "t" });
     const parsed = JSON.parse(readFileSync(connectorConfigPath("jira", configDir), "utf8"));
     expect(parsed.baseUrl).toBe("https://x.atlassian.net");
+  });
+
+  it("loads and saves slack config", () => {
+    saveSlackConfig({ enabled: true, token: "xoxc", cookie: "xoxd" });
+    expect(loadSlackConfig()?.token).toBe("xoxc");
+    expect(existsSync(connectorConfigPath("slack", configDir))).toBe(true);
+  });
+
+  it("testSlackConnection delegates to client", async () => {
+    const fetchImpl = async () =>
+      new Response(JSON.stringify({ ok: true, user: "u" }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    const result = await testSlackConnectionFromConfig(
+      { token: "xoxc", cookie: "xoxd" },
+      { fetchImpl },
+    );
+    expect(result.ok).toBe(true);
   });
 });

@@ -42,8 +42,10 @@ Then("the integrations tab shows the Jira panel", function (this: SettingsTabsWo
   assert.equal(get(controller.activeTab), "integrations");
   const src = readFileSync(join(ROOT, "src/lib/SettingsModal.svelte"), "utf8");
   assert.match(src, /JiraIntegrationPanel/);
+  assert.match(src, /SlackIntegrationPanel/);
   const strings = get(t);
   assert.ok(strings.settingsJiraTitle.length > 0);
+  assert.ok(strings.settingsSlackTitle.length > 0);
 });
 
 Then("the settings version field is not shown", function () {

@@ -70,8 +70,11 @@ import { createPromptQueue } from "./prompt-queue";
 import { readViewableFile } from "./viewable-file";
 import {
   loadJiraConfig,
+  loadSlackConfig,
   saveJiraConfig,
+  saveSlackConfig,
   testJiraConnectionFromConfig,
+  testSlackConnectionFromConfig,
 } from "./connectors/settings";
 
 /**
@@ -381,6 +384,15 @@ export async function main(deps: WorkerDeps = {}): Promise<void> {
       },
       async testJiraConnection(config) {
         return testJiraConnectionFromConfig(config);
+      },
+      async loadSlackConfig() {
+        return loadSlackConfig();
+      },
+      async saveSlackConfig(config) {
+        saveSlackConfig(config);
+      },
+      async testSlackConnection(config) {
+        return testSlackConnectionFromConfig(config);
       },
       async shutdown() {
         await core?.api.shutdown();
