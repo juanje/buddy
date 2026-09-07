@@ -44,6 +44,7 @@ export const TOOL_PATH_ARGS: Record<string, readonly string[]> = {
   wiki_file: [],
   // Connectors take no filesystem paths.
   jira: [],
+  slack: [],
 };
 
 /**

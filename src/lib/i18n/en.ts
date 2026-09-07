@@ -157,6 +157,7 @@ export const en: LocaleStrings = {
   slackError5xx: "Slack may be down — try again later.",
   slackErrorNetwork: "Check your network connection.",
   slackErrorTimeout: "Check your network connection and try again.",
+  slackErrorEnterprise: "Your corporate Slack workspace restricts this operation. Use thread or channel_history with a direct URL instead.",
   slackErrorGeneric: "Check the Slack credentials in Settings.",
   slackErrorNotConfigured: "Configure Slack in Settings → Integrations.",
   settingsClose: "Close",

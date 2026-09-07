@@ -8,6 +8,7 @@ export const SLACK_ERROR_SUGGESTION_KEYS = [
   "slackError5xx",
   "slackErrorNetwork",
   "slackErrorTimeout",
+  "slackErrorEnterprise",
   "slackErrorGeneric",
   "slackErrorNotConfigured",
 ] as const;

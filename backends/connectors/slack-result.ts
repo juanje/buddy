@@ -17,6 +17,7 @@ export function slackErrorMessagesFromLocale(locale: LocaleStrings): SlackErrorS
     slackError5xx: locale.slackError5xx,
     slackErrorNetwork: locale.slackErrorNetwork,
     slackErrorTimeout: locale.slackErrorTimeout,
+    slackErrorEnterprise: locale.slackErrorEnterprise,
     slackErrorGeneric: locale.slackErrorGeneric,
     slackErrorNotConfigured: locale.slackErrorNotConfigured,
   };

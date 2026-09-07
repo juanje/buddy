@@ -147,6 +147,7 @@ export type LocaleStrings = {
   slackError5xx: string;
   slackErrorNetwork: string;
   slackErrorTimeout: string;
+  slackErrorEnterprise: string;
   slackErrorGeneric: string;
   slackErrorNotConfigured: string;
   settingsClose: string;
@@ -341,6 +342,7 @@ export const es: LocaleStrings = {
   slackError5xx: "Slack puede estar caído — inténtalo más tarde.",
   slackErrorNetwork: "Comprueba tu conexión de red.",
   slackErrorTimeout: "Comprueba tu conexión de red e inténtalo de nuevo.",
+  slackErrorEnterprise: "Tu workspace corporativo de Slack restringe esta operación. Usa thread o channel_history con una URL directa.",
   slackErrorGeneric: "Comprueba las credenciales de Slack en Ajustes.",
   slackErrorNotConfigured: "Configura Slack en Ajustes → Integraciones.",
   settingsClose: "Cerrar",

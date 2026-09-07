@@ -82,6 +82,14 @@ export function mapSlackApiError(error: string, retryAfter?: string | null): Con
       suggestion: "slackError403",
     };
   }
+  if (error === "enterprise_is_restricted") {
+    return {
+      error: "Enterprise workspace restricts this API method",
+      code: 403,
+      recoverable: false,
+      suggestion: "slackErrorEnterprise",
+    };
+  }
   if (error === "channel_not_found" || error === "thread_not_found" || error === "user_not_found") {
     return {
       error: "Slack resource not found",
