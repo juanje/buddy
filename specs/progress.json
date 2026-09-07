@@ -389,6 +389,34 @@
           "unit_tests": 4
         }
       ]
+    },
+    {
+      "id": "FR-SLACK-04",
+      "title": "Enterprise error handling and channel auto-register from use",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Enterprise-restricted workspace returns actionable error",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Thread fetch auto-registers channel in entity store",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Channel history auto-registers channel in entity store",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "DM thread auto-registers with peer display name",
+          "bdd": "pass",
+          "unit_tests": 2
+        }
+      ]
     }
   ]
 }

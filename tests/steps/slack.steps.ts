@@ -33,6 +33,8 @@ interface SlackWorld extends BuddyWorld {
   channelList?: Array<{ id: string; name: string; num_members?: number }>;
   userDirectory?: Record<string, string>;
   userInfoCalled?: boolean;
+  conversationsListError?: string;
+  channelInfoOverrides?: Record<string, { id: string; name?: string; is_im?: boolean; user?: string }>;
 }
 
 function setupHome(this: SlackWorld): { home: string; configDir: string } {
@@ -92,6 +94,12 @@ function defaultFetch(this: SlackWorld) {
       });
     }
     if (url.includes("conversations.list")) {
+      if (this.conversationsListError) {
+        return new Response(
+          JSON.stringify({ ok: false, error: this.conversationsListError }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        );
+      }
       const channels =
         this.channelList?.map((c) => ({
           id: c.id,
@@ -106,8 +114,10 @@ function defaultFetch(this: SlackWorld) {
     if (url.includes("conversations.info")) {
       const channelMatch = /channel=([^&]+)/.exec(body) ?? /channel=([^&]+)/.exec(url);
       const channelId = channelMatch ? decodeURIComponent(channelMatch[1]) : "C123";
+      const override = this.channelInfoOverrides?.[channelId];
+      const channelData = override ?? { id: channelId, name: "general" };
       return new Response(
-        JSON.stringify({ ok: true, channel: { id: channelId, name: "general" } }),
+        JSON.stringify({ ok: true, channel: channelData }),
         { status: 200, headers: { "content-type": "application/json" } },
       );
     }
@@ -319,6 +329,35 @@ Then('the slack channel directory contains {string}', function (this: SlackWorld
   const found = Object.values(store).some((e) => e.name === name || e.id === name);
   assert.ok(found, `Expected channel "${name}" in entity store`);
 });
+
+Given("slack conversations list returns enterprise_is_restricted error", function (this: SlackWorld) {
+  this.conversationsListError = "enterprise_is_restricted";
+});
+
+Given(
+  'slack channel {string} is a DM with user {string}',
+  function (this: SlackWorld, channelId: string, userId: string) {
+    this.channelInfoOverrides = {
+      ...(this.channelInfoOverrides ?? {}),
+      [channelId]: { id: channelId, is_im: true, user: userId },
+    };
+  },
+);
+
+Then(
+  'the slack entity {string} has dm_peer_name {string}',
+  function (this: SlackWorld, entityId: string, expectedName: string) {
+    const root = ensureRoot.call(this);
+    const store = readEntityStore(root, "slack");
+    const entity = store[entityId];
+    assert.ok(entity, `Expected entity "${entityId}" in store`);
+    assert.equal(
+      (entity as Record<string, unknown>).dm_peer_name,
+      expectedName,
+      `Expected dm_peer_name "${expectedName}" on entity "${entityId}"`,
+    );
+  },
+);
 
 Then("saving slack config persists to credential file", function (this: SlackWorld) {
   const { configDir } = setupHome.call(this);

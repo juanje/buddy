@@ -80,3 +80,35 @@ Feature: Slack read-only connector
     And slack conversations list returns channel "team-updates" with id "C777"
     When the slack connector runs action "channels"
     Then the slack channel directory contains "team-updates"
+
+  @FR-SLACK-04
+  Scenario: Enterprise-restricted workspace returns actionable error
+    Given a configured slack integration
+    And slack conversations list returns enterprise_is_restricted error
+    When the slack connector runs action "channels"
+    Then the slack result includes "restricts"
+    And the slack result includes "Enterprise"
+
+  @FR-SLACK-04
+  Scenario: Thread fetch auto-registers channel in entity store
+    Given a configured slack integration
+    And slack thread in channel "C123" returns 2 messages from "Alice"
+    When the slack connector runs action "thread" for url "https://team.slack.com/archives/C123/p1712345678901234"
+    Then the slack channel directory contains "C123"
+
+  @FR-SLACK-04
+  Scenario: Channel history auto-registers channel in entity store
+    Given a configured slack integration
+    And slack channel "C456" history returns message "Daily standup"
+    When the slack connector runs action "channel_history" for channel "C456"
+    Then the slack channel directory contains "C456"
+
+  @FR-SLACK-04
+  Scenario: DM thread auto-registers with peer display name
+    Given a configured slack integration
+    And slack channel "D123" is a DM with user "U111"
+    And slack user "U111" resolves to "Avihai Efrat"
+    And slack thread in channel "D123" returns 2 messages from "Avihai"
+    When the slack connector runs action "thread" for url "https://team.slack.com/archives/D123/p1712345678901234"
+    Then the slack channel directory contains "D123"
+    And the slack entity "D123" has dm_peer_name "Avihai Efrat"

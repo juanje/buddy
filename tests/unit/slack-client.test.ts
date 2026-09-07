@@ -19,6 +19,14 @@ describe("slack client (FR-SLACK-01)", () => {
     expect(mapSlackApiError("ratelimited").suggestion).toBe("slackError429");
   });
 
+  it("maps enterprise_is_restricted to distinct non-recoverable error", () => {
+    const err = mapSlackApiError("enterprise_is_restricted");
+    expect(err.code).toBe(403);
+    expect(err.recoverable).toBe(false);
+    expect(err.suggestion).toBe("slackErrorEnterprise");
+    expect(err.error).toContain("Enterprise");
+  });
+
   it("maps HTTP status codes to ConnectorError suggestion keys", () => {
     expect(mapSlackHttpError(401).suggestion).toBe("slackError401");
     expect(mapSlackHttpError(429).recoverable).toBe(true);

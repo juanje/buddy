@@ -3245,6 +3245,7 @@ Further context on local-model evaluation methodology and findings:
 | FR-SLACK-01 | Slack dispatcher, help action, session auth, Settings panel | 4 ✓ |
 | FR-SLACK-02 | Read actions (thread, channel_history, channels) with fetch-to-file | 4 ✓ |
 | FR-SLACK-03 | User ID resolution and channel directory | 4 ✓ |
+| FR-SLACK-04 | Enterprise error handling and channel auto-register from use | 4 ✓ |
 
 **FR-SLACK-01 — Dispatcher, auth, and Settings**
 
@@ -3271,6 +3272,17 @@ Further context on local-model evaluation methodology and findings:
 - **Then** `<@U…>` mentions resolve to `@DisplayName` before the agent reads the file
 - **And** resolved users are cached in `.buddy/connections/slack/users.json`
 - **And** `channels` populates a channel directory in the entity store
+
+**FR-SLACK-04 — Enterprise error handling and channel auto-register from use**
+
+- **Given** a corporate Slack workspace using Enterprise Grid
+- **When** `conversations.list` returns `enterprise_is_restricted`
+- **Then** the error is mapped distinctly (code 403, non-recoverable) with a suggestion to use direct URLs
+- **And** the error message instructs the agent to stop and ask the user for a URL, not search for alternatives
+- **Given** a successful `thread` or `channel_history` action
+- **When** the channel is not yet in the entity store
+- **Then** the channel is auto-registered (best-effort, no failure propagation)
+- **And** for DM channels, the peer user's display name is resolved and stored as `dm_peer_name`
 
 ---
 

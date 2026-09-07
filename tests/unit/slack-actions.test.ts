@@ -6,6 +6,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { executeSlackAction, slackHelpText } from "../../backends/connectors/slack-actions";
+import { readEntityStore } from "../../backends/connectors/cache";
 import { readSlackUserCache } from "../../backends/connectors/slack-users";
 import { writeConnectorConfig } from "../../backends/connectors/credentials";
 
@@ -84,6 +85,107 @@ describe("slack actions (FR-SLACK-01..03)", () => {
     const result = await executeSlackAction(rootDir, "channels", {}, { fetchImpl });
     expect(result.data).toContain("general");
     expect(result.data).toContain("C999");
+  });
+
+  it("thread auto-registers channel in entity store", async () => {
+    const fetchImpl = mockFetch({
+      "conversations.replies": () => ({
+        messages: [{ ts: "1712345678.901234", user: "U1", text: "Hello" }],
+      }),
+      "conversations.info": () => ({ channel: { id: "C123", name: "general" } }),
+      "users.info": () => ({ user: { id: "U1", profile: { display_name: "Alice" } } }),
+    });
+    await executeSlackAction(
+      rootDir,
+      "thread",
+      { url: "https://team.slack.com/archives/C123/p1712345678901234" },
+      { fetchImpl },
+    );
+    const store = readEntityStore(rootDir, "slack");
+    expect(store.C123).toBeDefined();
+    expect(store.C123.name).toBe("general");
+    expect(store.C123.source).toBe("slack");
+  });
+
+  it("channel_history auto-registers channel in entity store", async () => {
+    const fetchImpl = mockFetch({
+      "conversations.history": () => ({
+        messages: [{ ts: "1712345600.000000", user: "U1", text: "Notes" }],
+      }),
+      "conversations.info": () => ({ channel: { id: "C456", name: "team-channel" } }),
+      "users.info": () => ({ user: { id: "U1", profile: { display_name: "Bob" } } }),
+    });
+    await executeSlackAction(rootDir, "channel_history", { channel: "C456" }, { fetchImpl });
+    const store = readEntityStore(rootDir, "slack");
+    expect(store.C456).toBeDefined();
+    expect(store.C456.name).toBe("team-channel");
+  });
+
+  it("registerChannelFromUse saves dm_peer_name for IM channels", async () => {
+    const fetchImpl = mockFetch({
+      "conversations.replies": () => ({
+        messages: [{ ts: "1712345678.901234", user: "U111", text: "Hi" }],
+      }),
+      "conversations.info": () => ({
+        channel: { id: "D123", name: "D123", is_im: true, user: "U111" },
+      }),
+      "users.info": () => ({
+        user: { id: "U111", profile: { display_name: "Avihai Efrat" } },
+      }),
+    });
+    await executeSlackAction(
+      rootDir,
+      "thread",
+      { url: "https://team.slack.com/archives/D123/p1712345678901234" },
+      { fetchImpl },
+    );
+    const store = readEntityStore(rootDir, "slack");
+    expect(store.D123).toBeDefined();
+    expect(store.D123.is_im).toBe(true);
+    expect((store.D123 as Record<string, unknown>).dm_peer_name).toBe("Avihai Efrat");
+  });
+
+  it("auto-register is best-effort: does not fail if conversations.info throws", async () => {
+    let infoCallCount = 0;
+    const fetchImpl = async (url: string) => {
+      if (url.includes("conversations.replies")) {
+        return new Response(
+          JSON.stringify({
+            ok: true,
+            messages: [{ ts: "1712345678.901234", user: "U1", text: "Hello" }],
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        );
+      }
+      if (url.includes("conversations.info")) {
+        infoCallCount++;
+        return new Response(
+          JSON.stringify({ ok: false, error: "channel_not_found" }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        );
+      }
+      if (url.includes("users.info")) {
+        return new Response(
+          JSON.stringify({
+            ok: true,
+            user: { id: "U1", profile: { display_name: "Alice" } },
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        );
+      }
+      return new Response(JSON.stringify({ ok: false, error: "not_found" }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    };
+    const result = await executeSlackAction(
+      rootDir,
+      "thread",
+      { url: "https://team.slack.com/archives/C999/p1712345678901234" },
+      { fetchImpl },
+    );
+    expect(result.data).toContain("Thread saved");
+    expect(infoCallCount).toBeGreaterThan(0);
   });
 
   it("resolves mentions into user directory", async () => {
