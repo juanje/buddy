@@ -240,16 +240,42 @@ export function slackHelpText(): string {
 Set \`params.force: true\` to bypass cache freshness and re-fetch from Slack.`;
 }
 
-function channelEntityKey(channel: { id: string; name?: string; is_private?: boolean; num_members?: number }) {
+function channelEntityKey(channel: { id: string; name?: string; is_im?: boolean; is_private?: boolean; num_members?: number; user?: string; dm_peer_name?: string }) {
   return {
     synced_at: new Date().toISOString(),
     stale_after: FRESHNESS.channels,
     source: SLACK_DOMAIN,
     id: channel.id,
     name: channel.name ?? channel.id,
+    is_im: channel.is_im ?? false,
     is_private: channel.is_private ?? false,
     num_members: channel.num_members ?? 0,
+    ...(channel.user ? { user: channel.user } : {}),
+    ...(channel.dm_peer_name ? { dm_peer_name: channel.dm_peer_name } : {}),
   };
+}
+
+/** Register a channel in the entity store so it's discoverable next time. */
+async function registerChannelFromUse(
+  client: SlackClient,
+  rootDir: string,
+  channelId: string,
+): Promise<void> {
+  try {
+    const info = await client.conversationsInfo(channelId);
+    const store = readEntityStore(rootDir, SLACK_DOMAIN);
+    if (!store[channelId]) {
+      let dmPeerName: string | undefined;
+      if (info.is_im && info.user) {
+        const resolver = new SlackUserResolver(client, rootDir);
+        dmPeerName = await resolver.resolve(info.user);
+      }
+      store[channelId] = channelEntityKey({ ...info, dm_peer_name: dmPeerName });
+      writeEntityStore(rootDir, SLACK_DOMAIN, store);
+    }
+  } catch {
+    // Best-effort: don't fail the main action if directory update fails.
+  }
 }
 
 export async function executeSlackAction(
@@ -327,6 +353,7 @@ export async function executeSlackAction(
           { synced_at: syncedAt, stale_after: FRESHNESS.thread, source: SLACK_DOMAIN },
           body,
         );
+        await registerChannelFromUse(client, rootDir, ref.channelId);
         const relPath = relThreadPath(fileId);
         return {
           data: `Thread saved to ${relPath}\nMessages: ${messages.length}\nRead the file locally for full content.`,
@@ -413,6 +440,7 @@ export async function executeSlackAction(
           { synced_at: syncedAt, stale_after: FRESHNESS.channelHistory, source: SLACK_DOMAIN },
           body,
         );
+        await registerChannelFromUse(client, rootDir, channelId);
         const relPath = relThreadPath(fileId);
         return {
           data: `Channel history saved to ${relPath}\nMessages: ${messages.length}\nRead the file locally for full content.`,

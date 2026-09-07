@@ -41,6 +41,7 @@ export interface SlackChannel {
   is_im?: boolean;
   is_private?: boolean;
   num_members?: number;
+  user?: string;
 }
 
 export interface SlackClient {
