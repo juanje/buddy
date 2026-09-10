@@ -3343,7 +3343,7 @@ Further context on local-model evaluation methodology and findings:
 |----|-------------|-------|
 | FR-TOPIC-01 | "New topic" ghost button + popover in InputBar | 2 Sprint A ✓ |
 | FR-TOPIC-02 | "Start now" — shutdown + reflect in background + fresh session | 2 Sprint A ✓ |
-| FR-TOPIC-03 | "Wrap up first" — interactive closure before transition | 2 Sprint B deferred |
+| FR-TOPIC-03 | "Wrap up first" — interactive closure before transition | 2 Sprint B ✓ |
 | FR-TOPIC-04 | i18n labels (EN/ES) | 2 Sprint A ✓ |
 | FR-TOPIC-05 | Button disabled during streaming and topic transition | 2 Sprint A ✓ |
 
@@ -3363,12 +3363,14 @@ Further context on local-model evaluation methodology and findings:
 - **And** a new Pi SDK session boots with standard system prompt assembly only
 - **And** no summary or transcript from the closed session is injected into the new session
 
-**FR-TOPIC-03 — Wrap up first (Phase 2 Sprint B)**
+**FR-TOPIC-03 — Wrap up first**
 
 - **Given** an active session with messages
 - **When** the user chooses "Wrap up first"
-- **Then** an interactive closure turn runs in the current session before shutdown
-- **Note:** Not implemented in Sprint A — option is visible but disabled with a "Coming soon" tooltip.
+- **Then** the agent produces a visible closure summary (decisions, pending items, next action) in the current chat
+- **And** the current session `shutdown()` runs after the closure turn completes
+- **And** the chat messages are cleared when the transition starts
+- **And** a new Pi SDK session boots with standard system prompt assembly only
 
 **FR-TOPIC-04 — Locale labels**
 

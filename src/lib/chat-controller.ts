@@ -124,6 +124,8 @@ export interface ChatController {
   endTopicTransition(): void;
   /** Start now: shutdown current session and boot a fresh one (FR-TOPIC-02). */
   newTopic(): Promise<void>;
+  /** Wrap up first: closure turn, then fresh session (FR-TOPIC-03). */
+  wrapUpThenNewTopic(): Promise<void>;
 }
 
 export function createChatController(worker: ChatWorkerAPI): ChatController {
@@ -398,6 +400,15 @@ export function createChatController(worker: ChatWorkerAPI): ChatController {
     }
   }
 
+  async function wrapUpThenNewTopic(): Promise<void> {
+    if (get(newTopicDisabled)) return;
+    try {
+      await worker.wrapUpThenNewTopic();
+    } catch {
+      topicTransitioning.set(false);
+    }
+  }
+
   return {
     messages,
     input,
@@ -433,5 +444,6 @@ export function createChatController(worker: ChatWorkerAPI): ChatController {
     beginTopicTransition,
     endTopicTransition,
     newTopic,
+    wrapUpThenNewTopic,
   };
 }

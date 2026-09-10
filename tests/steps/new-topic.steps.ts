@@ -1,4 +1,4 @@
-// tests/steps/new-topic.steps.ts — FR-TOPIC-01/02/04/05 topic transition.
+// tests/steps/new-topic.steps.ts — FR-TOPIC-01/02/03/04/05 topic transition.
 
 import { Given, When, Then } from "@cucumber/cucumber";
 import assert from "node:assert/strict";
@@ -22,6 +22,15 @@ Given("an active session with messages", async function (this: BuddyWorld) {
 
 When('the user triggers "Start now" via new topic', async function (this: BuddyWorld) {
   await this.controller.newTopic();
+});
+
+When('the user triggers "Wrap up first" via new topic', async function (this: BuddyWorld) {
+  await this.controller.wrapUpThenNewTopic();
+});
+
+Then("the assistant produces a closure summary", function (this: BuddyWorld) {
+  assert.equal(this.closureRan, true);
+  assert.equal(this.closureSummaryProduced, true);
 });
 
 Then('the input bar contains a {string} ghost button', function (this: BuddyWorld, label: string) {

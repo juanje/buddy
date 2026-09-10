@@ -51,6 +51,10 @@ export class BuddyWorld extends World {
   topicShutdownCalled = false;
   /** FR-TOPIC-02: fresh session boot after topic transition. */
   topicSessionRestarted = false;
+  /** FR-TOPIC-03: closure turn ran before topic transition. */
+  closureRan = false;
+  /** FR-TOPIC-03: assistant closure text was visible before transition. */
+  closureSummaryProduced = false;
 
   constructor(options: IWorldOptions) {
     super(options);
@@ -131,6 +135,26 @@ export class BuddyWorld extends World {
       },
       dismissDeferredItems: async () => {},
       newTopic: async () => {
+        self.topicShutdownCalled = true;
+        if (self.lifecycle) {
+          await self.lifecycle.shutdown();
+        } else {
+          await self.core.api.shutdown();
+        }
+        self.core.dispose();
+        controllerRef?.beginTopicTransition();
+        self.topicSessionRestarted = true;
+        self.connect(undefined, { force: true });
+      },
+      wrapUpThenNewTopic: async () => {
+        self.closureRan = true;
+        self.session.streamResponse([
+          "Summary: we discussed the previous topic. Next action: continue tomorrow.",
+        ]);
+        const messages = controllerRef ? get(controllerRef.messages) : [];
+        self.closureSummaryProduced = messages.some(
+          (m) => m.role === "assistant" && m.text.includes("Summary"),
+        );
         self.topicShutdownCalled = true;
         if (self.lifecycle) {
           await self.lifecycle.shutdown();

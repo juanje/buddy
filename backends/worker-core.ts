@@ -17,7 +17,7 @@ import { logEvent } from "./app-logger";
  */
 export type SessionWorkerAPI = Omit<
   ChatWorkerAPI,
-  "resolvePermission" | "dismissDeferredItems" | "newTopic"
+  "resolvePermission" | "dismissDeferredItems" | "newTopic" | "wrapUpThenNewTopic"
 > & {
   setModel(model: unknown): Promise<void>;
 };
@@ -46,6 +46,8 @@ export interface WorkerCoreOptions {
 
 export interface WorkerCore {
   api: SessionWorkerAPI;
+  /** Live Pi session — used for hidden closure prompts (FR-TOPIC-03). */
+  session: PiSessionLike;
   dispose(): void;
   isStreaming(): boolean;
 }
@@ -108,6 +110,7 @@ export function createWorkerCore(
 
   return {
     api,
+    session,
     dispose() {
       unsubscribe();
     },

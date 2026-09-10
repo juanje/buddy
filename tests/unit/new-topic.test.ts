@@ -1,8 +1,9 @@
-// tests/unit/new-topic.test.ts — FR-TOPIC-02 transition sequencing and guards.
+// tests/unit/new-topic.test.ts — FR-TOPIC-02/03 transition sequencing and guards.
 
 import { describe, expect, it, vi } from "vitest";
 
-import { runTopicTransition } from "../../backends/topic-transition";
+import { buildClosurePrompt } from "../../backends/closure-prompt";
+import { runTopicTransition, runWrapUpThenNewTopic } from "../../backends/topic-transition";
 import { isNewTopicDisabled } from "../../src/lib/new-topic-contract";
 
 describe("runTopicTransition", () => {
@@ -86,6 +87,73 @@ describe("runTopicTransition", () => {
     expect(onTransitionStart.mock.invocationCallOrder[0]).toBeLessThan(
       startSession.mock.invocationCallOrder[0],
     );
+  });
+});
+
+describe("buildClosurePrompt", () => {
+  it("returns a non-empty system-framed closure prompt", () => {
+    const prompt = buildClosurePrompt();
+    expect(prompt.trim().length).toBeGreaterThan(0);
+    expect(prompt).toMatch(/^\[System:/);
+    expect(prompt).toContain("wrap up");
+    expect(prompt).toContain("next action");
+  });
+});
+
+describe("runWrapUpThenNewTopic", () => {
+  it("is a no-op when there is no active core", async () => {
+    const runClosure = vi.fn(async () => {});
+    const shutdownCore = vi.fn(async () => {});
+
+    await runWrapUpThenNewTopic({
+      hasCore: () => false,
+      runClosure,
+      shutdownCore,
+      stopHeartbeat: vi.fn(),
+      disposeCore: vi.fn(),
+      clearCoreRef: vi.fn(),
+      onTransitionStart: vi.fn(),
+      startSession: vi.fn(async () => {}),
+      rootDir: "/tmp/buddy",
+    });
+
+    expect(runClosure).not.toHaveBeenCalled();
+    expect(shutdownCore).not.toHaveBeenCalled();
+  });
+
+  it("runs closure before shutdown and fresh session", async () => {
+    const order: string[] = [];
+    const runClosure = vi.fn(async () => {
+      order.push("closure");
+    });
+    const shutdownCore = vi.fn(async () => {
+      order.push("shutdown");
+    });
+    const startSession = vi.fn(async () => {
+      order.push("startSession");
+    });
+
+    await runWrapUpThenNewTopic({
+      hasCore: () => true,
+      runClosure,
+      shutdownCore,
+      stopHeartbeat: vi.fn(() => order.push("stopHeartbeat")),
+      disposeCore: vi.fn(() => order.push("dispose")),
+      clearCoreRef: vi.fn(() => order.push("clearCore")),
+      onTransitionStart: vi.fn(() => order.push("onTransitionStart")),
+      startSession,
+      rootDir: "/buddy",
+    });
+
+    expect(order).toEqual([
+      "closure",
+      "shutdown",
+      "stopHeartbeat",
+      "dispose",
+      "clearCore",
+      "onTransitionStart",
+      "startSession",
+    ]);
   });
 });
 

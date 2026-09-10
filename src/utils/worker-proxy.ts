@@ -25,6 +25,7 @@ const WITHOUT_WORKER: Partial<Record<keyof WorkerAPI, unknown>> = {
   resolvePermission: undefined,
   shutdown: undefined,
   newTopic: undefined,
+  wrapUpThenNewTopic: undefined,
   /** Rendered straight into the welcome state's list. */
   getDeferredItems: [] as DeferredItemView[],
 };

@@ -63,7 +63,6 @@ export type LocaleStrings = {
   newTopicButton: string;
   startNow: string;
   wrapUpFirst: string;
-  wrapUpComingSoon: string;
   sessionPreparing: string;
   dropOverlay: string;
   unsupportedFormat: string;
@@ -262,7 +261,6 @@ export const es: LocaleStrings = {
   newTopicButton: "Nuevo tema",
   startNow: "Empezar ya",
   wrapUpFirst: "Rematar primero",
-  wrapUpComingSoon: "Próximamente",
   sessionPreparing: "Preparando la sesión… Puedes escribir: tu mensaje se enviará solo. La primera respuesta puede tardar un poco.",
   dropOverlay: "Suelta el archivo aquí",
   unsupportedFormat: "Formato no compatible — prueba con .md, .txt, .csv, .json, .yaml o .log",

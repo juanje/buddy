@@ -259,6 +259,8 @@ export interface WorkerAPI {
   shutdown(): Promise<void>;
   /** End the current session and start a fresh one (FR-TOPIC-02). */
   newTopic(): Promise<void>;
+  /** Closure turn in current session, then fresh session (FR-TOPIC-03). */
+  wrapUpThenNewTopic(): Promise<void>;
 }
 
 /**
@@ -268,7 +270,13 @@ export interface WorkerAPI {
  */
 export type ChatWorkerAPI = Pick<
   WorkerAPI,
-  "prompt" | "abort" | "resolvePermission" | "shutdown" | "dismissDeferredItems" | "newTopic"
+  | "prompt"
+  | "abort"
+  | "resolvePermission"
+  | "shutdown"
+  | "dismissDeferredItems"
+  | "newTopic"
+  | "wrapUpThenNewTopic"
 >;
 
 /** Setup-scoped subset of WorkerAPI: what the wizard needs (FR-SETUP-02+). */

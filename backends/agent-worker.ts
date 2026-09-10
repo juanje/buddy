@@ -55,7 +55,8 @@ import {
   GIT_COMMIT_PREFIX,
 } from "../shared/defaults";
 import { bootSession, augmentPromptWithAttachments } from "./session-boot";
-import { runTopicTransition } from "./topic-transition";
+import { buildClosurePrompt } from "./closure-prompt";
+import { runTopicTransition, runWrapUpThenNewTopic } from "./topic-transition";
 import { recoverStaleSession } from "./crash-recovery";
 import { spawnReflectChild } from "./reflect-spawn";
 import { detectFirstRun, updateAppConfig } from "./setup";
@@ -403,28 +404,41 @@ export async function main(deps: WorkerDeps = {}): Promise<void> {
       },
       async newTopic() {
         if (setupState.firstRun) return;
-        await runTopicTransition({
-          hasCore: () => core !== undefined,
-          shutdownCore: async () => {
-            await core!.api.shutdown();
+        await runTopicTransition(topicTransitionDeps());
+      },
+      async wrapUpThenNewTopic() {
+        if (setupState.firstRun) return;
+        await runWrapUpThenNewTopic({
+          ...topicTransitionDeps(),
+          runClosure: async () => {
+            await core!.session.prompt(buildClosurePrompt());
           },
-          stopHeartbeat: () => stopHeartbeat(),
-          disposeCore: () => {
-            core!.dispose();
-          },
-          clearCoreRef: () => {
-            core = undefined;
-          },
-          onTransitionStart: () =>
-            notifyFrontend("topic", "onTopicTransitionStart", () =>
-              frontend.onTopicTransitionStart(),
-            ),
-          startSession: (rootDir) => startSession(rootDir),
-          rootDir: setupState.config.rootDir,
         });
       },
     },
   });
+
+  function topicTransitionDeps() {
+    return {
+      hasCore: () => core !== undefined,
+      shutdownCore: async () => {
+        await core!.api.shutdown();
+      },
+      stopHeartbeat: () => stopHeartbeat(),
+      disposeCore: () => {
+        core!.dispose();
+      },
+      clearCoreRef: () => {
+        core = undefined;
+      },
+      onTransitionStart: () =>
+        notifyFrontend("topic", "onTopicTransitionStart", () =>
+          frontend.onTopicTransitionStart(),
+        ),
+      startSession: (rootDir: string) => startSession(rootDir),
+      rootDir: setupState.firstRun ? "" : setupState.config.rootDir,
+    };
+  }
 
   frontend = channel.getAPI();
 

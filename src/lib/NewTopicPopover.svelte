@@ -6,9 +6,11 @@
   let {
     disabled = false,
     onStartNow,
+    onWrapUp,
   }: {
     disabled?: boolean;
     onStartNow: () => void;
+    onWrapUp: () => void;
   } = $props();
 
   let open = $state(false);
@@ -26,6 +28,11 @@
   function handleStartNow(): void {
     close();
     onStartNow();
+  }
+
+  function handleWrapUp(): void {
+    close();
+    onWrapUp();
   }
 
   function handleDocumentPointer(event: PointerEvent): void {
@@ -67,13 +74,7 @@
       <button type="button" class="option" role="menuitem" onclick={handleStartNow}>
         {$t.startNow}
       </button>
-      <button
-        type="button"
-        class="option wrap-up"
-        role="menuitem"
-        disabled
-        title={$t.wrapUpComingSoon}
-      >
+      <button type="button" class="option" role="menuitem" onclick={handleWrapUp}>
         {$t.wrapUpFirst}
       </button>
     </div>
@@ -133,9 +134,5 @@
   }
   .option:hover:not(:disabled) {
     background: var(--bg-secondary);
-  }
-  .option.wrap-up:disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
   }
 </style>

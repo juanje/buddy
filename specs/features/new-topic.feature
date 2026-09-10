@@ -24,6 +24,15 @@ Feature: Topic transition
     Given a topic transition is in progress
     Then the new topic button is disabled
 
+  @FR-TOPIC-03
+  Scenario: Wrap up first runs closure then transitions
+    Given an active session with messages
+    When the user triggers "Wrap up first" via new topic
+    Then the assistant produces a closure summary
+    And the current session shutdown fires
+    And the chat messages are cleared
+    And a new session starts
+
   @FR-TOPIC-04
   Scenario: New topic labels respect locale
     Given the app language is "es"

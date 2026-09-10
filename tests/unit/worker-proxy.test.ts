@@ -19,6 +19,7 @@ const TOLERATED: Array<[keyof WorkerAPI, unknown[], unknown]> = [
   ["resolvePermission", [1, true], undefined],
   ["shutdown", [], undefined],
   ["newTopic", [], undefined],
+  ["wrapUpThenNewTopic", [], undefined],
   // The chat welcome state renders this straight into a list.
   ["getDeferredItems", [], []],
 ];
@@ -82,7 +83,7 @@ describe("createWorkerProxy", () => {
       // leave it silently untested — which is how the hand-written version
       // could have drifted from the interface without anyone noticing.
       const listed = new Set([...TOLERATED.map((t) => t[0]), ...REQUIRES_WORKER.map((r) => r[0])]);
-      expect(listed.size).toBe(28);
+      expect(listed.size).toBe(29);
     });
   });
 
