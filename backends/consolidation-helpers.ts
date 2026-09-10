@@ -41,7 +41,7 @@ export function rewriteLinksForArchive(
 }
 
 export interface UpcomingReminder {
-  source: "inbox" | "active-context";
+  source: "tasks" | "active-context";
   line: string;
 }
 
@@ -147,12 +147,12 @@ export function rotateLogs(rootDir: string, targetDate: string): { archived: str
   return { archived };
 }
 
-export function findDatedInboxItems(rootDir: string, targetDate: string): string[] {
-  const inboxPath = join(rootDir, "user", "inbox.md");
-  if (!existsSync(inboxPath)) return [];
+export function findDatedTaskItems(rootDir: string, targetDate: string): string[] {
+  const tasksPath = join(rootDir, "user", "tasks.md");
+  if (!existsSync(tasksPath)) return [];
 
   const tomorrow = addDays(targetDate, 1);
-  const content = readFileSync(inboxPath, "utf8");
+  const content = readFileSync(tasksPath, "utf8");
 
   return content
     .split("\n")
@@ -163,6 +163,9 @@ export function findDatedInboxItems(rootDir: string, targetDate: string): string
       return match != null && (match[1] === targetDate || match[1] === tomorrow);
     });
 }
+
+/** @deprecated Use findDatedTaskItems */
+export const findDatedInboxItems = findDatedTaskItems;
 
 function extractActiveContextSection(agentsContent: string): string {
   const match = agentsContent.match(
@@ -191,8 +194,8 @@ function findDatedActiveContextItems(rootDir: string, targetDate: string): strin
 export function findUpcomingReminders(rootDir: string, targetDate: string): UpcomingReminder[] {
   const reminders: UpcomingReminder[] = [];
 
-  for (const line of findDatedInboxItems(rootDir, targetDate)) {
-    reminders.push({ source: "inbox", line });
+  for (const line of findDatedTaskItems(rootDir, targetDate)) {
+    reminders.push({ source: "tasks", line });
   }
   for (const line of findDatedActiveContextItems(rootDir, targetDate)) {
     reminders.push({ source: "active-context", line });
@@ -208,7 +211,7 @@ export function formatUpcomingRemindersBlock(reminders: UpcomingReminder[]): str
 
   const lines = ["Upcoming items (within 24h of run date):"];
   for (const item of reminders) {
-    const label = item.source === "inbox" ? "From inbox" : "From Active context";
+    const label = item.source === "tasks" ? "From tasks" : "From Active context";
     lines.push(`- ${label}: ${item.line}`);
   }
   return lines.join("\n");

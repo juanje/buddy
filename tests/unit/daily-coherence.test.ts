@@ -40,12 +40,12 @@ describe("daily coherence", () => {
     expect(flags.length).toBe(1);
   });
 
-  it("detects inbox items resolved in log", () => {
-    const inbox = `## Waiting For\n\n- **Alex:** Apply corrections and run tests on the feature PR (since 2026-08-10 — stale)`;
+  it("detects task items resolved or parked in log", () => {
+    const tasks = `- [ ] Apply corrections and run tests on the feature PR @work`;
     const log = "Feature PR parked temporarily; Alex will rebase when the codebase stabilizes";
-    const flags = detectInboxCoherence(inbox, log);
+    const flags = detectInboxCoherence(tasks, log);
     expect(flags.length).toBe(1);
-    expect(flags[0]!.section).toBe("Waiting For");
+    expect(flags[0]!.line).toContain("feature PR");
   });
 
   it("computes daily coherence from files", () => {

@@ -242,12 +242,12 @@ describe("consolidation mechanics", () => {
     });
   });
 
-  describe("findDatedInboxItems", () => {
-    it("finds inbox items matching target date or tomorrow", () => {
+  describe("findDatedTaskItems", () => {
+    it("finds task items matching target date or tomorrow", () => {
       setupRoot();
       mkdirSync(join(dir, "user"), { recursive: true });
       writeFileSync(
-        join(dir, "user", "inbox.md"),
+        join(dir, "user", "tasks.md"),
         "- Call doctor 2026-07-24\n- Later task 2026-07-30\n- Today item 2026-07-23\n",
       );
 
@@ -258,12 +258,12 @@ describe("consolidation mechanics", () => {
       ]);
     });
 
-    it("returns empty when inbox is missing or has no matches", () => {
+    it("returns empty when tasks.md is missing or has no matches", () => {
       setupRoot();
       expect(findDatedInboxItems(dir, "2026-07-23")).toEqual([]);
 
       mkdirSync(join(dir, "user"), { recursive: true });
-      writeFileSync(join(dir, "user", "inbox.md"), "- No dates here\n");
+      writeFileSync(join(dir, "user", "tasks.md"), "- No dates here\n");
       expect(findDatedInboxItems(dir, "2026-07-23")).toEqual([]);
     });
   });
@@ -272,7 +272,7 @@ describe("consolidation mechanics", () => {
     it("includes active context deadlines", () => {
       setupRoot();
       mkdirSync(join(dir, "user"), { recursive: true });
-      writeFileSync(join(dir, "user", "inbox.md"), "- Inbox item 2026-07-24\n");
+      writeFileSync(join(dir, "user", "tasks.md"), "- Task item 2026-07-24\n");
       writeFileSync(
         join(dir, "AGENTS.md"),
         "# Agent\n\n## Active context\n\n### Right now\n- Submit report 2026-07-24\n\n### Files\n",
@@ -280,7 +280,7 @@ describe("consolidation mechanics", () => {
 
       const reminders = findUpcomingReminders(dir, "2026-07-23");
       expect(reminders).toHaveLength(2);
-      expect(reminders.some((r) => r.source === "inbox")).toBe(true);
+      expect(reminders.some((r) => r.source === "tasks")).toBe(true);
       expect(reminders.some((r) => r.source === "active-context")).toBe(true);
     });
   });

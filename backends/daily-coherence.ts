@@ -18,8 +18,7 @@ export interface ResolvedDeferredFlag {
   logEvidence: string;
 }
 
-export interface InboxCoherenceFlag {
-  section: string;
+export interface TaskCoherenceFlag {
   line: string;
   logEvidence: string;
 }
@@ -29,7 +28,7 @@ export interface DailyCoherenceResult {
   logDecisions: string[];
   stalenessFlags: StalenessFlag[];
   resolvedDeferred: ResolvedDeferredFlag[];
-  inboxFlags: InboxCoherenceFlag[];
+  taskFlags: TaskCoherenceFlag[];
 }
 
 const DECISIONS_HEADING_RE = /^### Decisions\b/m;
@@ -159,30 +158,22 @@ const PARKED_KEYWORDS = [
   "cancelado",
 ];
 
-export function detectInboxCoherence(
-  inboxContent: string,
+export function detectTaskCoherence(
+  tasksContent: string,
   logContent: string,
-): InboxCoherenceFlag[] {
-  const flags: InboxCoherenceFlag[] = [];
+): TaskCoherenceFlag[] {
+  const flags: TaskCoherenceFlag[] = [];
   const logLower = logContent.toLowerCase();
   if (!logLower.trim()) return flags;
 
-  let currentSection = "";
-  for (const line of inboxContent.split("\n")) {
-    if (/^##\s/.test(line)) {
-      currentSection = line.replace(/^##\s+/, "").trim();
-      continue;
-    }
-    if (/^###\s/.test(line)) {
-      currentSection = line.replace(/^###\s+/, "").trim();
-      continue;
-    }
+  for (const line of tasksContent.split("\n")) {
     const trimmed = line.trim();
-    if (!trimmed.startsWith("-") || trimmed.length < 10) continue;
+    if (!/^- \[( |x)\]/.test(trimmed) || trimmed.length < 10) continue;
 
     const itemText = trimmed
-      .replace(/^-\s*\*\*[^*]+\*\*:?\s*/, "")
-      .replace(/\s*\[.*?\]\s*/g, " ")
+      .replace(/^- \[( |x)\] (>> )?/, "")
+      .replace(/\s*\*\*[^*]+\*\*/, "")
+      .replace(/\s*@[\w-]+\s*$/, "")
       .trim();
 
     const tokens = itemText
@@ -202,11 +193,14 @@ export function detectInboxCoherence(
       ? `log mentions "${matched}" with completion language`
       : `log mentions "${matched}" with parking/deferral language`;
 
-    flags.push({ section: currentSection, line: trimmed, logEvidence: reason });
+    flags.push({ line: trimmed, logEvidence: reason });
   }
 
   return flags;
 }
+
+/** @deprecated Use detectTaskCoherence */
+export const detectInboxCoherence = detectTaskCoherence;
 
 export function computeDailyCoherence(rootDir: string, now: Date = new Date()): DailyCoherenceResult {
   const rightNowContent = extractRightNowSection(readAgentsMd(rootDir));
@@ -217,16 +211,16 @@ export function computeDailyCoherence(rootDir: string, now: Date = new Date()): 
   const deferredFile = deferredPath(rootDir);
   if (existsSync(deferredFile)) deferredContent = readFileSync(deferredFile, "utf8");
 
-  let inboxContent = "";
-  const inboxFile = join(rootDir, "user", "inbox.md");
-  if (existsSync(inboxFile)) inboxContent = readFileSync(inboxFile, "utf8");
+  let tasksContent = "";
+  const tasksFile = join(rootDir, "user", "tasks.md");
+  if (existsSync(tasksFile)) tasksContent = readFileSync(tasksFile, "utf8");
 
   return {
     rightNowContent,
     logDecisions,
     stalenessFlags: detectRightNowStaleness(rightNowContent, logDecisions),
     resolvedDeferred: detectResolvedDeferred(deferredContent, logContent),
-    inboxFlags: detectInboxCoherence(inboxContent, logContent),
+    taskFlags: detectTaskCoherence(tasksContent, logContent),
   };
 }
 
@@ -234,7 +228,7 @@ export function formatDailyCoherenceBlock(result: DailyCoherenceResult): string 
   if (
     result.stalenessFlags.length === 0 &&
     result.resolvedDeferred.length === 0 &&
-    result.inboxFlags.length === 0 &&
+    result.taskFlags.length === 0 &&
     result.logDecisions.length === 0 &&
     !result.rightNowContent.trim()
   ) {
@@ -269,14 +263,14 @@ export function formatDailyCoherenceBlock(result: DailyCoherenceResult): string 
     }
   }
 
-  if (result.inboxFlags.length > 0) {
-    lines.push("Inbox items potentially resolved or parked (update/remove from inbox):");
-    for (const flag of result.inboxFlags) {
-      lines.push(`- [${flag.section}] ${flag.line} — ${flag.logEvidence}`);
+  if (result.taskFlags.length > 0) {
+    lines.push("Task items potentially resolved or parked (update via tasks() tool):");
+    for (const flag of result.taskFlags) {
+      lines.push(`- ${flag.line} — ${flag.logEvidence}`);
     }
   }
 
-  if (result.stalenessFlags.length === 0 && result.resolvedDeferred.length === 0 && result.inboxFlags.length === 0) {
+  if (result.stalenessFlags.length === 0 && result.resolvedDeferred.length === 0 && result.taskFlags.length === 0) {
     lines.push("No staleness or deferred-resolution flags detected.");
   }
 

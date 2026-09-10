@@ -78,6 +78,7 @@ import { WIKI_DIR } from "../shared/brain-paths";
 import { pathArgsOf } from "../shared/tool-paths";
 import { isContained } from "./containment";
 import { resolveInstanceLanguage } from "./wiki-tools";
+import { cleanupCompletedTasks } from "./tasks/task-cleanup";
 
 export interface MaintenanceSessionLike {
   prompt(text: string): Promise<void>;
@@ -568,6 +569,16 @@ export async function runConsolidation(options: RunConsolidationOptions): Promis
       try {
         depthSession = await createSession({ rootDir, modelRuntime, depth });
         ensureUserMdSectionsOnDisk(rootDir);
+        if (depth === 1) {
+          const logPath = join(rootDir, "logs", `${date}.md`);
+          let logContent = "";
+          try {
+            logContent = readFileSync(logPath, "utf8");
+          } catch {
+            // No log yet for today — cleanup is a no-op.
+          }
+          cleanupCompletedTasks(rootDir, logContent);
+        }
         logEvent(rootDir, { event: "consolidation_start", depth });
         const healthBefore = computeBrainHealthReport(rootDir);
         await depthSession.prompt(await buildConsolidationPrompt(rootDir, depth, now, state));
