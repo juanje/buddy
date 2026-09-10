@@ -1,6 +1,6 @@
 // tests/unit/brain-migration.test.ts — FR-BRAIN-08: USER.md section scaffolding; FR-PROMPT-08: AGENTS.md migration.
 
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -11,6 +11,7 @@ import {
   isOldAgentsMdFormat,
   migrateAgentsMdContent,
   migrateAgentsMdIfNeeded,
+  migrateInboxToTasksIfNeeded,
   ensureUserMdSections,
 } from "../../backends/brain-migration";
 
@@ -182,5 +183,46 @@ describe("migrateAgentsMd", () => {
     writeFileSync(join(dir, "AGENTS.md"), newFormat);
     expect(migrateAgentsMdIfNeeded(dir)).toBe(false);
     expect(readFileSync(join(dir, "AGENTS.md"), "utf8")).toBe(newFormat);
+  });
+});
+
+describe("migrateInboxToTasksIfNeeded", () => {
+  let dir: string;
+
+  afterEach(() => {
+    if (dir) rmSync(dir, { recursive: true, force: true });
+  });
+
+  it("extracts checkbox lines and marks first open per area", () => {
+    dir = mkdtempSync(join(tmpdir(), "buddy-inbox-migrate-"));
+    mkdirSync(join(dir, "user"), { recursive: true });
+    writeFileSync(
+      join(dir, "user", "inbox.md"),
+      `# Inbox
+
+## Next Actions
+- [ ] First @work
+- [ ] Second @work
+- [ ] Home errand @home
+`,
+      "utf8",
+    );
+    expect(migrateInboxToTasksIfNeeded(dir)).toBe(true);
+    expect(existsSync(join(dir, "user", "tasks.md"))).toBe(true);
+    expect(existsSync(join(dir, "user", "inbox.md"))).toBe(false);
+    expect(existsSync(join(dir, "user", "inbox.md.migrated"))).toBe(true);
+    const tasks = readFileSync(join(dir, "user", "tasks.md"), "utf8");
+    expect(tasks).toContain(">> First @work");
+    expect(tasks).toContain("- [ ] Second @work");
+    expect(tasks).toContain(">> Home errand @home");
+  });
+
+  it("is a no-op when tasks.md already exists", () => {
+    dir = mkdtempSync(join(tmpdir(), "buddy-inbox-migrate-"));
+    mkdirSync(join(dir, "user"), { recursive: true });
+    writeFileSync(join(dir, "user", "inbox.md"), "- [ ] Keep\n", "utf8");
+    writeFileSync(join(dir, "user", "tasks.md"), "- [ ] Existing\n", "utf8");
+    expect(migrateInboxToTasksIfNeeded(dir)).toBe(false);
+    expect(readFileSync(join(dir, "user", "tasks.md"), "utf8")).toContain("Existing");
   });
 });

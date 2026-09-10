@@ -1,5 +1,9 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
+
+import { USER_DIR } from "../shared/brain-paths";
+import type { TaskItem } from "../shared/task-types";
+import { parseTaskFileContent, writeTasksFile } from "./tasks/task-file";
 
 const PREFERENCES_HEADING = "## Preferences";
 const PRINCIPLES_HEADING = "## Principles";
@@ -170,5 +174,49 @@ export function migrateAgentsMdIfNeeded(rootDir: string): boolean {
   mkdirSync(dirname(backupPath), { recursive: true });
   writeFileSync(backupPath, original, "utf8");
   writeFileSync(agentsPath, migrated, "utf8");
+  return true;
+}
+
+const INBOX_CHECKBOX_RE = /^- \[( |x)\]\s*(.*)$/;
+
+function extractInboxTaskLines(content: string): string[] {
+  return content
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => INBOX_CHECKBOX_RE.test(line));
+}
+
+function applyFirstNextPerArea(items: TaskItem[]): void {
+  const seen = new Set<string>();
+  for (const item of items) {
+    if (item.done) continue;
+    const key = item.area ?? "";
+    if (seen.has(key)) continue;
+    seen.add(key);
+    item.next = true;
+  }
+}
+
+/**
+ * Migrate GTD inbox.md to flat tasks.md once (FR-TASK-07).
+ * Returns true when migration ran.
+ */
+export function migrateInboxToTasksIfNeeded(rootDir: string): boolean {
+  const inboxPath = join(rootDir, USER_DIR, "inbox.md");
+  const tasksPath = join(rootDir, USER_DIR, "tasks.md");
+  if (!existsSync(inboxPath) || existsSync(tasksPath)) return false;
+
+  const inboxContent = readFileSync(inboxPath, "utf8");
+  const lines = extractInboxTaskLines(inboxContent);
+  if (lines.length === 0) {
+    renameSync(inboxPath, `${inboxPath}.migrated`);
+    return true;
+  }
+
+  const pseudoFile = ["# Tasks", "", ...lines].join("\n");
+  const items = parseTaskFileContent(pseudoFile);
+  applyFirstNextPerArea(items);
+  writeTasksFile(rootDir, items);
+  renameSync(inboxPath, `${inboxPath}.migrated`);
   return true;
 }
