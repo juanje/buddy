@@ -283,7 +283,7 @@ export const PROTECTED_FILES = [
   indexRelPath(BRAIN_SUBDIRS.projects),
   indexRelPath(BRAIN_SUBDIRS.ideas),
   LOGS_INDEX,
-  `${USER_DIR}/inbox.md`,
+  `${USER_DIR}/tasks.md`,
 ] as const;
 
 /** Daily log path pattern for heading guard (logs/YYYY-MM-DD.md, not archive). */

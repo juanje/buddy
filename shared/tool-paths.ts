@@ -33,7 +33,7 @@ export const TOOL_PATH_ARGS: Record<string, readonly string[]> = {
   // pointed at the real toolset they were simply never examined, and a skill
   // tool that grew a path argument would have gone unnoticed.
   process_conversation: [],
-  triage_inbox: [],
+  tasks: [],
   // Consolidation-only.
   relocate_brain_file: ["source", "destination"],
   // Takes a URL, not a path. Destination containment is fetch_url's own

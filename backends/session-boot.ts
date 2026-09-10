@@ -28,6 +28,7 @@ import { buddySessionsDir } from "./session-paths";
 import { buildSkillTools } from "./skill-tools";
 import { buildFetchTools } from "./fetch-url";
 import { buildConnectorToolset } from "./connectors/index";
+import { buildTaskTool } from "./tasks/index";
 import { buildFileTools } from "./file-tools";
 import { buildShowFileTools } from "./show-file-tool";
 import { buildWikiTools } from "./wiki-tools";
@@ -35,7 +36,11 @@ import { SessionLifecycle } from "./session-lifecycle";
 import { installEditRecoveryHook } from "./edit-recovery";
 import { installHeadingGuardHook } from "./heading-guard";
 import { persistLiveSession } from "./crash-recovery";
-import { ensureUserMdSectionsOnDisk, migrateAgentsMdIfNeeded } from "./brain-migration";
+import {
+  ensureUserMdSectionsOnDisk,
+  migrateAgentsMdIfNeeded,
+  migrateInboxToTasksIfNeeded,
+} from "./brain-migration";
 import { createWorkerCore, type PiSessionLike, type WorkerCore } from "./worker-core";
 import type { UsageTracker } from "./usage-tracker";
 import { runWarmHandoff } from "./warm-handoff";
@@ -83,6 +88,7 @@ export function buildAgentToolset(
   const showFileTools = buildShowFileTools({ rootDir, showFile: deps.showFile });
   const wikiTools = buildWikiTools(rootDir);
   const connectorTools = buildConnectorToolset(rootDir);
+  const taskTool = buildTaskTool(rootDir);
 
   const customTools = [
     ...skillTools,
@@ -91,6 +97,7 @@ export function buildAgentToolset(
     ...showFileTools,
     ...wikiTools,
     ...connectorTools,
+    taskTool,
   ];
   return {
     names: [...AGENT_TOOLS, ...customTools.map((tool) => tool.name)],
@@ -184,6 +191,7 @@ export async function bootSession(
 
   ensureUserMdSectionsOnDisk(rootDir);
   migrateAgentsMdIfNeeded(rootDir);
+  migrateInboxToTasksIfNeeded(rootDir);
 
   const sessionId = randomUUID().slice(0, SESSION_ID_DISPLAY_LENGTH);
   logEvent(rootDir, { event: "session_start", session: sessionId });

@@ -192,19 +192,19 @@ describe("heading guard", () => {
     expect(readFileSync(filePath, "utf8")).toBe(original);
   });
 
-  it("still guards user/inbox.md", () => {
+  it("still guards user/tasks.md", () => {
     const guard = setup();
-    const filePath = join(dir, "user", "inbox.md");
+    const filePath = join(dir, "user", "tasks.md");
     mkdirSync(join(dir, "user"), { recursive: true });
-    const original = "## Capture\n\nIn.\n\n## Next Actions\n\nDo.\n";
+    const original = "# Tasks\n\n- [ ] Do something\n";
     writeFileSync(filePath, original, "utf8");
 
     guard.capture(filePath);
-    writeFileSync(filePath, "## Next Actions\n\nDo.\n", "utf8");
+    writeFileSync(filePath, "- [ ] Do something\n", "utf8");
     const result = guard.check(filePath);
 
     expect(result.reverted).toBe(true);
-    expect(result.lostHeadings).toEqual(["Capture"]);
+    expect(result.lostHeadings).toEqual(["Tasks"]);
     expect(readFileSync(filePath, "utf8")).toBe(original);
   });
 

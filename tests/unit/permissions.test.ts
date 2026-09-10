@@ -40,11 +40,11 @@ describe("evaluateToolCall", () => {
 
   it("allows reads and writes inside the buddy directory", () => {
     expect(evaluate("read", { path: `${AB}/agent_brain/notes.md` })).toEqual({ action: "allow" });
-    expect(evaluate("write", { path: `${AB}/user/inbox.md` })).toEqual({ action: "allow" });
+    expect(evaluate("write", { path: `${AB}/user/tasks.md` })).toEqual({ action: "allow" });
   });
 
   it("resolves relative paths against the buddy directory", () => {
-    expect(evaluate("read", { path: "user/inbox.md" })).toEqual({ action: "allow" });
+    expect(evaluate("read", { path: "user/tasks.md" })).toEqual({ action: "allow" });
     const escape = evaluate("read", { path: "../other/file.txt" });
     expect(escape.action).toBe("ask");
   });
@@ -84,6 +84,15 @@ describe("evaluateToolCall", () => {
       reason: "Modifying model configuration is not allowed.",
     });
     expect(evaluate("read", { path: `${AB}/.pi/settings.json` })).toEqual({ action: "allow" });
+  });
+
+  it("asks before tasks remove", () => {
+    const decision = evaluate("tasks", { action: "remove", params: { id: 1 } });
+    expect(decision).toMatchObject({ action: "ask", op: "write" });
+  });
+
+  it("allows tasks list without asking", () => {
+    expect(evaluate("tasks", { action: "list" })).toEqual({ action: "allow" });
   });
 
   it("denies the hardcoded denylist silently, wherever it appears", () => {

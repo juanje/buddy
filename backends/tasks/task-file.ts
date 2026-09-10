@@ -1,0 +1,179 @@
+// backends/tasks/task-file.ts — Parse and write user/tasks.md (FR-TASK).
+
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import { basename, dirname, join } from "node:path";
+
+import { USER_DIR } from "../../shared/brain-paths";
+import type { TaskItem, TaskListResult } from "../../shared/task-types";
+
+const CHECKBOX_RE = /^- \[( |x)\] (>> )?(.*)$/;
+
+function areaKey(area?: string): string {
+  return area?.trim() || "";
+}
+
+function parseItemLine(line: string, id: number): TaskItem | null {
+  const match = line.match(CHECKBOX_RE);
+  if (!match) return null;
+
+  const done = match[1] === "x";
+  const next = Boolean(match[2]);
+  let rest = match[3].trim();
+
+  let annotation: string | undefined;
+  const annMatch = rest.match(/\*\*([^*]+)\*\*/);
+  if (annMatch) {
+    annotation = annMatch[1].trim();
+    rest = rest.replace(/\*\*[^*]+\*\*/, "").trim();
+  }
+
+  let area: string | undefined;
+  const areaMatch = rest.match(/\s@([\w-]+)\s*$/);
+  if (areaMatch) {
+    area = areaMatch[1];
+    rest = rest.slice(0, areaMatch.index).trim();
+  }
+
+  let dueDate: string | undefined;
+  const dateMatch = rest.match(/\b(\d{4}-\d{2}-\d{2})\b/);
+  if (dateMatch) {
+    dueDate = dateMatch[1];
+  }
+
+  const text = rest.trim();
+  if (!text) return null;
+
+  return { id, text, done, next: done ? false : next, area, dueDate, annotation };
+}
+
+export function parseTaskFileContent(content: string): TaskItem[] {
+  const items: TaskItem[] = [];
+  let id = 0;
+  for (const line of content.split("\n")) {
+    const trimmed = line.trim();
+    if (!trimmed.startsWith("- [")) continue;
+    id += 1;
+    const item = parseItemLine(trimmed, id);
+    if (item) items.push(item);
+  }
+  return items;
+}
+
+function formatItemLine(item: TaskItem): string {
+  const checkbox = item.done ? "- [x]" : "- [ ]";
+  const next = !item.done && item.next ? " >>" : "";
+  const parts: string[] = [item.text];
+  if (item.dueDate && !item.text.includes(item.dueDate)) {
+    parts.push(item.dueDate);
+  }
+  if (item.annotation) {
+    parts.push(`**${item.annotation}**`);
+  }
+  if (item.area) {
+    parts.push(`@${item.area}`);
+  }
+  return `${checkbox}${next} ${parts.join(" ")}`.trimEnd();
+}
+
+export function serializeTaskFile(items: TaskItem[], created?: string): string {
+  const date = created ?? new Date().toISOString().slice(0, 10);
+  const lines = [
+    "---",
+    `created: ${date}`,
+    "---",
+    "",
+    "# Tasks",
+    "",
+    ...items.map((item) => formatItemLine(item)),
+  ];
+  if (items.length > 0) lines.push("");
+  return lines.join("\n");
+}
+
+export function tasksFilePath(rootDir: string): string {
+  return join(rootDir, USER_DIR, "tasks.md");
+}
+
+export function readTasksFile(rootDir: string): { content: string; items: TaskItem[] } {
+  const path = tasksFilePath(rootDir);
+  if (!existsSync(path)) {
+    return { content: "", items: [] };
+  }
+  const content = readFileSync(path, "utf8");
+  return { content, items: parseTaskFileContent(content) };
+}
+
+export function writeTasksFile(rootDir: string, items: TaskItem[], created?: string): void {
+  const path = tasksFilePath(rootDir);
+  mkdirSync(dirname(path), { recursive: true });
+  let createdDate = created;
+  if (!createdDate && existsSync(path)) {
+    const existing = readFileSync(path, "utf8");
+    const m = existing.match(/^created:\s*(\S+)/m);
+    createdDate = m?.[1];
+  }
+  const body = serializeTaskFile(items, createdDate);
+  const tmp = join(dirname(path), `.${basename(path)}.${process.pid}.${Date.now()}.tmp`);
+  try {
+    writeFileSync(tmp, body, "utf8");
+    renameSync(tmp, path);
+  } catch (error) {
+    try {
+      rmSync(tmp, { force: true });
+    } catch {
+      // ignore
+    }
+    throw error;
+  }
+}
+
+export function buildListResult(items: TaskItem[]): TaskListResult {
+  const areaMap = new Map<string, { open: number; hasNext: boolean }>();
+  let openCount = 0;
+  for (const item of items) {
+    const key = areaKey(item.area);
+    const entry = areaMap.get(key) ?? { open: 0, hasNext: false };
+    if (!item.done) {
+      entry.open += 1;
+      openCount += 1;
+      if (item.next) entry.hasNext = true;
+    }
+    areaMap.set(key, entry);
+  }
+  const areas = [...areaMap.entries()].map(([area, stats]) => ({
+    area: area || "(general)",
+    openCount: stats.open,
+    hasNext: stats.hasNext,
+  }));
+  return { items, areas, openCount };
+}
+
+export function findItemById(items: TaskItem[], id: number): TaskItem | undefined {
+  return items.find((item) => item.id === id);
+}
+
+export function clearNextInArea(items: TaskItem[], area?: string): void {
+  const key = areaKey(area);
+  for (const item of items) {
+    if (!item.done && areaKey(item.area) === key) {
+      item.next = false;
+    }
+  }
+}
+
+export function countOpenInArea(items: TaskItem[], area?: string): number {
+  const key = areaKey(area);
+  return items.filter((item) => !item.done && areaKey(item.area) === key).length;
+}
+
+export function areaHasNext(items: TaskItem[], area?: string): boolean {
+  const key = areaKey(area);
+  return items.some((item) => !item.done && item.next && areaKey(item.area) === key);
+}

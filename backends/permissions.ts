@@ -19,6 +19,7 @@ import { DENYLIST_BASENAMES, DENYLIST_HOME_DIRS, READ_TOOLS, WRITE_TOOLS } from 
 import { pathArgsOf } from "../shared/tool-paths";
 import { expandHome } from "../shared/path-utils";
 import { classifyConnectorAction, isConnectorTool } from "./connectors/actions";
+import { classifyTaskAction, isTaskTool } from "./tasks/actions";
 import { isContained } from "./containment";
 import { globalConfigDir } from "./global-config";
 import { identityDirPath } from "./brain-paths";
@@ -74,6 +75,29 @@ export function evaluateToolCall(
   home: string = homedir(),
   configDir: string = globalConfigDir(),
 ): PermissionDecision {
+  if (isTaskTool(toolName)) {
+    const action = connectorActionFromArgs(args);
+    if (!action) {
+      return { action: "deny", reason: "Task calls require an action argument." };
+    }
+    const classification = classifyTaskAction(action);
+    if (classification === "deny") {
+      return {
+        action: "deny",
+        reason: `Unknown or disallowed task action '${action}'.`,
+      };
+    }
+    if (classification === "write") {
+      return {
+        action: "ask",
+        kind: "outside",
+        op: "write",
+        path: `${toolName}:${action}`,
+      };
+    }
+    return { action: "allow" };
+  }
+
   if (isConnectorTool(toolName)) {
     const action = connectorActionFromArgs(args);
     if (!action) {
