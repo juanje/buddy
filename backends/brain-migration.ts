@@ -201,6 +201,29 @@ function applyFirstNextPerArea(items: TaskItem[]): void {
  * Migrate GTD inbox.md to flat tasks.md once (FR-TASK-07).
  * Returns true when migration ran.
  */
+const TASKS_NAV_LINE =
+  "  - [Tasks](user/tasks.md) — personal action list managed via the `tasks()` tool. Read when the user asks what's pending, what to work on, or when capturing new actions.";
+
+const AGENTS_INBOX_NAV_RE = /^\s*-\s*\[Inbox\]\(user\/inbox\.md\).*$/m;
+
+/**
+ * Replace legacy Inbox navigation line in AGENTS.md (FR-TASK-07).
+ * Idempotent when already migrated or line absent.
+ */
+export function migrateAgentsTasksReference(rootDir: string): boolean {
+  const agentsPath = join(rootDir, "AGENTS.md");
+  if (!existsSync(agentsPath)) return false;
+
+  const content = readFileSync(agentsPath, "utf8");
+  if (!AGENTS_INBOX_NAV_RE.test(content)) return false;
+
+  const updated = content.replace(AGENTS_INBOX_NAV_RE, TASKS_NAV_LINE);
+  if (updated === content) return false;
+
+  writeFileSync(agentsPath, updated, "utf8");
+  return true;
+}
+
 export function migrateInboxToTasksIfNeeded(rootDir: string): boolean {
   const inboxPath = join(rootDir, USER_DIR, "inbox.md");
   const tasksPath = join(rootDir, USER_DIR, "tasks.md");

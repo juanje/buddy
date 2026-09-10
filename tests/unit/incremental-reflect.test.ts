@@ -37,7 +37,7 @@ describe("SessionLifecycle checkpoint reflect", () => {
 
     await lc.handleEvent({
       type: "tool_execution_end",
-      toolCall: { name: "write", args: { path: "user/inbox.md" } },
+      toolCall: { name: "write", args: { path: "user/tasks.md" } },
     });
     await lc.handleEvent({ type: "compaction_start" });
 

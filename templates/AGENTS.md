@@ -15,7 +15,7 @@ Promotion is gradual — files climb through layers of visibility based on susta
 Directories with an `index.md` have a content map — read it first to decide what to open.
 
 - [User workspace](user/) — user's second brain (ideas, concepts, reference notes), action items, documents, drafts, lists. The user can also add files here directly for the agent to read and process.
-  - [Inbox](user/inbox.md) — GTD inbox: Capture, Next Actions, @context lists, Waiting For, Someday/Maybe. Read when the user asks what's pending, what to work on, or when capturing new tasks.
+  - [Tasks](user/tasks.md) — personal action list managed via the `tasks()` tool. Read when the user asks what's pending, what to work on, or when capturing new actions.
 - [User profile](agent_brain/identity/USER.md) — context, preferences, communication style.
 - [Agent guidelines](agent_brain/identity/SOUL.md) — operating values, limits, interaction style.
 - [Projects](agent_brain/projects/index.md) — project history, context, past decisions.

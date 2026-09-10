@@ -55,9 +55,9 @@ Feature: File operations tools
     When delete_file is called with path "AGENTS.md"
     Then the file tool returns an error containing "not allowed"
 
-  Scenario: Reject delete of protected inbox
-    Given a file "user/inbox.md" with content "## Capture\n\nItems."
-    When delete_file is called with path "user/inbox.md"
+  Scenario: Reject delete of protected tasks file
+    Given a file "user/tasks.md" with content "# Tasks\n\n- [ ] Items."
+    When delete_file is called with path "user/tasks.md"
     Then the file tool returns an error containing "not allowed"
 
   Scenario: Reject delete of missing file

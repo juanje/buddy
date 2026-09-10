@@ -3163,6 +3163,57 @@ Further context on local-model evaluation methodology and findings:
 - **Then** that domain's connector tool is not offered to the model
 - **And** configured domains register a connector tool at session boot
 
+### 3.24 Task management (FR-TASK)
+
+| ID | Description | Phase |
+|----|-------------|-------|
+| FR-TASK-01 | `tasks()` dispatcher, `user/tasks.md` format, PROTECTED_FILES | 1 ✓ |
+| FR-TASK-02 | Core actions: add, complete, list, move, annotate, remove | 1 ✓ |
+| FR-TASK-03 | Next action (`>>`), set_next, auto-mark first per area | 1 ✓ |
+| FR-TASK-04 | WIP limit via config action; warn on add when over limit | 1 ✓ |
+| FR-TASK-05 | Capture classification prompts in agents-base.md | 1 ✓ |
+| FR-TASK-06 | Daily cleanup + coherence renames (tasks.md) | 1 ✓ |
+| FR-TASK-07 | Migrate inbox.md → tasks.md + AGENTS.md inbox reference on session boot | 1 ✓ |
+| FR-TASK-08 | Consolidation/process prompts; retire triage_inbox skill | 1 ✓ |
+| FR-TASK-09 | Templates, BRAIN-SPEC, bundled assets | 1 ✓ |
+
+**FR-TASK-01 — Dispatcher and file format**
+
+- **Given** any user session
+- **When** the toolset is built
+- **Then** `tasks` is registered and `help` lists actions
+- **And** `user/tasks.md` is protected from delete/move
+
+**FR-TASK-02 — Core actions**
+
+- **When** the agent calls `tasks({ action: "add", params: { text, area? } })`
+- **Then** a checkbox line is appended atomically
+- **And** `remove` requires permission confirmation
+
+**FR-TASK-03 — Next action**
+
+- **When** the first open item is added to an area
+- **Then** it is auto-marked `>>`
+- **And** `set_next` enforces one `>>` per area
+
+**FR-TASK-04 — WIP**
+
+- **Given** open items ≥ configured `tasks.wipLimit` (default 5)
+- **When** `add` runs
+- **Then** the item is still added and a WIP warning is returned
+
+**FR-TASK-06 — Daily cleanup**
+
+- **When** depth-1 consolidation starts
+- **Then** verified `[x]` items mentioned in today's log are removed from tasks.md
+
+**FR-TASK-07 — Migration**
+
+- **Given** `user/inbox.md` exists and `user/tasks.md` does not
+- **When** session boot runs
+- **Then** items are extracted to tasks.md and inbox is renamed to `.migrated`
+- **And** when `AGENTS.md` still links to `user/inbox.md` in "Where to find things", that line is replaced with the tasks reference (idempotent)
+
 ### 3.25 Jira Connector (FR-JIRA)
 
 | ID | Description | Phase |
@@ -3452,7 +3503,7 @@ deliberately withdrawn — a scenario asserting it stays withdrawn.
 
 | ID | Requirement |
 |----|-------------|
-| NFR-ROUTE-01 | The agent routes captured information based on **ownership**, not topic. The rule is declared in `agents-base.md` (FR-PROMPT-03): user artifacts (plans, docs, bugs, roadmaps, drafts) → `user/` or `user/projects/`; interconnected user knowledge → `user/wiki/`; actionable items → `user/inbox.md` / `user/projects/`; agent operational knowledge (patterns, preferences, lessons about how to assist, project navigation context) → `agent_brain/` during reflect and consolidation. When content serves both, bifurcate: artifacts to `user/`, derived operational insights to `agent_brain/`. `agent_brain/projects/` holds how to assist on a project, not the project's deliverables. The agent does not ask "where should I save this?" unless the input is genuinely ambiguous. |
+| NFR-ROUTE-01 | The agent routes captured information based on **ownership**, not topic. The rule is declared in `agents-base.md` (FR-PROMPT-03): user artifacts (plans, docs, bugs, roadmaps, drafts) → `user/` or `user/projects/`; interconnected user knowledge → `user/wiki/`; actionable items → `tasks()` / `user/tasks.md` and `user/projects/`; agent operational knowledge (patterns, preferences, lessons about how to assist, project navigation context) → `agent_brain/` during reflect and consolidation. When content serves both, bifurcate: artifacts to `user/`, derived operational insights to `agent_brain/`. `agent_brain/projects/` holds how to assist on a project, not the project's deliverables. The agent does not ask "where should I save this?" unless the input is genuinely ambiguous. |
 | NFR-ROUTE-02 | The routing rule applies symmetrically to **retrieval**. `wiki_search` is for the user's second brain; the agent does not use it to look up its own operational knowledge. When the user asks "what do I know about X?", the agent searches the wiki or navigates `user/`. When the agent needs context about how to assist this user (preferences, operational project context, patterns learned), it navigates `agent_brain/` through indexes and progressive disclosure. When the user asks about past conversations, the agent reads logs. |
 
 **The test is ownership, not topic.** A concept about "complex systems" could

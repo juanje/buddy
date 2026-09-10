@@ -11,6 +11,7 @@ import {
   isOldAgentsMdFormat,
   migrateAgentsMdContent,
   migrateAgentsMdIfNeeded,
+  migrateAgentsTasksReference,
   migrateInboxToTasksIfNeeded,
   ensureUserMdSections,
 } from "../../backends/brain-migration";
@@ -224,5 +225,42 @@ describe("migrateInboxToTasksIfNeeded", () => {
     writeFileSync(join(dir, "user", "tasks.md"), "- [ ] Existing\n", "utf8");
     expect(migrateInboxToTasksIfNeeded(dir)).toBe(false);
     expect(readFileSync(join(dir, "user", "tasks.md"), "utf8")).toContain("Existing");
+  });
+});
+
+describe("migrateAgentsTasksReference", () => {
+  let dir: string;
+
+  afterEach(() => {
+    if (dir) rmSync(dir, { recursive: true, force: true });
+  });
+
+  const inboxNav =
+    "  - [Inbox](user/inbox.md) — GTD inbox: Capture, Next Actions, @context lists.";
+
+  it("replaces inbox navigation line with tasks line", () => {
+    dir = mkdtempSync(join(tmpdir(), "buddy-agents-tasks-nav-"));
+    writeFileSync(
+      join(dir, "AGENTS.md"),
+      `# Buddy\n\n## Where to find things\n\n${inboxNav}\n`,
+      "utf8",
+    );
+    expect(migrateAgentsTasksReference(dir)).toBe(true);
+    const content = readFileSync(join(dir, "AGENTS.md"), "utf8");
+    expect(content).toContain("[Tasks](user/tasks.md)");
+    expect(content).not.toContain("[Inbox](user/inbox.md)");
+  });
+
+  it("is a no-op when already migrated", () => {
+    dir = mkdtempSync(join(tmpdir(), "buddy-agents-tasks-nav-"));
+    const migrated = readFileSync(join(process.cwd(), "templates", "AGENTS.md"), "utf8");
+    writeFileSync(join(dir, "AGENTS.md"), migrated, "utf8");
+    expect(migrateAgentsTasksReference(dir)).toBe(false);
+  });
+
+  it("is a no-op when AGENTS.md has no inbox line", () => {
+    dir = mkdtempSync(join(tmpdir(), "buddy-agents-tasks-nav-"));
+    writeFileSync(join(dir, "AGENTS.md"), "# Buddy\n\n## Where to find things\n", "utf8");
+    expect(migrateAgentsTasksReference(dir)).toBe(false);
   });
 });

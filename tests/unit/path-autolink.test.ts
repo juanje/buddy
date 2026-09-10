@@ -43,11 +43,11 @@ describe("nesting guard", () => {
   });
 
   it("creates no link inside a link whose label merely mentions a path", () => {
-    expect(linkTokensInside("Mira [ver user/inbox.md aquí](user/inbox.md)")).toEqual([]);
+    expect(linkTokensInside("Mira [ver user/tasks.md aquí](user/tasks.md)")).toEqual([]);
   });
 
   it("emits no anchor inside an anchor", () => {
-    const html = renderMarkdown("Mira [ver user/inbox.md aquí](user/inbox.md)");
+    const html = renderMarkdown("Mira [ver user/tasks.md aquí](user/tasks.md)");
     expect(html.match(/<a\b/g)).toHaveLength(1);
   });
 });
@@ -59,7 +59,7 @@ describe("autolinkLabel", () => {
   });
 
   it("shows the whole path for the user's own space", () => {
-    expect(autolinkLabel("user/inbox.md")).toBe("user/inbox.md");
+    expect(autolinkLabel("user/tasks.md")).toBe("user/tasks.md");
     expect(autolinkLabel("downloads/article.md")).toBe("downloads/article.md");
   });
 });
@@ -72,52 +72,52 @@ describe("renderMarkdown path autolinking", () => {
   });
 
   it("adds no title when the label already is the path", () => {
-    expect(renderMarkdown("Está en user/inbox.md")).not.toContain("title=");
+    expect(renderMarkdown("Está en user/tasks.md")).not.toContain("title=");
   });
 
   it("links inside a list item", () => {
-    const html = renderMarkdown("- Revisa user/inbox.md\n- Y nada más");
-    expect(html).toContain('data-local-path="user/inbox.md"');
+    const html = renderMarkdown("- Revisa user/tasks.md\n- Y nada más");
+    expect(html).toContain('data-local-path="user/tasks.md"');
   });
 
   it("links inside a blockquote", () => {
-    expect(renderMarkdown("> Está en user/inbox.md")).toContain('data-local-path="user/inbox.md"');
+    expect(renderMarkdown("> Está en user/tasks.md")).toContain('data-local-path="user/tasks.md"');
   });
 
   it("links inside a table cell", () => {
-    const html = renderMarkdown("| File |\n| --- |\n| user/inbox.md |");
-    expect(html).toContain('data-local-path="user/inbox.md"');
+    const html = renderMarkdown("| File |\n| --- |\n| user/tasks.md |");
+    expect(html).toContain('data-local-path="user/tasks.md"');
   });
 
   it("links inside emphasis", () => {
-    expect(renderMarkdown("**Mira user/inbox.md**")).toContain('data-local-path="user/inbox.md"');
+    expect(renderMarkdown("**Mira user/tasks.md**")).toContain('data-local-path="user/tasks.md"');
   });
 
   it("leaves a path in an indented code block alone", () => {
-    const html = renderMarkdown("    user/inbox.md\n");
+    const html = renderMarkdown("    user/tasks.md\n");
     expect(html).not.toContain("data-local-path");
   });
 
   // NFR-SEC-10: rewriting tokens must not let author-chosen markup through.
   it("still escapes raw HTML in a message that also contains a path", () => {
-    const html = renderMarkdown('<img src=x onerror="alert(1)"> y user/inbox.md');
+    const html = renderMarkdown('<img src=x onerror="alert(1)"> y user/tasks.md');
     expect(html).not.toContain("<img");
     expect(html).toContain("&lt;img");
-    expect(html).toContain('data-local-path="user/inbox.md"');
+    expect(html).toContain('data-local-path="user/tasks.md"');
   });
 
   it("does not treat an html-escaped sequence as part of a path", () => {
-    const html = renderMarkdown("a & b user/inbox.md");
-    expect(html).toContain('data-local-path="user/inbox.md"');
+    const html = renderMarkdown("a & b user/tasks.md");
+    expect(html).toContain('data-local-path="user/tasks.md"');
     expect(html).toContain("&amp;");
   });
 
   // The href reaches an attribute, so a path shaped like an injection must not
   // survive as markup even if the pattern were ever loosened.
   it("produces an inert href for every autolinked path", () => {
-    const html = renderMarkdown("Está en user/inbox.md");
+    const html = renderMarkdown("Está en user/tasks.md");
     expect(html).toContain('<a href="#"');
-    expect(html).not.toContain('href="user/inbox.md"');
+    expect(html).not.toContain('href="user/tasks.md"');
   });
 
   it("leaves a message with no buddy paths byte-for-byte unchanged", () => {

@@ -17,7 +17,7 @@ describe("enrichEditError", () => {
 
   it("returns re-read hint for batched not-found errors", () => {
     const msg =
-      "Could not find edits[0] in user/inbox.md. The oldText must match exactly including all whitespace and newlines.";
+      "Could not find edits[0] in user/tasks.md. The oldText must match exactly including all whitespace and newlines.";
     expect(enrichEditError(msg)).toMatch(/Re-read the file/i);
   });
 

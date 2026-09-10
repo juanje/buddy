@@ -45,7 +45,7 @@ Based on exploration of the [Agentic Buddy](https://github.com/juanje/agentic-bu
 | `agent_brain/observations.md` | Agentic Buddy template | As-is (empty with section structure: Skill/Rule/Concept/Structure candidates, Resolved) |
 | `agent_brain/deferred.md` | Agentic Buddy template | As-is (queue semantics documented, entry format defined, parseable by code) |
 | `logs/index.md` | Agentic Buddy template | As-is (empty, managed by worker code) |
-| `user/inbox.md` | Agentic Buddy personal pack | As-is when personal pack applied (GTD sections: Capture, Next Actions, @context, Waiting For, Someday/Maybe) |
+| `user/tasks.md` | Buddy task template | Flat action list managed via `tasks()` tool (not direct LLM edits) |
 
 ### Files that need rewriting
 
@@ -53,7 +53,6 @@ Based on exploration of the [Agentic Buddy](https://github.com/juanje/agentic-bu
 |---|---|---|
 | `AGENTS.md` | Agentic Buddy CLAUDE.md template (104 lines, 16 rules) | Major rewrite — see section below |
 | `agent_brain/skills/process-conversation.md` | Agentic Buddy template (207 lines, 6 steps) | Remove git commit step (worker handles). Remove Step 4 interactive/autonomous branching (worker decides mode). Keep Steps 1-3, 5-6 logic intact |
-| `agent_brain/skills/triage-inbox.md` | Agentic Buddy personal pack (141 lines) | As-is (pure GTD procedure, no platform deps) |
 
 ### Files that DON'T ship (replaced by app code)
 
@@ -149,7 +148,7 @@ in the UI, not in the conversation.
 - Rename from `CLAUDE.md` to `AGENTS.md` (Pi/portable convention)
 - Remove the "Not yet configured / run /setup" pre-setup state (app wizard handles this)
 - The "Where to find things" section starts empty and grows with use
-- Skills section starts with: process-conversation, consolidation, triage-inbox
+- Skills section starts with: process-conversation; task list via `tasks()` tool (not a skill)
 
 ### Tone and language
 

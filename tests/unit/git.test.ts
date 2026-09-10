@@ -11,7 +11,7 @@ import { initTestGitRepo } from "../support/test-git";
 
 describe("buildCommitMessage", () => {
   it("summarizes one file", () => {
-    expect(buildCommitMessage(["user/inbox.md"])).toBe("buddy: update user/inbox.md");
+    expect(buildCommitMessage(["user/tasks.md"])).toBe("buddy: update user/tasks.md");
   });
 
   it("summarizes many files", () => {

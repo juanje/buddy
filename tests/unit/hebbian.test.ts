@@ -122,7 +122,7 @@ describe("createHebbianTracker", () => {
 
   it("never tracks files outside agent_brain", () => {
     const ab = setupBuddyDir();
-    const rel = "user/inbox.md";
+    const rel = "user/tasks.md";
     writeFileSync(join(ab, rel), "---\naccess_count: 1\n---\n\nBody\n", "utf8");
 
     const tracker = createHebbianTracker(ab);

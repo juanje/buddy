@@ -36,7 +36,7 @@ describe("SessionTracker relPath", () => {
         type: "tool_execution_start",
         toolCallId: "tc1",
         toolName: "read",
-        args: { path: "/home/u/buddy/user/inbox.md" },
+        args: { path: "/home/u/buddy/user/tasks.md" },
       },
       "/home/u/buddy",
     );
@@ -45,11 +45,11 @@ describe("SessionTracker relPath", () => {
         type: "tool_execution_end",
         toolCallId: "tc1",
         toolName: "read",
-        args: { path: "/home/u/buddy/user/inbox.md" },
+        args: { path: "/home/u/buddy/user/tasks.md" },
       },
       "/home/u/buddy",
     );
 
-    expect(tracker.filesRead).toEqual(["user/inbox.md"]);
+    expect(tracker.filesRead).toEqual(["user/tasks.md"]);
   });
 });

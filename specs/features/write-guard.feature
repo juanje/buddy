@@ -78,11 +78,11 @@ Feature: Heading-snapshot guard (FR-GUARD-01 / FR-GUARD-01b)
     Then the file is restored to its pre-write content
     And the tool result reports the lost heading "Active context"
 
-  Scenario: user inbox is guarded
-    Given a user file "user/inbox.md" with headings "Capture, Next Actions"
-    When the agent writes the file without the "Capture" heading
+  Scenario: user tasks file is guarded
+    Given a user file "user/tasks.md" with headings "Tasks"
+    When the agent writes the file without the "Tasks" heading
     Then the file is restored to its pre-write content
-    And the tool result reports the lost heading "Capture"
+    And the tool result reports the lost heading "Tasks"
 
   Scenario: A failed tool call does not trigger the guard
     Given a brain file "agent_brain/deferred.md" with headings "Queue"

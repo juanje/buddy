@@ -39,6 +39,7 @@ import { persistLiveSession } from "./crash-recovery";
 import {
   ensureUserMdSectionsOnDisk,
   migrateAgentsMdIfNeeded,
+  migrateAgentsTasksReference,
   migrateInboxToTasksIfNeeded,
 } from "./brain-migration";
 import { createWorkerCore, type PiSessionLike, type WorkerCore } from "./worker-core";
@@ -192,6 +193,7 @@ export async function bootSession(
   ensureUserMdSectionsOnDisk(rootDir);
   migrateAgentsMdIfNeeded(rootDir);
   migrateInboxToTasksIfNeeded(rootDir);
+  migrateAgentsTasksReference(rootDir);
 
   const sessionId = randomUUID().slice(0, SESSION_ID_DISPLAY_LENGTH);
   logEvent(rootDir, { event: "session_start", session: sessionId });

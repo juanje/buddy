@@ -32,7 +32,7 @@ describe("isFileOpProtected", () => {
   it("protects structural hub files", () => {
     expect(isFileOpProtected("agent_brain/observations.md")).toBe(true);
     expect(isFileOpProtected("agent_brain/concepts/index.md")).toBe(true);
-    expect(isFileOpProtected("user/inbox.md")).toBe(true);
+    expect(isFileOpProtected("user/tasks.md")).toBe(true);
     expect(isFileOpProtected("AGENTS.md")).toBe(true);
   });
 
@@ -59,7 +59,7 @@ describe("validateDeletablePath", () => {
   });
 
   it("rejects protected inbox", () => {
-    expect(() => validateDeletablePath(rootDir, "user/inbox.md")).toThrow(/not allowed/);
+    expect(() => validateDeletablePath(rootDir, "user/tasks.md")).toThrow(/not allowed/);
   });
 
   it("allows non-protected agent_brain paths", () => {

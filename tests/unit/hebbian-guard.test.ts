@@ -5,7 +5,7 @@
 //
 // Observed 2026-07-29. A local model failed eight consecutive `edit` calls
 // (it kept dropping Markdown bold markers from `oldText`), gave up, and
-// rewrote `user/inbox.md` whole. The rewrite reproduced the frontmatter from
+// rewrote `user/tasks.md` whole. The rewrite reproduced the frontmatter from
 // memory:
 //
 //     -access_count: 7
@@ -66,7 +66,7 @@ function read(rel: string): string {
 
 describe("createHebbianGuard", () => {
   it("restores counters a whole-file rewrite reset", () => {
-    const rel = "user/inbox.md";
+    const rel = "user/tasks.md";
     write(rel, ORIGINAL);
     const guard = createHebbianGuard(root);
 
@@ -81,7 +81,7 @@ describe("createHebbianGuard", () => {
 
   it("keeps the body and every other key the rewrite intended", () => {
     // The write is legitimate apart from the counters; only those come back.
-    const rel = "user/inbox.md";
+    const rel = "user/tasks.md";
     write(rel, ORIGINAL);
     const guard = createHebbianGuard(root);
 
@@ -95,7 +95,7 @@ describe("createHebbianGuard", () => {
   });
 
   it("does nothing when the rewrite left the counters alone", () => {
-    const rel = "user/inbox.md";
+    const rel = "user/tasks.md";
     write(rel, ORIGINAL);
     const guard = createHebbianGuard(root);
 
@@ -108,7 +108,7 @@ describe("createHebbianGuard", () => {
   it("does not resurrect counters into a file that no longer has frontmatter", () => {
     // Deliberately rewriting a file without frontmatter is a content decision;
     // re-inserting a block would be the guard inventing structure.
-    const rel = "user/inbox.md";
+    const rel = "user/tasks.md";
     write(rel, ORIGINAL);
     const guard = createHebbianGuard(root);
 
@@ -161,7 +161,7 @@ describe("createHebbianGuard", () => {
   });
 
   it("forgets a capture once restored, so a later write is judged fresh", () => {
-    const rel = "user/inbox.md";
+    const rel = "user/tasks.md";
     write(rel, ORIGINAL);
     const guard = createHebbianGuard(root);
 

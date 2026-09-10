@@ -23,7 +23,7 @@ describe("sanitizeReflectOutput", () => {
   });
 
   it("strips inline JSON tool call objects", () => {
-    const input = '### Context\n{"name":"read","arguments":{"path":"user/inbox.md"}}\nDone.';
+    const input = '### Context\n{"name":"read","arguments":{"path":"user/tasks.md"}}\nDone.';
     const out = sanitizeReflectOutput(input);
     expect(out).not.toContain('"name":"read"');
     expect(out).toContain("Done.");
