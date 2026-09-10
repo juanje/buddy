@@ -3337,6 +3337,52 @@ Further context on local-model evaluation methodology and findings:
 - **Then** the channel is auto-registered (best-effort, no failure propagation)
 - **And** for DM channels, the peer user's display name is resolved and stored as `dm_peer_name`
 
+### 3.27 Topic Transition (FR-TOPIC)
+
+| ID | Description | Phase |
+|----|-------------|-------|
+| FR-TOPIC-01 | "New topic" ghost button + popover in InputBar | 2 Sprint A ✓ |
+| FR-TOPIC-02 | "Start now" — shutdown + reflect in background + fresh session | 2 Sprint A ✓ |
+| FR-TOPIC-03 | "Wrap up first" — interactive closure before transition | 2 Sprint B deferred |
+| FR-TOPIC-04 | i18n labels (EN/ES) | 2 Sprint A ✓ |
+| FR-TOPIC-05 | Button disabled during streaming and topic transition | 2 Sprint A ✓ |
+
+**FR-TOPIC-01 — New topic button and popover**
+
+- **Given** the chat view is active
+- **Then** the input bar contains a ghost text button labeled "New topic" (or locale equivalent)
+- **And** clicking it opens a popover upward with "Start now" and "Wrap up first" options
+- **And** the popover closes on outside click or Escape
+
+**FR-TOPIC-02 — Start now transitions to a fresh session**
+
+- **Given** an active session with messages
+- **When** the user chooses "Start now"
+- **Then** the current session `shutdown()` runs (reflect child spawns in background)
+- **And** the chat messages are cleared when the transition starts
+- **And** a new Pi SDK session boots with standard system prompt assembly only
+- **And** no summary or transcript from the closed session is injected into the new session
+
+**FR-TOPIC-03 — Wrap up first (Phase 2 Sprint B)**
+
+- **Given** an active session with messages
+- **When** the user chooses "Wrap up first"
+- **Then** an interactive closure turn runs in the current session before shutdown
+- **Note:** Not implemented in Sprint A — option is visible but disabled with a "Coming soon" tooltip.
+
+**FR-TOPIC-04 — Locale labels**
+
+- **Given** the app language is Spanish
+- **Then** the new topic button reads "Nuevo tema"
+- **And** popover options read "Empezar ya" and "Rematar primero"
+
+**FR-TOPIC-05 — Disabled during streaming and transition**
+
+- **Given** the assistant is streaming a response
+- **Then** the new topic button is disabled
+- **Given** a topic transition is in progress
+- **Then** the new topic button is disabled
+
 ---
 
 ## 4. Non-Functional Requirements

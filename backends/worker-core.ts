@@ -15,7 +15,10 @@ import { logEvent } from "./app-logger";
  * the worker entry point (it owns the pending-request map), so it is
  * excluded here and composed into the RPC surface there.
  */
-export type SessionWorkerAPI = Omit<ChatWorkerAPI, "resolvePermission" | "dismissDeferredItems"> & {
+export type SessionWorkerAPI = Omit<
+  ChatWorkerAPI,
+  "resolvePermission" | "dismissDeferredItems" | "newTopic"
+> & {
   setModel(model: unknown): Promise<void>;
 };
 

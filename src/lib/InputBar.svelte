@@ -4,6 +4,7 @@
   import { t } from "./i18n";
   import { tick } from "svelte";
   import { autoResizeTextarea, sendAndResetTextarea } from "./input-bar";
+  import NewTopicPopover from "./NewTopicPopover.svelte";
 
   let {
     controller,
@@ -24,6 +25,7 @@
   const inputDisabled = $derived(controller.inputDisabled);
   const canSend = $derived(controller.canSend);
   const showAbort = $derived(controller.showAbort);
+  const newTopicDisabled = $derived(controller.newTopicDisabled);
   const canSendNow = $derived($canSend && !budgetBlocked);
   const inputLocked = $derived($inputDisabled || budgetBlocked);
 
@@ -109,6 +111,10 @@
       >
         📎
       </button>
+      <NewTopicPopover
+        disabled={$newTopicDisabled}
+        onStartNow={() => void controller.newTopic()}
+      />
       {#if $showAbort}
         <button class="abort" onclick={onAbort} title={$t.abortTitle}>◼</button>
       {:else}

@@ -20,6 +20,7 @@ import type {
 } from "../../shared/api";
 import { extractToolInfo } from "../../shared/pi-events";
 import { classifyAttachments, type RejectedAttachment } from "./attachment-classifier";
+import { isNewTopicDisabled } from "./new-topic-contract";
 
 export interface ToolCallEntry {
   name: string;
@@ -82,6 +83,10 @@ export interface ChatController {
   authErrors: Readable<AuthErrorCard[]>;
   /** Welcome banner visible until the first user message (FR-DEFERRED-01 visual). */
   welcomeVisible: Readable<boolean>;
+  /** True while a topic transition is in flight (FR-TOPIC-02). */
+  topicTransitioning: Readable<boolean>;
+  /** New topic button disabled while streaming or transitioning (FR-TOPIC-05). */
+  newTopicDisabled: Readable<boolean>;
 
   /** Send current input as a user message (no-op if canSend is false). */
   send(): Promise<void>;
@@ -111,6 +116,14 @@ export interface ChatController {
   handleAuthError(event: AuthErrorEvent): void;
   /** Remove an auth error card from the chat. */
   dismissAuthError(id: number): void;
+  /** Clear the transcript when a topic transition starts (FR-TOPIC-02). */
+  clearMessages(): void;
+  /** Mark topic transition active and clear the transcript (FR-TOPIC-02). */
+  beginTopicTransition(): void;
+  /** Mark topic transition complete when the new session is ready. */
+  endTopicTransition(): void;
+  /** Start now: shutdown current session and boot a fresh one (FR-TOPIC-02). */
+  newTopic(): Promise<void>;
 }
 
 export function createChatController(worker: ChatWorkerAPI): ChatController {
@@ -122,9 +135,13 @@ export function createChatController(worker: ChatWorkerAPI): ChatController {
   const attachmentErrors = writable<string[]>([]);
   const attachmentRejectionReasons = writable<RejectedAttachment[]>([]);
   const streaming = writable(false);
+  const topicTransitioning = writable(false);
   const welcomeVisible = writable(true);
 
   const inputDisabled = derived(streaming, ($s) => $s);
+  const newTopicDisabled = derived([streaming, topicTransitioning], ([$s, $t]) =>
+    isNewTopicDisabled($s, $t),
+  );
   const canSend = derived(
     [input, streaming, attachments],
     ([$input, $s, $attachments]) =>
@@ -357,6 +374,30 @@ export function createChatController(worker: ChatWorkerAPI): ChatController {
     authErrors.update((cards) => cards.filter((card) => card.id !== id));
   }
 
+  function clearMessages(): void {
+    messages.set([]);
+    welcomeVisible.set(true);
+  }
+
+  function beginTopicTransition(): void {
+    topicTransitioning.set(true);
+    clearMessages();
+  }
+
+  function endTopicTransition(): void {
+    topicTransitioning.set(false);
+  }
+
+  async function newTopic(): Promise<void> {
+    if (get(newTopicDisabled)) return;
+    topicTransitioning.set(true);
+    try {
+      await worker.newTopic();
+    } catch {
+      topicTransitioning.set(false);
+    }
+  }
+
   return {
     messages,
     input,
@@ -372,6 +413,8 @@ export function createChatController(worker: ChatWorkerAPI): ChatController {
     permissions,
     authErrors,
     welcomeVisible,
+    topicTransitioning,
+    newTopicDisabled,
     send,
     abort,
     onEscape,
@@ -386,5 +429,9 @@ export function createChatController(worker: ChatWorkerAPI): ChatController {
     showDeferredBanner,
     handleAuthError,
     dismissAuthError,
+    clearMessages,
+    beginTopicTransition,
+    endTopicTransition,
+    newTopic,
   };
 }

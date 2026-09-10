@@ -47,6 +47,11 @@ export class BuddyWorld extends World {
   /** Id of the most recent simulated permission request. */
   lastPermissionId?: number;
 
+  /** FR-TOPIC-02: shutdown invoked during a topic transition. */
+  topicShutdownCalled = false;
+  /** FR-TOPIC-02: fresh session boot after topic transition. */
+  topicSessionRestarted = false;
+
   constructor(options: IWorldOptions) {
     super(options);
   }
@@ -98,7 +103,12 @@ export class BuddyWorld extends World {
         onDeferredDue: () => {},
         onBudgetAlert: () => {},
     onMaintenancePaused: () => {},
-    onSessionReady: () => {},
+    onSessionReady: () => {
+      controllerRef?.endTopicTransition();
+    },
+    onTopicTransitionStart: () => {
+      controllerRef?.beginTopicTransition();
+    },
     onAuthError: (event) => controllerRef?.handleAuthError(event),
       },
       { lifecycle: this.lifecycle },
@@ -120,6 +130,18 @@ export class BuddyWorld extends World {
         self.permissionResolutions.push({ id, allow });
       },
       dismissDeferredItems: async () => {},
+      newTopic: async () => {
+        self.topicShutdownCalled = true;
+        if (self.lifecycle) {
+          await self.lifecycle.shutdown();
+        } else {
+          await self.core.api.shutdown();
+        }
+        self.core.dispose();
+        controllerRef?.beginTopicTransition();
+        self.topicSessionRestarted = true;
+        self.connect(undefined, { force: true });
+      },
     });
     controllerRef = this.controller;
 

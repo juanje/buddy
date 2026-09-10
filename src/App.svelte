@@ -171,6 +171,13 @@
             devLog("session ready");
             sessionPreparing = false;
             clearTimeout(preparingTimer);
+            controller?.endTopicTransition();
+          },
+          onTopicTransitionStart() {
+            devLog("topic transition start");
+            controller?.beginTopicTransition();
+            sessionPreparing = true;
+            clearTimeout(preparingTimer);
           },
           onMaintenancePaused(info) {
             devLog(`maintenance paused at depth ${info.depth}`);

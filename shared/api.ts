@@ -257,6 +257,8 @@ export interface WorkerAPI {
   /** Probe Slack session credentials (FR-SLACK-01). */
   testSlackConnection(config: ConnectorConfig): Promise<{ ok: boolean; error?: string }>;
   shutdown(): Promise<void>;
+  /** End the current session and start a fresh one (FR-TOPIC-02). */
+  newTopic(): Promise<void>;
 }
 
 /**
@@ -266,7 +268,7 @@ export interface WorkerAPI {
  */
 export type ChatWorkerAPI = Pick<
   WorkerAPI,
-  "prompt" | "abort" | "resolvePermission" | "shutdown" | "dismissDeferredItems"
+  "prompt" | "abort" | "resolvePermission" | "shutdown" | "dismissDeferredItems" | "newTopic"
 >;
 
 /** Setup-scoped subset of WorkerAPI: what the wizard needs (FR-SETUP-02+). */
@@ -313,6 +315,11 @@ export interface FrontendAPI {
    * a notice when it drags. Prompts sent meanwhile are queued, never lost.
    */
   onSessionReady(): void;
+  /**
+   * Topic transition started — shutdown complete, fresh session booting (FR-TOPIC-02).
+   * Frontend clears the transcript and shows the preparing notice.
+   */
+  onTopicTransitionStart(): void;
   /**
    * Background maintenance was abandoned at a depth after repeated failures
    * (FR-CONSOL-09). Surfaced so the user knows memory is no longer being

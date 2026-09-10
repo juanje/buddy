@@ -55,6 +55,7 @@ import {
   GIT_COMMIT_PREFIX,
 } from "../shared/defaults";
 import { bootSession, augmentPromptWithAttachments } from "./session-boot";
+import { runTopicTransition } from "./topic-transition";
 import { recoverStaleSession } from "./crash-recovery";
 import { spawnReflectChild } from "./reflect-spawn";
 import { detectFirstRun, updateAppConfig } from "./setup";
@@ -399,6 +400,28 @@ export async function main(deps: WorkerDeps = {}): Promise<void> {
         stopHeartbeat();
         core?.dispose();
         core = undefined;
+      },
+      async newTopic() {
+        if (setupState.firstRun) return;
+        await runTopicTransition({
+          hasCore: () => core !== undefined,
+          shutdownCore: async () => {
+            await core!.api.shutdown();
+          },
+          stopHeartbeat: () => stopHeartbeat(),
+          disposeCore: () => {
+            core!.dispose();
+          },
+          clearCoreRef: () => {
+            core = undefined;
+          },
+          onTransitionStart: () =>
+            notifyFrontend("topic", "onTopicTransitionStart", () =>
+              frontend.onTopicTransitionStart(),
+            ),
+          startSession: (rootDir) => startSession(rootDir),
+          rootDir: setupState.config.rootDir,
+        });
       },
     },
   });

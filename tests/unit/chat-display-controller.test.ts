@@ -13,6 +13,7 @@ function fakeWorker() {
     resolvePermission: async () => {},
     dismissDeferredItems: async () => {},
     shutdown: async () => {},
+    newTopic: async () => {},
   };
 }
 

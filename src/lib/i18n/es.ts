@@ -60,6 +60,10 @@ export type LocaleStrings = {
   creatingError: string;
   creatingRetry: string;
   attachTitle: string;
+  newTopicButton: string;
+  startNow: string;
+  wrapUpFirst: string;
+  wrapUpComingSoon: string;
   sessionPreparing: string;
   dropOverlay: string;
   unsupportedFormat: string;
@@ -255,6 +259,10 @@ export const es: LocaleStrings = {
   creatingError: "No se pudo completar la configuración",
   creatingRetry: "Reintentar",
   attachTitle: "Adjuntar archivo",
+  newTopicButton: "Nuevo tema",
+  startNow: "Empezar ya",
+  wrapUpFirst: "Rematar primero",
+  wrapUpComingSoon: "Próximamente",
   sessionPreparing: "Preparando la sesión… Puedes escribir: tu mensaje se enviará solo. La primera respuesta puede tardar un poco.",
   dropOverlay: "Suelta el archivo aquí",
   unsupportedFormat: "Formato no compatible — prueba con .md, .txt, .csv, .json, .yaml o .log",
