@@ -1,10 +1,28 @@
 // tests/unit/new-topic.test.ts — FR-TOPIC-02/03 transition sequencing and guards.
 
 import { describe, expect, it, vi } from "vitest";
+import { get } from "svelte/store";
 
 import { buildClosurePrompt } from "../../backends/closure-prompt";
-import { runTopicTransition, runWrapUpThenNewTopic } from "../../backends/topic-transition";
+import { runTopicTransition } from "../../backends/topic-transition";
+import { createChatController } from "../../src/lib/chat-controller";
 import { isNewTopicDisabled } from "../../src/lib/new-topic-contract";
+
+function fakeWorker(overrides: Partial<ReturnType<typeof baseWorker>> = {}) {
+  return { ...baseWorker(), ...overrides };
+}
+
+function baseWorker() {
+  return {
+    prompt: vi.fn(async () => {}),
+    abort: vi.fn(async () => {}),
+    resolvePermission: vi.fn(async () => {}),
+    dismissDeferredItems: vi.fn(async () => {}),
+    shutdown: vi.fn(async () => {}),
+    newTopic: vi.fn(async () => {}),
+    wrapUp: vi.fn(async () => {}),
+  };
+}
 
 describe("runTopicTransition", () => {
   it("is a no-op when there is no active core", async () => {
@@ -98,62 +116,39 @@ describe("buildClosurePrompt", () => {
     expect(prompt).toContain("wrap up");
     expect(prompt).toContain("next action");
   });
-});
 
-describe("runWrapUpThenNewTopic", () => {
-  it("is a no-op when there is no active core", async () => {
-    const runClosure = vi.fn(async () => {});
-    const shutdownCore = vi.fn(async () => {});
-
-    await runWrapUpThenNewTopic({
-      hasCore: () => false,
-      runClosure,
-      shutdownCore,
-      stopHeartbeat: vi.fn(),
-      disposeCore: vi.fn(),
-      clearCoreRef: vi.fn(),
-      onTransitionStart: vi.fn(),
-      startSession: vi.fn(async () => {}),
-      rootDir: "/tmp/buddy",
-    });
-
-    expect(runClosure).not.toHaveBeenCalled();
-    expect(shutdownCore).not.toHaveBeenCalled();
+  it("does not auto-close the session after the closure turn", () => {
+    const prompt = buildClosurePrompt();
+    expect(prompt.toLowerCase()).not.toContain("close automatically");
   });
 
-  it("runs closure before shutdown and fresh session", async () => {
-    const order: string[] = [];
-    const runClosure = vi.fn(async () => {
-      order.push("closure");
-    });
-    const shutdownCore = vi.fn(async () => {
-      order.push("shutdown");
-    });
-    const startSession = vi.fn(async () => {
-      order.push("startSession");
-    });
+  it("invites the user to discuss before closing", () => {
+    const prompt = buildClosurePrompt();
+    expect(prompt).toMatch(/discuss|questions|ready/i);
+  });
+});
 
-    await runWrapUpThenNewTopic({
-      hasCore: () => true,
-      runClosure,
-      shutdownCore,
-      stopHeartbeat: vi.fn(() => order.push("stopHeartbeat")),
-      disposeCore: vi.fn(() => order.push("dispose")),
-      clearCoreRef: vi.fn(() => order.push("clearCore")),
-      onTransitionStart: vi.fn(() => order.push("onTransitionStart")),
-      startSession,
-      rootDir: "/buddy",
-    });
+describe("wrapUp controller flow", () => {
+  it("sets wrappingUp without triggering a topic transition", async () => {
+    const worker = fakeWorker();
+    const controller = createChatController(worker);
 
-    expect(order).toEqual([
-      "closure",
-      "shutdown",
-      "stopHeartbeat",
-      "dispose",
-      "clearCore",
-      "onTransitionStart",
-      "startSession",
-    ]);
+    await controller.wrapUp();
+
+    expect(worker.wrapUp).toHaveBeenCalledOnce();
+    expect(worker.newTopic).not.toHaveBeenCalled();
+    expect(get(controller.wrappingUp)).toBe(true);
+  });
+
+  it("confirmWrapUp triggers newTopic and clears wrappingUp", async () => {
+    const worker = fakeWorker();
+    const controller = createChatController(worker);
+
+    await controller.wrapUp();
+    await controller.confirmWrapUp();
+
+    expect(worker.newTopic).toHaveBeenCalledOnce();
+    expect(get(controller.wrappingUp)).toBe(false);
   });
 });
 

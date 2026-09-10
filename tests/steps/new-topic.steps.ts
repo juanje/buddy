@@ -25,11 +25,37 @@ When('the user triggers "Start now" via new topic', async function (this: BuddyW
 });
 
 When('the user triggers "Wrap up first" via new topic', async function (this: BuddyWorld) {
-  await this.controller.wrapUpThenNewTopic();
+  await this.controller.wrapUp();
+});
+
+When('the user clicks "Done"', async function (this: BuddyWorld) {
+  await this.controller.confirmWrapUp();
 });
 
 Then("the assistant produces a closure summary", function (this: BuddyWorld) {
   assert.equal(this.closureRan, true);
+  assert.equal(this.closureSummaryProduced, true);
+});
+
+Then('a {string} button appears in the chat', function (this: BuddyWorld, label: string) {
+  assert.equal(get(t).closureDone, label);
+  assert.equal(this.read(this.controller.wrappingUp), true);
+  assert.equal(this.read(this.controller.showClosureDone), true);
+});
+
+Then("the user can still send messages", function (this: BuddyWorld) {
+  assert.equal(this.read(this.controller.canSend), false);
+  this.controller.input.set("One more thing before we close");
+  assert.equal(this.read(this.controller.canSend), true);
+});
+
+Given("a wrap-up closure is in progress", async function (this: BuddyWorld) {
+  this.connect();
+  this.controller.input.set("Previous topic message");
+  await this.controller.send();
+  this.session.endStreaming();
+  await this.controller.wrapUp();
+  assert.equal(this.read(this.controller.wrappingUp), true);
   assert.equal(this.closureSummaryProduced, true);
 });
 

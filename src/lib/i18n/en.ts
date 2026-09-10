@@ -73,6 +73,7 @@ export const en: LocaleStrings = {
   newTopicButton: "New topic",
   startNow: "Start now",
   wrapUpFirst: "Wrap up first",
+  closureDone: "Done",
   sessionPreparing: "Preparing the session… You can type: your message will be sent automatically. The first reply may take a moment.",
   dropOverlay: "Drop file here",
   unsupportedFormat: "Unsupported format — try .md, .txt, .csv, .json, .yaml, or .log",

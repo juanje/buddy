@@ -8,6 +8,7 @@
   import ToolActivity from "./ToolActivity.svelte";
   import WelcomeBanner from "./WelcomeBanner.svelte";
   import DeferredBanner from "./DeferredBanner.svelte";
+  import ClosureDoneButton from "./ClosureDoneButton.svelte";
   import FileViewer from "./FileViewer.svelte";
   import { routeLocalLinkClick } from "./local-link-handler";
   import type { FileViewerController } from "./file-viewer-controller";
@@ -37,6 +38,7 @@
   const permissions = $derived(controller.permissions);
   const authErrors = $derived(controller.authErrors);
   const welcomeVisible = $derived(controller.welcomeVisible);
+  const showClosureDone = $derived(controller.showClosureDone);
   const showScrollButton = $derived(scroll.showScrollButton);
 
   let container: HTMLDivElement | undefined = $state();
@@ -104,6 +106,9 @@
         <MessageBubble {message} streaming={message.id === $streamingBubbleId} />
       {/if}
     {/each}
+    {#if $showClosureDone}
+      <ClosureDoneButton onConfirm={() => void controller.confirmWrapUp()} />
+    {/if}
     {#each $permissions as card (card.request.id)}
       <PermissionCard
         {card}

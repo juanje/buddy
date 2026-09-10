@@ -17,7 +17,7 @@ import { logEvent } from "./app-logger";
  */
 export type SessionWorkerAPI = Omit<
   ChatWorkerAPI,
-  "resolvePermission" | "dismissDeferredItems" | "newTopic" | "wrapUpThenNewTopic"
+  "resolvePermission" | "dismissDeferredItems" | "newTopic" | "wrapUp"
 > & {
   setModel(model: unknown): Promise<void>;
 };

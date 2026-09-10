@@ -87,6 +87,10 @@ export interface ChatController {
   topicTransitioning: Readable<boolean>;
   /** New topic button disabled while streaming or transitioning (FR-TOPIC-05). */
   newTopicDisabled: Readable<boolean>;
+  /** True while a wrap-up closure is in progress (FR-TOPIC-03). */
+  wrappingUp: Readable<boolean>;
+  /** Done button visible after closure response finishes streaming (FR-TOPIC-03). */
+  showClosureDone: Readable<boolean>;
 
   /** Send current input as a user message (no-op if canSend is false). */
   send(): Promise<void>;
@@ -124,8 +128,10 @@ export interface ChatController {
   endTopicTransition(): void;
   /** Start now: shutdown current session and boot a fresh one (FR-TOPIC-02). */
   newTopic(): Promise<void>;
-  /** Wrap up first: closure turn, then fresh session (FR-TOPIC-03). */
-  wrapUpThenNewTopic(): Promise<void>;
+  /** Wrap up first: inject closure prompt in current session (FR-TOPIC-03). */
+  wrapUp(): Promise<void>;
+  /** User finished wrap-up — transition to a fresh session (FR-TOPIC-03). */
+  confirmWrapUp(): Promise<void>;
 }
 
 export function createChatController(worker: ChatWorkerAPI): ChatController {
@@ -138,12 +144,14 @@ export function createChatController(worker: ChatWorkerAPI): ChatController {
   const attachmentRejectionReasons = writable<RejectedAttachment[]>([]);
   const streaming = writable(false);
   const topicTransitioning = writable(false);
+  const wrappingUp = writable(false);
   const welcomeVisible = writable(true);
 
   const inputDisabled = derived(streaming, ($s) => $s);
   const newTopicDisabled = derived([streaming, topicTransitioning], ([$s, $t]) =>
     isNewTopicDisabled($s, $t),
   );
+  const showClosureDone = derived([wrappingUp, streaming], ([$w, $s]) => $w && !$s);
   const canSend = derived(
     [input, streaming, attachments],
     ([$input, $s, $attachments]) =>
@@ -383,6 +391,7 @@ export function createChatController(worker: ChatWorkerAPI): ChatController {
 
   function beginTopicTransition(): void {
     topicTransitioning.set(true);
+    wrappingUp.set(false);
     clearMessages();
   }
 
@@ -400,13 +409,20 @@ export function createChatController(worker: ChatWorkerAPI): ChatController {
     }
   }
 
-  async function wrapUpThenNewTopic(): Promise<void> {
+  async function wrapUp(): Promise<void> {
     if (get(newTopicDisabled)) return;
+    wrappingUp.set(true);
     try {
-      await worker.wrapUpThenNewTopic();
+      await worker.wrapUp();
     } catch {
-      topicTransitioning.set(false);
+      wrappingUp.set(false);
     }
+  }
+
+  async function confirmWrapUp(): Promise<void> {
+    if (!get(wrappingUp)) return;
+    wrappingUp.set(false);
+    await newTopic();
   }
 
   return {
@@ -426,6 +442,8 @@ export function createChatController(worker: ChatWorkerAPI): ChatController {
     welcomeVisible,
     topicTransitioning,
     newTopicDisabled,
+    wrappingUp,
+    showClosureDone,
     send,
     abort,
     onEscape,
@@ -444,6 +462,7 @@ export function createChatController(worker: ChatWorkerAPI): ChatController {
     beginTopicTransition,
     endTopicTransition,
     newTopic,
-    wrapUpThenNewTopic,
+    wrapUp,
+    confirmWrapUp,
   };
 }

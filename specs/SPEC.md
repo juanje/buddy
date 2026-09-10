@@ -3368,7 +3368,10 @@ Further context on local-model evaluation methodology and findings:
 - **Given** an active session with messages
 - **When** the user chooses "Wrap up first"
 - **Then** the agent produces a visible closure summary (decisions, pending items, next action) in the current chat
-- **And** the current session `shutdown()` runs after the closure turn completes
+- **And** the user can respond and continue the conversation before transitioning
+- **And** a "Done" button appears inline in the chat after the closure response finishes streaming
+- **When** the user clicks "Done"
+- **Then** the current session `shutdown()` runs (reflect child spawns in background)
 - **And** the chat messages are cleared when the transition starts
 - **And** a new Pi SDK session boots with standard system prompt assembly only
 

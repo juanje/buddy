@@ -56,7 +56,7 @@ import {
 } from "../shared/defaults";
 import { bootSession, augmentPromptWithAttachments } from "./session-boot";
 import { buildClosurePrompt } from "./closure-prompt";
-import { runTopicTransition, runWrapUpThenNewTopic } from "./topic-transition";
+import { runTopicTransition } from "./topic-transition";
 import { recoverStaleSession } from "./crash-recovery";
 import { spawnReflectChild } from "./reflect-spawn";
 import { detectFirstRun, updateAppConfig } from "./setup";
@@ -406,14 +406,9 @@ export async function main(deps: WorkerDeps = {}): Promise<void> {
         if (setupState.firstRun) return;
         await runTopicTransition(topicTransitionDeps());
       },
-      async wrapUpThenNewTopic() {
-        if (setupState.firstRun) return;
-        await runWrapUpThenNewTopic({
-          ...topicTransitionDeps(),
-          runClosure: async () => {
-            await core!.session.prompt(buildClosurePrompt());
-          },
-        });
+      async wrapUp() {
+        if (setupState.firstRun || !core) return;
+        await core.session.prompt(buildClosurePrompt());
       },
     },
   });

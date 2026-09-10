@@ -146,7 +146,7 @@ export class BuddyWorld extends World {
         self.topicSessionRestarted = true;
         self.connect(undefined, { force: true });
       },
-      wrapUpThenNewTopic: async () => {
+      wrapUp: async () => {
         self.closureRan = true;
         self.session.streamResponse([
           "Summary: we discussed the previous topic. Next action: continue tomorrow.",
@@ -155,16 +155,6 @@ export class BuddyWorld extends World {
         self.closureSummaryProduced = messages.some(
           (m) => m.role === "assistant" && m.text.includes("Summary"),
         );
-        self.topicShutdownCalled = true;
-        if (self.lifecycle) {
-          await self.lifecycle.shutdown();
-        } else {
-          await self.core.api.shutdown();
-        }
-        self.core.dispose();
-        controllerRef?.beginTopicTransition();
-        self.topicSessionRestarted = true;
-        self.connect(undefined, { force: true });
       },
     });
     controllerRef = this.controller;

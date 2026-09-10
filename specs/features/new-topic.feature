@@ -25,11 +25,18 @@ Feature: Topic transition
     Then the new topic button is disabled
 
   @FR-TOPIC-03
-  Scenario: Wrap up first runs closure then transitions
+  Scenario: Wrap up first lets the user converse before transitioning
     Given an active session with messages
     When the user triggers "Wrap up first" via new topic
     Then the assistant produces a closure summary
-    And the current session shutdown fires
+    And a "Done" button appears in the chat
+    And the user can still send messages
+
+  @FR-TOPIC-03
+  Scenario: Clicking Done after wrap-up transitions to a fresh session
+    Given a wrap-up closure is in progress
+    When the user clicks "Done"
+    Then the current session shutdown fires
     And the chat messages are cleared
     And a new session starts
 

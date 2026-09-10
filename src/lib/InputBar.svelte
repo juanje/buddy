@@ -114,7 +114,7 @@
       <NewTopicPopover
         disabled={$newTopicDisabled}
         onStartNow={() => void controller.newTopic()}
-        onWrapUp={() => void controller.wrapUpThenNewTopic()}
+        onWrapUp={() => void controller.wrapUp()}
       />
       {#if $showAbort}
         <button class="abort" onclick={onAbort} title={$t.abortTitle}>◼</button>

@@ -14,7 +14,7 @@ function fakeWorker() {
     dismissDeferredItems: async () => {},
     shutdown: async () => {},
     newTopic: async () => {},
-    wrapUpThenNewTopic: async () => {},
+    wrapUp: async () => {},
   };
 }
 

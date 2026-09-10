@@ -19,7 +19,7 @@ const TOLERATED: Array<[keyof WorkerAPI, unknown[], unknown]> = [
   ["resolvePermission", [1, true], undefined],
   ["shutdown", [], undefined],
   ["newTopic", [], undefined],
-  ["wrapUpThenNewTopic", [], undefined],
+  ["wrapUp", [], undefined],
   // The chat welcome state renders this straight into a list.
   ["getDeferredItems", [], []],
 ];

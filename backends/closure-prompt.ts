@@ -7,6 +7,7 @@ export function buildClosurePrompt(): string {
     "wrap up the current conversation: (1) summarize what was discussed, " +
     "(2) list any decisions made, (3) list any pending items or open questions, " +
     "(4) suggest a concrete next action. Be concise — this is a transition aid, " +
-    "not a report. After your response, the session will close automatically.]"
+    "not a report. If the user has questions or wants to discuss anything before " +
+    "moving on, invite them to respond — they will close the session when ready.]"
   );
 }

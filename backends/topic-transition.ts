@@ -24,13 +24,3 @@ export async function runTopicTransition(deps: TopicTransitionDeps): Promise<voi
   await deps.startSession(deps.rootDir);
 }
 
-export interface WrapUpThenTopicTransitionDeps extends TopicTransitionDeps {
-  runClosure: () => Promise<void>;
-}
-
-/** Run an interactive closure turn, then transition to a fresh session (FR-TOPIC-03). */
-export async function runWrapUpThenNewTopic(deps: WrapUpThenTopicTransitionDeps): Promise<void> {
-  if (!deps.hasCore()) return;
-  await deps.runClosure();
-  await runTopicTransition(deps);
-}
