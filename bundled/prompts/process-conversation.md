@@ -19,7 +19,7 @@ Produce a `## Session HH:MM–HH:MM` block for today's log **in English**, regar
 Include ONLY sections that have content — omit empty sections entirely. Available sections:
 
 - **Decisions** — what was decided and why
-- **Tasks captured** — actionable items routed to inbox or projects
+- **Tasks captured** — actionable items routed via `tasks()` or projects
 - **Information stored** — reference material saved to brain files, no action required
 - **Context** — situational notes, what prompted the session
 - **Lessons** — patterns discovered, things learned
@@ -32,7 +32,7 @@ Keep it dense. A trivial session gets 2-3 lines. A rich session gets a paragraph
 *Requires tools — skip this step when told you have none.*
 
 Ensure actionable items landed in the right place:
-- Tasks → `user/` (inbox or project)
+- Actions → `tasks()` tool (`user/tasks.md`) or `user/projects/`
 - Ideas → `agent_brain/ideas/`
 - Decisions → `agent_brain/projects/` or `agent_brain/concepts/`
 

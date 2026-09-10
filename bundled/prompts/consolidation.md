@@ -90,7 +90,7 @@ what they mentioned about people, life events, and personal reflections.
 7. If no personal content was shared today (e.g., only technical work), write
    a minimal entry or skip.
 
-The journal is a user artifact (like `user/inbox.md`): agent-written,
+The journal is a user artifact (like `user/tasks.md`): agent-written,
 user-owned. The user can read entries directly or ask the agent questions
 like "what did I do yesterday?", "how has my mother been doing?", "how have
 I progressed with exercise this month?".
@@ -116,18 +116,18 @@ When a preference changes, update `## Preferences` with the current state — do
 
 The satellite file carries the depth; USER.md carries the working summary. This pattern applies to all sections — About, Context, Preferences, and any new ones that emerge.
 
-#### 4. Triage inbox
+#### 4. Task cleanup
 
-Invoke the `triage_inbox` tool and follow its procedure. Process
-`user/inbox.md` — the goal is to empty the Capture section every day.
+Use `tasks(action='list')` to review open items. Completed work from today's log
+should be marked with `tasks(action='complete', ...)`. Stale or irrelevant items
+→ `tasks(action='remove', ...)`. Parked items stay in the file or move to
+`agent_brain/deferred.md` — do not duplicate log decisions.
 
-After the inbox triage, act on items flagged in the "Daily coherence data"
-block (inbox items matched against today's log):
-- If the log confirms an item is **done** → remove it from inbox.
-- If the log says it is **parked or deferred** → remove from inbox (the log
-  already documents the decision; do not duplicate it to `deferred.md`).
-- If an item is **stale and irrelevant to this instance** → remove it. Not
-  everything that leaves the inbox needs a decision trail.
+Act on items flagged in the "Daily coherence data" block (task items matched
+against today's log):
+- If the log confirms an item is **done** → `tasks(action='complete', ...)`.
+- If the log says it is **parked or deferred** → remove or leave per user intent.
+- If an item is **stale and irrelevant** → `tasks(action='remove', ...)`.
 
 If purely informational findings, note them in today's log under Decisions.
 
@@ -144,26 +144,26 @@ that genuinely can't be routed without input), write to
 `agent_brain/deferred.md`:
 `- **decision** (YYYY-MM-DD, daily): [description].`
 
-**Do not move inbox items to deferred in bulk.** Deferred is for items that
+**Do not move task items to deferred in bulk.** Deferred is for items that
 genuinely need a user decision at the next session start — not a holding pen
-for everything removed from inbox. If an item is stale and irrelevant, remove
+for everything removed from tasks. If an item is stale and irrelevant, remove
 it silently. If it was resolved or parked in the log, it's already documented
 there — do not create a deferred item for it.
 
-**Important:** If you removed or resolved an item from inbox in step 4, it is
+**Important:** If you removed or resolved a task in step 4, it is
 done — do not re-create it as a deferred. Your context may still show the old
-inbox content from before your edit; trust your edits, not stale read results.
+tasks content from before your edit; trust your edits, not stale read results.
 
 Don't wait for user interaction — act or defer.
 
 **5b. Date-triggered reminders** (from prompt header):
 
-The prompt header includes an "Upcoming items" block listing inbox items
+The prompt header includes an "Upcoming items" block listing dated task items
 and Active context deadlines within 24h. If items are listed:
 
 1. For each item, write to `agent_brain/deferred.md`:
    `- **reminder** (YYYY-MM-DD, daily): [description].`
-2. Remove the date-triggered item from inbox — inbox was storage; deferred
+2. Remove the date-triggered item from `user/tasks.md` — the file was storage; deferred
    is the surfacing mechanism for session start.
 
 If the block says "No dated items due within 24h" — skip 5b.
@@ -421,7 +421,7 @@ learned; it belongs in the files you fixed and nowhere else.
 Review the "Daily coherence data" block in the prompt header. For each flagged item:
 - If today's log confirms a stale "Right now" item is superseded → update the source.
 - If a deferred item appears resolved in today's log → remove it from `deferred.md`.
-- If an inbox item appears resolved or parked in today's log → remove or update it in `user/inbox.md` (move from Waiting For to done, remove from Next Actions if completed, etc.).
+- If a task item appears resolved or parked in today's log → `tasks(action='complete', ...)` or `tasks(action='remove', ...)`.
 - If ambiguous → write a `decision` item to `deferred.md`.
 - Log each reconciliation in today's log under `### Reconciled`.
 
@@ -461,7 +461,7 @@ or more preferences share an underlying pattern, distill a one-line principle in
 
 **W5. Coherence check (inter-day)** — review weekly diff and coherence-related flags:
 1. For each USER.md change since last depth-2 → verify it still reflects reality.
-2. For inbox items flagged as completed → remove or archive.
+2. For task items flagged as completed → complete or remove via `tasks()`.
 3. **Right now pruning:** review each bullet — if it was not referenced in any
    log this week, remove it. This is where items leave working memory.
 4. Log reconciliations in the weekly journal under "Reconciled this week."

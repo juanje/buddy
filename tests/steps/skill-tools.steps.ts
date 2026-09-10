@@ -26,7 +26,7 @@ Given("the app is running with skill tools", function (this: SkillToolsWorld) {
 
   const promptsDir = join(this.globalConfigDir, "prompts");
   this.skillTools = buildSkillTools(promptsDir);
-  assert.equal(this.skillTools.length, 2, "expected both skill tools to be registered");
+  assert.equal(this.skillTools.length, 1, "expected process_conversation skill tool");
 });
 
 When('the LLM invokes the {string} tool', async function (this: SkillToolsWorld, toolName: string) {

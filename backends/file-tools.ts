@@ -270,7 +270,7 @@ export function buildFileTools(rootDir: string, options?: FileToolOptions): Tool
       name: "delete_file",
       label: "Delete file",
       description:
-        "Delete a file. Cannot delete protected structural files (indexes, identity, observations, deferred, inbox) or logs. Requires user confirmation.",
+        "Delete a file. Cannot delete protected structural files (indexes, identity, observations, deferred, tasks) or logs. Requires user confirmation.",
       parameters: Type.Object({
         path: Type.String({
           description: "Path to the file to delete (relative to workspace)",

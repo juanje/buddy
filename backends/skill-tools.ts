@@ -26,13 +26,6 @@ const SKILL_REGISTRY: SkillDescriptor[] = [
       "Reflect on the current conversation: extract decisions, lessons, context, tasks, ideas, and observations into the daily log. Use when the user asks to save/reflect/capture the session.",
     promptFile: "process-conversation.md",
   },
-  {
-    name: "triage_inbox",
-    label: "Triage inbox",
-    description:
-      "Process the GTD inbox: handle captures, review next actions, clean up stale items. Use when the user says 'triage', 'process inbox', or 'what should I work on?'",
-    promptFile: "triage-inbox.md",
-  },
 ];
 
 /** Register skill tools for prompts deployed under ~/.buddy/prompts/. */

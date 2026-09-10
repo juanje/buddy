@@ -18,19 +18,15 @@ describe("buildSkillTools", () => {
     if (dir) rmSync(dir, { recursive: true, force: true });
   });
 
-  it("returns both skill tools when prompt files exist", async () => {
+  it("returns process_conversation when prompt file exists", async () => {
     dir = mkdtempSync(join(tmpdir(), "buddy-skill-tools-"));
     writeFileSync(join(dir, "process-conversation.md"), "# Skill: Process conversation\n", "utf8");
-    writeFileSync(join(dir, "triage-inbox.md"), "# Skill: Triage inbox\n", "utf8");
 
     const tools = buildSkillTools(dir);
 
-    expect(skillToolNames(tools)).toEqual(["process_conversation", "triage_inbox"]);
+    expect(skillToolNames(tools)).toEqual(["process_conversation"]);
     await expect(executeSkillTool(tools, "process_conversation")).resolves.toContain(
       "# Skill: Process conversation",
-    );
-    await expect(executeSkillTool(tools, "triage_inbox")).resolves.toContain(
-      "# Skill: Triage inbox",
     );
   });
 
