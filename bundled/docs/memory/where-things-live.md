@@ -12,7 +12,7 @@ Buddy organizes everything into a few top-level directories, each with a clear p
 
 This is your space. Buddy writes here on your behalf, but you own the content.
 
-- **`user/inbox.md`** — your GTD inbox. New tasks, reminders, and action items land here. Organized by context (@computer, @phone, @errands) with Next Actions, Waiting For, and Someday/Maybe sections.
+- **`user/tasks.md`** — your task list. Tell Buddy about a task or reminder and it captures it here — no manual editing needed. Tasks are grouped by area (like `@work` or `@personal`), can have due dates, and one item per area is always marked as the next step to focus on.
 - **`user/projects/`** — multi-step outcomes. Each project has its own file with outcome, next action, notes, and history.
 - **`user/wiki/`** — [your second brain](../wiki.md). Interconnected concept pages built from documents you share, ideas you discuss, and knowledge you want to keep. Organized by category with cross-references and tags.
 - **`user/journal/`** — your personal diary. Daily entries about activities, people, feelings, and reflections. Written in third person during daily consolidation. Structure: `YYYY/MM/DD.md` (daily), `YYYY/weekly/WNN.md` (weekly), `YYYY/MM.md` (monthly summary).
@@ -39,7 +39,7 @@ Daily records of what happened in each session.
 
 | You say... | Buddy puts it in... | Why |
 |---|---|---|
-| "Remind me to call Pedro on Friday" | `user/inbox.md` (with date) | Action item — surfaced when the date arrives |
+| "Remind me to call Pedro on Friday" | `user/tasks.md` | Action item — surfaced when the date arrives |
 | "I prefer morning meetings" | `agent_brain/identity/USER.md` | Preference about you |
 | "Save this idea about distributed teams" | `user/wiki/` | Your knowledge — goes to your second brain |
 | "I had lunch with my mother today" | Daily log + `user/journal/` | Personal life context |

@@ -11,7 +11,7 @@ Buddy maintains a personal knowledge base for you — a wiki of interconnected p
 
 ## What doesn't go in the wiki
 
-- **Tasks and action items** — those go to your inbox (`user/inbox.md`) and projects (`user/projects/`).
+- **Tasks and action items** — those go to your task list and projects. Tell Buddy "I need to do X" and it captures it there.
 - **Personal diary entries** — those go to your journal (`user/journal/`).
 - **What Buddy learns about you** — preferences, patterns, lessons about how to help you — go to Buddy's own memory (`agent_brain/`).
 

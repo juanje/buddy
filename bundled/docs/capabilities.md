@@ -17,7 +17,7 @@ Buddy is a personal assistant that remembers. It captures what you tell it, orga
 ### Captures and organizes
 
 - Tell Buddy about a task, an idea, a decision, or something you learned — it writes it to the right place automatically.
-- **Tasks and reminders** go to your inbox and projects. **Ideas, concepts, and knowledge** go to your [personal wiki](wiki.md) (your second brain). **What Buddy learns about you** — preferences, patterns, how to help you better — stays in Buddy's own memory.
+- **Tasks and reminders** go to your task list and projects. **Ideas, concepts, and knowledge** go to your [personal wiki](wiki.md) (your second brain). **What Buddy learns about you** — preferences, patterns, how to help you better — stays in Buddy's own memory.
 - You don't need to tell it where to put things. It routes based on what you share. If you disagree with where it put something, say so — it'll move it.
 
 ### Reminds you
@@ -27,15 +27,13 @@ Buddy is a personal assistant that remembers. It captures what you tell it, orga
 - **The reminder reaches you even when you're not chatting.** As long as Buddy is running — including minimized or in the background — it checks for due reminders about every half hour and sends a system notification when one comes due, so you don't have to keep the chat open or watch it. Click the notification and Buddy's window comes to the front. (This needs Buddy to be running: if you've fully quit the app, it can't notify you until you open it again.)
 - Dismiss a reminder when you've seen it and it won't come back.
 
-### Manages your inbox (GTD — Getting Things Done)
+### Manages your tasks
 
-GTD is a productivity method by David Allen. The core idea: get everything out of your head into a trusted system, then decide what each item means and what to do with it. Buddy acts as that trusted system — it captures, organizes, and surfaces your tasks so you don't have to hold them in memory.
-
-How it works in practice:
-
-- You dump anything into Buddy ("I need to call the dentist", "look into flights for September") — it captures everything in your inbox.
-- When you say "triage my inbox" or "what should I work on?", Buddy processes each item: is it actionable? Single step or a project? Can it be done in 2 minutes? It routes items to the right place (next actions, projects, someday/maybe) and surfaces your priorities by context.
-- You always have a clear "next action" — no vague to-dos, just concrete steps you can act on right now.
+- Tell Buddy what needs doing and it captures it — no manual editing needed. Say "I need to call the dentist" or "look into flights for September" and Buddy adds it to your task list with the right area and an optional due date.
+- Tasks belong to areas like `@work` or `@personal`. One item per area is always marked as the current focus — a concrete next step, not a vague to-do.
+- Ask "what should I work on?" and Buddy surfaces the most relevant next action for the context you're in.
+- If you're already juggling many open tasks, Buddy mentions it when you add more — a prompt to decide whether this is the right moment to take more on.
+- Completed tasks are cleaned up automatically — no housekeeping needed on your part.
 
 ### Tracks projects
 
@@ -75,7 +73,7 @@ How it works in practice:
 - Share a URL and Buddy fetches the page, extracts the main content as readable text, and saves a copy in your downloads folder. Works with web pages, online PDFs, and images.
 ### Reading Buddy's files inside the app
 
-- **Ask to see something and Buddy opens it for you** — "show me my profile", "let me see my inbox". The panel opens by itself; you don't have to find a link and click it.
+- **Ask to see something and Buddy opens it for you** — "show me my profile", "show me my tasks". The panel opens by itself; you don't have to find a link and click it.
 - When Buddy mentions one of your files, the link is clickable and the file opens in a panel inside Buddy — no text editor needed.
 - **Only `.md` and `.txt` files open this way**, and only from `agent_brain/`, `user/`, `downloads/` and `logs/`. Anything else is shown as plain text you can't click.
 - Documents that link to each other can be browsed: click a link inside an open document to follow it, and use Back to return the way you came.

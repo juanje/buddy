@@ -9,7 +9,7 @@ Buddy creates a git commit after every meaningful change:
 | Event | What's committed |
 |---|---|
 | End of session (reflect) | Daily log entry, captured tasks, updated files |
-| Daily consolidation | Journal entry, inbox changes, observation updates, index refreshes |
+| Daily consolidation | Journal entry, task list changes, observation updates, index refreshes |
 | Weekly/monthly consolidation | Archive moves, concept updates, structural reorganization |
 | During conversation | When Buddy captures something you asked it to save |
 

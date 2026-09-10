@@ -22,7 +22,7 @@ Each day gets a log entry summarizing what happened across sessions. Ask "what d
 
 Periodically, Buddy goes deeper — synthesizing knowledge from recent logs, updating projects, surfacing patterns, and keeping its memory organized. This runs in three levels:
 
-- **Daily** — summarizes recent activity, processes your inbox, updates indexes, writes your journal.
+- **Daily** — summarizes recent activity, reviews your task list, updates indexes, writes your journal.
 - **Weekly** — looks for patterns across the week, writes journal summaries.
 - **Monthly** — deeper reorganization: grouping related knowledge, cleaning up structure, reviewing ideas.
 
@@ -44,7 +44,7 @@ Buddy is two things at once: a **learning assistant** that gets better at helpin
 
 **[Your second brain](wiki.md)** (`user/wiki/`) — ideas, concepts, reflections, summaries of documents you shared, brainstorming output. This is knowledge you told Buddy to save. Buddy organizes it, connects related ideas, and helps you find things later — but the content is yours.
 
-**Your tasks** (`user/inbox.md`, `user/projects/`) — things you need to do. Buddy captures tasks and reminders, helps you triage, and tracks projects. This is your action list.
+**Your tasks** (`user/tasks.md`, `user/projects/`) — things you need to do. Tell Buddy about a task and it captures it; Buddy tracks what's next and cleans up completed items automatically. This is your action list.
 
 **Buddy's own memory** (`agent_brain/`) — what Buddy learned about you and how to help you: your preferences, patterns it noticed, decisions from past conversations, lessons about how to assist you better. Buddy manages this automatically through reflect and consolidation. You can read it anytime, but you normally don't need to edit it.
 

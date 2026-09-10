@@ -7,7 +7,7 @@ Buddy's memory isn't a passive recording — it's actively maintained through cy
 When a session ends, Buddy reviews what happened and captures anything worth keeping:
 
 - **Decisions** — what was decided and why.
-- **Tasks captured** — action items that were added to your inbox or projects.
+- **Tasks captured** — action items that were added to your task list or projects.
 - **Context** — background details, personal updates, things that help Buddy understand what's going on in your life.
 - **Lessons** — patterns or mistakes worth remembering.
 - **Open threads** — things that were started but not finished.
@@ -24,7 +24,7 @@ Beyond reflect, Buddy runs progressively deeper maintenance cycles. The basic do
 
 Runs after every few sessions or when ~24 hours have passed since the last depth-1 cycle:
 
-- **Inbox triage** — reviews your inbox, checks if anything needs attention, surfaces priorities.
+- **Task cleanup** — removes completed tasks that were confirmed in the session log. Items marked done but not mentioned in any log are flagged for your review rather than deleted silently.
 - **Journal entry** — writes a third-person summary of your day to `user/journal/`. Activities, people, feelings, reflections — the things that make up your life beyond tasks.
 - **Deferred queue** — checks for reminders or decisions that are due, and queues them so they appear at the start of your next session.
 - **Observations** — notes patterns it's seeing for the first time. If a pattern keeps appearing, it eventually becomes a permanent concept. See [How Buddy learns](how-buddy-learns.md).
