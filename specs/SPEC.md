@@ -3211,8 +3211,10 @@ Further context on local-model evaluation methodology and findings:
 
 - **Given** `user/inbox.md` exists and `user/tasks.md` does not
 - **When** session boot runs
-- **Then** items are extracted to tasks.md and inbox is renamed to `.migrated`
+- **Then** checkbox items are extracted to `tasks.md` (or an empty `tasks.md` is created when there are no extractable items)
+- **And** `user/inbox.md` is deleted (recovery via git history, not a `.migrated` rename)
 - **And** when `AGENTS.md` still links to `user/inbox.md` in "Where to find things", that line is replaced with the tasks reference (idempotent)
+- **And** remaining bare `inbox.md` references in `AGENTS.md` are replaced with `tasks.md`
 
 ### 3.25 Jira Connector (FR-JIRA)
 
@@ -3451,7 +3453,7 @@ Further context on local-model evaluation methodology and findings:
 
 **What gets deployed on refresh:**
 
-- `~/.buddy/prompts/` — `agents-base.md`, `consolidation.md`, `process-conversation.md`, `triage-inbox.md`
+- `~/.buddy/prompts/` — `agents-base.md`, `consolidation.md`, `process-conversation.md` (retired prompt files removed from disk on deploy)
 - `~/.buddy/docs/` — self-documentation KB (`index.md`, topic pages)
 
 **Future structural migrations:**

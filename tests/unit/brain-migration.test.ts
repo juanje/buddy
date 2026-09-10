@@ -211,11 +211,31 @@ describe("migrateInboxToTasksIfNeeded", () => {
     expect(migrateInboxToTasksIfNeeded(dir)).toBe(true);
     expect(existsSync(join(dir, "user", "tasks.md"))).toBe(true);
     expect(existsSync(join(dir, "user", "inbox.md"))).toBe(false);
-    expect(existsSync(join(dir, "user", "inbox.md.migrated"))).toBe(true);
+    expect(existsSync(join(dir, "user", "inbox.md.migrated"))).toBe(false);
     const tasks = readFileSync(join(dir, "user", "tasks.md"), "utf8");
     expect(tasks).toContain(">> First @work");
     expect(tasks).toContain("- [ ] Second @work");
     expect(tasks).toContain(">> Home errand @home");
+  });
+
+  it("creates empty tasks.md when inbox has no checkboxes", () => {
+    dir = mkdtempSync(join(tmpdir(), "buddy-inbox-migrate-"));
+    mkdirSync(join(dir, "user"), { recursive: true });
+    writeFileSync(
+      join(dir, "user", "inbox.md"),
+      `# Inbox
+
+## Capture
+Notes without checkbox syntax.
+`,
+      "utf8",
+    );
+    expect(migrateInboxToTasksIfNeeded(dir)).toBe(true);
+    expect(existsSync(join(dir, "user", "tasks.md"))).toBe(true);
+    const tasks = readFileSync(join(dir, "user", "tasks.md"), "utf8");
+    expect(tasks).toContain("# Tasks");
+    expect(tasks).not.toMatch(/^- \[[ x]\]/m);
+    expect(existsSync(join(dir, "user", "inbox.md"))).toBe(false);
   });
 
   it("is a no-op when tasks.md already exists", () => {
@@ -262,5 +282,24 @@ describe("migrateAgentsTasksReference", () => {
     dir = mkdtempSync(join(tmpdir(), "buddy-agents-tasks-nav-"));
     writeFileSync(join(dir, "AGENTS.md"), "# Buddy\n\n## Where to find things\n", "utf8");
     expect(migrateAgentsTasksReference(dir)).toBe(false);
+  });
+
+  it("replaces bare inbox.md references in customized content", () => {
+    dir = mkdtempSync(join(tmpdir(), "buddy-agents-tasks-nav-"));
+    writeFileSync(
+      join(dir, "AGENTS.md"),
+      `# Buddy
+
+## Where to find things
+
+  - [Tasks](user/tasks.md) — task list.
+  - [Projects](user/projects/index.md) — mirrored in inbox.md @context lists.
+`,
+      "utf8",
+    );
+    expect(migrateAgentsTasksReference(dir)).toBe(true);
+    const content = readFileSync(join(dir, "AGENTS.md"), "utf8");
+    expect(content).not.toMatch(/\binbox\.md\b/);
+    expect(content).toContain("mirrored in tasks.md");
   });
 });

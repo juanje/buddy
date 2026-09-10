@@ -2,7 +2,7 @@
 
 import { Given, Then, When } from "@cucumber/cucumber";
 import assert from "node:assert/strict";
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { evaluateToolCall } from "../../backends/permissions";
@@ -257,4 +257,86 @@ Then("AGENTS.md references tasks.md instead of inbox.md", function (this: TasksW
   const content = readFileSync(join(root.call(this), "AGENTS.md"), "utf8");
   assert.match(content, /\[Tasks\]\(user\/tasks\.md\)/);
   assert.doesNotMatch(content, /\[Inbox\]\(user\/inbox\.md\)/);
+});
+
+function userDir(this: TasksWorld): string {
+  return join(root.call(this), "user");
+}
+
+Given("the legacy inbox file has GTD sections but no checkbox items", function (this: TasksWorld) {
+    const dir = userDir.call(this);
+    mkdirSync(dir, { recursive: true });
+    const tasksPath = join(dir, "tasks.md");
+    if (existsSync(tasksPath)) unlinkSync(tasksPath);
+    writeFileSync(
+      join(dir, "inbox.md"),
+      `# Inbox
+
+## Capture
+Something to remember later.
+
+## Next Actions
+Call Pedro when back at desk.
+`,
+      "utf8",
+    );
+});
+
+Given("the legacy inbox file has checkbox items", function (this: TasksWorld) {
+  const dir = userDir.call(this);
+  mkdirSync(dir, { recursive: true });
+  const tasksPath = join(dir, "tasks.md");
+  if (existsSync(tasksPath)) unlinkSync(tasksPath);
+  writeFileSync(
+    join(dir, "inbox.md"),
+    `# Inbox
+
+## Next Actions
+- [ ] Buy milk @personal
+- [ ] Ship fix @work
+`,
+    "utf8",
+  );
+});
+
+Then("the user tasks file exists and is empty", function (this: TasksWorld) {
+  const path = join(userDir.call(this), "tasks.md");
+  assert.ok(existsSync(path), "expected user/tasks.md");
+  const content = readFileSync(path, "utf8");
+  assert.match(content, /^#\s+Tasks/m);
+  assert.doesNotMatch(content, /^- \[[ x]\]/m);
+});
+
+Then("the legacy inbox file no longer exists", function (this: TasksWorld) {
+  const inbox = join(userDir.call(this), "inbox.md");
+  const migrated = join(userDir.call(this), "inbox.md.migrated");
+  assert.ok(!existsSync(inbox), "inbox.md should be deleted");
+  assert.ok(!existsSync(migrated), "inbox.md.migrated should not exist");
+});
+
+Then("the user tasks file exists with migrated items", function (this: TasksWorld) {
+  const path = join(userDir.call(this), "tasks.md");
+  assert.ok(existsSync(path));
+  const content = readFileSync(path, "utf8");
+  assert.match(content, /Buy milk @personal/);
+  assert.match(content, /Ship fix @work/);
+});
+
+Given("AGENTS.md has a bare inbox.md reference outside the nav line", function (this: TasksWorld) {
+  const agentsPath = join(root.call(this), "AGENTS.md");
+  let content = readFileSync(agentsPath, "utf8");
+  const projectsLine =
+    "  - [Projects](user/projects/index.md) — next actions mirrored in `inbox.md` @context lists.";
+  if (content.includes("mirrored in `inbox.md`")) return;
+  const marker = "## Where to find things";
+  const idx = content.indexOf(marker);
+  assert.ok(idx !== -1);
+  const insertAt = content.indexOf("\n", idx) + 1;
+  content = content.slice(0, insertAt) + "\n" + projectsLine + "\n" + content.slice(insertAt);
+  writeFileSync(agentsPath, content, "utf8");
+});
+
+Then("AGENTS.md contains no inbox.md references", function (this: TasksWorld) {
+  const content = readFileSync(join(root.call(this), "AGENTS.md"), "utf8");
+  assert.doesNotMatch(content, /\binbox\.md\b/);
 });

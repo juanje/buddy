@@ -1,6 +1,6 @@
 // backends/deploy-bundled-content.ts — deploy bundled prompts and docs to ~/.buddy/ (NFR-MIGRATE-06).
 
-import { cpSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, readdirSync, unlinkSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -48,14 +48,36 @@ export function deployBundledGlobalContent(configDir: string): void {
   deployBundledDocs(configDir);
 }
 
+/** Remove .md files in targetDir that are not in the deployed set. */
+function removeOrphanedMarkdown(targetDir: string, deployedNames: Set<string>): void {
+  if (!existsSync(targetDir)) return;
+  for (const entry of readdirSync(targetDir, { recursive: true })) {
+    const name = String(entry);
+    if (!name.endsWith(".md")) continue;
+    if (!deployedNames.has(name)) {
+      const orphan = join(targetDir, name);
+      if (existsSync(orphan)) unlinkSync(orphan);
+    }
+  }
+}
+
 /** Deploy prompts only — needed before session creation (system prompt assembly). */
 export function deployBundledPrompts(configDir: string): void {
   const embedded = getEmbeddedAssets();
+  const promptsTargetDir = join(configDir, "prompts");
   deployMarkdownFiles(
     bundledPromptsDir(),
-    join(configDir, "prompts"),
+    promptsTargetDir,
     embedded?.prompts,
   );
+  const deployedNames = new Set(
+    embedded?.prompts
+      ? Object.keys(embedded.prompts).filter((n) => n.endsWith(".md"))
+      : [...readdirSync(bundledPromptsDir(), { recursive: true })]
+          .map(String)
+          .filter((n) => n.endsWith(".md")),
+  );
+  removeOrphanedMarkdown(promptsTargetDir, deployedNames);
 }
 
 /** Deploy docs only — can run after RPC channel is up (read on demand by the agent). */

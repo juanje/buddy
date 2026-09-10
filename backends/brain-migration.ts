@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 import { USER_DIR } from "../shared/brain-paths";
@@ -214,13 +214,23 @@ export function migrateAgentsTasksReference(rootDir: string): boolean {
   const agentsPath = join(rootDir, "AGENTS.md");
   if (!existsSync(agentsPath)) return false;
 
-  const content = readFileSync(agentsPath, "utf8");
-  if (!AGENTS_INBOX_NAV_RE.test(content)) return false;
+  let content = readFileSync(agentsPath, "utf8");
+  let changed = false;
 
-  const updated = content.replace(AGENTS_INBOX_NAV_RE, TASKS_NAV_LINE);
-  if (updated === content) return false;
+  if (AGENTS_INBOX_NAV_RE.test(content)) {
+    content = content.replace(AGENTS_INBOX_NAV_RE, TASKS_NAV_LINE);
+    changed = true;
+  }
 
-  writeFileSync(agentsPath, updated, "utf8");
+  if (content.includes("inbox.md")) {
+    content = content.replace(/`inbox\.md`/g, "`tasks.md`");
+    content = content.replace(/\binbox\.md\b/g, "tasks.md");
+    changed = true;
+  }
+
+  if (!changed) return false;
+
+  writeFileSync(agentsPath, content, "utf8");
   return true;
 }
 
@@ -232,7 +242,8 @@ export function migrateInboxToTasksIfNeeded(rootDir: string): boolean {
   const inboxContent = readFileSync(inboxPath, "utf8");
   const lines = extractInboxTaskLines(inboxContent);
   if (lines.length === 0) {
-    renameSync(inboxPath, `${inboxPath}.migrated`);
+    writeTasksFile(rootDir, []);
+    unlinkSync(inboxPath);
     return true;
   }
 
@@ -240,6 +251,6 @@ export function migrateInboxToTasksIfNeeded(rootDir: string): boolean {
   const items = parseTaskFileContent(pseudoFile);
   applyFirstNextPerArea(items);
   writeTasksFile(rootDir, items);
-  renameSync(inboxPath, `${inboxPath}.migrated`);
+  unlinkSync(inboxPath);
   return true;
 }

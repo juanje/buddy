@@ -57,7 +57,6 @@ Given("a buddy directory prepared for consolidation depth features", function (t
   }));
   const promptsDir = join(this.globalConfigDir!, "prompts");
   writeFileSync(join(promptsDir, "process-conversation.md"), "# Process\n");
-  writeFileSync(join(promptsDir, "triage-inbox.md"), "# Triage\n");
   this.depthTmpDir = mkdtempSync(join(tmpdir(), "buddy-depth-bdd-"));
   this.buddyDir = join(this.depthTmpDir, "buddy");
   mkdirSync(join(this.buddyDir, "agent_brain"), { recursive: true });

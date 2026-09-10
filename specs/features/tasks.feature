@@ -83,6 +83,29 @@ Feature: Task management
     When session boot runs migrations
     Then AGENTS.md references tasks.md instead of inbox.md
 
+  @FR-TASK-07
+  Scenario: Inbox without checkbox items produces empty tasks.md
+    Given an initialized buddy git repository
+    And the legacy inbox file has GTD sections but no checkbox items
+    When session boot runs migrations
+    Then the user tasks file exists and is empty
+    And the legacy inbox file no longer exists
+
+  @FR-TASK-07
+  Scenario: Inbox with checkbox items is deleted after migration
+    Given an initialized buddy git repository
+    And the legacy inbox file has checkbox items
+    When session boot runs migrations
+    Then the user tasks file exists with migrated items
+    And the legacy inbox file no longer exists
+
+  @FR-TASK-07
+  Scenario: Bare inbox.md references in AGENTS.md are replaced
+    Given an initialized buddy git repository
+    And AGENTS.md has a bare inbox.md reference outside the nav line
+    When session boot runs migrations
+    Then AGENTS.md contains no inbox.md references
+
   @FR-TASK-08
   Scenario: triage_inbox tool is not registered
     Then triage_inbox is not in the skill tool list
