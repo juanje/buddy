@@ -27,6 +27,7 @@ import {
   WIKI_INDEX,
   WIKI_META_DIR,
   WIKI_META_LOG,
+  WORKSPACES_DIR,
   dailyLogRelPath,
 } from "../shared/brain-paths";
 
@@ -58,3 +59,4 @@ export const wikiIndexPath = (rootDir: string): string => buddyPath(rootDir, WIK
 export const wikiGlossaryPath = (rootDir: string): string => buddyPath(rootDir, WIKI_GLOSSARY);
 export const wikiMetaDirPath = (rootDir: string): string => buddyPath(rootDir, WIKI_META_DIR);
 export const wikiMetaLogPath = (rootDir: string): string => buddyPath(rootDir, WIKI_META_LOG);
+export const workspacesDirPath = (rootDir: string): string => buddyPath(rootDir, WORKSPACES_DIR);

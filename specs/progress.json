@@ -755,6 +755,38 @@
           "unit_tests": 1
         }
       ]
+    },
+    {
+      "id": "FR-TASKM-20",
+      "title": "user/workspaces/ directory constant, template, and AGENTS.md nav",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "new buddy instance includes workspaces directory",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "template AGENTS.md includes workspaces navigation",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
+    },
+    {
+      "id": "FR-TASKM-21",
+      "title": "Boot migration: workspaces nav in existing AGENTS.md",
+      "status": "pending",
+      "cycle_step": "spec_review",
+      "scenarios": []
+    },
+    {
+      "id": "FR-TASKM-22",
+      "title": "Bundled docs: workspaces directory in where-things-live",
+      "status": "pending",
+      "cycle_step": "spec_review",
+      "scenarios": []
     }
   ]
 }

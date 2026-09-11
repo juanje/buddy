@@ -33,6 +33,8 @@ interface TasksWorld extends BuddyWorld {
   agentsBasePrompt?: string;
   consolidationPrompt?: string;
   processConversationPrompt?: string;
+  templateAgentsMd?: string;
+  whereThingsLiveDoc?: string;
   permGate?: PermissionGate;
   permOutcome?: { block: true; reason: string } | undefined;
 }
@@ -624,4 +626,43 @@ Given("AGENTS.md has a bare inbox.md reference outside the nav line", function (
 Then("AGENTS.md contains no inbox.md references", function (this: TasksWorld) {
   const content = readFileSync(join(root.call(this), "AGENTS.md"), "utf8");
   assert.doesNotMatch(content, /\binbox\.md\b/);
+});
+
+Given("the template AGENTS.md", function (this: TasksWorld) {
+  this.templateAgentsMd = readFileSync(join(process.cwd(), "templates", "AGENTS.md"), "utf8");
+});
+
+Then("the template AGENTS.md contains {string}", function (this: TasksWorld, text: string) {
+  assert.ok(this.templateAgentsMd?.includes(text), `missing: ${text}`);
+});
+
+Then("the buddy instance has a workspaces directory", function (this: TasksWorld) {
+  assert.ok(
+    existsSync(join(root.call(this), "user", "workspaces")),
+    "expected user/workspaces directory",
+  );
+});
+
+Given("AGENTS.md has tasks nav without workspaces", function (this: TasksWorld) {
+  const agentsPath = join(root.call(this), "AGENTS.md");
+  let content = readFileSync(agentsPath, "utf8");
+  content = content.replace(/\n\s*-\s*\[Workspaces\]\(user\/workspaces\/\).*/g, "");
+  writeFileSync(agentsPath, content, "utf8");
+  assert.doesNotMatch(content, /user\/workspaces\//);
+});
+
+Then("AGENTS.md contains workspaces navigation", function (this: TasksWorld) {
+  const content = readFileSync(join(root.call(this), "AGENTS.md"), "utf8");
+  assert.match(content, /\[Workspaces\]\(user\/workspaces\/\)/);
+});
+
+Given("the bundled where-things-live.md doc", function (this: TasksWorld) {
+  this.whereThingsLiveDoc = readFileSync(
+    join(process.cwd(), "bundled", "docs", "memory", "where-things-live.md"),
+    "utf8",
+  );
+});
+
+Then("the where-things-live doc contains {string}", function (this: TasksWorld, text: string) {
+  assert.ok(this.whereThingsLiveDoc?.includes(text), `missing: ${text}`);
 });

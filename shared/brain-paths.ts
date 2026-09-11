@@ -93,3 +93,6 @@ export const WIKI_META_DIR = `${WIKI_DIR}/.meta`;
 export const WIKI_GLOSSARY = `${WIKI_DIR}/glossary.md`;
 export const WIKI_INDEX = `${WIKI_DIR}/${INDEX_FILE}`;
 export const WIKI_META_LOG = `${WIKI_META_DIR}/log.md`;
+
+/** User workspaces for areas of focus (C5). */
+export const WORKSPACES_DIR = `${USER_DIR}/workspaces`;

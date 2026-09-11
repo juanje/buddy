@@ -3443,6 +3443,9 @@ Further context on local-model evaluation methodology and findings:
 | FR-TASKM-17 | Dual-lookup for areas and process-conversation verify update | 2.5 ✓ |
 | FR-TASKM-18 | Wiki vs workspace routing distinction in capture guidance | 2.5 ✓ |
 | FR-TASKM-19 | Consolidation workspace-to-wiki maturity flagging | 2.5 ✓ |
+| FR-TASKM-20 | user/workspaces/ directory constant, template, and AGENTS.md nav | 2.5 ✓ |
+| FR-TASKM-21 | Boot migration: workspaces nav in existing AGENTS.md | 2.5 |
+| FR-TASKM-22 | Bundled docs: workspaces directory in where-things-live | 2.5 |
 
 **FR-TASKM-01 — Project tag in task format**
 
@@ -3539,6 +3542,22 @@ Further context on local-model evaluation methodology and findings:
 **FR-TASKM-19 — Consolidation workspace-to-wiki maturity flagging**
 
 - `consolidation.md` weekly depth includes **W2b. Workspace maturity check**: flag mature workspace content ready for wiki ingestion; do not ingest automatically.
+
+**FR-TASKM-20 — Workspaces directory constant, template, and AGENTS.md nav**
+
+- `shared/brain-paths.ts` exports `WORKSPACES_DIR` (`user/workspaces`).
+- `backends/brain-paths.ts` exports `workspacesDirPath()`.
+- New instances include `templates/user/workspaces/.gitkeep`.
+- Template `AGENTS.md` lists workspaces in "Where to find things".
+
+**FR-TASKM-21 — Boot migration: workspaces nav in AGENTS.md**
+
+- `migrateAgentsWorkspacesReference()` inserts workspaces nav after Tasks line when absent; idempotent.
+- Called at session boot alongside existing migrations.
+
+**FR-TASKM-22 — Bundled docs: workspaces in where-things-live**
+
+- `bundled/docs/memory/where-things-live.md` documents `user/workspaces/` and includes a routing example.
 
 ---
 

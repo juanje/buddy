@@ -323,3 +323,35 @@ Feature: Task management
     Then the consolidation prompt contains "Workspace maturity check"
     And the consolidation prompt contains "wiki ingestion"
     And the consolidation prompt contains "do not ingest automatically"
+
+  @FR-TASKM-20
+  Scenario: new buddy instance includes workspaces directory
+    Given an initialized buddy git repository
+    Then the buddy instance has a workspaces directory
+
+  @FR-TASKM-20
+  Scenario: template AGENTS.md includes workspaces navigation
+    Given the template AGENTS.md
+    Then the template AGENTS.md contains "user/workspaces/"
+    And the template AGENTS.md contains "areas of focus"
+
+  @FR-TASKM-21
+  Scenario: boot migration adds workspaces nav to AGENTS.md
+    Given an initialized buddy git repository
+    And AGENTS.md has tasks nav without workspaces
+    When session boot runs migrations
+    Then AGENTS.md contains workspaces navigation
+
+  @FR-TASKM-21
+  Scenario: boot migration is idempotent for workspaces nav
+    Given an initialized buddy git repository
+    When session boot runs migrations
+    And session boot runs migrations again
+    Then AGENTS.md contains workspaces navigation
+
+  @FR-TASKM-22
+  Scenario: where-things-live docs include workspaces
+    Given the bundled where-things-live.md doc
+    Then the where-things-live doc contains "user/workspaces/"
+    And the where-things-live doc contains "areas of focus"
+    And the where-things-live doc contains "no defined end"
