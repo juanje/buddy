@@ -324,6 +324,13 @@ Feature: Task management
     And the consolidation prompt contains "wiki ingestion"
     And the consolidation prompt contains "do not ingest automatically"
 
+  @FR-TASKM-25
+  Scenario: consolidation prompt includes active fronts check
+    Given the bundled consolidation.md prompt
+    Then the consolidation prompt contains "Active fronts check"
+    And the consolidation prompt contains "activeNextCount"
+    And the consolidation prompt contains "WIP limit"
+
   @FR-TASKM-20
   Scenario: new buddy instance includes workspaces directory
     Given an initialized buddy git repository

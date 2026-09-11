@@ -131,6 +131,12 @@ against today's log):
 
 If purely informational findings, note them in today's log under Decisions.
 
+**Active fronts check:** after cleanup, call `tasks(action='list')` and read
+the `activeNextCount` field (items marked as next action). If it exceeds the
+configured WIP limit, flag to the user: "You have N active fronts
+(limit: M). Consider completing, parking, or deferring some." Propose
+specific actions for the excess — do not just warn.
+
 **Project health check (weekly):** For each active project in `user/projects/`, verify at least one open task exists in `tasks.md` with its `#project` tag. If a project has no linked open tasks, flag it to the user: "Project X has no pending actions — is it done, or does it need a next step?" Also verify that each `#project` tag in tasks.md has a corresponding file in `user/projects/`. Flag missing project files to the user.
 
 When `list` returns `parkedCount > 0` or `futureCount > 0`, note this in the

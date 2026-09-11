@@ -835,6 +835,19 @@
           "unit_tests": 3
         }
       ]
+    },
+    {
+      "id": "FR-TASKM-25",
+      "title": "Consolidation daily WIP review step",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "consolidation prompt includes active fronts check",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
     }
   ]
 }
