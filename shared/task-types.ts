@@ -29,6 +29,8 @@ export interface TaskListResult {
   items: TaskItem[];
   areas: TaskAreaSummary[];
   openCount: number;
+  parkedCount: number;
+  futureCount: number;
 }
 
 export interface TaskConfig {

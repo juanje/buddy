@@ -118,6 +118,69 @@ describe("executeTaskAction", () => {
     const result = assertSuccess(executeTaskAction(dir, "list", {}));
     expect(result.list?.items[0]?.staleDays).toBe(45);
   });
+
+  it("list excludes someday items by default", () => {
+    writeTasksFile(dir, [
+      { id: 1, text: "Active", done: false, next: true, area: "work" },
+      { id: 2, text: "Parked", done: false, next: false, area: "someday" },
+    ]);
+    const result = assertSuccess(executeTaskAction(dir, "list", {}));
+    expect(result.list?.items).toHaveLength(1);
+    expect(result.list?.items[0]?.area).toBe("work");
+    expect(result.list?.parkedCount).toBe(1);
+  });
+
+  it("list includes someday items when include_parked is true", () => {
+    writeTasksFile(dir, [
+      { id: 1, text: "Active", done: false, next: true, area: "work" },
+      { id: 2, text: "Parked", done: false, next: false, area: "someday" },
+    ]);
+    const result = assertSuccess(executeTaskAction(dir, "list", { include_parked: true }));
+    expect(result.list?.items.some((item) => item.area === "someday")).toBe(true);
+  });
+
+  it("list excludes future-dated items by default", () => {
+    const future = new Date();
+    future.setDate(future.getDate() + 14);
+    const futureStr = future.toISOString().slice(0, 10);
+    writeTasksFile(dir, [
+      { id: 1, text: "Now", done: false, next: true, area: "work" },
+      { id: 2, text: "Later", done: false, next: false, area: "personal", dueDate: futureStr },
+    ]);
+    const result = assertSuccess(executeTaskAction(dir, "list", {}));
+    expect(result.list?.items).toHaveLength(1);
+    expect(result.list?.futureCount).toBe(1);
+  });
+
+  it("list includes future items when include_future is true", () => {
+    const future = new Date();
+    future.setDate(future.getDate() + 14);
+    const futureStr = future.toISOString().slice(0, 10);
+    writeTasksFile(dir, [
+      { id: 1, text: "Now", done: false, next: true, area: "work" },
+      { id: 2, text: "Later", done: false, next: false, area: "personal", dueDate: futureStr },
+    ]);
+    const result = assertSuccess(executeTaskAction(dir, "list", { include_future: true }));
+    expect(result.list?.items.some((item) => item.dueDate === futureStr)).toBe(true);
+  });
+
+  it("WIP count excludes someday items", () => {
+    ({ configDir } = setupGlobalConfigDir());
+    writeTaskWipLimit(5);
+    writeTasksFile(dir, [
+      ...Array.from({ length: 4 }, (_, i) => ({
+        id: i + 1,
+        text: `T${i}`,
+        done: false,
+        next: i === 0,
+        area: "work",
+      })),
+      { id: 5, text: "S1", done: false, next: false, area: "someday" },
+      { id: 6, text: "S2", done: false, next: false, area: "someday" },
+    ]);
+    const result = assertSuccess(executeTaskAction(dir, "add", { text: "One more" }));
+    expect(result.wipWarning).toBeUndefined();
+  });
 });
 
 function assertSuccess(result: ReturnType<typeof executeTaskAction>): TaskActionSuccess {

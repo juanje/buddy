@@ -66,7 +66,7 @@ created: 2026-09-10
 # Tasks
 
 - [ ] >> Review PR @work
-- [ ] Pay rent 2026-09-15 @personal
+- [ ] Pay rent 2026-09-10 @personal
 `;
   writeFileSync(tasksFilePath(root.call(this)), content, "utf8");
 });
@@ -128,6 +128,56 @@ created: 2026-09-10
   writeFileSync(tasksFilePath(root.call(this)), content, "utf8");
 });
 
+Given(
+  "tasks.md has {int} open items and {int} someday items",
+  function (this: TasksWorld, openCount: number, somedayCount: number) {
+    const openItems = Array.from({ length: openCount }, (_, i) => ({
+      id: i + 1,
+      text: `Task ${i + 1}`,
+      done: false,
+      next: i === 0,
+      area: "work",
+    }));
+    const somedayItems = Array.from({ length: somedayCount }, (_, i) => ({
+      id: openCount + i + 1,
+      text: `Someday ${i + 1}`,
+      done: false,
+      next: false,
+      area: "someday",
+    }));
+    writeTasksFile(root.call(this), [...openItems, ...somedayItems]);
+  },
+);
+
+Given("tasks.md on disk has items with someday area", function (this: TasksWorld) {
+  const content = `---
+created: 2026-09-10
+---
+
+# Tasks
+
+- [ ] >> Active task @work
+- [ ] Parked idea @someday
+`;
+  writeFileSync(tasksFilePath(root.call(this)), content, "utf8");
+});
+
+Given("tasks.md on disk has a future-dated item", function (this: TasksWorld) {
+  const future = new Date();
+  future.setDate(future.getDate() + 14);
+  const futureStr = future.toISOString().slice(0, 10);
+  const content = `---
+created: 2026-09-10
+---
+
+# Tasks
+
+- [ ] >> Current task @work
+- [ ] Future task ${futureStr} @personal
+`;
+  writeFileSync(tasksFilePath(root.call(this)), content, "utf8");
+});
+
 Given("tasks.md has {int} open items", function (this: TasksWorld, count: number) {
   const items = Array.from({ length: count }, (_, i) => ({
     id: i + 1,
@@ -173,6 +223,14 @@ When(
   },
 );
 
+When("tasks list is invoked with include_parked true", function (this: TasksWorld) {
+  invoke.call(this, "list", { include_parked: true, include_done: true });
+});
+
+When("tasks list is invoked with include_future true", function (this: TasksWorld) {
+  invoke.call(this, "list", { include_future: true, include_done: true });
+});
+
 When("tasks complete is invoked for id {int}", function (this: TasksWorld, id: number) {
   invoke.call(this, "complete", { id });
 });
@@ -206,6 +264,13 @@ Then("the task result contains {string}", function (this: TasksWorld, snippet: s
   );
 });
 
+Then("the task result does not contain {string}", function (this: TasksWorld, snippet: string) {
+  assert.ok(
+    !this.taskResultText?.includes(snippet),
+    `expected "${snippet}" not in: ${this.taskResultText ?? "(empty)"}`,
+  );
+});
+
 Then("the task list has {int} items", function (this: TasksWorld, count: number) {
   assert.equal(this.taskListCount, count);
 });
@@ -228,6 +293,56 @@ Then("the stale item has staleDays of {int}", function (this: TasksWorld, days: 
   assert.ok(stale, "expected a stale item");
   assert.equal(stale.staleDays, days);
 });
+
+Then("the task list does not contain someday items", function (this: TasksWorld) {
+  assert.ok(this.taskResult?.ok && this.taskResult.list, "expected task list result");
+  assert.ok(
+    !this.taskResult.list!.items.some((item) => item.area === "someday"),
+    "expected no someday items",
+  );
+});
+
+Then("the task list contains someday items", function (this: TasksWorld) {
+  assert.ok(this.taskResult?.ok && this.taskResult.list, "expected task list result");
+  assert.ok(
+    this.taskResult.list!.items.some((item) => item.area === "someday"),
+    "expected someday items",
+  );
+});
+
+Then("the task list does not contain future-dated items", function (this: TasksWorld) {
+  assert.ok(this.taskResult?.ok && this.taskResult.list, "expected task list result");
+  const today = new Date().toISOString().slice(0, 10);
+  assert.ok(
+    !this.taskResult.list!.items.some((item) => item.dueDate && item.dueDate > today),
+    "expected no future-dated items",
+  );
+});
+
+Then("the task list contains future-dated items", function (this: TasksWorld) {
+  assert.ok(this.taskResult?.ok && this.taskResult.list, "expected task list result");
+  const today = new Date().toISOString().slice(0, 10);
+  assert.ok(
+    this.taskResult.list!.items.some((item) => item.dueDate && item.dueDate > today),
+    "expected future-dated items",
+  );
+});
+
+Then(
+  "the task list summary has parkedCount {int}",
+  function (this: TasksWorld, count: number) {
+    assert.ok(this.taskResult?.ok && this.taskResult.list, "expected task list result");
+    assert.equal(this.taskResult.list!.parkedCount, count);
+  },
+);
+
+Then(
+  "the task list summary has futureCount {int}",
+  function (this: TasksWorld, count: number) {
+    assert.ok(this.taskResult?.ok && this.taskResult.list, "expected task list result");
+    assert.equal(this.taskResult.list!.futureCount, count);
+  },
+);
 
 Then(
   'the task list contains only items with project {string}',

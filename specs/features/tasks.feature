@@ -167,3 +167,41 @@ Feature: Task management
     And tasks.md has an item created 45 days ago
     When tasks action list is invoked
     Then the stale item has staleDays of 45
+
+  @FR-TASKM-07
+  Scenario: list excludes someday items by default
+    Given an initialized buddy git repository
+    And tasks.md on disk has items with someday area
+    When tasks action list is invoked
+    Then the task list does not contain someday items
+    And the task list summary has parkedCount 1
+
+  @FR-TASKM-07
+  Scenario: list includes someday items when include_parked is true
+    Given an initialized buddy git repository
+    And tasks.md on disk has items with someday area
+    When tasks list is invoked with include_parked true
+    Then the task list contains someday items
+
+  @FR-TASKM-07
+  Scenario: WIP count excludes someday items
+    Given an initialized buddy git repository
+    And tasks.md has 4 open items and 2 someday items
+    And task WIP limit is 5
+    When tasks add is invoked with text "One more"
+    Then the task result does not contain "WIP"
+
+  @FR-TASKM-08
+  Scenario: list excludes future-dated items by default
+    Given an initialized buddy git repository
+    And tasks.md on disk has a future-dated item
+    When tasks action list is invoked
+    Then the task list does not contain future-dated items
+    And the task list summary has futureCount 1
+
+  @FR-TASKM-08
+  Scenario: list includes future items when include_future is true
+    Given an initialized buddy git repository
+    And tasks.md on disk has a future-dated item
+    When tasks list is invoked with include_future true
+    Then the task list contains future-dated items

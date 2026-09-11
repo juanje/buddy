@@ -543,6 +543,47 @@
       ]
     },
     {
+      "id": "FR-TASKM-07",
+      "title": "@someday parking",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "list excludes someday items by default",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "list includes someday items when include_parked is true",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "WIP count excludes someday items",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
+    },
+    {
+      "id": "FR-TASKM-08",
+      "title": "Date-gated visibility",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "list excludes future-dated items by default",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "list includes future items when include_future is true",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
+    },
+    {
       "id": "FR-TASKM-09",
       "title": "Staleness metadata",
       "status": "done",

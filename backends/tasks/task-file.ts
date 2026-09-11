@@ -210,7 +210,7 @@ export function buildListResult(items: TaskItem[], today?: string): TaskListResu
     openCount: stats.open,
     hasNext: stats.hasNext,
   }));
-  return { items: enriched, areas, openCount };
+  return { items: enriched, areas, openCount, parkedCount: 0, futureCount: 0 };
 }
 
 export function findItemById(items: TaskItem[], id: number): TaskItem | undefined {

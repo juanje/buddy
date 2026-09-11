@@ -3431,6 +3431,8 @@ Further context on local-model evaluation methodology and findings:
 | FR-TASKM-04 | Capture classification prompts: GTD anchoring for task vs project | 2.5 ✓ |
 | FR-TASKM-05 | Consolidation prompt: project health check | 2.5 ✓ |
 | FR-TASKM-06 | `created` field on TaskItem, set on add, serialized as HTML comment | 2.5 ✓ |
+| FR-TASKM-07 | `@someday` parking: excluded from default list and WIP count | 2.5 ✓ |
+| FR-TASKM-08 | Date-gated visibility: future items hidden from default list | 2.5 ✓ |
 | FR-TASKM-09 | Staleness metadata: `staleDays` in list result for aged items | 2.5 ✓ |
 
 **FR-TASKM-01 — Project tag in task format**
@@ -3464,6 +3466,20 @@ Further context on local-model evaluation methodology and findings:
 - Each task item has a `created` date (ISO `YYYY-MM-DD`), set to today on `add`.
 - Serialized as `<!-- c:YYYY-MM-DD -->` at the end of the line; parsed in `parseItemLine()`.
 - Existing items without the comment infer `created` from the file frontmatter `created` date.
+
+**FR-TASKM-07 — @someday parking**
+
+- `@someday` is a reserved area convention (`area === "someday"`).
+- Default `list` excludes @someday items; `include_parked` includes them.
+- WIP count in `add` excludes @someday items.
+- `TaskListResult.parkedCount` reports hidden @someday items.
+- Orientation (`selectNextTasks`) excludes @someday.
+
+**FR-TASKM-08 — Date-gated visibility**
+
+- Items with `dueDate > today` are excluded from default `list` results.
+- `include_future` includes them; `TaskListResult.futureCount` reports hidden future items.
+- Orientation excludes future-dated items.
 
 **FR-TASKM-09 — Staleness metadata**
 

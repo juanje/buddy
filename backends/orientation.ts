@@ -9,8 +9,18 @@ import { readTasksFile } from "./tasks/task-file";
 const NEXT_TASK_LIMIT = 3;
 
 /** One next task per area, then fill with other open items up to the limit. */
-export function selectNextTasks(items: TaskItem[], limit = NEXT_TASK_LIMIT): TaskItem[] {
-  const open = items.filter((item) => !item.done);
+export function selectNextTasks(
+  items: TaskItem[],
+  limit = NEXT_TASK_LIMIT,
+  today?: string,
+): TaskItem[] {
+  const todayStr = today ?? new Date().toISOString().slice(0, 10);
+  const open = items.filter(
+    (item) =>
+      !item.done &&
+      item.area !== "someday" &&
+      !(item.dueDate && item.dueDate > todayStr),
+  );
   const chosen: TaskItem[] = [];
   const seenAreas = new Set<string>();
 
@@ -45,7 +55,7 @@ export function buildOrientationData(
     today,
   );
   const { items } = readTasksFile(rootDir);
-  const nextTasks = selectNextTasks(items);
+  const nextTasks = selectNextTasks(items, NEXT_TASK_LIMIT, today);
   return { deferred, nextTasks };
 }
 

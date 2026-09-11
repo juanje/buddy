@@ -17,7 +17,7 @@ const HELP_TEXT = `tasks() actions:
 - add(text, area?, due?, project?) — add open item
 - complete(id) — mark done
 - set_next(id) — mark as next action (>>) for its area
-- list(area?, project?, include_done?) — structured items with ids
+- list(area?, project?, include_done?, include_parked?, include_future?) — structured items with ids
 - move(id, area) — change @area
 - annotate(id, annotation) — add **metadata**
 - remove(id) — delete item (requires confirmation)
@@ -32,6 +32,8 @@ export interface TaskActionParams {
   annotation?: string;
   wipLimit?: number;
   include_done?: boolean;
+  include_parked?: boolean;
+  include_future?: boolean;
 }
 
 function err(error: string, suggestion?: string): TaskActionResult {
@@ -63,6 +65,7 @@ export function executeTaskAction(
       return ok(HELP_TEXT);
 
     case "list": {
+      const today = new Date().toISOString().slice(0, 10);
       let items = loadItems(rootDir);
       if (!params.include_done) {
         items = items.filter((item) => !item.done);
@@ -75,7 +78,23 @@ export function executeTaskAction(
         const project = params.project.replace(/^#/, "");
         items = items.filter((item) => (item.project ?? "") === project);
       }
-      const list = buildListResult(items);
+
+      let parkedCount = 0;
+      let futureCount = 0;
+      let filtered = items;
+
+      if (!params.include_parked) {
+        parkedCount = filtered.filter((item) => item.area === "someday").length;
+        filtered = filtered.filter((item) => item.area !== "someday");
+      }
+      if (!params.include_future) {
+        futureCount = filtered.filter((item) => item.dueDate && item.dueDate > today).length;
+        filtered = filtered.filter((item) => !(item.dueDate && item.dueDate > today));
+      }
+
+      const list = buildListResult(filtered, today);
+      list.parkedCount = parkedCount;
+      list.futureCount = futureCount;
       return ok("Task list:", { list });
     }
 
@@ -97,7 +116,7 @@ export function executeTaskAction(
       if (!text) return err("add requires params.text.", "Provide the task description.");
 
       const items = loadItems(rootDir);
-      const openBefore = items.filter((item) => !item.done).length;
+      const openBefore = items.filter((item) => !item.done && item.area !== "someday").length;
       const { wipLimit } = readTaskConfig();
       let wipWarning: string | undefined;
       if (openBefore >= wipLimit) {
