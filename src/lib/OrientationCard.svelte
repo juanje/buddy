@@ -117,15 +117,7 @@
     gap: 6px;
     min-width: 0;
   }
-  .task-list li {
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-  }
   .task-text {
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
     min-width: 0;
     flex: 1 1 auto;
   }
