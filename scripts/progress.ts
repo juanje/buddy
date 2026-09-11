@@ -307,7 +307,7 @@ export function runCli(argv: string[], progressFile = DEFAULT_PROGRESS_FILE): vo
       cmdScenario(data, state, featureId, name);
       save(data, progressFile);
       print(`${featureId} scenario '${name}': bdd → ${state}`);
-    } else if (cmd === "units" && argv.length >= 5) {
+    } else if (cmd === "units" && argv.length >= 4) {
       const featureId = argv[1];
       const count = Number(argv[argv.length - 1]);
       const name = argv.slice(2, -1).join(" ");
