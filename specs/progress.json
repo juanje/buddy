@@ -729,6 +729,26 @@
           "unit_tests": 1
         }
       ]
+    },
+    {
+      "id": "FR-TASKM-18",
+      "title": "Wiki vs workspace routing distinction in capture guidance",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "agents-base prompt includes wiki vs workspace distinction",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
+    },
+    {
+      "id": "FR-TASKM-19",
+      "title": "Consolidation workspace-to-wiki maturity flagging",
+      "status": "pending",
+      "cycle_step": "spec_review",
+      "scenarios": []
     }
   ]
 }

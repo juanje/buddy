@@ -3441,6 +3441,8 @@ Further context on local-model evaluation methodology and findings:
 | FR-TASKM-15 | Default-context classification with explicit-commitment test for tasks | 2.5 ✓ |
 | FR-TASKM-16 | Area of Focus as sixth capture category with routing criteria | 2.5 ✓ |
 | FR-TASKM-17 | Dual-lookup for areas and process-conversation verify update | 2.5 ✓ |
+| FR-TASKM-18 | Wiki vs workspace routing distinction in capture guidance | 2.5 ✓ |
+| FR-TASKM-19 | Consolidation workspace-to-wiki maturity flagging | 2.5 |
 
 **FR-TASKM-01 — Project tag in task format**
 
@@ -3529,6 +3531,14 @@ Further context on local-model evaluation methodology and findings:
 
 - `agents-base.md` Area of Focus routing includes **Dual lookup** instruction for both trees.
 - `process-conversation.md` step 3 (Verify captures) lists all classification types including areas of focus.
+
+**FR-TASKM-18 — Wiki vs workspace routing distinction**
+
+- `agents-base.md` includes **Wiki vs workspaces** subsection: wiki = distilled interconnected concepts (high stability); workspace = raw/in-progress user materials (low stability); pipeline stages not copies.
+
+**FR-TASKM-19 — Consolidation workspace-to-wiki maturity flagging**
+
+- `consolidation.md` weekly depth includes **W2b. Workspace maturity check**: flag mature workspace content ready for wiki ingestion; do not ingest automatically.
 
 ---
 

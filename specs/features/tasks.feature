@@ -308,3 +308,18 @@ Feature: Task management
     Given the bundled process-conversation.md prompt
     Then the process-conversation prompt contains "Areas of focus"
     And the process-conversation prompt contains "agent_brain/projects/area/"
+
+  @FR-TASKM-18
+  Scenario: agents-base prompt includes wiki vs workspace distinction
+    Given the bundled agents-base.md prompt
+    Then the agents-base prompt contains "Wiki vs workspaces"
+    And the agents-base prompt contains "distilled, interconnected"
+    And the agents-base prompt contains "raw/in-progress"
+    And the agents-base prompt contains "stages, not copies"
+
+  @FR-TASKM-19
+  Scenario: consolidation prompt includes workspace maturity check
+    Given the bundled consolidation.md prompt
+    Then the consolidation prompt contains "Workspace maturity check"
+    And the consolidation prompt contains "wiki ingestion"
+    And the consolidation prompt contains "do not ingest automatically"

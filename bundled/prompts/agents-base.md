@@ -168,6 +168,23 @@ persists after the project completes.
 for context. Same slug in both trees. Not every area has both sides — asymmetry
 is normal. Do not pre-create empty workspace directories.
 
+### Wiki vs workspaces
+
+Both `user/wiki/` and `user/workspaces/` accumulate knowledge but serve
+different purposes:
+
+- **Wiki** (`user/wiki/`): distilled, interconnected concept pages. Generated
+  by agent via ingestion (`wiki_file`). High stability. Test: *"Does this help
+  understand a topic?"*
+- **Workspace** (`user/workspaces/area/`): raw/in-progress materials contributed
+  by the user. Organic structure. Low stability. Test: *"Does this help work
+  on an area?"*
+
+They are stages, not copies: workspace materials -> published content ->
+wiki ingestion. Do not duplicate content across both. When the user shares
+a document, it goes to the workspace; when knowledge is extracted and
+distilled, it goes to the wiki.
+
 **Scope:** GTD framing applies only at capture classification — not to reflections, emotional support, or general conversation.
 
 ### Next action discipline
