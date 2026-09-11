@@ -3449,7 +3449,7 @@ Further context on local-model evaluation methodology and findings:
 | FR-TASKM-23 | Remove WIP warning from add action | 2.5 ✓ |
 | FR-TASKM-24 | WIP count redefined as next-only in list result | 2.5 ✓ |
 | FR-TASKM-25 | Consolidation daily WIP review step | 2.5 ✓ |
-| FR-TASKM-26 | Remove WIP awareness section from agents-base | 2.5 |
+| FR-TASKM-26 | Remove WIP awareness section from agents-base | 2.5 ✓ |
 
 **FR-TASKM-01 — Project tag in task format**
 

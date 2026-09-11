@@ -464,6 +464,13 @@ Then("the agents-base prompt contains {string}", function (this: TasksWorld, tex
   assert.ok(this.agentsBasePrompt?.includes(text), `missing: ${text}`);
 });
 
+Then("the agents-base prompt does not contain {string}", function (this: TasksWorld, text: string) {
+  assert.ok(
+    !this.agentsBasePrompt?.includes(text),
+    `unexpected: ${text} in agents-base prompt`,
+  );
+});
+
 Then("the agents-base prompt references tasks action add", function (this: TasksWorld) {
   assert.match(this.agentsBasePrompt ?? "", /tasks\(action=['"]add['"]/);
 });

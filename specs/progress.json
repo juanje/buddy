@@ -848,6 +848,19 @@
           "unit_tests": 1
         }
       ]
+    },
+    {
+      "id": "FR-TASKM-26",
+      "title": "Remove WIP awareness section from agents-base",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "agents-base prompt does not contain WIP awareness section",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
     }
   ]
 }

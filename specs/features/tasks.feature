@@ -331,6 +331,12 @@ Feature: Task management
     And the consolidation prompt contains "activeNextCount"
     And the consolidation prompt contains "WIP limit"
 
+  @FR-TASKM-26
+  Scenario: agents-base prompt does not contain WIP awareness section
+    Given the bundled agents-base.md prompt
+    Then the agents-base prompt does not contain "WIP awareness"
+    And the agents-base prompt does not contain "wipWarning"
+
   @FR-TASKM-20
   Scenario: new buddy instance includes workspaces directory
     Given an initialized buddy git repository

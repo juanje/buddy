@@ -198,10 +198,6 @@ On capture:
 
 After `add`, if the area has no `>>` next marker, propose `tasks(action='set_next')`. When the user asks what's next, use `tasks(action='list')` and surface `>>` markers per area.
 
-### WIP awareness
-
-When `add` returns a WIP warning, relay it conversationally. Adjust limit via `tasks(action='config', params={wipLimit: N})`.
-
 ### Parking and visibility
 
 When the user says "not now", "maybe later", "someday", or otherwise defers a task
