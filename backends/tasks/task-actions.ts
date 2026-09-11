@@ -14,10 +14,10 @@ import {
 
 const HELP_TEXT = `tasks() actions:
 - help — list actions
-- add(text, area?, due?) — add open item
+- add(text, area?, due?, project?) — add open item
 - complete(id) — mark done
 - set_next(id) — mark as next action (>>) for its area
-- list(area?, include_done?) — structured items with ids
+- list(area?, project?, include_done?) — structured items with ids
 - move(id, area) — change @area
 - annotate(id, annotation) — add **metadata**
 - remove(id) — delete item (requires confirmation)
@@ -27,6 +27,7 @@ export interface TaskActionParams {
   text?: string;
   area?: string;
   due?: string;
+  project?: string;
   id?: number;
   annotation?: string;
   wipLimit?: number;
@@ -70,6 +71,10 @@ export function executeTaskAction(
         const area = params.area.replace(/^@/, "");
         items = items.filter((item) => (item.area ?? "") === area);
       }
+      if (params.project) {
+        const project = params.project.replace(/^#/, "");
+        items = items.filter((item) => (item.project ?? "") === project);
+      }
       const list = buildListResult(items);
       return ok("Task list:", { list });
     }
@@ -100,6 +105,7 @@ export function executeTaskAction(
       }
 
       const area = params.area?.replace(/^@/, "");
+      const project = params.project?.replace(/^#/, "");
       const openInAreaBefore = countOpenInArea(items, area);
       const newItem: TaskItem = {
         id: items.length + 1,
@@ -108,6 +114,7 @@ export function executeTaskAction(
         next: false,
         area,
         dueDate: params.due,
+        project,
       };
 
       const autoNext = openInAreaBefore === 0;

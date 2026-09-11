@@ -34,6 +34,33 @@ describe("parseTaskFileContent", () => {
   it("handles empty file", () => {
     expect(parseTaskFileContent("# Tasks\n")).toEqual([]);
   });
+
+  it("parses project tag from task line", () => {
+    const parsed = parseTaskFileContent(
+      "- [ ] >> Call dentist #ley-dep @health\n",
+    );
+    expect(parsed[0]).toMatchObject({
+      text: "Call dentist",
+      project: "ley-dep",
+      area: "health",
+      next: true,
+    });
+  });
+
+  it("serializes project tag before area", () => {
+    const serialized = serializeTaskFile([
+      { id: 1, text: "Get DNI copy", done: false, next: true, project: "ley-dep", area: "family" },
+    ]);
+    expect(serialized).toContain("#ley-dep @family");
+  });
+
+  it("round-trip parse-serialize preserves project", () => {
+    const items: TaskItem[] = [
+      { id: 1, text: "Call dentist", done: false, next: true, project: "ley-dep", area: "health" },
+    ];
+    const parsed = parseTaskFileContent(serializeTaskFile(items));
+    expect(parsed[0]?.project).toBe("ley-dep");
+  });
 });
 
 describe("writeTasksFile", () => {

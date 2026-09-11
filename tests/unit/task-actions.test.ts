@@ -64,6 +64,34 @@ describe("executeTaskAction", () => {
     expect(parseTaskFileCount(dir)).toBe(6);
   });
 
+  it("add stores project tag on new item", () => {
+    const result = assertSuccess(
+      executeTaskAction(dir, "add", { text: "Get DNI copy", area: "family", project: "ley-dep" }),
+    );
+    expect(result.message).toContain("added");
+    const content = readFileSync(tasksFilePath(dir), "utf8");
+    expect(content).toContain("#ley-dep @family");
+  });
+
+  it("list filters by project", () => {
+    writeTasksFile(dir, [
+      { id: 1, text: "Get DNI copy", done: false, next: true, project: "ley-dep", area: "family" },
+      { id: 2, text: "Review PR", done: false, next: true, area: "work" },
+    ]);
+    const result = assertSuccess(executeTaskAction(dir, "list", { project: "ley-dep" }));
+    expect(result.list?.items).toHaveLength(1);
+    expect(result.list?.items[0]?.project).toBe("ley-dep");
+  });
+
+  it("list without project returns all items including project-tagged ones", () => {
+    writeTasksFile(dir, [
+      { id: 1, text: "Get DNI copy", done: false, next: true, project: "ley-dep", area: "family" },
+      { id: 2, text: "Review PR", done: false, next: true, area: "work" },
+    ]);
+    const result = assertSuccess(executeTaskAction(dir, "list", {}));
+    expect(result.list?.items).toHaveLength(2);
+  });
+
   it("config reads and writes wipLimit", () => {
     ({ configDir } = setupGlobalConfigDir());
     writeTaskWipLimit(8);

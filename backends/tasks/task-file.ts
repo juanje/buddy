@@ -41,6 +41,13 @@ function parseItemLine(line: string, id: number): TaskItem | null {
     rest = rest.slice(0, areaMatch.index).trim();
   }
 
+  let project: string | undefined;
+  const projectMatch = rest.match(/\s#([\w-]+)\s*$/);
+  if (projectMatch) {
+    project = projectMatch[1];
+    rest = rest.slice(0, projectMatch.index).trim();
+  }
+
   let dueDate: string | undefined;
   const dateMatch = rest.match(/\b(\d{4}-\d{2}-\d{2})\b/);
   if (dateMatch) {
@@ -50,7 +57,7 @@ function parseItemLine(line: string, id: number): TaskItem | null {
   const text = rest.trim();
   if (!text) return null;
 
-  return { id, text, done, next: done ? false : next, area, dueDate, annotation };
+  return { id, text, done, next: done ? false : next, area, dueDate, annotation, project };
 }
 
 export function parseTaskFileContent(content: string): TaskItem[] {
@@ -75,6 +82,9 @@ function formatItemLine(item: TaskItem): string {
   }
   if (item.annotation) {
     parts.push(`**${item.annotation}**`);
+  }
+  if (item.project) {
+    parts.push(`#${item.project}`);
   }
   if (item.area) {
     parts.push(`@${item.area}`);

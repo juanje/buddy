@@ -115,3 +115,35 @@ Feature: Task management
     Given the bundled consolidation.md prompt
     Then the consolidation prompt step 4 references tasks list
     And the consolidation prompt does not reference triage_inbox
+
+  @FR-TASKM-01
+  Scenario: task with project tag is parsed and serialized
+    Given an initialized buddy git repository
+    And tasks.md on disk has line "- [ ] >> Call dentist #ley-dep @health"
+    When tasks action list is invoked
+    Then the first task has project "ley-dep"
+
+  @FR-TASKM-02
+  Scenario: add with project param writes project tag
+    Given an initialized buddy git repository
+    When tasks add is invoked with text "Get DNI copy" area "family" and project "ley-dep"
+    Then tasks.md on disk contains "#ley-dep @family"
+
+  @FR-TASKM-03
+  Scenario: list filters by project
+    Given an initialized buddy git repository
+    And tasks.md on disk has project-tagged items
+    When tasks list is invoked with project "ley-dep"
+    Then the task list contains only items with project "ley-dep"
+
+  @FR-TASKM-04
+  Scenario: agents-base prompt includes GTD project classification
+    Given the bundled agents-base.md prompt
+    Then the agents-base prompt contains "GTD next action"
+    And the agents-base prompt contains "GTD project"
+    And the agents-base prompt references project param in add
+
+  @FR-TASKM-05
+  Scenario: consolidation prompt includes project health check
+    Given the bundled consolidation.md prompt
+    Then the consolidation prompt references project health check

@@ -13,6 +13,7 @@ export interface TaskItem {
   area?: string;
   dueDate?: string;
   annotation?: string;
+  project?: string;
 }
 
 export interface TaskAreaSummary {

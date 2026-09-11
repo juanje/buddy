@@ -23,8 +23,10 @@ interface TasksWorld extends BuddyWorld {
   buddyDir?: string;
   rootDir?: string;
   taskResultText?: string;
+  taskResult?: ReturnType<typeof executeTaskAction>;
   taskListCount?: number;
   firstTaskNext?: boolean;
+  firstTaskProject?: string;
   globalConfigDir?: string;
   skillToolNames?: string[];
   agentsBasePrompt?: string;
@@ -39,10 +41,12 @@ function root(this: TasksWorld): string {
 
 function invoke(this: TasksWorld, action: string, params: Record<string, unknown> = {}): void {
   const result = executeTaskAction(root.call(this), action, params);
+  this.taskResult = result;
   this.taskResultText = taskResultToText(result);
   if (result.ok && result.list) {
     this.taskListCount = result.list.items.length;
     this.firstTaskNext = result.list.items[0]?.next;
+    this.firstTaskProject = result.list.items[0]?.project;
   }
 }
 
@@ -86,6 +90,20 @@ created: 2026-09-10
   writeFileSync(tasksFilePath(root.call(this)), content, "utf8");
 });
 
+Given("tasks.md on disk has project-tagged items", function (this: TasksWorld) {
+  const content = `---
+created: 2026-09-10
+---
+
+# Tasks
+
+- [ ] >> Get DNI copy #ley-dep @family
+- [ ] Review PR @work
+- [ ] Call dentist #ley-dep @health
+`;
+  writeFileSync(tasksFilePath(root.call(this)), content, "utf8");
+});
+
 Given("tasks.md on disk has no health items", function (this: TasksWorld) {
   writeTasksFile(root.call(this), [
     { id: 1, text: "Other", done: false, next: true, area: "work" },
@@ -120,6 +138,20 @@ When(
   'tasks add is invoked with text {string} and area {string}',
   function (this: TasksWorld, text: string, area: string) {
     invoke.call(this, "add", { text, area });
+  },
+);
+
+When(
+  'tasks add is invoked with text {string} area {string} and project {string}',
+  function (this: TasksWorld, text: string, area: string, project: string) {
+    invoke.call(this, "add", { text, area, project });
+  },
+);
+
+When(
+  'tasks list is invoked with project {string}',
+  function (this: TasksWorld, project: string) {
+    invoke.call(this, "list", { project, include_done: true });
   },
 );
 
@@ -164,6 +196,23 @@ Then("the first task has next marker true", function (this: TasksWorld) {
   assert.equal(this.firstTaskNext, true);
 });
 
+Then("the first task has project {string}", function (this: TasksWorld, project: string) {
+  assert.equal(this.firstTaskProject, project);
+});
+
+Then(
+  'the task list contains only items with project {string}',
+  function (this: TasksWorld, project: string) {
+    assert.ok(this.taskResult?.ok && this.taskResult.list, "expected task list result");
+    const items = this.taskResult.list!.items;
+    assert.ok(items.length > 0, "expected at least one item");
+    assert.ok(
+      items.every((item) => item.project === project),
+      `expected all items to have project ${project}`,
+    );
+  },
+);
+
 Then("tasks.md on disk contains {string}", function (this: TasksWorld, snippet: string) {
   const content = readFileSync(tasksFilePath(root.call(this)), "utf8");
   assert.ok(content.includes(snippet), content);
@@ -196,6 +245,10 @@ Then("the agents-base prompt references tasks action add", function (this: Tasks
   assert.match(this.agentsBasePrompt ?? "", /tasks\(action=['"]add['"]/);
 });
 
+Then("the agents-base prompt references project param in add", function (this: TasksWorld) {
+  assert.match(this.agentsBasePrompt ?? "", /project:\s*['"]/);
+});
+
 Then("the agents-base prompt does not reference inbox.md", function (this: TasksWorld) {
   assert.doesNotMatch(this.agentsBasePrompt ?? "", /user\/inbox\.md/);
 });
@@ -225,6 +278,11 @@ Then("the consolidation prompt step 4 references tasks list", function (this: Ta
 
 Then("the consolidation prompt does not reference triage_inbox", function (this: TasksWorld) {
   assert.doesNotMatch(this.consolidationPrompt ?? "", /triage_inbox/);
+});
+
+Then("the consolidation prompt references project health check", function (this: TasksWorld) {
+  assert.match(this.consolidationPrompt ?? "", /project health/i);
+  assert.match(this.consolidationPrompt ?? "", /#project/);
 });
 
 Given("AGENTS.md has an inbox reference in Where to find things", function (this: TasksWorld) {
