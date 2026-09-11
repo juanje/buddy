@@ -462,6 +462,12 @@ depth-2" and file-change activity:
 2. Hot concepts referenced this week: read each; update if the week evolved the concept.
 3. Projects referenced this week: does status match reality?
 
+**W2b. Workspace maturity check** — for each `user/workspaces/` directory
+with recent activity, check if any content is mature enough for wiki ingestion:
+polished articles, stable reference docs, or well-formed concepts that would
+benefit from cross-linking. Flag to the user: "X in workspace Y looks ready
+for wiki ingestion" — do not ingest automatically.
+
 **W3. Cross-domain principles** — review `## Preferences` in USER.md. When three
 or more preferences share an underlying pattern, distill a one-line principle in
 `## Principles` citing supporting preferences. Remove principles that lost support.

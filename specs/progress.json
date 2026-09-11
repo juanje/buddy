@@ -746,9 +746,15 @@
     {
       "id": "FR-TASKM-19",
       "title": "Consolidation workspace-to-wiki maturity flagging",
-      "status": "pending",
-      "cycle_step": "spec_review",
-      "scenarios": []
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "consolidation prompt includes workspace maturity check",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
     }
   ]
 }
