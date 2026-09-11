@@ -228,6 +228,7 @@ Then("tasks.md on disk has next on task B only", function (this: TasksWorld) {
 Then("the task remove permission gate asks for confirmation", function (this: TasksWorld) {
   const decision = JSON.parse(this.taskResultText ?? "{}");
   assert.equal(decision.action, "ask");
+  assert.equal(decision.kind, "task-remove");
 });
 
 Given("the bundled agents-base.md prompt", function (this: TasksWorld) {

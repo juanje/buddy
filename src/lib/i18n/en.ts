@@ -56,6 +56,7 @@ export const en: LocaleStrings = {
   permissionTitleOutside: "The assistant wants to access a file outside its folder",
   permissionTitleIdentity: "The assistant wants to update its personality",
   permissionTitleDelete: "The assistant wants to delete a file",
+  permissionTitleTaskRemove: "The assistant wants to delete a task",
   permissionOpRead: "Read",
   permissionOpWrite: "Write",
   permissionOpDelete: "Delete",

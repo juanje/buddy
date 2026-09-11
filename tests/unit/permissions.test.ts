@@ -86,9 +86,9 @@ describe("evaluateToolCall", () => {
     expect(evaluate("read", { path: `${AB}/.pi/settings.json` })).toEqual({ action: "allow" });
   });
 
-  it("asks before tasks remove", () => {
+  it("asks before tasks remove with task-remove kind", () => {
     const decision = evaluate("tasks", { action: "remove", params: { id: 1 } });
-    expect(decision).toMatchObject({ action: "ask", op: "write" });
+    expect(decision).toMatchObject({ action: "ask", kind: "task-remove", op: "write" });
   });
 
   it("allows tasks list without asking", () => {

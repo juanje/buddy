@@ -28,7 +28,7 @@ export type PermissionOp = "read" | "write";
 
 export interface PermissionRequest {
   id: number;
-  kind: "identity-write" | "outside" | "delete-file";
+  kind: "identity-write" | "outside" | "delete-file" | "task-remove";
   op: PermissionOp;
   path: string;
 }
@@ -90,7 +90,7 @@ export function evaluateToolCall(
     if (classification === "write") {
       return {
         action: "ask",
-        kind: "outside",
+        kind: "task-remove",
         op: "write",
         path: `${toolName}:${action}`,
       };

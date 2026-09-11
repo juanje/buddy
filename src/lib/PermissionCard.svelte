@@ -26,7 +26,9 @@
       ? strings.permissionTitleIdentity
       : card.request.kind === "delete-file"
         ? strings.permissionTitleDelete
-        : strings.permissionTitleOutside,
+        : card.request.kind === "task-remove"
+          ? strings.permissionTitleTaskRemove
+          : strings.permissionTitleOutside,
   );
   const opLabel = $derived(
     card.request.kind === "delete-file"

@@ -46,6 +46,7 @@ export type LocaleStrings = {
   permissionTitleOutside: string;
   permissionTitleIdentity: string;
   permissionTitleDelete: string;
+  permissionTitleTaskRemove: string;
   permissionOpRead: string;
   permissionOpWrite: string;
   permissionOpDelete: string;
@@ -250,6 +251,7 @@ export const es: LocaleStrings = {
   permissionTitleOutside: "El asistente quiere acceder a un archivo fuera de su carpeta",
   permissionTitleIdentity: "El asistente quiere actualizar su personalidad",
   permissionTitleDelete: "El asistente quiere eliminar un archivo",
+  permissionTitleTaskRemove: "El asistente quiere eliminar una tarea",
   permissionOpRead: "Leer",
   permissionOpWrite: "Escribir",
   permissionOpDelete: "Eliminar",

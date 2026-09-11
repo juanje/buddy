@@ -169,7 +169,7 @@ export interface AllowedPathPersist {
 /** A permission question the agent is waiting on (FR-PERM-02/03/07). */
 export interface PermissionRequest {
   id: number;
-  kind: "identity-write" | "outside" | "delete-file";
+  kind: "identity-write" | "outside" | "delete-file" | "task-remove";
   op: "read" | "write";
   path: string;
 }
