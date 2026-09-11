@@ -17,6 +17,7 @@ export interface SessionTrackerSnapshot {
   startTime: string;
   endTime: string;
   turnCount: number;
+  userPromptCount: number;
   filesRead: string[];
   filesWritten: string[];
   toolCalls: TrackedToolCall[];
@@ -33,6 +34,7 @@ export class SessionTracker {
   readonly sessionId: string;
   readonly startTime: Date;
   turnCount = 0;
+  userPromptCount = 0;
   filesRead: string[] = [];
   filesWritten: string[] = [];
   toolCalls: TrackedToolCall[] = [];
@@ -78,6 +80,10 @@ export class SessionTracker {
     return { turnEnded: false, compactionStart: false };
   }
 
+  recordUserPrompt(): void {
+    this.userPromptCount += 1;
+  }
+
   hasActivitySinceCheckpoint(): boolean {
     return this.activitySinceCheckpoint;
   }
@@ -92,6 +98,7 @@ export class SessionTracker {
       startTime: toLocalIsoStamp(this.startTime),
       endTime: toLocalIsoStamp(endTime),
       turnCount: this.turnCount,
+      userPromptCount: this.userPromptCount,
       filesRead: [...this.filesRead],
       filesWritten: [...this.filesWritten],
       toolCalls: [...this.toolCalls],

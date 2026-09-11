@@ -659,6 +659,7 @@ the current date on each user turn, not the session start date. Fixes #4.
 | FR-REFLECT-06 | Reflect child does not race the worker for the git index | 2 ✓ |
 | FR-REFLECT-07 | Reflect child is bounded by a timeout | 2 |
 | FR-REFLECT-08 | Empty sessions do not spawn a reflect | 2 ✓ |
+| FR-REFLECT-09 | Reflect requires user interaction, not just system turns | 2.5 ✓ |
 
 **FR-REFLECT-01 — Session-end reflect finalization**
 
@@ -760,6 +761,15 @@ Fork bomb defense:
 - **Rationale:** a setup-only or immediately-closed session has nothing to
   reflect on. Spawning a reflect child for it wastes an LLM call and produces a
   log entry like "Session 01:05–01:05" with no content.
+
+**FR-REFLECT-09 — Reflect requires user interaction**
+
+- **Given** a session has system-initiated agent turns (orientation, context injection) but no user prompts via the chat RPC
+- **When** the shutdown sequence runs
+- **Then** no reflect child is spawned and no reflect-pending marker is written
+- **Rationale:** since first-open orientation (v0.1.37), boot injects prompts that
+  complete agent cycles before the user types. `turnCount > 0` is no longer a
+  reliable proxy for "session had content to reflect on."
 
 **FR-REFLECT-04 — Log output sanitizer (strip tool-call artifacts)**
 

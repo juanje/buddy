@@ -81,4 +81,28 @@ describe("SessionLifecycle checkpoint reflect", () => {
 
     expect(spawns).toHaveLength(0);
   });
+
+  it("does not spawn session-end reflect when only system turns occurred", async () => {
+    dir = mkdtempSync(join(tmpdir(), "buddy-session-end-"));
+    await initTestGitRepo(dir);
+    const lc = lifecycle();
+
+    await lc.handleEvent({ type: "agent_end" });
+    await lc.shutdown();
+
+    expect(spawns).toHaveLength(0);
+  });
+
+  it("spawns session-end reflect when user prompted", async () => {
+    dir = mkdtempSync(join(tmpdir(), "buddy-session-end-"));
+    await initTestGitRepo(dir);
+    const lc = lifecycle();
+
+    lc.recordUserPrompt();
+    await lc.handleEvent({ type: "agent_end" });
+    await lc.shutdown();
+
+    expect(spawns).toHaveLength(1);
+    expect(spawns[0].mode).toBe("session-end");
+  });
 });

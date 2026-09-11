@@ -51,6 +51,10 @@ export class SessionLifecycle {
     this.sessionFile = path;
   }
 
+  recordUserPrompt(): void {
+    this.tracker.recordUserPrompt();
+  }
+
   handleEvent(event: AgentEvent): Promise<void> {
     this.eventChain = this.eventChain.then(() => this.handleEventInner(event));
     return this.eventChain;
@@ -122,7 +126,7 @@ export class SessionLifecycle {
       turns: snapshot.turnCount,
     });
 
-    if (snapshot.turnCount > 0) {
+    if (this.tracker.userPromptCount > 0) {
       markReflectPending(this.rootDir);
 
       this.requestReflect({

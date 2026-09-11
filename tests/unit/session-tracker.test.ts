@@ -4,6 +4,22 @@ import { describe, expect, it } from "vitest";
 
 import { SessionTracker } from "../../backends/session-tracker";
 
+describe("SessionTracker user prompts", () => {
+  it("recordUserPrompt increments userPromptCount", () => {
+    const tracker = new SessionTracker("s1");
+    expect(tracker.userPromptCount).toBe(0);
+    tracker.recordUserPrompt();
+    tracker.recordUserPrompt();
+    expect(tracker.userPromptCount).toBe(2);
+  });
+
+  it("toSnapshot includes userPromptCount", () => {
+    const tracker = new SessionTracker("s1");
+    tracker.recordUserPrompt();
+    expect(tracker.toSnapshot().userPromptCount).toBe(1);
+  });
+});
+
 describe("SessionTracker relPath", () => {
   it("does not treat sibling directories as inside the buddy home", () => {
     const tracker = new SessionTracker("s1");

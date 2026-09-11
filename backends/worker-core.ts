@@ -86,6 +86,7 @@ export function createWorkerCore(
 
   const api: SessionWorkerAPI = {
     async prompt(text: string, _options?: PromptOptions): Promise<void> {
+      lifecycle?.recordUserPrompt();
       const piOptions = _options?.images ? { images: _options.images } : undefined;
       await session.prompt(text, piOptions);
     },

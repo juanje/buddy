@@ -39,3 +39,11 @@ Feature: Session path persistence and crash recovery
     When the app shuts down gracefully
     Then no reflect spawn was requested
     And consolidation-state.json has reflectPending false
+
+  @FR-REFLECT-09
+  Scenario: Session with system turns but no user prompts does not spawn reflect
+    Given a session is running with persisted path "/tmp/session-orient.jsonl"
+    And the session has system-initiated turns but no user prompts
+    When the app shuts down gracefully
+    Then no reflect spawn was requested
+    And consolidation-state.json has reflectPending false

@@ -523,6 +523,19 @@
           "unit_tests": 1
         }
       ]
+    },
+    {
+      "id": "FR-REFLECT-09",
+      "title": "Reflect requires user interaction",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Session with system turns but no user prompts does not spawn reflect",
+          "bdd": "pass",
+          "unit_tests": 4
+        }
+      ]
     }
   ]
 }

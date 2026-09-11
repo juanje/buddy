@@ -135,5 +135,13 @@ Given("the session has zero completed turns", function (this: SessionPersistence
 });
 
 Given("at least one turn has completed", async function (this: SessionPersistenceWorld) {
+  this.lifecycle!.recordUserPrompt();
   await this.lifecycle!.handleEvent({ type: "agent_end" } as never);
 });
+
+Given(
+  "the session has system-initiated turns but no user prompts",
+  async function (this: SessionPersistenceWorld) {
+    await this.lifecycle!.handleEvent({ type: "agent_end" } as never);
+  },
+);
