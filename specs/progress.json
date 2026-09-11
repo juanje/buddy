@@ -1,5 +1,5 @@
 {
-  "current_focus": "FR-TASKM-23",
+  "current_focus": null,
   "features": [
     {
       "id": "FR-CHAT-18",
@@ -808,7 +808,7 @@
     {
       "id": "FR-TASKM-23",
       "title": "Remove WIP warning from add action",
-      "status": "in_progress",
+      "status": "done",
       "cycle_step": "done",
       "scenarios": [
         {
@@ -819,7 +819,20 @@
         {
           "name": "add does not produce WIP warning",
           "bdd": "pass",
-          "unit_tests": 0
+          "unit_tests": 1
+        }
+      ]
+    },
+    {
+      "id": "FR-TASKM-24",
+      "title": "WIP count redefined as next-only in list result",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "list result includes activeNextCount",
+          "bdd": "pass",
+          "unit_tests": 3
         }
       ]
     }

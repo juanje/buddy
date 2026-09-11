@@ -6,6 +6,7 @@ import {
   areaHasNext,
   buildListResult,
   clearNextInArea,
+  countActiveNext,
   countOpenInArea,
   findItemById,
   readTasksFile,
@@ -70,6 +71,7 @@ export function executeTaskAction(
       if (!params.include_done) {
         items = items.filter((item) => !item.done);
       }
+      const activeNextCount = countActiveNext(items, today);
       if (params.area) {
         const area = params.area.replace(/^@/, "");
         items = items.filter((item) => (item.area ?? "") === area);
@@ -95,6 +97,7 @@ export function executeTaskAction(
       const list = buildListResult(filtered, today);
       list.parkedCount = parkedCount;
       list.futureCount = futureCount;
+      list.activeNextCount = activeNextCount;
       return ok("Task list:", { list });
     }
 

@@ -363,3 +363,11 @@ Feature: Task management
     And task WIP limit is 5
     When tasks add is invoked with text "Overflow task"
     Then the task result does not contain "WIP"
+
+  @FR-TASKM-24
+  Scenario: list result includes activeNextCount
+    Given an initialized buddy git repository
+    And tasks.md on disk has work items A and B
+    When tasks action list is invoked with defaults
+    Then the task result contains "activeNextCount"
+    And the task list summary has activeNextCount 1

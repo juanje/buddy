@@ -8,6 +8,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import type { TaskItem } from "../../shared/task-types";
 import {
   buildListResult,
+  countActiveNext,
   parseTaskFileContent,
   readTasksFile,
   serializeTaskFile,
@@ -84,6 +85,22 @@ describe("parseTaskFileContent", () => {
     ];
     const parsed = parseTaskFileContent(serializeTaskFile(items));
     expect(parsed[0]?.created).toBe("2026-01-01");
+  });
+});
+
+describe("countActiveNext", () => {
+  it("counts open next items excluding someday and future", () => {
+    const count = countActiveNext(
+      [
+        { id: 1, text: "A", done: false, next: true, area: "work" },
+        { id: 2, text: "B", done: false, next: false, area: "work" },
+        { id: 3, text: "S", done: false, next: true, area: "someday" },
+        { id: 4, text: "F", done: false, next: true, area: "personal", dueDate: "2099-01-01" },
+        { id: 5, text: "D", done: true, next: true, area: "work" },
+      ],
+      "2026-09-10",
+    );
+    expect(count).toBe(1);
   });
 });
 

@@ -183,6 +183,17 @@ export function writeTasksFile(rootDir: string, items: TaskItem[], created?: str
   }
 }
 
+export function countActiveNext(items: TaskItem[], today?: string): number {
+  const todayStr = today ?? new Date().toISOString().slice(0, 10);
+  return items.filter(
+    (item) =>
+      !item.done &&
+      item.next &&
+      item.area !== "someday" &&
+      !(item.dueDate && item.dueDate > todayStr),
+  ).length;
+}
+
 export function buildListResult(items: TaskItem[], today?: string): TaskListResult {
   const todayStr = today ?? new Date().toISOString().slice(0, 10);
   const areaMap = new Map<string, { open: number; hasNext: boolean }>();
@@ -210,7 +221,7 @@ export function buildListResult(items: TaskItem[], today?: string): TaskListResu
     openCount: stats.open,
     hasNext: stats.hasNext,
   }));
-  return { items: enriched, areas, openCount, parkedCount: 0, futureCount: 0 };
+  return { items: enriched, areas, openCount, parkedCount: 0, futureCount: 0, activeNextCount: 0 };
 }
 
 export function findItemById(items: TaskItem[], id: number): TaskItem | undefined {

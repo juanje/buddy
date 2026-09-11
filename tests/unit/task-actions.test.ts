@@ -122,6 +122,28 @@ describe("executeTaskAction", () => {
     expect(result.list?.items[0]?.staleDays).toBe(45);
   });
 
+  it("list includes activeNextCount for next-action items only", () => {
+    writeTasksFile(dir, [
+      { id: 1, text: "Active next", done: false, next: true, area: "work" },
+      { id: 2, text: "Open not next", done: false, next: false, area: "work" },
+      { id: 3, text: "Someday next", done: false, next: true, area: "someday" },
+    ]);
+    const result = assertSuccess(executeTaskAction(dir, "list", {}));
+    expect(result.list?.activeNextCount).toBe(1);
+  });
+
+  it("activeNextCount excludes future-dated next items", () => {
+    const future = new Date();
+    future.setDate(future.getDate() + 14);
+    const futureStr = future.toISOString().slice(0, 10);
+    writeTasksFile(dir, [
+      { id: 1, text: "Now", done: false, next: true, area: "work" },
+      { id: 2, text: "Later", done: false, next: true, area: "personal", dueDate: futureStr },
+    ]);
+    const result = assertSuccess(executeTaskAction(dir, "list", {}));
+    expect(result.list?.activeNextCount).toBe(1);
+  });
+
   it("list excludes someday items by default", () => {
     writeTasksFile(dir, [
       { id: 1, text: "Active", done: false, next: true, area: "work" },

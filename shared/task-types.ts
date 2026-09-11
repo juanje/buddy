@@ -31,6 +31,8 @@ export interface TaskListResult {
   openCount: number;
   parkedCount: number;
   futureCount: number;
+  /** Open next-action items excluding @someday and future-dated */
+  activeNextCount: number;
 }
 
 export interface TaskConfig {

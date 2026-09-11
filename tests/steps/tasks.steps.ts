@@ -406,6 +406,14 @@ Then(
 );
 
 Then(
+  "the task list summary has activeNextCount {int}",
+  function (this: TasksWorld, count: number) {
+    assert.ok(this.taskResult?.ok && this.taskResult.list, "expected task list result");
+    assert.equal(this.taskResult.list!.activeNextCount, count);
+  },
+);
+
+Then(
   'the task list contains only items with project {string}',
   function (this: TasksWorld, project: string) {
     assert.ok(this.taskResult?.ok && this.taskResult.list, "expected task list result");
