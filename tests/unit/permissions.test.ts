@@ -40,11 +40,22 @@ describe("evaluateToolCall", () => {
 
   it("allows reads and writes inside the buddy directory", () => {
     expect(evaluate("read", { path: `${AB}/agent_brain/notes.md` })).toEqual({ action: "allow" });
-    expect(evaluate("write", { path: `${AB}/user/tasks.md` })).toEqual({ action: "allow" });
+    expect(evaluate("write", { path: `${AB}/user/notes.md` })).toEqual({ action: "allow" });
+  });
+
+  it("denies direct file-tool access to user/tasks.md (FR-TASKM-11)", () => {
+    const reason = "Use the tasks() tool to read and modify tasks.";
+    expect(evaluate("read", { path: `${AB}/user/tasks.md` })).toEqual({ action: "deny", reason });
+    expect(evaluate("write", { path: `${AB}/user/tasks.md` })).toEqual({ action: "deny", reason });
+    expect(evaluate("edit", { path: `${AB}/user/tasks.md` })).toEqual({ action: "deny", reason });
+    expect(evaluate("grep", { path: "user/tasks.md", pattern: "foo" })).toEqual({
+      action: "deny",
+      reason,
+    });
+    expect(evaluate("read", { path: "user/tasks.md" })).toEqual({ action: "deny", reason });
   });
 
   it("resolves relative paths against the buddy directory", () => {
-    expect(evaluate("read", { path: "user/tasks.md" })).toEqual({ action: "allow" });
     const escape = evaluate("read", { path: "../other/file.txt" });
     expect(escape.action).toBe("ask");
   });

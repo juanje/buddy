@@ -16,6 +16,7 @@ import { homedir } from "node:os";
 import type { AllowedEntry } from "./allowed-paths";
 import { isPathPersistentlyAllowed } from "./allowed-paths";
 import { DENYLIST_BASENAMES, DENYLIST_HOME_DIRS, READ_TOOLS, WRITE_TOOLS } from "../shared/defaults";
+import { USER_DIR } from "../shared/brain-paths";
 import { pathArgsOf } from "../shared/tool-paths";
 import { expandHome } from "../shared/path-utils";
 import { classifyConnectorAction, isConnectorTool } from "./connectors/actions";
@@ -41,6 +42,11 @@ export type PermissionDecision =
 const IDENTITY_FILES = ["SOUL.md"];
 /** Agent-managed config paths that must never be modified by the agent (NFR-SEC-06). */
 const PROTECTED_CONFIG_RELPATHS = [join(".pi", "settings.json")];
+const TASK_FILE_RELPATH = `${USER_DIR}/tasks.md`;
+
+function isTaskFile(absPath: string, rootDir: string): boolean {
+  return resolve(rootDir, TASK_FILE_RELPATH) === absPath;
+}
 
 function connectorActionFromArgs(args: unknown): string | undefined {
   if (!args || typeof args !== "object" || !("action" in args)) return undefined;
@@ -163,6 +169,10 @@ function evaluateOnePath(
   }
   if (op === "write" && isProtectedConfig(absPath, rootDir)) {
     return { action: "deny", reason: "Modifying model configuration is not allowed." };
+  }
+  // FR-TASKM-11: tasks.md is managed exclusively by the tasks() tool.
+  if (isTaskFile(absPath, rootDir)) {
+    return { action: "deny", reason: "Use the tasks() tool to read and modify tasks." };
   }
   // NFR-SEC-15: Zone 1 is decided on the resolved location. A symlink under the
   // buddy directory pointing at ~/Documents would otherwise make every file it

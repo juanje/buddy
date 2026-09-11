@@ -212,3 +212,24 @@ Feature: Task management
     And tasks.md on disk has a future-dated item
     When tasks list is invoked with include_future true
     Then the task list contains future-dated items
+
+  @FR-TASKM-11
+  Scenario: write to tasks.md is denied
+    Given an initialized buddy git repository
+    And a permission layer for tasks file access
+    When the agent writes "user/tasks.md" via permission gate
+    Then the permission gate blocks with tasks tool message
+
+  @FR-TASKM-11
+  Scenario: read of tasks.md is denied
+    Given an initialized buddy git repository
+    And a permission layer for tasks file access
+    When the agent reads "user/tasks.md" via permission gate
+    Then the permission gate blocks with tasks tool message
+
+  @FR-TASKM-11
+  Scenario: edit of tasks.md is denied
+    Given an initialized buddy git repository
+    And a permission layer for tasks file access
+    When the agent edits "user/tasks.md" via permission gate
+    Then the permission gate blocks with tasks tool message

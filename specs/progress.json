@@ -608,6 +608,29 @@
           "unit_tests": 4
         }
       ]
+    },
+    {
+      "id": "FR-TASKM-11",
+      "title": "Direct file-tool access to tasks.md denied",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "write to tasks.md is denied",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "read of tasks.md is denied",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "edit of tasks.md is denied",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
     }
   ]
 }

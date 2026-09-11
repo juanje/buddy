@@ -3434,6 +3434,7 @@ Further context on local-model evaluation methodology and findings:
 | FR-TASKM-07 | `@someday` parking: excluded from default list and WIP count | 2.5 ✓ |
 | FR-TASKM-08 | Date-gated visibility: future items hidden from default list | 2.5 ✓ |
 | FR-TASKM-09 | Staleness metadata: `staleDays` in list result for aged items | 2.5 ✓ |
+| FR-TASKM-11 | Direct file-tool access to `user/tasks.md` denied (read, write, edit) | 2.5 ✓ |
 
 **FR-TASKM-01 — Project tag in task format**
 
@@ -3485,6 +3486,13 @@ Further context on local-model evaluation methodology and findings:
 
 - `TaskItem.staleDays` is computed at list time (not persisted) when the item is open, not `>>`, and age > 30 days.
 - Age is `daysSince(created)` relative to today.
+
+**FR-TASKM-11 — Direct access to tasks.md denied**
+
+- All file tools (`read`, `write`, `edit`, `grep`, `find`, `ls`) targeting `user/tasks.md` are denied in `evaluateOnePath()`.
+- Deny message: "Use the tasks() tool to read and modify tasks."
+- The `tasks()` tool itself is not affected (it reads/writes the file internally, not through file tools).
+- `delete_file` and `move_file` are already blocked via `PROTECTED_FILES`.
 
 ---
 

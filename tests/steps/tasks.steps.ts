@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { evaluateToolCall } from "../../backends/permissions";
+import { createPermissionGate, evaluateToolCall, type PermissionGate } from "../../backends/permissions";
 import { buildSkillTools, skillToolNames } from "../../backends/skill-tools";
 import { executeTaskAction } from "../../backends/tasks/task-actions";
 import { taskResultToText } from "../../backends/tasks/task-result";
@@ -32,6 +32,8 @@ interface TasksWorld extends BuddyWorld {
   skillToolNames?: string[];
   agentsBasePrompt?: string;
   consolidationPrompt?: string;
+  permGate?: PermissionGate;
+  permOutcome?: { block: true; reason: string } | undefined;
 }
 
 function root(this: TasksWorld): string {
@@ -262,6 +264,46 @@ When("tasks remove permission is evaluated for id {int}", function (this: TasksW
   const rootDir = root.call(this);
   const decision = evaluateToolCall("tasks", { action: "remove", params: { id } }, rootDir);
   this.taskResultText = JSON.stringify(decision);
+});
+
+Given("a permission layer for tasks file access", function (this: TasksWorld) {
+  const rootDir = root.call(this);
+  this.permGate = createPermissionGate(
+    rootDir,
+    async () => {
+      throw new Error("should not ask");
+    },
+    process.env.HOME,
+  );
+});
+
+When(
+  'the agent writes {string} via permission gate',
+  async function (this: TasksWorld, relPath: string) {
+    this.permOutcome = await this.permGate!.check("write", { path: relPath });
+  },
+);
+
+When(
+  'the agent reads {string} via permission gate',
+  async function (this: TasksWorld, relPath: string) {
+    this.permOutcome = await this.permGate!.check("read", { path: relPath });
+  },
+);
+
+When(
+  'the agent edits {string} via permission gate',
+  async function (this: TasksWorld, relPath: string) {
+    this.permOutcome = await this.permGate!.check("edit", { path: relPath });
+  },
+);
+
+Then("the permission gate blocks with tasks tool message", function (this: TasksWorld) {
+  assert.ok(this.permOutcome?.block, "expected the tool call to be blocked");
+  assert.equal(
+    this.permOutcome?.reason,
+    "Use the tasks() tool to read and modify tasks.",
+  );
 });
 
 Then("the toolset offers tasks", function (this: TasksWorld) {
