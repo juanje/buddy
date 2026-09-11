@@ -116,12 +116,6 @@ export function executeTaskAction(
       if (!text) return err("add requires params.text.", "Provide the task description.");
 
       const items = loadItems(rootDir);
-      const openBefore = items.filter((item) => !item.done && item.area !== "someday").length;
-      const { wipLimit } = readTaskConfig();
-      let wipWarning: string | undefined;
-      if (openBefore >= wipLimit) {
-        wipWarning = `You now have ${openBefore + 1} open items (WIP limit: ${wipLimit}). Consider completing or parking something.`;
-      }
 
       const area = params.area?.replace(/^@/, "");
       const project = params.project?.replace(/^#/, "");
@@ -151,7 +145,7 @@ export function executeTaskAction(
         noNextForArea = area || "general";
       }
 
-      return ok("Task added.", { wipWarning, noNextForArea });
+      return ok("Task added.", { noNextForArea });
     }
 
     case "complete": {

@@ -7,7 +7,6 @@ export function taskResultToText(result: TaskActionResult): string {
     return result.suggestion ? `${result.error}. ${result.suggestion}` : result.error;
   }
   const parts = [result.message];
-  if (result.wipWarning) parts.push(result.wipWarning);
   if (result.nextClearedForArea) {
     parts.push(`Next action cleared for @${result.nextClearedForArea || "general"}.`);
   }

@@ -60,13 +60,13 @@ Feature: Task management
     When tasks add is invoked with text "Call dentist" and area "health"
     Then tasks.md on disk contains ">> Call dentist @health"
 
-  @FR-TASK-04
-  Scenario: add warns when WIP limit exceeded
+  @FR-TASK-04 @FR-TASKM-23
+  Scenario: add does not warn when WIP limit exceeded
     Given an initialized buddy git repository
     And tasks.md has 5 open items
     And task WIP limit is 5
     When tasks add is invoked with text "Another task"
-    Then the task result contains "WIP"
+    Then the task result does not contain "WIP"
 
   @FR-TASK-05
   Scenario: agents-base prompt includes capture classification
@@ -355,3 +355,11 @@ Feature: Task management
     Then the where-things-live doc contains "user/workspaces/"
     And the where-things-live doc contains "areas of focus"
     And the where-things-live doc contains "no defined end"
+
+  @FR-TASKM-23
+  Scenario: add does not produce WIP warning
+    Given an initialized buddy git repository
+    And tasks.md has 5 open items
+    And task WIP limit is 5
+    When tasks add is invoked with text "Overflow task"
+    Then the task result does not contain "WIP"

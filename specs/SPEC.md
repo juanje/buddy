@@ -3446,6 +3446,10 @@ Further context on local-model evaluation methodology and findings:
 | FR-TASKM-20 | user/workspaces/ directory constant, template, and AGENTS.md nav | 2.5 ✓ |
 | FR-TASKM-21 | Boot migration: workspaces nav in existing AGENTS.md | 2.5 ✓ |
 | FR-TASKM-22 | Bundled docs: workspaces directory in where-things-live | 2.5 ✓ |
+| FR-TASKM-23 | Remove WIP warning from add action | 2.5 ✓ |
+| FR-TASKM-24 | WIP count redefined as next-only in list result | 2.5 |
+| FR-TASKM-25 | Consolidation daily WIP review step | 2.5 |
+| FR-TASKM-26 | Remove WIP awareness section from agents-base | 2.5 |
 
 **FR-TASKM-01 — Project tag in task format**
 
@@ -3558,6 +3562,24 @@ Further context on local-model evaluation methodology and findings:
 **FR-TASKM-22 — Bundled docs: workspaces in where-things-live**
 
 - `bundled/docs/memory/where-things-live.md` documents `user/workspaces/` and includes a routing example.
+
+**FR-TASKM-23 — Remove WIP warning from add action**
+
+- `add` no longer counts open items or returns `wipWarning`.
+- Capture is never gated by WIP at add time (GTD: capture freely, process later).
+
+**FR-TASKM-24 — WIP count redefined as next-only in list result**
+
+- `TaskListResult` includes `activeNextCount`: count of open items marked as next action, excluding `@someday` and future-dated items.
+- Exposed in `list` JSON result for consolidation and orientation.
+
+**FR-TASKM-25 — Consolidation daily WIP review step**
+
+- `consolidation.md` daily step 4 (Task cleanup) includes **Active fronts check**: after cleanup, call `tasks(action='list')`, read `activeNextCount`, compare to configured WIP limit, flag excess with proposed actions.
+
+**FR-TASKM-26 — Remove WIP awareness section from agents-base**
+
+- Delete `### WIP awareness` from `agents-base.md` (add no longer returns WIP warnings; review is consolidation's job).
 
 ---
 

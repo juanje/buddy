@@ -1,5 +1,5 @@
 {
-  "current_focus": null,
+  "current_focus": "FR-TASKM-23",
   "features": [
     {
       "id": "FR-CHAT-18",
@@ -802,6 +802,24 @@
           "name": "where-things-live docs include workspaces",
           "bdd": "pass",
           "unit_tests": 1
+        }
+      ]
+    },
+    {
+      "id": "FR-TASKM-23",
+      "title": "Remove WIP warning from add action",
+      "status": "in_progress",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "add does not warn when WIP limit exceeded",
+          "bdd": "pass",
+          "unit_tests": 3
+        },
+        {
+          "name": "add does not produce WIP warning",
+          "bdd": "pass",
+          "unit_tests": 0
         }
       ]
     }

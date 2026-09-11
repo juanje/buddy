@@ -6,6 +6,7 @@ import { dirname, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { executeTaskAction } from "../../backends/tasks/task-actions";
+import { taskResultToText } from "../../backends/tasks/task-result";
 import type { TaskActionSuccess } from "../../shared/task-types";
 import { tasksFilePath, writeTasksFile } from "../../backends/tasks/task-file";
 import { setupGlobalConfigDir, teardownGlobalConfigDir } from "../support/global-config";
@@ -50,7 +51,7 @@ describe("executeTaskAction", () => {
     expect(result.nextClearedForArea).toBe("work");
   });
 
-  it("add warns when WIP exceeded but still adds", () => {
+  it("add does not warn when WIP exceeded but still adds", () => {
     ({ configDir } = setupGlobalConfigDir());
     writeTaskWipLimit(5);
     writeTasksFile(dir, Array.from({ length: 5 }, (_, i) => ({
@@ -60,8 +61,9 @@ describe("executeTaskAction", () => {
       next: i === 0,
     })));
     const result = assertSuccess(executeTaskAction(dir, "add", { text: "Overflow" }));
-    expect(result.wipWarning).toMatch(/WIP/i);
     expect(parseTaskFileCount(dir)).toBe(6);
+    const text = taskResultToText(result);
+    expect(text).not.toMatch(/WIP/i);
   });
 
   it("add stores project tag on new item", () => {
@@ -208,7 +210,7 @@ created: ${createdStr}
     expect(result.list?.items[0]?.staleDays).toBe(45);
   });
 
-  it("WIP count excludes someday items", () => {
+  it("add does not warn when someday items inflate open count", () => {
     ({ configDir } = setupGlobalConfigDir());
     writeTaskWipLimit(5);
     writeTasksFile(dir, [
@@ -223,10 +225,10 @@ created: ${createdStr}
       { id: 6, text: "S2", done: false, next: false, area: "someday" },
     ]);
     const result = assertSuccess(executeTaskAction(dir, "add", { text: "One more" }));
-    expect(result.wipWarning).toBeUndefined();
+    expect(taskResultToText(result)).not.toMatch(/WIP/i);
   });
 
-  it("WIP warns when non-someday count reaches limit", () => {
+  it("add does not warn when non-someday count reaches limit", () => {
     ({ configDir } = setupGlobalConfigDir());
     writeTaskWipLimit(5);
     writeTasksFile(dir, [
@@ -240,7 +242,7 @@ created: ${createdStr}
       { id: 6, text: "S1", done: false, next: false, area: "someday" },
     ]);
     const result = assertSuccess(executeTaskAction(dir, "add", { text: "Over limit" }));
-    expect(result.wipWarning).toMatch(/WIP/i);
+    expect(taskResultToText(result)).not.toMatch(/WIP/i);
   });
 });
 

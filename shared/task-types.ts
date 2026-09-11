@@ -41,7 +41,6 @@ export interface TaskActionSuccess {
   ok: true;
   message: string;
   list?: TaskListResult;
-  wipWarning?: string;
   nextClearedForArea?: string;
   noNextForArea?: string;
 }
