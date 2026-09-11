@@ -231,6 +231,14 @@ Feature: Task management
     And the consolidation prompt contains "@someday"
     And the consolidation prompt contains "parkedCount"
 
+  @FR-TASKM-14
+  Scenario: agents-base prompt enforces first-person voice
+    Given the bundled agents-base.md prompt
+    Then the agents-base prompt contains "first person"
+    And the agents-base prompt contains "I captured"
+    And the agents-base prompt contains "never"
+    And the agents-base prompt contains "Buddy has"
+
   @FR-TASKM-13
   Scenario: agents-base prompt includes batch capture guidance
     Given the bundled agents-base.md prompt

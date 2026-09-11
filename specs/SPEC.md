@@ -3437,7 +3437,7 @@ Further context on local-model evaluation methodology and findings:
 | FR-TASKM-10 | Prompt guidance for parking, visibility, and staleness review | 2.5 ✓ |
 | FR-TASKM-11 | Direct file-tool access to `user/tasks.md` denied (read, write, edit) | 2.5 ✓ |
 | FR-TASKM-13 | Batch brain dump classification guidance and project file parity | 2.5 ✓ |
-| FR-TASKM-14 | Identity voice: first-person consistency in agent responses | 2.5 |
+| FR-TASKM-14 | Identity voice: first-person consistency in agent responses | 2.5 ✓ |
 
 **FR-TASKM-01 — Project tag in task format**
 

@@ -667,6 +667,19 @@
           "unit_tests": 1
         }
       ]
+    },
+    {
+      "id": "FR-TASKM-14",
+      "title": "Identity voice: first-person consistency in agent responses",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "agents-base prompt enforces first-person voice",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
     }
   ]
 }
