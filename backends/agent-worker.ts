@@ -47,6 +47,8 @@ import { checkPrerequisites } from "./prereqs";
 import type { ModelRuntime } from "@earendil-works/pi-coding-agent";
 import { configureProviderKey, createBuddyModelRuntime } from "./provider-auth";
 import { getDueDeferred, removeDueDeferredItems, toDeferredItemViews } from "./deferred";
+import { buildOrientationData, markOrientationDismissed } from "./orientation";
+import { fetchOneLinerFromSession } from "./orientation-one-liner";
 import { toIsoDay } from "../shared/dates";
 import { commitAll } from "./git";
 import {
@@ -136,6 +138,46 @@ export async function main(deps: WorkerDeps = {}): Promise<void> {
   // Definite assignment: set right after the channel is created below, and
   // bootSession only runs after that.
   let frontend!: FrontendAPI;
+  /** Suppress agent events during silent one-liner recap (FR-ORIENT-03). */
+  let suppressAgentEvents = false;
+  const sessionFrontend: FrontendAPI = {
+    onAgentEvent(event) {
+      if (!suppressAgentEvents) frontend.onAgentEvent(event);
+    },
+    onWorkerError(error) {
+      frontend.onWorkerError(error);
+    },
+    onPermissionRequest(request) {
+      frontend.onPermissionRequest(request);
+    },
+    onOAuthEvent(event) {
+      frontend.onOAuthEvent(event);
+    },
+    onShowFile(relPath) {
+      frontend.onShowFile(relPath);
+    },
+    onDeferredDue(items) {
+      frontend.onDeferredDue(items);
+    },
+    onBudgetAlert(status) {
+      frontend.onBudgetAlert(status);
+    },
+    onSessionReady() {
+      frontend.onSessionReady();
+    },
+    onTopicTransitionStart() {
+      frontend.onTopicTransitionStart();
+    },
+    onMaintenancePaused(info) {
+      frontend.onMaintenancePaused(info);
+    },
+    onAuthError(event) {
+      frontend.onAuthError(event);
+    },
+    onOneLiner(text) {
+      frontend.onOneLiner(text);
+    },
+  };
 
   // Pending permission questions: id → resolver (FR-PERM-07). The tool call
   // awaits inside the beforeToolCall hook until the user answers in the chat.
@@ -215,7 +257,7 @@ export async function main(deps: WorkerDeps = {}): Promise<void> {
     const booted = await bootSession(
       rootDir,
       {
-        frontend,
+        frontend: sessionFrontend,
         modelRuntime: runtime,
         sessionAllowedPaths,
         persistentAllowedPaths: () => persistentAllowedPaths,
@@ -267,6 +309,29 @@ export async function main(deps: WorkerDeps = {}): Promise<void> {
         if (setupState.firstRun) return [];
         const today = toIsoDay(new Date());
         return toDeferredItemViews(getDueDeferred(setupState.config.rootDir), today);
+      },
+      async getOrientationData() {
+        if (setupState.firstRun) return null;
+        const today = toIsoDay(new Date());
+        return buildOrientationData(setupState.config.rootDir, today);
+      },
+      async dismissOrientation() {
+        if (setupState.firstRun) return;
+        const today = toIsoDay(new Date());
+        markOrientationDismissed(setupState.config.rootDir, today);
+        await commitAll(setupState.config.rootDir, `${GIT_COMMIT_PREFIX} dismiss orientation`);
+      },
+      async requestOneLiner() {
+        if (setupState.firstRun || !core) return;
+        suppressAgentEvents = true;
+        try {
+          const text = await fetchOneLinerFromSession(core.session);
+          if (text) {
+            notifyFrontend("orient", "onOneLiner", () => frontend.onOneLiner(text));
+          }
+        } finally {
+          suppressAgentEvents = false;
+        }
       },
       async dismissDeferredItems() {
         if (setupState.firstRun) return;

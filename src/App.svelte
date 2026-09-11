@@ -27,7 +27,14 @@
   import { formatBudgetNotificationBody, notifyBudgetAlert } from "./utils/budget-notify";
   import { notifyMaintenancePaused } from "./utils/maintenance-notify";
   import { t } from "./lib/i18n";
-  import type { AgentEvent, BudgetStatus, DeferredItemView, OAuthUIEvent, SetupConfig } from "../shared/api";
+  import type {
+    AgentEvent,
+    BudgetStatus,
+    DeferredItemView,
+    OAuthUIEvent,
+    OrientationData,
+    SetupConfig,
+  } from "../shared/api";
   import { SESSION_PREPARING_NOTICE_MS, SHUTDOWN_TIMEOUT_MS } from "../shared/defaults";
 
   const APP_VERSION = __APP_VERSION__;
@@ -39,6 +46,10 @@
   let view: AppView | undefined = $state();
   let dragOver = $state(false);
   let deferredItems: DeferredItemView[] = $state([]);
+  let orientationData: OrientationData | null = $state(null);
+  /** Sticky flag: card was shown this launch (survives dismiss before session ready). */
+  let orientationShownThisSession = $state(false);
+  let lastOneLiner: string | null = $state(null);
   let setupOAuthHandler: ((event: OAuthUIEvent) => void) | undefined = $state();
   let appConfig = $state<SetupConfig | undefined>();
   let settingsController = $state<SettingsController | undefined>();
@@ -106,6 +117,15 @@
     }
   }
 
+  async function dismissOrientationCard(): Promise<void> {
+    try {
+      await workerProxy.dismissOrientation();
+    } catch {
+      // Best-effort; card still closes locally.
+    }
+    orientationData = null;
+  }
+
   function applySetupConfig(config: SetupConfig): void {
     appConfig = config;
     if (!settingsController) {
@@ -167,11 +187,18 @@
               body,
             });
           },
+          onOneLiner(text: string) {
+            devLog(`one-liner: ${text}`);
+            lastOneLiner = text;
+          },
           onSessionReady() {
             devLog("session ready");
             sessionPreparing = false;
             clearTimeout(preparingTimer);
             controller?.endTopicTransition();
+            if (orientationShownThisSession && lastOneLiner === null) {
+              void workerProxy.requestOneLiner();
+            }
           },
           onTopicTransitionStart() {
             devLog("topic transition start");
@@ -225,7 +252,9 @@
         preparingTimer = setTimeout(() => {
           sessionPreparing = true;
         }, SESSION_PREPARING_NOTICE_MS);
-        deferredItems = await connection.api.getDeferredItems();
+        orientationData = await connection.api.getOrientationData();
+        if (orientationData) orientationShownThisSession = true;
+        deferredItems = orientationData ? [] : await connection.api.getDeferredItems();
         try {
           const usage = await connection.api.getUsage();
           budgetBlocked = usage.budget.level === "exceeded";
@@ -346,7 +375,9 @@
         if (!setupState.firstRun) {
           applySetupConfig(setupState.config);
         }
-        deferredItems = await workerProxy.getDeferredItems();
+        orientationData = await workerProxy.getOrientationData();
+        if (orientationData) orientationShownThisSession = true;
+        deferredItems = orientationData ? [] : await workerProxy.getDeferredItems();
       }}
       onSetupFailed={() => (view = "setup")}
     />
@@ -362,7 +393,10 @@
         bind:this={chatView}
         {controller}
         {scroll}
-        {deferredItems}
+        {orientationData}
+        onDismissOrientation={() => void dismissOrientationCard()}
+        deferredItems={orientationData ? [] : deferredItems}
+        oneLiner={lastOneLiner}
         rootDir={appConfig?.rootDir ?? ""}
         fileViewer={fileViewerController}
         onOpenSettings={() => settingsController?.openSettings()}

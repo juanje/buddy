@@ -1,6 +1,7 @@
 // shared/api.ts — Type-safe contract between frontend and worker (kkrpc).
 
 import type { ConnectorConfig } from "./connector-types";
+import type { TaskItem } from "./task-types";
 
 export type { ConnectorConfig };
 
@@ -196,6 +197,12 @@ export interface DeferredItemView {
   overdue: boolean;
 }
 
+/** First-open orientation card payload (FR-ORIENT-02). */
+export interface OrientationData {
+  deferred: DeferredItemView[];
+  nextTasks: TaskItem[];
+}
+
 /** Frontend calls these on the worker. */
 export interface WorkerAPI {
   prompt(text: string, options?: PromptOptions): Promise<void>;
@@ -204,6 +211,12 @@ export interface WorkerAPI {
   getDeferredItems(): Promise<DeferredItemView[]>;
   /** Acknowledge due items: remove from deferred.md (FR-DEFERRED-01 dismiss). */
   dismissDeferredItems(): Promise<void>;
+  /** First-open orientation data; null when already shown today (FR-ORIENT-02). */
+  getOrientationData(): Promise<OrientationData | null>;
+  /** Dismiss orientation card and acknowledge deferred items (FR-ORIENT-02). */
+  dismissOrientation(): Promise<void>;
+  /** Silent agent recap for first open of the day (FR-ORIENT-03). */
+  requestOneLiner(): Promise<void>;
   getSetupState(): Promise<SetupState>;
   checkPrerequisites(): Promise<PrereqStatus>;
   getDefaultLocation(): Promise<string>;
@@ -312,6 +325,8 @@ export interface FrontendAPI {
   onShowFile(relPath: string): void;
   /** Deferred items surfaced by heartbeat (FR-DEFERRED-02). */
   onDeferredDue(items: DeferredItemView[]): void;
+  /** Agent-generated where-we-left-off recap (FR-ORIENT-03). */
+  onOneLiner(text: string): void;
   /** Budget threshold crossed (80% warning or 100% exceeded) (FR-COST-03). */
   onBudgetAlert(status: BudgetStatus): void;
   /**

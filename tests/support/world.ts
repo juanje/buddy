@@ -107,6 +107,7 @@ export class BuddyWorld extends World {
         onDeferredDue: () => {},
         onBudgetAlert: () => {},
     onMaintenancePaused: () => {},
+    onOneLiner: () => {},
     onSessionReady: () => {
       controllerRef?.endTopicTransition();
     },

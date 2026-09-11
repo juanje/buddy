@@ -89,6 +89,11 @@ export type LocaleStrings = {
   welcomeDismiss: string;
   deferredTypes: Record<string, string>;
   welcomeRegion: string;
+  orientationDismiss: string;
+  orientationNotifications: string;
+  orientationNextTasks: string;
+  orientationNoTasks: string;
+  orientationWhereWeLeftOff: string;
   oauthSignIn: string;
   oauthWaiting: string;
   oauthUseApiKey: string;
@@ -288,6 +293,11 @@ export const es: LocaleStrings = {
   welcomeDismiss: "Entendido",
   deferredTypes: { reminder: "recordatorio", decision: "decisión", info: "info", review: "revisión" },
   welcomeRegion: "Bienvenida",
+  orientationDismiss: "Cerrar",
+  orientationNotifications: "Notificaciones",
+  orientationNextTasks: "Próximas tareas",
+  orientationNoTasks: "No hay tareas abiertas.",
+  orientationWhereWeLeftOff: "Donde lo dejamos",
   oauthSignIn: "Iniciar sesión",
   oauthWaiting: "Esperando al navegador…",
   oauthUseApiKey: "Tengo una clave de API",

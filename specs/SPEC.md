@@ -3388,6 +3388,28 @@ Further context on local-model evaluation methodology and findings:
 - **Given** a topic transition is in progress
 - **Then** the new topic button is disabled
 
+### 3.28 First-open orientation (FR-ORIENT)
+
+| ID | Description | Phase |
+|----|-------------|-------|
+| FR-ORIENT-02 | Orientation card at first open (deferred + next tasks) | 2 ✓ |
+| FR-ORIENT-03 | Agent-generated "where we left off" one-liner | 2 ✓ |
+
+**FR-ORIENT-02 — Orientation card at first open**
+
+- On the first open of the calendar day, a card appears above the chat listing due deferred items (if any) and next tasks (up to three, at most one per area).
+- While the orientation card is visible, the separate deferred welcome banner is suppressed.
+- Long task text is truncated with an ellipsis when it overflows the card width.
+- Dismissing the card (X or Dismiss) persists today's date as the last-shown date and acknowledges due deferred items (removes them from the queue).
+- The card does not reappear until the next calendar day.
+
+**FR-ORIENT-03 — Agent-generated where-we-left-off one-liner**
+
+- After the session finishes booting, when this is the first open of the day, the worker silently asks the agent for a one-sentence recap of the last session.
+- The recap appears in the chat area replacing the welcome greeting, in the user's language; it is not shown as chat bubbles.
+- The one-liner disappears when the user sends their first message.
+- The request is not made on topic transitions or on subsequent app opens the same day.
+
 ---
 
 ## 4. Non-Functional Requirements

@@ -1,12 +1,14 @@
 <script lang="ts">
   import type { ChatController } from "./chat-controller";
   import type { ScrollController } from "./scroll-controller";
-  import type { DeferredItemView } from "../../shared/api";
+  import type { DeferredItemView, OrientationData } from "../../shared/api";
+  import OrientationCard from "./OrientationCard.svelte";
   import MessageBubble from "./MessageBubble.svelte";
   import PermissionCard from "./PermissionCard.svelte";
   import AuthErrorCard from "./AuthErrorCard.svelte";
   import ToolActivity from "./ToolActivity.svelte";
   import WelcomeBanner from "./WelcomeBanner.svelte";
+  import LastSessionSummary from "./LastSessionSummary.svelte";
   import DeferredBanner from "./DeferredBanner.svelte";
   import ClosureDoneButton from "./ClosureDoneButton.svelte";
   import FileViewer from "./FileViewer.svelte";
@@ -18,6 +20,9 @@
     controller,
     scroll,
     deferredItems = [],
+    orientationData = null,
+    onDismissOrientation,
+    oneLiner = null,
     rootDir = "",
     fileViewer,
     onOpenSettings,
@@ -25,6 +30,9 @@
     controller: ChatController;
     scroll: ScrollController;
     deferredItems?: DeferredItemView[];
+    orientationData?: OrientationData | null;
+    onDismissOrientation?: () => void;
+    oneLiner?: string | null;
     rootDir?: string;
     fileViewer?: FileViewerController;
     onOpenSettings?: () => void;
@@ -88,7 +96,9 @@
 </script>
 
 <div class="chat-wrap">
-  {#if !deferredDismissed}
+  {#if orientationData}
+    <OrientationCard data={orientationData} onDismiss={onDismissOrientation} />
+  {:else if !deferredDismissed}
     <DeferredBanner
       items={deferredItems}
       onDismiss={() => { controller.dismissWelcome(); deferredDismissed = true; }}
@@ -96,8 +106,11 @@
   {/if}
   <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
   <div class="chat" bind:this={container} onscroll={handleScroll} onclick={handleChatClick}>
+    {#if oneLiner && $messages.length === 0}
+      <LastSessionSummary text={oneLiner} />
+    {/if}
     <WelcomeBanner
-      visible={$welcomeVisible && deferredItems.length === 0}
+      visible={$welcomeVisible && deferredItems.length === 0 && !oneLiner}
     />
     {#each $messages as message (message.id)}
       {#if message.role === "tool-activity"}

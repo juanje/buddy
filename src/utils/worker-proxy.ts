@@ -28,6 +28,9 @@ const WITHOUT_WORKER: Partial<Record<keyof WorkerAPI, unknown>> = {
   wrapUp: undefined,
   /** Rendered straight into the welcome state's list. */
   getDeferredItems: [] as DeferredItemView[],
+  getOrientationData: null,
+  dismissOrientation: undefined,
+  requestOneLiner: undefined,
 };
 
 export function createWorkerProxy(getConnection: () => WorkerConnection | undefined): WorkerAPI {

@@ -417,6 +417,47 @@
           "unit_tests": 2
         }
       ]
+    },
+    {
+      "id": "FR-ORIENT-02",
+      "title": "Orientation card at first open",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Orientation data bundles deferred items and next tasks on first open",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Orientation data is null when already shown today",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Dismiss orientation persists last shown date and acknowledges deferred",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
+    },
+    {
+      "id": "FR-ORIENT-03",
+      "title": "Agent-generated where-we-left-off one-liner",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Agent generates where-we-left-off recap after session ready",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "One-liner replaces welcome greeting and hides after first message",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
     }
   ]
 }

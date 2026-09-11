@@ -29,6 +29,7 @@ describe("warm handoff", () => {
       onBudgetAlert: vi.fn(),
     onMaintenancePaused: vi.fn(),
     onSessionReady: vi.fn(),
+    onOneLiner: vi.fn(),
     onTopicTransitionStart: vi.fn(),
     onAuthError: vi.fn(),
     };
