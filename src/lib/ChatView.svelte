@@ -106,7 +106,7 @@
   {/if}
   <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
   <div class="chat" bind:this={container} onscroll={handleScroll} onclick={handleChatClick}>
-    {#if oneLiner && $messages.length === 0}
+    {#if oneLiner && !orientationData && $messages.length === 0}
       <LastSessionSummary text={oneLiner} />
     {/if}
     <WelcomeBanner

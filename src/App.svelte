@@ -173,6 +173,7 @@
           },
           onDeferredDue(items) {
             devLog(`deferred due: ${items.length} item(s)`);
+            if (orientationShownThisSession) return;
             deferredItems = items;
             if (items.length > 0) {
               controller?.showDeferredBanner();
