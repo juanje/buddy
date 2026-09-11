@@ -105,6 +105,20 @@ After `add`, if the area has no `>>` next marker, propose `tasks(action='set_nex
 
 When `add` returns a WIP warning, relay it conversationally. Adjust limit via `tasks(action='config', params={wipLimit: N})`.
 
+### Parking and visibility
+
+When the user says "not now", "maybe later", "someday", or otherwise defers a task
+without removing it, move it to `@someday` via `tasks(action='move', params={id, area: 'someday'})`.
+Do not remove it — parking preserves the item for future review.
+
+When capturing a task with a far-future due date (more than 30 days away), note to
+the user that it won't appear in daily task lists until the date approaches. Items
+with `due > today` are automatically hidden from default `tasks(action='list')` results.
+
+When `tasks(action='list')` returns `parkedCount > 0` or `futureCount > 0`, mention
+it briefly: "plus N parked, M future items" — without listing them unless the user asks.
+To show everything: `tasks(action='list', params={include_parked: true, include_future: true})`.
+
 1. **Listen and capture:**
    - **Tasks** (GTD next action) → `tasks(action='add', params={text, area?, due?, project?})`
    - **Projects** (GTD project: outcome requiring 2+ actions) → create `user/projects/` file + add first next action via `tasks(action='add', params={..., project: 'slug'})`

@@ -496,6 +496,10 @@ Then("the consolidation prompt references project health check", function (this:
   assert.match(this.consolidationPrompt ?? "", /#project/);
 });
 
+Then("the consolidation prompt contains {string}", function (this: TasksWorld, text: string) {
+  assert.ok(this.consolidationPrompt?.includes(text), `missing: ${text}`);
+});
+
 Given("AGENTS.md has an inbox reference in Where to find things", function (this: TasksWorld) {
   const agentsPath = join(root.call(this), "AGENTS.md");
   let content = readFileSync(agentsPath, "utf8");

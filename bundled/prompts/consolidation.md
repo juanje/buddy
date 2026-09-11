@@ -133,6 +133,10 @@ If purely informational findings, note them in today's log under Decisions.
 
 **Project health check (weekly):** For each active project in `user/projects/`, verify at least one open task exists in `tasks.md` with its `#project` tag. If a project has no linked open tasks, flag it to the user: "Project X has no pending actions — is it done, or does it need a next step?"
 
+When `list` returns `parkedCount > 0` or `futureCount > 0`, note this in the
+Day summary under **Open** — "N parked, M future items not shown in default list" —
+so the log reader knows the full task inventory.
+
 #### 5. Write deferred items
 
 Two sources feed the deferred queue. Write **all** deferred items in the
@@ -444,6 +448,13 @@ this week's logs. If the file already exists (from a previous depth-2 run this
 week), **extend it** with new days — do not rewrite or discard content already
 covering earlier days. Cover the week's arc, patterns, personal note, and
 looking ahead.
+
+**W1b. Staleness review** — call `tasks(action='list')` and review items where
+`staleDays` is present (open > 30 days without being `>>`). For each stale item,
+propose one of: keep (still relevant), complete (already done), park to `@someday`
+(not now but not never), or remove (no longer relevant). If parking, also write to
+`agent_brain/deferred.md` with a revisit date (default +30d) so the item resurfaces
+via the deferred notification system.
 
 **W2. Weekly themes and concept evolution** — review "Weekly diff since last
 depth-2" and file-change activity:

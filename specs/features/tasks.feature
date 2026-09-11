@@ -213,6 +213,24 @@ Feature: Task management
     When tasks list is invoked with include_future true
     Then the task list contains future-dated items
 
+  @FR-TASKM-10
+  Scenario: agents-base prompt includes parking and visibility guidance
+    Given the bundled agents-base.md prompt
+    Then the agents-base prompt contains "Parking and visibility"
+    And the agents-base prompt contains "@someday"
+    And the agents-base prompt contains "include_parked"
+    And the agents-base prompt contains "parkedCount"
+    And the agents-base prompt contains "futureCount"
+    And the agents-base prompt contains "due > today"
+
+  @FR-TASKM-10
+  Scenario: consolidation prompt includes weekly staleness review
+    Given the bundled consolidation.md prompt
+    Then the consolidation prompt contains "Staleness review"
+    And the consolidation prompt contains "staleDays"
+    And the consolidation prompt contains "@someday"
+    And the consolidation prompt contains "parkedCount"
+
   @FR-TASKM-11
   Scenario: write to tasks.md is denied
     Given an initialized buddy git repository

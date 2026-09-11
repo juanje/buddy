@@ -631,6 +631,24 @@
           "unit_tests": 1
         }
       ]
+    },
+    {
+      "id": "FR-TASKM-10",
+      "title": "Prompt guidance for parking, visibility, and staleness review",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "agents-base prompt includes parking and visibility guidance",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "consolidation prompt includes weekly staleness review",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
     }
   ]
 }
