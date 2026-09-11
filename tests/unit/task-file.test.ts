@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import type { TaskItem } from "../../shared/task-types";
 import {
+  buildListResult,
   parseTaskFileContent,
   readTasksFile,
   serializeTaskFile,
@@ -60,6 +61,46 @@ describe("parseTaskFileContent", () => {
     ];
     const parsed = parseTaskFileContent(serializeTaskFile(items));
     expect(parsed[0]?.project).toBe("ley-dep");
+  });
+
+  it("parses created comment from task line", () => {
+    const parsed = parseTaskFileContent("- [ ] Buy milk @personal <!-- c:2026-01-01 -->\n");
+    expect(parsed[0]?.created).toBe("2026-01-01");
+    expect(parsed[0]?.text).toBe("Buy milk");
+  });
+
+  it("serializes created comment at line end", () => {
+    const serialized = serializeTaskFile([
+      { id: 1, text: "Buy milk", done: false, next: false, area: "personal", created: "2026-01-01" },
+    ]);
+    expect(serialized).toContain("<!-- c:2026-01-01 -->");
+    expect(serialized).toMatch(/@personal <!-- c:2026-01-01 -->/);
+  });
+
+  it("round-trip parse-serialize preserves created", () => {
+    const items: TaskItem[] = [
+      { id: 1, text: "Buy milk", done: false, next: false, area: "personal", created: "2026-01-01" },
+    ];
+    const parsed = parseTaskFileContent(serializeTaskFile(items));
+    expect(parsed[0]?.created).toBe("2026-01-01");
+  });
+});
+
+describe("buildListResult", () => {
+  it("computes staleDays for open non-next items older than 30 days", () => {
+    const result = buildListResult(
+      [{ id: 1, text: "Old", done: false, next: false, area: "work", created: "2026-01-01" }],
+      "2026-03-01",
+    );
+    expect(result.items[0]?.staleDays).toBeGreaterThan(30);
+  });
+
+  it("does not set staleDays on next items", () => {
+    const result = buildListResult(
+      [{ id: 1, text: "Old next", done: false, next: true, area: "work", created: "2026-01-01" }],
+      "2026-03-01",
+    );
+    expect(result.items[0]?.staleDays).toBeUndefined();
   });
 });
 

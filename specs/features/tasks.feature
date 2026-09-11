@@ -147,3 +147,23 @@ Feature: Task management
   Scenario: consolidation prompt includes project health check
     Given the bundled consolidation.md prompt
     Then the consolidation prompt references project health check
+
+  @FR-TASKM-06
+  Scenario: add sets created date on new task
+    Given an initialized buddy git repository
+    When tasks add is invoked with text "Buy milk" and area "personal"
+    Then tasks.md on disk contains "<!-- c:"
+
+  @FR-TASKM-06
+  Scenario: created date is parsed from task line
+    Given an initialized buddy git repository
+    And tasks.md on disk has line "- [ ] Buy milk @personal <!-- c:2026-01-01 -->"
+    When tasks action list is invoked
+    Then the first task has created "2026-01-01"
+
+  @FR-TASKM-09
+  Scenario: stale items have staleDays in list result
+    Given an initialized buddy git repository
+    And tasks.md has an item created 45 days ago
+    When tasks action list is invoked
+    Then the stale item has staleDays of 45

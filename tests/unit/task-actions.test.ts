@@ -101,6 +101,23 @@ describe("executeTaskAction", () => {
     const after = assertSuccess(executeTaskAction(dir, "config"));
     expect(after.message).toContain("3");
   });
+
+  it("add sets created date on new item", () => {
+    executeTaskAction(dir, "add", { text: "Buy milk", area: "personal" });
+    const content = readFileSync(tasksFilePath(dir), "utf8");
+    expect(content).toMatch(/<!-- c:\d{4}-\d{2}-\d{2} -->/);
+  });
+
+  it("staleDays appears on stale open items in list", () => {
+    const created = new Date();
+    created.setDate(created.getDate() - 45);
+    const createdStr = created.toISOString().slice(0, 10);
+    writeTasksFile(dir, [
+      { id: 1, text: "Old", done: false, next: false, area: "work", created: createdStr },
+    ]);
+    const result = assertSuccess(executeTaskAction(dir, "list", {}));
+    expect(result.list?.items[0]?.staleDays).toBe(45);
+  });
 });
 
 function assertSuccess(result: ReturnType<typeof executeTaskAction>): TaskActionSuccess {

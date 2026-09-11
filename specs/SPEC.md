@@ -3430,6 +3430,8 @@ Further context on local-model evaluation methodology and findings:
 | FR-TASKM-03 | `list` action filters by project | 2.5 ✓ |
 | FR-TASKM-04 | Capture classification prompts: GTD anchoring for task vs project | 2.5 ✓ |
 | FR-TASKM-05 | Consolidation prompt: project health check | 2.5 ✓ |
+| FR-TASKM-06 | `created` field on TaskItem, set on add, serialized as HTML comment | 2.5 ✓ |
+| FR-TASKM-09 | Staleness metadata: `staleDays` in list result for aged items | 2.5 ✓ |
 
 **FR-TASKM-01 — Project tag in task format**
 
@@ -3456,6 +3458,17 @@ Further context on local-model evaluation methodology and findings:
 
 - Weekly consolidation verifies each active project in `user/projects/` has at least one open task in `tasks.md` with its `#project` tag.
 - Gaps are flagged to the user.
+
+**FR-TASKM-06 — created field on TaskItem**
+
+- Each task item has a `created` date (ISO `YYYY-MM-DD`), set to today on `add`.
+- Serialized as `<!-- c:YYYY-MM-DD -->` at the end of the line; parsed in `parseItemLine()`.
+- Existing items without the comment infer `created` from the file frontmatter `created` date.
+
+**FR-TASKM-09 — Staleness metadata**
+
+- `TaskItem.staleDays` is computed at list time (not persisted) when the item is open, not `>>`, and age > 30 days.
+- Age is `daysSince(created)` relative to today.
 
 ---
 

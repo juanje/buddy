@@ -19,6 +19,17 @@ function areaKey(area?: string): string {
   return area?.trim() || "";
 }
 
+function daysBetween(start: string, end: string): number {
+  const startMs = new Date(`${start}T12:00:00`).getTime();
+  const endMs = new Date(`${end}T12:00:00`).getTime();
+  return Math.floor((endMs - startMs) / (1000 * 60 * 60 * 24));
+}
+
+function parseFileCreated(content: string): string | undefined {
+  const m = content.match(/^created:\s*(\S+)/m);
+  return m?.[1];
+}
+
 function parseItemLine(line: string, id: number): TaskItem | null {
   const match = line.match(CHECKBOX_RE);
   if (!match) return null;
@@ -26,6 +37,13 @@ function parseItemLine(line: string, id: number): TaskItem | null {
   const done = match[1] === "x";
   const next = Boolean(match[2]);
   let rest = match[3].trim();
+
+  let created: string | undefined;
+  const createdMatch = rest.match(/\s*<!-- c:(\d{4}-\d{2}-\d{2}) -->$/);
+  if (createdMatch) {
+    created = createdMatch[1];
+    rest = rest.slice(0, createdMatch.index).trim();
+  }
 
   let annotation: string | undefined;
   const annMatch = rest.match(/\*\*([^*]+)\*\*/);
@@ -57,7 +75,17 @@ function parseItemLine(line: string, id: number): TaskItem | null {
   const text = rest.trim();
   if (!text) return null;
 
-  return { id, text, done, next: done ? false : next, area, dueDate, annotation, project };
+  return {
+    id,
+    text,
+    done,
+    next: done ? false : next,
+    area,
+    dueDate,
+    annotation,
+    project,
+    created,
+  };
 }
 
 export function parseTaskFileContent(content: string): TaskItem[] {
@@ -89,7 +117,11 @@ function formatItemLine(item: TaskItem): string {
   if (item.area) {
     parts.push(`@${item.area}`);
   }
-  return `${checkbox}${next} ${parts.join(" ")}`.trimEnd();
+  let line = `${checkbox}${next} ${parts.join(" ")}`.trimEnd();
+  if (item.created) {
+    line += ` <!-- c:${item.created} -->`;
+  }
+  return line;
 }
 
 export function serializeTaskFile(items: TaskItem[], created?: string): string {
@@ -117,7 +149,14 @@ export function readTasksFile(rootDir: string): { content: string; items: TaskIt
     return { content: "", items: [] };
   }
   const content = readFileSync(path, "utf8");
-  return { content, items: parseTaskFileContent(content) };
+  const fileCreated = parseFileCreated(content);
+  const items = parseTaskFileContent(content);
+  if (fileCreated) {
+    for (const item of items) {
+      if (!item.created) item.created = fileCreated;
+    }
+  }
+  return { content, items };
 }
 
 export function writeTasksFile(rootDir: string, items: TaskItem[], created?: string): void {
@@ -144,10 +183,19 @@ export function writeTasksFile(rootDir: string, items: TaskItem[], created?: str
   }
 }
 
-export function buildListResult(items: TaskItem[]): TaskListResult {
+export function buildListResult(items: TaskItem[], today?: string): TaskListResult {
+  const todayStr = today ?? new Date().toISOString().slice(0, 10);
   const areaMap = new Map<string, { open: number; hasNext: boolean }>();
   let openCount = 0;
-  for (const item of items) {
+  const enriched: TaskItem[] = items.map((item) => {
+    const copy = { ...item };
+    if (!copy.done && !copy.next && copy.created) {
+      const age = daysBetween(copy.created, todayStr);
+      if (age > 30) copy.staleDays = age;
+    }
+    return copy;
+  });
+  for (const item of enriched) {
     const key = areaKey(item.area);
     const entry = areaMap.get(key) ?? { open: 0, hasNext: false };
     if (!item.done) {
@@ -162,7 +210,7 @@ export function buildListResult(items: TaskItem[]): TaskListResult {
     openCount: stats.open,
     hasNext: stats.hasNext,
   }));
-  return { items, areas, openCount };
+  return { items: enriched, areas, openCount };
 }
 
 export function findItemById(items: TaskItem[], id: number): TaskItem | undefined {

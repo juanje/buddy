@@ -115,6 +115,7 @@ export function executeTaskAction(
         area,
         dueDate: params.due,
         project,
+        created: new Date().toISOString().slice(0, 10),
       };
 
       const autoNext = openInAreaBefore === 0;

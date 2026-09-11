@@ -27,6 +27,7 @@ interface TasksWorld extends BuddyWorld {
   taskListCount?: number;
   firstTaskNext?: boolean;
   firstTaskProject?: string;
+  firstTaskCreated?: string;
   globalConfigDir?: string;
   skillToolNames?: string[];
   agentsBasePrompt?: string;
@@ -47,6 +48,7 @@ function invoke(this: TasksWorld, action: string, params: Record<string, unknown
     this.taskListCount = result.list.items.length;
     this.firstTaskNext = result.list.items[0]?.next;
     this.firstTaskProject = result.list.items[0]?.project;
+    this.firstTaskCreated = result.list.items[0]?.created;
   }
 }
 
@@ -108,6 +110,22 @@ Given("tasks.md on disk has no health items", function (this: TasksWorld) {
   writeTasksFile(root.call(this), [
     { id: 1, text: "Other", done: false, next: true, area: "work" },
   ]);
+});
+
+Given("tasks.md has an item created 45 days ago", function (this: TasksWorld) {
+  const today = new Date();
+  const created = new Date(today);
+  created.setDate(created.getDate() - 45);
+  const createdStr = created.toISOString().slice(0, 10);
+  const content = `---
+created: 2026-09-10
+---
+
+# Tasks
+
+- [ ] Old task @work <!-- c:${createdStr} -->
+`;
+  writeFileSync(tasksFilePath(root.call(this)), content, "utf8");
 });
 
 Given("tasks.md has {int} open items", function (this: TasksWorld, count: number) {
@@ -198,6 +216,17 @@ Then("the first task has next marker true", function (this: TasksWorld) {
 
 Then("the first task has project {string}", function (this: TasksWorld, project: string) {
   assert.equal(this.firstTaskProject, project);
+});
+
+Then("the first task has created {string}", function (this: TasksWorld, created: string) {
+  assert.equal(this.firstTaskCreated, created);
+});
+
+Then("the stale item has staleDays of {int}", function (this: TasksWorld, days: number) {
+  assert.ok(this.taskResult?.ok && this.taskResult.list, "expected task list result");
+  const stale = this.taskResult.list!.items.find((item) => item.staleDays !== undefined);
+  assert.ok(stale, "expected a stale item");
+  assert.equal(stale.staleDays, days);
 });
 
 Then(

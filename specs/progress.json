@@ -525,6 +525,37 @@
       ]
     },
     {
+      "id": "FR-TASKM-06",
+      "title": "created field on TaskItem",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "add sets created date on new task",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "created date is parsed from task line",
+          "bdd": "pass",
+          "unit_tests": 3
+        }
+      ]
+    },
+    {
+      "id": "FR-TASKM-09",
+      "title": "Staleness metadata",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "stale items have staleDays in list result",
+          "bdd": "pass",
+          "unit_tests": 2
+        }
+      ]
+    },
+    {
       "id": "FR-REFLECT-09",
       "title": "Reflect requires user interaction",
       "status": "done",

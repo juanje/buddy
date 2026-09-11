@@ -14,6 +14,9 @@ export interface TaskItem {
   dueDate?: string;
   annotation?: string;
   project?: string;
+  created?: string;
+  /** Computed at list time when open, not next, and age > 30 days */
+  staleDays?: number;
 }
 
 export interface TaskAreaSummary {
