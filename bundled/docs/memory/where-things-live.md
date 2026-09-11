@@ -14,6 +14,7 @@ This is your space. Buddy writes here on your behalf, but you own the content.
 
 - **`user/tasks.md`** — your task list. Tell Buddy about a task or reminder and it captures it here — no manual editing needed. Tasks are grouped by area (like `@work` or `@personal`), can have due dates, and one item per area is always marked as the next step to focus on.
 - **`user/projects/`** — multi-step outcomes. Each project has its own file with outcome, next action, notes, and history.
+- **`user/workspaces/`** — areas of focus. Ongoing topics or initiatives with no defined end (like "cooking" or "open source project"). You accumulate materials, notes, drafts, and references here. Unlike projects, these never "finish" — they grow and reorganize over time.
 - **`user/wiki/`** — [your second brain](../wiki.md). Interconnected concept pages built from documents you share, ideas you discuss, and knowledge you want to keep. Organized by category with cross-references and tags.
 - **`user/journal/`** — your personal diary. Daily entries about activities, people, feelings, and reflections. Written in third person during daily consolidation. Structure: `YYYY/MM/DD.md` (daily), `YYYY/weekly/WNN.md` (weekly), `YYYY/MM.md` (monthly summary).
 
@@ -44,6 +45,7 @@ Daily records of what happened in each session.
 | "Save this idea about distributed teams" | `user/wiki/` | Your knowledge — goes to your second brain |
 | "I had lunch with my mother today" | Daily log + `user/journal/` | Personal life context |
 | "Let's track the kitchen renovation as a project" | `user/projects/kitchen-renovation.md` | Multi-step outcome |
+| "I'm collecting notes on distributed systems" | `user/workspaces/distributed-systems/` | Area of focus — ongoing, no end state |
 | "I learned that batch commits are safer" | `agent_brain/concepts/` (if pattern) or `agent_brain/observations.md` (if first time) | Knowledge Buddy acquires about how to work |
 
 If Buddy puts something in the wrong place, tell it — it'll move it. The routing is a best guess, not a rigid rule.
