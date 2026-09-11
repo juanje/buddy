@@ -1,5 +1,5 @@
 {
-  "current_focus": "FR-TASKM-16",
+  "current_focus": null,
   "features": [
     {
       "id": "FR-CHAT-18",
@@ -697,27 +697,38 @@
     {
       "id": "FR-TASKM-16",
       "title": "Area of Focus as sixth capture category with routing criteria",
-      "status": "in_progress",
-      "cycle_step": "implementing",
+      "status": "done",
+      "cycle_step": "done",
       "scenarios": [
         {
           "name": "agents-base prompt includes Area of Focus in classification",
           "bdd": "pass",
-          "unit_tests": 0
+          "unit_tests": 1
         },
         {
           "name": "agents-base prompt includes area routing criteria",
-          "bdd": "fail",
-          "unit_tests": 0
+          "bdd": "pass",
+          "unit_tests": 1
         }
       ]
     },
     {
       "id": "FR-TASKM-17",
       "title": "Dual-lookup for areas and process-conversation verify update",
-      "status": "pending",
-      "cycle_step": "spec_review",
-      "scenarios": []
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "agents-base prompt includes dual-lookup instruction",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "process-conversation prompt includes area-of-focus routing",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
     }
   ]
 }

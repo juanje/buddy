@@ -163,6 +163,11 @@ Areas of focus can spawn GTD projects. Example: area "cooking"
 (`user/projects/pasta-course.md`). The project is finite; the area
 persists after the project completes.
 
+**Dual lookup:** When the conversation involves a known area, check both
+`agent_brain/projects/{area}/` and `user/workspaces/{area}/` (if it exists)
+for context. Same slug in both trees. Not every area has both sides — asymmetry
+is normal. Do not pre-create empty workspace directories.
+
 **Scope:** GTD framing applies only at capture classification — not to reflections, emotional support, or general conversation.
 
 ### Next action discipline

@@ -3440,7 +3440,7 @@ Further context on local-model evaluation methodology and findings:
 | FR-TASKM-14 | Identity voice: first-person consistency in agent responses | 2.5 ✓ |
 | FR-TASKM-15 | Default-context classification with explicit-commitment test for tasks | 2.5 ✓ |
 | FR-TASKM-16 | Area of Focus as sixth capture category with routing criteria | 2.5 ✓ |
-| FR-TASKM-17 | Dual-lookup for areas and process-conversation verify update | 2.5 |
+| FR-TASKM-17 | Dual-lookup for areas and process-conversation verify update | 2.5 ✓ |
 
 **FR-TASKM-01 — Project tag in task format**
 

@@ -31,8 +31,12 @@ Keep it dense. A trivial session gets 2-3 lines. A rich session gets a paragraph
 
 *Requires tools — skip this step when told you have none.*
 
-Ensure actionable items landed in the right place:
-- Actions → `tasks()` tool (`user/tasks.md`) or `user/projects/`
+Ensure items landed in the right place by classification type:
+- Actions → captured via `tasks()` tool, each with a concrete next step
+- Projects (multi-step outcomes) → `user/projects/` file + first task
+- Areas of focus → `agent_brain/projects/area/` or `user/workspaces/area/`
+- Maturing items → `agent_brain/deferred.md` with revisit date
+- Context → no explicit file (reflect captured it in the log)
 - Ideas → `agent_brain/ideas/`
 - Decisions → `agent_brain/projects/` or `agent_brain/concepts/`
 
