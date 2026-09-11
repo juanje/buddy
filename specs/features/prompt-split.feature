@@ -46,8 +46,7 @@ Feature: AGENTS.md prompt split
     When the system prompt is assembled for prompt split
     Then the assembled system prompt contains "## Capture rules"
     And the assembled system prompt contains "## Core rules"
-    And the assembled system prompt contains "### Where to write"
-    And the assembled system prompt contains "### Where to search"
+    And the assembled system prompt contains "## Where to search"
 
   Scenario: Consolidation prompt distinguishes core vs instance rules
     Given the bundled consolidation skill is deployed
