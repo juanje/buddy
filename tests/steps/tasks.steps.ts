@@ -13,6 +13,7 @@ import { tasksFilePath, writeTasksFile } from "../../backends/tasks/task-file";
 import { writeTaskWipLimit } from "../../backends/tasks/task-config";
 import {
   migrateAgentsTasksReference,
+  migrateAgentsWorkspacesReference,
   migrateInboxToTasksIfNeeded,
 } from "../../backends/brain-migration";
 import { bootRefreshIfNeeded } from "../../backends/boot-refresh";
@@ -534,10 +535,19 @@ Given("AGENTS.md has an inbox reference in Where to find things", function (this
   writeFileSync(agentsPath, content, "utf8");
 });
 
-When("session boot runs migrations", function (this: TasksWorld) {
+function runSessionBootMigrations(this: TasksWorld): void {
   const dir = root.call(this);
   migrateInboxToTasksIfNeeded(dir);
   migrateAgentsTasksReference(dir);
+  migrateAgentsWorkspacesReference(dir);
+}
+
+When("session boot runs migrations", function (this: TasksWorld) {
+  runSessionBootMigrations.call(this);
+});
+
+When("session boot runs migrations again", function (this: TasksWorld) {
+  runSessionBootMigrations.call(this);
 });
 
 Then("AGENTS.md references tasks.md instead of inbox.md", function (this: TasksWorld) {

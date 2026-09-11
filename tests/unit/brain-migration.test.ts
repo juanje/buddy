@@ -12,6 +12,7 @@ import {
   migrateAgentsMdContent,
   migrateAgentsMdIfNeeded,
   migrateAgentsTasksReference,
+  migrateAgentsWorkspacesReference,
   migrateInboxToTasksIfNeeded,
   ensureUserMdSections,
 } from "../../backends/brain-migration";
@@ -301,5 +302,38 @@ describe("migrateAgentsTasksReference", () => {
     const content = readFileSync(join(dir, "AGENTS.md"), "utf8");
     expect(content).not.toMatch(/\binbox\.md\b/);
     expect(content).toContain("mirrored in tasks.md");
+  });
+});
+
+describe("migrateAgentsWorkspacesReference", () => {
+  let dir: string;
+
+  afterEach(() => {
+    if (dir) rmSync(dir, { recursive: true, force: true });
+  });
+
+  const tasksNav =
+    "  - [Tasks](user/tasks.md) — personal action list managed via the `tasks()` tool.";
+
+  it("inserts workspaces navigation line after tasks line", () => {
+    dir = mkdtempSync(join(tmpdir(), "buddy-agents-workspaces-nav-"));
+    writeFileSync(
+      join(dir, "AGENTS.md"),
+      `# Buddy\n\n## Where to find things\n\n${tasksNav}\n`,
+      "utf8",
+    );
+    expect(migrateAgentsWorkspacesReference(dir)).toBe(true);
+    const content = readFileSync(join(dir, "AGENTS.md"), "utf8");
+    expect(content).toContain("[Workspaces](user/workspaces/)");
+    expect(content.indexOf("[Workspaces](user/workspaces/)")).toBeGreaterThan(
+      content.indexOf("[Tasks](user/tasks.md)"),
+    );
+  });
+
+  it("is a no-op when workspaces nav already present", () => {
+    dir = mkdtempSync(join(tmpdir(), "buddy-agents-workspaces-nav-"));
+    const migrated = readFileSync(join(process.cwd(), "templates", "AGENTS.md"), "utf8");
+    writeFileSync(join(dir, "AGENTS.md"), migrated, "utf8");
+    expect(migrateAgentsWorkspacesReference(dir)).toBe(false);
   });
 });

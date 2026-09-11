@@ -3444,7 +3444,7 @@ Further context on local-model evaluation methodology and findings:
 | FR-TASKM-18 | Wiki vs workspace routing distinction in capture guidance | 2.5 ✓ |
 | FR-TASKM-19 | Consolidation workspace-to-wiki maturity flagging | 2.5 ✓ |
 | FR-TASKM-20 | user/workspaces/ directory constant, template, and AGENTS.md nav | 2.5 ✓ |
-| FR-TASKM-21 | Boot migration: workspaces nav in existing AGENTS.md | 2.5 |
+| FR-TASKM-21 | Boot migration: workspaces nav in existing AGENTS.md | 2.5 ✓ |
 | FR-TASKM-22 | Bundled docs: workspaces directory in where-things-live | 2.5 |
 
 **FR-TASKM-01 — Project tag in task format**

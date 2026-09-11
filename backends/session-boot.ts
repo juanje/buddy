@@ -40,6 +40,7 @@ import {
   ensureUserMdSectionsOnDisk,
   migrateAgentsMdIfNeeded,
   migrateAgentsTasksReference,
+  migrateAgentsWorkspacesReference,
   migrateInboxToTasksIfNeeded,
 } from "./brain-migration";
 import { createWorkerCore, type PiSessionLike, type WorkerCore } from "./worker-core";
@@ -194,6 +195,7 @@ export async function bootSession(
   migrateAgentsMdIfNeeded(rootDir);
   migrateInboxToTasksIfNeeded(rootDir);
   migrateAgentsTasksReference(rootDir);
+  migrateAgentsWorkspacesReference(rootDir);
 
   const sessionId = randomUUID().slice(0, SESSION_ID_DISPLAY_LENGTH);
   logEvent(rootDir, { event: "session_start", session: sessionId });

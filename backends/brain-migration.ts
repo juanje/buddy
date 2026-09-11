@@ -234,6 +234,28 @@ export function migrateAgentsTasksReference(rootDir: string): boolean {
   return true;
 }
 
+const WORKSPACES_NAV_LINE =
+  "  - [Workspaces](user/workspaces/) — areas of focus: ongoing topics or initiatives with no defined end. Read when the user asks about an area they work in continuously.";
+
+const AGENTS_TASKS_NAV_RE = /^(\s*-\s*\[Tasks\]\(user\/tasks\.md\).*)$/m;
+
+/**
+ * Insert workspaces nav line in AGENTS.md if absent (FR-TASKM-21).
+ * Inserts after the Tasks nav line. Idempotent.
+ */
+export function migrateAgentsWorkspacesReference(rootDir: string): boolean {
+  const agentsPath = join(rootDir, "AGENTS.md");
+  if (!existsSync(agentsPath)) return false;
+
+  const content = readFileSync(agentsPath, "utf8");
+  if (content.includes("user/workspaces/")) return false;
+  if (!AGENTS_TASKS_NAV_RE.test(content)) return false;
+
+  const updated = content.replace(AGENTS_TASKS_NAV_RE, `$1\n${WORKSPACES_NAV_LINE}`);
+  writeFileSync(agentsPath, updated, "utf8");
+  return true;
+}
+
 export function migrateInboxToTasksIfNeeded(rootDir: string): boolean {
   const inboxPath = join(rootDir, USER_DIR, "inbox.md");
   const tasksPath = join(rootDir, USER_DIR, "tasks.md");
