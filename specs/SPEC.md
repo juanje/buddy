@@ -3436,6 +3436,8 @@ Further context on local-model evaluation methodology and findings:
 | FR-TASKM-09 | Staleness metadata: `staleDays` in list result for aged items | 2.5 ✓ |
 | FR-TASKM-10 | Prompt guidance for parking, visibility, and staleness review | 2.5 ✓ |
 | FR-TASKM-11 | Direct file-tool access to `user/tasks.md` denied (read, write, edit) | 2.5 ✓ |
+| FR-TASKM-13 | Batch brain dump classification guidance and project file parity | 2.5 ✓ |
+| FR-TASKM-14 | Identity voice: first-person consistency in agent responses | 2.5 |
 
 **FR-TASKM-01 — Project tag in task format**
 
@@ -3500,6 +3502,15 @@ Further context on local-model evaluation methodology and findings:
 - Deny message: "Use the tasks() tool to read and modify tasks."
 - The `tasks()` tool itself is not affected (it reads/writes the file internally, not through file tools).
 - `delete_file` and `move_file` are already blocked via `PROTECTED_FILES`.
+
+**FR-TASKM-13 — Batch brain dump classification**
+
+- `agents-base.md` includes a "Batch capture" subsection: classify each item individually in multi-item dumps; worked example; every project requires `user/projects/slug.md`.
+- `consolidation.md` project health check also verifies each `#project` tag has a corresponding file in `user/projects/`.
+
+**FR-TASKM-14 — Identity voice first-person**
+
+- `agents-base.md` includes explicit **Voice** guidance: use first person ("I captured…", "I marked…"), never third person ("Buddy has marked…") or system voice ("The system captured…").
 
 ---
 

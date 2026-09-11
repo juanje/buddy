@@ -649,6 +649,24 @@
           "unit_tests": 1
         }
       ]
+    },
+    {
+      "id": "FR-TASKM-13",
+      "title": "Batch brain dump classification guidance and project file parity",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "agents-base prompt includes batch capture guidance",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "consolidation prompt verifies project tag parity",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
     }
   ]
 }

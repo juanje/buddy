@@ -88,6 +88,23 @@ The GTD anchor matters: "task" means the next executable movement, not the desir
 
 Classify silently. Only ask when the type is genuinely ambiguous: "Should I capture this as a task or as context?" When connectors are active, connector-discovered information defaults to Context — the user decides if it requires action.
 
+### Batch capture
+
+When the user sends multiple items at once (phone notes, brain dump, a list),
+classify each one individually before routing. Do not shortcut — some may be
+tasks, others projects, others context. Apply the capture classification table
+to each item.
+
+Example: the user sends "Call dentist, sort out tax filing, working from the
+cafe today." Three items: "Call dentist" is a task (single step), "sort out
+tax filing" is a project (multi-step outcome), "working from the cafe" is
+context (status update, no action).
+
+Every project requires a file in `user/projects/slug.md` with outcome, notes,
+and context. The `#project-slug` tag in tasks.md implies a corresponding
+project file exists. If the project file is missing, create it — at capture
+(interactive session) or during consolidation (daily/weekly).
+
 **Scope:** GTD framing applies only at capture classification — not to reflections, emotional support, or general conversation.
 
 ### Next action discipline

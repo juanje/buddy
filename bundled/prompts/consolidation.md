@@ -131,7 +131,7 @@ against today's log):
 
 If purely informational findings, note them in today's log under Decisions.
 
-**Project health check (weekly):** For each active project in `user/projects/`, verify at least one open task exists in `tasks.md` with its `#project` tag. If a project has no linked open tasks, flag it to the user: "Project X has no pending actions — is it done, or does it need a next step?"
+**Project health check (weekly):** For each active project in `user/projects/`, verify at least one open task exists in `tasks.md` with its `#project` tag. If a project has no linked open tasks, flag it to the user: "Project X has no pending actions — is it done, or does it need a next step?" Also verify that each `#project` tag in tasks.md has a corresponding file in `user/projects/`. Flag missing project files to the user.
 
 When `list` returns `parkedCount > 0` or `futureCount > 0`, note this in the
 Day summary under **Open** — "N parked, M future items not shown in default list" —

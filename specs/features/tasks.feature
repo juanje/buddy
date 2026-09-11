@@ -231,6 +231,20 @@ Feature: Task management
     And the consolidation prompt contains "@someday"
     And the consolidation prompt contains "parkedCount"
 
+  @FR-TASKM-13
+  Scenario: agents-base prompt includes batch capture guidance
+    Given the bundled agents-base.md prompt
+    Then the agents-base prompt contains "Batch capture"
+    And the agents-base prompt contains "classify each one individually"
+    And the agents-base prompt contains "project requires a file"
+
+  @FR-TASKM-13
+  Scenario: consolidation prompt verifies project tag parity
+    Given the bundled consolidation.md prompt
+    Then the consolidation prompt contains "#project"
+    And the consolidation prompt contains "corresponding file"
+    And the consolidation prompt contains "missing project files"
+
   @FR-TASKM-11
   Scenario: write to tasks.md is denied
     Given an initialized buddy git repository
