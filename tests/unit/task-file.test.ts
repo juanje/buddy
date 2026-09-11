@@ -1,8 +1,8 @@
 // tests/unit/task-file.test.ts — FR-TASK-01 task file parse/serialize.
 
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 import type { TaskItem } from "../../shared/task-types";
@@ -11,6 +11,7 @@ import {
   parseTaskFileContent,
   readTasksFile,
   serializeTaskFile,
+  tasksFilePath,
   writeTasksFile,
 } from "../../backends/tasks/task-file";
 
@@ -87,12 +88,36 @@ describe("parseTaskFileContent", () => {
 });
 
 describe("buildListResult", () => {
-  it("computes staleDays for open non-next items older than 30 days", () => {
+  it("staleDays is exactly 59 for item created on 2026-01-01 listed on 2026-03-01", () => {
     const result = buildListResult(
       [{ id: 1, text: "Old", done: false, next: false, area: "work", created: "2026-01-01" }],
       "2026-03-01",
     );
-    expect(result.items[0]?.staleDays).toBeGreaterThan(30);
+    expect(result.items[0]?.staleDays).toBe(59);
+  });
+
+  it("staleDays is undefined at exactly 30 days", () => {
+    const result = buildListResult(
+      [{ id: 1, text: "X", done: false, next: false, area: "work", created: "2026-01-01" }],
+      "2026-01-31",
+    );
+    expect(result.items[0]?.staleDays).toBeUndefined();
+  });
+
+  it("staleDays is 31 at exactly 31 days", () => {
+    const result = buildListResult(
+      [{ id: 1, text: "X", done: false, next: false, area: "work", created: "2026-01-01" }],
+      "2026-02-01",
+    );
+    expect(result.items[0]?.staleDays).toBe(31);
+  });
+
+  it("staleDays is undefined on done items", () => {
+    const result = buildListResult(
+      [{ id: 1, text: "X", done: true, next: false, area: "work", created: "2026-01-01" }],
+      "2026-03-01",
+    );
+    expect(result.items[0]?.staleDays).toBeUndefined();
   });
 
   it("does not set staleDays on next items", () => {
@@ -101,6 +126,54 @@ describe("buildListResult", () => {
       "2026-03-01",
     );
     expect(result.items[0]?.staleDays).toBeUndefined();
+  });
+});
+
+describe("readTasksFile", () => {
+  let dir: string;
+
+  afterEach(() => {
+    if (dir) rmSync(dir, { recursive: true, force: true });
+  });
+
+  it("infers created from file frontmatter when line has no comment", () => {
+    dir = mkdtempSync(join(tmpdir(), "buddy-task-file-read-"));
+    const path = tasksFilePath(dir);
+    mkdirSync(dirname(path), { recursive: true });
+    writeFileSync(
+      path,
+      `---
+created: 2026-01-15
+---
+
+# Tasks
+
+- [ ] Old task @work
+`,
+      "utf8",
+    );
+    const { items } = readTasksFile(dir);
+    expect(items[0]?.created).toBe("2026-01-15");
+  });
+
+  it("line created comment wins over file frontmatter", () => {
+    dir = mkdtempSync(join(tmpdir(), "buddy-task-file-read-"));
+    const path = tasksFilePath(dir);
+    mkdirSync(dirname(path), { recursive: true });
+    writeFileSync(
+      path,
+      `---
+created: 2026-01-15
+---
+
+# Tasks
+
+- [ ] Old task @work <!-- c:2026-02-01 -->
+`,
+      "utf8",
+    );
+    const { items } = readTasksFile(dir);
+    expect(items[0]?.created).toBe("2026-02-01");
   });
 });
 

@@ -1,8 +1,8 @@
 // tests/unit/task-actions.test.ts — FR-TASK-02..04 task actions.
 
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { executeTaskAction } from "../../backends/tasks/task-actions";
@@ -102,10 +102,11 @@ describe("executeTaskAction", () => {
     expect(after.message).toContain("3");
   });
 
-  it("add sets created date on new item", () => {
+  it("add sets created date equal to today", () => {
+    const today = new Date().toISOString().slice(0, 10);
     executeTaskAction(dir, "add", { text: "Buy milk", area: "personal" });
-    const content = readFileSync(tasksFilePath(dir), "utf8");
-    expect(content).toMatch(/<!-- c:\d{4}-\d{2}-\d{2} -->/);
+    const result = assertSuccess(executeTaskAction(dir, "list", {}));
+    expect(result.list?.items[0]?.created).toBe(today);
   });
 
   it("staleDays appears on stale open items in list", () => {
@@ -137,6 +138,7 @@ describe("executeTaskAction", () => {
     ]);
     const result = assertSuccess(executeTaskAction(dir, "list", { include_parked: true }));
     expect(result.list?.items.some((item) => item.area === "someday")).toBe(true);
+    expect(result.list?.parkedCount).toBe(0);
   });
 
   it("list excludes future-dated items by default", () => {
@@ -162,6 +164,48 @@ describe("executeTaskAction", () => {
     ]);
     const result = assertSuccess(executeTaskAction(dir, "list", { include_future: true }));
     expect(result.list?.items.some((item) => item.dueDate === futureStr)).toBe(true);
+    expect(result.list?.futureCount).toBe(0);
+  });
+
+  it("list includes item due today (not future)", () => {
+    const today = new Date().toISOString().slice(0, 10);
+    writeTasksFile(dir, [
+      { id: 1, text: "Due today", done: false, next: true, area: "work", dueDate: today },
+    ]);
+    const result = assertSuccess(executeTaskAction(dir, "list", {}));
+    expect(result.list?.items).toHaveLength(1);
+    expect(result.list?.futureCount).toBe(0);
+  });
+
+  it("staleDays is not written to disk after list", () => {
+    const created = new Date();
+    created.setDate(created.getDate() - 45);
+    const createdStr = created.toISOString().slice(0, 10);
+    writeTasksFile(dir, [
+      { id: 1, text: "Old", done: false, next: false, area: "work", created: createdStr },
+    ]);
+    executeTaskAction(dir, "list", {});
+    const content = readFileSync(tasksFilePath(dir), "utf8");
+    expect(content).not.toContain("staleDays");
+  });
+
+  it("staleDays computed from frontmatter-inferred created", () => {
+    const created = new Date();
+    created.setDate(created.getDate() - 45);
+    const createdStr = created.toISOString().slice(0, 10);
+    const fileContent = `---
+created: ${createdStr}
+---
+
+# Tasks
+
+- [ ] Legacy task @work
+`;
+    const path = tasksFilePath(dir);
+    mkdirSync(dirname(path), { recursive: true });
+    writeFileSync(path, fileContent, "utf8");
+    const result = assertSuccess(executeTaskAction(dir, "list", {}));
+    expect(result.list?.items[0]?.staleDays).toBe(45);
   });
 
   it("WIP count excludes someday items", () => {
@@ -180,6 +224,23 @@ describe("executeTaskAction", () => {
     ]);
     const result = assertSuccess(executeTaskAction(dir, "add", { text: "One more" }));
     expect(result.wipWarning).toBeUndefined();
+  });
+
+  it("WIP warns when non-someday count reaches limit", () => {
+    ({ configDir } = setupGlobalConfigDir());
+    writeTaskWipLimit(5);
+    writeTasksFile(dir, [
+      ...Array.from({ length: 5 }, (_, i) => ({
+        id: i + 1,
+        text: `T${i}`,
+        done: false,
+        next: i === 0,
+        area: "work",
+      })),
+      { id: 6, text: "S1", done: false, next: false, area: "someday" },
+    ]);
+    const result = assertSuccess(executeTaskAction(dir, "add", { text: "Over limit" }));
+    expect(result.wipWarning).toMatch(/WIP/i);
   });
 });
 

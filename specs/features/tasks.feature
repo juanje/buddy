@@ -152,7 +152,14 @@ Feature: Task management
   Scenario: add sets created date on new task
     Given an initialized buddy git repository
     When tasks add is invoked with text "Buy milk" and area "personal"
-    Then tasks.md on disk contains "<!-- c:"
+    Then tasks.md on disk contains today's date as created comment
+
+  @FR-TASKM-06
+  Scenario: items without created comment inherit file frontmatter date
+    Given an initialized buddy git repository
+    And tasks.md on disk has frontmatter created "2026-01-15" and line "- [ ] Old task @work"
+    When tasks action list is invoked
+    Then the first task has created "2026-01-15"
 
   @FR-TASKM-06
   Scenario: created date is parsed from task line
@@ -172,7 +179,7 @@ Feature: Task management
   Scenario: list excludes someday items by default
     Given an initialized buddy git repository
     And tasks.md on disk has items with someday area
-    When tasks action list is invoked
+    When tasks action list is invoked with defaults
     Then the task list does not contain someday items
     And the task list summary has parkedCount 1
 
@@ -195,7 +202,7 @@ Feature: Task management
   Scenario: list excludes future-dated items by default
     Given an initialized buddy git repository
     And tasks.md on disk has a future-dated item
-    When tasks action list is invoked
+    When tasks action list is invoked with defaults
     Then the task list does not contain future-dated items
     And the task list summary has futureCount 1
 

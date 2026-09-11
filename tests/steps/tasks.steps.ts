@@ -79,6 +79,17 @@ Given("tasks.md on disk has line {string}", function (this: TasksWorld, line: st
   );
 });
 
+Given(
+  'tasks.md on disk has frontmatter created {string} and line {string}',
+  function (this: TasksWorld, created: string, line: string) {
+    writeFileSync(
+      tasksFilePath(root.call(this)),
+      `---\ncreated: ${created}\n---\n\n# Tasks\n\n${line}\n`,
+      "utf8",
+    );
+  },
+);
+
 Given("tasks.md on disk has work items A and B", function (this: TasksWorld) {
   const content = `---
 created: 2026-09-10
@@ -200,6 +211,10 @@ When("tasks action help is invoked", function (this: TasksWorld) {
 
 When("tasks action list is invoked", function (this: TasksWorld) {
   invoke.call(this, "list", { include_done: true });
+});
+
+When("tasks action list is invoked with defaults", function (this: TasksWorld) {
+  invoke.call(this, "list", {});
 });
 
 When(
@@ -360,6 +375,15 @@ Then(
 Then("tasks.md on disk contains {string}", function (this: TasksWorld, snippet: string) {
   const content = readFileSync(tasksFilePath(root.call(this)), "utf8");
   assert.ok(content.includes(snippet), content);
+});
+
+Then("tasks.md on disk contains today's date as created comment", function (this: TasksWorld) {
+  const today = new Date().toISOString().slice(0, 10);
+  const content = readFileSync(tasksFilePath(root.call(this)), "utf8");
+  assert.ok(
+    content.includes(`<!-- c:${today} -->`),
+    `expected <!-- c:${today} --> in:\n${content}`,
+  );
 });
 
 Then("tasks.md on disk has next on task B only", function (this: TasksWorld) {
