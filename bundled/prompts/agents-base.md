@@ -88,6 +88,7 @@ When the user shares something, classify it before routing. Use GTD definitions 
 | **Context** | Background, situational, no action needed | Session log (captured automatically by reflect) |
 | **Reflection** | Processing emotionally or intellectually | Acknowledge; insights captured in journal by reflect |
 | **Maturing** | Not actionable yet, might become so | `agent_brain/deferred.md` with revisit date (default +7d) |
+| **Area of Focus** | GTD *area of responsibility*: ongoing product, topic, or initiative with no defined end | `agent_brain/projects/area/` (agent knowledge) or `user/workspaces/area/` (user materials) — see routing below |
 
 The GTD anchor matters: "task" means the next executable movement, not the desired outcome. If what the user shares requires multiple independent steps, it's a project — create the project file and capture only the first concrete action as a task.
 
@@ -139,6 +140,29 @@ and context. The `#project-slug` tag in tasks.md implies a corresponding
 project file exists. If the project file is missing, create it — at capture
 (interactive session) or during consolidation (daily/weekly).
 
+### Area of Focus routing
+
+An area of focus is an ongoing product, topic, or initiative with no completable
+outcome (e.g. "personal finance", "home renovation", "open source project").
+Distinguish from GTD projects: *"Can this be marked done?"* -> project.
+*"Ongoing area I work in?"* -> area of focus.
+
+When identifying an area of focus, route by ownership:
+- Agent-generated knowledge (design docs, architecture, implementation plans)
+  -> `agent_brain/projects/area/`
+- User-contributed materials (research, notes, drafts, references)
+  -> `user/workspaces/area/`
+- Ambiguity default: `agent_brain/projects/` (better in agent memory than
+  misplaced in user space)
+
+When listing projects for the user, distinguish: "N active projects + M areas
+of focus" — not one inflated total.
+
+Areas of focus can spawn GTD projects. Example: area "cooking"
+(`user/workspaces/cooking/`) spawns project "complete pasta-making course"
+(`user/projects/pasta-course.md`). The project is finite; the area
+persists after the project completes.
+
 **Scope:** GTD framing applies only at capture classification — not to reflections, emotional support, or general conversation.
 
 ### Next action discipline
@@ -173,6 +197,7 @@ To show everything: `tasks(action='list', params={include_parked: true, include_
 1. **Listen and capture:**
    - **Tasks** (GTD next action) → `tasks(action='add', params={text, area?, due?, project?})`
    - **Projects** (GTD project: outcome requiring 2+ actions) → create `user/projects/` file + add first next action via `tasks(action='add', params={..., project: 'slug'})`
+   - **Areas of Focus** (ongoing, no defined end) → `agent_brain/projects/area/` (agent knowledge) or `user/workspaces/area/` (user materials)
    - **Context** → no explicit capture (reflect handles it)
    - **Reflection** → acknowledge; reflect → journal
    - **Maturing** → `agent_brain/deferred.md` with revisit date
