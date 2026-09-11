@@ -3411,6 +3411,42 @@ Further context on local-model evaluation methodology and findings:
 - The one-liner disappears when the user sends their first message.
 - The request is not made on topic transitions or on subsequent app opens the same day.
 
+### 3.29 Task maturity (FR-TASKM)
+
+| ID | Description | Phase |
+|----|-------------|-------|
+| FR-TASKM-01 | Project tag in task format (`#project-slug`) | 2.5 ✓ |
+| FR-TASKM-02 | `add` action accepts `project` param | 2.5 ✓ |
+| FR-TASKM-03 | `list` action filters by project | 2.5 ✓ |
+| FR-TASKM-04 | Capture classification prompts: GTD anchoring for task vs project | 2.5 ✓ |
+| FR-TASKM-05 | Consolidation prompt: project health check | 2.5 ✓ |
+
+**FR-TASKM-01 — Project tag in task format**
+
+- Task lines may include an optional `#project-slug` tag linking to a project file in `user/projects/`.
+- The tag is parsed into `TaskItem.project` and serialized back to the file on write.
+
+**FR-TASKM-02 — add with project param**
+
+- `tasks({ action: "add", params: { text, area?, due?, project? } })` stores the project slug on the new item.
+- `help` documents the `project` parameter.
+
+**FR-TASKM-03 — list filters by project**
+
+- `tasks({ action: "list", params: { project? } })` returns only items with the matching project tag when `project` is set.
+- Without `project`, all items are returned (including project-tagged ones).
+
+**FR-TASKM-04 — GTD-anchored capture classification**
+
+- `agents-base.md` capture classification distinguishes Task (GTD next action) from Project (GTD project: outcome requiring 2+ actions).
+- Next action discipline and routing list reference project linking via `tasks(action='add', params={..., project: 'slug'})`.
+- GTD framing applies only at capture classification, not to the agent's overall personality.
+
+**FR-TASKM-05 — Project health check in consolidation**
+
+- Weekly consolidation verifies each active project in `user/projects/` has at least one open task in `tasks.md` with its `#project` tag.
+- Gaps are flagged to the user.
+
 ---
 
 ## 4. Non-Functional Requirements

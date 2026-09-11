@@ -131,6 +131,8 @@ against today's log):
 
 If purely informational findings, note them in today's log under Decisions.
 
+**Project health check (weekly):** For each active project in `user/projects/`, verify at least one open task exists in `tasks.md` with its `#project` tag. If a project has no linked open tasks, flag it to the user: "Project X has no pending actions — is it done, or does it need a next step?"
+
 #### 5. Write deferred items
 
 Two sources feed the deferred queue. Write **all** deferred items in the

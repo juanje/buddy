@@ -458,6 +458,71 @@
           "unit_tests": 1
         }
       ]
+    },
+    {
+      "id": "FR-TASKM-01",
+      "title": "Project tag in task format (#project-slug)",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "task with project tag is parsed and serialized",
+          "bdd": "pass",
+          "unit_tests": 3
+        }
+      ]
+    },
+    {
+      "id": "FR-TASKM-02",
+      "title": "add action accepts project param",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "add with project param writes project tag",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
+    },
+    {
+      "id": "FR-TASKM-03",
+      "title": "list action filters by project",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "list filters by project",
+          "bdd": "pass",
+          "unit_tests": 2
+        }
+      ]
+    },
+    {
+      "id": "FR-TASKM-04",
+      "title": "GTD-anchored capture classification",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "agents-base prompt includes GTD project classification",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
+    },
+    {
+      "id": "FR-TASKM-05",
+      "title": "Consolidation project health check",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "consolidation prompt includes project health check",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
     }
   ]
 }

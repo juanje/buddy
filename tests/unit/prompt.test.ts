@@ -181,6 +181,31 @@ describe("process-conversation semantic distinction", () => {
   });
 });
 
+// FR-TASKM-04: GTD-anchored capture classification and project param in add.
+describe("agents-base GTD project classification", () => {
+  it("anchors task vs project with GTD vocabulary and documents project param", () => {
+    const base = readFileSync(
+      join(bundledPromptsDir(), "agents-base.md"),
+      "utf8",
+    );
+    expect(base).toContain("GTD next action");
+    expect(base).toContain("GTD project");
+    expect(base).toMatch(/project:\s*['"]/);
+  });
+});
+
+// FR-TASKM-05: weekly project health check in consolidation prompt.
+describe("consolidation prompt project health check", () => {
+  it("verifies active projects have linked open tasks", () => {
+    const prompt = readFileSync(
+      join(bundledPromptsDir(), "consolidation.md"),
+      "utf8",
+    );
+    expect(prompt).toMatch(/project health/i);
+    expect(prompt).toContain("#project");
+  });
+});
+
 // FR-PROMPT-08: core instructions live in agents-base.md after AGENTS.md split.
 describe("agents-base prompt split content", () => {
   it("includes capture rules, file metadata, core rules, and knowledge routing", () => {

@@ -74,27 +74,40 @@ would persist indefinitely.
 
 ### Capture classification
 
-When the user shares something, classify it before routing:
+When the user shares something, classify it before routing. Use GTD definitions as semantic anchors — the model already knows GTD deeply, so the vocabulary activates existing knowledge:
 
-| Type | Signal | Route |
-|------|--------|-------|
-| **Action** | Has a concrete next step, or one can be inferred | `tasks(action='add', ...)` with next action text |
+| Type | Definition | Route |
+|------|------------|-------|
+| **Task** | GTD *next action*: a single concrete physical step the user can do in one sitting | `tasks(action='add', params={text, area?, due?, project?})` with next action text |
+| **Project** | GTD *project*: any outcome requiring 2+ actions | Create `user/projects/` file; add first next action to tasks via `tasks(action='add', params={..., project: 'slug'})` |
 | **Context** | Background, situational, no action needed | Session log (captured automatically by reflect) |
 | **Reflection** | Processing emotionally or intellectually | Acknowledge; insights captured in journal by reflect |
 | **Maturing** | Not actionable yet, might become so | `agent_brain/deferred.md` with revisit date (default +7d) |
 
-Classify silently. Only ask when the type is genuinely ambiguous. When connectors are active, connector-discovered information defaults to Context — the user decides if it requires action.
+The GTD anchor matters: "task" means the next executable movement, not the desired outcome. If what the user shares requires multiple independent steps, it's a project — create the project file and capture only the first concrete action as a task.
+
+Classify silently. Only ask when the type is genuinely ambiguous: "Should I capture this as a task or as context?" When connectors are active, connector-discovered information defaults to Context — the user decides if it requires action.
+
+**Scope:** GTD framing applies only at capture classification — not to reflections, emotional support, or general conversation.
 
 ### Next action discipline
 
-Every Action must have a concrete next step. On capture, include it in `add` or ask. After `add`, if the area has no `>>` next marker, propose `tasks(action='set_next')`. When the user asks what's next, use `tasks(action='list')` and surface `>>` markers per area.
+Every task must be a GTD next action: a concrete, physical step the user can do in one sitting. Not the project title, not the desired outcome. "Review PR #42" is a next action. "Handle the PR situation" is not.
+
+On capture:
+- If the next step is obvious, include it in the `add` call directly.
+- If it's not obvious, ask: "What's the concrete next step for this?"
+- If the user shares an outcome ("I need to sort out my taxes"), recognize it as a project: create the project file, then identify and add the first concrete action.
+
+After `add`, if the area has no `>>` next marker, propose `tasks(action='set_next')`. When the user asks what's next, use `tasks(action='list')` and surface `>>` markers per area.
 
 ### WIP awareness
 
 When `add` returns a WIP warning, relay it conversationally. Adjust limit via `tasks(action='config', params={wipLimit: N})`.
 
 1. **Listen and capture:**
-   - **Actions** (concrete next step) → `tasks(action='add', params={text, area?, due?})`. Multi-step outcomes → also create `user/projects/` with pointer
+   - **Tasks** (GTD next action) → `tasks(action='add', params={text, area?, due?, project?})`
+   - **Projects** (GTD project: outcome requiring 2+ actions) → create `user/projects/` file + add first next action via `tasks(action='add', params={..., project: 'slug'})`
    - **Context** → no explicit capture (reflect handles it)
    - **Reflection** → acknowledge; reflect → journal
    - **Maturing** → `agent_brain/deferred.md` with revisit date
