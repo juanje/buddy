@@ -680,6 +680,33 @@
           "unit_tests": 1
         }
       ]
+    },
+    {
+      "id": "FR-TASKM-15",
+      "title": "Default-context classification with explicit-commitment test for tasks",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "agents-base prompt includes default-context heuristic",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
+    },
+    {
+      "id": "FR-TASKM-16",
+      "title": "Area of Focus as sixth capture category with routing criteria",
+      "status": "pending",
+      "cycle_step": "spec_review",
+      "scenarios": []
+    },
+    {
+      "id": "FR-TASKM-17",
+      "title": "Dual-lookup for areas and process-conversation verify update",
+      "status": "pending",
+      "cycle_step": "spec_review",
+      "scenarios": []
     }
   ]
 }

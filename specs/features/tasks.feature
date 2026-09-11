@@ -273,3 +273,38 @@ Feature: Task management
     And a permission layer for tasks file access
     When the agent edits "user/tasks.md" via permission gate
     Then the permission gate blocks with tasks tool message
+
+  @FR-TASKM-15
+  Scenario: agents-base prompt includes default-context heuristic
+    Given the bundled agents-base.md prompt
+    Then the agents-base prompt contains "Default to context"
+    And the agents-base prompt contains "explicit commitment"
+    And the agents-base prompt contains "first filter"
+    And the agents-base prompt contains "Signals of NO commitment"
+
+  @FR-TASKM-16
+  Scenario: agents-base prompt includes Area of Focus in classification
+    Given the bundled agents-base.md prompt
+    Then the agents-base prompt contains "Area of Focus"
+    And the agents-base prompt contains "area of responsibility"
+    And the agents-base prompt contains "user/workspaces/"
+
+  @FR-TASKM-16
+  Scenario: agents-base prompt includes area routing criteria
+    Given the bundled agents-base.md prompt
+    Then the agents-base prompt contains "Area of Focus routing"
+    And the agents-base prompt contains "agent_brain/projects/area/"
+    And the agents-base prompt contains "Ambiguity default"
+
+  @FR-TASKM-17
+  Scenario: agents-base prompt includes dual-lookup instruction
+    Given the bundled agents-base.md prompt
+    Then the agents-base prompt contains "Dual lookup"
+    And the agents-base prompt contains "agent_brain/projects/{area}/"
+    And the agents-base prompt contains "user/workspaces/{area}/"
+
+  @FR-TASKM-17
+  Scenario: process-conversation prompt includes area-of-focus routing
+    Given the bundled process-conversation.md prompt
+    Then the process-conversation prompt contains "Areas of focus"
+    And the process-conversation prompt contains "agent_brain/projects/area/"

@@ -3438,6 +3438,9 @@ Further context on local-model evaluation methodology and findings:
 | FR-TASKM-11 | Direct file-tool access to `user/tasks.md` denied (read, write, edit) | 2.5 ✓ |
 | FR-TASKM-13 | Batch brain dump classification guidance and project file parity | 2.5 ✓ |
 | FR-TASKM-14 | Identity voice: first-person consistency in agent responses | 2.5 ✓ |
+| FR-TASKM-15 | Default-context classification with explicit-commitment test for tasks | 2.5 ✓ |
+| FR-TASKM-16 | Area of Focus as sixth capture category with routing criteria | 2.5 |
+| FR-TASKM-17 | Dual-lookup for areas and process-conversation verify update | 2.5 |
 
 **FR-TASKM-01 — Project tag in task format**
 
@@ -3511,6 +3514,21 @@ Further context on local-model evaluation methodology and findings:
 **FR-TASKM-14 — Identity voice first-person**
 
 - `agents-base.md` includes explicit **Voice** guidance: use first person ("I captured…", "I marked…"), never third person ("Buddy has marked…") or system voice ("The system captured…").
+
+**FR-TASKM-15 — Default-context with explicit-commitment test**
+
+- `agents-base.md` capture classification includes **Default to context** paragraph: invert burden of proof before the classification table; two-step filter (commitment? → task vs project); signals of explicit commitment and NO commitment; default to Context when in doubt.
+
+**FR-TASKM-16 — Area of Focus classification and routing**
+
+- Classification table adds **Area of Focus** as sixth type (GTD area of responsibility, no defined end).
+- `agents-base.md` includes **Area of Focus routing** subsection: distinguish from projects, route by ownership (`agent_brain/projects/area/` vs `user/workspaces/area/`), ambiguity default, project spawn example.
+- Listen-and-capture routing list includes Areas of Focus.
+
+**FR-TASKM-17 — Dual-lookup and process-conversation update**
+
+- `agents-base.md` Area of Focus routing includes **Dual lookup** instruction for both trees.
+- `process-conversation.md` step 3 (Verify captures) lists all classification types including areas of focus.
 
 ---
 

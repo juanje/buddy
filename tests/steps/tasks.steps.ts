@@ -32,6 +32,7 @@ interface TasksWorld extends BuddyWorld {
   skillToolNames?: string[];
   agentsBasePrompt?: string;
   consolidationPrompt?: string;
+  processConversationPrompt?: string;
   permGate?: PermissionGate;
   permOutcome?: { block: true; reason: string } | undefined;
 }
@@ -498,6 +499,17 @@ Then("the consolidation prompt references project health check", function (this:
 
 Then("the consolidation prompt contains {string}", function (this: TasksWorld, text: string) {
   assert.ok(this.consolidationPrompt?.includes(text), `missing: ${text}`);
+});
+
+Given("the bundled process-conversation.md prompt", function (this: TasksWorld) {
+  this.processConversationPrompt = readFileSync(
+    join(process.cwd(), "bundled", "prompts", "process-conversation.md"),
+    "utf8",
+  );
+});
+
+Then("the process-conversation prompt contains {string}", function (this: TasksWorld, text: string) {
+  assert.ok(this.processConversationPrompt?.includes(text), `missing: ${text}`);
 });
 
 Given("AGENTS.md has an inbox reference in Where to find things", function (this: TasksWorld) {

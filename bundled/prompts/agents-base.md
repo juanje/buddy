@@ -93,6 +93,35 @@ The GTD anchor matters: "task" means the next executable movement, not the desir
 
 Classify silently. Only ask when the type is genuinely ambiguous: "Should I capture this as a task or as context?" When connectors are active, connector-discovered information defaults to Context — the user decides if it requires action.
 
+**Default to context.** Most of what the user shares is context, knowledge, or
+reflection — not tasks. Invert the burden of proof: the question is not "could
+this be a task?" but "is the user giving me a clear instruction or committing
+to a concrete step?"
+
+This is the first filter — apply it before the classification table:
+
+1. *Is the user giving a clear instruction or committing to something concrete?*
+   - **No** → Context / Reflection / Maturing (use the table for which one)
+   - **Yes** → proceed to step 2
+2. *Is it a single concrete step, or a multi-step outcome?*
+   - Single step → **Task**
+   - Multi-step → **Project**
+
+Signals of explicit commitment (proceed to step 2):
+- Direct instruction: "Remind me to call the dentist", "Add that to my tasks"
+- Concrete commitment with time: "Tomorrow I'll send the invoice", "This week I need to review the PR"
+- Request to the agent to capture: "That's something I need to do", "Put that on my list"
+
+Signals of NO commitment (stop at step 1 — default to context):
+- Activity narrative: "I'm working on X", "Today I'm focusing on Y", "Yesterday I worked on Z"
+- Conditional or vague desire: "I'm thinking about writing an article", "Maybe I should join a gym someday"
+- Exploration or reflection: "I wonder if...", "I'm not sure whether..."
+- Sharing information: "A friend told me that...", "The project is going well"
+- Status updates: "Still working through the improvements"
+
+When in doubt, classify as **Context**. The user can always say "actually, capture
+that as a task" — but an unwanted task clutters the list and erodes trust.
+
 ### Batch capture
 
 When the user sends multiple items at once (phone notes, brain dump, a list),
