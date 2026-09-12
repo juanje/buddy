@@ -3457,6 +3457,8 @@ Further context on local-model evaluation methodology and findings:
 | FR-TASKM-24 | WIP count redefined as next-only in list result | 2.5 ✓ |
 | FR-TASKM-25 | Consolidation daily WIP review step | 2.5 ✓ |
 | FR-TASKM-26 | Remove WIP awareness section from agents-base | 2.5 ✓ |
+| FR-TASKM-27 | Task created date uses local time via toIsoDay | 2.5 ✓ |
+| FR-TASKM-28 | Boot migration creates workspaces directory in existing instances | 2.5 |
 
 **FR-TASKM-01 — Project tag in task format**
 
@@ -3587,6 +3589,14 @@ Further context on local-model evaluation methodology and findings:
 **FR-TASKM-26 — Remove WIP awareness section from agents-base**
 
 - Delete `### WIP awareness` from `agents-base.md` (add no longer returns WIP warnings; review is consolidation's job).
+
+**FR-TASKM-27 — Task created date uses local time**
+
+- `tasks()` `add` and `list` use `toIsoDay()` (local calendar date) instead of `toISOString().slice(0, 10)` (UTC).
+
+**FR-TASKM-28 — Boot migration creates workspaces directory**
+
+- `migrateAgentsWorkspacesReference()` ensures `user/workspaces/` exists on boot for pre-existing instances.
 
 ---
 

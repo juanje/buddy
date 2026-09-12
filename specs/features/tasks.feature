@@ -384,3 +384,16 @@ Feature: Task management
     When tasks action list is invoked with defaults
     Then the task result contains "activeNextCount"
     And the task list summary has activeNextCount 1
+
+  @FR-TASKM-27
+  Scenario: task created date uses local time
+    Given an initialized buddy git repository
+    When tasks add is invoked with text "Buy milk" and area "personal"
+    Then the first task has created matching local calendar day
+
+  @FR-TASKM-28
+  Scenario: boot migration creates workspaces directory
+    Given an initialized buddy git repository
+    And user workspaces directory does not exist
+    When workspaces boot migration runs
+    Then user workspaces directory exists

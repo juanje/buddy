@@ -1,6 +1,7 @@
 // backends/tasks/task-actions.ts — tasks() action implementations (FR-TASK).
 
 import type { TaskActionResult, TaskActionSuccess, TaskItem } from "../../shared/task-types";
+import { toIsoDay } from "../../shared/dates";
 import { readTaskConfig, writeTaskWipLimit } from "./task-config";
 import {
   areaHasNext,
@@ -66,7 +67,7 @@ export function executeTaskAction(
       return ok(HELP_TEXT);
 
     case "list": {
-      const today = new Date().toISOString().slice(0, 10);
+      const today = toIsoDay(new Date());
       let items = loadItems(rootDir);
       if (!params.include_done) {
         items = items.filter((item) => !item.done);
@@ -131,7 +132,7 @@ export function executeTaskAction(
         area,
         dueDate: params.due,
         project,
-        created: new Date().toISOString().slice(0, 10),
+        created: toIsoDay(new Date()),
       };
 
       const autoNext = openInAreaBefore === 0;

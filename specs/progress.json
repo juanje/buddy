@@ -874,6 +874,19 @@
           "unit_tests": 2
         }
       ]
+    },
+    {
+      "id": "FR-TASKM-27",
+      "title": "Task created date uses local time via toIsoDay",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "task created date uses local time",
+          "bdd": "pass",
+          "unit_tests": 2
+        }
+      ]
     }
   ]
 }

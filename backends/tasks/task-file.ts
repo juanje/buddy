@@ -11,6 +11,7 @@ import {
 import { basename, dirname, join } from "node:path";
 
 import { USER_DIR } from "../../shared/brain-paths";
+import { toIsoDay } from "../../shared/dates";
 import type { TaskItem, TaskListResult } from "../../shared/task-types";
 
 const CHECKBOX_RE = /^- \[( |x)\] (>> )?(.*)$/;
@@ -125,7 +126,7 @@ function formatItemLine(item: TaskItem): string {
 }
 
 export function serializeTaskFile(items: TaskItem[], created?: string): string {
-  const date = created ?? new Date().toISOString().slice(0, 10);
+  const date = created ?? toIsoDay(new Date());
   const lines = [
     "---",
     `created: ${date}`,
@@ -184,7 +185,7 @@ export function writeTasksFile(rootDir: string, items: TaskItem[], created?: str
 }
 
 export function countActiveNext(items: TaskItem[], today?: string): number {
-  const todayStr = today ?? new Date().toISOString().slice(0, 10);
+  const todayStr = today ?? toIsoDay(new Date());
   return items.filter(
     (item) =>
       !item.done &&
@@ -195,7 +196,7 @@ export function countActiveNext(items: TaskItem[], today?: string): number {
 }
 
 export function buildListResult(items: TaskItem[], today?: string): TaskListResult {
-  const todayStr = today ?? new Date().toISOString().slice(0, 10);
+  const todayStr = today ?? toIsoDay(new Date());
   const areaMap = new Map<string, { open: number; hasNext: boolean }>();
   let openCount = 0;
   const enriched: TaskItem[] = items.map((item) => {

@@ -3,10 +3,11 @@
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { executeTaskAction } from "../../backends/tasks/task-actions";
 import { taskResultToText } from "../../backends/tasks/task-result";
+import { toIsoDay } from "../../shared/dates";
 import type { TaskActionSuccess } from "../../shared/task-types";
 import { tasksFilePath, writeTasksFile } from "../../backends/tasks/task-file";
 import { setupGlobalConfigDir, teardownGlobalConfigDir } from "../support/global-config";
@@ -105,10 +106,27 @@ describe("executeTaskAction", () => {
   });
 
   it("add sets created date equal to today", () => {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = toIsoDay(new Date());
     executeTaskAction(dir, "add", { text: "Buy milk", area: "personal" });
     const result = assertSuccess(executeTaskAction(dir, "list", {}));
     expect(result.list?.items[0]?.created).toBe(today);
+  });
+
+  it("add uses local calendar day not UTC at night-owl hours", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 8, 12, 0, 30, 0));
+    try {
+      const localDay = toIsoDay(new Date());
+      const utcDay = new Date().toISOString().slice(0, 10);
+      executeTaskAction(dir, "add", { text: "Night task", area: "personal" });
+      const result = assertSuccess(executeTaskAction(dir, "list", {}));
+      expect(result.list?.items[0]?.created).toBe(localDay);
+      if (utcDay !== localDay) {
+        expect(result.list?.items[0]?.created).not.toBe(utcDay);
+      }
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("staleDays appears on stale open items in list", () => {

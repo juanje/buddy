@@ -2,7 +2,7 @@
 
 import { Given, Then, When } from "@cucumber/cucumber";
 import assert from "node:assert/strict";
-import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { createPermissionGate, evaluateToolCall, type PermissionGate } from "../../backends/permissions";
@@ -11,6 +11,7 @@ import { executeTaskAction } from "../../backends/tasks/task-actions";
 import { taskResultToText } from "../../backends/tasks/task-result";
 import { tasksFilePath, writeTasksFile } from "../../backends/tasks/task-file";
 import { writeTaskWipLimit } from "../../backends/tasks/task-config";
+import { toIsoDay } from "../../shared/dates";
 import {
   migrateAgentsTasksReference,
   migrateAgentsWorkspacesReference,
@@ -348,6 +349,13 @@ Then("the first task has created {string}", function (this: TasksWorld, created:
   assert.equal(this.firstTaskCreated, created);
 });
 
+Then("the first task has created matching local calendar day", function (this: TasksWorld) {
+  const result = executeTaskAction(root.call(this), "list", {});
+  assert.ok(result.ok && result.list, "expected task list result");
+  const created = result.list!.items[0]?.created;
+  assert.equal(created, toIsoDay(new Date()));
+});
+
 Then("the stale item has staleDays of {int}", function (this: TasksWorld, days: number) {
   assert.ok(this.taskResult?.ok && this.taskResult.list, "expected task list result");
   const stale = this.taskResult.list!.items.find((item) => item.staleDays !== undefined);
@@ -662,6 +670,25 @@ Then("the template AGENTS.md contains {string}", function (this: TasksWorld, tex
 });
 
 Then("the buddy instance has a workspaces directory", function (this: TasksWorld) {
+  assert.ok(
+    existsSync(join(root.call(this), "user", "workspaces")),
+    "expected user/workspaces directory",
+  );
+});
+
+Given("user workspaces directory does not exist", function (this: TasksWorld) {
+  const wsDir = join(root.call(this), "user", "workspaces");
+  if (existsSync(wsDir)) {
+    rmSync(wsDir, { recursive: true, force: true });
+  }
+  assert.ok(!existsSync(wsDir), "workspaces dir should be absent");
+});
+
+When("workspaces boot migration runs", function (this: TasksWorld) {
+  migrateAgentsWorkspacesReference(root.call(this));
+});
+
+Then("user workspaces directory exists", function (this: TasksWorld) {
   assert.ok(
     existsSync(join(root.call(this), "user", "workspaces")),
     "expected user/workspaces directory",
