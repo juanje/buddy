@@ -1218,6 +1218,19 @@
           "unit_tests": 1
         }
       ]
+    },
+    {
+      "id": "FR-TASKM-40",
+      "title": "Default WIP limit to 3",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Default WIP limit is 3",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
     }
   ]
 }

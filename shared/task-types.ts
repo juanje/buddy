@@ -1,6 +1,6 @@
 // shared/task-types.ts — Task file and tasks() tool types (FR-TASK).
 
-export const WIP_DEFAULT = 5;
+export const WIP_DEFAULT = 3;
 
 export const TASKS_REL_PATH = "user/tasks.md";
 

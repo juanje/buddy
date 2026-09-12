@@ -209,6 +209,11 @@ describe("executeTaskAction", () => {
     expect(after.message).toContain("3");
   });
 
+  it("config default WIP limit is 3", () => {
+    const result = assertSuccess(executeTaskAction(dir, "config"));
+    expect(result.message).toContain("3");
+  });
+
   it("add sets created date equal to today", () => {
     const today = toIsoDay(new Date());
     executeTaskAction(dir, "add", { text: "Buy milk", area: "personal" });

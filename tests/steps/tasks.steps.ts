@@ -291,6 +291,10 @@ When("tasks action help is invoked", function (this: TasksWorld) {
   invoke.call(this, "help");
 });
 
+When("tasks config is invoked without params", function (this: TasksWorld) {
+  invoke.call(this, "config", {});
+});
+
 When("tasks action list is invoked", function (this: TasksWorld) {
   invoke.call(this, "list", { include_done: true });
 });

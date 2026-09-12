@@ -601,3 +601,9 @@ Feature: Task management
     Given the bundled consolidation.md prompt
     Then the consolidation prompt contains "Active fronts per area"
     And the consolidation prompt does not contain "activeNextCount"
+
+  @FR-TASKM-40
+  Scenario: Default WIP limit is 3
+    Given an initialized buddy git repository
+    When tasks config is invoked without params
+    Then the task result contains "3"
