@@ -31,6 +31,7 @@ import {
 import {
   detectGroupingCandidates,
 } from "../../backends/grouping-candidates";
+import { findUpcomingReminders } from "../../backends/consolidation-helpers";
 import { toIsoDay, toLocalIsoStamp } from "../../shared/dates";
 import type { BuddyWorld } from "../support/world";
 import { setupGlobalConfigDir, teardownGlobalConfigDir } from "../support/global-config";
@@ -44,6 +45,7 @@ interface DepthWorld extends BuddyWorld {
   coherence?: ReturnType<typeof computeDailyCoherence>;
   weeklyDiffBlock?: string;
   groupingCandidates?: ReturnType<typeof detectGroupingCandidates>;
+  upcomingReminders?: ReturnType<typeof findUpcomingReminders>;
 }
 
 After(function (this: DepthWorld) {
@@ -264,4 +266,59 @@ When("grouping candidates are computed", function (this: DepthWorld) {
 
 Then('a grouping candidate for "memory" is present', function (this: DepthWorld) {
   assert.ok(this.groupingCandidates?.some((candidate) => candidate.keyword === "memory"));
+});
+
+Given("tasks.md has a line {string}", function (this: DepthWorld, line: string) {
+  const userDir = join(this.buddyDir!, "user");
+  mkdirSync(userDir, { recursive: true });
+  writeFileSync(join(userDir, "tasks.md"), `${line}\n`, "utf8");
+});
+
+When('upcoming reminders are computed for {string}', function (this: DepthWorld, date: string) {
+  this.upcomingReminders = findUpcomingReminders(this.buddyDir!, date);
+});
+
+Then("no upcoming task reminders are found", function (this: DepthWorld) {
+  const taskReminders = (this.upcomingReminders ?? []).filter((item) => item.source === "tasks");
+  assert.equal(taskReminders.length, 0);
+});
+
+Then("{int} upcoming task reminder is found", function (this: DepthWorld, count: number) {
+  const taskReminders = (this.upcomingReminders ?? []).filter((item) => item.source === "tasks");
+  assert.equal(taskReminders.length, count);
+});
+
+Given('today\'s log mentions "family visit completed"', function (this: DepthWorld) {
+  mkdirSync(join(this.buddyDir!, "logs"), { recursive: true });
+  writeFileSync(
+    join(this.buddyDir!, "logs", "2026-08-17.md"),
+    "### Context\n- family visit completed today\n",
+  );
+});
+
+Given("today's log has completion language about a different topic", function (this: DepthWorld) {
+  mkdirSync(join(this.buddyDir!, "logs"), { recursive: true });
+  writeFileSync(
+    join(this.buddyDir!, "logs", "2026-08-17.md"),
+    "### Decisions\n- Workspace migration completed successfully\n",
+  );
+});
+
+Given(
+  'today\'s log mentions "Feature PR corrections completed and merged"',
+  function (this: DepthWorld) {
+    mkdirSync(join(this.buddyDir!, "logs"), { recursive: true });
+    writeFileSync(
+      join(this.buddyDir!, "logs", "2026-08-17.md"),
+      "### Decisions\n- Feature PR corrections completed and merged\n",
+    );
+  },
+);
+
+Then("no task coherence flags are present", function (this: DepthWorld) {
+  assert.equal(this.coherence?.taskFlags.length ?? 0, 0);
+});
+
+Then("a task coherence flag is present", function (this: DepthWorld) {
+  assert.ok((this.coherence?.taskFlags.length ?? 0) > 0);
 });

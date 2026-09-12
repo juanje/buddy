@@ -17,6 +17,13 @@ import { updateLogsIndexEntry } from "./reflect";
 import { dailyLogPath, logsDirPath } from "./brain-paths";
 
 const DATE_MARKER_RE = /\b(\d{4}-\d{2}-\d{2})\b/;
+const CREATED_COMMENT_RE = /<!--\s*c:\d{4}-\d{2}-\d{2}\s*-->/;
+
+function lineDateForReminder(line: string): string | undefined {
+  const cleaned = line.replace(CREATED_COMMENT_RE, "");
+  const match = DATE_MARKER_RE.exec(cleaned);
+  return match?.[1];
+}
 const MARKDOWN_LINK = /\[([^\]]*)\]\(([^)]+)\)/g;
 
 /** Rewrite relative markdown links when a log moves deeper in the tree (FR-CONSOL-26). */
@@ -159,8 +166,8 @@ export function findDatedTaskItems(rootDir: string, targetDate: string): string[
     .map((line) => line.trim())
     .filter((line) => {
       if (!line.startsWith("-")) return false;
-      const match = DATE_MARKER_RE.exec(line);
-      return match != null && (match[1] === targetDate || match[1] === tomorrow);
+      const dueDate = lineDateForReminder(line);
+      return dueDate === targetDate || dueDate === tomorrow;
     });
 }
 
@@ -186,8 +193,8 @@ function findDatedActiveContextItems(rootDir: string, targetDate: string): strin
     .map((line) => line.trim())
     .filter((line) => line.startsWith("-"))
     .filter((line) => {
-      const match = DATE_MARKER_RE.exec(line);
-      return match != null && (match[1] === targetDate || match[1] === tomorrow);
+      const dueDate = lineDateForReminder(line);
+      return dueDate === targetDate || dueDate === tomorrow;
     });
 }
 

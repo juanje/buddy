@@ -266,6 +266,30 @@ describe("consolidation mechanics", () => {
       writeFileSync(join(dir, "user", "tasks.md"), "- No dates here\n");
       expect(findDatedInboxItems(dir, "2026-07-23")).toEqual([]);
     });
+
+    it("ignores created-date HTML comments without inline due date", () => {
+      setupRoot();
+      mkdirSync(join(dir, "user"), { recursive: true });
+      writeFileSync(
+        join(dir, "user", "tasks.md"),
+        "- [ ] >> Buy milk @personal <!-- c:2026-07-23 -->\n",
+      );
+
+      expect(findDatedInboxItems(dir, "2026-07-23")).toEqual([]);
+    });
+
+    it("matches inline due date when created comment is also present", () => {
+      setupRoot();
+      mkdirSync(join(dir, "user"), { recursive: true });
+      writeFileSync(
+        join(dir, "user", "tasks.md"),
+        "- [ ] Pay rent 2026-07-24 @personal <!-- c:2026-07-20 -->\n",
+      );
+
+      expect(findDatedInboxItems(dir, "2026-07-23")).toEqual([
+        "- [ ] Pay rent 2026-07-24 @personal <!-- c:2026-07-20 -->",
+      ]);
+    });
   });
 
   describe("findUpcomingReminders", () => {

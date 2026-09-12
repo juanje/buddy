@@ -1,5 +1,5 @@
 {
-  "current_focus": "FR-TASKM-33",
+  "current_focus": "FR-CONSOL-29",
   "features": [
     {
       "id": "FR-CHAT-18",
@@ -972,6 +972,13 @@
     {
       "id": "FR-TASKM-33",
       "title": "Consolidation deterministic task filters",
+      "status": "in_progress",
+      "cycle_step": "done",
+      "scenarios": []
+    },
+    {
+      "id": "FR-CONSOL-29",
+      "title": "findDatedTaskItems excludes created-date comments",
       "status": "in_progress",
       "cycle_step": "done",
       "scenarios": []

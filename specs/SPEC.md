@@ -991,6 +991,8 @@ Fork bomb defense:
 | FR-CONSOL-26 | Log rotation preserves relative links | 2 ✓ |
 | FR-CONSOL-27 | Pending logs detection for late reflects | 2 ✓ |
 | FR-CONSOL-28 | tasks() tool registered in consolidation session toolset | 2.5 ✓ |
+| FR-CONSOL-29 | findDatedTaskItems excludes created-date HTML comments from date matching | 2 ✓ |
+| FR-CONSOL-30 | detectTaskCoherence: strip metadata tokens, proximity-scoped completion check | 2 |
 
 **Consolidation depths:**
 
@@ -1331,6 +1333,17 @@ fresh session per depth gives each depth the full window.
 **FR-CONSOL-28 — tasks() tool in consolidation session**
 
 - The maintenance session registers the `tasks()` custom tool alongside skill and consolidation tools so consolidation step 4 instructions can invoke `tasks(action='list'|'complete'|'remove'|'add')`.
+
+**FR-CONSOL-29 — findDatedTaskItems excludes created-date comments**
+
+- `findDatedTaskItems` strips `<!-- c:YYYY-MM-DD -->` comments before applying `DATE_MARKER_RE`, so tasks without an inline due date are not falsely included in the "Upcoming items" header block.
+- `findDatedActiveContextItems` uses the same stripping for consistency.
+
+**FR-CONSOL-30 — detectTaskCoherence false positive reduction**
+
+- `detectTaskCoherence` strips project tags (`#slug`), created comments (`<!-- c:... -->`), and dates before tokenizing.
+- Minimum token length raised from 5 to 7 characters.
+- Completion and parking keywords are checked only on log lines containing the matched token, not globally.
 
 | ID | Description | Phase |
 |----|-------------|-------|
