@@ -54,8 +54,10 @@ export interface TaskActionSuccess {
   message: string;
   list?: TaskListResult;
   nextClearedForArea?: string;
+  /** Project slug when the cleared next belonged to a project scope */
+  nextClearedForProject?: string;
   noNextForArea?: string;
-  /** Open non-someday, non-future items remaining in area after next was cleared */
+  /** Open non-someday, non-future items remaining in the cleared item's scope */
   remainingInArea?: number;
   /** Scope descriptor when add did not auto-mark next (project:slug or area:name) */
   noNextForScope?: string;

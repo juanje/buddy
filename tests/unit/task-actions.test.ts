@@ -84,6 +84,33 @@ describe("executeTaskAction", () => {
     expect(taskResultToText(result)).toContain("No open tasks remain");
   });
 
+  it("complete of project-tagged next counts remaining in that project only", () => {
+    writeTasksFile(dir, [
+      { id: 1, text: "A1", done: false, next: true, area: "work", project: "alpha" },
+      { id: 2, text: "A2", done: false, next: false, area: "work", project: "alpha" },
+      { id: 3, text: "A3", done: false, next: false, area: "work", project: "alpha" },
+      { id: 4, text: "B1", done: false, next: true, area: "work", project: "beta" },
+      { id: 5, text: "B2", done: false, next: false, area: "work", project: "beta" },
+    ]);
+    const result = assertSuccess(executeTaskAction(dir, "complete", { id: 1 }));
+    expect(result.remainingInArea).toBe(2);
+    expect(result.nextClearedForProject).toBe("alpha");
+    expect(taskResultToText(result)).toContain("in #alpha");
+    expect(taskResultToText(result)).not.toContain("4 open tasks remain");
+  });
+
+  it("remove of loose next counts remaining loose items in area only", () => {
+    writeTasksFile(dir, [
+      { id: 1, text: "Loose next", done: false, next: true, area: "work" },
+      { id: 2, text: "Loose other", done: false, next: false, area: "work" },
+      { id: 3, text: "Tagged", done: false, next: true, area: "work", project: "alpha" },
+    ]);
+    const result = assertSuccess(executeTaskAction(dir, "remove", { id: 1 }));
+    expect(result.remainingInArea).toBe(1);
+    expect(result.nextClearedForProject).toBeUndefined();
+    expect(taskResultToText(result)).toContain("@work (loose tasks)");
+  });
+
   it("complete of next returns remainingInArea excluding someday and future", () => {
     const today = toIsoDay(new Date());
     const future = addDays(today, 14);

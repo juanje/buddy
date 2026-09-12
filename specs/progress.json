@@ -1187,6 +1187,19 @@
           "unit_tests": 1
         }
       ]
+    },
+    {
+      "id": "FR-TASKM-38",
+      "title": "complete/remove hint counts remaining in scope",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Completing project next counts remaining in project only",
+          "bdd": "pass",
+          "unit_tests": 2
+        }
+      ]
     }
   ]
 }

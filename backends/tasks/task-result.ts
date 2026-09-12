@@ -9,12 +9,15 @@ export function taskResultToText(result: TaskActionResult): string {
   const parts = [result.message];
   if (result.nextClearedForArea) {
     const area = result.nextClearedForArea || "general";
+    const scopeLabel = result.nextClearedForProject
+      ? `#${result.nextClearedForProject}`
+      : `@${area} (loose tasks)`;
     if (result.remainingInArea !== undefined && result.remainingInArea > 0) {
       parts.push(
-        `Next action cleared for @${area}. ${result.remainingInArea} open tasks remain with none marked next — suggest one to the user so this area doesn't stall.`,
+        `Next action cleared for ${scopeLabel}. ${result.remainingInArea} open tasks remain in ${scopeLabel} with none marked next — suggest one to the user so this area doesn't stall.`,
       );
     } else {
-      parts.push(`Next action cleared for @${area}. No open tasks remain in this area.`);
+      parts.push(`Next action cleared for ${scopeLabel}. No open tasks remain in ${scopeLabel}.`);
     }
   }
   if (result.noNextForScope) {

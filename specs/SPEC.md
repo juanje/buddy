@@ -3498,7 +3498,7 @@ Further context on local-model evaluation methodology and findings:
 | FR-TASKM-35 | Outcome-vs-task reinforcement: outcome-shaped language patterns in capture prompt | 2.5 ✓ |
 | FR-TASKM-36 | Untagged cluster review: consolidation weekly step with anti-misc-project guardrail | 2.5 ✓ |
 | FR-TASKM-37 | Next-per-project: >> scoped to project or loose-in-area, not whole area | 2.5 ✓ |
-| FR-TASKM-38 | complete/remove hint counts remaining in scope, not whole area | 2.5 |
+| FR-TASKM-38 | complete/remove hint counts remaining in scope, not whole area | 2.5 ✓ |
 | FR-TASKM-39 | Active fronts pre-computation: parse AGENTS.md Right now for per-area WIP check | 2.5 |
 | FR-TASKM-40 | Default WIP limit changed from 5 to 3 (per-area threshold) | 2.5 |
 

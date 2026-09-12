@@ -163,6 +163,28 @@ Given("tasks.md with project alpha having a next item", function (this: TasksWor
   ]);
 });
 
+Given(
+  "tasks.md with project alpha having 3 items and project beta having 2 items in @work",
+  function (this: TasksWorld) {
+    writeFileSync(
+      tasksFilePath(root.call(this)),
+      `---
+created: 2026-09-10
+---
+
+# Tasks
+
+- [ ] >> Alpha next #alpha @work
+- [ ] Alpha two #alpha @work
+- [ ] Alpha three #alpha @work
+- [ ] >> Beta one #beta @work
+- [ ] Beta two #beta @work
+`,
+      "utf8",
+    );
+  },
+);
+
 Given("tasks.md on disk has project-tagged items", function (this: TasksWorld) {
   const content = `---
 created: 2026-09-10
@@ -410,6 +432,10 @@ When("the user completes the next item via the tasks tool", function (this: Task
   invoke.call(this, "complete", { id: 1 });
 });
 
+When("the user completes the next item of project alpha", function (this: TasksWorld) {
+  invoke.call(this, "complete", { id: 1 });
+});
+
 When("tasks remove is invoked for id {int}", function (this: TasksWorld, id: number) {
   invoke.call(this, "remove", { id });
 });
@@ -500,6 +526,21 @@ Then(
     assert.ok(
       this.taskResultText?.includes(`${count} open tasks remain`),
       `expected remaining count ${count} in: ${this.taskResultText ?? "(empty)"}`,
+    );
+  },
+);
+
+Then(
+  'the remaining count is {string} not {string}',
+  function (this: TasksWorld, expected: string, notExpected: string) {
+    const text = this.taskResultText ?? "";
+    assert.ok(
+      text.includes(`${expected} open tasks remain`),
+      `expected remaining count ${expected} in: ${text || "(empty)"}`,
+    );
+    assert.ok(
+      !text.includes(`${notExpected} open tasks remain`),
+      `expected remaining count not ${notExpected} in: ${text}`,
     );
   },
 );

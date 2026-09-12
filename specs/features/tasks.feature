@@ -579,3 +579,10 @@ Feature: Task management
     And tasks.md with project alpha having a next item
     When tasks add is invoked with text "Another step" area "work" and project "alpha"
     Then the new item is not marked as next
+
+  @FR-TASKM-38
+  Scenario: Completing project next counts remaining in project only
+    Given an initialized buddy git repository
+    And tasks.md with project alpha having 3 items and project beta having 2 items in @work
+    When the user completes the next item of project alpha
+    Then the remaining count is "2" not "4"

@@ -9,7 +9,7 @@ import {
   buildUntaggedClusters,
   clearNextInScope,
   countActiveNext,
-  countActiveInArea,
+  countActiveInScope,
   findItemById,
   isActiveNextItem,
   readTasksFile,
@@ -205,14 +205,16 @@ export function executeTaskAction(
       if (!item) return err(`No task with id ${id}.`, "Call list first for current ids.");
       const hadNext = item.next;
       const area = item.area;
+      const project = item.project;
       item.done = true;
       item.next = false;
       writeTasksFile(rootDir, reindexItems(items));
       if (!hadNext) return ok("Task completed.");
       const today = toIsoDay(new Date());
-      const remainingInArea = countActiveInArea(items, area, today);
+      const remainingInArea = countActiveInScope(items, area, project, today);
       return ok("Task completed.", {
         nextClearedForArea: area || "general",
+        nextClearedForProject: project,
         remainingInArea,
       });
     }
@@ -286,13 +288,15 @@ export function executeTaskAction(
       const removed = items[index];
       const hadNext = removed.next;
       const area = removed.area;
+      const project = removed.project;
       items.splice(index, 1);
       writeTasksFile(rootDir, reindexItems(items));
       if (!hadNext) return ok("Task removed.");
       const today = toIsoDay(new Date());
-      const remainingInArea = countActiveInArea(items, area, today);
+      const remainingInArea = countActiveInScope(items, area, project, today);
       return ok("Task removed.", {
         nextClearedForArea: area || "general",
+        nextClearedForProject: project,
         remainingInArea,
       });
     }
