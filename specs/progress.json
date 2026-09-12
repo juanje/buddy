@@ -1,5 +1,5 @@
 {
-  "current_focus": "FR-CONSOL-29",
+  "current_focus": "FR-CONSOL-30",
   "features": [
     {
       "id": "FR-CHAT-18",
@@ -979,6 +979,13 @@
     {
       "id": "FR-CONSOL-29",
       "title": "findDatedTaskItems excludes created-date comments",
+      "status": "in_progress",
+      "cycle_step": "done",
+      "scenarios": []
+    },
+    {
+      "id": "FR-CONSOL-30",
+      "title": "detectTaskCoherence false positive reduction",
       "status": "in_progress",
       "cycle_step": "done",
       "scenarios": []

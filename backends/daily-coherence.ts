@@ -166,6 +166,8 @@ export function detectTaskCoherence(
   const logLower = logContent.toLowerCase();
   if (!logLower.trim()) return flags;
 
+  const logLines = logContent.split("\n").map((line) => line.toLowerCase());
+
   for (const line of tasksContent.split("\n")) {
     const trimmed = line.trim();
     if (!/^- \[( |x)\]/.test(trimmed) || trimmed.length < 10) continue;
@@ -174,22 +176,30 @@ export function detectTaskCoherence(
       .replace(/^- \[( |x)\] (>> )?/, "")
       .replace(/\s*\*\*[^*]+\*\*/, "")
       .replace(/\s*@[\w-]+\s*$/, "")
+      .replace(/\s*#[\w-]+/g, "")
+      .replace(/<!--[^>]*-->/g, "")
+      .replace(/\b\d{4}-\d{2}-\d{2}\b/g, "")
       .trim();
 
     const tokens = itemText
       .toLowerCase()
       .replace(/[^\p{L}\p{N}\s-]/gu, " ")
       .split(/\s+/)
-      .filter((word) => word.length >= 5);
+      .filter((word) => word.length >= 7);
 
     const matched = tokens.find((token) => logLower.includes(token));
     if (!matched) continue;
 
-    const completionMatch = COMPLETION_KEYWORDS.some((word) => logLower.includes(word));
-    const parkedMatch = PARKED_KEYWORDS.some((word) => logLower.includes(word));
-    if (!completionMatch && !parkedMatch) continue;
+    const matchedLines = logLines.filter((entry) => entry.includes(matched));
+    const completionNearby = matchedLines.some((entry) =>
+      COMPLETION_KEYWORDS.some((word) => entry.includes(word)),
+    );
+    const parkedNearby = matchedLines.some((entry) =>
+      PARKED_KEYWORDS.some((word) => entry.includes(word)),
+    );
+    if (!completionNearby && !parkedNearby) continue;
 
-    const reason = completionMatch
+    const reason = completionNearby
       ? `log mentions "${matched}" with completion language`
       : `log mentions "${matched}" with parking/deferral language`;
 

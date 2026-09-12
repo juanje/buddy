@@ -992,7 +992,7 @@ Fork bomb defense:
 | FR-CONSOL-27 | Pending logs detection for late reflects | 2 ✓ |
 | FR-CONSOL-28 | tasks() tool registered in consolidation session toolset | 2.5 ✓ |
 | FR-CONSOL-29 | findDatedTaskItems excludes created-date HTML comments from date matching | 2 ✓ |
-| FR-CONSOL-30 | detectTaskCoherence: strip metadata tokens, proximity-scoped completion check | 2 |
+| FR-CONSOL-30 | detectTaskCoherence: strip metadata tokens, proximity-scoped completion check | 2 ✓ |
 
 **Consolidation depths:**
 

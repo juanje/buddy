@@ -48,6 +48,29 @@ describe("daily coherence", () => {
     expect(flags[0]!.line).toContain("feature PR");
   });
 
+  it("does not flag tasks when only area words overlap with distant completion language", () => {
+    const tasks = `- [ ] Confirm docs @family`;
+    const log = "family lunch was nice, PR completed";
+    const flags = detectInboxCoherence(tasks, log);
+    expect(flags).toHaveLength(0);
+  });
+
+  it("does not flag tasks when metadata tokens are stripped and completion is unrelated", () => {
+    const tasks =
+      `- [ ] Pay rent 2026-09-15 #housing @personal <!-- c:2026-09-01 -->`;
+    const log = "housing discussion completed";
+    const flags = detectInboxCoherence(tasks, log);
+    expect(flags).toHaveLength(0);
+  });
+
+  it("flags genuine task completion when token and completion language share a log line", () => {
+    const tasks = `- [ ] Apply corrections and run tests on feature PR @work`;
+    const log = "feature PR corrections completed today";
+    const flags = detectInboxCoherence(tasks, log);
+    expect(flags).toHaveLength(1);
+    expect(flags[0]!.line).toContain("corrections");
+  });
+
   it("computes daily coherence from files", () => {
     dir = mkdtempSync(join(tmpdir(), "buddy-coherence-"));
     mkdirSync(join(dir, "logs"), { recursive: true });
