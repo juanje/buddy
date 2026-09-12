@@ -317,6 +317,13 @@ Feature: Task management
     And the agents-base prompt contains "raw/in-progress"
     And the agents-base prompt contains "stages, not copies"
 
+  @FR-TASKM-29
+  Scenario: agents-base prompt includes content escape hatch
+    Given the bundled agents-base.md prompt
+    Then the agents-base prompt contains "structured actionable information"
+    And the agents-base prompt contains "step 1b"
+    And the agents-base prompt contains "ask the user"
+
   @FR-TASKM-19
   Scenario: consolidation prompt includes workspace maturity check
     Given the bundled consolidation.md prompt

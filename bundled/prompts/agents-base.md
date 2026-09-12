@@ -95,8 +95,16 @@ Most of what the user shares is context, not tasks. This is the first filter
 — apply it before the classification table:
 
 1. *Is the user giving a clear instruction or committing to something concrete?*
-   - **No** → Context / Reflection / Maturing (use the table)
    - **Yes** → step 2
+   - **No** → step 1b
+
+1b. *Does the content contain structured actionable information for the user?*
+    (lists of documents to collect, steps to follow, deadlines, requirements,
+    appointments to schedule)
+   - **Yes** → ask the user: "I see actionable items here — should I capture them as
+     tasks/a project, or is this just context for now?"
+   - **No** → Context / Reflection / Maturing (use the table)
+
 2. *Single concrete step, or multi-step outcome?*
    - Single step → **Task**
    - Multi-step → **Project**

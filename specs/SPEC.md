@@ -3459,6 +3459,7 @@ Further context on local-model evaluation methodology and findings:
 | FR-TASKM-26 | Remove WIP awareness section from agents-base | 2.5 ✓ |
 | FR-TASKM-27 | Task created date uses local time via toIsoDay | 2.5 ✓ |
 | FR-TASKM-28 | Boot migration creates workspaces directory in existing instances | 2.5 ✓ |
+| FR-TASKM-29 | Content escape hatch: ask when shared content contains structured actions | 2.5 ✓ |
 
 **FR-TASKM-01 — Project tag in task format**
 
@@ -3597,6 +3598,10 @@ Further context on local-model evaluation methodology and findings:
 **FR-TASKM-28 — Boot migration creates workspaces directory**
 
 - `migrateAgentsWorkspacesReference()` ensures `user/workspaces/` exists on boot for pre-existing instances.
+
+**FR-TASKM-29 — Content escape hatch in capture classification**
+
+- `agents-base.md` "Default to context" section adds step 1b between existing steps: when no explicit commitment is detected but content contains structured actionable information (lists, deadlines, requirements, document checklists), ask the user before classifying. Does not create tasks automatically — asks.
 
 ---
 

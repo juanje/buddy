@@ -900,6 +900,19 @@
           "unit_tests": 26
         }
       ]
+    },
+    {
+      "id": "FR-TASKM-29",
+      "title": "Content escape hatch: ask when shared content contains structured actions 2.5",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "agents-base prompt includes content escape hatch",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
     }
   ]
 }

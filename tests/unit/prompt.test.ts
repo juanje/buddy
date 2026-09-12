@@ -181,6 +181,19 @@ describe("process-conversation semantic distinction", () => {
   });
 });
 
+// FR-TASKM-29: content escape hatch in default-context classification.
+describe("agents-base content escape hatch", () => {
+  it("asks the user when content contains structured actionable information", () => {
+    const base = readFileSync(
+      join(bundledPromptsDir(), "agents-base.md"),
+      "utf8",
+    );
+    expect(base).toContain("structured actionable information");
+    expect(base).toContain("step 1b");
+    expect(base).toContain("ask the user");
+  });
+});
+
 // FR-TASKM-04: GTD-anchored capture classification and project param in add.
 describe("agents-base GTD project classification", () => {
   it("anchors task vs project with GTD vocabulary and documents project param", () => {
