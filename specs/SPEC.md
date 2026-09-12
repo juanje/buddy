@@ -3466,6 +3466,9 @@ Further context on local-model evaluation methodology and findings:
 | FR-TASKM-28 | Boot migration creates workspaces directory in existing instances | 2.5 ✓ |
 | FR-TASKM-29 | Content escape hatch: ask when shared content contains structured actions | 2.5 ✓ |
 | FR-TASKM-30 | Safe inbox migration: preserve unrecognized content for LLM fallback | 2.5 ✓ |
+| FR-TASKM-31 | Deterministic list filters: only_next, only_stale, only_due, only_projects | 2.5 ✓ |
+| FR-TASKM-32 | edit action: modify task text, area, project, due in place | 2.5 ✓ |
+| FR-TASKM-33 | Consolidation uses deterministic task filters instead of broad list | 2.5 ✓ |
 
 **FR-TASKM-01 — Project tag in task format**
 
@@ -3615,6 +3618,26 @@ Further context on local-model evaluation methodology and findings:
 - Consolidation: step 4 guidance migrates pending inbox via `tasks()` and writes `user/.inbox-migration-done` marker.
 - Boot: `cleanupPendingInboxMigration()` removes pending file and marker when marker exists.
 - Truly empty inboxes (structure only) still delete `inbox.md` and create empty `tasks.md`.
+
+**FR-TASKM-31 — Deterministic list filters**
+
+- `list(only_next: true)` returns only open next-action items, excluding `@someday` and future-dated items.
+- `list(only_stale: true)` returns only items with computed `staleDays` (open > 30 days, not `>>`, not `@someday`).
+- `list(only_due: true)` returns only items with `dueDate` today or tomorrow.
+- `list(only_projects: true)` returns `projects: ProjectSummary[]` with `{ project, openCount, hasNext }` per `#project` tag.
+- Filters combine with existing `area?` and `project?` params.
+
+**FR-TASKM-32 — edit action**
+
+- `edit(id, text?, area?, project?, due?)` modifies task fields in place; only provided fields change.
+- Classified as `read` (no confirmation). Preserves `created` date and id stability.
+
+**FR-TASKM-33 — Consolidation deterministic task filters**
+
+- `consolidation.md` step 4 uses `only_next`, `only_projects`, and `only_stale` instead of broad `list`.
+- Step 5b uses `only_due: true` instead of pre-computed header block scanning.
+- W1b uses `only_stale: true`.
+- Prominent guardrail: do not call unfiltered `list` during consolidation.
 
 ---
 

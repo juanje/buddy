@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { executeTaskAction } from "../../backends/tasks/task-actions";
 import { taskResultToText } from "../../backends/tasks/task-result";
-import { toIsoDay } from "../../shared/dates";
+import { addDays, toIsoDay } from "../../shared/dates";
 import type { TaskActionSuccess } from "../../shared/task-types";
 import { tasksFilePath, writeTasksFile } from "../../backends/tasks/task-file";
 import { setupGlobalConfigDir, teardownGlobalConfigDir } from "../support/global-config";
@@ -266,6 +266,128 @@ created: ${createdStr}
     ]);
     const result = assertSuccess(executeTaskAction(dir, "add", { text: "One more" }));
     expect(taskResultToText(result)).not.toMatch(/WIP/i);
+  });
+
+  it("only_next returns only active next-action items", () => {
+    const future = new Date();
+    future.setDate(future.getDate() + 14);
+    const futureStr = future.toISOString().slice(0, 10);
+    writeTasksFile(dir, [
+      { id: 1, text: "Active next", done: false, next: true, area: "work" },
+      { id: 2, text: "Open not next", done: false, next: false, area: "work" },
+      { id: 3, text: "Someday next", done: false, next: true, area: "someday" },
+      { id: 4, text: "Future next", done: false, next: true, area: "personal", dueDate: futureStr },
+    ]);
+    const result = assertSuccess(executeTaskAction(dir, "list", { only_next: true }));
+    expect(result.list?.items).toHaveLength(1);
+    expect(result.list?.items[0]?.text).toBe("Active next");
+  });
+
+  it("only_stale returns only items with staleDays", () => {
+    const created = new Date();
+    created.setDate(created.getDate() - 45);
+    const createdStr = created.toISOString().slice(0, 10);
+    writeTasksFile(dir, [
+      { id: 1, text: "Old", done: false, next: false, area: "work", created: createdStr },
+      { id: 2, text: "Fresh", done: false, next: false, area: "work", created: toIsoDay(new Date()) },
+      { id: 3, text: "Old next", done: false, next: true, area: "work", created: createdStr },
+    ]);
+    const result = assertSuccess(executeTaskAction(dir, "list", { only_stale: true }));
+    expect(result.list?.items).toHaveLength(1);
+    expect(result.list?.items[0]?.text).toBe("Old");
+  });
+
+  it("only_due returns items due today or tomorrow", () => {
+    const today = toIsoDay(new Date());
+    const tomorrow = addDays(today, 1);
+    const nextWeek = addDays(today, 7);
+    writeTasksFile(dir, [
+      { id: 1, text: "Today", done: false, next: true, area: "work", dueDate: today },
+      { id: 2, text: "Tomorrow", done: false, next: false, area: "personal", dueDate: tomorrow },
+      { id: 3, text: "Later", done: false, next: false, area: "personal", dueDate: nextWeek },
+    ]);
+    const result = assertSuccess(executeTaskAction(dir, "list", { only_due: true }));
+    expect(result.list?.items).toHaveLength(2);
+    expect(result.list?.items.map((item) => item.dueDate).sort()).toEqual([today, tomorrow].sort());
+  });
+
+  it("only_projects returns project summary with openCount and hasNext", () => {
+    writeTasksFile(dir, [
+      { id: 1, text: "A", done: false, next: true, project: "alpha", area: "work" },
+      { id: 2, text: "B", done: false, next: false, project: "alpha", area: "work" },
+      { id: 3, text: "C", done: false, next: true, area: "work" },
+    ]);
+    const result = assertSuccess(executeTaskAction(dir, "list", { only_projects: true }));
+    expect(result.list?.items).toHaveLength(0);
+    expect(result.list?.projects).toEqual([
+      { project: "alpha", openCount: 2, hasNext: true },
+    ]);
+  });
+
+  it("only_next combines with area filter", () => {
+    writeTasksFile(dir, [
+      { id: 1, text: "Work next", done: false, next: true, area: "work" },
+      { id: 2, text: "Personal next", done: false, next: true, area: "personal" },
+    ]);
+    const result = assertSuccess(executeTaskAction(dir, "list", { only_next: true, area: "work" }));
+    expect(result.list?.items).toHaveLength(1);
+    expect(result.list?.items[0]?.area).toBe("work");
+  });
+
+  it("edit text preserves created date and next status", () => {
+    writeTasksFile(dir, [
+      { id: 1, text: "Buy milk", done: false, next: true, area: "personal", created: "2026-01-15" },
+    ]);
+    const result = assertSuccess(executeTaskAction(dir, "edit", { id: 1, text: "Buy oat milk" }));
+    expect(result.message).toContain("updated");
+    const content = readFileSync(tasksFilePath(dir), "utf8");
+    expect(content).toContain(">> Buy oat milk @personal");
+    expect(content).toContain("<!-- c:2026-01-15 -->");
+  });
+
+  it("edit area and project change only provided fields", () => {
+    writeTasksFile(dir, [
+      {
+        id: 1,
+        text: "Get DNI copy",
+        done: false,
+        next: true,
+        area: "family",
+        project: "ley-dep",
+      },
+    ]);
+    assertSuccess(executeTaskAction(dir, "edit", { id: 1, area: "personal", project: "other" }));
+    const list = assertSuccess(executeTaskAction(dir, "list", {}));
+    expect(list.list?.items[0]).toMatchObject({
+      text: "Get DNI copy",
+      area: "personal",
+      project: "other",
+      next: true,
+    });
+  });
+
+  it("edit due updates dueDate only when provided", () => {
+    writeTasksFile(dir, [
+      { id: 1, text: "Pay rent", done: false, next: true, area: "personal", dueDate: "2026-09-01" },
+    ]);
+    assertSuccess(executeTaskAction(dir, "edit", { id: 1, due: "2026-10-01" }));
+    const list = assertSuccess(executeTaskAction(dir, "list", { include_future: true }));
+    expect(list.list?.items[0]?.dueDate).toBe("2026-10-01");
+  });
+
+  it("edit non-existent id returns error", () => {
+    const result = executeTaskAction(dir, "edit", { id: 99, text: "Nope" });
+    expect(result.ok).toBe(false);
+  });
+
+  it("edit with no fields is a no-op success", () => {
+    writeTasksFile(dir, [
+      { id: 1, text: "Keep", done: false, next: true, area: "work" },
+    ]);
+    const result = assertSuccess(executeTaskAction(dir, "edit", { id: 1 }));
+    expect(result.message).toContain("updated");
+    const content = readFileSync(tasksFilePath(dir), "utf8");
+    expect(content).toContain(">> Keep @work");
   });
 
   it("add does not warn when non-someday count reaches limit", () => {

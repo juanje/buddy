@@ -12,7 +12,7 @@ import { basename, dirname, join } from "node:path";
 
 import { USER_DIR } from "../../shared/brain-paths";
 import { toIsoDay } from "../../shared/dates";
-import type { TaskItem, TaskListResult } from "../../shared/task-types";
+import type { ProjectSummary, TaskItem, TaskListResult } from "../../shared/task-types";
 
 const CHECKBOX_RE = /^- \[( |x)\] (>> )?(.*)$/;
 
@@ -246,4 +246,31 @@ export function countOpenInArea(items: TaskItem[], area?: string): number {
 export function areaHasNext(items: TaskItem[], area?: string): boolean {
   const key = areaKey(area);
   return items.some((item) => !item.done && item.next && areaKey(item.area) === key);
+}
+
+export function buildProjectSummary(items: TaskItem[]): ProjectSummary[] {
+  const map = new Map<string, { openCount: number; hasNext: boolean }>();
+  for (const item of items) {
+    if (item.done || !item.project) continue;
+    const entry = map.get(item.project) ?? { openCount: 0, hasNext: false };
+    entry.openCount += 1;
+    if (item.next) entry.hasNext = true;
+    map.set(item.project, entry);
+  }
+  return [...map.entries()]
+    .map(([project, stats]) => ({
+      project,
+      openCount: stats.openCount,
+      hasNext: stats.hasNext,
+    }))
+    .sort((a, b) => a.project.localeCompare(b.project));
+}
+
+export function isActiveNextItem(item: TaskItem, today: string): boolean {
+  return (
+    !item.done &&
+    item.next &&
+    item.area !== "someday" &&
+    !(item.dueDate && item.dueDate > today)
+  );
 }

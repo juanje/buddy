@@ -1,15 +1,17 @@
 // backends/tasks/task-actions.ts — tasks() action implementations (FR-TASK).
 
 import type { TaskActionResult, TaskActionSuccess, TaskItem } from "../../shared/task-types";
-import { toIsoDay } from "../../shared/dates";
+import { addDays, toIsoDay } from "../../shared/dates";
 import { readTaskConfig, writeTaskWipLimit } from "./task-config";
 import {
   areaHasNext,
   buildListResult,
+  buildProjectSummary,
   clearNextInArea,
   countActiveNext,
   countOpenInArea,
   findItemById,
+  isActiveNextItem,
   readTasksFile,
   writeTasksFile,
 } from "./task-file";
@@ -17,9 +19,11 @@ import {
 const HELP_TEXT = `tasks() actions:
 - help — list actions
 - add(text, area?, due?, project?) — add open item
+- edit(id, text?, area?, project?, due?) — modify task fields in place
 - complete(id) — mark done
 - set_next(id) — mark as next action (>>) for its area
-- list(area?, project?, include_done?, include_parked?, include_future?) — structured items with ids
+- list(area?, project?, include_done?, include_parked?, include_future?,
+       only_next?, only_stale?, only_due?, only_projects?) — structured items
 - move(id, area) — change @area
 - annotate(id, annotation) — add **metadata**
 - remove(id) — delete item (requires confirmation)
@@ -36,6 +40,10 @@ export interface TaskActionParams {
   include_done?: boolean;
   include_parked?: boolean;
   include_future?: boolean;
+  only_next?: boolean;
+  only_stale?: boolean;
+  only_due?: boolean;
+  only_projects?: boolean;
 }
 
 function err(error: string, suggestion?: string): TaskActionResult {
@@ -90,7 +98,7 @@ export function executeTaskAction(
         parkedCount = filtered.filter((item) => item.area === "someday").length;
         filtered = filtered.filter((item) => item.area !== "someday");
       }
-      if (!params.include_future) {
+      if (!params.include_future && !params.only_due) {
         futureCount = filtered.filter((item) => item.dueDate && item.dueDate > today).length;
         filtered = filtered.filter((item) => !(item.dueDate && item.dueDate > today));
       }
@@ -99,6 +107,32 @@ export function executeTaskAction(
       list.parkedCount = parkedCount;
       list.futureCount = futureCount;
       list.activeNextCount = activeNextCount;
+
+      if (params.only_projects) {
+        list.projects = buildProjectSummary(items.filter((item) => !item.done));
+        list.items = [];
+        list.areas = [];
+        list.openCount = 0;
+        return ok("Task list:", { list });
+      }
+
+      if (params.only_next) {
+        list.items = list.items.filter((item) => isActiveNextItem(item, today));
+      }
+      if (params.only_stale) {
+        list.items = list.items.filter((item) => item.staleDays !== undefined);
+      }
+      if (params.only_due) {
+        const tomorrow = addDays(today, 1);
+        list.items = list.items.filter(
+          (item) => item.dueDate === today || item.dueDate === tomorrow,
+        );
+      }
+
+      if (params.only_next || params.only_stale || params.only_due) {
+        list.openCount = list.items.length;
+      }
+
       return ok("Task list:", { list });
     }
 
@@ -177,6 +211,27 @@ export function executeTaskAction(
       item.next = true;
       writeTasksFile(rootDir, reindexItems(items));
       return ok("Next action updated.");
+    }
+
+    case "edit": {
+      const id = params.id;
+      if (id === undefined) return err("edit requires params.id.");
+      const items = loadItems(rootDir);
+      const item = findItemById(items, id);
+      if (!item) return err(`No task with id ${id}.`, "Call list first for current ids.");
+      if (params.text) item.text = params.text.trim();
+      if (params.area !== undefined) {
+        item.area = params.area.replace(/^@/, "") || undefined;
+      }
+      if (params.project !== undefined) {
+        item.project = params.project.replace(/^#/, "") || undefined;
+      }
+      if (params.due !== undefined) {
+        item.dueDate = params.due || undefined;
+        item.text = item.text.replace(/\b\d{4}-\d{2}-\d{2}\b/g, "").replace(/\s+/g, " ").trim();
+      }
+      writeTasksFile(rootDir, reindexItems(items));
+      return ok("Task updated.");
     }
 
     case "move": {

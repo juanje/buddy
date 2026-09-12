@@ -433,3 +433,74 @@ Feature: Task management
     And user workspaces directory does not exist
     When workspaces boot migration runs
     Then user workspaces directory exists
+
+  @FR-TASKM-31
+  Scenario: list with only_next returns next actions only
+    Given an initialized buddy git repository
+    And tasks.md on disk has work items A and B
+    When tasks list is invoked with only_next true
+    Then the task list has 1 items
+    And the first task has next marker true
+
+  @FR-TASKM-31
+  Scenario: list with only_stale returns aged items only
+    Given an initialized buddy git repository
+    And tasks.md has an item created 45 days ago
+    When tasks list is invoked with only_stale true
+    Then the task list has 1 items
+    And the stale item has staleDays of 45
+
+  @FR-TASKM-31
+  Scenario: list with only_due returns date-triggered items
+    Given an initialized buddy git repository
+    And tasks.md on disk has due today tomorrow and next week items
+    When tasks list is invoked with only_due true
+    Then the task list has 2 items
+
+  @FR-TASKM-31
+  Scenario: list with only_projects returns project summary
+    Given an initialized buddy git repository
+    And tasks.md on disk has project-tagged items
+    When tasks list is invoked with only_projects true
+    Then the task list projects summary has 1 projects
+    And project ley-dep has openCount 2 and hasNext true
+
+  @FR-TASKM-32
+  Scenario: edit changes task text
+    Given an initialized buddy git repository
+    And tasks.md on disk has frontmatter created "2026-01-15" and line "- [ ] >> Buy milk @personal"
+    When tasks edit is invoked for id 1 with text "Buy oat milk"
+    Then tasks.md on disk contains ">> Buy oat milk @personal"
+    And tasks.md on disk contains "<!-- c:2026-01-15 -->"
+
+  @FR-TASKM-32
+  Scenario: edit changes area and project
+    Given an initialized buddy git repository
+    And tasks.md on disk has line "- [ ] >> Get DNI copy #ley-dep @family"
+    When tasks edit is invoked for id 1 with area "personal" and project "other"
+    Then tasks.md on disk contains ">> Get DNI copy #other @personal"
+
+  @FR-TASKM-33
+  Scenario: consolidation prompt uses only_next for active fronts
+    Given the bundled consolidation.md prompt
+    Then the consolidation prompt contains "only_next"
+
+  @FR-TASKM-33
+  Scenario: consolidation prompt uses only_stale for staleness review
+    Given the bundled consolidation.md prompt
+    Then the consolidation prompt contains "only_stale"
+
+  @FR-TASKM-33
+  Scenario: consolidation prompt uses only_due for date reminders
+    Given the bundled consolidation.md prompt
+    Then the consolidation prompt contains "only_due"
+
+  @FR-TASKM-33
+  Scenario: consolidation prompt uses only_projects for health check
+    Given the bundled consolidation.md prompt
+    Then the consolidation prompt contains "only_projects"
+
+  @FR-TASKM-33
+  Scenario: consolidation prompt forbids unfiltered list
+    Given the bundled consolidation.md prompt
+    Then the consolidation prompt forbids unfiltered list

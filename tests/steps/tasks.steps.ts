@@ -11,7 +11,7 @@ import { executeTaskAction } from "../../backends/tasks/task-actions";
 import { taskResultToText } from "../../backends/tasks/task-result";
 import { tasksFilePath, writeTasksFile } from "../../backends/tasks/task-file";
 import { writeTaskWipLimit } from "../../backends/tasks/task-config";
-import { toIsoDay } from "../../shared/dates";
+import { addDays, toIsoDay } from "../../shared/dates";
 import {
   cleanupPendingInboxMigration,
   migrateAgentsTasksReference,
@@ -32,6 +32,7 @@ interface TasksWorld extends BuddyWorld {
   firstTaskNext?: boolean;
   firstTaskProject?: string;
   firstTaskCreated?: string;
+  taskListProjectsCount?: number;
   globalConfigDir?: string;
   skillToolNames?: string[];
   agentsBasePrompt?: string;
@@ -58,6 +59,7 @@ function invoke(this: TasksWorld, action: string, params: Record<string, unknown
     this.firstTaskNext = result.list.items[0]?.next;
     this.firstTaskProject = result.list.items[0]?.project;
     this.firstTaskCreated = result.list.items[0]?.created;
+    this.taskListProjectsCount = result.list.projects?.length;
   }
 }
 
@@ -254,6 +256,53 @@ When("tasks list is invoked with include_parked true", function (this: TasksWorl
 When("tasks list is invoked with include_future true", function (this: TasksWorld) {
   invoke.call(this, "list", { include_future: true, include_done: true });
 });
+
+When("tasks list is invoked with only_next true", function (this: TasksWorld) {
+  invoke.call(this, "list", { only_next: true });
+});
+
+When("tasks list is invoked with only_stale true", function (this: TasksWorld) {
+  invoke.call(this, "list", { only_stale: true });
+});
+
+When("tasks list is invoked with only_due true", function (this: TasksWorld) {
+  invoke.call(this, "list", { only_due: true });
+});
+
+When("tasks list is invoked with only_projects true", function (this: TasksWorld) {
+  invoke.call(this, "list", { only_projects: true });
+});
+
+Given("tasks.md on disk has due today tomorrow and next week items", function (this: TasksWorld) {
+  const today = toIsoDay(new Date());
+  const tomorrow = addDays(today, 1);
+  const nextWeek = addDays(today, 7);
+  const content = `---
+created: ${today}
+---
+
+# Tasks
+
+- [ ] >> Due today ${today} @work
+- [ ] Due tomorrow ${tomorrow} @personal
+- [ ] Due later ${nextWeek} @personal
+`;
+  writeFileSync(tasksFilePath(root.call(this)), content, "utf8");
+});
+
+When(
+  "tasks edit is invoked for id {int} with text {string}",
+  function (this: TasksWorld, id: number, text: string) {
+    invoke.call(this, "edit", { id, text });
+  },
+);
+
+When(
+  "tasks edit is invoked for id {int} with area {string} and project {string}",
+  function (this: TasksWorld, id: number, area: string, project: string) {
+    invoke.call(this, "edit", { id, area, project });
+  },
+);
 
 When("tasks complete is invoked for id {int}", function (this: TasksWorld, id: number) {
   invoke.call(this, "complete", { id });
@@ -527,6 +576,32 @@ Then("the consolidation prompt references project health check", function (this:
 
 Then("the consolidation prompt contains {string}", function (this: TasksWorld, text: string) {
   assert.ok(this.consolidationPrompt?.includes(text), `missing: ${text}`);
+});
+
+Then(
+  "the task list projects summary has {int} projects",
+  function (this: TasksWorld, count: number) {
+    assert.ok(this.taskResult?.ok && this.taskResult.list, "expected task list result");
+    assert.equal(this.taskResult.list!.projects?.length, count);
+  },
+);
+
+Then(
+  "project {word} has openCount {int} and hasNext {word}",
+  function (this: TasksWorld, project: string, openCount: number, hasNext: string) {
+    assert.ok(this.taskResult?.ok && this.taskResult.list, "expected task list result");
+    const summary = this.taskResult.list!.projects?.find((entry) => entry.project === project);
+    assert.ok(summary, `expected project ${project}`);
+    assert.equal(summary.openCount, openCount);
+    assert.equal(summary.hasNext, hasNext === "true");
+  },
+);
+
+Then("the consolidation prompt forbids unfiltered list", function (this: TasksWorld) {
+  assert.match(
+    this.consolidationPrompt ?? "",
+    /Do not call `tasks\(action='list'\)` without filters during consolidation/i,
+  );
 });
 
 Then("the consolidation session toolset includes tasks", function (this: TasksWorld) {

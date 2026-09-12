@@ -25,6 +25,12 @@ export interface TaskAreaSummary {
   hasNext: boolean;
 }
 
+export interface ProjectSummary {
+  project: string;
+  openCount: number;
+  hasNext: boolean;
+}
+
 export interface TaskListResult {
   items: TaskItem[];
   areas: TaskAreaSummary[];
@@ -33,6 +39,8 @@ export interface TaskListResult {
   futureCount: number;
   /** Open next-action items excluding @someday and future-dated */
   activeNextCount: number;
+  /** Populated when list(only_projects: true) */
+  projects?: ProjectSummary[];
 }
 
 export interface TaskConfig {
