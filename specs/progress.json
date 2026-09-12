@@ -1105,6 +1105,24 @@
           "unit_tests": 2
         }
       ]
+    },
+    {
+      "id": "FR-TASKM-34",
+      "title": "Next-action hint on area clear",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Completing next action hints remaining tasks in area",
+          "bdd": "pass",
+          "unit_tests": 6
+        },
+        {
+          "name": "Removing the only next action confirms area is clear",
+          "bdd": "pass",
+          "unit_tests": 2
+        }
+      ]
     }
   ]
 }

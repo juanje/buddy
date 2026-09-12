@@ -243,6 +243,18 @@ export function countOpenInArea(items: TaskItem[], area?: string): number {
   return items.filter((item) => !item.done && areaKey(item.area) === key).length;
 }
 
+export function countActiveInArea(items: TaskItem[], area?: string, today?: string): number {
+  const key = areaKey(area);
+  const todayStr = today ?? toIsoDay(new Date());
+  return items.filter(
+    (item) =>
+      !item.done &&
+      areaKey(item.area) === key &&
+      item.area !== "someday" &&
+      !(item.dueDate && item.dueDate > todayStr),
+  ).length;
+}
+
 export function areaHasNext(items: TaskItem[], area?: string): boolean {
   const key = areaKey(area);
   return items.some((item) => !item.done && item.next && areaKey(item.area) === key);

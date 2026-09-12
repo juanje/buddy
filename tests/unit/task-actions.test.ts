@@ -50,6 +50,53 @@ describe("executeTaskAction", () => {
     ]);
     const result = assertSuccess(executeTaskAction(dir, "complete", { id: 1 }));
     expect(result.nextClearedForArea).toBe("work");
+    expect(result.remainingInArea).toBe(0);
+    expect(taskResultToText(result)).toContain("No open tasks remain");
+  });
+
+  it("complete of next returns remainingInArea excluding someday and future", () => {
+    const today = toIsoDay(new Date());
+    const future = addDays(today, 14);
+    writeTasksFile(dir, [
+      { id: 1, text: "Next work", done: false, next: true, area: "work" },
+      { id: 2, text: "Other one", done: false, next: false, area: "work" },
+      { id: 3, text: "Other two", done: false, next: false, area: "work" },
+      { id: 4, text: "Parked", done: false, next: false, area: "someday" },
+      { id: 5, text: "Future", done: false, next: false, area: "work", dueDate: future },
+    ]);
+    const result = assertSuccess(executeTaskAction(dir, "complete", { id: 1 }));
+    expect(result.remainingInArea).toBe(2);
+    const text = taskResultToText(result);
+    expect(text).toContain("2 open tasks remain");
+    expect(text.toLowerCase()).toContain("suggest");
+  });
+
+  it("complete of non-next does not return nextClearedForArea", () => {
+    writeTasksFile(dir, [
+      { id: 1, text: "Plain task", done: false, next: false, area: "work" },
+    ]);
+    const result = assertSuccess(executeTaskAction(dir, "complete", { id: 1 }));
+    expect(result.nextClearedForArea).toBeUndefined();
+    expect(result.remainingInArea).toBeUndefined();
+  });
+
+  it("remove of next returns nextClearedForArea and remainingInArea", () => {
+    writeTasksFile(dir, [
+      { id: 1, text: "Next health", done: false, next: true, area: "health" },
+      { id: 2, text: "Other health", done: false, next: false, area: "health" },
+    ]);
+    const result = assertSuccess(executeTaskAction(dir, "remove", { id: 1 }));
+    expect(result.nextClearedForArea).toBe("health");
+    expect(result.remainingInArea).toBe(1);
+  });
+
+  it("remove of non-next does not return nextClearedForArea", () => {
+    writeTasksFile(dir, [
+      { id: 1, text: "Plain task", done: false, next: false, area: "work" },
+    ]);
+    const result = assertSuccess(executeTaskAction(dir, "remove", { id: 1 }));
+    expect(result.nextClearedForArea).toBeUndefined();
+    expect(result.remainingInArea).toBeUndefined();
   });
 
   it("add does not warn when WIP exceeded but still adds", () => {

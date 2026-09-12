@@ -9,6 +9,7 @@ import {
   buildProjectSummary,
   clearNextInArea,
   countActiveNext,
+  countActiveInArea,
   countOpenInArea,
   findItemById,
   isActiveNextItem,
@@ -197,7 +198,13 @@ export function executeTaskAction(
       item.done = true;
       item.next = false;
       writeTasksFile(rootDir, reindexItems(items));
-      return ok("Task completed.", hadNext ? { nextClearedForArea: area || "general" } : undefined);
+      if (!hadNext) return ok("Task completed.");
+      const today = toIsoDay(new Date());
+      const remainingInArea = countActiveInArea(items, area, today);
+      return ok("Task completed.", {
+        nextClearedForArea: area || "general",
+        remainingInArea,
+      });
     }
 
     case "set_next": {
@@ -266,9 +273,18 @@ export function executeTaskAction(
       const items = loadItems(rootDir);
       const index = items.findIndex((item) => item.id === id);
       if (index === -1) return err(`No task with id ${id}.`);
+      const removed = items[index];
+      const hadNext = removed.next;
+      const area = removed.area;
       items.splice(index, 1);
       writeTasksFile(rootDir, reindexItems(items));
-      return ok("Task removed.");
+      if (!hadNext) return ok("Task removed.");
+      const today = toIsoDay(new Date());
+      const remainingInArea = countActiveInArea(items, area, today);
+      return ok("Task removed.", {
+        nextClearedForArea: area || "general",
+        remainingInArea,
+      });
     }
 
     default:

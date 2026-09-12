@@ -504,3 +504,20 @@ Feature: Task management
   Scenario: consolidation prompt forbids unfiltered list
     Given the bundled consolidation.md prompt
     Then the consolidation prompt forbids unfiltered list
+
+  @FR-TASKM-34
+  Scenario: Completing next action hints remaining tasks in area
+    Given an initialized buddy git repository
+    And a tasks.md with a >> item in @work and 2 other open @work items
+    When the user completes the next item via the tasks tool
+    Then the tool response includes the remaining count "2"
+    And the tool response includes a suggest hint
+
+  @FR-TASKM-34
+  Scenario: Removing the only next action confirms area is clear
+    Given an initialized buddy git repository
+    And a tasks.md with a single >> item in @health and no other @health items
+    When the user removes the next item via the tasks tool
+    Then the tool response includes nextClearedForArea
+    And the tool response says no open tasks remain
+    And the tool response does not include a suggest hint

@@ -53,6 +53,8 @@ export interface TaskActionSuccess {
   list?: TaskListResult;
   nextClearedForArea?: string;
   noNextForArea?: string;
+  /** Open non-someday, non-future items remaining in area after next was cleared */
+  remainingInArea?: number;
 }
 
 export interface TaskActionError {

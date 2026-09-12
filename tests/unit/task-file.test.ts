@@ -8,6 +8,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import type { TaskItem } from "../../shared/task-types";
 import {
   buildListResult,
+  countActiveInArea,
   countActiveNext,
   parseTaskFileContent,
   readTasksFile,
@@ -15,6 +16,7 @@ import {
   tasksFilePath,
   writeTasksFile,
 } from "../../backends/tasks/task-file";
+import { addDays, toIsoDay } from "../../shared/dates";
 
 describe("parseTaskFileContent", () => {
   it("round-trips items through serialize", () => {
@@ -191,6 +193,21 @@ created: 2026-01-15
     );
     const { items } = readTasksFile(dir);
     expect(items[0]?.created).toBe("2026-02-01");
+  });
+});
+
+describe("countActiveInArea", () => {
+  it("excludes someday and future-dated items in the area", () => {
+    const today = toIsoDay(new Date());
+    const future = addDays(today, 10);
+    const items: TaskItem[] = [
+      { id: 1, text: "Open one", done: false, next: false, area: "work" },
+      { id: 2, text: "Open two", done: false, next: false, area: "work" },
+      { id: 3, text: "Parked", done: false, next: false, area: "someday" },
+      { id: 4, text: "Future", done: false, next: false, area: "work", dueDate: future },
+      { id: 5, text: "Done", done: true, next: false, area: "work" },
+    ];
+    expect(countActiveInArea(items, "work", today)).toBe(2);
   });
 });
 

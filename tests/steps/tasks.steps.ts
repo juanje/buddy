@@ -114,6 +114,26 @@ created: 2026-09-10
   writeFileSync(tasksFilePath(root.call(this)), content, "utf8");
 });
 
+Given(
+  "a tasks.md with a >> item in @work and 2 other open @work items",
+  function (this: TasksWorld) {
+    writeTasksFile(root.call(this), [
+      { id: 1, text: "Next work task", done: false, next: true, area: "work" },
+      { id: 2, text: "Other work one", done: false, next: false, area: "work" },
+      { id: 3, text: "Other work two", done: false, next: false, area: "work" },
+    ]);
+  },
+);
+
+Given(
+  "a tasks.md with a single >> item in @health and no other @health items",
+  function (this: TasksWorld) {
+    writeTasksFile(root.call(this), [
+      { id: 1, text: "Health next", done: false, next: true, area: "health" },
+    ]);
+  },
+);
+
 Given("tasks.md on disk has project-tagged items", function (this: TasksWorld) {
   const content = `---
 created: 2026-09-10
@@ -308,6 +328,18 @@ When("tasks complete is invoked for id {int}", function (this: TasksWorld, id: n
   invoke.call(this, "complete", { id });
 });
 
+When("the user completes the next item via the tasks tool", function (this: TasksWorld) {
+  invoke.call(this, "complete", { id: 1 });
+});
+
+When("tasks remove is invoked for id {int}", function (this: TasksWorld, id: number) {
+  invoke.call(this, "remove", { id });
+});
+
+When("the user removes the next item via the tasks tool", function (this: TasksWorld) {
+  invoke.call(this, "remove", { id: 1 });
+});
+
 When("tasks set_next is invoked for id {int}", function (this: TasksWorld, id: number) {
   invoke.call(this, "set_next", { id });
 });
@@ -381,6 +413,50 @@ Then("the task result does not contain {string}", function (this: TasksWorld, sn
   assert.ok(
     !this.taskResultText?.includes(snippet),
     `expected "${snippet}" not in: ${this.taskResultText ?? "(empty)"}`,
+  );
+});
+
+Then(
+  'the tool response includes the remaining count {string}',
+  function (this: TasksWorld, count: string) {
+    assert.ok(
+      this.taskResultText?.includes(`${count} open tasks remain`),
+      `expected remaining count ${count} in: ${this.taskResultText ?? "(empty)"}`,
+    );
+  },
+);
+
+Then("the tool response includes a suggest hint", function (this: TasksWorld) {
+  assert.ok(
+    this.taskResultText?.toLowerCase().includes("suggest"),
+    `expected suggest hint in: ${this.taskResultText ?? "(empty)"}`,
+  );
+});
+
+Then("the tool response includes nextClearedForArea", function (this: TasksWorld) {
+  assert.ok(this.taskResult?.ok, "expected successful task result");
+  assert.ok(
+    (this.taskResult as { nextClearedForArea?: string }).nextClearedForArea,
+    "expected nextClearedForArea on result",
+  );
+  assert.match(
+    this.taskResultText ?? "",
+    /Next action cleared for @/,
+    "expected next cleared message in tool text",
+  );
+});
+
+Then("the tool response says no open tasks remain", function (this: TasksWorld) {
+  assert.ok(
+    this.taskResultText?.includes("No open tasks remain"),
+    `expected area clear message in: ${this.taskResultText ?? "(empty)"}`,
+  );
+});
+
+Then("the tool response does not include a suggest hint", function (this: TasksWorld) {
+  assert.ok(
+    !this.taskResultText?.toLowerCase().includes("suggest"),
+    `expected no suggest hint in: ${this.taskResultText ?? "(empty)"}`,
   );
 });
 

@@ -3494,6 +3494,9 @@ Further context on local-model evaluation methodology and findings:
 | FR-TASKM-31 | Deterministic list filters: only_next, only_stale, only_due, only_projects | 2.5 ✓ |
 | FR-TASKM-32 | edit action: modify task text, area, project, due in place | 2.5 ✓ |
 | FR-TASKM-33 | Consolidation uses deterministic task filters instead of broad list | 2.5 ✓ |
+| FR-TASKM-34 | Next-action hint on area clear: remaining count + suggest prompt in tool response | 2.5 ✓ |
+| FR-TASKM-35 | Outcome-vs-task reinforcement: outcome-shaped language patterns in capture prompt | 2.5 |
+| FR-TASKM-36 | Untagged cluster review: consolidation weekly step with anti-misc-project guardrail | 2.5 |
 
 **FR-TASKM-01 — Project tag in task format**
 
@@ -3663,6 +3666,33 @@ Further context on local-model evaluation methodology and findings:
 - Step 5b uses `only_due: true` instead of pre-computed header block scanning.
 - W1b uses `only_stale: true`.
 - Prominent guardrail: do not call unfiltered `list` during consolidation.
+
+**FR-TASKM-34 — Next-action hint on area clear**
+
+- When `complete` or `remove` clears the `>>` item and other open (non-someday,
+  non-future) tasks remain in the area, the tool response includes the remaining
+  count and a suggestion hint for the agent to propose a new next action.
+- When `remove` clears the `>>` item, it emits `nextClearedForArea` (same as `complete`).
+- When the area has no remaining open tasks after clearing, the response confirms
+  the area is clear without a suggest hint.
+
+**FR-TASKM-35 — Outcome-vs-task reinforcement in capture prompt**
+
+- `agents-base.md` Next action discipline section includes explicit outcome-shaped
+  language patterns (Update X, Organize Y, Prepare Z, Sort out, Handle).
+- `agents-base.md` instructs asking for the concrete first step when text matches
+  outcome patterns, or proposing one and creating a project file.
+- `agents-base.md` preserves the exception: if the user insists, capture as-is.
+
+**FR-TASKM-36 — Untagged cluster review at weekly consolidation**
+
+- `list` accepts `only_untagged_clusters` param; returns areas with 3+ open
+  untagged items (no `#project`), excluding `@someday`. Result field:
+  `untaggedClusters: Array<{ area: string; count: number }>`.
+- Tool response text includes hint to review for shared outcome and warns
+  against catch-all projects ("Same area is not a shared outcome").
+- `consolidation.md` weekly step W1c uses this filter and includes
+  no-misc-project guardrail.
 
 ---
 
