@@ -13,6 +13,7 @@ import { tasksFilePath, writeTasksFile } from "../../backends/tasks/task-file";
 import { writeTaskWipLimit } from "../../backends/tasks/task-config";
 import { toIsoDay } from "../../shared/dates";
 import {
+  cleanupPendingInboxMigration,
   migrateAgentsTasksReference,
   migrateAgentsWorkspacesReference,
   migrateInboxToTasksIfNeeded,
@@ -567,6 +568,7 @@ Given("AGENTS.md has an inbox reference in Where to find things", function (this
 
 function runSessionBootMigrations(this: TasksWorld): void {
   const dir = root.call(this);
+  cleanupPendingInboxMigration(dir);
   migrateInboxToTasksIfNeeded(dir);
   migrateAgentsTasksReference(dir);
   migrateAgentsWorkspacesReference(dir);
@@ -590,23 +592,59 @@ function userDir(this: TasksWorld): string {
   return join(root.call(this), "user");
 }
 
-Given("the legacy inbox file has GTD sections but no checkbox items", function (this: TasksWorld) {
-    const dir = userDir.call(this);
-    mkdirSync(dir, { recursive: true });
-    const tasksPath = join(dir, "tasks.md");
-    if (existsSync(tasksPath)) unlinkSync(tasksPath);
-    writeFileSync(
-      join(dir, "inbox.md"),
-      `# Inbox
-
-## Capture
-Something to remember later.
+Given("the legacy inbox file has GTD list items but no checkboxes", function (this: TasksWorld) {
+  const dir = userDir.call(this);
+  mkdirSync(dir, { recursive: true });
+  const tasksPath = join(dir, "tasks.md");
+  if (existsSync(tasksPath)) unlinkSync(tasksPath);
+  writeFileSync(
+    join(dir, "inbox.md"),
+    `# Inbox
 
 ## Next Actions
-Call Pedro when back at desk.
+- **Review and refine the 14 new/updated concept notes**
+- [Implement Jira connectors](projects/buddy-work-coordination.md).
 `,
-      "utf8",
-    );
+    "utf8",
+  );
+});
+
+Given("the legacy inbox file has only structural headings", function (this: TasksWorld) {
+  const dir = userDir.call(this);
+  mkdirSync(dir, { recursive: true });
+  const tasksPath = join(dir, "tasks.md");
+  if (existsSync(tasksPath)) unlinkSync(tasksPath);
+  writeFileSync(
+    join(dir, "inbox.md"),
+    `# Inbox
+
+## Capture
+
+## Next Actions
+`,
+    "utf8",
+  );
+});
+
+Given("a pending inbox migration file is on disk", function (this: TasksWorld) {
+  const dir = userDir.call(this);
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(
+    join(dir, "inbox.md.pending-migration"),
+    `# Inbox
+
+## Next Actions
+- **Legacy task pending migration**
+`,
+    "utf8",
+  );
+  writeFileSync(join(dir, "tasks.md"), "---\ncreated: 2026-09-11\n---\n\n# Tasks\n", "utf8");
+});
+
+Given("the inbox migration done marker exists", function (this: TasksWorld) {
+  const dir = userDir.call(this);
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, ".inbox-migration-done"), "2026-09-12\n", "utf8");
 });
 
 Given("the legacy inbox file has checkbox items", function (this: TasksWorld) {
@@ -639,6 +677,21 @@ Then("the legacy inbox file no longer exists", function (this: TasksWorld) {
   const migrated = join(userDir.call(this), "inbox.md.migrated");
   assert.ok(!existsSync(inbox), "inbox.md should be deleted");
   assert.ok(!existsSync(migrated), "inbox.md.migrated should not exist");
+});
+
+Then("the pending inbox migration file exists", function (this: TasksWorld) {
+  const path = join(userDir.call(this), "inbox.md.pending-migration");
+  assert.ok(existsSync(path), "expected user/inbox.md.pending-migration");
+});
+
+Then("the pending inbox migration file does not exist", function (this: TasksWorld) {
+  const path = join(userDir.call(this), "inbox.md.pending-migration");
+  assert.ok(!existsSync(path), "user/inbox.md.pending-migration should not exist");
+});
+
+Then("the inbox migration done marker does not exist", function (this: TasksWorld) {
+  const path = join(userDir.call(this), ".inbox-migration-done");
+  assert.ok(!existsSync(path), "user/.inbox-migration-done should not exist");
 });
 
 Then("the user tasks file exists with migrated items", function (this: TasksWorld) {

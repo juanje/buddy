@@ -143,6 +143,13 @@ When `list` returns `parkedCount > 0` or `futureCount > 0`, note this in the
 Day summary under **Open** — "N parked, M future items not shown in default list" —
 so the log reader knows the full task inventory.
 
+**Pending inbox migration:** If `user/inbox.md.pending-migration` exists, this is
+a legacy inbox that could not be migrated automatically. Read it, classify each
+item using capture classification (tasks, projects, context, areas of focus),
+add tasks and projects via `tasks()`, then write `user/.inbox-migration-done`
+(content: the current date). The boot process will clean up both files on next
+startup.
+
 #### 5. Write deferred items
 
 Two sources feed the deferred queue. Write **all** deferred items in the

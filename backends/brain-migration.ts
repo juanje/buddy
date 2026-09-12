@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 import { USER_DIR } from "../shared/brain-paths";
@@ -178,6 +178,18 @@ export function migrateAgentsMdIfNeeded(rootDir: string): boolean {
 }
 
 const INBOX_CHECKBOX_RE = /^- \[( |x)\]\s*(.*)$/;
+const PENDING_INBOX_FILENAME = "inbox.md.pending-migration";
+const INBOX_MIGRATION_DONE_MARKER = ".inbox-migration-done";
+const STRUCTURE_LINE_RE = /^(#|\s*$|---|[\w_-]+:\s)/;
+
+function hasContentBeyondStructure(content: string): boolean {
+  return content.split("\n").some((line) => {
+    const trimmed = line.trim();
+    if (!trimmed) return false;
+    if (STRUCTURE_LINE_RE.test(trimmed)) return false;
+    return true;
+  });
+}
 
 function extractInboxTaskLines(content: string): string[] {
   return content
@@ -258,6 +270,20 @@ export function migrateAgentsWorkspacesReference(rootDir: string): boolean {
   return true;
 }
 
+export function cleanupPendingInboxMigration(rootDir: string): boolean {
+  const markerPath = join(rootDir, USER_DIR, INBOX_MIGRATION_DONE_MARKER);
+  if (!existsSync(markerPath)) return false;
+
+  const pendingPath = join(rootDir, USER_DIR, PENDING_INBOX_FILENAME);
+  try {
+    unlinkSync(pendingPath);
+  } catch {
+    // Already removed — marker is the signal that migration completed.
+  }
+  unlinkSync(markerPath);
+  return true;
+}
+
 export function migrateInboxToTasksIfNeeded(rootDir: string): boolean {
   const inboxPath = join(rootDir, USER_DIR, "inbox.md");
   const tasksPath = join(rootDir, USER_DIR, "tasks.md");
@@ -267,7 +293,11 @@ export function migrateInboxToTasksIfNeeded(rootDir: string): boolean {
   const lines = extractInboxTaskLines(inboxContent);
   if (lines.length === 0) {
     writeTasksFile(rootDir, []);
-    unlinkSync(inboxPath);
+    if (hasContentBeyondStructure(inboxContent)) {
+      renameSync(inboxPath, join(rootDir, USER_DIR, PENDING_INBOX_FILENAME));
+    } else {
+      unlinkSync(inboxPath);
+    }
     return true;
   }
 

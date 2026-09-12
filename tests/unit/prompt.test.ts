@@ -181,6 +181,18 @@ describe("process-conversation semantic distinction", () => {
   });
 });
 
+// FR-TASKM-30: pending inbox migration guidance in consolidation prompt.
+describe("consolidation pending inbox migration", () => {
+  it("includes pending file and done marker instructions", () => {
+    const prompt = readFileSync(
+      join(bundledPromptsDir(), "consolidation.md"),
+      "utf8",
+    );
+    expect(prompt).toContain("inbox.md.pending-migration");
+    expect(prompt).toContain(".inbox-migration-done");
+  });
+});
+
 // FR-TASKM-29: content escape hatch in default-context classification.
 describe("agents-base content escape hatch", () => {
   it("asks the user when content contains structured actionable information", () => {

@@ -37,6 +37,7 @@ import { installEditRecoveryHook } from "./edit-recovery";
 import { installHeadingGuardHook } from "./heading-guard";
 import { persistLiveSession } from "./crash-recovery";
 import {
+  cleanupPendingInboxMigration,
   ensureUserMdSectionsOnDisk,
   migrateAgentsMdIfNeeded,
   migrateAgentsTasksReference,
@@ -193,6 +194,7 @@ export async function bootSession(
 
   ensureUserMdSectionsOnDisk(rootDir);
   migrateAgentsMdIfNeeded(rootDir);
+  cleanupPendingInboxMigration(rootDir);
   migrateInboxToTasksIfNeeded(rootDir);
   migrateAgentsTasksReference(rootDir);
   migrateAgentsWorkspacesReference(rootDir);

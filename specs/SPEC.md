@@ -3465,6 +3465,7 @@ Further context on local-model evaluation methodology and findings:
 | FR-TASKM-27 | Task created date uses local time via toIsoDay | 2.5 ✓ |
 | FR-TASKM-28 | Boot migration creates workspaces directory in existing instances | 2.5 ✓ |
 | FR-TASKM-29 | Content escape hatch: ask when shared content contains structured actions | 2.5 ✓ |
+| FR-TASKM-30 | Safe inbox migration: preserve unrecognized content for LLM fallback | 2.5 ✓ |
 
 **FR-TASKM-01 — Project tag in task format**
 
@@ -3607,6 +3608,13 @@ Further context on local-model evaluation methodology and findings:
 **FR-TASKM-29 — Content escape hatch in capture classification**
 
 - `agents-base.md` "Default to context" section adds step 1b between existing steps: when no explicit commitment is detected but content contains structured actionable information (lists, deadlines, requirements, document checklists), ask the user before classifying. Does not create tasks automatically — asks.
+
+**FR-TASKM-30 — Safe inbox migration with LLM fallback**
+
+- Boot: `migrateInboxToTasksIfNeeded()` preserves `inbox.md` as `user/inbox.md.pending-migration` when no checkbox lines are found but real content exists; creates empty `tasks.md`.
+- Consolidation: step 4 guidance migrates pending inbox via `tasks()` and writes `user/.inbox-migration-done` marker.
+- Boot: `cleanupPendingInboxMigration()` removes pending file and marker when marker exists.
+- Truly empty inboxes (structure only) still delete `inbox.md` and create empty `tasks.md`.
 
 ---
 

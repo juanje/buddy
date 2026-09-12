@@ -926,6 +926,34 @@
           "unit_tests": 1
         }
       ]
+    },
+    {
+      "id": "FR-TASKM-30",
+      "title": "Safe inbox migration: preserve unrecognized content for LLM fallback 2.5",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Inbox with non-checkbox content is preserved for LLM migration",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Truly empty inbox is removed without pending file",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Boot cleanup removes pending files after LLM marker",
+          "bdd": "pass",
+          "unit_tests": 2
+        },
+        {
+          "name": "Consolidation prompt includes pending inbox migration guidance",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
     }
   ]
 }

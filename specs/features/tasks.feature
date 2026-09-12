@@ -83,13 +83,38 @@ Feature: Task management
     When session boot runs migrations
     Then AGENTS.md references tasks.md instead of inbox.md
 
-  @FR-TASK-07
-  Scenario: Inbox without checkbox items produces empty tasks.md
+  @FR-TASKM-30
+  Scenario: Inbox with non-checkbox content is preserved for LLM migration
     Given an initialized buddy git repository
-    And the legacy inbox file has GTD sections but no checkbox items
+    And the legacy inbox file has GTD list items but no checkboxes
     When session boot runs migrations
     Then the user tasks file exists and is empty
+    And the pending inbox migration file exists
     And the legacy inbox file no longer exists
+
+  @FR-TASKM-30
+  Scenario: Truly empty inbox is removed without pending file
+    Given an initialized buddy git repository
+    And the legacy inbox file has only structural headings
+    When session boot runs migrations
+    Then the user tasks file exists and is empty
+    And the pending inbox migration file does not exist
+    And the legacy inbox file no longer exists
+
+  @FR-TASKM-30
+  Scenario: Boot cleanup removes pending files after LLM marker
+    Given an initialized buddy git repository
+    And a pending inbox migration file is on disk
+    And the inbox migration done marker exists
+    When session boot runs migrations
+    Then the pending inbox migration file does not exist
+    And the inbox migration done marker does not exist
+
+  @FR-TASKM-30
+  Scenario: Consolidation prompt includes pending inbox migration guidance
+    Given the bundled consolidation.md prompt
+    Then the consolidation prompt contains "inbox.md.pending-migration"
+    And the consolidation prompt contains ".inbox-migration-done"
 
   @FR-TASK-07
   Scenario: Inbox with checkbox items is deleted after migration

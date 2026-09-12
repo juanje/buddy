@@ -13,6 +13,7 @@ import {
   migrateAgentsMdIfNeeded,
   migrateAgentsTasksReference,
   migrateAgentsWorkspacesReference,
+  cleanupPendingInboxMigration,
   migrateInboxToTasksIfNeeded,
   ensureUserMdSections,
 } from "../../backends/brain-migration";
@@ -219,7 +220,26 @@ describe("migrateInboxToTasksIfNeeded", () => {
     expect(tasks).toContain(">> Home errand @home");
   });
 
-  it("creates empty tasks.md when inbox has no checkboxes", () => {
+  it("preserves inbox with GTD list items as pending-migration when no checkboxes", () => {
+    dir = mkdtempSync(join(tmpdir(), "buddy-inbox-migrate-"));
+    mkdirSync(join(dir, "user"), { recursive: true });
+    writeFileSync(
+      join(dir, "user", "inbox.md"),
+      `# Inbox
+
+## Next Actions
+- **Review concept notes**
+- [Implement connectors](projects/buddy.md).
+`,
+      "utf8",
+    );
+    expect(migrateInboxToTasksIfNeeded(dir)).toBe(true);
+    expect(existsSync(join(dir, "user", "tasks.md"))).toBe(true);
+    expect(existsSync(join(dir, "user", "inbox.md.pending-migration"))).toBe(true);
+    expect(existsSync(join(dir, "user", "inbox.md"))).toBe(false);
+  });
+
+  it("deletes truly empty inbox without creating pending-migration file", () => {
     dir = mkdtempSync(join(tmpdir(), "buddy-inbox-migrate-"));
     mkdirSync(join(dir, "user"), { recursive: true });
     writeFileSync(
@@ -227,15 +247,14 @@ describe("migrateInboxToTasksIfNeeded", () => {
       `# Inbox
 
 ## Capture
-Notes without checkbox syntax.
+
+## Next Actions
 `,
       "utf8",
     );
     expect(migrateInboxToTasksIfNeeded(dir)).toBe(true);
     expect(existsSync(join(dir, "user", "tasks.md"))).toBe(true);
-    const tasks = readFileSync(join(dir, "user", "tasks.md"), "utf8");
-    expect(tasks).toContain("# Tasks");
-    expect(tasks).not.toMatch(/^- \[[ x]\]/m);
+    expect(existsSync(join(dir, "user", "inbox.md.pending-migration"))).toBe(false);
     expect(existsSync(join(dir, "user", "inbox.md"))).toBe(false);
   });
 
@@ -246,6 +265,32 @@ Notes without checkbox syntax.
     writeFileSync(join(dir, "user", "tasks.md"), "- [ ] Existing\n", "utf8");
     expect(migrateInboxToTasksIfNeeded(dir)).toBe(false);
     expect(readFileSync(join(dir, "user", "tasks.md"), "utf8")).toContain("Existing");
+  });
+});
+
+describe("cleanupPendingInboxMigration", () => {
+  let dir: string;
+
+  afterEach(() => {
+    if (dir) rmSync(dir, { recursive: true, force: true });
+  });
+
+  it("removes pending file and marker when marker exists", () => {
+    dir = mkdtempSync(join(tmpdir(), "buddy-inbox-cleanup-"));
+    mkdirSync(join(dir, "user"), { recursive: true });
+    writeFileSync(join(dir, "user", "inbox.md.pending-migration"), "# Inbox\n", "utf8");
+    writeFileSync(join(dir, "user", ".inbox-migration-done"), "2026-09-12\n", "utf8");
+    expect(cleanupPendingInboxMigration(dir)).toBe(true);
+    expect(existsSync(join(dir, "user", "inbox.md.pending-migration"))).toBe(false);
+    expect(existsSync(join(dir, "user", ".inbox-migration-done"))).toBe(false);
+  });
+
+  it("is a no-op when marker is absent", () => {
+    dir = mkdtempSync(join(tmpdir(), "buddy-inbox-cleanup-"));
+    mkdirSync(join(dir, "user"), { recursive: true });
+    writeFileSync(join(dir, "user", "inbox.md.pending-migration"), "# Inbox\n", "utf8");
+    expect(cleanupPendingInboxMigration(dir)).toBe(false);
+    expect(existsSync(join(dir, "user", "inbox.md.pending-migration"))).toBe(true);
   });
 });
 
