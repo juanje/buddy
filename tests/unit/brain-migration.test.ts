@@ -336,4 +336,27 @@ describe("migrateAgentsWorkspacesReference", () => {
     writeFileSync(join(dir, "AGENTS.md"), migrated, "utf8");
     expect(migrateAgentsWorkspacesReference(dir)).toBe(false);
   });
+
+  it("creates user/workspaces directory when absent", () => {
+    dir = mkdtempSync(join(tmpdir(), "buddy-agents-workspaces-dir-"));
+    writeFileSync(
+      join(dir, "AGENTS.md"),
+      `# Buddy\n\n## Where to find things\n\n${tasksNav}\n`,
+      "utf8",
+    );
+    const wsDir = join(dir, "user", "workspaces");
+    expect(existsSync(wsDir)).toBe(false);
+    migrateAgentsWorkspacesReference(dir);
+    expect(existsSync(wsDir)).toBe(true);
+  });
+
+  it("is idempotent when workspaces directory already exists", () => {
+    dir = mkdtempSync(join(tmpdir(), "buddy-agents-workspaces-dir-"));
+    const wsDir = join(dir, "user", "workspaces");
+    mkdirSync(wsDir, { recursive: true });
+    const migrated = readFileSync(join(process.cwd(), "templates", "AGENTS.md"), "utf8");
+    writeFileSync(join(dir, "AGENTS.md"), migrated, "utf8");
+    expect(() => migrateAgentsWorkspacesReference(dir)).not.toThrow();
+    expect(existsSync(wsDir)).toBe(true);
+  });
 });

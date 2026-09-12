@@ -247,6 +247,8 @@ export function migrateAgentsWorkspacesReference(rootDir: string): boolean {
   const agentsPath = join(rootDir, "AGENTS.md");
   if (!existsSync(agentsPath)) return false;
 
+  mkdirSync(join(rootDir, USER_DIR, "workspaces"), { recursive: true });
+
   const content = readFileSync(agentsPath, "utf8");
   if (content.includes("user/workspaces/")) return false;
   if (!AGENTS_TASKS_NAV_RE.test(content)) return false;

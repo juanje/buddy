@@ -3458,7 +3458,7 @@ Further context on local-model evaluation methodology and findings:
 | FR-TASKM-25 | Consolidation daily WIP review step | 2.5 ✓ |
 | FR-TASKM-26 | Remove WIP awareness section from agents-base | 2.5 ✓ |
 | FR-TASKM-27 | Task created date uses local time via toIsoDay | 2.5 ✓ |
-| FR-TASKM-28 | Boot migration creates workspaces directory in existing instances | 2.5 |
+| FR-TASKM-28 | Boot migration creates workspaces directory in existing instances | 2.5 ✓ |
 
 **FR-TASKM-01 — Project tag in task format**
 
