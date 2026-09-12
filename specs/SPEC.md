@@ -3499,7 +3499,7 @@ Further context on local-model evaluation methodology and findings:
 | FR-TASKM-36 | Untagged cluster review: consolidation weekly step with anti-misc-project guardrail | 2.5 ✓ |
 | FR-TASKM-37 | Next-per-project: >> scoped to project or loose-in-area, not whole area | 2.5 ✓ |
 | FR-TASKM-38 | complete/remove hint counts remaining in scope, not whole area | 2.5 ✓ |
-| FR-TASKM-39 | Active fronts pre-computation: parse AGENTS.md Right now for per-area WIP check | 2.5 |
+| FR-TASKM-39 | Active fronts pre-computation: parse AGENTS.md Right now for per-area WIP check | 2.5 ✓ |
 | FR-TASKM-40 | Default WIP limit changed from 5 to 3 (per-area threshold) | 2.5 |
 
 **FR-TASKM-01 — Project tag in task format**
@@ -3626,7 +3626,10 @@ Further context on local-model evaluation methodology and findings:
 
 **FR-TASKM-25 — Consolidation daily WIP review step**
 
-- `consolidation.md` daily step 4 (Task cleanup) includes **Active fronts check**: after cleanup, call `tasks(action='list')`, read `activeNextCount`, compare to configured WIP limit, flag excess with proposed actions.
+- `consolidation.md` daily step 4 (Task cleanup) includes **Active fronts check**:
+  read the pre-computed "Active fronts per area" block (from AGENTS.md Right now),
+  compare each area count to the configured WIP limit, and write a deferred item
+  for areas over the limit. Do not use `tasks(only_next)` / `activeNextCount` for WIP.
 
 **FR-TASKM-26 — Remove WIP awareness section from agents-base**
 

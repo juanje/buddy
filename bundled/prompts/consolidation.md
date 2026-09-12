@@ -129,10 +129,10 @@ against today's log):
 Do not move tasks to deferred. Tasks stay in tasks.md.
 
 Targeted queries (do not use `list` without filters in consolidation):
-- **Active fronts check:** `tasks(action='list', params={only_next: true})`.
-  Read `activeNextCount`. If it exceeds the configured WIP limit, flag to the
-  user: "You have N active fronts (limit: M). Consider completing, parking, or
-  deferring some." Propose specific actions for the excess — do not just warn.
+- **Active fronts check:** Read the "Active fronts per area" block in the
+  prompt header. For each area, if count exceeds the configured WIP limit,
+  write a deferred item: "You have N active fronts in @area (limit: M) --
+  which ones do you want to focus on?" Do not use tasks(only_next) for WIP.
 - **Project health check (weekly):** `tasks(action='list', params={only_projects: true})`.
   For each project in the result, verify each `#project` tag has a corresponding file
   in `user/projects/`. Flag projects with `openCount > 0` and `hasNext: false`.

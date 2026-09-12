@@ -1200,6 +1200,24 @@
           "unit_tests": 2
         }
       ]
+    },
+    {
+      "id": "FR-TASKM-39",
+      "title": "Active fronts pre-computation from AGENTS.md",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Consolidation prompt includes active fronts per area block",
+          "bdd": "pass",
+          "unit_tests": 3
+        },
+        {
+          "name": "Consolidation prompt references active fronts instead of activeNextCount",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
     }
   ]
 }

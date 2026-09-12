@@ -801,6 +801,13 @@ Then("the consolidation prompt contains {string}", function (this: TasksWorld, t
   assert.ok(this.consolidationPrompt?.includes(text), `missing: ${text}`);
 });
 
+Then("the consolidation prompt does not contain {string}", function (this: TasksWorld, text: string) {
+  assert.ok(
+    !this.consolidationPrompt?.includes(text),
+    `expected not to contain "${text}" in: ${this.consolidationPrompt ?? "(empty)"}`,
+  );
+});
+
 Then(
   "the task list projects summary has {int} projects",
   function (this: TasksWorld, count: number) {

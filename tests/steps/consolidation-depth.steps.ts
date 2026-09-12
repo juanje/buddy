@@ -66,6 +66,26 @@ Given("a buddy directory prepared for consolidation depth features", function (t
   saveConsolidationState(this.buddyDir, defaultConsolidationState());
 });
 
+Given(
+  "AGENTS.md Right now has 3 items tagged @work and 1 tagged @family",
+  function (this: DepthWorld) {
+    writeFileSync(
+      join(this.buddyDir!, "AGENTS.md"),
+      `## Active context
+
+### Right now
+- Buddy C-post sprint @work
+- Connector follow-up @work
+- Review PRs @work
+- Ley de dependencia @family
+
+### Files
+`,
+      "utf8",
+    );
+  },
+);
+
 When('the "process_conversation" skill tool is invoked', async function (this: DepthWorld) {
   const tools = buildSkillTools(join(this.globalConfigDir!, "prompts"), { rootDir: this.buddyDir });
   await executeSkillTool(tools, "process_conversation");

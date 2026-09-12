@@ -364,7 +364,7 @@ Feature: Task management
   Scenario: consolidation prompt includes active fronts check
     Given the bundled consolidation.md prompt
     Then the consolidation prompt contains "Active fronts check"
-    And the consolidation prompt contains "activeNextCount"
+    And the consolidation prompt contains "Active fronts per area"
     And the consolidation prompt contains "WIP limit"
 
   @FR-TASKM-26
@@ -586,3 +586,18 @@ Feature: Task management
     And tasks.md with project alpha having 3 items and project beta having 2 items in @work
     When the user completes the next item of project alpha
     Then the remaining count is "2" not "4"
+
+  @FR-TASKM-39
+  Scenario: Consolidation prompt includes active fronts per area block
+    Given a buddy directory prepared for consolidation depth features
+    And AGENTS.md Right now has 3 items tagged @work and 1 tagged @family
+    When the consolidation prompt is built for depth 1
+    Then the prompt contains "Active fronts per area"
+    And the prompt contains "@work: 3"
+    And the prompt contains "@family: 1"
+
+  @FR-TASKM-39
+  Scenario: Consolidation prompt references active fronts instead of activeNextCount
+    Given the bundled consolidation.md prompt
+    Then the consolidation prompt contains "Active fronts per area"
+    And the consolidation prompt does not contain "activeNextCount"
