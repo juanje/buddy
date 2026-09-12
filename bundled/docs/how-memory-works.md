@@ -44,6 +44,8 @@ Buddy is two things at once: a **learning assistant** that gets better at helpin
 
 **[Your second brain](wiki.md)** (`user/wiki/`) — ideas, concepts, reflections, summaries of documents you shared, brainstorming output. This is knowledge you told Buddy to save. Buddy organizes it, connects related ideas, and helps you find things later — but the content is yours.
 
+**Your workspaces** (`user/workspaces/`) — ongoing areas of focus where you accumulate materials, notes, and drafts. Unlike the wiki (distilled knowledge) or projects (finite outcomes), workspaces grow over time without a defined end.
+
 **Your tasks** (`user/tasks.md`, `user/projects/`) — things you need to do. Tell Buddy about a task and it captures it; Buddy tracks what's next and cleans up completed items automatically. This is your action list.
 
 **Buddy's own memory** (`agent_brain/`) — what Buddy learned about you and how to help you: your preferences, patterns it noticed, decisions from past conversations, lessons about how to assist you better. Buddy manages this automatically through reflect and consolidation. You can read it anytime, but you normally don't need to edit it.

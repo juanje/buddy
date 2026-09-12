@@ -9,5 +9,6 @@ Start with [How memory works](../how-memory-works.md) for the overview.
 - [reflect-and-consolidation.md](reflect-and-consolidation.md) — When reflect and consolidation run, what each level produces, and how the deferred queue communicates with you.
 - [hebbian-scoring.md](hebbian-scoring.md) — How frequently used knowledge rises to the surface and unused knowledge fades without disappearing.
 - [where-things-live.md](where-things-live.md) — What goes where and why: routing rules for identity, tasks, knowledge, and logs.
+- [how-buddy-routes.md](how-buddy-routes.md) — How Buddy classifies what you share and decides what type it is before routing it to a destination.
 - [how-buddy-learns.md](how-buddy-learns.md) — The pipeline from first observation to permanent concept.
 - [git-safety-net.md](git-safety-net.md) — How git protects your data, when commits happen, and how to recover previous states.

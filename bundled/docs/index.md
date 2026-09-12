@@ -21,6 +21,7 @@ These pages explain how Buddy's internals work — for users who want to underst
 - [memory/reflect-and-consolidation.md](memory/reflect-and-consolidation.md) — When reflect and consolidation run, what each level produces, and how the deferred queue communicates with you.
 - [memory/hebbian-scoring.md](memory/hebbian-scoring.md) — How frequently used knowledge rises to the surface and unused knowledge fades without disappearing.
 - [memory/where-things-live.md](memory/where-things-live.md) — What goes where and why: routing rules for identity, tasks, knowledge, and logs.
+- [memory/how-buddy-routes.md](memory/how-buddy-routes.md) — How Buddy classifies what you share: what becomes a task, a project, context, or knowledge — and why most things default to context.
 - [memory/how-buddy-learns.md](memory/how-buddy-learns.md) — The pipeline from first observation to permanent concept.
 - [memory/git-safety-net.md](memory/git-safety-net.md) — How git protects your data, when commits happen, and how to recover previous states.
 

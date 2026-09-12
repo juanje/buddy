@@ -12,7 +12,7 @@ Buddy organizes everything into a few top-level directories, each with a clear p
 
 This is your space. Buddy writes here on your behalf, but you own the content.
 
-- **`user/tasks.md`** — your task list. Tell Buddy about a task or reminder and it captures it here — no manual editing needed. Tasks are grouped by area (like `@work` or `@personal`), can have due dates, and one item per area is always marked as the next step to focus on.
+- **`user/tasks.md`** — your task list. Tell Buddy about a task or reminder and it captures it here — no manual editing needed. Tasks are grouped by area (like `@work` or `@personal`) and can have due dates. Each project within an area can have its own focused next step — and loose tasks in an area (ones not tied to a project) share a next step among themselves.
 - **`user/projects/`** — multi-step outcomes. Each project has its own file with outcome, next action, notes, and history.
 - **`user/workspaces/`** — areas of focus. Ongoing topics or initiatives with no defined end (like "cooking" or "open source project"). You accumulate materials, notes, drafts, and references here. Unlike projects, these never "finish" — they grow and reorganize over time.
 - **`user/wiki/`** — [your second brain](../wiki.md). Interconnected concept pages built from documents you share, ideas you discuss, and knowledge you want to keep. Organized by category with cross-references and tags.
@@ -37,6 +37,8 @@ Daily records of what happened in each session.
 - **`logs/archive/YYYY-MM/`** — older logs moved here during monthly consolidation. Still searchable, just not in the way.
 
 ## How Buddy decides where to put things
+
+For how Buddy classifies what type something is before choosing a destination, see [How Buddy routes what you share](how-buddy-routes.md).
 
 | You say... | Buddy puts it in... | Why |
 |---|---|---|
