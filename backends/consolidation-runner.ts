@@ -47,6 +47,7 @@ import {
   formatRipeObservationsBlock,
   formatSkillUsageBlock,
   formatStaleObservationsBlock,
+  formatPendingInboxBlock,
   formatUpcomingRemindersBlock,
   formatWeeklyDiffBlock,
   findPendingLogs,
@@ -249,6 +250,7 @@ export async function buildConsolidationPrompt(
   );
   const hebbianBlock = formatHebbianReportBlock(computeHebbianReport(rootDir, now));
   const remindersBlock = formatUpcomingRemindersBlock(findUpcomingReminders(rootDir, date));
+  const inboxBlock = depth === 1 ? formatPendingInboxBlock(rootDir) : undefined;
   const healthBlock = formatBrainHealthReportBlock(computeBrainHealthReport(rootDir));
   const ripeBlock = formatRipeObservationsBlock(extractRipeObservations(rootDir));
   const coherenceBlock = formatDailyCoherenceBlock(computeDailyCoherence(rootDir, now));
@@ -258,6 +260,7 @@ export async function buildConsolidationPrompt(
     `User language: ${lang === "es" ? "Spanish" : "English"}`,
     pendingBlock,
     remindersBlock,
+    inboxBlock,
     coherenceBlock,
     hebbianBlock,
     healthBlock || undefined,

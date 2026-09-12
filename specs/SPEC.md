@@ -993,6 +993,8 @@ Fork bomb defense:
 | FR-CONSOL-28 | tasks() tool registered in consolidation session toolset | 2.5 ✓ |
 | FR-CONSOL-29 | findDatedTaskItems excludes created-date HTML comments from date matching | 2 ✓ |
 | FR-CONSOL-30 | detectTaskCoherence: strip metadata tokens, proximity-scoped completion check | 2 ✓ |
+| FR-CONSOL-31 | buildConsolidationPrompt includes pending inbox migration signal when file exists | 2.5 ✓ |
+| FR-CONSOL-32 | Maintenance permission policy allows task-remove during consolidation | 2.5 |
 
 **Consolidation depths:**
 
@@ -1344,6 +1346,16 @@ fresh session per depth gives each depth the full window.
 - `detectTaskCoherence` strips project tags (`#slug`), created comments (`<!-- c:... -->`), and dates before tokenizing.
 - Minimum token length raised from 5 to 7 characters.
 - Completion and parking keywords are checked only on log lines containing the matched token, not globally.
+
+**FR-CONSOL-31 — Pending inbox migration signal in prompt header**
+
+- `buildConsolidationPrompt` injects a header block when `user/inbox.md.pending-migration` exists, signalling the LLM to process it per consolidation step 4.
+- Block includes content line count. Omitted when the file is absent. Depth 1 only.
+
+**FR-CONSOL-32 — Maintenance policy allows task-remove**
+
+- `createMaintenancePermissionPolicy` allows `task-remove` requests so consolidation can clean up completed tasks via `tasks(action='remove')`.
+- Outside-path and other `ask` kinds remain refused.
 
 | ID | Description | Phase |
 |----|-------------|-------|

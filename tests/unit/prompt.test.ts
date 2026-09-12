@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { readFileSync } from "node:fs";
 
+import { buildConsolidationPrompt } from "../../backends/consolidation-runner";
 import { assembleSessionContext, assembleSystemPrompt } from "../../backends/prompt";
 import { bundledPromptsDir } from "../../backends/deploy-bundled-content";
 import { setupGlobalConfigDir, teardownGlobalConfigDir } from "../support/global-config";
@@ -181,15 +182,56 @@ describe("process-conversation semantic distinction", () => {
   });
 });
 
-// FR-TASKM-30: pending inbox migration guidance in consolidation prompt.
+// FR-TASKM-30 / FR-CONSOL-31: pending inbox migration in consolidation prompt.
 describe("consolidation pending inbox migration", () => {
-  it("includes pending file and done marker instructions", () => {
+  let dir: string;
+  let globalConfigDir: string | undefined;
+
+  afterEach(() => {
+    if (dir) rmSync(dir, { recursive: true, force: true });
+    teardownGlobalConfigDir(globalConfigDir, vi);
+    globalConfigDir = undefined;
+  });
+
+  it("includes pending file and done marker instructions in skill text", () => {
     const prompt = readFileSync(
       join(bundledPromptsDir(), "consolidation.md"),
       "utf8",
     );
     expect(prompt).toContain("inbox.md.pending-migration");
     expect(prompt).toContain(".inbox-migration-done");
+  });
+
+  it("signals pending inbox migration in prompt header when file exists", async () => {
+    ({ configDir: globalConfigDir } = setupGlobalConfigDir({
+      consolidationSkill: "# Skill\n\nDo consolidation.\n",
+    }, vi));
+    dir = mkdtempSync(join(tmpdir(), "buddy-prompt-inbox-"));
+    mkdirSync(join(dir, "user"), { recursive: true });
+    writeFileSync(
+      join(dir, "user", "inbox.md.pending-migration"),
+      `# Inbox
+
+## Next Actions
+
+- **Apply for Maui's UK ETA.**
+- **Review blog migration.**
+`,
+      "utf8",
+    );
+
+    const prompt = await buildConsolidationPrompt(dir, 1, new Date("2026-08-17T12:00:00Z"));
+    expect(prompt).toContain("inbox.md.pending-migration exists (2 content lines)");
+  });
+
+  it("omits inbox migration signal when pending file is absent", async () => {
+    ({ configDir: globalConfigDir } = setupGlobalConfigDir({
+      consolidationSkill: "# Skill\n\nDo consolidation.\n",
+    }, vi));
+    dir = mkdtempSync(join(tmpdir(), "buddy-prompt-inbox-"));
+
+    const prompt = await buildConsolidationPrompt(dir, 1, new Date("2026-08-17T12:00:00Z"));
+    expect(prompt).not.toContain("inbox.md.pending-migration exists");
   });
 });
 

@@ -211,6 +211,24 @@ export function findUpcomingReminders(rootDir: string, targetDate: string): Upco
   return reminders;
 }
 
+const PENDING_INBOX_FILENAME = "inbox.md.pending-migration";
+
+/** FR-CONSOL-31: signal pending inbox migration in consolidation prompt header. */
+export function formatPendingInboxBlock(rootDir: string): string | undefined {
+  const pendingPath = join(rootDir, "user", PENDING_INBOX_FILENAME);
+  if (!existsSync(pendingPath)) return undefined;
+
+  const content = readFileSync(pendingPath, "utf8");
+  const contentLines = content
+    .split("\n")
+    .filter((line) => {
+      const trimmed = line.trim();
+      return trimmed && !trimmed.startsWith("#") && !trimmed.startsWith("---");
+    });
+
+  return `Pending inbox migration: user/inbox.md.pending-migration exists (${contentLines.length} content lines). Process per step 4.`;
+}
+
 export function formatUpcomingRemindersBlock(reminders: UpcomingReminder[]): string {
   if (reminders.length === 0) {
     return "Upcoming items (within 24h of run date):\nNo dated items due within 24h.";

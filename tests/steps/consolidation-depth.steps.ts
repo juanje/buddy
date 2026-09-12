@@ -322,3 +322,20 @@ Then("no task coherence flags are present", function (this: DepthWorld) {
 Then("a task coherence flag is present", function (this: DepthWorld) {
   assert.ok((this.coherence?.taskFlags.length ?? 0) > 0);
 });
+
+Given("a pending inbox migration file exists with content", function (this: DepthWorld) {
+  const userDir = join(this.buddyDir!, "user");
+  mkdirSync(userDir, { recursive: true });
+  writeFileSync(
+    join(userDir, "inbox.md.pending-migration"),
+    `# Inbox
+
+## Next Actions
+
+- **Apply for Maui's UK ETA using her renewed passport.**
+- **Review juanjeojeda.com content and functionality, then switch DNS from WordPress to Quartz.**
+`,
+    "utf8",
+  );
+});
+

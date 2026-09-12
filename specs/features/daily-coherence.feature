@@ -57,3 +57,14 @@ Feature: Daily coherence detection (FR-CONSOL-20)
     And today's log mentions "Feature PR corrections completed and merged"
     When daily coherence is computed
     Then a task coherence flag is present
+
+  @FR-CONSOL-31
+  Scenario: consolidation prompt signals pending inbox migration when file exists
+    Given a pending inbox migration file exists with content
+    When the consolidation prompt is built for depth 1
+    Then the prompt contains "inbox.md.pending-migration exists"
+
+  @FR-CONSOL-31
+  Scenario: consolidation prompt omits inbox signal when no pending file
+    When the consolidation prompt is built for depth 1
+    Then the prompt does not contain "inbox.md.pending-migration exists"

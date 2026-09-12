@@ -195,3 +195,7 @@ Then("the formatted health block is empty", function (this: BrainHealthWorld) {
 Then("the prompt contains {string}", function (this: BrainHealthWorld, text: string) {
   assert.ok(this.prompt?.includes(text));
 });
+
+Then("the prompt does not contain {string}", function (this: BrainHealthWorld, text: string) {
+  assert.ok(!this.prompt?.includes(text));
+});
