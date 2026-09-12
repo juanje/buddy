@@ -1164,6 +1164,29 @@
           "unit_tests": 1
         }
       ]
+    },
+    {
+      "id": "FR-TASKM-37",
+      "title": "Next-per-project scope",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "set_next clears previous within same project only",
+          "bdd": "pass",
+          "unit_tests": 2
+        },
+        {
+          "name": "add auto-marks next in empty project scope",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "add does not auto-mark when project scope already has next",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
     }
   ]
 }

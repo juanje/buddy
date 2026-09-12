@@ -229,6 +229,12 @@ export function findItemById(items: TaskItem[], id: number): TaskItem | undefine
   return items.find((item) => item.id === id);
 }
 
+function inSameScope(item: TaskItem, area?: string, project?: string): boolean {
+  const slug = project?.replace(/^#/, "").trim();
+  if (slug) return item.project === slug;
+  return areaKey(item.area) === areaKey(area) && !item.project;
+}
+
 export function clearNextInArea(items: TaskItem[], area?: string): void {
   const key = areaKey(area);
   for (const item of items) {
@@ -238,9 +244,21 @@ export function clearNextInArea(items: TaskItem[], area?: string): void {
   }
 }
 
+export function clearNextInScope(items: TaskItem[], area?: string, project?: string): void {
+  for (const item of items) {
+    if (!item.done && inSameScope(item, area, project)) {
+      item.next = false;
+    }
+  }
+}
+
 export function countOpenInArea(items: TaskItem[], area?: string): number {
   const key = areaKey(area);
   return items.filter((item) => !item.done && areaKey(item.area) === key).length;
+}
+
+export function countOpenInScope(items: TaskItem[], area?: string, project?: string): number {
+  return items.filter((item) => !item.done && inSameScope(item, area, project)).length;
 }
 
 export function countActiveInArea(items: TaskItem[], area?: string, today?: string): number {
@@ -255,9 +273,29 @@ export function countActiveInArea(items: TaskItem[], area?: string, today?: stri
   ).length;
 }
 
+export function countActiveInScope(
+  items: TaskItem[],
+  area?: string,
+  project?: string,
+  today?: string,
+): number {
+  const todayStr = today ?? toIsoDay(new Date());
+  return items.filter(
+    (item) =>
+      !item.done &&
+      inSameScope(item, area, project) &&
+      item.area !== "someday" &&
+      !(item.dueDate && item.dueDate > todayStr),
+  ).length;
+}
+
 export function areaHasNext(items: TaskItem[], area?: string): boolean {
   const key = areaKey(area);
   return items.some((item) => !item.done && item.next && areaKey(item.area) === key);
+}
+
+export function scopeHasNext(items: TaskItem[], area?: string, project?: string): boolean {
+  return items.some((item) => !item.done && item.next && inSameScope(item, area, project));
 }
 
 export function buildProjectSummary(items: TaskItem[]): ProjectSummary[] {

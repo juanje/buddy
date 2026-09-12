@@ -3497,6 +3497,10 @@ Further context on local-model evaluation methodology and findings:
 | FR-TASKM-34 | Next-action hint on area clear: remaining count + suggest prompt in tool response | 2.5 ✓ |
 | FR-TASKM-35 | Outcome-vs-task reinforcement: outcome-shaped language patterns in capture prompt | 2.5 ✓ |
 | FR-TASKM-36 | Untagged cluster review: consolidation weekly step with anti-misc-project guardrail | 2.5 ✓ |
+| FR-TASKM-37 | Next-per-project: >> scoped to project or loose-in-area, not whole area | 2.5 ✓ |
+| FR-TASKM-38 | complete/remove hint counts remaining in scope, not whole area | 2.5 |
+| FR-TASKM-39 | Active fronts pre-computation: parse AGENTS.md Right now for per-area WIP check | 2.5 |
+| FR-TASKM-40 | Default WIP limit changed from 5 to 3 (per-area threshold) | 2.5 |
 
 **FR-TASKM-01 — Project tag in task format**
 
@@ -3693,6 +3697,37 @@ Further context on local-model evaluation methodology and findings:
   against catch-all projects ("Same area is not a shared outcome").
 - `consolidation.md` weekly step W1c uses this filter and includes
   no-misc-project guardrail.
+
+**FR-TASKM-37 — Next-per-project scope**
+
+- `set_next(id)` clears `>>` only within the same scope: items sharing
+  the same `#project` tag, or untagged items in the same `@area`.
+- `add` auto-marks `>>` when the new item's scope has no existing `>>`.
+  Scope = same project if project-tagged, or loose-in-area if untagged.
+- Multiple `>>` items per area is valid when they belong to different scopes.
+- `noNextForArea` hint on `add` becomes `noNextForScope` -- fires when
+  the item's scope has no `>>` and was not auto-marked.
+
+**FR-TASKM-38 — Scope-aware remaining count in complete/remove hint**
+
+- When `complete` or `remove` clears a `>>` item, `remainingInArea` counts
+  open items in the same scope (project or loose-in-area), not the whole area.
+- Hint text references the scope: "in #project" or "in @area (loose tasks)".
+
+**FR-TASKM-39 — Active fronts pre-computation from AGENTS.md**
+
+- `buildConsolidationPrompt` includes a pre-computed "Active fronts per area"
+  block parsed from AGENTS.md Right now section.
+- Bullets with `@area` suffix are counted per area. Bullets without @area
+  are counted under "(general)".
+- The block format: "Active fronts per area (from AGENTS.md):\n@work: 3\n@family: 1"
+- consolidation.md active fronts check references this block instead of
+  `activeNextCount`.
+
+**FR-TASKM-40 — Default WIP limit to 3**
+
+- `WIP_DEFAULT` in `shared/task-types.ts` changes from 5 to 3.
+- `config(wipLimit)` still works. The number now applies per area, not globally.
 
 ---
 

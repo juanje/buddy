@@ -17,7 +17,15 @@ export function taskResultToText(result: TaskActionResult): string {
       parts.push(`Next action cleared for @${area}. No open tasks remain in this area.`);
     }
   }
-  if (result.noNextForArea) {
+  if (result.noNextForScope) {
+    if (result.noNextForScope.startsWith("project:")) {
+      const slug = result.noNextForScope.slice("project:".length);
+      parts.push(`No next action set for #${slug} — consider set_next.`);
+    } else {
+      const area = result.noNextForScope.replace(/^area:/, "") || "general";
+      parts.push(`No next action set for @${area} (loose tasks) — consider set_next.`);
+    }
+  } else if (result.noNextForArea) {
     parts.push(`No next action set for @${result.noNextForArea || "general"} — consider set_next.`);
   }
   if (result.list) {

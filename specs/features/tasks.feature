@@ -557,3 +557,25 @@ Feature: Task management
     Then the consolidation prompt contains "W1c"
     And the consolidation prompt contains "only_untagged_clusters"
     And the consolidation prompt contains "catch-all"
+
+  @FR-TASKM-37
+  Scenario: set_next clears previous within same project only
+    Given an initialized buddy git repository
+    And tasks.md with two projects in @work each having a next
+    When tasks set_next is invoked for id 2
+    Then project alpha has only the second item as next
+    And project beta still has its original next
+
+  @FR-TASKM-37
+  Scenario: add auto-marks next in empty project scope
+    Given an initialized buddy git repository
+    And tasks.md with one project that has no next
+    When tasks add is invoked with text "New step" area "work" and project "alpha"
+    Then the new item is auto-marked as next
+
+  @FR-TASKM-37
+  Scenario: add does not auto-mark when project scope already has next
+    Given an initialized buddy git repository
+    And tasks.md with project alpha having a next item
+    When tasks add is invoked with text "Another step" area "work" and project "alpha"
+    Then the new item is not marked as next

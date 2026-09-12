@@ -57,6 +57,8 @@ export interface TaskActionSuccess {
   noNextForArea?: string;
   /** Open non-someday, non-future items remaining in area after next was cleared */
   remainingInArea?: number;
+  /** Scope descriptor when add did not auto-mark next (project:slug or area:name) */
+  noNextForScope?: string;
 }
 
 export interface TaskActionError {

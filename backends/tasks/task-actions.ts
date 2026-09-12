@@ -4,17 +4,16 @@ import type { TaskActionResult, TaskActionSuccess, TaskItem } from "../../shared
 import { addDays, toIsoDay } from "../../shared/dates";
 import { readTaskConfig, writeTaskWipLimit } from "./task-config";
 import {
-  areaHasNext,
   buildListResult,
   buildProjectSummary,
   buildUntaggedClusters,
-  clearNextInArea,
+  clearNextInScope,
   countActiveNext,
   countActiveInArea,
-  countOpenInArea,
   findItemById,
   isActiveNextItem,
   readTasksFile,
+  scopeHasNext,
   writeTasksFile,
 } from "./task-file";
 
@@ -168,7 +167,6 @@ export function executeTaskAction(
 
       const area = params.area?.replace(/^@/, "");
       const project = params.project?.replace(/^#/, "");
-      const openInAreaBefore = countOpenInArea(items, area);
       const newItem: TaskItem = {
         id: items.length + 1,
         text: params.due ? `${text} ${params.due}` : text,
@@ -180,9 +178,9 @@ export function executeTaskAction(
         created: toIsoDay(new Date()),
       };
 
-      const autoNext = openInAreaBefore === 0;
+      const autoNext = !scopeHasNext(items, area, project);
       if (autoNext) {
-        clearNextInArea(items, area);
+        clearNextInScope(items, area, project);
         newItem.next = true;
       }
 
@@ -190,11 +188,13 @@ export function executeTaskAction(
       writeTasksFile(rootDir, reindexItems(items));
 
       let noNextForArea: string | undefined;
-      if (!autoNext && !areaHasNext(items, area)) {
+      let noNextForScope: string | undefined;
+      if (!autoNext && !scopeHasNext(items, area, project)) {
         noNextForArea = area || "general";
+        noNextForScope = project ? `project:${project}` : `area:${area || "general"}`;
       }
 
-      return ok("Task added.", { noNextForArea });
+      return ok("Task added.", { noNextForArea, noNextForScope });
     }
 
     case "complete": {
@@ -224,7 +224,7 @@ export function executeTaskAction(
       const item = findItemById(items, id);
       if (!item) return err(`No task with id ${id}.`, "Call list first for current ids.");
       if (item.done) return err("Cannot set next on a completed task.");
-      clearNextInArea(items, item.area);
+      clearNextInScope(items, item.area, item.project);
       item.next = true;
       writeTasksFile(rootDir, reindexItems(items));
       return ok("Next action updated.");

@@ -9,10 +9,13 @@ import type { TaskItem } from "../../shared/task-types";
 import {
   buildListResult,
   buildUntaggedClusters,
+  clearNextInScope,
   countActiveInArea,
+  countActiveInScope,
   countActiveNext,
   parseTaskFileContent,
   readTasksFile,
+  scopeHasNext,
   serializeTaskFile,
   tasksFilePath,
   writeTasksFile,
@@ -209,6 +212,52 @@ describe("countActiveInArea", () => {
       { id: 5, text: "Done", done: true, next: false, area: "work" },
     ];
     expect(countActiveInArea(items, "work", today)).toBe(2);
+  });
+});
+
+describe("clearNextInScope", () => {
+  it("clears next only within the same project", () => {
+    const items: TaskItem[] = [
+      { id: 1, text: "A1", done: false, next: true, area: "work", project: "alpha" },
+      { id: 2, text: "A2", done: false, next: false, area: "work", project: "alpha" },
+      { id: 3, text: "B1", done: false, next: true, area: "work", project: "beta" },
+    ];
+    clearNextInScope(items, "work", "alpha");
+    expect(items[0].next).toBe(false);
+    expect(items[2].next).toBe(true);
+  });
+
+  it("clears next only among loose items in the area", () => {
+    const items: TaskItem[] = [
+      { id: 1, text: "Loose", done: false, next: true, area: "work" },
+      { id: 2, text: "Tagged", done: false, next: true, area: "work", project: "alpha" },
+    ];
+    clearNextInScope(items, "work");
+    expect(items[0].next).toBe(false);
+    expect(items[1].next).toBe(true);
+  });
+});
+
+describe("scopeHasNext", () => {
+  it("returns true only for the matching scope", () => {
+    const items: TaskItem[] = [
+      { id: 1, text: "A1", done: false, next: true, area: "work", project: "alpha" },
+      { id: 2, text: "Loose", done: false, next: false, area: "work" },
+    ];
+    expect(scopeHasNext(items, "work", "alpha")).toBe(true);
+    expect(scopeHasNext(items, "work")).toBe(false);
+  });
+});
+
+describe("countActiveInScope", () => {
+  it("counts only items in the project scope", () => {
+    const today = toIsoDay(new Date());
+    const items: TaskItem[] = [
+      { id: 1, text: "A1", done: false, next: true, area: "work", project: "alpha" },
+      { id: 2, text: "A2", done: false, next: false, area: "work", project: "alpha" },
+      { id: 3, text: "B1", done: false, next: false, area: "work", project: "beta" },
+    ];
+    expect(countActiveInScope(items, "work", "alpha", today)).toBe(2);
   });
 });
 

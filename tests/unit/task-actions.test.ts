@@ -44,6 +44,36 @@ describe("executeTaskAction", () => {
     expect(content).toMatch(/- \[ \] >> B @work/);
   });
 
+  it("set_next clears >> only within the same project", () => {
+    writeTasksFile(dir, [
+      { id: 1, text: "A1", done: false, next: true, area: "work", project: "alpha" },
+      { id: 2, text: "A2", done: false, next: false, area: "work", project: "alpha" },
+      { id: 3, text: "B1", done: false, next: true, area: "work", project: "beta" },
+    ]);
+    executeTaskAction(dir, "set_next", { id: 2 });
+    const listed = assertSuccess(executeTaskAction(dir, "list", { include_done: true }));
+    const nexts = listed.list!.items.filter((item) => item.next).map((item) => item.text);
+    expect(nexts).toEqual(["A2", "B1"]);
+  });
+
+  it("add auto-marks next when project scope is empty", () => {
+    writeTasksFile(dir, [
+      { id: 1, text: "Existing", done: false, next: false, area: "work", project: "alpha" },
+    ]);
+    executeTaskAction(dir, "add", { text: "New step", area: "work", project: "alpha" });
+    const listed = assertSuccess(executeTaskAction(dir, "list", { include_done: true }));
+    expect(listed.list!.items.find((item) => item.text === "New step")?.next).toBe(true);
+  });
+
+  it("add does not auto-mark when project scope already has next", () => {
+    writeTasksFile(dir, [
+      { id: 1, text: "Existing", done: false, next: true, area: "work", project: "alpha" },
+    ]);
+    executeTaskAction(dir, "add", { text: "Another step", area: "work", project: "alpha" });
+    const listed = assertSuccess(executeTaskAction(dir, "list", { include_done: true }));
+    expect(listed.list!.items.find((item) => item.text === "Another step")?.next).toBe(false);
+  });
+
   it("complete flags cleared next for area", () => {
     writeTasksFile(dir, [
       { id: 1, text: "Review PR", done: false, next: true, area: "work" },

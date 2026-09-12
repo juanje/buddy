@@ -134,6 +134,35 @@ Given(
   },
 );
 
+Given("tasks.md with two projects in @work each having a next", function (this: TasksWorld) {
+  writeFileSync(
+    tasksFilePath(root.call(this)),
+    `---
+created: 2026-09-10
+---
+
+# Tasks
+
+- [ ] >> Alpha first #alpha @work
+- [ ] Alpha second #alpha @work
+- [ ] >> Beta next #beta @work
+`,
+    "utf8",
+  );
+});
+
+Given("tasks.md with one project that has no next", function (this: TasksWorld) {
+  writeTasksFile(root.call(this), [
+    { id: 1, text: "Alpha existing", done: false, next: false, area: "work", project: "alpha" },
+  ]);
+});
+
+Given("tasks.md with project alpha having a next item", function (this: TasksWorld) {
+  writeTasksFile(root.call(this), [
+    { id: 1, text: "Alpha next", done: false, next: true, area: "work", project: "alpha" },
+  ]);
+});
+
 Given("tasks.md on disk has project-tagged items", function (this: TasksWorld) {
   const content = `---
 created: 2026-09-10
@@ -629,6 +658,34 @@ Then("tasks.md on disk has next on task B only", function (this: TasksWorld) {
   assert.match(content, /- \[ \] Task A @work/);
   assert.match(content, /- \[ \] >> Task B @work/);
   assert.doesNotMatch(content, />> Task A/);
+});
+
+Then("project alpha has only the second item as next", function (this: TasksWorld) {
+  const content = readFileSync(tasksFilePath(root.call(this)), "utf8");
+  assert.match(content, /- \[ \] Alpha first #alpha @work/);
+  assert.match(content, /- \[ \] >> Alpha second #alpha @work/);
+  assert.doesNotMatch(content, />> Alpha first/);
+});
+
+Then("project beta still has its original next", function (this: TasksWorld) {
+  const content = readFileSync(tasksFilePath(root.call(this)), "utf8");
+  assert.match(content, /- \[ \] >> Beta next #beta @work/);
+});
+
+Then("the new item is auto-marked as next", function (this: TasksWorld) {
+  const listed = executeTaskAction(root.call(this), "list", { include_done: true });
+  assert.ok(listed.ok && listed.list);
+  const added = listed.list.items.find((item) => item.text === "New step");
+  assert.ok(added, "expected added item New step");
+  assert.equal(added.next, true);
+});
+
+Then("the new item is not marked as next", function (this: TasksWorld) {
+  const listed = executeTaskAction(root.call(this), "list", { include_done: true });
+  assert.ok(listed.ok && listed.list);
+  const added = listed.list.items.find((item) => item.text === "Another step");
+  assert.ok(added, "expected added item Another step");
+  assert.equal(added.next, false);
 });
 
 Then("the task remove permission gate asks for confirmation", function (this: TasksWorld) {
