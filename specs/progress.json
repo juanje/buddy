@@ -1,5 +1,5 @@
 {
-  "current_focus": "FR-CONSOL-30",
+  "current_focus": null,
   "features": [
     {
       "id": "FR-CHAT-18",
@@ -958,37 +958,122 @@
     {
       "id": "FR-TASKM-31",
       "title": "Deterministic list filters",
-      "status": "in_progress",
+      "status": "done",
       "cycle_step": "done",
-      "scenarios": []
+      "scenarios": [
+        {
+          "name": "list with only_next returns next actions only",
+          "bdd": "pass",
+          "unit_tests": 6
+        },
+        {
+          "name": "list with only_stale returns aged items only",
+          "bdd": "pass",
+          "unit_tests": 6
+        },
+        {
+          "name": "list with only_due returns date-triggered items",
+          "bdd": "pass",
+          "unit_tests": 6
+        },
+        {
+          "name": "list with only_projects returns project summary",
+          "bdd": "pass",
+          "unit_tests": 6
+        }
+      ]
     },
     {
       "id": "FR-TASKM-32",
       "title": "edit action",
-      "status": "in_progress",
+      "status": "done",
       "cycle_step": "done",
-      "scenarios": []
+      "scenarios": [
+        {
+          "name": "edit changes task text",
+          "bdd": "pass",
+          "unit_tests": 5
+        },
+        {
+          "name": "edit changes area and project",
+          "bdd": "pass",
+          "unit_tests": 5
+        }
+      ]
     },
     {
       "id": "FR-TASKM-33",
       "title": "Consolidation deterministic task filters",
-      "status": "in_progress",
+      "status": "done",
       "cycle_step": "done",
-      "scenarios": []
+      "scenarios": [
+        {
+          "name": "consolidation prompt uses only_next for active fronts",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "consolidation prompt uses only_stale for staleness review",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "consolidation prompt uses only_due for date reminders",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "consolidation prompt uses only_projects for health check",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "consolidation prompt forbids unfiltered list",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
     },
     {
       "id": "FR-CONSOL-29",
       "title": "findDatedTaskItems excludes created-date comments",
-      "status": "in_progress",
+      "status": "done",
       "cycle_step": "done",
-      "scenarios": []
+      "scenarios": [
+        {
+          "name": "task with only created-date comment is not upcoming",
+          "bdd": "pass",
+          "unit_tests": 2
+        },
+        {
+          "name": "task with real due date is still upcoming",
+          "bdd": "pass",
+          "unit_tests": 2
+        }
+      ]
     },
     {
       "id": "FR-CONSOL-30",
       "title": "detectTaskCoherence false positive reduction",
-      "status": "in_progress",
+      "status": "done",
       "cycle_step": "done",
-      "scenarios": []
+      "scenarios": [
+        {
+          "name": "area-only word overlap does not produce coherence flag",
+          "bdd": "pass",
+          "unit_tests": 3
+        },
+        {
+          "name": "completion keyword in unrelated paragraph does not flag distant task",
+          "bdd": "pass",
+          "unit_tests": 3
+        },
+        {
+          "name": "genuine task completion still flagged",
+          "bdd": "pass",
+          "unit_tests": 3
+        }
+      ]
     }
   ]
 }
