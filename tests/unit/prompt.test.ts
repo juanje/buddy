@@ -227,7 +227,24 @@ describe("consolidation prompt project health check", () => {
       "utf8",
     );
     expect(prompt).toMatch(/project health/i);
-    expect(prompt).toContain("#project");
+    expect(prompt).toContain("only_projects");
+  });
+});
+
+// FR-TASKM-33: consolidation uses deterministic task filters.
+describe("consolidation deterministic task filters", () => {
+  it("uses only_next, only_stale, only_due, only_projects and forbids unfiltered list", () => {
+    const prompt = readFileSync(
+      join(bundledPromptsDir(), "consolidation.md"),
+      "utf8",
+    );
+    expect(prompt).toContain("only_next");
+    expect(prompt).toContain("only_stale");
+    expect(prompt).toContain("only_due");
+    expect(prompt).toContain("only_projects");
+    expect(prompt).toMatch(
+      /Do not call `tasks\(action='list'\)` without filters during consolidation/i,
+    );
   });
 });
 

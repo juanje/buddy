@@ -1,5 +1,5 @@
 {
-  "current_focus": null,
+  "current_focus": "FR-TASKM-33",
   "features": [
     {
       "id": "FR-CHAT-18",
@@ -954,6 +954,27 @@
           "unit_tests": 1
         }
       ]
+    },
+    {
+      "id": "FR-TASKM-31",
+      "title": "Deterministic list filters",
+      "status": "in_progress",
+      "cycle_step": "done",
+      "scenarios": []
+    },
+    {
+      "id": "FR-TASKM-32",
+      "title": "edit action",
+      "status": "in_progress",
+      "cycle_step": "done",
+      "scenarios": []
+    },
+    {
+      "id": "FR-TASKM-33",
+      "title": "Consolidation deterministic task filters",
+      "status": "in_progress",
+      "cycle_step": "done",
+      "scenarios": []
     }
   ]
 }

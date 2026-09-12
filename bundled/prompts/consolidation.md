@@ -118,30 +118,32 @@ The satellite file carries the depth; USER.md carries the working summary. This 
 
 #### 4. Task cleanup
 
-Use `tasks(action='list')` to review open items. Completed work from today's log
-should be marked with `tasks(action='complete', ...)`. Stale or irrelevant items
-→ `tasks(action='remove', ...)`. Parked items stay in the file or move to
-`agent_brain/deferred.md` — do not duplicate log decisions.
+**Do not call `tasks(action='list')` without filters during consolidation.**
+Use only targeted queries. A broad `list` is for interactive sessions.
 
 Act on items flagged in the "Daily coherence data" block (task items matched
 against today's log):
-- If the log confirms an item is **done** → `tasks(action='complete', ...)`.
-- If the log says it is **parked or deferred** → remove or leave per user intent.
-- If an item is **stale and irrelevant** → `tasks(action='remove', ...)`.
+- If the log confirms an item is **done** → `tasks(action='complete', params={id})`.
+- If the log says it is **parked** → `tasks(action='move', params={id, area: 'someday'})`.
+
+Do not move tasks to deferred. Tasks stay in tasks.md.
+
+Targeted queries (do not use `list` without filters in consolidation):
+- **Active fronts check:** `tasks(action='list', params={only_next: true})`.
+  Read `activeNextCount`. If it exceeds the configured WIP limit, flag to the
+  user: "You have N active fronts (limit: M). Consider completing, parking, or
+  deferring some." Propose specific actions for the excess — do not just warn.
+- **Project health check (weekly):** `tasks(action='list', params={only_projects: true})`.
+  For each project in the result, verify each `#project` tag has a corresponding file
+  in `user/projects/`. Flag projects with `openCount > 0` and `hasNext: false`.
+  Flag missing project files to the user.
+- `tasks(action='list', params={only_stale: true})` — items for review (open > 30 days,
+  `staleDays` present).
+
+When a filtered `list` returns `parkedCount > 0` or `futureCount > 0`, note this in
+the Day summary under **Open** — "N parked, M future items not shown in default list".
 
 If purely informational findings, note them in today's log under Decisions.
-
-**Active fronts check:** after cleanup, call `tasks(action='list')` and read
-the `activeNextCount` field (items marked as next action). If it exceeds the
-configured WIP limit, flag to the user: "You have N active fronts
-(limit: M). Consider completing, parking, or deferring some." Propose
-specific actions for the excess — do not just warn.
-
-**Project health check (weekly):** For each active project in `user/projects/`, verify at least one open task exists in `tasks.md` with its `#project` tag. If a project has no linked open tasks, flag it to the user: "Project X has no pending actions — is it done, or does it need a next step?" Also verify that each `#project` tag in tasks.md has a corresponding file in `user/projects/`. Flag missing project files to the user.
-
-When `list` returns `parkedCount > 0` or `futureCount > 0`, note this in the
-Day summary under **Open** — "N parked, M future items not shown in default list" —
-so the log reader knows the full task inventory.
 
 **Pending inbox migration:** If `user/inbox.md.pending-migration` exists, this is
 a legacy inbox that could not be migrated automatically. Read it, classify each
@@ -175,19 +177,15 @@ tasks content from before your edit; trust your edits, not stale read results.
 
 Don't wait for user interaction — act or defer.
 
-**5b. Date-triggered reminders** (from prompt header):
+**5b. Date-triggered reminders:**
 
-The prompt header includes an "Upcoming items" block listing dated task items
-and Active context deadlines within 24h. If items are listed:
+Call `tasks(action='list', params={only_due: true})`. If items returned,
+write one deferred entry per item:
+`- **reminder** (YYYY-MM-DD, daily): [description].`
 
-1. For each item, write to `agent_brain/deferred.md`:
-   `- **reminder** (YYYY-MM-DD, daily): [description].`
-2. Remove the date-triggered item from `user/tasks.md` — the file was storage; deferred
-   is the surfacing mechanism for session start.
+If empty, skip 5b.
 
-If the block says "No dated items due within 24h" — skip 5b.
-
-Do not scan files yourself — the runner has already done the date matching.
+Do not create reminders for non-due tasks.
 
 ---
 
@@ -462,12 +460,12 @@ week), **extend it** with new days — do not rewrite or discard content already
 covering earlier days. Cover the week's arc, patterns, personal note, and
 looking ahead.
 
-**W1b. Staleness review** — call `tasks(action='list')` and review items where
-`staleDays` is present (open > 30 days without being `>>`). For each stale item,
-propose one of: keep (still relevant), complete (already done), park to `@someday`
-(not now but not never), or remove (no longer relevant). If parking, also write to
-`agent_brain/deferred.md` with a revisit date (default +30d) so the item resurfaces
-via the deferred notification system.
+**W1b. Staleness review** — `tasks(action='list', params={only_stale: true})`.
+Review items where `staleDays` is present (open > 30 days without being `>>`).
+For each stale item, propose one of: keep (still relevant), complete (already done),
+park to `@someday` (not now but not never), or remove (no longer relevant). If parking,
+also write to `agent_brain/deferred.md` with a revisit date (default +30d) so the item
+resurfaces via the deferred notification system.
 
 **W2. Weekly themes and concept evolution** — review "Weekly diff since last
 depth-2" and file-change activity:
