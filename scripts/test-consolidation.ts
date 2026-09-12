@@ -45,6 +45,9 @@ import { resolveSessionModel } from "../backends/model-switch";
 import { readStateFile } from "../backends/state-file";
 import type { SetupConfig } from "../shared/api";
 import { AGENT_TOOLS, CONSOLIDATION_RETRY_CEILING, EXCLUDED_TOOLS } from "../shared/defaults";
+import { buildSkillTools, skillToolNames } from "../backends/skill-tools";
+import { buildConsolidationTools, consolidationToolNames } from "../backends/consolidation-tools";
+import { buildTaskTool } from "../backends/tasks/index";
 import {
   loadConsolidationLog,
   loadConsolidationState,
@@ -426,12 +429,23 @@ async function main(): Promise<void> {
         });
         await rl.reload();
 
+        const promptsDir = join(globalConfigDir(), "prompts");
+        const skillTools = buildSkillTools(promptsDir, { rootDir: rd });
+        const consolTools = buildConsolidationTools(rd);
+        const taskTool = buildTaskTool(rd);
+
         const { session } = await createAgentSession({
           cwd: rd,
           resourceLoader: rl,
           sessionManager: SessionManager.create(rd, buddySessionsDir(rd)),
           excludeTools: [...EXCLUDED_TOOLS],
-          tools: [...AGENT_TOOLS],
+          tools: [
+            ...AGENT_TOOLS,
+            ...skillToolNames(skillTools),
+            ...consolidationToolNames(consolTools),
+            taskTool.name,
+          ],
+          customTools: [...skillTools, ...consolTools, taskTool],
           modelRuntime: mr,
         });
 
