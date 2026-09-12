@@ -994,7 +994,7 @@ Fork bomb defense:
 | FR-CONSOL-29 | findDatedTaskItems excludes created-date HTML comments from date matching | 2 ✓ |
 | FR-CONSOL-30 | detectTaskCoherence: strip metadata tokens, proximity-scoped completion check | 2 ✓ |
 | FR-CONSOL-31 | buildConsolidationPrompt includes pending inbox migration signal when file exists | 2.5 ✓ |
-| FR-CONSOL-32 | Maintenance permission policy allows task-remove during consolidation | 2.5 |
+| FR-CONSOL-32 | Maintenance permission policy allows task-remove during consolidation | 2.5 ✓ |
 
 **Consolidation depths:**
 

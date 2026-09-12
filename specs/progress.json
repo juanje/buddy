@@ -1096,9 +1096,15 @@
     {
       "id": "FR-CONSOL-32",
       "title": "Maintenance permission policy allows task-remove during consolidation",
-      "status": "in_progress",
-      "cycle_step": "bdd_red",
-      "scenarios": []
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "The maintenance session allows task removal",
+          "bdd": "pass",
+          "unit_tests": 2
+        }
+      ]
     }
   ]
 }

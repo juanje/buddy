@@ -18,6 +18,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
 import {
+  createMaintenancePermissionPolicy,
   createMaintenanceSession,
   type MaintenanceAgentSession,
 } from "../../backends/consolidation-runner";
@@ -107,6 +108,27 @@ describe("session creation call sites", () => {
       new AbortController().signal,
     );
     expect(readBlocked?.block).toBe(true);
+  });
+
+  it("maintenance policy allows task-remove during consolidation", async () => {
+    const policy = createMaintenancePermissionPolicy();
+    const allowed = await policy.askUser({
+      kind: "task-remove",
+      op: "write",
+      path: "tasks:remove",
+    });
+    expect(allowed).toBe(true);
+  });
+
+  it("maintenance policy still refuses outside-path access", async () => {
+    const policy = createMaintenancePermissionPolicy();
+    const allowed = await policy.askUser({
+      kind: "outside",
+      op: "read",
+      path: "/etc/hosts",
+    });
+    expect(allowed).toBe(false);
+    expect(policy.refusedPaths()).toContain("/etc/hosts");
   });
 
   it("every session creator supplies buddy's own ModelRuntime", () => {

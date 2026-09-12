@@ -144,6 +144,11 @@ Feature: Consolidation scheduler (FR-CONSOL-01/02/04/05/06/08/09, FR-COST-05, FR
     When the maintenance session tries to write ".pi/settings.json"
     Then the maintenance tool call is blocked
 
+  @FR-CONSOL-32
+  Scenario: The maintenance session allows task removal
+    When the maintenance session tries to remove a task
+    Then the maintenance tool call is allowed
+
   # --- FR-CONSOL-16: each depth runs in its own session ---
 
   Scenario: Each depth in a cascade gets its own session

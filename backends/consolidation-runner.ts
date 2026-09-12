@@ -210,6 +210,9 @@ export function createMaintenancePermissionPolicy(): {
         identityChanged = true;
         return true;
       }
+      if (request.kind === "task-remove") {
+        return true;
+      }
       refused.push(request.path);
       return false;
     },

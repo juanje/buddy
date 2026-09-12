@@ -404,6 +404,13 @@ When(
   },
 );
 
+When("the maintenance session tries to remove a task", async function (this: ConsolidationWorld) {
+  const policy = createMaintenancePermissionPolicy();
+  const gate = createPermissionGate(this.buddyDir!, policy.askUser, this.consolTmpDir!);
+  this.maintenancePolicy = policy;
+  this.maintenanceGateResult = await gate.check("tasks", { action: "remove", params: { id: 1 } });
+});
+
 Then("the maintenance tool call is blocked", function (this: ConsolidationWorld) {
   assert.ok(
     this.maintenanceGateResult?.block,
