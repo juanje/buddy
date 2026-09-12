@@ -15,6 +15,13 @@ import { buildOrientationData, markOrientationDismissed } from "../../backends/o
 import { readLastOrientationDate, writeLastOrientationDate } from "../../backends/orientation-config";
 import { writeTasksFile } from "../../backends/tasks/task-file";
 import type { OrientationData, SetupConfig } from "../../shared/api";
+import {
+  clearOneLinerOnTopicTransition,
+  createOneLinerSessionState,
+  recordOneLinerReceived,
+  shouldRequestOneLiner,
+  type OneLinerSessionState,
+} from "../../src/lib/one-liner-session";
 import { setupGlobalConfigDir, teardownGlobalConfigDir } from "../support/global-config";
 import type { BuddyWorld } from "../support/world";
 
@@ -27,6 +34,7 @@ interface OrientationWorld extends BuddyWorld {
   orientationShownThisSession?: boolean;
   oneLinerReceived?: string | null;
   chatOneLiner?: string | null;
+  oneLinerSession?: OneLinerSessionState;
 }
 
 After(function (this: OrientationWorld) {
@@ -134,6 +142,10 @@ Then("the deferred queue is empty", function (this: OrientationWorld) {
 
 Given("orientation was shown this session", function (this: OrientationWorld) {
   this.orientationShownThisSession = true;
+  this.oneLinerSession = {
+    ...(this.oneLinerSession ?? createOneLinerSessionState()),
+    orientationShownThisSession: true,
+  };
 });
 
 When("the session becomes ready", function (this: OrientationWorld) {
@@ -164,8 +176,28 @@ Given(
   'a one-liner "Worked on orientation card" has been received',
   function (this: OrientationWorld) {
     this.chatOneLiner = "Worked on orientation card";
+    const base = this.oneLinerSession ?? createOneLinerSessionState();
+    this.oneLinerSession = recordOneLinerReceived(base, "Worked on orientation card");
   },
 );
+
+When("a topic transition starts", function (this: OrientationWorld) {
+  assert.ok(this.oneLinerSession, "one-liner session state should be initialized");
+  this.oneLinerSession = clearOneLinerOnTopicTransition(this.oneLinerSession);
+  this.chatOneLiner = this.oneLinerSession.lastOneLiner;
+  this.controller.beginTopicTransition();
+});
+
+Then("the one-liner is cleared", function (this: OrientationWorld) {
+  assert.ok(this.oneLinerSession, "one-liner session state should exist");
+  assert.equal(this.oneLinerSession.lastOneLiner, null);
+  assert.equal(this.chatOneLiner, null);
+});
+
+Then("the one-liner would not be re-requested on session ready", function (this: OrientationWorld) {
+  assert.ok(this.oneLinerSession, "one-liner session state should exist");
+  assert.equal(shouldRequestOneLiner(this.oneLinerSession), false);
+});
 
 Then("the welcome greeting is not visible", function (this: OrientationWorld) {
   const welcomeVisible = get(this.controller.welcomeVisible);

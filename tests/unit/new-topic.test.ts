@@ -7,6 +7,13 @@ import { buildClosurePrompt } from "../../backends/closure-prompt";
 import { runTopicTransition } from "../../backends/topic-transition";
 import { createChatController } from "../../src/lib/chat-controller";
 import { isNewTopicDisabled } from "../../src/lib/new-topic-contract";
+import {
+  clearOneLinerOnTopicTransition,
+  createOneLinerSessionState,
+  isOneLinerVisible,
+  recordOneLinerReceived,
+  shouldRequestOneLiner,
+} from "../../src/lib/one-liner-session";
 
 function fakeWorker(overrides: Partial<ReturnType<typeof baseWorker>> = {}) {
   return { ...baseWorker(), ...overrides };
@@ -163,5 +170,29 @@ describe("isNewTopicDisabled", () => {
 
   it("is enabled when idle", () => {
     expect(isNewTopicDisabled(false, false)).toBe(false);
+  });
+});
+
+describe("one-liner session (FR-ORIENT-04)", () => {
+  it("requests one-liner only on first open before any recap was fetched", () => {
+    const state = {
+      ...createOneLinerSessionState(),
+      orientationShownThisSession: true,
+    };
+    expect(shouldRequestOneLiner(state)).toBe(true);
+  });
+
+  it("clears one-liner on topic transition and does not re-request", () => {
+    let state = {
+      ...createOneLinerSessionState(),
+      orientationShownThisSession: true,
+    };
+    state = recordOneLinerReceived(state, "Worked on orientation card");
+    expect(isOneLinerVisible(state.lastOneLiner, null, 0)).toBe(true);
+
+    state = clearOneLinerOnTopicTransition(state);
+    expect(state.lastOneLiner).toBe(null);
+    expect(isOneLinerVisible(state.lastOneLiner, null, 0)).toBe(false);
+    expect(shouldRequestOneLiner(state)).toBe(false);
   });
 });

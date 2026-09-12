@@ -49,6 +49,7 @@
   let orientationData: OrientationData | null = $state(null);
   /** Sticky flag: card was shown this launch (survives dismiss before session ready). */
   let orientationShownThisSession = $state(false);
+  let oneLinerFetchedOnce = $state(false);
   let lastOneLiner: string | null = $state(null);
   let setupOAuthHandler: ((event: OAuthUIEvent) => void) | undefined = $state();
   let appConfig = $state<SetupConfig | undefined>();
@@ -191,18 +192,20 @@
           onOneLiner(text: string) {
             devLog(`one-liner: ${text}`);
             lastOneLiner = text;
+            oneLinerFetchedOnce = true;
           },
           onSessionReady() {
             devLog("session ready");
             sessionPreparing = false;
             clearTimeout(preparingTimer);
             controller?.endTopicTransition();
-            if (orientationShownThisSession && lastOneLiner === null) {
+            if (orientationShownThisSession && lastOneLiner === null && !oneLinerFetchedOnce) {
               void workerProxy.requestOneLiner();
             }
           },
           onTopicTransitionStart() {
             devLog("topic transition start");
+            lastOneLiner = null;
             controller?.beginTopicTransition();
             sessionPreparing = true;
             clearTimeout(preparingTimer);

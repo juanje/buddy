@@ -43,3 +43,13 @@ Feature: First-open-of-the-day orientation
     Then the welcome greeting is not visible
     When I send the message "Hello"
     Then the one-liner is not visible
+
+  @FR-ORIENT-04
+  Scenario: One-liner does not reappear after topic change
+    Given the app is running
+    And the Pi SDK session is connected
+    And orientation was shown this session
+    And a one-liner "Worked on orientation card" has been received
+    When a topic transition starts
+    Then the one-liner is cleared
+    And the one-liner would not be re-requested on session ready

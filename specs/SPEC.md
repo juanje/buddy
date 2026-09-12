@@ -3404,6 +3404,7 @@ Further context on local-model evaluation methodology and findings:
 |----|-------------|-------|
 | FR-ORIENT-02 | Orientation card at first open (deferred + next tasks) | 2 ✓ |
 | FR-ORIENT-03 | Agent-generated "where we left off" one-liner | 2 ✓ |
+| FR-ORIENT-04 | One-liner cleared on topic transition, not re-requested | 2.5 ✓ |
 
 **FR-ORIENT-02 — Orientation card at first open**
 
@@ -3420,6 +3421,12 @@ Further context on local-model evaluation methodology and findings:
 - The one-liner is not visible while the orientation card is showing; it appears after the card is dismissed.
 - The one-liner disappears when the user sends their first message.
 - The request is not made on topic transitions or on subsequent app opens the same day.
+
+**FR-ORIENT-04 — One-liner cleared on topic transition**
+
+- When the user starts a new topic, any displayed one-liner is cleared immediately.
+- The one-liner is not re-requested after a topic transition within the same app launch.
+- First open of the day still requests the one-liner once (unchanged FR-ORIENT-03 behavior).
 
 ### 3.29 Task maturity (FR-TASKM)
 

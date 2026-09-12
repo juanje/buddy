@@ -861,6 +861,19 @@
           "unit_tests": 1
         }
       ]
+    },
+    {
+      "id": "FR-ORIENT-04",
+      "title": "One-liner cleared on topic transition, not re-requested",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "One-liner does not reappear after topic change",
+          "bdd": "pass",
+          "unit_tests": 2
+        }
+      ]
     }
   ]
 }
