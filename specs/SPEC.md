@@ -3496,7 +3496,7 @@ Further context on local-model evaluation methodology and findings:
 | FR-TASKM-33 | Consolidation uses deterministic task filters instead of broad list | 2.5 ✓ |
 | FR-TASKM-34 | Next-action hint on area clear: remaining count + suggest prompt in tool response | 2.5 ✓ |
 | FR-TASKM-35 | Outcome-vs-task reinforcement: outcome-shaped language patterns in capture prompt | 2.5 ✓ |
-| FR-TASKM-36 | Untagged cluster review: consolidation weekly step with anti-misc-project guardrail | 2.5 |
+| FR-TASKM-36 | Untagged cluster review: consolidation weekly step with anti-misc-project guardrail | 2.5 ✓ |
 
 **FR-TASKM-01 — Project tag in task format**
 

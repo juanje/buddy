@@ -8,6 +8,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import type { TaskItem } from "../../shared/task-types";
 import {
   buildListResult,
+  buildUntaggedClusters,
   countActiveInArea,
   countActiveNext,
   parseTaskFileContent,
@@ -208,6 +209,23 @@ describe("countActiveInArea", () => {
       { id: 5, text: "Done", done: true, next: false, area: "work" },
     ];
     expect(countActiveInArea(items, "work", today)).toBe(2);
+  });
+});
+
+describe("buildUntaggedClusters", () => {
+  it("returns areas with 3+ open untagged items excluding someday and project tags", () => {
+    const items: TaskItem[] = [
+      { id: 1, text: "W1", done: false, next: false, area: "work" },
+      { id: 2, text: "W2", done: false, next: false, area: "work" },
+      { id: 3, text: "W3", done: false, next: false, area: "work" },
+      { id: 4, text: "W4", done: false, next: false, area: "work" },
+      { id: 5, text: "H1", done: false, next: false, area: "health" },
+      { id: 6, text: "H2", done: false, next: false, area: "health" },
+      { id: 7, text: "Parked", done: false, next: false, area: "someday" },
+      { id: 8, text: "Tagged", done: false, next: false, area: "work", project: "foo" },
+      { id: 9, text: "Done", done: true, next: false, area: "work" },
+    ];
+    expect(buildUntaggedClusters(items)).toEqual([{ area: "work", count: 4 }]);
   });
 });
 

@@ -293,6 +293,55 @@ When("tasks list is invoked with only_projects true", function (this: TasksWorld
   invoke.call(this, "list", { only_projects: true });
 });
 
+When("tasks list is invoked with only_untagged_clusters true", function (this: TasksWorld) {
+  invoke.call(this, "list", { only_untagged_clusters: true });
+});
+
+Given(
+  "a tasks.md with 4 open untagged tasks in @work and 2 open untagged in @health",
+  function (this: TasksWorld) {
+    writeTasksFile(root.call(this), [
+      { id: 1, text: "Work one", done: false, next: false, area: "work" },
+      { id: 2, text: "Work two", done: false, next: false, area: "work" },
+      { id: 3, text: "Work three", done: false, next: false, area: "work" },
+      { id: 4, text: "Work four", done: false, next: false, area: "work" },
+      { id: 5, text: "Health one", done: false, next: false, area: "health" },
+      { id: 6, text: "Health two", done: false, next: false, area: "health" },
+    ]);
+  },
+);
+
+Given("a tasks.md with 3 open untagged tasks in @work", function (this: TasksWorld) {
+  writeTasksFile(root.call(this), [
+    { id: 1, text: "Work one", done: false, next: false, area: "work" },
+    { id: 2, text: "Work two", done: false, next: false, area: "work" },
+    { id: 3, text: "Work three", done: false, next: false, area: "work" },
+  ]);
+});
+
+Then(
+  "the task result includes untaggedClusters for @work with count {int}",
+  function (this: TasksWorld, count: number) {
+    assert.ok(this.taskResult?.ok, "expected successful task result");
+    const clusters = this.taskResult!.list?.untaggedClusters ?? [];
+    const work = clusters.find((entry) => entry.area === "work");
+    assert.ok(work, `expected @work cluster in ${JSON.stringify(clusters)}`);
+    assert.equal(work!.count, count);
+  },
+);
+
+Then(
+  "the task result does not include untaggedClusters for @health",
+  function (this: TasksWorld) {
+    assert.ok(this.taskResult?.ok, "expected successful task result");
+    const clusters = this.taskResult!.list?.untaggedClusters ?? [];
+    assert.ok(
+      !clusters.some((entry) => entry.area === "health"),
+      `unexpected @health cluster in ${JSON.stringify(clusters)}`,
+    );
+  },
+);
+
 Given("tasks.md on disk has due today tomorrow and next week items", function (this: TasksWorld) {
   const today = toIsoDay(new Date());
   const tomorrow = addDays(today, 1);

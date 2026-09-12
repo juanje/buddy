@@ -371,6 +371,22 @@ created: ${createdStr}
     ]);
   });
 
+  it("only_untagged_clusters returns cluster summary and anti-pattern hint text", () => {
+    writeTasksFile(dir, [
+      { id: 1, text: "W1", done: false, next: false, area: "work" },
+      { id: 2, text: "W2", done: false, next: false, area: "work" },
+      { id: 3, text: "W3", done: false, next: false, area: "work" },
+      { id: 4, text: "H1", done: false, next: false, area: "health" },
+      { id: 5, text: "H2", done: false, next: false, area: "health" },
+    ]);
+    const result = assertSuccess(
+      executeTaskAction(dir, "list", { only_untagged_clusters: true }),
+    );
+    expect(result.list?.items).toHaveLength(0);
+    expect(result.list?.untaggedClusters).toEqual([{ area: "work", count: 3 }]);
+    expect(taskResultToText(result)).toContain("not a shared outcome");
+  });
+
   it("only_next combines with area filter", () => {
     writeTasksFile(dir, [
       { id: 1, text: "Work next", done: false, next: true, area: "work" },

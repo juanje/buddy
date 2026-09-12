@@ -41,6 +41,8 @@ export interface TaskListResult {
   activeNextCount: number;
   /** Populated when list(only_projects: true) */
   projects?: ProjectSummary[];
+  /** Populated when list(only_untagged_clusters: true) */
+  untaggedClusters?: Array<{ area: string; count: number }>;
 }
 
 export interface TaskConfig {

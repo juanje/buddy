@@ -467,6 +467,13 @@ park to `@someday` (not now but not never), or remove (no longer relevant). If p
 also write to `agent_brain/deferred.md` with a revisit date (default +30d) so the item
 resurfaces via the deferred notification system.
 
+**W1c. Untagged cluster review** — `tasks(action='list', params={only_untagged_clusters: true})`.
+Review areas with 3+ open tasks not tagged with a `#project`.
+For each cluster, evaluate: do these tasks share a completable outcome (a defined
+"done") and/or have dependencies between them?
+- **Yes** → propose a project to the user via deferred (name, outcome, which tasks belong).
+- **No** → skip. Same @area is not a project. Never create catch-all or miscellaneous projects.
+
 **W2. Weekly themes and concept evolution** — review "Weekly diff since last
 depth-2" and file-change activity:
 1. Themes appearing across multiple days but not captured anywhere → note as observation seed.

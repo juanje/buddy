@@ -535,3 +535,25 @@ Feature: Task management
     Given the bundled agents-base.md prompt
     Then the agents-base prompt contains "first concrete step"
     And the agents-base prompt contains "capture as-is"
+
+  @FR-TASKM-36
+  Scenario: list returns untagged clusters above threshold
+    Given an initialized buddy git repository
+    And a tasks.md with 4 open untagged tasks in @work and 2 open untagged in @health
+    When tasks list is invoked with only_untagged_clusters true
+    Then the task result includes untaggedClusters for @work with count 4
+    And the task result does not include untaggedClusters for @health
+
+  @FR-TASKM-36
+  Scenario: cluster hint includes anti-pattern warning
+    Given an initialized buddy git repository
+    And a tasks.md with 3 open untagged tasks in @work
+    When tasks list is invoked with only_untagged_clusters true
+    Then the task result contains "not a shared outcome"
+
+  @FR-TASKM-36
+  Scenario: consolidation prompt includes cluster review step
+    Given the bundled consolidation.md prompt
+    Then the consolidation prompt contains "W1c"
+    And the consolidation prompt contains "only_untagged_clusters"
+    And the consolidation prompt contains "catch-all"

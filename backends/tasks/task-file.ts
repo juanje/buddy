@@ -278,6 +278,21 @@ export function buildProjectSummary(items: TaskItem[]): ProjectSummary[] {
     .sort((a, b) => a.project.localeCompare(b.project));
 }
 
+const UNTAGGED_CLUSTER_THRESHOLD = 3;
+
+export function buildUntaggedClusters(items: TaskItem[]): Array<{ area: string; count: number }> {
+  const counts = new Map<string, number>();
+  for (const item of items) {
+    if (item.done || item.project || item.area === "someday") continue;
+    const key = areaKey(item.area) || "general";
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  return [...counts.entries()]
+    .filter(([, count]) => count >= UNTAGGED_CLUSTER_THRESHOLD)
+    .map(([area, count]) => ({ area, count }))
+    .sort((a, b) => b.count - a.count || a.area.localeCompare(b.area));
+}
+
 export function isActiveNextItem(item: TaskItem, today: string): boolean {
   return (
     !item.done &&

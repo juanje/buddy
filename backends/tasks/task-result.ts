@@ -21,6 +21,14 @@ export function taskResultToText(result: TaskActionResult): string {
     parts.push(`No next action set for @${result.noNextForArea || "general"} — consider set_next.`);
   }
   if (result.list) {
+    if (result.list.untaggedClusters && result.list.untaggedClusters.length > 0) {
+      const summary = result.list.untaggedClusters
+        .map(({ area, count }) => `@${area} (${count})`)
+        .join(", ");
+      parts.push(
+        `Areas with 3+ untagged open tasks: ${summary}. Review whether any share a completable outcome — only propose a project if they do. Same area is not a shared outcome.`,
+      );
+    }
     parts.push(JSON.stringify(result.list, null, 2));
   }
   return parts.join("\n\n");

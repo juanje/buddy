@@ -289,7 +289,7 @@ describe("consolidation prompt project health check", () => {
   });
 });
 
-// FR-TASKM-33: consolidation uses deterministic task filters.
+// FR-TASKM-33: consolidation deterministic task filters.
 describe("consolidation deterministic task filters", () => {
   it("uses only_next, only_stale, only_due, only_projects and forbids unfiltered list", () => {
     const prompt = readFileSync(
@@ -303,6 +303,19 @@ describe("consolidation deterministic task filters", () => {
     expect(prompt).toMatch(
       /Do not call `tasks\(action='list'\)` without filters during consolidation/i,
     );
+  });
+});
+
+// FR-TASKM-36: untagged cluster review at weekly consolidation.
+describe("consolidation untagged cluster review", () => {
+  it("includes W1c step with only_untagged_clusters and catch-all guard", () => {
+    const prompt = readFileSync(
+      join(bundledPromptsDir(), "consolidation.md"),
+      "utf8",
+    );
+    expect(prompt).toContain("W1c");
+    expect(prompt).toContain("only_untagged_clusters");
+    expect(prompt).toContain("catch-all");
   });
 });
 

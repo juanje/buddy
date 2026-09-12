@@ -7,6 +7,7 @@ import {
   areaHasNext,
   buildListResult,
   buildProjectSummary,
+  buildUntaggedClusters,
   clearNextInArea,
   countActiveNext,
   countActiveInArea,
@@ -24,7 +25,7 @@ const HELP_TEXT = `tasks() actions:
 - complete(id) — mark done
 - set_next(id) — mark as next action (>>) for its area
 - list(area?, project?, include_done?, include_parked?, include_future?,
-       only_next?, only_stale?, only_due?, only_projects?) — structured items
+       only_next?, only_stale?, only_due?, only_projects?, only_untagged_clusters?) — structured items
 - move(id, area) — change @area
 - annotate(id, annotation) — add **metadata**
 - remove(id) — delete item (requires confirmation)
@@ -45,6 +46,7 @@ export interface TaskActionParams {
   only_stale?: boolean;
   only_due?: boolean;
   only_projects?: boolean;
+  only_untagged_clusters?: boolean;
 }
 
 function err(error: string, suggestion?: string): TaskActionResult {
@@ -111,6 +113,14 @@ export function executeTaskAction(
 
       if (params.only_projects) {
         list.projects = buildProjectSummary(items.filter((item) => !item.done));
+        list.items = [];
+        list.areas = [];
+        list.openCount = 0;
+        return ok("Task list:", { list });
+      }
+
+      if (params.only_untagged_clusters) {
+        list.untaggedClusters = buildUntaggedClusters(items.filter((item) => !item.done));
         list.items = [];
         list.areas = [];
         list.openCount = 0;
