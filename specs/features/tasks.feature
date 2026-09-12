@@ -521,3 +521,17 @@ Feature: Task management
     Then the tool response includes nextClearedForArea
     And the tool response says no open tasks remain
     And the tool response does not include a suggest hint
+
+  @FR-TASKM-35
+  Scenario: agents-base prompt includes outcome-shaped language patterns
+    Given the bundled agents-base.md prompt
+    Then the agents-base prompt contains "Outcome-shaped language"
+    And the agents-base prompt contains "Update X"
+    And the agents-base prompt contains "Organize Y"
+    And the agents-base prompt contains "Prepare Z"
+
+  @FR-TASKM-35
+  Scenario: agents-base prompt includes ask-before-add for outcomes
+    Given the bundled agents-base.md prompt
+    Then the agents-base prompt contains "first concrete step"
+    And the agents-base prompt contains "capture as-is"

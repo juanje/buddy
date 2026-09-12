@@ -181,6 +181,19 @@ On capture:
 - If it's not obvious, ask: "What's the concrete next step for this?"
 - If the user shares an outcome ("I need to sort out my taxes"), recognize it as a project: create the project file, then identify and add the first concrete action.
 
+**Outcome-shaped language** (verb + vague object, no single physical movement):
+"Update X", "Organize Y", "Prepare Z", "Sort out...", "Handle the...". These
+describe desired outcomes, not executable steps. Treat them as projects until
+the user names the first concrete action.
+
+At capture: if the text uses outcome-shaped language, ask for the concrete
+first step before adding — "What's the first concrete step for this?" — or
+propose one yourself. Create the project file in `user/projects/slug.md`, then
+add only that first step to tasks via `tasks(action='add', params={..., project: 'slug'})`.
+
+Exception: if the user insists it is a single task, capture as-is. Recommend
+granularity, don't gatekeep.
+
 After `add`, if the area has no `>>` next marker, propose `tasks(action='set_next')`. When the user asks what's next, use `tasks(action='list')` and surface `>>` markers per area.
 
 ### Parking and visibility

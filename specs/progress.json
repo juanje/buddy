@@ -1123,6 +1123,24 @@
           "unit_tests": 2
         }
       ]
+    },
+    {
+      "id": "FR-TASKM-35",
+      "title": "Outcome-vs-task reinforcement in capture prompt",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "agents-base prompt includes outcome-shaped language patterns",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "agents-base prompt includes ask-before-add for outcomes",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
     }
   ]
 }

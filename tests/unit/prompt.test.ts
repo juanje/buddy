@@ -261,6 +261,22 @@ describe("agents-base GTD project classification", () => {
   });
 });
 
+// FR-TASKM-35: outcome-vs-task reinforcement in capture prompt.
+describe("agents-base outcome-vs-task reinforcement", () => {
+  it("includes outcome-shaped language patterns and ask-before-add guidance", () => {
+    const base = readFileSync(
+      join(bundledPromptsDir(), "agents-base.md"),
+      "utf8",
+    );
+    expect(base).toContain("Outcome-shaped language");
+    expect(base).toContain("Update X");
+    expect(base).toContain("Organize Y");
+    expect(base).toContain("Prepare Z");
+    expect(base).toContain("first concrete step");
+    expect(base).toContain("capture as-is");
+  });
+});
+
 // FR-TASKM-05: weekly project health check in consolidation prompt.
 describe("consolidation prompt project health check", () => {
   it("verifies active projects have linked open tasks", () => {
