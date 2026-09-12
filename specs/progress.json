@@ -913,6 +913,19 @@
           "unit_tests": 1
         }
       ]
+    },
+    {
+      "id": "FR-CONSOL-28",
+      "title": "tasks() tool registered in consolidation session toolset 2.5",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "consolidation session includes tasks tool",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
     }
   ]
 }

@@ -5,6 +5,7 @@ import {
   DefaultResourceLoader,
   SessionManager,
   type ModelRuntime,
+  type ToolDefinition,
 } from "@earendil-works/pi-coding-agent";
 import { readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -79,6 +80,7 @@ import { pathArgsOf } from "../shared/tool-paths";
 import { isContained } from "./containment";
 import { resolveInstanceLanguage } from "./wiki-tools";
 import { cleanupCompletedTasks } from "./tasks/task-cleanup";
+import { buildTaskTool } from "./tasks/index";
 
 export interface MaintenanceSessionLike {
   prompt(text: string): Promise<void>;
@@ -310,6 +312,30 @@ export type MaintenanceAgentSession = Pick<
 >;
 
 
+function buildMaintenanceTooling(rootDir: string): {
+  toolNames: string[];
+  customTools: ToolDefinition[];
+} {
+  const promptsDir = join(globalConfigDir(), "prompts");
+  const skillTools = buildSkillTools(promptsDir, { rootDir });
+  const consolTools = buildConsolidationTools(rootDir);
+  const taskTool = buildTaskTool(rootDir);
+  return {
+    toolNames: [
+      ...AGENT_TOOLS,
+      ...skillToolNames(skillTools),
+      ...consolidationToolNames(consolTools),
+      taskTool.name,
+    ],
+    customTools: [...skillTools, ...consolTools, taskTool],
+  };
+}
+
+/** Tool names registered on the maintenance session (FR-CONSOL-28). */
+export function getMaintenanceSessionToolNames(rootDir: string): string[] {
+  return buildMaintenanceTooling(rootDir).toolNames;
+}
+
 async function openRealMaintenanceSession(config: {
   rootDir: string;
   modelRuntime: ModelRuntime;
@@ -325,9 +351,7 @@ async function openRealMaintenanceSession(config: {
   });
   await resourceLoader.reload();
 
-  const promptsDir = join(globalConfigDir(), "prompts");
-  const skillTools = buildSkillTools(promptsDir, { rootDir });
-  const consolTools = buildConsolidationTools(rootDir);
+  const { toolNames, customTools } = buildMaintenanceTooling(rootDir);
 
   const { session } = await createAgentSession({
     cwd: rootDir,
@@ -335,8 +359,8 @@ async function openRealMaintenanceSession(config: {
     resourceLoader,
     sessionManager: SessionManager.create(rootDir, buddySessionsDir(rootDir)),
     excludeTools: [...EXCLUDED_TOOLS],
-    tools: [...AGENT_TOOLS, ...skillToolNames(skillTools), ...consolidationToolNames(consolTools)],
-    customTools: [...skillTools, ...consolTools],
+    tools: toolNames,
+    customTools,
     modelRuntime,
     ...depthModelOptions,
   });

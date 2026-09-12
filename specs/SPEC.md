@@ -990,6 +990,7 @@ Fork bomb defense:
 | FR-CONSOL-25 | Scheduler threshold update | 2 ✓ |
 | FR-CONSOL-26 | Log rotation preserves relative links | 2 ✓ |
 | FR-CONSOL-27 | Pending logs detection for late reflects | 2 ✓ |
+| FR-CONSOL-28 | tasks() tool registered in consolidation session toolset | 2.5 ✓ |
 
 **Consolidation depths:**
 
@@ -1326,6 +1327,10 @@ fresh session per depth gives each depth the full window.
 - **When** the runner builds the consolidation prompt
 - **Then** a "Pending logs" block lists each such log file (excluding today's date)
 - **And** the consolidation procedure reads pending logs before today's log
+
+**FR-CONSOL-28 — tasks() tool in consolidation session**
+
+- The maintenance session registers the `tasks()` custom tool alongside skill and consolidation tools so consolidation step 4 instructions can invoke `tasks(action='list'|'complete'|'remove'|'add')`.
 
 | ID | Description | Phase |
 |----|-------------|-------|

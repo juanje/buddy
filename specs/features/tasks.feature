@@ -116,6 +116,10 @@ Feature: Task management
     Then the consolidation prompt step 4 references tasks list
     And the consolidation prompt does not reference triage_inbox
 
+  @FR-CONSOL-28
+  Scenario: consolidation session includes tasks tool
+    Then the consolidation session toolset includes tasks
+
   @FR-TASKM-01
   Scenario: task with project tag is parsed and serialized
     Given an initialized buddy git repository

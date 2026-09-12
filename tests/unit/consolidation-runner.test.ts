@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   buildConsolidationPrompt,
+  getMaintenanceSessionToolNames,
   runConsolidation,
   type MaintenanceSessionLike,
 } from "../../backends/consolidation-runner";
@@ -37,6 +38,12 @@ describe("consolidation runner", () => {
     writeFileSync(join(dir, "AGENTS.md"), "# Rules\n");
     writeFileSync(join(dir, "notes.txt"), "hello\n");
   }
+
+  it("registers tasks tool in maintenance session toolset (FR-CONSOL-28)", () => {
+    setupBuddyDir();
+    const names = getMaintenanceSessionToolNames(dir);
+    expect(names).toContain("tasks");
+  });
 
   it("builds consolidation prompt from the global skill file", async () => {
     setupBuddyDir();

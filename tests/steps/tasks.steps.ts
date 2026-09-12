@@ -17,6 +17,7 @@ import {
   migrateAgentsWorkspacesReference,
   migrateInboxToTasksIfNeeded,
 } from "../../backends/brain-migration";
+import { getMaintenanceSessionToolNames } from "../../backends/consolidation-runner";
 import { bootRefreshIfNeeded } from "../../backends/boot-refresh";
 import { setupGlobalConfigDir } from "../support/global-config";
 import type { BuddyWorld } from "../support/world";
@@ -525,6 +526,12 @@ Then("the consolidation prompt references project health check", function (this:
 
 Then("the consolidation prompt contains {string}", function (this: TasksWorld, text: string) {
   assert.ok(this.consolidationPrompt?.includes(text), `missing: ${text}`);
+});
+
+Then("the consolidation session toolset includes tasks", function (this: TasksWorld) {
+  setupGlobalConfigDir();
+  const names = getMaintenanceSessionToolNames(process.cwd());
+  assert.ok(names.includes("tasks"), `expected tasks in toolset: ${names.join(", ")}`);
 });
 
 Given("the bundled process-conversation.md prompt", function (this: TasksWorld) {
