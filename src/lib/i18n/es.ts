@@ -88,6 +88,7 @@ export type LocaleStrings = {
   welcomeDueToday: string;
   welcomeOverdue: string;
   welcomeDismiss: string;
+  welcomeClose: string;
   deferredTypes: Record<string, string>;
   welcomeRegion: string;
   orientationDismiss: string;
@@ -293,6 +294,7 @@ export const es: LocaleStrings = {
   welcomeDueToday: "hoy",
   welcomeOverdue: "vencido",
   welcomeDismiss: "Entendido",
+  welcomeClose: "Cerrar",
   deferredTypes: { reminder: "recordatorio", decision: "decisión", info: "info", review: "revisión" },
   welcomeRegion: "Bienvenida",
   orientationDismiss: "Cerrar",

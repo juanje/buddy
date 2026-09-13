@@ -1249,6 +1249,24 @@
           "unit_tests": 3
         }
       ]
+    },
+    {
+      "id": "FR-DEFERRED-04",
+      "title": "Deferred banner Close vs Dismiss",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Closing deferred banner hides it without removing items",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Dismissing deferred banner removes due items",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
     }
   ]
 }

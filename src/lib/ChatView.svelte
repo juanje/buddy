@@ -108,6 +108,7 @@
   })}
     <DeferredBanner
       items={deferredItems}
+      onClose={() => { deferredDismissed = true; controller.closeWelcome(); }}
       onDismiss={() => { controller.dismissWelcome(); deferredDismissed = true; }}
     />
   {/if}

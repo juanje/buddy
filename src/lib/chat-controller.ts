@@ -114,6 +114,8 @@ export interface ChatController {
   dismissPermission(id: number): void;
   /** Hide the welcome banner and acknowledge due deferred items (FR-DEFERRED-01). */
   dismissWelcome(): void;
+  /** Hide the welcome/deferred banner without acknowledging items (FR-DEFERRED-04). */
+  closeWelcome(): void;
   /** Re-show the deferred banner when mid-session items come due (FR-DEFERRED-03). */
   showDeferredBanner(): void;
   /** Surface a provider auth failure as an inline card (FR-AUTH-02). */
@@ -257,6 +259,10 @@ export function createChatController(worker: ChatWorkerAPI): ChatController {
 
   function dismissWelcome(): void {
     void worker.dismissDeferredItems();
+    welcomeVisible.set(false);
+  }
+
+  function closeWelcome(): void {
     welcomeVisible.set(false);
   }
 
@@ -455,6 +461,7 @@ export function createChatController(worker: ChatWorkerAPI): ChatController {
     respondPermission,
     dismissPermission,
     dismissWelcome,
+    closeWelcome,
     showDeferredBanner,
     handleAuthError,
     dismissAuthError,

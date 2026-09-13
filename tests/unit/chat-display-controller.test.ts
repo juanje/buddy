@@ -67,6 +67,20 @@ describe("chat controller display polish", () => {
     expect(dismissed).toBe(true);
     expect(get(controller.welcomeVisible)).toBe(false);
   });
+
+  it("closeWelcome hides the banner without calling dismissDeferredItems", async () => {
+    let dismissed = false;
+    const controller = createChatController({
+      ...fakeWorker(),
+      dismissDeferredItems: async () => {
+        dismissed = true;
+      },
+    });
+    controller.closeWelcome();
+    await Promise.resolve();
+    expect(dismissed).toBe(false);
+    expect(get(controller.welcomeVisible)).toBe(false);
+  });
 });
 
 // FR-CHAT-19: tokenizer artifact stripping.

@@ -98,6 +98,7 @@ export const en: LocaleStrings = {
   welcomeDueToday: "due",
   welcomeOverdue: "overdue",
   welcomeDismiss: "Got it",
+  welcomeClose: "Close",
   deferredTypes: { reminder: "reminder", decision: "decision", info: "info", review: "review" },
   welcomeRegion: "Welcome",
   orientationDismiss: "Dismiss",

@@ -4,9 +4,11 @@
 
   let {
     items,
+    onClose,
     onDismiss,
   }: {
     items: DeferredItemView[];
+    onClose?: () => void;
     onDismiss?: () => void;
   } = $props();
 
@@ -35,11 +37,18 @@
           </li>
         {/each}
       </ul>
-      {#if onDismiss}
+      {#if onClose || onDismiss}
         <div class="dismiss-row">
-          <button type="button" class="dismiss-btn" onclick={onDismiss}>
-            {$t.welcomeDismiss}
-          </button>
+          {#if onClose}
+            <button type="button" class="close-action" onclick={onClose}>
+              {$t.welcomeClose}
+            </button>
+          {/if}
+          {#if onDismiss}
+            <button type="button" class="dismiss-btn" onclick={onDismiss}>
+              {$t.welcomeDismiss}
+            </button>
+          {/if}
         </div>
       {/if}
     </div>
@@ -115,7 +124,20 @@
   .dismiss-row {
     display: flex;
     justify-content: flex-end;
+    gap: 8px;
     margin-top: 8px;
+  }
+  .close-action {
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 4px 10px;
+  }
+  .close-action:hover {
+    color: var(--fg);
   }
   .dismiss-btn {
     border: 1px solid var(--fg-secondary);

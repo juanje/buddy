@@ -930,6 +930,7 @@ Fork bomb defense:
 | FR-DEFERRED-01 | Surface due items on app start | 1 ✓ |
 | FR-DEFERRED-02 | Heartbeat periodic check | 2 ✓ |
 | FR-DEFERRED-03 | OS notification for due items | 2 ✓ |
+| FR-DEFERRED-04 | Deferred banner Close vs Dismiss | 2.5 ✓ |
 
 **FR-DEFERRED-01 — Surface on start**
 
@@ -959,6 +960,13 @@ Fork bomb defense:
 - **And** the deferred banner re-shows inside the app so the user sees the items whether they arrive via notification or are already in the app
 - **And** the user can dismiss the banner, which removes the items from `deferred.md`
 - **Resilience:** A concurrency guard (`notifyInFlight`) prevents multiple simultaneous notification attempts when heartbeat ticks arrive faster than the async notification call resolves. Permission is requested proactively at app start.
+
+**FR-DEFERRED-04 — Deferred banner Close vs Dismiss**
+
+- The deferred banner offers two actions: **Close** and **Dismiss**.
+- Close hides the banner only. Due items stay in `deferred.md` and can resurface on the next heartbeat or the next session.
+- Dismiss acknowledges the due items: they are removed from `deferred.md` and will not come back.
+- Closing is for clearing the chat; dismissing is for "I have seen this and do not need the reminder again."
 
 ### 3.8 Consolidation (FR-CONSOL)
 

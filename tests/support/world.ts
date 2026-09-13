@@ -7,6 +7,7 @@ import { get } from "svelte/store";
 
 import { FakeSession } from "./fake-session";
 import { augmentPromptWithAttachments } from "../../backends/session-boot";
+import { removeDueDeferredItems } from "../../backends/deferred";
 import { createWorkerCore, type WorkerCore } from "../../backends/worker-core";
 import { SessionLifecycle } from "../../backends/session-lifecycle";
 import type { SpawnReflectOptions } from "../../backends/reflect-spawn";
@@ -62,6 +63,10 @@ export class BuddyWorld extends World {
 
   /** Optional buddy directory for memory-loop scenarios (FR-GIT-01+). */
   rootDir?: string;
+  /** Set by orientation/deferred fixtures that create a temp buddy instance. */
+  buddyDir?: string;
+  /** FR-DEFERRED-04: how many times the dismiss RPC ran this scenario. */
+  deferredDismissRpcCount = 0;
   lifecycle?: SessionLifecycle;
   spawnCalls?: SpawnReflectOptions[];
 
@@ -71,7 +76,8 @@ export class BuddyWorld extends World {
     options?: { force?: boolean; trackSpawn?: boolean },
   ): void {
     if (this.controller && !options?.force) return;
-    this.rootDir = rootDir;
+    this.rootDir = rootDir ?? this.rootDir ?? this.buddyDir;
+    this.deferredDismissRpcCount = 0;
     this.session = new FakeSession();
 
     // `trackSpawn` decides whether a scenario *inspects* the spawns, never
@@ -134,7 +140,12 @@ export class BuddyWorld extends World {
       resolvePermission: async (id, allow) => {
         self.permissionResolutions.push({ id, allow });
       },
-      dismissDeferredItems: async () => {},
+      dismissDeferredItems: async () => {
+        self.deferredDismissRpcCount += 1;
+        if (self.rootDir) {
+          removeDueDeferredItems(self.rootDir);
+        }
+      },
       newTopic: async () => {
         self.topicShutdownCalled = true;
         if (self.lifecycle) {
