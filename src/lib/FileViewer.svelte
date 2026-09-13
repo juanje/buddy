@@ -17,6 +17,7 @@
   const loading = $derived(controller.loading);
 
   const canGoBack = $derived(controller.canGoBack);
+  const canReveal = $derived(controller.canReveal);
 
   function onBackdropClick(event: MouseEvent) {
     if (event.target === event.currentTarget) {
@@ -92,9 +93,16 @@
         {/if}
       </div>
 
-      <!-- No "open externally" action: Buddy never hands a file to another
-           program (FR-CHAT-11). -->
+      <!-- Reveal in Finder/Nautilus is not opening the file with another
+           program (FR-CHAT-20 vs FR-CHAT-11): the file manager displays the
+           directory; it does not execute the file. Hidden outside user/ and
+           downloads/. The agent cannot invoke this. -->
       <footer class="footer">
+        {#if $canReveal}
+          <button type="button" class="secondary" onclick={() => controller.reveal()}>
+            {$t.fileViewerReveal}
+          </button>
+        {/if}
         <button type="button" class="primary" onclick={() => controller.close()}>
           {$t.fileViewerClose}
         </button>
@@ -214,5 +222,14 @@
     border: 1px solid var(--accent);
     background: var(--accent);
     color: var(--accent-fg);
+  }
+  .secondary {
+    border-radius: 8px;
+    padding: 8px 14px;
+    cursor: pointer;
+    font-size: 14px;
+    border: 1px solid var(--border);
+    background: var(--bg-secondary);
+    color: var(--fg);
   }
 </style>

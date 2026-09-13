@@ -16,6 +16,7 @@
       "identifier": "opener:allow-open-url",
       "allow": [{ "url": "https://**" }]
     },
+    "opener:allow-reveal-item-in-dir",
     "notification:default"
   ]
 }

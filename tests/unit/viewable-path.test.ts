@@ -6,7 +6,7 @@
 
 import { describe, expect, it } from "vitest";
 
-import { resolveViewablePath } from "../../shared/viewable-path";
+import { resolveRevealablePath, resolveViewablePath } from "../../shared/viewable-path";
 
 const ROOT = "/home/buddy";
 
@@ -93,5 +93,34 @@ describe("resolveViewablePath — external and malformed input", () => {
     "/",
   ])("rejects %s", (href) => {
     expect(resolveViewablePath(ROOT, href)).toBeNull();
+  });
+});
+
+describe("resolveRevealablePath — FR-CHAT-20", () => {
+  it("returns the absolute path for user/tasks.md", () => {
+    expect(resolveRevealablePath(ROOT, "user/tasks.md")).toBe("/home/buddy/user/tasks.md");
+  });
+
+  it("returns the absolute path for downloads/report.pdf", () => {
+    expect(resolveRevealablePath(ROOT, "downloads/report.pdf")).toBe(
+      "/home/buddy/downloads/report.pdf",
+    );
+  });
+
+  it("rejects agent_brain/", () => {
+    expect(resolveRevealablePath(ROOT, "agent_brain/observations.md")).toBeNull();
+  });
+
+  it("rejects logs/", () => {
+    expect(resolveRevealablePath(ROOT, "logs/2026-09-12.md")).toBeNull();
+  });
+
+  it("rejects relative traversal that escapes rootDir", () => {
+    expect(resolveRevealablePath(ROOT, "../etc/passwd")).toBeNull();
+    expect(resolveRevealablePath(ROOT, "user/../../../etc/passwd")).toBeNull();
+  });
+
+  it("rejects an absolute path outside rootDir", () => {
+    expect(resolveRevealablePath(ROOT, "/etc/passwd")).toBeNull();
   });
 });

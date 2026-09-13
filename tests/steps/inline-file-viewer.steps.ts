@@ -17,6 +17,7 @@ interface InlineFileViewerWorld {
   linkAction?: LocalLinkAction | null;
   fileContents?: Map<string, string>;
   fileViewer?: ReturnType<typeof createFileViewerController>;
+  revealedPaths?: string[];
 }
 
 /**
@@ -40,6 +41,7 @@ function readStore<T>(store: { subscribe: (fn: (value: T) => void) => () => void
 Given("the buddy root directory is {string}", function (this: InlineFileViewerWorld, rootDir: string) {
   this.rootDir = rootDir;
   this.fileContents = new Map();
+  this.revealedPaths = [];
   this.fileViewer = createFileViewerController({
     // The frontend has no filesystem capability (NFR-SEC-09): content arrives
     // over worker RPC, keyed by a path relative to the buddy directory.
@@ -49,6 +51,10 @@ Given("the buddy root directory is {string}", function (this: InlineFileViewerWo
         throw new Error(`File not found: ${relPath}`);
       }
       return content;
+    },
+    rootDir: () => this.rootDir ?? "",
+    revealInFileManager: async (absPath: string) => {
+      this.revealedPaths?.push(absPath);
     },
   });
 });

@@ -113,3 +113,51 @@ describe("FileViewerController", () => {
     expect(readStore(controller.content)).toBe("");
   });
 });
+
+describe("FileViewerController reveal (FR-CHAT-20)", () => {
+  const ROOT = "/home/test/buddy";
+
+  it("offers reveal for user/ files and not for agent_brain/", async () => {
+    const readViewableFile = vi.fn(async () => "# Title");
+    const controller = createFileViewerController({
+      readViewableFile,
+      rootDir: () => ROOT,
+    });
+
+    await controller.openFile("user/tasks.md");
+    expect(readStore(controller.canReveal)).toBe(true);
+
+    await controller.openFile("agent_brain/observations.md");
+    expect(readStore(controller.canReveal)).toBe(false);
+  });
+
+  it("reveals the absolute path via the injected opener", async () => {
+    const readViewableFile = vi.fn(async () => "# Tasks");
+    const revealInFileManager = vi.fn(async () => undefined);
+    const controller = createFileViewerController({
+      readViewableFile,
+      rootDir: () => ROOT,
+      revealInFileManager,
+    });
+
+    await controller.openFile("user/tasks.md");
+    await controller.reveal();
+
+    expect(revealInFileManager).toHaveBeenCalledWith("/home/test/buddy/user/tasks.md");
+  });
+
+  it("does not call the opener for a traversal path", async () => {
+    const readViewableFile = vi.fn(async () => "x");
+    const revealInFileManager = vi.fn(async () => undefined);
+    const controller = createFileViewerController({
+      readViewableFile,
+      rootDir: () => ROOT,
+      revealInFileManager,
+    });
+
+    await controller.openFile("user/../../../etc/passwd");
+    expect(readStore(controller.canReveal)).toBe(false);
+    await controller.reveal();
+    expect(revealInFileManager).not.toHaveBeenCalled();
+  });
+});

@@ -202,6 +202,7 @@ export const en: LocaleStrings = {
   fileViewerBack: "Back",
   fileViewerLoading: "Loading file…",
   fileViewerError: "Could not read file: {message}",
+  fileViewerReveal: "Show in folder",
 };
 
 export function tierDescriptionEn(tier: "fast" | "balanced" | "powerful"): string {

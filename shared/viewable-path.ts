@@ -9,6 +9,7 @@
 // call this to decide whether to render a link as clickable, but that decision
 // is presentational: nothing is read until the worker validates again.
 
+import { USER_DIR, DOWNLOADS_DIR } from "./brain-paths";
 import { VIEWABLE_DIRS, VIEWABLE_EXTENSIONS } from "./defaults";
 
 /** True when the href should open in the system browser, not inside Buddy. */
@@ -102,4 +103,45 @@ export function resolveViewablePath(
   if (!isViewableFile(relPath)) return null;
 
   return relPath;
+}
+
+/** Directories the inline viewer may reveal in the native file manager (FR-CHAT-20). */
+export const REVEALABLE_DIRS = [USER_DIR, DOWNLOADS_DIR] as const;
+
+/**
+ * Resolve a viewer path to an absolute path that may be revealed in the native
+ * file manager, or null when it must not be.
+ *
+ * Unlike resolveViewablePath this is not about what Buddy can render: it is
+ * about what the user is allowed to manage outside the app. Only `user/` and
+ * `downloads/`. Traversal that escapes rootDir is a rejection, never a clamp.
+ */
+export function resolveRevealablePath(rootDir: string, relPath: string): string | null {
+  const href = relPath.trim();
+  if (!href || isExternalHref(href)) return null;
+
+  const rootNorm = rootDir.replace(/\\/g, "/").replace(/\/+$/, "");
+  if (!rootNorm) return null;
+
+  const stripped = href.replace(/^file:\/\//i, "");
+  let relSegments: string[] | null;
+
+  if (isAbsolute(stripped)) {
+    const rootSegments = normalizeSegments(splitPath(rootNorm));
+    const pathSegments = normalizeSegments(splitPath(stripped));
+    if (!rootSegments || !pathSegments) return null;
+    if (pathSegments.length <= rootSegments.length) return null;
+    const containedInRoot = rootSegments.every((seg, i) => pathSegments[i] === seg);
+    if (!containedInRoot) return null;
+    relSegments = pathSegments.slice(rootSegments.length);
+  } else {
+    relSegments = normalizeSegments(splitPath(stripped));
+  }
+
+  if (!relSegments || relSegments.length < 2) return null;
+
+  const topDir = relSegments[0];
+  if (!REVEALABLE_DIRS.some((dir) => dir === topDir)) return null;
+
+  return `${rootNorm}/${relSegments.join("/")}`;
 }

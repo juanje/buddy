@@ -251,6 +251,13 @@ open in the browser via `openUrl()`, restricted to `https://`.
 **Buddy never hands a file to another program.** For anything it cannot render,
 it points the user at the location and they open it themselves.
 
+Revealing a user file in the native file manager — opening the directory with
+the file selected — is not "handing a file to another program." It is the
+mechanism by which Buddy points the user at the location. The distinction: the
+file manager displays the filesystem; it does not execute the file. This action
+is available only for files under `user/` and `downloads/`, only from the
+inline viewer's UI, and never invocable by the agent (FR-CHAT-20).
+
 *Corrected 2026-07-28.* This paragraph previously described `openPath()` and an
 "Open externally" action, both removed in July 2026: a click became execution —
 macOS opening a `.command` file with Terminal, for instance — and the agent

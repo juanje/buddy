@@ -4,7 +4,7 @@ import { get, writable, type Readable } from "svelte/store";
 
 import { basename } from "../utils/path";
 import { splitFrontmatter } from "../../shared/frontmatter";
-import { resolveViewablePath } from "../../shared/viewable-path";
+import { resolveRevealablePath, resolveViewablePath } from "../../shared/viewable-path";
 
 export interface FileViewerDeps {
   /**
@@ -14,6 +14,11 @@ export interface FileViewerDeps {
   readViewableFile(relPath: string): Promise<string>;
   /** Buddy directory, needed to resolve links found inside a document. */
   rootDir?: () => string;
+  /**
+   * Open the native file manager with the file selected (FR-CHAT-20).
+   * Wired to Tauri `revealItemInDir`. The agent cannot invoke this.
+   */
+  revealInFileManager?: (absPath: string) => Promise<void>;
 }
 
 export interface FileViewerController {
@@ -32,6 +37,11 @@ export interface FileViewerController {
   loading: Readable<boolean>;
   /** True when there is a previously viewed document to return to (FR-CHAT-12). */
   canGoBack: Readable<boolean>;
+  /**
+   * True when the open file may be revealed in the native file manager
+   * (`user/` or `downloads/` only — FR-CHAT-20).
+   */
+  canReveal: Readable<boolean>;
   /** Open a file by path relative to the buddy directory. Starts a new history. */
   openFile(relPath: string): Promise<void>;
   /**
@@ -42,6 +52,8 @@ export interface FileViewerController {
   followLink(href: string): Promise<boolean>;
   /** Return to the previously viewed document. */
   back(): Promise<void>;
+  /** Reveal the open file in the native file manager (FR-CHAT-20). */
+  reveal(): Promise<void>;
   close(): void;
 }
 
@@ -55,14 +67,21 @@ export function createFileViewerController(deps: FileViewerDeps): FileViewerCont
   const isMarkdownStore = writable(false);
   const loadingStore = writable(false);
   const canGoBackStore = writable(false);
+  const canRevealStore = writable(false);
 
   /** Documents visited before the current one, most recent last. */
   let history: string[] = [];
+
+  function updateCanReveal(relPath: string): void {
+    const root = deps.rootDir?.() ?? "";
+    canRevealStore.set(resolveRevealablePath(root, relPath) !== null);
+  }
 
   async function load(relPath: string): Promise<void> {
     openStore.set(true);
     filePathStore.set(relPath);
     fileNameStore.set(basename(relPath));
+    updateCanReveal(relPath);
     const isMarkdown = /\.md$/i.test(relPath);
     isMarkdownStore.set(isMarkdown);
     contentStore.set("");
@@ -121,9 +140,18 @@ export function createFileViewerController(deps: FileViewerDeps): FileViewerCont
     await load(previous);
   }
 
+  async function reveal(): Promise<void> {
+    const relPath = get(filePathStore);
+    const root = deps.rootDir?.() ?? "";
+    const absPath = resolveRevealablePath(root, relPath);
+    if (!absPath || !deps.revealInFileManager) return;
+    await deps.revealInFileManager(absPath);
+  }
+
   function close(): void {
     history = [];
     canGoBackStore.set(false);
+    canRevealStore.set(false);
     openStore.set(false);
     filePathStore.set("");
     fileNameStore.set("");
@@ -144,9 +172,11 @@ export function createFileViewerController(deps: FileViewerDeps): FileViewerCont
     isMarkdown: { subscribe: isMarkdownStore.subscribe },
     loading: { subscribe: loadingStore.subscribe },
     canGoBack: { subscribe: canGoBackStore.subscribe },
+    canReveal: { subscribe: canRevealStore.subscribe },
     openFile,
     followLink,
     back,
+    reveal,
     close,
   };
 }

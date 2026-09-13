@@ -101,6 +101,7 @@ rootDir (git repo — user/agent content only)
 | FR-CHAT-17 | `show_file` — the agent opens a file in the viewer | 3 ✓ |
 | FR-CHAT-18 | Export the viewed file as PDF via the system print dialog | 3 |
 | FR-CHAT-19 | Tokenizer artifact stripping in assistant output | 2 ✓ |
+| FR-CHAT-20 | Reveal file in native file manager from inline viewer | 3 ✓ |
 
 **FR-CHAT-01 — Streaming message display**
 
@@ -466,6 +467,28 @@ metadata without any extra work.
 internal `thought` token as visible text at the start of a response. It is
 a tokenizer artifact, not content — the same family as `<|tool_call|>`
 which the reflect sanitizer already strips.
+
+**FR-CHAT-20 — Reveal file in native file manager from inline viewer**
+
+- **Given** a file under `user/` or `downloads/` is open in the inline viewer (FR-CHAT-10)
+- **When** the user activates "Show in folder"
+- **Then** the native file manager opens that file's parent directory with the file selected
+- **And** the path is taken from viewer state, not from agent-authored markup
+- **But when** the open file is under `agent_brain/` or `logs/`
+- **Then** the action is not shown
+- **And** a path that escapes the buddy directory is refused
+
+**Why.** After reading a draft, a wiki page, or a fetched document, the next
+step is often to attach it to an email or copy it elsewhere. The viewer path
+is read-only text; the user should not have to hunt for the file in Finder or
+Nautilus. Revealing the file in the native file manager is how Buddy points
+them at the location.
+
+**Why it does not contradict FR-CHAT-11.** That requirement withdrew
+`openPath()` because agent-authored links are attacker-influenced input, and
+opening a file with the system opener can execute it. This action is a UI
+button the user clicks, scoped to `user/` and `downloads/`, and it reveals the
+file in its directory — it does not execute it. The agent cannot invoke it.
 
 ### 3.2 First-Run / Onboarding (FR-SETUP)
 

@@ -1280,6 +1280,34 @@
           "unit_tests": 2
         }
       ]
+    },
+    {
+      "id": "FR-CHAT-20",
+      "title": "Reveal file in native file manager from inline viewer",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Reveal button visible for user/ file",
+          "bdd": "pass",
+          "unit_tests": 2
+        },
+        {
+          "name": "Reveal button hidden for agent_brain/ file",
+          "bdd": "pass",
+          "unit_tests": 2
+        },
+        {
+          "name": "Reveal calls Tauri API with correct absolute path",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Reveal rejected for path traversal",
+          "bdd": "pass",
+          "unit_tests": 3
+        }
+      ]
     }
   ]
 }

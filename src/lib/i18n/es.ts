@@ -194,6 +194,7 @@ export type LocaleStrings = {
   fileViewerBack: string;
   fileViewerLoading: string;
   fileViewerError: string;
+  fileViewerReveal: string;
 };
 
 export const es: LocaleStrings = {
@@ -398,6 +399,7 @@ export const es: LocaleStrings = {
   fileViewerBack: "Atrás",
   fileViewerLoading: "Cargando archivo…",
   fileViewerError: "No se pudo leer el archivo: {message}",
+  fileViewerReveal: "Mostrar en carpeta",
 };
 
 /** Short cost/capability description per model tier (FR-SETUP-05). */
