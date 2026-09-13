@@ -2,7 +2,7 @@
 
 import type { OrientationData } from "../shared/api";
 import type { TaskItem } from "../shared/task-types";
-import { getDueDeferred, removeDueDeferredItems, toDeferredItemViews } from "./deferred";
+import { getDueDeferred, toDeferredItemViews } from "./deferred";
 import { readLastOrientationDate, writeLastOrientationDate } from "./orientation-config";
 import { readTasksFile } from "./tasks/task-file";
 
@@ -59,12 +59,11 @@ export function buildOrientationData(
   return { deferred, nextTasks };
 }
 
-/** Persist last-shown date and acknowledge due deferred items (FR-ORIENT-02 dismiss). */
+/** Persist last-shown date. Does not acknowledge deferred items (FR-ORIENT-05). */
 export function markOrientationDismissed(
-  rootDir: string,
+  _rootDir: string,
   today: string,
   configPath?: string,
 ): void {
   writeLastOrientationDate(today, configPath);
-  removeDueDeferredItems(rootDir, new Date(`${today}T12:00:00`));
 }

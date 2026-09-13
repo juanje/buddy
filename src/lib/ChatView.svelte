@@ -14,6 +14,7 @@
   import FileViewer from "./FileViewer.svelte";
   import { routeLocalLinkClick } from "./local-link-handler";
   import type { FileViewerController } from "./file-viewer-controller";
+  import { shouldShowDeferredBanner } from "./deferred-banner-visibility";
   import { t } from "./i18n";
 
   let {
@@ -21,6 +22,7 @@
     scroll,
     deferredItems = [],
     orientationData = null,
+    orientationShownThisSession = false,
     onDismissOrientation,
     oneLiner = null,
     rootDir = "",
@@ -31,6 +33,7 @@
     scroll: ScrollController;
     deferredItems?: DeferredItemView[];
     orientationData?: OrientationData | null;
+    orientationShownThisSession?: boolean;
     onDismissOrientation?: () => void;
     oneLiner?: string | null;
     rootDir?: string;
@@ -98,7 +101,11 @@
 <div class="chat-wrap">
   {#if orientationData}
     <OrientationCard data={orientationData} onDismiss={onDismissOrientation} />
-  {:else if !deferredDismissed}
+  {:else if shouldShowDeferredBanner({
+    hasOrientationCard: false,
+    deferredDismissed,
+    orientationShownThisSession,
+  })}
     <DeferredBanner
       items={deferredItems}
       onDismiss={() => { controller.dismissWelcome(); deferredDismissed = true; }}

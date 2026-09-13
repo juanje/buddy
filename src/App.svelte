@@ -398,6 +398,7 @@
         {controller}
         {scroll}
         {orientationData}
+        orientationShownThisSession={orientationShownThisSession}
         onDismissOrientation={() => void dismissOrientationCard()}
         deferredItems={orientationData ? [] : deferredItems}
         oneLiner={lastOneLiner}

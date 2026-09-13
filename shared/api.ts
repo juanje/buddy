@@ -213,7 +213,7 @@ export interface WorkerAPI {
   dismissDeferredItems(): Promise<void>;
   /** First-open orientation data; null when already shown today (FR-ORIENT-02). */
   getOrientationData(): Promise<OrientationData | null>;
-  /** Dismiss orientation card and acknowledge deferred items (FR-ORIENT-02). */
+  /** Dismiss orientation card for today (FR-ORIENT-02/05). Does not acknowledge deferred items. */
   dismissOrientation(): Promise<void>;
   /** Silent agent recap for first open of the day (FR-ORIENT-03). */
   requestOneLiner(): Promise<void>;

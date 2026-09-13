@@ -72,7 +72,7 @@ describe("orientation (FR-ORIENT-02)", () => {
     rmSync(rootDir, { recursive: true, force: true });
   });
 
-  it("markOrientationDismissed writes date and clears due deferred items", () => {
+  it("markOrientationDismissed writes date and leaves due deferred items", () => {
     const fixture = setupGlobalConfigDir();
     configDir = fixture.configDir;
     const rootDir = mkdtempSync(join(tmpdir(), "buddy-orient-unit-"));
@@ -84,7 +84,21 @@ describe("orientation (FR-ORIENT-02)", () => {
     const due = parseDeferredItems(readFileSync(deferredPath, "utf8")).filter(
       (item) => item.dueDate <= "2026-09-10",
     );
-    expect(due).toHaveLength(0);
+    expect(due).toHaveLength(1);
+    expect(due[0]?.text).toBe("Call dentist.");
+    rmSync(rootDir, { recursive: true, force: true });
+  });
+
+  it("markOrientationDismissed only writes date, does not touch deferred.md", () => {
+    const fixture = setupGlobalConfigDir();
+    configDir = fixture.configDir;
+    const rootDir = mkdtempSync(join(tmpdir(), "buddy-orient-unit-"));
+    mkdirSync(join(rootDir, "agent_brain"), { recursive: true });
+    const deferredPath = join(rootDir, "agent_brain", "deferred.md");
+    const original = "- **reminder** (2026-09-10, user): Call dentist.\n";
+    writeFileSync(deferredPath, original, "utf8");
+    markOrientationDismissed(rootDir, "2026-09-10", join(configDir, "config.json"));
+    expect(readFileSync(deferredPath, "utf8")).toBe(original);
     rmSync(rootDir, { recursive: true, force: true });
   });
 });

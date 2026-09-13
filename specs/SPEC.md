@@ -3435,14 +3435,15 @@ Further context on local-model evaluation methodology and findings:
 | FR-ORIENT-02 | Orientation card at first open (deferred + next tasks) | 2 ✓ |
 | FR-ORIENT-03 | Agent-generated "where we left off" one-liner | 2 ✓ |
 | FR-ORIENT-04 | One-liner cleared on topic transition, not re-requested | 2.5 ✓ |
+| FR-ORIENT-05 | Orientation dismiss does not acknowledge deferred items | 2.5 ✓ |
 
 **FR-ORIENT-02 — Orientation card at first open**
 
 - On the first open of the calendar day, a card appears above the chat listing due deferred items (if any) and next tasks (up to three, at most one per area).
 - While the orientation card is visible, the separate deferred welcome banner is suppressed.
 - Long task text wraps to multiple lines within the card.
-- Dismissing the card (X or Dismiss) persists today's date as the last-shown date and acknowledges due deferred items (removes them from the queue).
-- The card does not reappear until the next calendar day.
+- Dismissing the card (X or Dismiss) persists today's date as the last-shown date. The card does not reappear until the next calendar day.
+- Dismissing the card does not acknowledge deferred items — see FR-ORIENT-05.
 
 **FR-ORIENT-03 — Agent-generated where-we-left-off one-liner**
 
@@ -3457,6 +3458,13 @@ Further context on local-model evaluation methodology and findings:
 - When the user starts a new topic, any displayed one-liner is cleared immediately.
 - The one-liner is not re-requested after a topic transition within the same app launch.
 - First open of the day still requests the one-liner once (unchanged FR-ORIENT-03 behavior).
+
+**FR-ORIENT-05 — Orientation dismiss does not acknowledge deferred items**
+
+- Closing the orientation card only hides it and records that orientation ran today.
+- Due deferred items stay in the queue. They are not treated as acknowledged.
+- The standalone deferred banner does not appear in the same session after the card closes (avoids a second card immediately replacing the first).
+- Unacknowledged items resurface on a later session or heartbeat when orientation is not showing.
 
 ### 3.29 Task maturity (FR-TASKM)
 

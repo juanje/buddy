@@ -1231,6 +1231,24 @@
           "unit_tests": 1
         }
       ]
+    },
+    {
+      "id": "FR-ORIENT-05",
+      "title": "Orientation dismiss does not acknowledge deferred items",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Dismiss orientation persists last shown date without acknowledging deferred",
+          "bdd": "pass",
+          "unit_tests": 2
+        },
+        {
+          "name": "Orientation dismiss does not remove deferred items",
+          "bdd": "pass",
+          "unit_tests": 3
+        }
+      ]
     }
   ]
 }

@@ -17,13 +17,20 @@ Feature: First-open-of-the-day orientation
     When orientation data is fetched for today "2026-09-10"
     Then orientation data is null
 
-  @FR-ORIENT-02
-  Scenario: Dismiss orientation persists last shown date and acknowledges deferred
+  @FR-ORIENT-02 @FR-ORIENT-05
+  Scenario: Dismiss orientation persists last shown date without acknowledging deferred
     Given an initialized buddy git repository for orientation
     And the orientation deferred queue has an item due on "2026-09-10"
     When orientation is dismissed for today "2026-09-10"
     Then orientation last shown date is "2026-09-10"
-    And the deferred queue is empty
+    And the deferred queue still has due items
+
+  @FR-ORIENT-05
+  Scenario: Orientation dismiss does not remove deferred items
+    Given an initialized buddy git repository for orientation
+    And the orientation deferred queue has an item due on "2026-09-10"
+    When orientation is dismissed for today "2026-09-10"
+    Then the deferred queue still has due items
 
   @FR-ORIENT-03
   Scenario: Agent generates where-we-left-off recap after session ready

@@ -140,6 +140,16 @@ Then("the deferred queue is empty", function (this: OrientationWorld) {
   assert.equal(due.length, 0);
 });
 
+Then("the deferred queue still has due items", function (this: OrientationWorld) {
+  assert.ok(this.buddyDir, "buddyDir should be set");
+  const path = join(this.buddyDir, "agent_brain", "deferred.md");
+  assert.ok(existsSync(path), "deferred.md should exist");
+  const content = readFileSync(path, "utf8");
+  const today = this.orientationToday ?? "2026-09-10";
+  const due = parseDeferredItems(content).filter((item) => item.dueDate <= today);
+  assert.ok(due.length > 0, "due deferred items should survive orientation dismiss");
+});
+
 Given("orientation was shown this session", function (this: OrientationWorld) {
   this.orientationShownThisSession = true;
   this.oneLinerSession = {
