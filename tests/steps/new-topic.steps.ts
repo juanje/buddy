@@ -1,4 +1,4 @@
-// tests/steps/new-topic.steps.ts — FR-TOPIC-01/02/03/04/05 topic transition.
+// tests/steps/new-topic.steps.ts — FR-TOPIC-01/02/03/04/05/06 topic transition.
 
 import { Given, When, Then } from "@cucumber/cucumber";
 import assert from "node:assert/strict";
@@ -7,6 +7,7 @@ import { get } from "svelte/store";
 import type { BuddyWorld } from "../support/world";
 import { NEW_TOPIC_BUTTON_CLASS } from "../../src/lib/new-topic-contract";
 import { getLocale, setLocale, t } from "../../src/lib/i18n";
+import { buildClosurePrompt } from "../../backends/closure-prompt";
 
 Given("the chat view is active", function (this: BuddyWorld) {
   this.connect();
@@ -101,4 +102,17 @@ Given('the app language is {string}', function (this: BuddyWorld, locale: string
 
 Then('the new topic button reads {string}', function (this: BuddyWorld, label: string) {
   assert.equal(get(t).newTopicButton, label);
+});
+
+Given("the closure prompt is built", function (this: BuddyWorld) {
+  this.closurePromptText = buildClosurePrompt();
+});
+
+Then("the closure prompt contains a task capture instruction", function (this: BuddyWorld) {
+  assert.ok(this.closurePromptText, "closure prompt should be built");
+  assert.ok(this.closurePromptText.includes("tasks"), "should mention tasks");
+  assert.ok(
+    this.closurePromptText.match(/capture|create|add/i),
+    "should instruct to capture/create/add tasks",
+  );
 });

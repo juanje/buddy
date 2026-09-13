@@ -133,6 +133,16 @@ describe("buildClosurePrompt", () => {
     const prompt = buildClosurePrompt();
     expect(prompt).toMatch(/discuss|questions|ready/i);
   });
+
+  it("instructs the agent to offer task capture for pending items", () => {
+    const prompt = buildClosurePrompt();
+    expect(prompt).toMatch(/tasks.*capture|capture.*tasks|create.*tasks|add.*tasks/i);
+  });
+
+  it("instructs the agent to ask the user before capturing", () => {
+    const prompt = buildClosurePrompt();
+    expect(prompt).toMatch(/ask|confirm|should I|want me to/i);
+  });
 });
 
 describe("wrapUp controller flow", () => {

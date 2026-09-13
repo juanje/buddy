@@ -1267,6 +1267,19 @@
           "unit_tests": 1
         }
       ]
+    },
+    {
+      "id": "FR-TOPIC-06",
+      "title": "Wrap-up offers to capture pending items as tasks",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Wrap-up closure prompt instructs the agent to offer task capture",
+          "bdd": "pass",
+          "unit_tests": 2
+        }
+      ]
     }
   ]
 }

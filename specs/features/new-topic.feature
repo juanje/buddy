@@ -44,3 +44,8 @@ Feature: Topic transition
   Scenario: New topic labels respect locale
     Given the app language is "es"
     Then the new topic button reads "Nuevo tema"
+
+  @FR-TOPIC-06
+  Scenario: Wrap-up closure prompt instructs the agent to offer task capture
+    Given the closure prompt is built
+    Then the closure prompt contains a task capture instruction

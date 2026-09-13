@@ -3394,6 +3394,7 @@ Further context on local-model evaluation methodology and findings:
 | FR-TOPIC-03 | "Wrap up first" — interactive closure before transition | 2 Sprint B ✓ |
 | FR-TOPIC-04 | i18n labels (EN/ES) | 2 Sprint A ✓ |
 | FR-TOPIC-05 | Button disabled during streaming and topic transition | 2 Sprint A ✓ |
+| FR-TOPIC-06 | Wrap-up offers to capture pending items as tasks | 2.5 ✓ |
 
 **FR-TOPIC-01 — New topic button and popover**
 
@@ -3435,6 +3436,13 @@ Further context on local-model evaluation methodology and findings:
 - **Then** the new topic button is disabled
 - **Given** a topic transition is in progress
 - **Then** the new topic button is disabled
+
+**FR-TOPIC-06 — Wrap-up task capture offer**
+
+- When the closure summary identifies pending items or concrete next actions, the agent asks the user whether to capture them as tasks.
+- The agent calls `tasks(action='add', ...)` for each confirmed item.
+- If the user declines, the items remain in the summary only.
+- The offer is part of the conversational flow — no UI changes.
 
 ### 3.28 First-open orientation (FR-ORIENT)
 

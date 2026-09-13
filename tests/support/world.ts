@@ -67,6 +67,8 @@ export class BuddyWorld extends World {
   buddyDir?: string;
   /** FR-DEFERRED-04: how many times the dismiss RPC ran this scenario. */
   deferredDismissRpcCount = 0;
+  /** FR-TOPIC-06: text of the wrap-up closure prompt under test. */
+  closurePromptText?: string;
   lifecycle?: SessionLifecycle;
   spawnCalls?: SpawnReflectOptions[];
 
