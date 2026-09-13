@@ -8,6 +8,8 @@ use tauri::image::Image;
 use tauri::menu::{AboutMetadata, MenuBuilder, MenuItemBuilder, PredefinedMenuItem, SubmenuBuilder};
 use tauri::Emitter;
 
+mod pdf;
+
 struct MenuLabels {
     about: &'static str,
     edit: &'static str,
@@ -61,6 +63,7 @@ fn main() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_notification::init())
+        .invoke_handler(tauri::generate_handler![pdf::create_pdf])
         .setup(|app| {
             let labels = menu_labels(detect_language());
 

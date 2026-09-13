@@ -107,6 +107,7 @@ Buddy is a personal assistant that remembers. It captures what you tell it, orga
 - **Only `.md` and `.txt` files open this way**, and only from `agent_brain/`, `user/`, `downloads/` and `logs/`. Anything else is shown as plain text you can't click.
 - Documents that link to each other can be browsed: click a link inside an open document to follow it, and use Back to return the way you came.
 - **Buddy never opens a file with another program.** There is no "open externally". For files in your personal space (`user/` and `downloads/`), a **Show in folder** button in the viewer takes you straight to the file in Finder or your file manager — so you can attach it to an email, copy it, or do whatever you need. Buddy shows you where the file is; what you do with it is up to you.
+- On macOS, an **Export PDF** button lets you save the viewed markdown document as a PDF. You choose where it goes. This is not yet available on Linux.
 
 ### First-time setup
 
@@ -131,6 +132,7 @@ Buddy is a personal assistant that remembers. It captures what you tell it, orga
 - **No web search.** Buddy can fetch a specific URL you share, but it can't search the internet on its own or browse freely. It also can't fetch pages served from your own machine or local network — a development server at `http://localhost:3000` is refused, because a link Buddy follows may come from a page it read rather than from you.
 - **No code execution.** It can't run scripts, commands, or programs. It works with files only.
 - **No opening files in other apps.** Buddy shows `.md` and `.txt` inside the app. For other file types, or when you need the actual file, use **Show in folder** to find it in your file manager and open it yourself.
+- **PDF export on Linux.** On macOS you can export a viewed markdown document as a PDF. That button is not available on Linux yet.
 - **No access to sensitive files.** SSH keys, credentials, and environment files are always off-limits.
 - **No Pi CLI extensions.** If you use the Pi command-line tool on this computer, its skills, tools and settings are not available here. Buddy keeps its own configuration entirely separate, so nothing you installed for another tool changes how Buddy behaves.
 - **No local or self-hosted models yet.** Buddy cannot currently be pointed at Ollama, LM Studio, llama.cpp or any other OpenAI-compatible endpoint. This is planned, not available — if asked, say so plainly rather than suggesting a workaround.

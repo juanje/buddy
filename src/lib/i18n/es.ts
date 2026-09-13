@@ -195,6 +195,7 @@ export type LocaleStrings = {
   fileViewerLoading: string;
   fileViewerError: string;
   fileViewerReveal: string;
+  fileViewerExportPdf: string;
 };
 
 export const es: LocaleStrings = {
@@ -400,6 +401,7 @@ export const es: LocaleStrings = {
   fileViewerLoading: "Cargando archivo…",
   fileViewerError: "No se pudo leer el archivo: {message}",
   fileViewerReveal: "Mostrar en carpeta",
+  fileViewerExportPdf: "Exportar PDF",
 };
 
 /** Short cost/capability description per model tier (FR-SETUP-05). */

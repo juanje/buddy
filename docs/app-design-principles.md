@@ -258,6 +258,10 @@ file manager displays the filesystem; it does not execute the file. This action
 is available only for files under `user/` and `downloads/`, only from the
 inline viewer's UI, and never invocable by the agent (FR-CHAT-20).
 
+Exporting a PDF from the viewer is creating a new file, not opening one with
+another program. The user picks the destination in a native save dialog. The
+agent cannot invoke it. Available on macOS; not yet on Linux (FR-CHAT-18).
+
 *Corrected 2026-07-28.* This paragraph previously described `openPath()` and an
 "Open externally" action, both removed in July 2026: a click became execution —
 macOS opening a `.command` file with Terminal, for instance — and the agent

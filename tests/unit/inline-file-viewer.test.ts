@@ -161,3 +161,48 @@ describe("FileViewerController reveal (FR-CHAT-20)", () => {
     expect(revealInFileManager).not.toHaveBeenCalled();
   });
 });
+
+describe("FileViewerController export PDF (FR-CHAT-18)", () => {
+  it("offers export for markdown when the platform supports it", async () => {
+    const readViewableFile = vi.fn(async () => "# Title");
+    const controller = createFileViewerController({
+      readViewableFile,
+      platformSupportsPdf: true,
+    });
+
+    await controller.openFile("agent_brain/concepts/foo.md");
+    expect(readStore(controller.canExportPdf)).toBe(true);
+
+    await controller.openFile("user/notes.txt");
+    expect(readStore(controller.canExportPdf)).toBe(false);
+  });
+
+  it("hides export when the platform does not support PDF", async () => {
+    const readViewableFile = vi.fn(async () => "# Title");
+    const controller = createFileViewerController({
+      readViewableFile,
+      platformSupportsPdf: false,
+    });
+
+    await controller.openFile("user/notes.md");
+    expect(readStore(controller.canExportPdf)).toBe(false);
+  });
+
+  it("calls createPdf and savePdf with a .pdf filename", async () => {
+    const readViewableFile = vi.fn(async () => "# Hello");
+    const createPdf = vi.fn(async () => new Uint8Array([1, 2, 3]));
+    const savePdf = vi.fn(async () => undefined);
+    const controller = createFileViewerController({
+      readViewableFile,
+      platformSupportsPdf: true,
+      createPdf,
+      savePdf,
+    });
+
+    await controller.openFile("user/notes.md");
+    await controller.exportPdf();
+
+    expect(createPdf).toHaveBeenCalledOnce();
+    expect(savePdf).toHaveBeenCalledWith("notes.pdf", expect.any(Uint8Array));
+  });
+});

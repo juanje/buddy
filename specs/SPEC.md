@@ -99,7 +99,7 @@ rootDir (git repo — user/agent content only)
 | FR-CHAT-15 | The inline viewer does not render frontmatter as content | 3 ✓ |
 | FR-CHAT-16 | Buddy paths in assistant text become labelled links | 3 ✓ |
 | FR-CHAT-17 | `show_file` — the agent opens a file in the viewer | 3 ✓ |
-| FR-CHAT-18 | Export the viewed file as PDF via the system print dialog | 3 |
+| FR-CHAT-18 | Export the viewed file as PDF | 3 ✓ |
 | FR-CHAT-19 | Tokenizer artifact stripping in assistant output | 2 ✓ |
 | FR-CHAT-20 | Reveal file in native file manager from inline viewer | 3 ✓ |
 
@@ -411,48 +411,40 @@ channel with seven callbacks (permissions, deferred items, budget alerts); this
 adds one. Containment is already built and already enforced for clicked links —
 the tool surfaces a file the agent could already read, to the user who owns it.
 
-**FR-CHAT-18 — Export the viewed file as PDF via the system print dialog**
+**FR-CHAT-18 — Export the viewed file as PDF**
 
-**Blocked on a spike.** Whether `window.print()` works in the Tauri webview is
-unverified, and it decides the whole shape of this. The spike is a button
-calling `window.print()`, built and tried on macOS (WKWebView) and Linux
-(WebKitGTK). WKWebView has historically not implemented it, so a negative result
-is plausible and must be measured, not assumed. If it fails, the fallback is a
-per-platform Rust command (`createPDF()` on macOS, WebKitGTK's print operation
-on Linux) — several days rather than an afternoon, and platform-specific code at
-a moment when Windows support is already in question. Do not design further
-until the spike answers.
+- **Given** a markdown file is open in the inline viewer (FR-CHAT-10), on macOS
+- **When** the user activates "Export PDF"
+- **Then** a native save dialog opens with a suggested name `{filename}.pdf`
+- **And** when the user picks a location, a PDF of the rendered document is written there
+- **And** the PDF contains only the document — no app chrome, no backdrop, no frontmatter
+- **And** the source file on disk is untouched
+- **But when** the open file is plain text (not markdown)
+- **Then** the export action is not shown
+- **And** on Linux the export action is not shown
+- **And** if the user cancels the save dialog, no file is written
 
-- **Given** a file open in the inline viewer (FR-CHAT-10)
-- **When** the user activates the export action
-- **Then** the system print dialog opens, from which the OS offers "Save as PDF"
-- **And** what is printed is the rendered document only — not the app chrome,
-  the backdrop, the chat behind it, or the viewer's own buttons
-- **And** the user chooses the destination through the native dialog; Buddy
-  never writes the PDF to a location it picked
-- **And** the file on disk is untouched — the export is a rendering, not a
-  conversion
+**Spike (Sep 13 2026).** `window.print()` does not work in WKWebView: the print
+dialog opens with a blank preview and a disabled Print button. The working
+path is a Tauri command that creates an offscreen `WKWebView`, loads the
+rendered HTML, and calls `createPDF()`. Linux (WebKitGTK print-to-file) is
+deferred; the button is hidden there until that implementation exists.
 
-**Why the print dialog rather than a PDF library.** It reuses the exact HTML the
-viewer already renders, so the PDF matches what the user is looking at, keeps
-selectable text, and adds no dependency. A client-side library would either
-rasterize the DOM — unselectable text, poor print quality — or re-implement
-markdown layout and drift from the viewer. It is also the clearer concept: the
-user is printing or exporting *a version of* content that stays where it was.
-Nothing leaves their space; a copy is made.
+**Why not a PDF library.** The HTML is already rendered for the viewer. An
+offscreen WebView reuses that rendering so the PDF keeps selectable text and
+matches what the user is looking at. A client-side library would either
+rasterize the DOM or re-implement markdown layout and drift from the viewer.
 
 **Why it does not contradict FR-CHAT-11.** That requirement withdrew handing a
 file to an external program, because a link the *agent* wrote must never
-invoke the system opener. This is the user acting on the document they are
-already looking at, through a native dialog they drive. Stated explicitly so a
-later reader does not read it as an oversight.
+invoke the system opener. Export creates a *new* file through a native save
+dialog the user drives. The agent cannot invoke it.
 
 **Why it is worth building.** Markdown is right for editing and wrong for
 sending. A report or article Buddy helped write is trapped for any recipient
-without a markdown renderer — and "send it to someone" is the ordinary next step
-for the target user, who is not going to install one. FR-CHAT-15 compounds with
-it: with frontmatter no longer rendered, the exported PDF carries no bookkeeping
-metadata without any extra work.
+without a markdown renderer — and "send it to someone" is the ordinary next
+step for the target user. FR-CHAT-15 compounds with it: with frontmatter no
+longer rendered, the exported PDF carries no bookkeeping metadata.
 
 **FR-CHAT-19 — Tokenizer artifact stripping**
 

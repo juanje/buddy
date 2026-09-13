@@ -203,6 +203,7 @@ export const en: LocaleStrings = {
   fileViewerLoading: "Loading file…",
   fileViewerError: "Could not read file: {message}",
   fileViewerReveal: "Show in folder",
+  fileViewerExportPdf: "Export PDF",
 };
 
 export function tierDescriptionEn(tier: "fast" | "balanced" | "powerful"): string {

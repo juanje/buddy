@@ -4,10 +4,31 @@
     {
       "id": "FR-CHAT-18",
       "title": "Export to PDF from viewer",
-      "status": "blocked",
-      "cycle_step": "spec_review",
-      "scenarios": [],
-      "note": "Spike: does window.print() work in the Tauri webview?"
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Export PDF button visible for markdown file",
+          "bdd": "pass",
+          "unit_tests": 2
+        },
+        {
+          "name": "Export PDF button hidden for plain text",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "PDF HTML template is self-contained",
+          "bdd": "pass",
+          "unit_tests": 3
+        },
+        {
+          "name": "Export cancelled by user writes nothing",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ],
+      "note": "macOS createPDF(); Linux deferred"
     },
     {
       "id": "FR-PERM-06b",

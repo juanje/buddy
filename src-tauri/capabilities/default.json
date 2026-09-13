@@ -17,6 +17,10 @@
       "allow": [{ "url": "https://**" }]
     },
     "opener:allow-reveal-item-in-dir",
+    {
+      "identifier": "fs:allow-write-file",
+      "allow": [{ "path": "$HOME/**" }]
+    },
     "notification:default"
   ]
 }

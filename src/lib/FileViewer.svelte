@@ -18,6 +18,7 @@
 
   const canGoBack = $derived(controller.canGoBack);
   const canReveal = $derived(controller.canReveal);
+  const canExportPdf = $derived(controller.canExportPdf);
 
   function onBackdropClick(event: MouseEvent) {
     if (event.target === event.currentTarget) {
@@ -101,6 +102,11 @@
         {#if $canReveal}
           <button type="button" class="secondary" onclick={() => controller.reveal()}>
             {$t.fileViewerReveal}
+          </button>
+        {/if}
+        {#if $canExportPdf}
+          <button type="button" class="secondary" onclick={() => controller.exportPdf()}>
+            {$t.fileViewerExportPdf}
           </button>
         {/if}
         <button type="button" class="primary" onclick={() => controller.close()}>

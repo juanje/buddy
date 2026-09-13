@@ -5,6 +5,8 @@ import { get, writable, type Readable } from "svelte/store";
 import { basename } from "../utils/path";
 import { splitFrontmatter } from "../../shared/frontmatter";
 import { resolveRevealablePath, resolveViewablePath } from "../../shared/viewable-path";
+import { renderMarkdown } from "./markdown";
+import { buildPdfHtml } from "./pdf-html";
 
 export interface FileViewerDeps {
   /**
@@ -19,6 +21,15 @@ export interface FileViewerDeps {
    * Wired to Tauri `revealItemInDir`. The agent cannot invoke this.
    */
   revealInFileManager?: (absPath: string) => Promise<void>;
+  /** True on platforms that can generate a PDF (macOS). Hidden on Linux. */
+  platformSupportsPdf?: boolean;
+  /** Render HTML to PDF bytes via the Tauri `create_pdf` command. */
+  createPdf?: (html: string) => Promise<Uint8Array>;
+  /**
+   * Show a save dialog and write the PDF. No-op if the user cancels.
+   * The agent cannot invoke this.
+   */
+  savePdf?: (suggestedName: string, data: Uint8Array) => Promise<void>;
 }
 
 export interface FileViewerController {
@@ -42,6 +53,11 @@ export interface FileViewerController {
    * (`user/` or `downloads/` only — FR-CHAT-20).
    */
   canReveal: Readable<boolean>;
+  /**
+   * True when the open file may be exported as PDF (markdown, and only on
+   * platforms that implement createPDF — macOS today). FR-CHAT-18.
+   */
+  canExportPdf: Readable<boolean>;
   /** Open a file by path relative to the buddy directory. Starts a new history. */
   openFile(relPath: string): Promise<void>;
   /**
@@ -54,6 +70,8 @@ export interface FileViewerController {
   back(): Promise<void>;
   /** Reveal the open file in the native file manager (FR-CHAT-20). */
   reveal(): Promise<void>;
+  /** Export the open markdown document as a PDF (FR-CHAT-18). */
+  exportPdf(): Promise<void>;
   close(): void;
 }
 
@@ -68,6 +86,7 @@ export function createFileViewerController(deps: FileViewerDeps): FileViewerCont
   const loadingStore = writable(false);
   const canGoBackStore = writable(false);
   const canRevealStore = writable(false);
+  const canExportPdfStore = writable(false);
 
   /** Documents visited before the current one, most recent last. */
   let history: string[] = [];
@@ -84,6 +103,7 @@ export function createFileViewerController(deps: FileViewerDeps): FileViewerCont
     updateCanReveal(relPath);
     const isMarkdown = /\.md$/i.test(relPath);
     isMarkdownStore.set(isMarkdown);
+    canExportPdfStore.set(Boolean(isMarkdown && deps.platformSupportsPdf));
     contentStore.set("");
     summaryStore.set(undefined);
     errorStore.set(undefined);
@@ -148,10 +168,19 @@ export function createFileViewerController(deps: FileViewerDeps): FileViewerCont
     await deps.revealInFileManager(absPath);
   }
 
+  async function exportPdf(): Promise<void> {
+    if (!get(canExportPdfStore) || !deps.createPdf || !deps.savePdf) return;
+    const html = buildPdfHtml(renderMarkdown(get(contentStore)));
+    const bytes = await deps.createPdf(html);
+    const name = get(fileNameStore).replace(/\.md$/i, "") + ".pdf";
+    await deps.savePdf(name, bytes);
+  }
+
   function close(): void {
     history = [];
     canGoBackStore.set(false);
     canRevealStore.set(false);
+    canExportPdfStore.set(false);
     openStore.set(false);
     filePathStore.set("");
     fileNameStore.set("");
@@ -173,10 +202,12 @@ export function createFileViewerController(deps: FileViewerDeps): FileViewerCont
     loading: { subscribe: loadingStore.subscribe },
     canGoBack: { subscribe: canGoBackStore.subscribe },
     canReveal: { subscribe: canRevealStore.subscribe },
+    canExportPdf: { subscribe: canExportPdfStore.subscribe },
     openFile,
     followLink,
     back,
     reveal,
+    exportPdf,
     close,
   };
 }
