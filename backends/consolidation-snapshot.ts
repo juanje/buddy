@@ -19,6 +19,7 @@ export interface WeeklyDiff {
 }
 
 const RIGHT_NOW_HEADING_RE = /### Right now\b/i;
+const RIGHT_NOW_LINE_RE = /^###[ \t]+Right now[ \t]*$/im;
 const ACTIVE_CONTEXT_RE = /## Active context\b/i;
 
 function hashContent(content: string): string {
@@ -49,6 +50,22 @@ export function extractRightNowSection(agentsMd: string): string {
   const nextHeading = fromRightNow.search(/^### /m);
   const body = nextHeading === -1 ? fromRightNow : fromRightNow.slice(0, nextHeading);
   return body.trim();
+}
+
+/** Replace the body of `### Right now` (not `### Right now patches`). */
+export function replaceRightNowSection(agentsMd: string, newBody: string): string {
+  const match = RIGHT_NOW_LINE_RE.exec(agentsMd);
+  if (!match || match.index == null) return agentsMd;
+
+  const headingEnd = match.index + match[0].length;
+  const after = agentsMd.slice(headingEnd);
+  const next = after.search(/^#{2,3}[ \t]/m);
+  const trimmed = newBody.trim();
+  const replacement = trimmed.length > 0 ? `\n\n${trimmed}\n\n` : `\n\n`;
+  if (next === -1) {
+    return agentsMd.slice(0, headingEnd) + replacement;
+  }
+  return agentsMd.slice(0, headingEnd) + replacement + after.slice(next);
 }
 
 function simpleLineDiff(before: string, after: string, label: string): string {

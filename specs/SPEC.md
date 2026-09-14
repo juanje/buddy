@@ -676,6 +676,7 @@ the current date on each user turn, not the session start date. Fixes #4.
 | FR-REFLECT-08 | Empty sessions do not spawn a reflect | 2 ✓ |
 | FR-REFLECT-09 | Reflect requires user interaction, not just system turns | 2.5 ✓ |
 | FR-REFLECT-10 | Enriched reflect observations, reasoning, and concrete facts | 2.5 ✓ |
+| FR-REFLECT-11 | Active context patches via session-end reflect | 2.5 ✓ |
 
 **FR-REFLECT-01 — Session-end reflect finalization**
 
@@ -803,6 +804,22 @@ facts lost here are lost everywhere.
 - **Suffix:** keep no-tools constraints (skip verify; emit `### Observations`
   instead of writing the file) but frame observations as high-value and require
   decision reasoning, not a minimalist "produce only" tone.
+
+**FR-REFLECT-11 — Active context patches via session-end reflect**
+
+The session-end reflect must patch AGENTS.md "Right now" when the conversation
+changed volatile state that the next session would otherwise get wrong (dates,
+task status, new constraints). Consolidation is too late for that freshness.
+
+The fork has no tools, so the model emits a `### Right now patches` section
+with the **complete updated Right now body**. The worker extracts it and
+replaces the current `### Right now` section in AGENTS.md (read at patch time,
+not session start). Omit the section when nothing volatile changed.
+
+- **Scope:** `process-conversation.md`, `OUTPUT_ONLY_SUFFIX`, worker extract
+  and apply. Only "Right now" — "Files" stays in consolidation.
+- **Do not patch:** long-term project context, items that only need archiving,
+  wording or structure polish.
 
 **FR-REFLECT-04 — Log output sanitizer (strip tool-call artifacts)**
 
@@ -2737,7 +2754,7 @@ result — the LLM then follows the procedure.
 - **Given** a session ends and the reflect child is spawned
 - **When** the child builds its user prompt for the forked session
 - **Then** it loads `process-conversation.md` from the bundle (same prompt as FR-SKILL-02)
-- **And** appends an output-only suffix: no tools; skip verify; emit `### Observations` for the worker to file; capture decision reasoning and concrete facts (FR-REFLECT-10). No preamble, wrapper headers, or empty sections
+- **And** appends an output-only suffix: no tools; skip verify; emit `### Observations` for the worker to file; emit `### Right now patches` when volatile state changed (FR-REFLECT-11); capture decision reasoning and concrete facts (FR-REFLECT-10). No preamble, wrapper headers, or empty sections
 - **Note:** The reflect child has `noTools: "all"`, so the suffix prevents file operations. The worker persists the Session block to the daily log. Manual tool usage (FR-SKILL-02) returns the prompt without the suffix since the LLM has tools. Quality rules: synthesize don't transcribe; omit sections with no content; preserve concrete facts.
 
 **FR-SKILL-05 — Consolidation invokes triage via tool call**

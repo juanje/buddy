@@ -23,6 +23,17 @@ Feature: Reflect prompt captures depth, observations, and session-time log write
     And the suffix frames observations as the most valuable reflect output
     And the suffix does not frame output as Produce ONLY
 
+  @FR-REFLECT-11
+  Scenario: Process-conversation prompt includes Right now patch step
+    Given the bundled process-conversation.md prompt
+    Then the process-conversation prompt contains "Right now patches"
+    And the process-conversation prompt contains "volatile state"
+
+  @FR-REFLECT-11
+  Scenario: Output-only suffix instructs Right now patching
+    Given the output-only suffix for session-end reflect
+    Then the suffix contains "Right now patches"
+
   @FR-PROMPT-09
   Scenario: Base prompt permits log writing during sessions
     Given the bundled agents-base.md prompt

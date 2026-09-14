@@ -39,13 +39,14 @@ import { collectAssistantText } from "./pi-utils";
 import { createBuddyModelRuntime } from "./provider-auth";
 import {
   appendReflectObservations,
+  applyRightNowPatches,
   finalizeCheckpointToDailyLog,
   finalizeReflectToDailyLog,
   sanitizeReflectOutput,
   updateLogsIndexEntry,
 } from "./reflect";
 import { clearSessionPersistence } from "./crash-recovery";
-import { buildReflectUserPrompt, extractObservationsSection } from "./reflect-prompts";
+import { buildReflectUserPrompt, extractObservationsSection, extractRightNowPatches } from "./reflect-prompts";
 import { recordSessionUsage } from "./usage-tracker";
 
 async function acquireLockWithRetry(rootDir: string): Promise<boolean> {
@@ -204,8 +205,10 @@ export async function runReflect(
           // a section instead of writing them. The worker files them and keeps
           // them out of the daily log — both files reach future sessions, and
           // the same text in both is noise.
-          const { body, observations } = extractObservationsSection(result);
+          const { body: afterObservations, observations } = extractObservationsSection(result);
+          const { body, rightNowPatches } = extractRightNowPatches(afterObservations);
           appendReflectObservations(rootDir, sessionDate, observations);
+          applyRightNowPatches(rootDir, rightNowPatches);
           const dailyPath = finalizeReflectToDailyLog({
             rootDir,
             sessionDate,

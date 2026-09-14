@@ -68,6 +68,12 @@ describe("process-conversation prompt content", () => {
     expect(prompt).toMatch(/explicit user correction/i);
     expect(prompt).toMatch(/inferred/i);
   });
+
+  it("instructs emitting Right now patches for volatile state (FR-REFLECT-11)", () => {
+    const prompt = loadProcessConversationPrompt();
+    expect(prompt).toContain("Right now patches");
+    expect(prompt).toContain("volatile state");
+  });
 });
 
 describe("buildReflectUserPrompt", () => {
@@ -90,5 +96,9 @@ describe("buildReflectUserPrompt", () => {
     expect(OUTPUT_ONLY_SUFFIX).toMatch(/full reasoning behind decisions/i);
     expect(OUTPUT_ONLY_SUFFIX).toMatch(/most valuable part of the reflect/i);
     expect(OUTPUT_ONLY_SUFFIX).not.toMatch(/Produce ONLY/i);
+  });
+
+  it("suffix instructs Right now patches (FR-REFLECT-11)", () => {
+    expect(OUTPUT_ONLY_SUFFIX).toContain("Right now patches");
   });
 });

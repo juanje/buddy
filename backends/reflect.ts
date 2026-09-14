@@ -4,6 +4,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { logsDirPath, observationsPath } from "./brain-paths";
 import { toLocalIsoStamp } from "../shared/dates";
+import { replaceRightNowSection } from "./consolidation-snapshot";
 
 export type LogStatus = "active" | "maintenance";
 
@@ -266,4 +267,17 @@ export function appendReflectObservations(
   }
   const insertAt = content.indexOf("\n", heading) + 1;
   writeFileSync(path, content.slice(0, insertAt) + entry + content.slice(insertAt), "utf8");
+}
+
+/**
+ * Replace AGENTS.md `### Right now` with the reflect fork's patched body (FR-REFLECT-11).
+ * Reads the file at apply time. No-op when missing, heading absent, or patches empty.
+ */
+export function applyRightNowPatches(rootDir: string, patches: string | undefined): void {
+  if (!patches?.trim()) return;
+  const path = join(rootDir, "AGENTS.md");
+  if (!existsSync(path)) return;
+  const current = readFileSync(path, "utf8");
+  if (!/^###[ \t]+Right now[ \t]*$/m.test(current)) return;
+  writeFileSync(path, replaceRightNowSection(current, patches), "utf8");
 }

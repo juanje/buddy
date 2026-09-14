@@ -44,7 +44,24 @@ Ensure items landed in the right place by classification type:
 - Ideas → `agent_brain/ideas/`
 - Decisions → `agent_brain/projects/` or `agent_brain/concepts/`
 
-### 4. Detect observations and preference signals
+### 4. Detect active context changes
+
+If this session changed volatile state that the next session needs to know
+(dates shifted, tasks completed, status flipped, new constraint), emit a
+`### Right now patches` section containing the **complete updated Right now
+content** — all bullets, not just the changed ones.
+
+Only patch when something would cause a concrete mistake in the next session
+if left stale. Do **not** patch:
+- Long-term project context — already in `projects/`; consolidation handles promotion
+- Completed items that just need archiving — consolidation sweeps those
+- Wording improvements or structural reorganization — consolidation owns those
+
+*When you have no tools:* emit the section as output; the worker replaces
+`AGENTS.md` "Right now". Omit the section entirely when no volatile state
+changed.
+
+### 5. Detect observations and preference signals
 
 Review the conversation looking for signals that the system itself should
 evolve, or that new knowledge is emerging. Only record genuine observations.

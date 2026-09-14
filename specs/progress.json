@@ -1365,6 +1365,24 @@
           "unit_tests": 1
         }
       ]
+    },
+    {
+      "id": "FR-REFLECT-11",
+      "title": "Active context patches via session-end reflect",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Process-conversation prompt includes Right now patch step",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Output-only suffix instructs Right now patching",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
     }
   ]
 }

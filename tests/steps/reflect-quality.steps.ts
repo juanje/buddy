@@ -45,3 +45,8 @@ Then("the suffix does not frame output as Produce ONLY", function (this: Reflect
     "suffix still uses minimalist Produce ONLY framing",
   );
 });
+
+Then("the suffix contains {string}", function (this: ReflectQualityWorld, text: string) {
+  const suffix = this.outputOnlySuffix ?? "";
+  assert.ok(suffix.includes(text), `suffix missing ${JSON.stringify(text)}`);
+});
