@@ -603,7 +603,7 @@ Worker (code, no LLM, <100ms):
 Background child (LLM, async):
   - Open the forked session (full conversation history: all turns, tool calls, results)
   - Load bundled process-conversation.md + OUTPUT_ONLY_SUFFIX
-  - Produce ONLY the ## Session HH:MM–HH:MM block (omit empty sections; synthesize, don't transcribe)
+  - Content sections only (omit empty sections; synthesize, don't transcribe; preserve concrete facts and decision reasoning)
   - NO system prompt override, NO ResourceLoader, NO AGENTS.md
   - Worker persists output to logs/YYYY-MM-DD.md; commit agent file writes if any
   - Rebuild logs/index.md → commit → exit

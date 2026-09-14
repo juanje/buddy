@@ -1329,6 +1329,29 @@
           "unit_tests": 3
         }
       ]
+    },
+    {
+      "id": "FR-REFLECT-10",
+      "title": "Enriched reflect observations, reasoning, and concrete facts",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Process-conversation prompt includes observation exclusion criteria",
+          "bdd": "pass",
+          "unit_tests": 2
+        },
+        {
+          "name": "Process-conversation prompt preserves concrete facts",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Output-only suffix instructs reasoning depth",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
     }
   ]
 }

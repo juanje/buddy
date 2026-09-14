@@ -675,6 +675,7 @@ the current date on each user turn, not the session start date. Fixes #4.
 | FR-REFLECT-07 | Reflect child is bounded by a timeout | 2 |
 | FR-REFLECT-08 | Empty sessions do not spawn a reflect | 2 ✓ |
 | FR-REFLECT-09 | Reflect requires user interaction, not just system turns | 2.5 ✓ |
+| FR-REFLECT-10 | Enriched reflect observations, reasoning, and concrete facts | 2.5 ✓ |
 
 **FR-REFLECT-01 — Session-end reflect finalization**
 
@@ -785,6 +786,23 @@ Fork bomb defense:
 - **Rationale:** since first-open orientation (v0.1.37), boot injects prompts that
   complete agent cycles before the user types. `turnCount > 0` is no longer a
   reliable proxy for "session had content to reflect on."
+
+**FR-REFLECT-10 — Enriched reflect observations, reasoning, and concrete facts**
+
+The session-end reflect prompt (`process-conversation.md` plus output-only suffix)
+must capture *why* decisions were made, concrete facts (names, dates, amounts,
+statuses), and observation candidates with exclusion criteria — not topic labels
+or thin conclusions. Thin reflects starve the journal and later consolidation:
+facts lost here are lost everywhere.
+
+- **Scope:** prompt text in `bundled/prompts/process-conversation.md` and
+  `OUTPUT_ONLY_SUFFIX` in `backends/reflect-prompts.ts`. No worker pipeline change.
+- **Observations:** each category includes NOT-a-candidate examples; rule
+  candidates distinguish explicit user correction (fast-track note) from inferred
+  patterns (journal, 2+ threshold).
+- **Suffix:** keep no-tools constraints (skip verify; emit `### Observations`
+  instead of writing the file) but frame observations as high-value and require
+  decision reasoning, not a minimalist "produce only" tone.
 
 **FR-REFLECT-04 — Log output sanitizer (strip tool-call artifacts)**
 
@@ -2705,8 +2723,8 @@ result — the LLM then follows the procedure.
 - **Given** a session ends and the reflect child is spawned
 - **When** the child builds its user prompt for the forked session
 - **Then** it loads `process-conversation.md` from the bundle (same prompt as FR-SKILL-02)
-- **And** appends an output-only suffix: **"Produce ONLY the `## Session HH:MM–HH:MM` markdown block — nothing else."** No preamble, wrapper headers, or empty sections
-- **Note:** The reflect child has `noTools: "all"`, so the suffix prevents file operations. The worker persists the Session block to the daily log. Manual tool usage (FR-SKILL-02) returns the prompt without the suffix since the LLM has tools. Quality rules: synthesize don't transcribe; omit sections with no content.
+- **And** appends an output-only suffix: no tools; skip verify; emit `### Observations` for the worker to file; capture decision reasoning and concrete facts (FR-REFLECT-10). No preamble, wrapper headers, or empty sections
+- **Note:** The reflect child has `noTools: "all"`, so the suffix prevents file operations. The worker persists the Session block to the daily log. Manual tool usage (FR-SKILL-02) returns the prompt without the suffix since the LLM has tools. Quality rules: synthesize don't transcribe; omit sections with no content; preserve concrete facts.
 
 **FR-SKILL-05 — Consolidation invokes triage via tool call**
 

@@ -51,6 +51,23 @@ describe("process-conversation prompt content", () => {
     expect(prompt).toContain("Rule candidate:");
     expect(prompt).toMatch(/example|e\.g\./i);
   });
+
+  it("includes observation exclusion criteria (FR-REFLECT-10)", () => {
+    const prompt = loadProcessConversationPrompt();
+    expect(prompt).toContain("NOT a candidate");
+  });
+
+  it("instructs preserving concrete facts (FR-REFLECT-10)", () => {
+    const prompt = loadProcessConversationPrompt();
+    expect(prompt).toContain("Concrete facts feed");
+    expect(prompt).toContain("Preserve concrete facts");
+  });
+
+  it("distinguishes explicit correction from inferred rule candidates (FR-REFLECT-10)", () => {
+    const prompt = loadProcessConversationPrompt();
+    expect(prompt).toMatch(/explicit user correction/i);
+    expect(prompt).toMatch(/inferred/i);
+  });
 });
 
 describe("buildReflectUserPrompt", () => {
@@ -67,5 +84,11 @@ describe("buildReflectUserPrompt", () => {
     expect(prompt).toContain("# Skill: Process conversation");
     expect(prompt.endsWith(OUTPUT_ONLY_SUFFIX.trim())).toBe(true);
     expect(prompt).toContain("You have no tools in this context");
+  });
+
+  it("suffix requires decision reasoning and values observations (FR-REFLECT-10)", () => {
+    expect(OUTPUT_ONLY_SUFFIX).toMatch(/full reasoning behind decisions/i);
+    expect(OUTPUT_ONLY_SUFFIX).toMatch(/most valuable part of the reflect/i);
+    expect(OUTPUT_ONLY_SUFFIX).not.toMatch(/Produce ONLY/i);
   });
 });
