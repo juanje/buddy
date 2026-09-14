@@ -32,6 +32,13 @@ Feature: First-open-of-the-day orientation
     When orientation is dismissed for today "2026-09-10"
     Then the deferred queue still has due items
 
+  @FR-DEFERRED-05
+  Scenario: Orientation suppresses duplicate banner but not system notification
+    Given orientation was shown this session
+    When due deferred items arrive after orientation
+    Then the deferred system notification is allowed
+    And the deferred banner remains suppressed
+
   @FR-ORIENT-03
   Scenario: Agent generates where-we-left-off recap after session ready
     Given the app is running

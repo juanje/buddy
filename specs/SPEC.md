@@ -981,6 +981,7 @@ not session start). Omit the section when nothing volatile changed.
 | FR-DEFERRED-02 | Heartbeat periodic check | 2 ✓ |
 | FR-DEFERRED-03 | OS notification for due items | 2 ✓ |
 | FR-DEFERRED-04 | Deferred banner Close vs Dismiss | 2.5 ✓ |
+| FR-DEFERRED-05 | Orientation suppresses duplicate banner without suppressing notifications | 2.5 ✓ |
 
 **FR-DEFERRED-01 — Surface on start**
 
@@ -1010,6 +1011,10 @@ not session start). Omit the section when nothing volatile changed.
 - **And** the deferred banner re-shows inside the app so the user sees the items whether they arrive via notification or are already in the app
 - **And** the user can dismiss the banner, which removes the items from `deferred.md`
 - **Resilience:** A concurrency guard (`notifyInFlight`) prevents multiple simultaneous notification attempts when heartbeat ticks arrive faster than the async notification call resolves. Permission is requested proactively at app start.
+
+**FR-DEFERRED-05 — Orientation does not suppress deferred notifications**
+
+Orientation may suppress the duplicate in-app deferred banner for the rest of the session, but due deferred items must continue to trigger OS notifications and remain in the deferred queue.
 
 **FR-DEFERRED-04 — Deferred banner Close vs Dismiss**
 

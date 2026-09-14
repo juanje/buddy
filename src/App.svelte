@@ -26,6 +26,7 @@
   import { ensureNotificationPermission, notifyDeferredDue } from "./utils/deferred-notify";
   import { formatBudgetNotificationBody, notifyBudgetAlert } from "./utils/budget-notify";
   import { notifyMaintenancePaused } from "./utils/maintenance-notify";
+  import { shouldNotifyDeferredDue } from "./lib/deferred-event";
   import { t } from "./lib/i18n";
   import type {
     AgentEvent,
@@ -174,9 +175,8 @@
           },
           onDeferredDue(items) {
             devLog(`deferred due: ${items.length} item(s)`);
-            if (orientationShownThisSession) return;
             deferredItems = items;
-            if (items.length > 0) {
+            if (!orientationShownThisSession && items.length > 0) {
               controller?.showDeferredBanner();
             }
             const strings = get(t);
@@ -184,10 +184,12 @@
             const body = items.length <= 1
               ? first
               : `${first} (+${items.length - 1})`;
-            void notifyDeferredDue(items.length, {
-              title: strings.notificationTitle,
-              body,
-            });
+            if (shouldNotifyDeferredDue({ count: items.length, orientationShownThisSession })) {
+              void notifyDeferredDue(items.length, {
+                title: strings.notificationTitle,
+                body,
+              });
+            }
           },
           onOneLiner(text: string) {
             devLog(`one-liner: ${text}`);

@@ -12,6 +12,8 @@ import { parseDeferredItems } from "../../backends/deferred";
 import { fetchOneLinerFromSession } from "../../backends/orientation-one-liner";
 import { buildOneLinerPrompt } from "../../backends/orientation-prompt";
 import { buildOrientationData, markOrientationDismissed } from "../../backends/orientation";
+import { shouldNotifyDeferredDue } from "../../src/lib/deferred-event";
+import { shouldShowDeferredBanner } from "../../src/lib/deferred-banner-visibility";
 import { readLastOrientationDate, writeLastOrientationDate } from "../../backends/orientation-config";
 import { writeTasksFile } from "../../backends/tasks/task-file";
 import type { OrientationData, SetupConfig } from "../../shared/api";
@@ -33,6 +35,8 @@ interface OrientationWorld extends BuddyWorld {
   orientationToday?: string;
   orientationShownThisSession?: boolean;
   oneLinerReceived?: string | null;
+  deferredNotificationAllowed?: boolean;
+  deferredBannerShown?: boolean;
   chatOneLiner?: string | null;
   oneLinerSession?: OneLinerSessionState;
 }
@@ -156,6 +160,26 @@ Given("orientation was shown this session", function (this: OrientationWorld) {
     ...(this.oneLinerSession ?? createOneLinerSessionState()),
     orientationShownThisSession: true,
   };
+});
+
+When("due deferred items arrive after orientation", function (this: OrientationWorld) {
+  this.deferredNotificationAllowed = shouldNotifyDeferredDue({
+    count: 1,
+    orientationShownThisSession: this.orientationShownThisSession === true,
+  });
+  this.deferredBannerShown = shouldShowDeferredBanner({
+    hasOrientationCard: false,
+    deferredDismissed: false,
+    orientationShownThisSession: this.orientationShownThisSession === true,
+  });
+});
+
+Then("the deferred system notification is allowed", function (this: OrientationWorld) {
+  assert.equal(this.deferredNotificationAllowed, true);
+});
+
+Then("the deferred banner remains suppressed", function (this: OrientationWorld) {
+  assert.equal(this.deferredBannerShown, false);
 });
 
 When("the session becomes ready", function (this: OrientationWorld) {

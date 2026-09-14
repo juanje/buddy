@@ -1383,6 +1383,19 @@
           "unit_tests": 1
         }
       ]
+    },
+    {
+      "id": "FR-DEFERRED-05",
+      "title": "Orientation suppresses duplicate banner without suppressing notifications",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Orientation suppresses duplicate banner but not system notification",
+          "bdd": "pass",
+          "unit_tests": 2
+        }
+      ]
     }
   ]
 }
