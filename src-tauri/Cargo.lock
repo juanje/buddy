@@ -318,7 +318,7 @@ dependencies = [
 
 [[package]]
 name = "buddy"
-version = "0.1.46"
+version = "0.1.47"
 dependencies = [
  "block2",
  "dispatch",
