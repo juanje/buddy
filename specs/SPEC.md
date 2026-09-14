@@ -1728,6 +1728,7 @@ repair → `commitAll`.
 | FR-PROMPT-06 | Edit batching guidance for append-heavy files | 2 ✓ |
 | FR-PROMPT-07 | Queue file edit anchoring guidance | 2 ✓ |
 | FR-PROMPT-08 | AGENTS.md structural migration (strip core instructions) | 2 ✓ |
+| FR-PROMPT-09 | Session-time log writing guidance | 2.5 ✓ |
 
 **FR-PROMPT-01 — System prompt assembly**
 
@@ -1834,10 +1835,23 @@ does not know them, and orders their profile overwritten.
 - **And** fresh instances created from the new template never have core instructions in AGENTS.md
 - **Conflict resolutions** (all in agents-base.md, single source of truth):
   - **Wiki routing:** interconnected knowledge → `user/wiki/` via `wiki_file`; structured content → direct write in `user/`
-  - **Rule 6:** "Write it or don't say it" applies to `agent_brain/` and `user/` only — not `logs/` (reflect owns log writes)
+  - **Rule 6:** "Write it or don't say it" applies to `agent_brain/`, `user/`, and significant decisions/lessons in `logs/` during the session; reflect still completes and synthesizes at session end
   - **USER.md authority:** update with observed facts, always inform the user, mark inferences as `[inferred — verify]`
   - **agent_brain timing:** user's decisions → write during session; agent's own learning → reflect/consolidation only
   - **Deferred language:** stated once in capture rules; agents-base environment section keeps format/tone guidance only
+
+**FR-PROMPT-09 — Session-time log writing guidance**
+
+The interactive agent may write significant decisions, lessons, and context to
+`logs/YYYY-MM-DD.md` during the session. Waiting until session-end reflect
+drops the "why" and named facts that were fresh when they happened. Reflect
+still appends a `## Session` block at the end and must not duplicate what was
+already written.
+
+- **Scope:** prompt text in `bundled/prompts/agents-base.md`. No worker change —
+  `appendDailyLog` already supports multiple blocks on the same day.
+- **Guidance:** write during the session for decisions with reasoning, lessons,
+  and open threads. Skip routine context that reflect can reconstruct.
 
 ### 3.11 Git Operations (FR-GIT)
 

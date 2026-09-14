@@ -22,3 +22,10 @@ Feature: Reflect prompt captures depth, observations, and session-time log write
     Then the suffix instructs capturing full reasoning behind decisions
     And the suffix frames observations as the most valuable reflect output
     And the suffix does not frame output as Produce ONLY
+
+  @FR-PROMPT-09
+  Scenario: Base prompt permits log writing during sessions
+    Given the bundled agents-base.md prompt
+    Then the agents-base prompt does not contain "Do not write to `logs/` directly"
+    And the agents-base prompt contains "You can write to `logs/"
+    And the agents-base prompt contains "session-time writing"

@@ -332,13 +332,15 @@ describe("agents-base prompt split content", () => {
     expect(base).toContain("## Where to search");
   });
 
-  it("write-it rule excludes logs from direct capture", () => {
+  it("write-it rule includes session-time log writing (FR-PROMPT-09)", () => {
     const base = readFileSync(
       join(bundledPromptsDir(), "agents-base.md"),
       "utf8",
     );
     expect(base).toMatch(/write it immediately/i);
-    expect(base).toMatch(/Do not write to `logs\/` directly/);
+    expect(base).not.toMatch(/Do not write to `logs\/` directly/);
+    expect(base).toContain("You can write to `logs/");
+    expect(base).toContain("session-time writing");
   });
 
   it("consolidation Step 8 distinguishes core vs instance rules", () => {

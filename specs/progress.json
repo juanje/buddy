@@ -1352,6 +1352,19 @@
           "unit_tests": 1
         }
       ]
+    },
+    {
+      "id": "FR-PROMPT-09",
+      "title": "Session-time log writing guidance",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Base prompt permits log writing during sessions",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
     }
   ]
 }
