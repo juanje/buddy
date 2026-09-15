@@ -11,6 +11,7 @@ import { computeActiveFronts } from "../../backends/active-fronts";
 import { executeTaskAction } from "../../backends/tasks/task-actions";
 import { taskResultToText } from "../../backends/tasks/task-result";
 import { tasksFilePath, writeTasksFile } from "../../backends/tasks/task-file";
+import { cleanupCompletedTasks } from "../../backends/tasks/task-cleanup";
 import { writeTaskWipLimit } from "../../backends/tasks/task-config";
 import { addDays, toIsoDay } from "../../shared/dates";
 import {
@@ -44,6 +45,7 @@ interface TasksWorld extends BuddyWorld {
   permGate?: PermissionGate;
   permOutcome?: { block: true; reason: string } | undefined;
   activeFrontsReport?: ReturnType<typeof computeActiveFronts>;
+  cleanupResult?: ReturnType<typeof cleanupCompletedTasks>;
 }
 
 function root(this: TasksWorld): string {
@@ -1185,3 +1187,35 @@ Then(
     assert.equal(row.count, expected);
   },
 );
+
+Given("a tasks file with items:", function (this: TasksWorld, table: DataTable) {
+  const rows = table.hashes();
+  const items = rows.map((row, index) => ({
+    id: index + 1,
+    text: row.text,
+    done: row.done?.trim().toLowerCase() === "true",
+    next: false,
+    area: row.area?.trim() || undefined,
+  }));
+  writeTasksFile(root.call(this), items);
+});
+
+Given("a tasks file with raw content:", function (this: TasksWorld, content: string) {
+  const path = tasksFilePath(root.call(this));
+  mkdirSync(join(root.call(this), "user"), { recursive: true });
+  writeFileSync(path, content, "utf8");
+});
+
+When("task cleanup runs", function (this: TasksWorld) {
+  this.cleanupResult = cleanupCompletedTasks(root.call(this));
+});
+
+Then("the tasks file contains {string}", function (this: TasksWorld, snippet: string) {
+  const content = readFileSync(tasksFilePath(root.call(this)), "utf8");
+  assert.ok(content.includes(snippet), `expected tasks file to contain "${snippet}"`);
+});
+
+Then("the tasks file does not contain {string}", function (this: TasksWorld, snippet: string) {
+  const content = readFileSync(tasksFilePath(root.call(this)), "utf8");
+  assert.ok(!content.includes(snippet), `expected tasks file NOT to contain "${snippet}"`);
+});

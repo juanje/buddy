@@ -604,14 +604,7 @@ export async function runConsolidation(options: RunConsolidationOptions): Promis
         depthSession = await createSession({ rootDir, modelRuntime, depth });
         ensureUserMdSectionsOnDisk(rootDir);
         if (depth === 1) {
-          const logPath = join(rootDir, "logs", `${date}.md`);
-          let logContent = "";
-          try {
-            logContent = readFileSync(logPath, "utf8");
-          } catch {
-            // No log yet for today — cleanup is a no-op.
-          }
-          cleanupCompletedTasks(rootDir, logContent);
+          cleanupCompletedTasks(rootDir);
         }
         logEvent(rootDir, { event: "consolidation_start", depth });
         const healthBefore = computeBrainHealthReport(rootDir);

@@ -638,3 +638,35 @@ Feature: Task management
   Scenario: Process-conversation prompt excludes tasks from Right now patches
     Given the bundled process-conversation prompt
     Then step 4 contains task exclusion guidance
+
+  @FR-TASKM-44
+  Scenario: Cleanup removes all completed items unconditionally
+    Given an initialized buddy git repository
+    And a tasks file with items:
+      | text          | done  | area   |
+      | Buy milk      | true  | home   |
+      | Call dentist  | false | health |
+      | Send invoice  | true  | work   |
+    When task cleanup runs
+    Then the tasks file contains "Call dentist"
+    And the tasks file does not contain "Buy milk"
+    And the tasks file does not contain "Send invoice"
+
+  @FR-TASKM-44
+  Scenario: Cleanup removes items with verify comments
+    Given an initialized buddy git repository
+    And a tasks file with raw content:
+      """
+      ---
+      created: 2026-09-10
+      ---
+
+      # Tasks
+
+      - [x] Old task @work <!-- c:2026-09-10 --> <!-- verify: not found in recent logs --> <!-- c:2026-09-10 -->
+      - [ ] Active task @work <!-- c:2026-09-10 -->
+      """
+    When task cleanup runs
+    Then the tasks file contains "Active task"
+    And the tasks file does not contain "Old task"
+    And the tasks file does not contain "verify:"

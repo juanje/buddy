@@ -3322,7 +3322,9 @@ Further context on local-model evaluation methodology and findings:
 **FR-TASK-06 — Daily cleanup**
 
 - **When** depth-1 consolidation starts
-- **Then** verified `[x]` items mentioned in today's log are removed from tasks.md
+- **Then** all `[x]` items are removed from tasks.md
+- **And** the `[x]` mark itself is the verification (set by the agent
+  via `tasks(action='complete')` or consolidation coherence)
 
 **FR-TASK-07 — Migration**
 
@@ -3597,6 +3599,7 @@ Further context on local-model evaluation methodology and findings:
 | FR-TASKM-41 | Active fronts computed from tasks.md (supersedes FR-TASKM-39) | 2.5 ✓ |
 | FR-TASKM-42 | Consolidation WIP check references tasks.md fronts (updates FR-TASKM-25) | 2.5 ✓ |
 | FR-TASKM-43 | Right now content guidance: exclude tasks and projects | 2.5 ✓ |
+| FR-TASKM-44 | Simplify task cleanup: remove all [x] items, drop verify mechanism | 2.5 ✓ |
 
 **FR-TASKM-01 — Project tag in task format**
 
@@ -3863,6 +3866,23 @@ context), not a WIP tracker. Tasks and projects belong in tasks.md.
   and exclude list (tasks, projects, hot files).
 - `process-conversation.md` step 4 (Right now patches) includes same
   exclusion: do not emit patches with task/project items.
+
+**FR-TASKM-44 — Simplify task cleanup**
+
+Supersedes the log-verification mechanism in FR-TASK-06. Completed
+items (`[x]`) are removed unconditionally — the `[x]` mark is the
+verification.
+
+- `cleanupCompletedTasks(rootDir)` removes all `[x]` items from
+  tasks.md. No log content parameter, no keyword matching.
+- The `<!-- verify: not found in recent logs -->` mechanism is removed.
+- Items already carrying `<!-- verify: -->` comments are cleaned up
+  like any other `[x]` item.
+- `consolidation-runner.ts` calls `cleanupCompletedTasks(rootDir)`
+  without reading/passing the log file.
+- `itemMentionedInLog()` and `COMPLETION_KEYWORDS` are removed from
+  task-cleanup.ts (they remain in daily-coherence.ts where log-matching
+  is the correct approach).
 
 ---
 

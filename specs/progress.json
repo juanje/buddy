@@ -1440,6 +1440,24 @@
           "unit_tests": 1
         }
       ]
+    },
+    {
+      "id": "FR-TASKM-44",
+      "title": "Simplify task cleanup: remove all [x] items",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Cleanup removes all completed items unconditionally",
+          "bdd": "pass",
+          "unit_tests": 2
+        },
+        {
+          "name": "Cleanup removes items with verify comments",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
     }
   ]
 }
