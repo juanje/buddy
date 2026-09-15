@@ -72,6 +72,63 @@ export function removeDueDeferredItems(rootDir: string, now: Date = new Date()):
   writeFileSync(path, kept.join("\n"), "utf8");
 }
 
+/**
+ * Remove specific resolved deferred items from deferred.md (FR-DEFERRED-06).
+ *
+ * `resolvedText` comes from the reflect fork's `### Resolved deferred`
+ * section — one item per line, in whichever format the model reached for:
+ * the raw deferred.md entry, the `[type] due date (source): text` form it
+ * saw in the session-start context, or just the description text. Matching
+ * is on the description only (the part after the `):` prefix, if present),
+ * normalized and compared as a substring in both directions — the model may
+ * paraphrase or truncate, and a deferred entry may carry more detail than
+ * what the model echoes back.
+ */
+export function removeResolvedDeferredItems(rootDir: string, resolvedText: string): number {
+  const path = deferredPath(rootDir);
+  let content: string;
+  try {
+    content = readFileSync(path, "utf8");
+  } catch {
+    return 0;
+  }
+
+  const resolvedDescriptions = resolvedText
+    .split("\n")
+    .map((line) => {
+      let text = line.replace(/^-\s*/, "").trim();
+      // Strip "[type] due YYYY-MM-DD (source): " prefix (session-context format).
+      text = text.replace(/^\[?\w+\]?\s*(?:due\s+)?\d{4}-\d{2}-\d{2}\s*\(\w+\):\s*/i, "");
+      // Strip "**type** (YYYY-MM-DD, source): " prefix (deferred.md format).
+      text = text.replace(/^\*\*\w+\*\*\s*\(\d{4}-\d{2}-\d{2}(?:\s+\d{2}:\d{2})?,\s*\w+\):\s*/i, "");
+      return text.toLowerCase().trim();
+    })
+    .filter((text) => text.length >= 10);
+
+  if (resolvedDescriptions.length === 0) return 0;
+
+  const lines = content.split("\n");
+  let removedCount = 0;
+  const kept = lines.filter((line) => {
+    const match = ENTRY_RE.exec(line.trim());
+    if (!match) return true;
+    const entryDescription = match[4].trim().toLowerCase();
+    const isResolved = resolvedDescriptions.some(
+      (desc) => entryDescription.includes(desc) || desc.includes(entryDescription),
+    );
+    if (isResolved) {
+      removedCount++;
+      return false;
+    }
+    return true;
+  });
+
+  if (removedCount > 0) {
+    writeFileSync(path, kept.join("\n"), "utf8");
+  }
+  return removedCount;
+}
+
 /** Map parsed deferred items to frontend view models (FR-DEFERRED-01/02). */
 export function toDeferredItemViews(
   items: ParsedDeferredItem[],

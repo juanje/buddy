@@ -982,6 +982,7 @@ not session start). Omit the section when nothing volatile changed.
 | FR-DEFERRED-03 | OS notification for due items | 2 ✓ |
 | FR-DEFERRED-04 | Deferred banner Close vs Dismiss | 2.5 ✓ |
 | FR-DEFERRED-05 | Orientation suppresses duplicate banner without suppressing notifications | 2.5 ✓ |
+| FR-DEFERRED-06 | Reflect removes resolved deferred items via ### Resolved deferred section | 2.5 ✓ |
 
 **FR-DEFERRED-01 — Surface on start**
 
@@ -1022,6 +1023,20 @@ Orientation may suppress the duplicate in-app deferred banner for the rest of th
 - Close hides the banner only. Due items stay in `deferred.md` and can resurface on the next heartbeat or the next session.
 - Dismiss acknowledges the due items: they are removed from `deferred.md` and will not come back.
 - Closing is for clearing the chat; dismissing is for "I have seen this and do not need the reminder again."
+
+**FR-DEFERRED-06 — Reflect cleans resolved deferred items**
+
+When the reflect fork detects that deferred items surfaced at session
+start were addressed during the session, it emits a
+`### Resolved deferred` section. The worker extracts matching entries
+from `deferred.md` and removes them.
+
+- `extractResolvedDeferred()` in reflect-prompts.ts extracts the section.
+- `removeResolvedDeferredItems()` in deferred.ts removes matching entries
+  by description-text comparison (tolerant of format differences).
+- The section is removed from the daily log body (same as Observations
+  and Right now patches).
+- If no deferred items were resolved, the section is omitted.
 
 ### 3.8 Consolidation (FR-CONSOL)
 

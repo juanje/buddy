@@ -34,6 +34,11 @@ Feature: Reflect prompt captures depth, observations, and session-time log write
     Given the output-only suffix for session-end reflect
     Then the suffix contains "Right now patches"
 
+  @FR-DEFERRED-06
+  Scenario: Output-only suffix instructs resolved deferred reporting
+    Given the output-only suffix for session-end reflect
+    Then the suffix contains "Resolved deferred"
+
   @FR-PROMPT-09
   Scenario: Base prompt permits log writing during sessions
     Given the bundled agents-base.md prompt

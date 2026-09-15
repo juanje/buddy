@@ -7,7 +7,7 @@ import { join } from "node:path";
 import { getEmbeddedAssets } from "./embedded-assets";
 import { bundledPromptsDir } from "./deploy-bundled-content";
 
-export const OUTPUT_ONLY_SUFFIX = `\n\n---\nYou have no tools in this context — produce the content sections for today's log entry. Do NOT include a \`## Session\` header; the worker adds it automatically with correct timestamps. Use \`###\` (h3) for section headings (e.g. \`### Context\`, \`### Decisions\`). No preamble, no explanation.\n\nThree steps of the procedure above assume tools you do not have here:\n- **Step 3 (Verify captures): skip it.** You cannot read the files to check, and guessing whether something landed is worse than not saying.\n- **Step 4 (Active context patches): emit a \`### Right now patches\` section** with the complete updated Right now content when session events changed volatile state. The worker replaces the section in AGENTS.md. Omit when nothing volatile changed.\n- **Step 5 (Detect observations): emit an \`### Observations\` section with entries the worker will file.** This is the most valuable part of the reflect — invest effort here. A session that produced decisions or lessons almost certainly has observation-worthy patterns. Omit ONLY when the session was genuinely trivial.\n\nCapture the full reasoning behind decisions, not just conclusions. A log entry that says "Decided X" without explaining why is a failure — future sessions need the reasoning to avoid re-deriving it.\n\nWrite about the conversation. Never write about this procedure — the instructions above are not something the session taught you.`
+export const OUTPUT_ONLY_SUFFIX = `\n\n---\nYou have no tools in this context — produce the content sections for today's log entry. Do NOT include a \`## Session\` header; the worker adds it automatically with correct timestamps. Use \`###\` (h3) for section headings (e.g. \`### Context\`, \`### Decisions\`). No preamble, no explanation.\n\nThree steps of the procedure above assume tools you do not have here:\n- **Step 3 (Verify captures): skip it.** You cannot read the files to check, and guessing whether something landed is worse than not saying.\n- **Step 4 (Active context patches): emit a \`### Right now patches\` section** with the complete updated Right now content when session events changed volatile state. The worker replaces the section in AGENTS.md. Omit when nothing volatile changed.\n- **Step 5 (Detect observations): emit an \`### Observations\` section with entries the worker will file.** This is the most valuable part of the reflect — invest effort here. A session that produced decisions or lessons almost certainly has observation-worthy patterns. Omit ONLY when the session was genuinely trivial.\n- **Resolved deferred items: emit a \`### Resolved deferred\` section** listing any deferred items (from the "Pending items to surface" block) that were addressed or resolved during this session. Copy each resolved item's description text, one per line. The worker removes them from deferred.md. Omit when no deferred items were surfaced, or none were resolved.\n\nCapture the full reasoning behind decisions, not just conclusions. A log entry that says "Decided X" without explaining why is a failure — future sessions need the reasoning to avoid re-deriving it.\n\nWrite about the conversation. Never write about this procedure — the instructions above are not something the session taught you.`
 
 export const CHECKPOINT_USER_PROMPT = `Briefly encode the recent segment of this session before context compaction:
 
@@ -72,6 +72,22 @@ export function extractRightNowPatches(output: string): {
 } {
   const { body, extracted } = extractNamedSection(output, "Right now patches");
   return extracted ? { body, rightNowPatches: extracted } : { body };
+}
+
+/**
+ * Split a `### Resolved deferred` section out of reflect output (FR-DEFERRED-06).
+ *
+ * Same division of labour as observations and Right now patches: the model
+ * judges which deferred items were resolved during the session, the worker
+ * removes them from deferred.md. Each line in the section is the original
+ * deferred entry text (or a recognizable substring) — one per line.
+ */
+export function extractResolvedDeferred(output: string): {
+  body: string;
+  resolvedDeferred?: string;
+} {
+  const { body, extracted } = extractNamedSection(output, "Resolved deferred");
+  return extracted ? { body, resolvedDeferred: extracted } : { body };
 }
 
 function extractNamedSection(output: string, heading: string): {

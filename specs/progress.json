@@ -1476,6 +1476,24 @@
           "unit_tests": 2
         }
       ]
+    },
+    {
+      "id": "FR-DEFERRED-06",
+      "title": "Reflect removes resolved deferred items",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Reflect output with resolved deferred removes items from deferred.md",
+          "bdd": "pass",
+          "unit_tests": 6
+        },
+        {
+          "name": "extractResolvedDeferred removes the section from log body",
+          "bdd": "pass",
+          "unit_tests": 5
+        }
+      ]
     }
   ]
 }

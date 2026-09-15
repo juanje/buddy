@@ -46,7 +46,13 @@ import {
   updateLogsIndexEntry,
 } from "./reflect";
 import { clearSessionPersistence } from "./crash-recovery";
-import { buildReflectUserPrompt, extractObservationsSection, extractRightNowPatches } from "./reflect-prompts";
+import { removeResolvedDeferredItems } from "./deferred";
+import {
+  buildReflectUserPrompt,
+  extractObservationsSection,
+  extractResolvedDeferred,
+  extractRightNowPatches,
+} from "./reflect-prompts";
 import { recordSessionUsage } from "./usage-tracker";
 
 async function acquireLockWithRetry(rootDir: string): Promise<boolean> {
@@ -206,9 +212,13 @@ export async function runReflect(
           // them out of the daily log — both files reach future sessions, and
           // the same text in both is noise.
           const { body: afterObservations, observations } = extractObservationsSection(result);
-          const { body, rightNowPatches } = extractRightNowPatches(afterObservations);
+          const { body: afterDeferred, resolvedDeferred } = extractResolvedDeferred(afterObservations);
+          const { body, rightNowPatches } = extractRightNowPatches(afterDeferred);
           appendReflectObservations(rootDir, sessionDate, observations);
           applyRightNowPatches(rootDir, rightNowPatches);
+          if (resolvedDeferred) {
+            removeResolvedDeferredItems(rootDir, resolvedDeferred);
+          }
           const dailyPath = finalizeReflectToDailyLog({
             rootDir,
             sessionDate,
