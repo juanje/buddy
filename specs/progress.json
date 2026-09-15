@@ -1458,6 +1458,24 @@
           "unit_tests": 1
         }
       ]
+    },
+    {
+      "id": "FR-TASKM-45",
+      "title": "Auto-mark sole remaining task as next on complete/remove",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Complete auto-marks sole remaining task as next",
+          "bdd": "pass",
+          "unit_tests": 2
+        },
+        {
+          "name": "Complete does not auto-mark when multiple tasks remain",
+          "bdd": "pass",
+          "unit_tests": 2
+        }
+      ]
     }
   ]
 }

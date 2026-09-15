@@ -3312,6 +3312,8 @@ Further context on local-model evaluation methodology and findings:
 - **When** the first open item is added to an area
 - **Then** it is auto-marked `>>`
 - **And** `set_next` enforces one `>>` per area
+- **And** when `complete`/`remove` clears `>>` and exactly one active
+  item remains in scope, that item is auto-marked `>>` (FR-TASKM-45)
 
 **FR-TASK-04 — WIP**
 
@@ -3600,6 +3602,7 @@ Further context on local-model evaluation methodology and findings:
 | FR-TASKM-42 | Consolidation WIP check references tasks.md fronts (updates FR-TASKM-25) | 2.5 ✓ |
 | FR-TASKM-43 | Right now content guidance: exclude tasks and projects | 2.5 ✓ |
 | FR-TASKM-44 | Simplify task cleanup: remove all [x] items, drop verify mechanism | 2.5 ✓ |
+| FR-TASKM-45 | Auto-mark sole remaining task as next on complete/remove | 2.5 ✓ |
 
 **FR-TASKM-01 — Project tag in task format**
 
@@ -3883,6 +3886,20 @@ verification.
 - `itemMentionedInLog()` and `COMPLETION_KEYWORDS` are removed from
   task-cleanup.ts (they remain in daily-coherence.ts where log-matching
   is the correct approach).
+
+**FR-TASKM-45 — Auto-mark sole remaining task as next**
+
+When `complete` or `remove` clears the next action (`>>`) from a scope
+(area + project), and exactly one active (non-done, non-someday,
+non-future) item remains in that scope, the tool auto-marks it as next.
+
+- `complete(id)` and `remove(id)`: after clearing `>>`, if
+  `countActiveInScope === 1`, find the sole item and set `next = true`.
+- The result message says which task was auto-marked.
+- `nextClearedForArea` is NOT set (the situation is resolved — the
+  agent does not need to suggest a replacement).
+- When 0 or 2+ items remain, existing behavior is unchanged.
+- `findSoleActiveInScope()` added to task-file.ts.
 
 ---
 

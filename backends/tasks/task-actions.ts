@@ -11,6 +11,7 @@ import {
   countActiveNext,
   countActiveInScope,
   findItemById,
+  findSoleActiveInScope,
   isActiveNextItem,
   readTasksFile,
   scopeHasNext,
@@ -65,6 +66,11 @@ function reindexItems(items: TaskItem[]): TaskItem[] {
 
 function loadItems(rootDir: string): TaskItem[] {
   return readTasksFile(rootDir).items;
+}
+
+function scopeLabel(area?: string, project?: string): string {
+  if (project) return `#${project}`;
+  return area ? `@${area}` : "@(general)";
 }
 
 export function executeTaskAction(
@@ -212,6 +218,16 @@ export function executeTaskAction(
       if (!hadNext) return ok("Task completed.");
       const today = toIsoDay(new Date());
       const remainingInArea = countActiveInScope(items, area, project, today);
+      if (remainingInArea === 1) {
+        const sole = findSoleActiveInScope(items, area, project, today);
+        if (sole) {
+          sole.next = true;
+          writeTasksFile(rootDir, reindexItems(items));
+          return ok(
+            `Task completed. Auto-marked "${sole.text}" as next for ${scopeLabel(area, project)}.`,
+          );
+        }
+      }
       return ok("Task completed.", {
         nextClearedForArea: area || "general",
         nextClearedForProject: project,
@@ -294,6 +310,16 @@ export function executeTaskAction(
       if (!hadNext) return ok("Task removed.");
       const today = toIsoDay(new Date());
       const remainingInArea = countActiveInScope(items, area, project, today);
+      if (remainingInArea === 1) {
+        const sole = findSoleActiveInScope(items, area, project, today);
+        if (sole) {
+          sole.next = true;
+          writeTasksFile(rootDir, reindexItems(items));
+          return ok(
+            `Task removed. Auto-marked "${sole.text}" as next for ${scopeLabel(area, project)}.`,
+          );
+        }
+      }
       return ok("Task removed.", {
         nextClearedForArea: area || "general",
         nextClearedForProject: project,

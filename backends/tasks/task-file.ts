@@ -289,6 +289,23 @@ export function countActiveInScope(
   ).length;
 }
 
+export function findSoleActiveInScope(
+  items: TaskItem[],
+  area?: string,
+  project?: string,
+  today?: string,
+): TaskItem | undefined {
+  const todayStr = today ?? toIsoDay(new Date());
+  const active = items.filter(
+    (item) =>
+      !item.done &&
+      inSameScope(item, area, project) &&
+      item.area !== "someday" &&
+      !(item.dueDate && item.dueDate > todayStr),
+  );
+  return active.length === 1 ? active[0] : undefined;
+}
+
 export function areaHasNext(items: TaskItem[], area?: string): boolean {
   const key = areaKey(area);
   return items.some((item) => !item.done && item.next && areaKey(item.area) === key);

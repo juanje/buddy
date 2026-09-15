@@ -670,3 +670,25 @@ Feature: Task management
     Then the tasks file contains "Active task"
     And the tasks file does not contain "Old task"
     And the tasks file does not contain "verify:"
+
+  @FR-TASKM-45
+  Scenario: Complete auto-marks sole remaining task as next
+    Given an initialized buddy git repository
+    And a tasks file with items:
+      | text         | done  | area   | project | next  |
+      | Write tests  | false | work   | alpha   | true  |
+      | Deploy app   | false | work   | alpha   | false |
+    When the task "Write tests" is completed
+    Then the task "Deploy app" is marked as next
+
+  @FR-TASKM-45
+  Scenario: Complete does not auto-mark when multiple tasks remain
+    Given an initialized buddy git repository
+    And a tasks file with items:
+      | text         | done  | area   | project | next  |
+      | Write tests  | false | work   | alpha   | true  |
+      | Deploy app   | false | work   | alpha   | false |
+      | Update docs  | false | work   | alpha   | false |
+    When the task "Write tests" is completed
+    Then the task "Deploy app" is not marked as next
+    And the task "Update docs" is not marked as next

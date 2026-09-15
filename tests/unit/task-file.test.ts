@@ -13,6 +13,7 @@ import {
   countActiveInArea,
   countActiveInScope,
   countActiveNext,
+  findSoleActiveInScope,
   parseTaskFileContent,
   readTasksFile,
   scopeHasNext,
@@ -258,6 +259,42 @@ describe("countActiveInScope", () => {
       { id: 3, text: "B1", done: false, next: false, area: "work", project: "beta" },
     ];
     expect(countActiveInScope(items, "work", "alpha", today)).toBe(2);
+  });
+});
+
+describe("findSoleActiveInScope", () => {
+  it("returns the sole active item in scope", () => {
+    const today = toIsoDay(new Date());
+    const items: TaskItem[] = [
+      { id: 1, text: "A1", done: false, next: false, area: "work", project: "alpha" },
+    ];
+    expect(findSoleActiveInScope(items, "work", "alpha", today)?.text).toBe("A1");
+  });
+
+  it("returns undefined when zero items remain in scope", () => {
+    const today = toIsoDay(new Date());
+    expect(findSoleActiveInScope([], "work", "alpha", today)).toBeUndefined();
+  });
+
+  it("returns undefined when 2+ items remain in scope", () => {
+    const today = toIsoDay(new Date());
+    const items: TaskItem[] = [
+      { id: 1, text: "A1", done: false, next: false, area: "work", project: "alpha" },
+      { id: 2, text: "A2", done: false, next: false, area: "work", project: "alpha" },
+    ];
+    expect(findSoleActiveInScope(items, "work", "alpha", today)).toBeUndefined();
+  });
+
+  it("excludes someday, done, and future-dated items from the count", () => {
+    const today = toIsoDay(new Date());
+    const future = addDays(today, 14);
+    const items: TaskItem[] = [
+      { id: 1, text: "Sole", done: false, next: false, area: "work" },
+      { id: 2, text: "Done", done: true, next: false, area: "work" },
+      { id: 3, text: "Parked", done: false, next: false, area: "someday" },
+      { id: 4, text: "Future", done: false, next: false, area: "work", dueDate: future },
+    ];
+    expect(findSoleActiveInScope(items, "work", undefined, today)?.text).toBe("Sole");
   });
 });
 

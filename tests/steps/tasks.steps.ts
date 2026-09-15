@@ -1194,10 +1194,12 @@ Given("a tasks file with items:", function (this: TasksWorld, table: DataTable) 
     id: index + 1,
     text: row.text,
     done: row.done?.trim().toLowerCase() === "true",
-    next: false,
+    next: row.next?.trim().toLowerCase() === "true",
     area: row.area?.trim() || undefined,
+    project: row.project?.trim() || undefined,
+    created: toIsoDay(new Date()),
   }));
-  writeTasksFile(root.call(this), items);
+  writeTasksFile(root.call(this), items, toIsoDay(new Date()));
 });
 
 Given("a tasks file with raw content:", function (this: TasksWorld, content: string) {
@@ -1213,6 +1215,30 @@ When("task cleanup runs", function (this: TasksWorld) {
 Then("the tasks file contains {string}", function (this: TasksWorld, snippet: string) {
   const content = readFileSync(tasksFilePath(root.call(this)), "utf8");
   assert.ok(content.includes(snippet), `expected tasks file to contain "${snippet}"`);
+});
+
+When("the task {string} is completed", function (this: TasksWorld, text: string) {
+  const listed = executeTaskAction(root.call(this), "list", { include_done: true });
+  assert.ok(listed.ok && listed.list);
+  const task = listed.list.items.find((item) => item.text === text);
+  assert.ok(task, `expected a task with text "${text}"`);
+  invoke.call(this, "complete", { id: task.id });
+});
+
+Then("the task {string} is marked as next", function (this: TasksWorld, text: string) {
+  const listed = executeTaskAction(root.call(this), "list", { include_done: true });
+  assert.ok(listed.ok && listed.list);
+  const task = listed.list.items.find((item) => item.text === text);
+  assert.ok(task, `expected a task with text "${text}"`);
+  assert.equal(task.next, true);
+});
+
+Then("the task {string} is not marked as next", function (this: TasksWorld, text: string) {
+  const listed = executeTaskAction(root.call(this), "list", { include_done: true });
+  assert.ok(listed.ok && listed.list);
+  const task = listed.list.items.find((item) => item.text === text);
+  assert.ok(task, `expected a task with text "${text}"`);
+  assert.equal(task.next, false);
 });
 
 Then("the tasks file does not contain {string}", function (this: TasksWorld, snippet: string) {

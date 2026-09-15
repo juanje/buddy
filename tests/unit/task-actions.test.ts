@@ -84,6 +84,32 @@ describe("executeTaskAction", () => {
     expect(taskResultToText(result)).toContain("No open tasks remain");
   });
 
+  it("complete auto-marks sole remaining task as next in scope", () => {
+    writeTasksFile(dir, [
+      { id: 1, text: "Write tests", done: false, next: true, area: "work", project: "alpha" },
+      { id: 2, text: "Deploy app", done: false, next: false, area: "work", project: "alpha" },
+    ]);
+    const result = assertSuccess(executeTaskAction(dir, "complete", { id: 1 }));
+    expect(result.nextClearedForArea).toBeUndefined();
+    expect(result.remainingInArea).toBeUndefined();
+    expect(result.message).toContain("Deploy app");
+    const listed = assertSuccess(executeTaskAction(dir, "list", { include_done: true }));
+    expect(listed.list!.items.find((item) => item.text === "Deploy app")?.next).toBe(true);
+  });
+
+  it("complete does not auto-mark when 2+ tasks remain", () => {
+    writeTasksFile(dir, [
+      { id: 1, text: "Write tests", done: false, next: true, area: "work", project: "alpha" },
+      { id: 2, text: "Deploy app", done: false, next: false, area: "work", project: "alpha" },
+      { id: 3, text: "Update docs", done: false, next: false, area: "work", project: "alpha" },
+    ]);
+    const result = assertSuccess(executeTaskAction(dir, "complete", { id: 1 }));
+    expect(result.nextClearedForProject).toBe("alpha");
+    expect(result.remainingInArea).toBe(2);
+    const listed = assertSuccess(executeTaskAction(dir, "list", { include_done: true }));
+    expect(listed.list!.items.some((item) => item.next)).toBe(false);
+  });
+
   it("complete of project-tagged next counts remaining in that project only", () => {
     writeTasksFile(dir, [
       { id: 1, text: "A1", done: false, next: true, area: "work", project: "alpha" },
@@ -99,16 +125,45 @@ describe("executeTaskAction", () => {
     expect(taskResultToText(result)).not.toContain("4 open tasks remain");
   });
 
-  it("remove of loose next counts remaining loose items in area only", () => {
+  it("remove of loose next with 2+ remaining counts remaining loose items in area only", () => {
+    writeTasksFile(dir, [
+      { id: 1, text: "Loose next", done: false, next: true, area: "work" },
+      { id: 2, text: "Loose other", done: false, next: false, area: "work" },
+      { id: 3, text: "Loose third", done: false, next: false, area: "work" },
+      { id: 4, text: "Tagged", done: false, next: true, area: "work", project: "alpha" },
+    ]);
+    const result = assertSuccess(executeTaskAction(dir, "remove", { id: 1 }));
+    expect(result.remainingInArea).toBe(2);
+    expect(result.nextClearedForProject).toBeUndefined();
+    expect(taskResultToText(result)).toContain("@work (loose tasks)");
+  });
+
+  it("remove auto-marks sole remaining task as next in scope", () => {
     writeTasksFile(dir, [
       { id: 1, text: "Loose next", done: false, next: true, area: "work" },
       { id: 2, text: "Loose other", done: false, next: false, area: "work" },
       { id: 3, text: "Tagged", done: false, next: true, area: "work", project: "alpha" },
     ]);
     const result = assertSuccess(executeTaskAction(dir, "remove", { id: 1 }));
-    expect(result.remainingInArea).toBe(1);
-    expect(result.nextClearedForProject).toBeUndefined();
-    expect(taskResultToText(result)).toContain("@work (loose tasks)");
+    expect(result.nextClearedForArea).toBeUndefined();
+    expect(result.remainingInArea).toBeUndefined();
+    expect(result.message).toContain("Loose other");
+    const listed = assertSuccess(executeTaskAction(dir, "list", { include_done: true }));
+    expect(listed.list!.items.find((item) => item.text === "Loose other")?.next).toBe(true);
+    expect(listed.list!.items.find((item) => item.text === "Tagged")?.next).toBe(true);
+  });
+
+  it("remove does not auto-mark when 2+ tasks remain", () => {
+    writeTasksFile(dir, [
+      { id: 1, text: "Loose next", done: false, next: true, area: "work" },
+      { id: 2, text: "Loose other", done: false, next: false, area: "work" },
+      { id: 3, text: "Loose third", done: false, next: false, area: "work" },
+    ]);
+    const result = assertSuccess(executeTaskAction(dir, "remove", { id: 1 }));
+    expect(result.nextClearedForArea).toBe("work");
+    expect(result.remainingInArea).toBe(2);
+    const listed = assertSuccess(executeTaskAction(dir, "list", { include_done: true }));
+    expect(listed.list!.items.some((item) => item.next)).toBe(false);
   });
 
   it("complete of next returns remainingInArea excluding someday and future", () => {
@@ -141,10 +196,11 @@ describe("executeTaskAction", () => {
     writeTasksFile(dir, [
       { id: 1, text: "Next health", done: false, next: true, area: "health" },
       { id: 2, text: "Other health", done: false, next: false, area: "health" },
+      { id: 3, text: "Another health", done: false, next: false, area: "health" },
     ]);
     const result = assertSuccess(executeTaskAction(dir, "remove", { id: 1 }));
     expect(result.nextClearedForArea).toBe("health");
-    expect(result.remainingInArea).toBe(1);
+    expect(result.remainingInArea).toBe(2);
   });
 
   it("remove of non-next does not return nextClearedForArea", () => {
