@@ -3594,6 +3594,7 @@ Further context on local-model evaluation methodology and findings:
 | FR-TASKM-38 | complete/remove hint counts remaining in scope, not whole area | 2.5 ✓ |
 | FR-TASKM-39 | Active fronts pre-computation: parse AGENTS.md Right now for per-area WIP check | 2.5 ✓ |
 | FR-TASKM-40 | Default WIP limit changed from 5 to 3 (per-area threshold) | 2.5 ✓ |
+| FR-TASKM-41 | Active fronts computed from tasks.md (supersedes FR-TASKM-39) | 2.5 ✓ |
 
 **FR-TASKM-01 — Project tag in task format**
 
@@ -3824,6 +3825,22 @@ Further context on local-model evaluation methodology and findings:
 
 - `WIP_DEFAULT` in `shared/task-types.ts` changes from 5 to 3.
 - `config(wipLimit)` still works. The number now applies per area, not globally.
+
+**FR-TASKM-41 — Active fronts computed from tasks.md**
+
+Supersedes FR-TASKM-39. Active fronts are now derived from tasks.md
+instead of AGENTS.md Right now section.
+
+- `computeActiveFronts(rootDir)` returns `ActiveFrontsReport` using
+  `loadItems()` from `task-file.ts`.
+- Each distinct `#project` slug with ≥1 open, non-someday, non-future
+  item in an area counts as 1 front.
+- Loose items (no `#project`) in an area count as 1 front collectively
+  (not per-item), if any exist.
+- `@someday` items and future-dated items are excluded from the count.
+- `formatActiveFrontsBlock()` label changes from "(from AGENTS.md)" to
+  "(from tasks.md)".
+- `buildConsolidationPrompt` calls `computeActiveFronts(rootDir)`.
 
 ---
 

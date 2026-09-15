@@ -1,65 +1,115 @@
-// tests/unit/active-fronts.test.ts — FR-TASKM-39 parse AGENTS.md Right now.
+// tests/unit/active-fronts.test.ts — FR-TASKM-41 compute active fronts from tasks.md.
 
-import { readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { formatActiveFrontsBlock, parseActiveFronts } from "../../backends/active-fronts";
+import { computeActiveFronts, formatActiveFrontsBlock } from "../../backends/active-fronts";
 import { bundledPromptsDir } from "../../backends/deploy-bundled-content";
+import { writeTasksFile } from "../../backends/tasks/task-file";
+import { addDays, toIsoDay } from "../../shared/dates";
+import type { TaskItem } from "../../shared/task-types";
 
-const SAMPLE = `## Active context
+describe("computeActiveFronts", () => {
+  let rootDir: string;
 
-### Right now
-- Buddy C-post sprint @work
-- Connector follow-up @work
-- Review PRs @work
-- Ley de dependencia @family
-
-### Files
-`;
-
-describe("parseActiveFronts", () => {
-  it("counts bullets with @area per area", () => {
-    const report = parseActiveFronts(SAMPLE);
-    expect(report.perArea).toEqual([
-      { area: "work", count: 3 },
-      { area: "family", count: 1 },
-    ]);
-    expect(report.total).toBe(4);
+  beforeEach(() => {
+    rootDir = mkdtempSync(join(tmpdir(), "active-fronts-"));
   });
 
-  it("counts bullets without @area under (general)", () => {
-    const report = parseActiveFronts(`## Active context
-
-### Right now
-- Something unlabeled
-- Another unlabeled
-- Tagged @work
-`);
-    expect(report.perArea).toEqual([
-      { area: "(general)", count: 2 },
-      { area: "work", count: 1 },
-    ]);
+  afterEach(() => {
+    rmSync(rootDir, { recursive: true, force: true });
   });
 
-  it("returns zero counts when Right now is empty", () => {
-    const report = parseActiveFronts(`## Active context
+  function seed(items: TaskItem[]): void {
+    writeTasksFile(rootDir, items);
+  }
 
-### Right now
+  it("counts each project as 1 front per area", () => {
+    seed([
+      { id: 1, text: "Review PR", done: false, next: false, area: "work", project: "buddy" },
+      { id: 2, text: "Write tests", done: false, next: false, area: "work", project: "buddy" },
+      { id: 3, text: "Deploy staging", done: false, next: false, area: "work", project: "infra" },
+    ]);
+    const report = computeActiveFronts(rootDir);
+    expect(report.perArea).toEqual([{ area: "work", count: 2 }]);
+    expect(report.total).toBe(2);
+  });
 
-### Files
-`);
+  it("counts loose items as 1 front per area", () => {
+    seed([
+      { id: 1, text: "Call dentist", done: false, next: false, area: "health" },
+      { id: 2, text: "Buy vitamins", done: false, next: false, area: "health" },
+    ]);
+    const report = computeActiveFronts(rootDir);
+    expect(report.perArea).toEqual([{ area: "health", count: 1 }]);
+    expect(report.total).toBe(1);
+  });
+
+  it("counts projects and loose items together in the same area", () => {
+    seed([
+      { id: 1, text: "Review PR", done: false, next: false, area: "work", project: "buddy" },
+      { id: 2, text: "Deploy staging", done: false, next: false, area: "work", project: "infra" },
+      { id: 3, text: "Check email", done: false, next: false, area: "work" },
+    ]);
+    const report = computeActiveFronts(rootDir);
+    expect(report.perArea).toEqual([{ area: "work", count: 3 }]);
+  });
+
+  it("excludes @someday items", () => {
+    seed([
+      { id: 1, text: "Someday thing", done: false, next: false, area: "someday" },
+      { id: 2, text: "Active thing", done: false, next: false, area: "work" },
+    ]);
+    const report = computeActiveFronts(rootDir);
+    expect(report.perArea).toEqual([{ area: "work", count: 1 }]);
+  });
+
+  it("excludes future-dated items", () => {
+    const future = addDays(toIsoDay(new Date()), 10);
+    seed([
+      { id: 1, text: "Future thing", done: false, next: false, area: "work", dueDate: future },
+      { id: 2, text: "Active thing", done: false, next: false, area: "work" },
+    ]);
+    const report = computeActiveFronts(rootDir);
+    expect(report.perArea).toEqual([{ area: "work", count: 1 }]);
+  });
+
+  it("excludes done items", () => {
+    seed([
+      { id: 1, text: "Finished", done: true, next: false, area: "work" },
+      { id: 2, text: "Active thing", done: false, next: false, area: "work" },
+    ]);
+    const report = computeActiveFronts(rootDir);
+    expect(report.perArea).toEqual([{ area: "work", count: 1 }]);
+  });
+
+  it("handles items without area as (general)", () => {
+    seed([{ id: 1, text: "No area", done: false, next: false }]);
+    const report = computeActiveFronts(rootDir);
+    expect(report.perArea).toEqual([{ area: "(general)", count: 1 }]);
+  });
+
+  it("returns zero when tasks.md is empty", () => {
+    seed([]);
+    const report = computeActiveFronts(rootDir);
+    expect(report.total).toBe(0);
+    expect(report.perArea).toEqual([]);
+  });
+
+  it("returns zero when tasks.md does not exist", () => {
+    const report = computeActiveFronts(rootDir);
     expect(report.total).toBe(0);
     expect(report.perArea).toEqual([]);
   });
 });
 
 describe("formatActiveFrontsBlock", () => {
-  it("formats per-area counts", () => {
-    const block = formatActiveFrontsBlock(parseActiveFronts(SAMPLE));
-    expect(block).toContain("Active fronts per area (from AGENTS.md):");
-    expect(block).toContain("@work: 3");
-    expect(block).toContain("@family: 1");
+  it("labels block as from tasks.md", () => {
+    const block = formatActiveFrontsBlock({ perArea: [{ area: "work", count: 2 }], total: 2 });
+    expect(block).toContain("Active fronts per area (from tasks.md):");
+    expect(block).toContain("@work: 2");
   });
 });
 

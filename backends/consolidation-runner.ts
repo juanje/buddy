@@ -7,10 +7,10 @@ import {
   type ModelRuntime,
   type ToolDefinition,
 } from "@earendil-works/pi-coding-agent";
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
-import { formatActiveFrontsBlock, parseActiveFronts } from "./active-fronts";
+import { computeActiveFronts, formatActiveFrontsBlock } from "./active-fronts";
 
 import {
   AGENT_TOOLS,
@@ -259,9 +259,7 @@ export async function buildConsolidationPrompt(
   const healthBlock = formatBrainHealthReportBlock(computeBrainHealthReport(rootDir));
   const ripeBlock = formatRipeObservationsBlock(extractRipeObservations(rootDir));
   const coherenceBlock = formatDailyCoherenceBlock(computeDailyCoherence(rootDir, now));
-  const agentsPath = join(rootDir, "AGENTS.md");
-  const agentsMd = existsSync(agentsPath) ? readFileSync(agentsPath, "utf8") : "";
-  const activeFrontsBlock = formatActiveFrontsBlock(parseActiveFronts(agentsMd));
+  const activeFrontsBlock = formatActiveFrontsBlock(computeActiveFronts(rootDir));
 
   const blocks = [
     `Date: ${date}`,

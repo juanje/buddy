@@ -32,6 +32,7 @@ import {
   detectGroupingCandidates,
 } from "../../backends/grouping-candidates";
 import { findUpcomingReminders } from "../../backends/consolidation-helpers";
+import { writeTasksFile } from "../../backends/tasks/task-file";
 import { toIsoDay, toLocalIsoStamp } from "../../shared/dates";
 import type { BuddyWorld } from "../support/world";
 import { setupGlobalConfigDir, teardownGlobalConfigDir } from "../support/global-config";
@@ -67,22 +68,14 @@ Given("a buddy directory prepared for consolidation depth features", function (t
 });
 
 Given(
-  "AGENTS.md Right now has 3 items tagged @work and 1 tagged @family",
+  "tasks.md has 3 projects in @work and 1 loose item in @family",
   function (this: DepthWorld) {
-    writeFileSync(
-      join(this.buddyDir!, "AGENTS.md"),
-      `## Active context
-
-### Right now
-- Buddy C-post sprint @work
-- Connector follow-up @work
-- Review PRs @work
-- Ley de dependencia @family
-
-### Files
-`,
-      "utf8",
-    );
+    writeTasksFile(this.buddyDir!, [
+      { id: 1, text: "Buddy C-post sprint", done: false, next: false, area: "work", project: "buddy" },
+      { id: 2, text: "Connector follow-up", done: false, next: false, area: "work", project: "connectors" },
+      { id: 3, text: "Review PRs", done: false, next: false, area: "work", project: "review" },
+      { id: 4, text: "Ley de dependencia", done: false, next: false, area: "family" },
+    ]);
   },
 );
 

@@ -1396,6 +1396,19 @@
           "unit_tests": 2
         }
       ]
+    },
+    {
+      "id": "FR-TASKM-41",
+      "title": "Active fronts computed from tasks.md",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Active fronts count projects and loose tasks per area",
+          "bdd": "pass",
+          "unit_tests": 11
+        }
+      ]
     }
   ]
 }

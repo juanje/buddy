@@ -587,10 +587,10 @@ Feature: Task management
     When the user completes the next item of project alpha
     Then the remaining count is "2" not "4"
 
-  @FR-TASKM-39
+  @FR-TASKM-41
   Scenario: Consolidation prompt includes active fronts per area block
     Given a buddy directory prepared for consolidation depth features
-    And AGENTS.md Right now has 3 items tagged @work and 1 tagged @family
+    And tasks.md has 3 projects in @work and 1 loose item in @family
     When the consolidation prompt is built for depth 1
     Then the prompt contains "Active fronts per area"
     And the prompt contains "@work: 3"
@@ -607,3 +607,18 @@ Feature: Task management
     Given an initialized buddy git repository
     When tasks config is invoked without params
     Then the task result contains "3"
+
+  @FR-TASKM-41
+  Scenario: Active fronts count projects and loose tasks per area
+    Given an initialized buddy git repository
+    And a tasks file with:
+      | text                        | area   | project        |
+      | Call dentist                | health |                |
+      | Buy vitamins                | health |                |
+      | Review PR                   | work   | buddy          |
+      | Write tests                 | work   | buddy          |
+      | Deploy staging              | work   | infra          |
+      | Check email                 | work   |                |
+    When active fronts are computed
+    Then area "health" has 1 active front
+    And area "work" has 3 active fronts

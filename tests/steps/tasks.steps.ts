@@ -1,12 +1,13 @@
 // tests/steps/tasks.steps.ts — FR-TASK BDD steps.
 
-import { Given, Then, When } from "@cucumber/cucumber";
+import { DataTable, Given, Then, When } from "@cucumber/cucumber";
 import assert from "node:assert/strict";
 import { existsSync, mkdirSync, readFileSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { createPermissionGate, evaluateToolCall, type PermissionGate } from "../../backends/permissions";
 import { buildSkillTools, skillToolNames } from "../../backends/skill-tools";
+import { computeActiveFronts } from "../../backends/active-fronts";
 import { executeTaskAction } from "../../backends/tasks/task-actions";
 import { taskResultToText } from "../../backends/tasks/task-result";
 import { tasksFilePath, writeTasksFile } from "../../backends/tasks/task-file";
@@ -42,6 +43,7 @@ interface TasksWorld extends BuddyWorld {
   whereThingsLiveDoc?: string;
   permGate?: PermissionGate;
   permOutcome?: { block: true; reason: string } | undefined;
+  activeFrontsReport?: ReturnType<typeof computeActiveFronts>;
 }
 
 function root(this: TasksWorld): string {
@@ -1087,3 +1089,38 @@ Given("the bundled where-things-live.md doc", function (this: TasksWorld) {
 Then("the where-things-live doc contains {string}", function (this: TasksWorld, text: string) {
   assert.ok(this.whereThingsLiveDoc?.includes(text), `missing: ${text}`);
 });
+
+Given("a tasks file with:", function (this: TasksWorld, table: DataTable) {
+  const rows = table.hashes();
+  const items = rows.map((row, index) => ({
+    id: index + 1,
+    text: row.text,
+    done: false,
+    next: false,
+    area: row.area?.trim() || undefined,
+    project: row.project?.trim() || undefined,
+  }));
+  writeTasksFile(root.call(this), items);
+});
+
+When("active fronts are computed", function (this: TasksWorld) {
+  this.activeFrontsReport = computeActiveFronts(root.call(this));
+});
+
+Then(
+  "area {string} has {int} active front",
+  function (this: TasksWorld, area: string, expected: number) {
+    const row = this.activeFrontsReport?.perArea.find((entry) => entry.area === area);
+    assert.ok(row, `expected an active fronts entry for area "${area}"`);
+    assert.equal(row.count, expected);
+  },
+);
+
+Then(
+  "area {string} has {int} active fronts",
+  function (this: TasksWorld, area: string, expected: number) {
+    const row = this.activeFrontsReport?.perArea.find((entry) => entry.area === area);
+    assert.ok(row, `expected an active fronts entry for area "${area}"`);
+    assert.equal(row.count, expected);
+  },
+);
