@@ -27,7 +27,7 @@ function daysBetween(start: string, end: string): number {
 }
 
 function parseFileCreated(content: string): string | undefined {
-  const m = content.match(/^created:\s*(\S+)/m);
+  const m = content.match(/^created:[ \t]*(\d{4}-\d{2}-\d{2})/m);
   return m?.[1];
 }
 
@@ -166,7 +166,7 @@ export function writeTasksFile(rootDir: string, items: TaskItem[], created?: str
   let createdDate = created;
   if (!createdDate && existsSync(path)) {
     const existing = readFileSync(path, "utf8");
-    const m = existing.match(/^created:\s*(\S+)/m);
+    const m = existing.match(/^created:[ \t]*(\d{4}-\d{2}-\d{2})/m);
     createdDate = m?.[1];
   }
   const body = serializeTaskFile(items, createdDate);

@@ -180,6 +180,19 @@ created: 2026-01-15
     expect(items[0]?.created).toBe("2026-01-15");
   });
 
+  it("empty created frontmatter does not leak into items", () => {
+    dir = mkdtempSync(join(tmpdir(), "buddy-task-file-read-"));
+    const path = tasksFilePath(dir);
+    mkdirSync(dirname(path), { recursive: true });
+    writeFileSync(
+      path,
+      `---\ncreated:\n---\n\n# Tasks\n\n- [ ] New task @work\n`,
+      "utf8",
+    );
+    const { items } = readTasksFile(dir);
+    expect(items[0]?.created).toBeUndefined();
+  });
+
   it("line created comment wins over file frontmatter", () => {
     dir = mkdtempSync(join(tmpdir(), "buddy-task-file-read-"));
     const path = tasksFilePath(dir);
