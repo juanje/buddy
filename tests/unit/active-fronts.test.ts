@@ -119,4 +119,13 @@ describe("bundled consolidation prompt", () => {
     expect(prompt).toContain("Active fronts per area");
     expect(prompt).not.toContain("activeNextCount");
   });
+
+  it("active fronts check references tasks.md, not AGENTS.md (FR-TASKM-42)", () => {
+    const prompt = readFileSync(join(bundledPromptsDir(), "consolidation.md"), "utf8");
+    const match = prompt.match(/- \*\*Active fronts check:\*\*[\s\S]*?(?=\n- \*\*|\n\n)/);
+    expect(match).not.toBeNull();
+    const section = match![0];
+    expect(section).toContain("from tasks.md");
+    expect(section).not.toContain("from AGENTS.md");
+  });
 });

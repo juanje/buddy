@@ -3595,6 +3595,7 @@ Further context on local-model evaluation methodology and findings:
 | FR-TASKM-39 | Active fronts pre-computation: parse AGENTS.md Right now for per-area WIP check | 2.5 ✓ |
 | FR-TASKM-40 | Default WIP limit changed from 5 to 3 (per-area threshold) | 2.5 ✓ |
 | FR-TASKM-41 | Active fronts computed from tasks.md (supersedes FR-TASKM-39) | 2.5 ✓ |
+| FR-TASKM-42 | Consolidation WIP check references tasks.md fronts (updates FR-TASKM-25) | 2.5 ✓ |
 
 **FR-TASKM-01 — Project tag in task format**
 
@@ -3721,7 +3722,7 @@ Further context on local-model evaluation methodology and findings:
 **FR-TASKM-25 — Consolidation daily WIP review step**
 
 - `consolidation.md` daily step 4 (Task cleanup) includes **Active fronts check**:
-  read the pre-computed "Active fronts per area" block (from AGENTS.md Right now),
+  read the pre-computed "Active fronts per area" block (from tasks.md — see FR-TASKM-41),
   compare each area count to the configured WIP limit, and write a deferred item
   for areas over the limit. Do not use `tasks(only_next)` / `activeNextCount` for WIP.
 
@@ -3811,15 +3812,11 @@ Further context on local-model evaluation methodology and findings:
   open items in the same scope (project or loose-in-area), not the whole area.
 - Hint text references the scope: "in #project" or "in @area (loose tasks)".
 
-**FR-TASKM-39 — Active fronts pre-computation from AGENTS.md**
+**FR-TASKM-39 — Active fronts pre-computation from AGENTS.md** *(superseded by FR-TASKM-41)*
 
-- `buildConsolidationPrompt` includes a pre-computed "Active fronts per area"
-  block parsed from AGENTS.md Right now section.
-- Bullets with `@area` suffix are counted per area. Bullets without @area
-  are counted under "(general)".
-- The block format: "Active fronts per area (from AGENTS.md):\n@work: 3\n@family: 1"
-- consolidation.md active fronts check references this block instead of
-  `activeNextCount`.
+- ~~`buildConsolidationPrompt` includes a pre-computed "Active fronts per area"
+  block parsed from AGENTS.md Right now section.~~
+- Superseded by FR-TASKM-41: active fronts are now computed from tasks.md.
 
 **FR-TASKM-40 — Default WIP limit to 3**
 
@@ -3841,6 +3838,16 @@ instead of AGENTS.md Right now section.
 - `formatActiveFrontsBlock()` label changes from "(from AGENTS.md)" to
   "(from tasks.md)".
 - `buildConsolidationPrompt` calls `computeActiveFronts(rootDir)`.
+
+**FR-TASKM-42 — Consolidation WIP check references tasks.md fronts**
+
+Updates FR-TASKM-25. The consolidation prompt's active fronts check
+instruction references the pre-computed block from tasks.md.
+
+- `consolidation.md` active fronts check instruction says "Active fronts
+  per area (from tasks.md)" (not AGENTS.md).
+- No behavioral change — still writes a deferred item when an area
+  exceeds the configured WIP limit.
 
 ---
 

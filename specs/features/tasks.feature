@@ -622,3 +622,9 @@ Feature: Task management
     When active fronts are computed
     Then area "health" has 1 active front
     And area "work" has 3 active fronts
+
+  @FR-TASKM-42
+  Scenario: Consolidation prompt references tasks.md for active fronts
+    Given the bundled consolidation prompt
+    Then it contains "from tasks.md" in the active fronts check
+    And it does not contain "from AGENTS.md" in the active fronts check

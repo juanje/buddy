@@ -814,6 +814,34 @@ Then("the consolidation prompt does not contain {string}", function (this: Tasks
   );
 });
 
+Given("the bundled consolidation prompt", function (this: TasksWorld) {
+  this.consolidationPrompt = readFileSync(
+    join(process.cwd(), "bundled", "prompts", "consolidation.md"),
+    "utf8",
+  );
+});
+
+function activeFrontsCheckSection(prompt: string | undefined): string {
+  const match = (prompt ?? "").match(/- \*\*Active fronts check:\*\*[\s\S]*?(?=\n- \*\*|\n\n)/);
+  assert.ok(match, "expected an Active fronts check bullet in the consolidation prompt");
+  return match[0];
+}
+
+Then("it contains {string} in the active fronts check", function (this: TasksWorld, text: string) {
+  const section = activeFrontsCheckSection(this.consolidationPrompt);
+  assert.ok(section.includes(text), `missing "${text}" in active fronts check: ${section}`);
+});
+
+Then(
+  "it does not contain {string} in the active fronts check",
+  function (this: TasksWorld, text: string) {
+    const section = activeFrontsCheckSection(this.consolidationPrompt);
+    assert.ok(
+      !section.includes(text),
+      `expected not to contain "${text}" in active fronts check: ${section}`,
+    );
+});
+
 Then(
   "the task list projects summary has {int} projects",
   function (this: TasksWorld, count: number) {

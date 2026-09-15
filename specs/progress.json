@@ -1409,6 +1409,19 @@
           "unit_tests": 11
         }
       ]
+    },
+    {
+      "id": "FR-TASKM-42",
+      "title": "Consolidation WIP check references tasks.md fronts",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Consolidation prompt references tasks.md for active fronts",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
     }
   ]
 }
