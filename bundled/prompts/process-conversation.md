@@ -47,15 +47,21 @@ Ensure items landed in the right place by classification type:
 ### 4. Detect active context changes
 
 If this session changed volatile state that the next session needs to know
-(dates shifted, tasks completed, status flipped, new constraint), emit a
+(dates shifted, status flipped, new constraint, situation change), emit a
 `### Right now patches` section containing the **complete updated Right now
 content** — all bullets, not just the changed ones.
 
-Only patch when something would cause a concrete mistake in the next session
-if left stale. Do **not** patch:
+Right now is the agent's working memory for situational context — not a
+task list. Do **not** patch with:
+- Tasks, projects, or next actions — those live in tasks.md (managed by
+  the `tasks()` tool, not by Right now bullets)
 - Long-term project context — already in `projects/`; consolidation handles promotion
 - Completed items that just need archiving — consolidation sweeps those
 - Wording improvements or structural reorganization — consolidation owns those
+- Hot files — the Files section handles that via Hebbian tracking
+
+Only patch when something would cause a concrete mistake in the next session
+if left stale.
 
 *When you have no tools:* emit the section as output; the worker replaces
 `AGENTS.md` "Right now". Omit the section entirely when no volatile state

@@ -1422,6 +1422,24 @@
           "unit_tests": 1
         }
       ]
+    },
+    {
+      "id": "FR-TASKM-43",
+      "title": "Right now content guidance excludes tasks/projects",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Consolidation prompt excludes tasks from Right now guidance",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Process-conversation prompt excludes tasks from Right now patches",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
     }
   ]
 }

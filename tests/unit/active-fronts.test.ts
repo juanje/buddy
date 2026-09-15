@@ -128,4 +128,24 @@ describe("bundled consolidation prompt", () => {
     expect(section).toContain("from tasks.md");
     expect(section).not.toContain("from AGENTS.md");
   });
+
+  it("step 9a excludes tasks/projects from Right now guidance (FR-TASKM-43)", () => {
+    const prompt = readFileSync(join(bundledPromptsDir(), "consolidation.md"), "utf8");
+    const match = prompt.match(/#### 9a\.[\s\S]*?(?=\n#### \d|\n### \d|\n## )/);
+    expect(match).not.toBeNull();
+    const section = match![0];
+    expect(section).toContain("Do not add tasks, projects, or next actions");
+    expect(section).toContain("tasks.md");
+  });
+});
+
+describe("bundled process-conversation prompt", () => {
+  it("step 4 excludes tasks/projects from Right now patches (FR-TASKM-43)", () => {
+    const prompt = readFileSync(join(bundledPromptsDir(), "process-conversation.md"), "utf8");
+    const match = prompt.match(/### 4\.[\s\S]*?(?=\n### \d|\n## )/);
+    expect(match).not.toBeNull();
+    const section = match![0];
+    expect(section).toContain("Tasks, projects, or next actions");
+    expect(section).toContain("tasks.md");
+  });
 });

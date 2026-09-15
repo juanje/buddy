@@ -881,8 +881,41 @@ Given("the bundled process-conversation.md prompt", function (this: TasksWorld) 
   );
 });
 
+Given("the bundled process-conversation prompt", function (this: TasksWorld) {
+  this.processConversationPrompt = readFileSync(
+    join(process.cwd(), "bundled", "prompts", "process-conversation.md"),
+    "utf8",
+  );
+});
+
 Then("the process-conversation prompt contains {string}", function (this: TasksWorld, text: string) {
   assert.ok(this.processConversationPrompt?.includes(text), `missing: ${text}`);
+});
+
+function step9aSection(prompt: string | undefined): string {
+  const match = (prompt ?? "").match(/#### 9a\.[\s\S]*?(?=\n#### \d|\n### \d|\n## )/);
+  assert.ok(match, "expected a step 9a section in the consolidation prompt");
+  return match[0];
+}
+
+Then("step 9a contains {string}", function (this: TasksWorld, text: string) {
+  const section = step9aSection(this.consolidationPrompt);
+  assert.ok(section.includes(text), `missing "${text}" in step 9a: ${section}`);
+});
+
+function step4Section(prompt: string | undefined): string {
+  const match = (prompt ?? "").match(/### 4\.[\s\S]*?(?=\n### \d|\n## )/);
+  assert.ok(match, "expected a step 4 section in the process-conversation prompt");
+  return match[0];
+}
+
+Then("step 4 contains task exclusion guidance", function (this: TasksWorld) {
+  const section = step4Section(this.processConversationPrompt);
+  assert.match(
+    section,
+    /tasks,?\s*(and\s*)?projects?[\s\S]{0,80}tasks\.md|Tasks, projects, or next actions[\s\S]{0,80}tasks\.md/i,
+    `expected task/project exclusion guidance in step 4: ${section}`,
+  );
 });
 
 Given("AGENTS.md has an inbox reference in Where to find things", function (this: TasksWorld) {

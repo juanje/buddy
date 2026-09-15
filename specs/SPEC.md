@@ -3596,6 +3596,7 @@ Further context on local-model evaluation methodology and findings:
 | FR-TASKM-40 | Default WIP limit changed from 5 to 3 (per-area threshold) | 2.5 ✓ |
 | FR-TASKM-41 | Active fronts computed from tasks.md (supersedes FR-TASKM-39) | 2.5 ✓ |
 | FR-TASKM-42 | Consolidation WIP check references tasks.md fronts (updates FR-TASKM-25) | 2.5 ✓ |
+| FR-TASKM-43 | Right now content guidance: exclude tasks and projects | 2.5 ✓ |
 
 **FR-TASKM-01 — Project tag in task format**
 
@@ -3848,6 +3849,20 @@ instruction references the pre-computed block from tasks.md.
   per area (from tasks.md)" (not AGENTS.md).
 - No behavioral change — still writes a deferred item when an area
   exceeds the configured WIP limit.
+
+**FR-TASKM-43 — Right now content guidance excludes tasks/projects**
+
+Right now in AGENTS.md is agent working memory (volatile situational
+context), not a WIP tracker. Tasks and projects belong in tasks.md.
+
+- `consolidation.md` step 9a includes explicit exclusion: tasks,
+  projects, and next actions do not belong in Right now — those live
+  in tasks.md. Hot files belong in the Files section (Hebbian).
+- `consolidation.md` step 9a content guidance updated with include
+  list (situation, constraints, blockers, recent volatile decisions)
+  and exclude list (tasks, projects, hot files).
+- `process-conversation.md` step 4 (Right now patches) includes same
+  exclusion: do not emit patches with task/project items.
 
 ---
 

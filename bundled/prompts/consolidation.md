@@ -333,14 +333,21 @@ Read the day's log and the current "Right now" content.
 - Review the week's logs. Items not referenced in any log this week may be
   removed — a full week of silence is sufficient evidence.
 
-Content for bullets — volatile facts that change every few days:
-- Current situation (vacation, sick, deadline week, travel)
-- Most immediate next actions (1-3 items, with dates if known)
-- Health or personal context affecting daily activity
-- Constraints or blockers
+Right now is the agent's working memory — volatile situational context
+the next session needs to avoid starting cold. It is NOT a task list or
+project tracker (tasks.md handles that via the `tasks()` tool).
 
-Keep it to 3-7 bullet points. This is the scratchpad of working memory —
-not a task list, not a log.
+**Include** — volatile facts that change every few days:
+- Current situation (vacation, sick, deadline week, travel)
+- Health or personal context affecting daily activity
+- Constraints or blockers (waiting for someone, service down)
+- Recent decisions not yet consolidated into projects/ or concepts/
+
+**Do not add tasks, projects, or next actions** — those live in tasks.md
+and are managed by the `tasks()` tool. Do not add hot files — the Files
+section below handles that via Hebbian tracking.
+
+Keep it to 3-7 bullet points.
 
 #### 9b. Hebbian file promotions
 

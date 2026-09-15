@@ -628,3 +628,13 @@ Feature: Task management
     Given the bundled consolidation prompt
     Then it contains "from tasks.md" in the active fronts check
     And it does not contain "from AGENTS.md" in the active fronts check
+
+  @FR-TASKM-43
+  Scenario: Consolidation prompt excludes tasks from Right now guidance
+    Given the bundled consolidation prompt
+    Then step 9a contains "Do not add tasks, projects, or next actions"
+
+  @FR-TASKM-43
+  Scenario: Process-conversation prompt excludes tasks from Right now patches
+    Given the bundled process-conversation prompt
+    Then step 4 contains task exclusion guidance
