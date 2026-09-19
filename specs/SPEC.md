@@ -1971,6 +1971,7 @@ already written.
 | FR-SETTINGS-08 | Settings tab system (General + Integrations) | 4 ✓ |
 | FR-SETTINGS-09 | Remove Version from Settings modal | 4 ✓ |
 | FR-SETTINGS-10 | Collapsible integration panels (collapsed by default, status visible) | 4 ✓ |
+| FR-SETTINGS-03b | Fix: API-key provider switch silently reverts | — |
 
 **FR-SETTINGS-01 — Pi settings**
 
@@ -1995,6 +1996,14 @@ already written.
 - **And** the last selected model per provider is remembered within the session (switching back restores the previous choice)
 - **And** the user can authenticate additional providers inline ("Add provider") without leaving settings — Anthropic, OpenAI and Google only (see FR-PROVIDER-01)
 - **Known defect (FR-PROVIDER-01):** the provider dropdown is built from `[...new Set($models.map(m => m.provider))]`, and `loadAuthenticatedModels` filters `custom` out of that list. Any authenticated provider absent from the model list therefore has no `<option>`, so no option is `selected` and the browser falls back to showing the first one — the dropdown names a provider the user is not using. Unreachable today because `custom` can no longer be configured; it becomes live again the moment it can.
+- **Known defect (API-key provider switch silently reverts):** `listModelsForProvider` (used to populate the model dropdown) falls back to the curated model catalog (`shared/model-catalog.ts`) when the SDK runtime has no entries yet, but `resolveSessionModel` (used by `setModel()` to actually switch) only queries the runtime's live availability snapshot, with no catalog fallback. When a provider is added via API key, the runtime's snapshot can lag behind `setRuntimeApiKey` just long enough that `resolveSessionModel` throws "Model not found" for a model the dropdown just showed as selectable. The `catch` block in `setModel()` (`src/lib/settings-controller.ts`) then reverts to the previous provider without surfacing an error, so the newly added provider appears in Settings but selecting it silently does nothing. Tracked and fixed under **FR-SETTINGS-03b**.
+
+**FR-SETTINGS-03b — Fix: API-key provider switch silently reverts**
+
+- **Given** a provider was added via API key and its models are in the curated catalog but the SDK runtime's availability snapshot has not yet caught up
+- **When** the user selects that provider and one of its models
+- **Then** `resolveSessionModel` falls back to the curated catalog (mirroring `listModelsForProvider`) and the switch succeeds
+- **And** if no catalog entry exists either, `setModel()` surfaces an error to the user instead of silently reverting to the previous provider
 
 **FR-SETTINGS-04 — Language switching**
 

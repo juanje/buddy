@@ -22,6 +22,7 @@ interface SettingsWorld extends BuddyWorld {
   settings?: SettingsController;
   updateConfigCalls: Array<Partial<Pick<SetupConfig, "language" | "monthlyBudget">>>;
   changeModelCalls: Array<{ provider: SetupConfig["provider"]; model: string }>;
+  changeModelFailures: Array<{ provider: SetupConfig["provider"]; model: string }>;
   oauthLoginCalls: SetupConfig["provider"][];
   authedProviders: Set<SetupConfig["provider"]>;
   usageReport?: UsageReport;
@@ -42,6 +43,13 @@ function buildWorker(this: SettingsWorld): SettingsWorkerAPI {
       this.appConfig = { ...this.appConfig, ...patch };
     },
     changeModel: async (provider, model) => {
+      if (
+        this.changeModelFailures.some(
+          (f) => f.provider === provider && f.model === model,
+        )
+      ) {
+        throw new Error(`Model not found for ${provider}/${model}`);
+      }
       this.changeModelCalls.push({ provider, model });
       this.appConfig = { ...this.appConfig, provider, model };
     },
@@ -77,6 +85,7 @@ function ensureSettings(this: SettingsWorld): SettingsController {
     this.appConfig = { ...defaultConfig };
     this.updateConfigCalls = [];
     this.changeModelCalls = [];
+    this.changeModelFailures = [];
     this.oauthLoginCalls = [];
     this.authedProviders = new Set(["anthropic"]);
   }
@@ -97,6 +106,7 @@ Given("the app is configured with language {string}", function (this: SettingsWo
   this.appConfig = { ...defaultConfig, language: language as SetupConfig["language"] };
   this.updateConfigCalls = [];
   this.changeModelCalls = [];
+  this.changeModelFailures = [];
   this.oauthLoginCalls = [];
   this.authedProviders = new Set(["anthropic"]);
 });
@@ -131,6 +141,21 @@ When("I add provider {string} in settings", async function (this: SettingsWorld,
   controller.selectAuthProvider(provider as SetupConfig["provider"]);
   await controller.submitAuthOAuth();
 });
+
+Given("{string} was added via API key", async function (this: SettingsWorld, provider: string) {
+  const controller = ensureSettings.call(this);
+  controller.startAddProvider();
+  controller.selectAuthProvider(provider as SetupConfig["provider"]);
+  await controller.submitAuthApiKey("test-api-key");
+});
+
+Given(
+  "changeModel fails for provider {string} and model {string}",
+  function (this: SettingsWorld, provider: string, model: string) {
+    ensureSettings.call(this);
+    this.changeModelFailures.push({ provider: provider as SetupConfig["provider"], model });
+  },
+);
 
 When("I switch settings model to {string} on provider {string}", async function (
   this: SettingsWorld,
@@ -185,6 +210,11 @@ Then("changeModel was called with provider {string} and model {string}", functio
   assert.ok(
     this.changeModelCalls.some((call) => call.provider === provider && call.model === model),
   );
+});
+
+Then("the settings show a model switch error", function (this: SettingsWorld) {
+  const controller = ensureSettings.call(this);
+  assert.ok(get(controller.modelError), "expected a model switch error to be set");
 });
 
 Then("the settings model list includes {string}", async function (this: SettingsWorld, modelId: string) {

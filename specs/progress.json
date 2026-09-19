@@ -1494,6 +1494,24 @@
           "unit_tests": 5
         }
       ]
+    },
+    {
+      "id": "FR-SETTINGS-03b",
+      "title": "Fix: API-key provider switch silently reverts",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Switch to a provider added via API key",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Model switch failure shows an error instead of silently reverting",
+          "bdd": "pass",
+          "unit_tests": 3
+        }
+      ]
     }
   ]
 }

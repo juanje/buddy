@@ -257,6 +257,36 @@ describe("createSettingsController", () => {
     expect(get(controller.config).model).toBe("claude-haiku-4-5");
   });
 
+  it("surfaces an error and reverts instead of silently reverting when changeModel fails (FR-SETTINGS-03b)", async () => {
+    let config: SetupConfig = {
+      rootDir: "/tmp/buddy",
+      provider: "anthropic",
+      model: "claude-sonnet-5",
+      language: "es",
+    };
+
+    const controller = createSettingsController({
+      worker: mockWorker({
+        changeModel: async () => {
+          throw new Error("Model not found for openai/unknown-model");
+        },
+      }),
+      getConfig: () => config,
+      onConfigChange: (next) => {
+        config = next;
+      },
+      version: "0.1.0-test",
+    });
+
+    await controller.setModel("openai", "unknown-model");
+
+    expect(get(controller.modelError)).toBeTruthy();
+    expect(config.provider).toBe("anthropic");
+    expect(config.model).toBe("claude-sonnet-5");
+    expect(get(controller.config).provider).toBe("anthropic");
+    expect(get(controller.config).model).toBe("claude-sonnet-5");
+  });
+
   it("remembers last selected model per provider across switches", async () => {
     let config: SetupConfig = {
       rootDir: "/tmp/buddy",

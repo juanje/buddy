@@ -43,3 +43,21 @@ Feature: Settings UI (FR-SETTINGS-02)
     Then the settings show provider "openai"
     And the settings show model "gpt-5.6-terra"
     And changeModel was called with provider "openai" and model "gpt-5.6-terra"
+
+  @FR-SETTINGS-03b
+  Scenario: Switch to a provider added via API key
+    Given the settings panel is open
+    And "openai" was added via API key
+    When I switch settings model to "gpt-5.6-terra" on provider "openai"
+    Then the settings show provider "openai"
+    And the settings show model "gpt-5.6-terra"
+    And changeModel was called with provider "openai" and model "gpt-5.6-terra"
+
+  @FR-SETTINGS-03b
+  Scenario: Model switch failure shows an error instead of silently reverting
+    Given the settings panel is open
+    And "openai" was added via API key
+    And changeModel fails for provider "openai" and model "unknown-model"
+    When I switch settings model to "unknown-model" on provider "openai"
+    Then the settings show a model switch error
+    And the settings show provider "anthropic"

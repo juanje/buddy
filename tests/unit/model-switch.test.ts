@@ -32,6 +32,18 @@ describe("resolveSessionModel", () => {
     expect(model.id).toBe("gpt-5");
   });
 
+  it("falls back to the curated catalog when the runtime has no match (FR-SETTINGS-03b)", async () => {
+    const model = await resolveSessionModel(
+      {
+        getModel: () => undefined,
+        getAvailable: async () => [],
+      },
+      "openai",
+      "gpt-5.6-terra",
+    );
+    expect(model).toEqual({ id: "gpt-5.6-terra", provider: "openai-codex" });
+  });
+
   it("throws when model is missing", async () => {
     await expect(
       resolveSessionModel(

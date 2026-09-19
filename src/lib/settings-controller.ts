@@ -80,6 +80,7 @@ export interface SettingsController {
   authProvider: Readable<SettingsProviderId | undefined>;
   authLoggingIn: Readable<boolean>;
   authError: Readable<string | undefined>;
+  modelError: Readable<string | undefined>;
   authShowApiKey: Readable<boolean>;
   unauthenticatedProviders: Readable<SettingsProviderId[]>;
   reauthProviders: Readable<SettingsProviderId[]>;
@@ -195,6 +196,7 @@ export function createSettingsController(options: {
   const authProvider = writable<SettingsProviderId | undefined>(undefined);
   const authLoggingIn = writable(false);
   const authError = writable<string | undefined>(undefined);
+  const modelError = writable<string | undefined>(undefined);
   const authShowApiKey = writable(false);
   const unauthenticatedProviders = writable<SettingsProviderId[]>([]);
   const reauthProviders = writable<SettingsProviderId[]>([]);
@@ -266,6 +268,7 @@ export function createSettingsController(options: {
     authProvider,
     authLoggingIn,
     authError,
+    modelError,
     authShowApiKey,
     unauthenticatedProviders,
     reauthProviders,
@@ -297,6 +300,7 @@ export function createSettingsController(options: {
       addingProvider.set(false);
       authProvider.set(undefined);
       authError.set(undefined);
+      modelError.set(undefined);
       authShowApiKey.set(false);
       providerAddedNotice.set(false);
       activeTab.set("general");
@@ -335,9 +339,10 @@ export function createSettingsController(options: {
       const updated: SetupConfig = { ...previous, provider, model, modelByProvider };
       options.onConfigChange(updated);
       config.update((current) => ({ ...current, provider, model }));
+      modelError.set(undefined);
       try {
         await options.worker.changeModel(provider, model);
-      } catch {
+      } catch (error) {
         options.onConfigChange(previous);
         config.update((current) => ({
           ...current,
@@ -345,6 +350,7 @@ export function createSettingsController(options: {
           model: previous.model,
         }));
         lastModelByProvider.set(previous.provider, previous.model);
+        modelError.set(error instanceof Error ? error.message : String(error));
       }
     },
     getLastModelForProvider(provider) {
