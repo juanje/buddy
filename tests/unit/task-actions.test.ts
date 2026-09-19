@@ -295,14 +295,17 @@ describe("executeTaskAction", () => {
   });
 
   it("staleDays appears on stale open items in list", () => {
-    const created = new Date();
-    created.setDate(created.getDate() - 45);
-    const createdStr = created.toISOString().slice(0, 10);
-    writeTasksFile(dir, [
-      { id: 1, text: "Old", done: false, next: false, area: "work", created: createdStr },
-    ]);
-    const result = assertSuccess(executeTaskAction(dir, "list", {}));
-    expect(result.list?.items[0]?.staleDays).toBe(45);
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-08-15T15:00:00"));
+    try {
+      writeTasksFile(dir, [
+        { id: 1, text: "Old", done: false, next: false, area: "work", created: "2026-07-01" },
+      ]);
+      const result = assertSuccess(executeTaskAction(dir, "list", {}));
+      expect(result.list?.items[0]?.staleDays).toBe(45);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("list includes activeNextCount for next-action items only", () => {
@@ -375,44 +378,55 @@ describe("executeTaskAction", () => {
   });
 
   it("list includes item due today (not future)", () => {
-    const today = new Date().toISOString().slice(0, 10);
-    writeTasksFile(dir, [
-      { id: 1, text: "Due today", done: false, next: true, area: "work", dueDate: today },
-    ]);
-    const result = assertSuccess(executeTaskAction(dir, "list", {}));
-    expect(result.list?.items).toHaveLength(1);
-    expect(result.list?.futureCount).toBe(0);
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-08-15T15:00:00"));
+    try {
+      writeTasksFile(dir, [
+        { id: 1, text: "Due today", done: false, next: true, area: "work", dueDate: "2026-08-15" },
+      ]);
+      const result = assertSuccess(executeTaskAction(dir, "list", {}));
+      expect(result.list?.items).toHaveLength(1);
+      expect(result.list?.futureCount).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("staleDays is not written to disk after list", () => {
-    const created = new Date();
-    created.setDate(created.getDate() - 45);
-    const createdStr = created.toISOString().slice(0, 10);
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-08-15T15:00:00"));
+    try {
     writeTasksFile(dir, [
-      { id: 1, text: "Old", done: false, next: false, area: "work", created: createdStr },
+      { id: 1, text: "Old", done: false, next: false, area: "work", created: "2026-07-01" },
     ]);
     executeTaskAction(dir, "list", {});
     const content = readFileSync(tasksFilePath(dir), "utf8");
     expect(content).not.toContain("staleDays");
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("staleDays computed from frontmatter-inferred created", () => {
-    const created = new Date();
-    created.setDate(created.getDate() - 45);
-    const createdStr = created.toISOString().slice(0, 10);
-    const fileContent = `---
-created: ${createdStr}
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-08-15T15:00:00"));
+    try {
+      const fileContent = `---
+created: 2026-07-01
 ---
 
 # Tasks
 
 - [ ] Legacy task @work
 `;
-    const path = tasksFilePath(dir);
-    mkdirSync(dirname(path), { recursive: true });
-    writeFileSync(path, fileContent, "utf8");
-    const result = assertSuccess(executeTaskAction(dir, "list", {}));
-    expect(result.list?.items[0]?.staleDays).toBe(45);
+      const path = tasksFilePath(dir);
+      mkdirSync(dirname(path), { recursive: true });
+      writeFileSync(path, fileContent, "utf8");
+      const result = assertSuccess(executeTaskAction(dir, "list", {}));
+      expect(result.list?.items[0]?.staleDays).toBe(45);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("add does not warn when someday items inflate open count", () => {
@@ -449,17 +463,20 @@ created: ${createdStr}
   });
 
   it("only_stale returns only items with staleDays", () => {
-    const created = new Date();
-    created.setDate(created.getDate() - 45);
-    const createdStr = created.toISOString().slice(0, 10);
-    writeTasksFile(dir, [
-      { id: 1, text: "Old", done: false, next: false, area: "work", created: createdStr },
-      { id: 2, text: "Fresh", done: false, next: false, area: "work", created: toIsoDay(new Date()) },
-      { id: 3, text: "Old next", done: false, next: true, area: "work", created: createdStr },
-    ]);
-    const result = assertSuccess(executeTaskAction(dir, "list", { only_stale: true }));
-    expect(result.list?.items).toHaveLength(1);
-    expect(result.list?.items[0]?.text).toBe("Old");
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-08-15T15:00:00"));
+    try {
+      writeTasksFile(dir, [
+        { id: 1, text: "Old", done: false, next: false, area: "work", created: "2026-07-01" },
+        { id: 2, text: "Fresh", done: false, next: false, area: "work", created: "2026-08-15" },
+        { id: 3, text: "Old next", done: false, next: true, area: "work", created: "2026-07-01" },
+      ]);
+      const result = assertSuccess(executeTaskAction(dir, "list", { only_stale: true }));
+      expect(result.list?.items).toHaveLength(1);
+      expect(result.list?.items[0]?.text).toBe("Old");
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("only_due returns items due today or tomorrow", () => {

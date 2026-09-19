@@ -210,17 +210,15 @@ Given("tasks.md on disk has no health items", function (this: TasksWorld) {
 });
 
 Given("tasks.md has an item created 45 days ago", function (this: TasksWorld) {
-  const today = new Date();
-  const created = new Date(today);
-  created.setDate(created.getDate() - 45);
-  const createdStr = created.toISOString().slice(0, 10);
+  const today = toIsoDay(new Date());
+  const created = addDays(today, -45);
   const content = `---
 created: 2026-09-10
 ---
 
 # Tasks
 
-- [ ] Old task @work <!-- c:${createdStr} -->
+- [ ] Old task @work <!-- c:${created} -->
 `;
   writeFileSync(tasksFilePath(root.call(this)), content, "utf8");
 });
@@ -260,9 +258,7 @@ created: 2026-09-10
 });
 
 Given("tasks.md on disk has a future-dated item", function (this: TasksWorld) {
-  const future = new Date();
-  future.setDate(future.getDate() + 14);
-  const futureStr = future.toISOString().slice(0, 10);
+  const futureStr = addDays(toIsoDay(new Date()), 14);
   const content = `---
 created: 2026-09-10
 ---
@@ -635,7 +631,7 @@ Then("the task list contains someday items", function (this: TasksWorld) {
 
 Then("the task list does not contain future-dated items", function (this: TasksWorld) {
   assert.ok(this.taskResult?.ok && this.taskResult.list, "expected task list result");
-  const today = new Date().toISOString().slice(0, 10);
+  const today = toIsoDay(new Date());
   assert.ok(
     !this.taskResult.list!.items.some((item) => item.dueDate && item.dueDate > today),
     "expected no future-dated items",
@@ -644,7 +640,7 @@ Then("the task list does not contain future-dated items", function (this: TasksW
 
 Then("the task list contains future-dated items", function (this: TasksWorld) {
   assert.ok(this.taskResult?.ok && this.taskResult.list, "expected task list result");
-  const today = new Date().toISOString().slice(0, 10);
+  const today = toIsoDay(new Date());
   assert.ok(
     this.taskResult.list!.items.some((item) => item.dueDate && item.dueDate > today),
     "expected future-dated items",
@@ -694,7 +690,7 @@ Then("tasks.md on disk contains {string}", function (this: TasksWorld, snippet: 
 });
 
 Then("tasks.md on disk contains today's date as created comment", function (this: TasksWorld) {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = toIsoDay(new Date());
   const content = readFileSync(tasksFilePath(root.call(this)), "utf8");
   assert.ok(
     content.includes(`<!-- c:${today} -->`),
