@@ -53,6 +53,16 @@ Feature: Settings UI (FR-SETTINGS-02)
     And the settings show model "gpt-5.6-terra"
     And changeModel was called with provider "openai" and model "gpt-5.6-terra"
 
+  @FR-SETTINGS-03c
+  Scenario: API-key credential is stored under the api-key Pi provider
+    Given "openai" provider key was configured via API key
+    Then the auth store entry is keyed by Pi provider "openai"
+
+  @FR-SETTINGS-03c
+  Scenario: Auth status reports the api-key Pi provider when OpenAI uses API key
+    Given the runtime has configured auth for Pi provider "openai"
+    Then auth status reports OpenAI with Pi provider "openai"
+
   @FR-SETTINGS-03b
   Scenario: Model switch failure shows an error instead of silently reverting
     Given the settings panel is open

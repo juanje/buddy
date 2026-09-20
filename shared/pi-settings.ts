@@ -7,7 +7,7 @@ import { dirname, join } from "node:path";
 
 import type { SetupConfig } from "./api";
 import { DEFAULT_PI_PROVIDER } from "./defaults";
-import { toPiProviderId } from "./provider-mapping";
+import { type AuthType, toPiProviderId } from "./provider-mapping";
 
 export interface PiSettings {
   defaultProvider?: string;
@@ -18,13 +18,17 @@ export function piSettingsPath(rootDir: string): string {
   return join(rootDir, ".pi", "settings.json");
 }
 
-export function writePiSettings(rootDir: string, config: Pick<SetupConfig, "provider" | "model">): void {
+export function writePiSettings(
+  rootDir: string,
+  config: Pick<SetupConfig, "provider" | "model">,
+  authType?: AuthType,
+): void {
   const settingsPath = piSettingsPath(rootDir);
   mkdirSync(dirname(settingsPath), { recursive: true });
   writeFileSync(
     settingsPath,
     JSON.stringify(
-      { defaultProvider: toPiProviderId(config.provider), defaultModel: config.model },
+      { defaultProvider: toPiProviderId(config.provider, authType), defaultModel: config.model },
       null,
       2,
     ) + "\n",

@@ -2,11 +2,19 @@
 
 import type { SetupProviderId } from "./api";
 
-/** Pi SDK provider id for each Buddy wizard provider. */
-export function toPiProviderId(provider: SetupProviderId): string {
+export type AuthType = "api_key" | "oauth";
+
+/**
+ * Pi SDK provider id for each Buddy wizard provider.
+ *
+ * OpenAI has two Pi providers: `openai-codex` (OAuth via ChatGPT Plus/Pro) and
+ * `openai` (direct API key via api.openai.com). Pass `authType` to pick the
+ * right one; omitting it defaults to `openai-codex` for backward compat.
+ */
+export function toPiProviderId(provider: SetupProviderId, authType?: AuthType): string {
   switch (provider) {
     case "openai":
-      return "openai-codex";
+      return authType === "api_key" ? "openai" : "openai-codex";
     case "anthropic":
       return "anthropic";
     case "google":
@@ -32,4 +40,4 @@ export function fromPiProviderId(piProviderId: string): SetupProviderId | undefi
 }
 
 /** Pi provider ids checked for auth status in the wizard. */
-export const WIZARD_PI_PROVIDERS = ["openai-codex", "anthropic", "google"] as const;
+export const WIZARD_PI_PROVIDERS = ["openai-codex", "openai", "anthropic", "google"] as const;

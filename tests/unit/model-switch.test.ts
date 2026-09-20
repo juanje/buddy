@@ -44,6 +44,22 @@ describe("resolveSessionModel", () => {
     expect(model).toEqual({ id: "gpt-5.6-terra", provider: "openai-codex" });
   });
 
+  it("resolves openai models against the api-key provider when authType is api_key", async () => {
+    const model = await resolveSessionModel(
+      {
+        getModel: (provider, id) =>
+          provider === "openai" && id === "gpt-5.6-terra"
+            ? { id, provider }
+            : undefined,
+        getAvailable: async () => [],
+      },
+      "openai",
+      "gpt-5.6-terra",
+      "api_key",
+    );
+    expect(model).toEqual({ id: "gpt-5.6-terra", provider: "openai" });
+  });
+
   it("throws when model is missing", async () => {
     await expect(
       resolveSessionModel(

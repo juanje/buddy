@@ -7,7 +7,7 @@ import {
   recommendedModelFor,
   type ModelChoice,
 } from "../shared/model-catalog";
-import { toPiProviderId } from "../shared/provider-mapping";
+import { type AuthType, toPiProviderId } from "../shared/provider-mapping";
 
 export interface ModelRuntimeLike {
   getAvailable(providerId?: string): Promise<readonly { id: string; name?: string }[]>;
@@ -64,8 +64,9 @@ export async function listModelsForProvider(
   runtime: ModelRuntimeLike,
   provider: SetupProviderId,
   timeoutMs: number = PROVIDER_REQUEST_TIMEOUT_MS,
+  authType?: AuthType,
 ): Promise<ModelInfo[]> {
-  const piProvider = toPiProviderId(provider);
+  const piProvider = toPiProviderId(provider, authType);
   try {
     const available = await withTimeout(runtime.getAvailable(piProvider), timeoutMs);
     if (available.length > 0) {

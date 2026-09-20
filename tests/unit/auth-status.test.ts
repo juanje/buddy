@@ -79,6 +79,28 @@ describe("buildAuthStatus", () => {
     expect(codex?.authType).toBe("oauth");
   });
 
+  it("reports api_key auth for openai when the api-key provider is configured", () => {
+    const status = buildAuthStatus(
+      fakeRuntime({ openai: { configured: true } }),
+      NO_STORED,
+    );
+    const openai = status.providers.find((p) => p.buddyProvider === "openai");
+    expect(openai?.hasAuth).toBe(true);
+    expect(openai?.authType).toBe("api_key");
+    expect(openai?.piProviderId).toBe("openai");
+  });
+
+  it("prefers the authed pi provider when both openai and openai-codex exist", () => {
+    const status = buildAuthStatus(
+      fakeRuntime({ openai: { configured: true }, "openai-codex": { configured: false } }),
+      NO_STORED,
+    );
+    const entries = status.providers.filter((p) => p.buddyProvider === "openai");
+    expect(entries).toHaveLength(1);
+    expect(entries[0].piProviderId).toBe("openai");
+    expect(entries[0].hasAuth).toBe(true);
+  });
+
   it("leaves authType undefined for an unconfigured provider", () => {
     const status = buildAuthStatus(fakeRuntime({}), NO_STORED);
     for (const provider of status.providers) {

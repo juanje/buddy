@@ -2,7 +2,7 @@
 
 import type { SetupProviderId } from "../shared/api";
 import { modelChoicesFor } from "../shared/model-catalog";
-import { toPiProviderId } from "../shared/provider-mapping";
+import { type AuthType, toPiProviderId } from "../shared/provider-mapping";
 
 export interface SessionModelLike {
   id: string;
@@ -19,8 +19,9 @@ export async function resolveSessionModel(
   runtime: ModelRuntimeForSwitch,
   provider: SetupProviderId,
   modelId: string,
+  authType?: AuthType,
 ): Promise<SessionModelLike> {
-  const piProvider = toPiProviderId(provider);
+  const piProvider = toPiProviderId(provider, authType);
   const direct = runtime.getModel(piProvider, modelId);
   if (direct) return direct;
 

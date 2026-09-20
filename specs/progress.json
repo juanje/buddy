@@ -1512,6 +1512,24 @@
           "unit_tests": 3
         }
       ]
+    },
+    {
+      "id": "FR-SETTINGS-03c",
+      "title": "Fix: OpenAI API-key maps to wrong Pi provider",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "API-key credential is stored under the api-key Pi provider",
+          "bdd": "pass",
+          "unit_tests": 3
+        },
+        {
+          "name": "Auth status reports the api-key Pi provider when OpenAI uses API key",
+          "bdd": "pass",
+          "unit_tests": 2
+        }
+      ]
     }
   ]
 }

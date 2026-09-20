@@ -63,7 +63,7 @@ import { recoverStaleSession } from "./crash-recovery";
 import { spawnReflectChild } from "./reflect-spawn";
 import { detectFirstRun, updateAppConfig } from "./setup";
 import { writePiSettings } from "../shared/pi-settings";
-import { toPiProviderId } from "../shared/provider-mapping";
+import { type AuthType, toPiProviderId } from "../shared/provider-mapping";
 import { createWorkerCore } from "./worker-core";
 import { startHeartbeat, type HeartbeatHandle } from "./heartbeat";
 import { ensureConfigDirMode, globalConfigDir, globalConfigPath } from "./global-config";
@@ -354,7 +354,7 @@ export async function main(deps: WorkerDeps = {}): Promise<void> {
         const result = await configureProviderKey(provider, apiKey, { baseUrl });
         if (result.valid) {
           const runtime = await modelRuntimeReady;
-          await runtime.setRuntimeApiKey(toPiProviderId(provider), apiKey);
+          await runtime.setRuntimeApiKey(toPiProviderId(provider, "api_key"), apiKey);
         }
         return result;
       },
@@ -372,7 +372,10 @@ export async function main(deps: WorkerDeps = {}): Promise<void> {
         (await ensureOAuthService()).cancel();
       },
       async listModels(provider) {
-        return listModelsForProvider(await modelRuntimeReady, provider);
+        const runtime = await modelRuntimeReady;
+        const authType: AuthType | undefined =
+          provider === "openai" && runtime.hasConfiguredAuth("openai") ? "api_key" : undefined;
+        return listModelsForProvider(runtime, provider, undefined, authType);
       },
       async getAuthStatus() {
         return buildAuthStatus(await modelRuntimeReady, { needsReauthProviders: reauthProviders });
@@ -422,9 +425,12 @@ export async function main(deps: WorkerDeps = {}): Promise<void> {
         if (!core) {
           throw new Error("No active session");
         }
-        const resolved = await resolveSessionModel(await modelRuntimeReady, provider, model);
+        const runtime = await modelRuntimeReady;
+        const authType: AuthType | undefined =
+          provider === "openai" && runtime.hasConfiguredAuth("openai") ? "api_key" : undefined;
+        const resolved = await resolveSessionModel(runtime, provider, model, authType);
         await core.api.setModel(resolved);
-        writePiSettings(setupState.config.rootDir, { provider, model });
+        writePiSettings(setupState.config.rootDir, { provider, model }, authType);
         // Recorded per provider as well as globally: switching back should
         // return to what the user picked, not to the provider's first listing.
         const modelByProvider = { ...setupState.config.modelByProvider, [provider]: model };

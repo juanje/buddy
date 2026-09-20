@@ -31,7 +31,7 @@ export function buildAuthStatus(runtime: ModelRuntime, deps: AuthStatusDeps = {}
   const readCredential = deps.readCredential ?? readStoredCredential;
   const needsReauthProviders = deps.needsReauthProviders ?? new Set<string>();
 
-  const providers = WIZARD_PI_PROVIDERS.map((piProviderId) => {
+  const all = WIZARD_PI_PROVIDERS.map((piProviderId) => {
     const buddyProvider = fromPiProviderId(piProviderId);
     const status = runtime.getProviderAuthStatus(piProviderId);
     // Additive on purpose: the runtime knows about credential sources Buddy's
@@ -49,6 +49,18 @@ export function buildAuthStatus(runtime: ModelRuntime, deps: AuthStatusDeps = {}
       authType: hasAuth ? authTypeOf(runtime, piProviderId, status.configured, stored) : undefined,
     };
   }).filter((p) => p.buddyProvider);
+
+  // Multiple Pi providers can map to the same Buddy provider (openai-codex and
+  // openai both map to "openai"). Keep the entry that has auth; when both do,
+  // keep the first (openai-codex / OAuth takes priority in the listing).
+  const seen = new Map<string, (typeof all)[number]>();
+  for (const entry of all) {
+    const existing = seen.get(entry.buddyProvider);
+    if (!existing || (!existing.hasAuth && entry.hasAuth)) {
+      seen.set(entry.buddyProvider, entry);
+    }
+  }
+  const providers = [...seen.values()];
 
   return { providers };
 }

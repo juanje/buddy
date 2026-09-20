@@ -1971,7 +1971,8 @@ already written.
 | FR-SETTINGS-08 | Settings tab system (General + Integrations) | 4 ✓ |
 | FR-SETTINGS-09 | Remove Version from Settings modal | 4 ✓ |
 | FR-SETTINGS-10 | Collapsible integration panels (collapsed by default, status visible) | 4 ✓ |
-| FR-SETTINGS-03b | Fix: API-key provider switch silently reverts | — |
+| FR-SETTINGS-03b | Fix: API-key provider switch silently reverts (catalog fallback) | — |
+| FR-SETTINGS-03c | Fix: OpenAI API-key maps to wrong Pi provider | — |
 
 **FR-SETTINGS-01 — Pi settings**
 
@@ -1996,7 +1997,7 @@ already written.
 - **And** the last selected model per provider is remembered within the session (switching back restores the previous choice)
 - **And** the user can authenticate additional providers inline ("Add provider") without leaving settings — Anthropic, OpenAI and Google only (see FR-PROVIDER-01)
 - **Known defect (FR-PROVIDER-01):** the provider dropdown is built from `[...new Set($models.map(m => m.provider))]`, and `loadAuthenticatedModels` filters `custom` out of that list. Any authenticated provider absent from the model list therefore has no `<option>`, so no option is `selected` and the browser falls back to showing the first one — the dropdown names a provider the user is not using. Unreachable today because `custom` can no longer be configured; it becomes live again the moment it can.
-- **Known defect (API-key provider switch silently reverts):** `listModelsForProvider` (used to populate the model dropdown) falls back to the curated model catalog (`shared/model-catalog.ts`) when the SDK runtime has no entries yet, but `resolveSessionModel` (used by `setModel()` to actually switch) only queries the runtime's live availability snapshot, with no catalog fallback. When a provider is added via API key, the runtime's snapshot can lag behind `setRuntimeApiKey` just long enough that `resolveSessionModel` throws "Model not found" for a model the dropdown just showed as selectable. The `catch` block in `setModel()` (`src/lib/settings-controller.ts`) then reverts to the previous provider without surfacing an error, so the newly added provider appears in Settings but selecting it silently does nothing. Tracked and fixed under **FR-SETTINGS-03b**.
+- **Known defect (API-key provider switch silently reverts) — fixed:** Two layered issues. Surface: `resolveSessionModel` lacked the catalog fallback that `listModelsForProvider` had (fixed in FR-SETTINGS-03b). Root cause: `toPiProviderId("openai")` always mapped to `"openai-codex"` (OAuth-only Pi provider), so API keys registered via `setRuntimeApiKey` were stored on a provider whose `checkAuth` ignores API keys entirely. Fixed in FR-SETTINGS-03c by routing API-key auth to the `"openai"` Pi provider.
 
 **FR-SETTINGS-03b — Fix: API-key provider switch silently reverts**
 
@@ -2004,6 +2005,15 @@ already written.
 - **When** the user selects that provider and one of its models
 - **Then** `resolveSessionModel` falls back to the curated catalog (mirroring `listModelsForProvider`) and the switch succeeds
 - **And** if no catalog entry exists either, `setModel()` surfaces an error to the user instead of silently reverting to the previous provider
+
+**FR-SETTINGS-03c — Fix: OpenAI API-key maps to wrong Pi provider**
+
+- **Root cause:** `toPiProviderId("openai")` always returned `"openai-codex"`, which in Pi SDK only supports OAuth (`auth: { oauth }`). The direct-API-key provider is `"openai"` (`auth: { apiKey }`). When a user added OpenAI via API key, `setRuntimeApiKey("openai-codex", key)` registered the key on a provider that ignores API keys, so `AgentSession.setModel()` → `checkAuth()` returned `undefined` → "No API key" error → silent revert.
+- **Given** a provider is added via API key in the wizard
+- **When** `configureProviderKey` stores the credential and `setRuntimeApiKey` registers it
+- **Then** both calls use the Pi provider that supports API-key auth (`"openai"`, not `"openai-codex"`)
+- **And** `changeModel`, `listModels`, and `writePiSettings` detect the auth type from the runtime and route through the correct Pi provider
+- **And** `buildAuthStatus` deduplicates multiple Pi providers that map to the same Buddy provider, preferring the one with configured auth
 
 **FR-SETTINGS-04 — Language switching**
 

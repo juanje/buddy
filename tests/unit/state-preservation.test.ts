@@ -43,7 +43,7 @@ describe("auth.json", () => {
     });
 
     const store = JSON.parse(readFileSync(authPath(), "utf8")) as Record<string, unknown>;
-    expect(Object.keys(store).sort()).toEqual(["anthropic", "openai-codex"]);
+    expect(Object.keys(store).sort()).toEqual(["anthropic", "openai"]);
   });
 
   it("refuses to store into an unreadable file instead of replacing it", async () => {

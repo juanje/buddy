@@ -198,7 +198,7 @@ export async function configureProviderKey(
     return { valid: false, error: result.error ?? "key rejected" };
   }
 
-  storeApiKey(options.authPath ?? defaultAuthPath(), toPiProviderId(provider), apiKey);
+  storeApiKey(options.authPath ?? defaultAuthPath(), toPiProviderId(provider, "api_key"), apiKey);
   return { valid: true };
 }
 

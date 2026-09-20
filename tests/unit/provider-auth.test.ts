@@ -42,7 +42,7 @@ describe("configureProviderKey", () => {
     await configureProviderKey("openai", "sk-o", { authPath, probe: accept });
     expect(JSON.parse(readFileSync(authPath, "utf8"))).toEqual({
       google: { type: "api_key", key: "g" },
-      "openai-codex": { type: "api_key", key: "sk-o" },
+      openai: { type: "api_key", key: "sk-o" },
     });
   });
 
