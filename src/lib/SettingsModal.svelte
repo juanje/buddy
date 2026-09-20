@@ -21,6 +21,7 @@
   const authProvider = $derived(controller.authProvider);
   const authLoggingIn = $derived(controller.authLoggingIn);
   const authError = $derived(controller.authError);
+  const modelError = $derived(controller.modelError);
   const authShowApiKey = $derived(controller.authShowApiKey);
   const unauthenticatedProviders = $derived(controller.unauthenticatedProviders);
   const reauthProviders = $derived(controller.reauthProviders);
@@ -293,6 +294,9 @@
             {/if}
           </dd>
         </div>
+        {#if $modelError}
+          <p class="model-error">{$modelError}</p>
+        {/if}
         <div class="field">
           <dt>{$t.settingsUsage}</dt>
           <dd class="usage-panel">
@@ -592,5 +596,13 @@
   button:disabled {
     opacity: 0.5;
     cursor: default;
+  }
+  .model-error {
+    color: var(--error-fg);
+    background: var(--error-bg);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 13px;
+    margin: 0;
   }
 </style>
