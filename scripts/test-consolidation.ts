@@ -42,6 +42,7 @@ import { bootRefreshIfNeeded } from "../backends/boot-refresh";
 import { buddyAgentDir, globalConfigDir, globalConfigPath } from "../backends/global-config";
 import { buddySessionsDir } from "../backends/session-paths";
 import { resolveSessionModel } from "../backends/model-switch";
+import type { AuthType } from "../shared/provider-mapping";
 import { readStateFile } from "../backends/state-file";
 import type { SetupConfig } from "../shared/api";
 import { AGENT_TOOLS, CONSOLIDATION_RETRY_CEILING, EXCLUDED_TOOLS } from "../shared/defaults";
@@ -406,8 +407,10 @@ async function main(): Promise<void> {
     console.error("Could not read provider/model from config. Run Buddy setup first.");
     process.exit(1);
   }
-  const sessionModel = await resolveSessionModel(modelRuntime, appConfig.provider, appConfig.model);
-  console.log(`Model: ${appConfig.provider}/${appConfig.model}`);
+  const authType: AuthType | undefined =
+    appConfig.provider === "openai" && modelRuntime.hasConfiguredAuth("openai") ? "api_key" : undefined;
+  const sessionModel = await resolveSessionModel(modelRuntime, appConfig.provider, appConfig.model, authType);
+  console.log(`Model: ${appConfig.provider}/${appConfig.model}${authType ? ` (${authType})` : ""}`);
   const start = Date.now();
 
   try {

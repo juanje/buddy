@@ -26,6 +26,7 @@ import { bootRefreshIfNeeded } from "../backends/boot-refresh";
 import { buddyAgentDir, globalConfigDir, globalConfigPath } from "../backends/global-config";
 import { buddySessionsDir } from "../backends/session-paths";
 import { resolveSessionModel } from "../backends/model-switch";
+import type { AuthType } from "../shared/provider-mapping";
 import { readStateFile } from "../backends/state-file";
 import type { SetupConfig } from "../shared/api";
 import { AGENT_TOOLS, EXCLUDED_TOOLS } from "../shared/defaults";
@@ -145,9 +146,11 @@ async function runReflectEval(fixturePath: string, dryRun: boolean): Promise<str
     modelRuntime,
   });
 
-  const sessionModel = await resolveSessionModel(modelRuntime, appConfig.provider, appConfig.model);
+  const authType: AuthType | undefined =
+    appConfig.provider === "openai" && modelRuntime.hasConfiguredAuth("openai") ? "api_key" : undefined;
+  const sessionModel = await resolveSessionModel(modelRuntime, appConfig.provider, appConfig.model, authType);
   await session.setModel(sessionModel);
-  console.log(`Model: ${appConfig.provider}/${appConfig.model}`);
+  console.log(`Model: ${appConfig.provider}/${appConfig.model}${authType ? ` (${authType})` : ""}`);
 
   let assistantOutput = "";
   session.subscribe((event) => {
