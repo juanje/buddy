@@ -11,6 +11,7 @@ import { readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 import { computeActiveFronts, formatActiveFrontsBlock } from "./active-fronts";
+import { readTaskConfig } from "./tasks/task-config";
 
 import {
   AGENT_TOOLS,
@@ -259,7 +260,8 @@ export async function buildConsolidationPrompt(
   const healthBlock = formatBrainHealthReportBlock(computeBrainHealthReport(rootDir));
   const ripeBlock = formatRipeObservationsBlock(extractRipeObservations(rootDir));
   const coherenceBlock = formatDailyCoherenceBlock(computeDailyCoherence(rootDir, now));
-  const activeFrontsBlock = formatActiveFrontsBlock(computeActiveFronts(rootDir));
+  const taskConfig = readTaskConfig();
+  const activeFrontsBlock = formatActiveFrontsBlock(computeActiveFronts(rootDir), taskConfig);
 
   const blocks = [
     `Date: ${date}`,

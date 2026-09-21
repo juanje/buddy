@@ -268,6 +268,24 @@ describe("executeTaskAction", () => {
   it("config default WIP limit is 3", () => {
     const result = assertSuccess(executeTaskAction(dir, "config"));
     expect(result.message).toContain("3");
+    expect(result.message).toContain("overrides: none");
+  });
+
+  it("config with wipLimitOverrides writes and confirms", () => {
+    ({ configDir } = setupGlobalConfigDir());
+    const result = assertSuccess(
+      executeTaskAction(dir, "config", { wipLimitOverrides: { work: null } }),
+    );
+    expect(result.message).toContain("WIP overrides updated");
+    expect(result.message).toContain("@work: no limit");
+  });
+
+  it("config read shows overrides", () => {
+    ({ configDir } = setupGlobalConfigDir());
+    executeTaskAction(dir, "config", { wipLimitOverrides: { work: null, personal: 5 } });
+    const result = assertSuccess(executeTaskAction(dir, "config"));
+    expect(result.message).toContain("@work: no limit");
+    expect(result.message).toContain("@personal: 5");
   });
 
   it("add sets created date equal to today", () => {

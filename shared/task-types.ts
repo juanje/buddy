@@ -47,6 +47,7 @@ export interface TaskListResult {
 
 export interface TaskConfig {
   wipLimit: number;
+  wipLimitOverrides?: Record<string, number | null>;
 }
 
 export interface TaskActionSuccess {

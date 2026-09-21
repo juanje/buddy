@@ -2,7 +2,7 @@
 
 import type { TaskActionResult, TaskActionSuccess, TaskItem } from "../../shared/task-types";
 import { addDays, toIsoDay } from "../../shared/dates";
-import { readTaskConfig, writeTaskWipLimit } from "./task-config";
+import { readTaskConfig, writeTaskWipLimit, writeTaskWipOverrides } from "./task-config";
 import {
   buildListResult,
   buildProjectSummary,
@@ -29,7 +29,7 @@ const HELP_TEXT = `tasks() actions:
 - move(id, area) — change @area
 - annotate(id, annotation) — add **metadata**
 - remove(id) — delete item (requires confirmation)
-- config(wipLimit?) — read or set WIP limit`;
+- config(wipLimit?, wipLimitOverrides?) — read or set WIP limit and per-area overrides`;
 
 export interface TaskActionParams {
   text?: string;
@@ -39,6 +39,7 @@ export interface TaskActionParams {
   id?: number;
   annotation?: string;
   wipLimit?: number;
+  wipLimitOverrides?: Record<string, number | null>;
   include_done?: boolean;
   include_parked?: boolean;
   include_future?: boolean;
@@ -153,6 +154,13 @@ export function executeTaskAction(
     }
 
     case "config": {
+      if (params.wipLimitOverrides !== undefined) {
+        const config = writeTaskWipOverrides(params.wipLimitOverrides);
+        const overrideLines = Object.entries(config.wipLimitOverrides ?? {})
+          .map(([area, limit]) => `@${area}: ${limit === null ? "no limit" : limit}`)
+          .join(", ");
+        return ok(`WIP overrides updated. ${overrideLines || "none"}`);
+      }
       if (params.wipLimit !== undefined) {
         const limit = Number(params.wipLimit);
         if (!Number.isFinite(limit) || limit < 1) {
@@ -162,7 +170,12 @@ export function executeTaskAction(
         return ok(`WIP limit set to ${config.wipLimit}.`);
       }
       const config = readTaskConfig();
-      return ok(`WIP limit: ${config.wipLimit}`);
+      const overrideStr = config.wipLimitOverrides
+        ? Object.entries(config.wipLimitOverrides)
+            .map(([area, limit]) => `@${area}: ${limit === null ? "no limit" : limit}`)
+            .join(", ")
+        : "none";
+      return ok(`WIP limit: ${config.wipLimit}, overrides: ${overrideStr}`);
     }
 
     case "add": {

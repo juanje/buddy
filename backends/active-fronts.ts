@@ -2,6 +2,7 @@
 
 import { readTasksFile } from "./tasks/task-file";
 import { toIsoDay } from "../shared/dates";
+import { WIP_DEFAULT, type TaskConfig } from "../shared/task-types";
 
 export interface ActiveFrontsReport {
   perArea: Array<{ area: string; count: number }>;
@@ -44,11 +45,20 @@ export function computeActiveFronts(rootDir: string): ActiveFrontsReport {
 }
 
 
-export function formatActiveFrontsBlock(report: ActiveFrontsReport): string {
+export function formatActiveFrontsBlock(
+  report: ActiveFrontsReport,
+  config?: TaskConfig,
+): string {
   const header = "Active fronts per area (from tasks.md):";
   if (report.total === 0) return `${header}\n(none)`;
-  const lines = report.perArea.map((row) =>
-    row.area === "(general)" ? `(general): ${row.count}` : `@${row.area}: ${row.count}`,
-  );
+  const lines = report.perArea.map((row) => {
+    const areaName = row.area === "(general)" ? "(general)" : `@${row.area}`;
+    const override = config?.wipLimitOverrides?.[row.area];
+    const limitLabel =
+      override === null
+        ? "(no limit)"
+        : `(limit: ${override ?? config?.wipLimit ?? WIP_DEFAULT})`;
+    return `${areaName}: ${row.count} ${limitLabel}`;
+  });
   return `${header}\n${lines.join("\n")}`;
 }

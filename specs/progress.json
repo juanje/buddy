@@ -1581,6 +1581,34 @@
           "unit_tests": 1
         }
       ]
+    },
+    {
+      "id": "FR-TASKM-46",
+      "title": "Per-area WIP overrides",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Area with null override shows no limit in active fronts block",
+          "bdd": "pass",
+          "unit_tests": 4
+        },
+        {
+          "name": "Area with numeric override shows custom limit",
+          "bdd": "pass",
+          "unit_tests": 4
+        },
+        {
+          "name": "Area without override uses global default",
+          "bdd": "pass",
+          "unit_tests": 4
+        },
+        {
+          "name": "Config action reads and writes WIP overrides",
+          "bdd": "pass",
+          "unit_tests": 3
+        }
+      ]
     }
   ]
 }

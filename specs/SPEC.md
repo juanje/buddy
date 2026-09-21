@@ -3668,6 +3668,7 @@ Further context on local-model evaluation methodology and findings:
 | FR-TASKM-43 | Right now content guidance: exclude tasks and projects | 2.5 ✓ |
 | FR-TASKM-44 | Simplify task cleanup: remove all [x] items, drop verify mechanism | 2.5 ✓ |
 | FR-TASKM-45 | Auto-mark sole remaining task as next on complete/remove | 2.5 ✓ |
+| FR-TASKM-46 | Per-area WIP overrides in config; null disables, number replaces global | 2.5 ✓ |
 
 **FR-TASKM-01 — Project tag in task format**
 
@@ -3965,6 +3966,21 @@ non-future) item remains in that scope, the tool auto-marks it as next.
   agent does not need to suggest a replacement).
 - When 0 or 2+ items remain, existing behavior is unchanged.
 - `findSoleActiveInScope()` added to task-file.ts.
+
+**FR-TASKM-46 — Per-area WIP overrides**
+
+Per-area WIP overrides stored in `~/.buddy/config.json` as
+`tasks.wipLimitOverrides: Record<string, number | null>`. The
+`tasks(action='config')` action reads and writes overrides alongside
+the global limit. `formatActiveFrontsBlock()` annotates each area
+with its effective limit (override, global, or "no limit"). The
+consolidation prompt skips the deferred nudge for areas marked `null`.
+
+- **Scope:** `shared/task-types.ts` (extend `TaskConfig`),
+  `backends/tasks/task-config.ts` (read/write overrides),
+  `backends/tasks/task-actions.ts` (config action accepts overrides),
+  `backends/active-fronts.ts` (annotated block output),
+  `bundled/prompts/consolidation.md` (respect per-area limits).
 
 ---
 

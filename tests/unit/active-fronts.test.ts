@@ -106,10 +106,41 @@ describe("computeActiveFronts", () => {
 });
 
 describe("formatActiveFrontsBlock", () => {
-  it("labels block as from tasks.md", () => {
+  it("labels block as from tasks.md with default limit", () => {
     const block = formatActiveFrontsBlock({ perArea: [{ area: "work", count: 2 }], total: 2 });
     expect(block).toContain("Active fronts per area (from tasks.md):");
-    expect(block).toContain("@work: 2");
+    expect(block).toContain("@work: 2 (limit: 3)");
+  });
+
+  it("shows no limit when area override is null", () => {
+    const block = formatActiveFrontsBlock(
+      { perArea: [{ area: "work", count: 5 }], total: 5 },
+      { wipLimit: 3, wipLimitOverrides: { work: null } },
+    );
+    expect(block).toContain("@work: 5 (no limit)");
+  });
+
+  it("shows numeric override per area", () => {
+    const block = formatActiveFrontsBlock(
+      { perArea: [{ area: "personal", count: 2 }], total: 2 },
+      { wipLimit: 3, wipLimitOverrides: { personal: 5 } },
+    );
+    expect(block).toContain("@personal: 2 (limit: 5)");
+  });
+
+  it("mixed areas get distinct limit labels", () => {
+    const block = formatActiveFrontsBlock(
+      {
+        perArea: [
+          { area: "work", count: 5 },
+          { area: "personal", count: 2 },
+        ],
+        total: 7,
+      },
+      { wipLimit: 3, wipLimitOverrides: { work: null, personal: 5 } },
+    );
+    expect(block).toContain("@work: 5 (no limit)");
+    expect(block).toContain("@personal: 2 (limit: 5)");
   });
 });
 
@@ -127,6 +158,15 @@ describe("bundled consolidation prompt", () => {
     const section = match![0];
     expect(section).toContain("from tasks.md");
     expect(section).not.toContain("from AGENTS.md");
+  });
+
+  it("active fronts check respects per-area limits (FR-TASKM-46)", () => {
+    const prompt = readFileSync(join(bundledPromptsDir(), "consolidation.md"), "utf8");
+    const match = prompt.match(/- \*\*Active fronts check:\*\*[\s\S]*?(?=\n- \*\*|\n\n)/);
+    expect(match).not.toBeNull();
+    const section = match![0];
+    expect(section).toContain("(no limit)");
+    expect(section).toContain("portfolio areas");
   });
 
   it("step 9a excludes tasks/projects from Right now guidance (FR-TASKM-43)", () => {
