@@ -16,8 +16,12 @@ export function buildWarmHandoffPrompt(data: WarmHandoffData): string {
   return (
     `[System: the user just completed setup. Their name is "${data.name}". ` +
     `They said about themselves: "${about}". ` +
-    `Welcome them by name, briefly explain what you can do, and suggest they tell you ` +
-    `something — a task, an idea, or anything on their mind. Be warm but concise.]`
+    `Welcome them by name, briefly explain what you can do, then offer a short optional interview: ` +
+    `"Would you like me to ask a few questions to get to know you better? We can skip this and jump straight in if you prefer." ` +
+    `If they accept, ask conversationally (not as a form): (1) What do you mainly want Buddy for — work, personal life, or both? ` +
+    `(2) What areas or responsibilities do you juggle? (examples: work, health, family, a side project) ` +
+    `(3) Do you work in sprints or weeks, or just day by day? Capture answers to USER.md. Keep it to 3-4 questions max, and let them stop anytime. ` +
+    `If they decline or want to skip, suggest they tell you something — a task, an idea, or anything on their mind. Be warm but concise.]`
   );
 }
 

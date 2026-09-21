@@ -66,6 +66,8 @@ Buddy checks this during its daily review — not when you add tasks. Adding is 
 
 The limit exists to help you notice when you are spreading attention, not to stop you from capturing. You can change it anytime by telling Buddy ("set the limit to 5", "I don't want a limit") — it is a conversation, not a setting in a menu.
 
+**Portfolio areas.** Some areas hold many projects by design — `@work` might have eight projects where only one or two are active at any time. Tell Buddy "work is a portfolio area" and it stops checking the limit there. You can also set a custom limit per area ("set the limit for work to 8") instead of disabling it entirely.
+
 ## If Buddy gets it wrong
 
 Tell it. Buddy moves the information to the right place. The routing is a best guess based on what you said, not a rigid rule.

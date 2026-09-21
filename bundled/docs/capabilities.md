@@ -39,7 +39,7 @@ Buddy is a personal assistant that remembers. It captures what you tell it, orga
 - Tasks you are not ready for can be **parked** — they stay on your list but out of your daily view until you bring them back. Say "not now" or "maybe later" and Buddy parks it.
 - Tasks with a future date stay hidden until they become relevant.
 - If you send a list of things at once, each item gets classified on its own — some may become tasks, others context, others projects.
-- **Active work limit.** Buddy periodically reviews how many fronts you have active in each area. If you are spreading attention beyond the limit (3 per area by default), Buddy surfaces it during its daily review — not when you add a task. Adding is never blocked. You can change the limit anytime by telling Buddy ("set the limit to 5", "remove the limit"). For more on what "active front" means, see [How Buddy routes what you share](memory/how-buddy-routes.md).
+- **Active work limit.** Buddy periodically reviews how many fronts you have active in each area. If you are spreading attention beyond the limit (3 per area by default), Buddy surfaces it during its daily review — not when you add a task. Adding is never blocked. You can change the limit anytime by telling Buddy ("set the limit to 5", "remove the limit"). If an area holds many projects by nature — like `@work` where several projects coexist as a backlog — tell Buddy it's a portfolio area and the limit stops applying to it. For more on what "active front" means, see [How Buddy routes what you share](memory/how-buddy-routes.md).
 - Completed tasks are cleaned up automatically — no housekeeping needed on your part.
 
 ### Tracks projects
@@ -61,6 +61,12 @@ Buddy is a personal assistant that remembers. It captures what you tell it, orga
 - Buddy builds a profile of who you are: your name, language, interests, how you like to work.
 - It updates this profile as it learns — from conversation. You're informed of changes.
 - Preferences are transparent: you can read your profile file directly and correct anything.
+
+### Learns new abilities
+
+- Buddy can learn new skills from repeated patterns. If it notices it keeps doing the same multi-step task, it creates a reusable procedure — and from then on, it can do it in one step.
+- You can also teach Buddy explicitly: "create a skill for reviewing my drafts" and it builds one from the conversation.
+- Learned skills appear alongside built-in ones. Ask "what skills do you have?" to see both.
 
 ### Keeps a journal
 
