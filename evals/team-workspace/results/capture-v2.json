@@ -1,0 +1,1266 @@
+{
+  "generatedAt": "2026-09-20T20:09:10.375Z",
+  "metrics": {
+    "depersonalizationRate": 100,
+    "factualityRate": 92.3076923076923,
+    "completenessRate": 59.61538461538461,
+    "wellFormedRate": 100,
+    "depersonalizedPass": 52,
+    "factualPass": 48,
+    "completePass": 31,
+    "wellFormedPass": 52,
+    "judgedTotal": 52,
+    "captureErrors": 0,
+    "judgeErrors": 0
+  },
+  "rows": [
+    {
+      "id": "ex-001",
+      "destination": "team/decisions/",
+      "generatedCapture": "---\ntitle: RHIVOS 2.0.z Advisory Creation\ntags: [sprint, rhivos, advisories, planning]\ncreated: 2026-09-20\nconfidence: emerging\n---\n\n# RHIVOS 2.0.z Advisory Creation\n\nThe sprint goal is to create advisories for RHIVOS 2.0.z.\n\nAman proposed the goal, and the team agreed to it.",
+      "judge": {
+        "depersonalized": {
+          "pass": true,
+          "notes": ""
+        },
+        "factual": {
+          "pass": true,
+          "notes": ""
+        },
+        "complete": {
+          "pass": false,
+          "notes": "Missing that this was Sprint 136 and that the agreement occurred during Sprint 136 planning; it also says only 'the team' rather than the full team."
+        },
+        "well_formed": {
+          "pass": true,
+          "notes": ""
+        }
+      },
+      "allPass": false
+    },
+    {
+      "id": "ex-002",
+      "destination": "team/wiki/",
+      "generatedCapture": "---\ntitle: Phantom Jira tickets in sprint backlogs\ntags: [jira, sprint-planning, backlog, team-state, vroom-22346]\ncreated: 2026-09-20\nconfidence: emerging\n---\n\n# Phantom Jira Tickets in Sprint Backlogs\n\nVROOM-22346 was found in Ozan's Sprint 136 backlog during the pre-planning Jira sweep, but nobody was working on it and it was absent from the team-state document.\n\nPlanning clarified that VROOM-22346 is noise rather than real work. After planning, it remained in the Sprint 136 backlog and continues to carry over as a phantom ticket.\n\nPhantom tickets can confuse sprint preparation when they appear in Jira without corresponding team-state coverage or active ownership.",
+      "judge": {
+        "depersonalized": {
+          "pass": true,
+          "notes": ""
+        },
+        "factual": {
+          "pass": true,
+          "notes": ""
+        },
+        "complete": {
+          "pass": true,
+          "notes": ""
+        },
+        "well_formed": {
+          "pass": true,
+          "notes": ""
+        }
+      },
+      "allPass": true
+    },
+    {
+      "id": "ex-003",
+      "destination": "team/decisions/",
+      "generatedCapture": "---\ntitle: Remove Versioning from Auto Product Build Downstream Bucket\ntags: [decision, versioning, auto-product-build-downstream]\ncreated: 2026-09-20\nconfidence: emerging\n---\n\n# Remove Versioning from Auto Product Build Downstream Bucket\n\nDecision: Remove versioning from the `auto-product-build-downstream` bucket.\n\nJuanje will add a confirming comment on the ticket.",
+      "judge": {
+        "depersonalized": {
+          "pass": true,
+          "notes": ""
+        },
+        "factual": {
+          "pass": true,
+          "notes": ""
+        },
+        "complete": {
+          "pass": false,
+          "notes": "Missing the ticket ID VROOM-53501 and the fact that all stakeholders confirmed there was no requirement for versioning."
+        },
+        "well_formed": {
+          "pass": true,
+          "notes": ""
+        }
+      },
+      "allPass": false
+    },
+    {
+      "id": "ex-004b",
+      "destination": "team/decisions/",
+      "generatedCapture": "---\ntitle: Backlog Refinement Experiment\ntags: [backlog, refinement, sprint-planning, process]\ncreated: 2026-09-20\nconfidence: emerging\n---\n\n# Backlog Refinement Experiment\n\nDecision: Experiment with improved backlog refinement going forward.\n\nNo hard change to the process will be made during the current sprint.",
+      "judge": {
+        "depersonalized": {
+          "pass": true,
+          "notes": ""
+        },
+        "factual": {
+          "pass": true,
+          "notes": ""
+        },
+        "complete": {
+          "pass": false,
+          "notes": " omits that the agreement was made during Sprint 136 planning and that the refinement investment aims to reduce overcommitment."
+        },
+        "well_formed": {
+          "pass": true,
+          "notes": ""
+        }
+      },
+      "allPass": false
+    },
+    {
+      "id": "ex-005",
+      "destination": "team/processes/",
+      "generatedCapture": "---\ntitle: Grafana Alert Routing Process\ntags: [grafana, alerting, monitoring, slack, email]\ncreated: 2026-09-20\nconfidence: emerging\n---\n\n# Grafana Alert Routing Process\n\nNon-urgent tracking alerts should be routed to email rather than Slack. Slack is reserved for urgent and critical alerts to reduce channel noise and preserve attention for incidents requiring immediate action.\n\nGrafana alerts in the infrastructure channel were configured for three-day warnings and daily critical notifications but were firing more frequently than expected. The noise is also expected to decrease after certificate renewals are completed.\n\nMatt will investigate switching the non-critical alerts to email. Matt and Eitan own monitoring decisions and alert configuration.",
+      "judge": {
+        "depersonalized": {
+          "pass": true,
+          "notes": ""
+        },
+        "factual": {
+          "pass": true,
+          "notes": ""
+        },
+        "complete": {
+          "pass": true,
+          "notes": "Preserves the alert-routing decision, ownership, investigation action, excessive firing frequency, configured warning/critical cadence, and certificate-renewal context. The accountability rationale is paraphrased as preserving attention and reducing channel noise."
+        },
+        "well_formed": {
+          "pass": true,
+          "notes": ""
+        }
+      },
+      "allPass": true
+    },
+    {
+      "id": "ex-006",
+      "destination": "team/wiki/",
+      "generatedCapture": "---\ntitle: S3 Copy Failure During Product Build Promotion\ntags: [pipeline, release, s3, rhivos, vroom]\ncreated: 2026-09-20\nconfidence: emerging\n---\n\n# S3 Copy Failure During Product Build Promotion\n\nThe `promote-product-build-and-release` job failed during the S3 copy from:\n\n```text\nRHIVOS-2.0-Core-VROOM-46538-RC1/\n```\n\nto:\n\n```text\nRHIVOS-2.0-Core-VROOM-46538/\n```\n\n## Suspected Root Cause\n\nA race condition in the job that pushes test results is suspected. The same pattern occurred at RC1 and again during the final promotion run. The root cause has not been fully confirmed.\n\n## Recovery\n\nThe copy was completed manually through the AWS console.",
+      "judge": {
+        "depersonalized": {
+          "pass": true,
+          "notes": ""
+        },
+        "factual": {
+          "pass": true,
+          "notes": ""
+        },
+        "complete": {
+          "pass": true,
+          "notes": ""
+        },
+        "well_formed": {
+          "pass": true,
+          "notes": ""
+        }
+      },
+      "allPass": true
+    },
+    {
+      "id": "ex-007",
+      "destination": "team/wiki/",
+      "generatedCapture": "---\ntitle: Chai Bot Token Budget\ntags: [chai-bot, token-budget, quotas, billing]\ncreated: 2026-09-20\nconfidence: emerging\n---\n\n# Chai Bot Token Budget\n\nChai Bot requests use the centralized Chai budget and do not consume an individual team member’s $300/month token quota.",
+      "judge": {
+        "depersonalized": {
+          "pass": true,
+          "notes": ""
+        },
+        "factual": {
+          "pass": true,
+          "notes": ""
+        },
+        "complete": {
+          "pass": false,
+          "notes": "Preserves the centralized-budget and $300/month quota facts but omits that this was confirmed by Allison King/the team and does not include the documented Jira, pipeline, and Slack Q&A use cases."
+        },
+        "well_formed": {
+          "pass": true,
+          "notes": ""
+        }
+      },
+      "allPass": false
+    },
+    {
+      "id": "ex-008",
+      "destination": "team/wiki/",
+      "generatedCapture": "---\ntitle: Chai Bot Persona Model and Access\ntags: [chai-bot, slack, tooling, grounding, team-wiki]\ncreated: 2026-09-20\nconfidence: emerging\n---\n\n# Chai Bot Persona Model and Access\n\nChai Bot’s persona model consists of:\n\n- System instructions\n- More than 65 tool packages, including Jira, GitLab, Sippy CI, and Release Controller\n- Grounding data at gigabyte scale, including Slack history, Jira, Confluence, Google Docs, repositories, and code RAG\n\nAccess Chai Bot by mentioning `@chai-bot` in the `#chai-users` Slack channel.",
+      "judge": {
+        "depersonalized": {
+          "pass": true,
+          "notes": ""
+        },
+        "factual": {
+          "pass": true,
+          "notes": ""
+        },
+        "complete": {
+          "pass": false,
+          "notes": "The capture omits the reference's material detail that Chai Bot has 260+ personas."
+        },
+        "well_formed": {
+          "pass": true,
+          "notes": ""
+        }
+      },
+      "allPass": false
+    },
+    {
+      "id": "ex-009b",
+      "destination": "team/wiki/",
+      "generatedCapture": "---\ntitle: Subtask-Only Work Reduces Sprint Visibility\ntags: [jira, sprint-tracking, subtasks, sprint-hygiene]\ncreated: 2026-09-20\nconfidence: emerging\n---\n\n# Subtask-Only Work Reduces Sprint Visibility\n\nWork tracked exclusively as subtasks under another team member’s Jira tickets does not provide individual visibility in sprint board views.\n\nDuring a pre-planning Jira review, a team member had no sprint tickets because all work was recorded as subtasks under another member’s tickets. This created a sprint tracking gap: the work was present in Jira, but the contributor had no own ticket representation in sprint views.",
+      "judge": {
+        "depersonalized": {
+          "pass": true,
+          "notes": ""
+        },
+        "factual": {
+          "pass": true,
+          "notes": ""
+        },
+        "complete": {
+          "pass": false,
+          "notes": "It captures the tracking gap and its cause, but omits the process detail from the reference: during pre-planning Jira sweeps, check for team members with no tickets who may be active on subtasks."
+        },
+        "well_formed": {
+          "pass": true,
+          "notes": ""
+        }
+      },
+      "allPass": false
+    },
+    {
+      "id": "ex-010",
+      "destination": "team/projects/",
+      "generatedCapture": "---\ntitle: Developer VM Image Handoff and Monitoring Ownership\ntags: [developer-vm, vroom-52268, aib, monitoring, handoff]\ncreated: 2026-09-20\nconfidence: emerging\n---\n\n# Developer VM Image Handoff and Monitoring Ownership\n\nVROOM-52268 was transferred to Ozan for ongoing monitoring. The AIB team now owns the implementation:\n\n- Boaz is building the image.\n- Pablo knows the content and is handling testing.\n- After completion, the image will be published to the CDN and then sent to the customer portal.\n\nOzan will own monitoring going forward, as the previous owner is unavailable starting September 23.",
+      "judge": {
+        "depersonalized": {
+          "pass": true,
+          "notes": ""
+        },
+        "factual": {
+          "pass": true,
+          "notes": ""
+        },
+        "complete": {
+          "pass": false,
+          "notes": "The capture omits the explicit transition date: the previous owner is out starting September 23. It also weakens the stated reason for the handoff by saying only that the previous owner is unavailable."
+        },
+        "well_formed": {
+          "pass": true,
+          "notes": ""
+        }
+      },
+      "allPass": false
+    },
+    {
+      "id": "ex-011",
+      "destination": "team/processes/",
+      "generatedCapture": "---\ntitle: Sprint Reporting with Jira Rovo and Google Drive\ntags: [sprint-reporting, jira-rovo, google-drive, toolchain, process]\ncreated: 2026-09-20\nconfidence: emerging\n---\n\n# Sprint Reporting with Jira Rovo and Google Drive\n\nRachel automates sprint reports using Jira Rovo prompts. The reports generate:\n\n- Status bars\n- Sprint goal status\n- Flags for tickets with high sprint age\n\nThe workflow is hands-off after setup. Jira Rovo is free and does not count against the AI token budget.\n\n## Canonical Location\n\nSprint reports must be stored on Google Drive for program visibility. Slack may be used for team sharing, but Google Drive is the canonical location.\n\n## Prompt Ownership\n\nJulia Williams wrote the Rovo prompt used by Rachel. The prompt needs to be obtained for reuse.\n\n## Toolchain Setup\n\nThe planned setup is to obtain Julia Williams's prompt and configure Toolchain's sprint reporting to publish reports on Google Drive.",
+      "judge": {
+        "depersonalized": {
+          "pass": true,
+          "notes": ""
+        },
+        "factual": {
+          "pass": true,
+          "notes": ""
+        },
+        "complete": {
+          "pass": false,
+          "notes": "Omits that the Google Drive requirement came from Shawn and was reinforced by Whitney, and does not preserve that Julia's prompt was shared in meeting notes."
+        },
+        "well_formed": {
+          "pass": true,
+          "notes": ""
+        }
+      },
+      "allPass": false
+    },
+    {
+      "id": "ex-012",
+      "destination": "team/wiki/",
+      "generatedCapture": "---\ntitle: Canonical Package List and Execopen Coverage\ntags: [packages, execopen, certification, canonical-list]\ncreated: 2026-09-20\nconfidence: emerging\n---\n\n# Canonical Package List and Execopen Coverage\n\nThe canonical package list contains four packages that `execopen` neither detects nor can generate:\n\n- `auto-boot-check`\n- `binutils`\n- `checkpolicy`\n- `nmstate`\n\n`nmstate` is not installed in the image.\n\nThe canonical list is aspirational: it defines the packages that should be certified, rather than mirroring the packages reported by `execopen`.",
+      "judge": {
+        "depersonalized": {
+          "pass": true,
+          "notes": ""
+        },
+        "factual": {
+          "pass": true,
+          "notes": ""
+        },
+        "complete": {
+          "pass": true,
+          "notes": ""
+        },
+        "well_formed": {
+          "pass": true,
+          "notes": ""
+        }
+      },
+      "allPass": true
+    },
+    {
+      "id": "ex-013",
+      "destination": "team/decisions/",
+      "generatedCapture": "---\ntitle: Approval of Imperfect Canonical Lists MR\ntags: [decision, canonical-lists, merge-request, downstream-consumers]\ncreated: 2026-09-20\nconfidence: emerging\n---\n\n# Approval of Imperfect Canonical Lists MR\n\nMR !2 was approved on September 17 despite known discrepancies in the canonical lists.\n\nThe approval unblocks Ian, Petr, and downstream consumers, including FoA and RHEL issue cloning. The lists are acknowledged as imperfect; correcting them through the MR process is itself part of the goal.",
+      "judge": {
+        "depersonalized": {
+          "pass": true,
+          "notes": ""
+        },
+        "factual": {
+          "pass": true,
+          "notes": ""
+        },
+        "complete": {
+          "pass": false,
+          "notes": "Omits that the discrepancies were with execopen output and that the nightly pipeline test VROOM-40719 is expected to fail initially."
+        },
+        "well_formed": {
+          "pass": true,
+          "notes": ""
+        }
+      },
+      "allPass": false
+    },
+    {
+      "id": "ex-014",
+      "destination": "team/wiki/",
+      "generatedCapture": "---\ntitle: VROOM-41639 Configurable Compose and EIB Compose Pinning\ntags: [vroom, aib, compose, eib, knowledge-transfer]\ncreated: 2026-09-20\nconfidence: emerging\n---\n\n# VROOM-41639 Configurable Compose and EIB Compose Pinning\n\nVROOM-41639 covers Ozan’s configurable compose and EIB compose pinning feature.\n\nAn explanatory document exists describing how to apply the feature. The AIB team received a walkthrough of the feature and its application at an AIB team meeting because the document alone was lengthy and could be confusing without context about what the feature is and why it exists.",
+      "judge": {
+        "depersonalized": {
+          "pass": true,
+          "notes": ""
+        },
+        "factual": {
+          "pass": true,
+          "notes": ""
+        },
+        "complete": {
+          "pass": false,
+          "notes": "It omits that the feature shipped on Aug 27, that the document was created by Ozan, and the broader lesson that ticket closure or written documentation does not ensure consumer readiness for complex features."
+        },
+        "well_formed": {
+          "pass": true,
+          "notes": ""
+        }
+      },
+      "allPass": false
+    },
+    {
+      "id": "ex-016",
+      "destination": "team/processes/",
+      "generatedCapture": "---\ntitle: TPO Reporting Workflow\ntags: [program-management, sprint-status, agile-maturity, reporting]\ncreated: 2026-09-20\nconfidence: emerging\n---\n\n# TPO Reporting Workflow\n\n## Program Meeting Preparation\n\nProgram meeting preparation reviews sprint backlogs and team observations to synthesize high-level status rather than granular detail.\n\nThe process evolved from heavy Jira document summaries to manual observation and judgment.\n\n## Agile Maturity Tracking\n\nAgile maturity tracking maintains a Google Drive directory containing:\n\n- Velocity charts\n- Version charts\n- Burn-up and burn-down charts\n\nVersion reports use fixed versions on tickets to show release progress with green, yellow, or red status indicators.",
+      "judge": {
+        "depersonalized": {
+          "pass": true,
+          "notes": ""
+        },
+        "factual": {
+          "pass": true,
+          "notes": ""
+        },
+        "complete": {
+          "pass": true,
+          "notes": ""
+        },
+        "well_formed": {
+          "pass": true,
+          "notes": ""
+        }
+      },
+      "allPass": true
+    },
+    {
+      "id": "ex-017",
+      "destination": "team/wiki/",
+      "generatedCapture": "---\ntitle: QCOW2 Build Path and Konflux Limitation\ntags: [qcow2, brew, rhel, konflux, image-builder]\ncreated: 2026-09-20\nconfidence: emerging\n---\n\n# QCOW2 Build Path and Konflux Limitation\n\nQCOW2 images are buildable in Brew.\n\nRHEL has moved to Image Builder. For RHEL build-path questions, contact **Ondřej Budai**.\n\n**Konflux cannot currently produce package-mode QCOW images.** A design document by lsedlar is in progress.\n\nFor speed, use Brew.",
+      "judge": {
+        "depersonalized": {
+          "pass": true,
+          "notes": ""
+        },
+        "factual": {
+          "pass": true,
+          "notes": ""
+        },
+        "complete": {
+          "pass": true,
+          "notes": ""
+        },
+        "well_formed": {
+          "pass": true,
+          "notes": ""
+        }
+      },
+      "allPass": true
+    },
+    {
+      "id": "ex-018",
+      "destination": "team/wiki/",
+      "generatedCapture": "---\ntitle: Jira Ticket Custom Fields Require Manual UI Entry\ntags: [jira, acli, authentication, custom-fields, vroom]\ncreated: 2026-09-20\nconfidence: emerging\n---\n\n# Jira Ticket Custom Fields Require Manual UI Entry\n\nJira ticket creation via `acli` encountered a brief authentication expiry, then succeeded.\n\nThe following custom fields were not accepted through the create/edit API and required manual entry in the Jira UI:\n\n- **AssignedTeam:** `rhivos-pdr-auto-toolchain`\n- **Sub-System Group:** `rhivos-pdr`\n- **Story Points:** `2`\n\nThis applied to both **VROOM-53478** and **VROOM-53479**.",
+      "judge": {
+        "depersonalized": {
+          "pass": true,
+          "notes": ""
+        },
+        "factual": {
+          "pass": true,
+          "notes": ""
+        },
+        "complete": {
+          "pass": true,
+          "notes": ""
+        },
+        "well_formed": {
+          "pass": true,
+          "notes": ""
+        }
+      },
+      "allPass": true
+    },
+    {
+      "id": "ex-019",
+      "destination": "team/decisions/",
+      "generatedCapture": "---\ntitle: Brew Selected for Developer VM Images\ntags: [developer-vm, brew, konflux, bootc, image-build]\ncreated: 2026-09-20\nconfidence: emerging\n---\n\n# Brew Selected for Developer VM Images\n\nDecision: Use Brew to build the developer VM image. Konflux is not suitable for this image type.\n\nKonflux can only build bootc images. Bootc images remain immutable even when converted to QCOW2 through BIB. The developer VM requires a mutable image to support:\n\n- RPM installation\n- RHSM registration\n- Persistent data storage\n\nThe Konflux preparation work—source repository skeleton and KRD configuration planning—remains applicable to other image types.",
+      "judge": {
+        "depersonalized": {
+          "pass": true,
+          "notes": ""
+        },
+        "factual": {
+          "pass": true,
+          "notes": ""
+        },
+        "complete": {
+          "pass": true,
+          "notes": ""
+        },
+        "well_formed": {
+          "pass": true,
+          "notes": ""
+        }
+      },
+      "allPass": true
+    },
+    {
+      "id": "ex-020",
+      "destination": "team/wiki/",
+      "generatedCapture": "---\ntitle: Developer VM Requirements\ntags: [developer-vm, rhivos, packages, cdn-access]\ncreated: 2026-09-20\nconfidence: emerging\n---\n\n# Developer VM Requirements\n\nDeveloper VMs must use RHIVOS, not RHEL with additional components. The `redhat-release-automotive` package carries the required CDN certificates.\n\nVMs must be mutable to support:\n\n- CDN access\n- Package installation\n- Data storage\n\nMinimum required packages:\n\n- `redhat-release-automotive`\n- `redhat-subscription-manager`\n- AIB",
+      "judge": {
+        "depersonalized": {
+          "pass": true,
+          "notes": ""
+        },
+        "factual": {
+          "pass": true,
+          "notes": ""
+        },
+        "complete": {
+          "pass": true,
+          "notes": ""
+        },
+        "well_formed": {
+          "pass": true,
+          "notes": ""
+        }
+      },
+      "allPass": true
+    },
+    {
+      "id": "ex-021",
+      "destination": "team/decisions/",
+      "generatedCapture": "---\ntitle: Discontinue Report Portal for RHIVOS\ntags: [rhivos, report-portal, polarian, test-reporting]\ncreated: 2026-09-20\nconfidence: emerging\n---\n\n# Discontinue Report Portal for RHIVOS\n\n**Decision:** Discontinue Report Portal for RHIVOS.\n\nReport Portal was a workaround in maintenance mode and was not helpful. Pablo Rulfi's AI skill replaces the Polarian sync by automatically linking failed VROOM tickets to failed test cases in Polarian.",
+      "judge": {
+        "depersonalized": {
+          "pass": true,
+          "notes": ""
+        },
+        "factual": {
+          "pass": true,
+          "notes": ""
+        },
+        "complete": {
+          "pass": true,
+          "notes": ""
+        },
+        "well_formed": {
+          "pass": true,
+          "notes": ""
+        }
+      },
+      "allPass": true
+    },
+    {
+      "id": "ex-022",
+      "destination": "team/wiki/",
+      "generatedCapture": "---\ntitle: AI Usage Budget and Model Selection\ntags: [budget, ai-models, usage-tracking, cost-management]\ncreated: 2026-09-20\nconfidence: emerging\n---\n\n# AI Usage Budget and Model Selection\n\nThe budget was reduced from $500 to $300 per month per person, per system, and may be reduced further.\n\nUsage must be measured in currency, not only token counts, to support budget justification.\n\nRecommended models:\n\n- **GPT-56 Luna:** Approximately one-quarter the cost of Haiku with sonnet-level quality.\n- **Gemini Flash 3.7:** Capable and inexpensive through Vertex AI.\n\nModel selection should not automatically default to the most expensive model.",
+      "judge": {
+        "depersonalized": {
+          "pass": true,
+          "notes": ""
+        },
+        "factual": {
+          "pass": true,
+          "notes": ""
+        },
+        "complete": {
+          "pass": true,
+          "notes": ""
+        },
+        "well_formed": {
+          "pass": true,
+          "notes": ""
+        }
+      },
+      "allPass": true
+    },
+    {
+      "id": "ex-023",
+      "destination": "team/wiki/",
+      "generatedCapture": "---\ntitle: AI Workflow Cost Estimate for Pipeline Diagnostics\ntags: [ai-costs, pipeline-debugger, ci-cd, models-corp]\ncreated: 2026-09-20\nconfidence: emerging\n---\n\n# AI Workflow Cost Estimate for Pipeline Diagnostics\n\n- `ccusage` analysis of pipeline-debugger sessions recorded:\n  - June: **$46**, during a heavy development month.\n  - July and August: approximately **$9–13 per month**.\n  - Projected steady-state: approximately **$10 per month**.\n- **82% of tokens are cache reads.**\n- Business-case estimate: an autonomous CI/CD diagnostic agent is expected to cost approximately **$10–15 per month in production**.\n- Cost may increase when the agent is integrated as a CI terminal job that runs on every pipeline failure.\n- These figures are required for the `models.corp` business justification for service accounts.",
+      "judge": {
+        "depersonalized": {
+          "pass": true,
+          "notes": ""
+        },
+        "factual": {
+          "pass": true,
+          "notes": ""
+        },
+        "complete": {
+          "pass": false,
+          "notes": "Missing the operational cost reference/ticket ID VROOM-44416 and the consolidated Jun–Aug total of $67.62. It also omits that Ian asked everyone in AAA to produce estimates."
+        },
+        "well_formed": {
+          "pass": true,
+          "notes": ""
+        }
+      },
+      "allPass": false
+    },
+    {
+      "id": "ex-024",
+      "destination": "team/processes/",
+      "generatedCapture": "---\ntitle: Service Accounts for Autonomous AI Consumption\ntags: [ai-budget, service-accounts, models-corp, automation]\ncreated: 2026-09-20\nconfidence: emerging\n---\n\n# Service Accounts for Autonomous AI Consumption\n\nThe $300/month individual limit does not apply effectively to agents and pipelines that run autonomously.\n\n## Process\n\n- Agents and pipelines that consume AI tokens must use a dedicated service account.\n- Start the service-account request through the `models.corp` intake process.\n- Do not charge autonomous agent or pipeline consumption against an individual’s personal $300/month budget.\n\nAn application for dedicated service accounts for non-individual AI consumption was started through the `models.corp` intake process. A meeting with `models.corp` took place last Thursday.",
+      "judge": {
+        "depersonalized": {
+          "pass": true,
+          "notes": ""
+        },
+        "factual": {
+          "pass": true,
+          "notes": ""
+        },
+        "complete": {
+          "pass": true,
+          "notes": ""
+        },
+        "well_formed": {
+          "pass": true,
+          "notes": ""
+        }
+      },
+      "allPass": true
+    },
+    {
+      "id": "ex-025a",
+      "destination": "team/decisions/",
+      "generatedCapture": "---\ntitle: ProdSec-approved customer distribution chain\ntags: [prodsec, distribution, cdn, customer-portal]\ncreated: 2026-09-20\nconfidence: emerging\n---\n\n# ProdSec-approved customer distribution chain\n\nDecision: The only ProdSec-approved customer-facing distribution path is:\n\n`Brew/Konflux → CDN → customer portal`\n\n`S3 → CDN` is not approved.",
+      "judge": {
+        "depersonalized": {
+          "pass": true,
+          "notes": ""
+        },
+        "factual": {
+          "pass": true,
+          "notes": ""
+        },
+        "complete": {
+          "pass": false,
+          "notes": "Missing the publication-process distinction: Brew requires a manual CDN publication step, while Konflux automates CDN publication via RPA."
+        },
+        "well_formed": {
+          "pass": true,
+          "notes": ""
+        }
+      },
+      "allPass": false
+    },
+    {
+      "id": "ex-026",
+      "destination": "team/wiki/",
+      "generatedCapture": "---\ntitle: Use the Correct Disk Image CDN Command\ntags: [konflux, cdn, qcow2, deployment]\ncreated: 2026-09-20\nconfidence: emerging\n---\n\n# Use the Correct Disk Image CDN Command\n\nUse `push-disk-images-to-cdn` to publish raw QCOW2 disk images.\n\nDo not use `push-artifacts-to-cdn`: it applies `tar.gz` compression, which breaks raw QCOW2 files.",
+      "judge": {
+        "depersonalized": {
+          "pass": true,
+          "notes": ""
+        },
+        "factual": {
+          "pass": true,
+          "notes": ""
+        },
+        "complete": {
+          "pass": true,
+          "notes": ""
+        },
+        "well_formed": {
+          "pass": true,
+          "notes": ""
+        }
+      },
+      "allPass": true
+    },
+    {
+      "id": "ex-027",
+      "destination": "team/wiki/",
+      "generatedCapture": "---\ntitle: rhsm-pulp Access from p02\ntags: [rhsm-pulp, p02, konflux, hermetic-builds, activation-key]\ncreated: 2026-09-20\nconfidence: emerging\n---\n\n# rhsm-pulp Access from p02\n\np02 has direct network routes to `rhsm-pulp.corp.redhat.com`; no Activation Key is needed.\n\nAn `activation-key` secret in the tenant namespace breaks hermetic builds because of TLS client certificate interference.\n\nUse a `.repo` file only.",
+      "judge": {
+        "depersonalized": {
+          "pass": true,
+          "notes": ""
+        },
+        "factual": {
+          "pass": true,
+          "notes": ""
+        },
+        "complete": {
+          "pass": false,
+          "notes": "The capture omits the scope that this applies to the Konflux p02 cluster for internal/GitLab repositories, and does not explicitly state not to add an activation-key secret for rhsm-pulp on p02."
+        },
+        "well_formed": {
+          "pass": true,
+          "notes": ""
+        }
+      },
+      "allPass": false
+    },
+    {
+      "id": "ex-032",
+      "destination": "team/wiki/",
+      "generatedCapture": "---\ntitle: BASE_URL Skips pac-jobs Nightly Preparation\ntags: [pipeline, pac-jobs, compose, nightly, aws-s3]\ncreated: 2026-09-20\nconfidence: emerging\n---\n\n# BASE_URL Skips pac-jobs Nightly Preparation\n\nSetting `BASE_URL` to a previously promoted compose allows a build to use that compose instead of rebuilding the broken compose. However, some `pac-jobs` commands skip the normal workflow when `BASE_URL` is set.\n\nThis bypass prevents generation of `cat-manifests/` and copying of `repo/`, which results in missing repositories in the rebuilt nightly.\n\nThe affected nightly paths were fixed manually with `aws s3 sync`, copying `cat-manifests/` and `repo/` from the source compose.",
+      "judge": {
+        "depersonalized": {
+          "pass": true,
+          "notes": ""
+        },
+        "factual": {
+          "pass": true,
+          "notes": ""
+        },
+        "complete": {
+          "pass": true,
+          "notes": ""
+        },
+        "well_formed": {
+          "pass": true,
+          "notes": ""
+        }
+      },
+      "allPass": true
+    },
+    {
+      "id": "ex-034",
+      "destination": "team/wiki/",
+      "generatedCapture": "---\ntitle: AMI Cleanup Must Retain Latest Nightlies\ntags: [ami, cleanup, pipelines, retention, tc, rhivos]\ncreated: 2026-09-20\nconfidence: emerging\n---\n\n# AMI Cleanup Must Retain Latest Nightlies\n\nThe `latest-RHIVOS-2` pipeline was broken for days or weeks due to libbpf and llvm incidents. Its AMI cleanup script removes AMIs older than five days without checking whether they are the latest available images.\n\nWhen a pipeline remains broken for more than five days, this logic deletes all of its AMIs, preventing TC from provisioning.\n\nThe retention logic must keep the last N nightlies unconditionally, regardless of age. This behavior was likely lost during the cleanup script refactoring tracked by `VROOM-47053`.",
+      "judge": {
+        "depersonalized": {
+          "pass": true,
+          "notes": ""
+        },
+        "factual": {
+          "pass": true,
+          "notes": ""
+        },
+        "complete": {
+          "pass": true,
+          "notes": ""
+        },
+        "well_formed": {
+          "pass": true,
+          "notes": ""
+        }
+      },
+      "allPass": true
+    },
+    {
+      "id": "ex-035",
+      "destination": "team/projects/",
+      "generatedCapture": "---\ntitle: RHIVOS 2.1 Pipeline Blocked by FuSa Policy\ntags: [rhivos, pipeline, libbpf, bpf, fusa, blocking]\ncreated: 2026-09-20\nconfidence: emerging\n---\n\n# RHIVOS 2.1 Pipeline Blocked by FuSa Policy\n\nThe RHIVOS 2.1 pipeline is blocked because `libbpf`/BPF remains on the downstream FuSa denylist. The drivers pipeline fails at package-level gating.\n\nThe official FA-side process is required to remove BPF from the policy and release a new package. Until that process is completed and the new package is released, the pipeline remains blocked.",
+      "judge": {
+        "depersonalized": {
+          "pass": true,
+          "notes": ""
+        },
+        "factual": {
+          "pass": true,
+          "notes": ""
+        },
+        "complete": {
+          "pass": false,
+          "notes": "The capture omits tickets VROOM-50225 and VROOM-50230 and does not identify the automotive-image-builder-policy or clarify that the fix requires the official FA process rather than only a package bump."
+        },
+        "well_formed": {
+          "pass": true,
+          "notes": ""
+        }
+      },
+      "allPass": false
+    },
+    {
+      "id": "ex-036",
+      "destination": "team/processes/",
+      "generatedCapture": "---\ntitle: AWS Cost Reduction Process and Constraints\ntags: [aws, cost-reduction, retention, artifacts, storage]\ncreated: 2026-09-20\nconfidence: emerging\n---\n\n# AWS Cost Reduction Process and Constraints\n\nThe AWS cost reduction target for CY26H2 is **20%**. This is a best-effort target, is not tracked at the program level, and has no AUTOBU epic. Cost-reduction work must not disrupt workflows.\n\n## Approach\n\n1. Clean up obvious waste.\n2. Address retention policies as a longer-term effort.\n\n## Artifact cleanup\n\n- RHIVOS 1.0 artifacts can probably be removed in most cases.\n- Before deleting RHIVOS 1.0 artifacts, Steve or Bruce from FuSa must confirm which artifacts are required as certification evidence.\n- AutoSD 9 artifacts can likely be pruned completely.\n\n## Storage constraints\n\nS3 is used instead of internal storage because the same system is needed for upstream/downstream and staging-to-promoted workflows.\n\nPulp is the intended replacement for S3, but the migration is on hold because Pulp is currently too slow.",
+      "judge": {
+        "depersonalized": {
+          "pass": true,
+          "notes": ""
+        },
+        "factual": {
+          "pass": true,
+          "notes": ""
+        },
+        "complete": {
+          "pass": true,
+          "notes": ""
+        },
+        "well_formed": {
+          "pass": true,
+          "notes": ""
+        }
+      },
+      "allPass": true
+    },
+    {
+      "id": "ex-037",
+      "destination": "team/decisions/",
+      "generatedCapture": "---\ntitle: UBI 10 and Python Image Vulnerability Exceptions\ntags: [security, vulnerabilities, ubi-10, python, policy-exceptions]\ncreated: 2026-09-20\nconfidence: emerging\n---\n\n# UBI 10 and Python Image Vulnerability Exceptions\n\nPersistent vulnerabilities remain in UBI 10 and Python base images. The `data-router` component is being removed.\n\n## Decision\n\nOpen policy exceptions as required by ESS requirements for the persistent vulnerabilities in the affected base images.\n\n## Future Direction\n\nPrevent installation of unknown packages in future image builds.",
+      "judge": {
+        "depersonalized": {
+          "pass": true,
+          "notes": ""
+        },
+        "factual": {
+          "pass": true,
+          "notes": ""
+        },
+        "complete": {
+          "pass": true,
+          "notes": ""
+        },
+        "well_formed": {
+          "pass": true,
+          "notes": ""
+        }
+      },
+      "allPass": true
+    },
+    {
+      "id": "ex-038",
+      "destination": "team/wiki/",
+      "generatedCapture": "---\ntitle: AI Token Cost Optimization Patterns\ntags: [ai, token-optimization, cli, mcp, sub-agents]\ncreated: 2026-09-20\nconfidence: emerging\n---\n\n# AI Token Cost Optimization Patterns\n\n- Scrummit migrated from MCP to CLI to reduce costs.\n- A sub-agent pattern was proposed for heavy MCP queries: have a sub-agent perform the query and return only a paragraph.\n- Output masking reduced token usage by approximately 80%.\n- A two-pass approach is being explored:\n  1. Perform reasoning in Markdown.\n  2. Use Gemini Flash Light to convert the result to JSON.\n- For lower-cost, more focused outputs:\n  - Request specific fields.\n  - Use Markdown rendering.",
+      "judge": {
+        "depersonalized": {
+          "pass": true,
+          "notes": ""
+        },
+        "factual": {
+          "pass": false,
+          "notes": "The final section uses recommendation-style language ('For lower-cost... Request... Use...') rather than strictly stating observations or facts."
+        },
+        "complete": {
+          "pass": false,
+          "notes": "It omits that the CLI-over-MCP migration concerned Jira queries, the lower-overhead result, and that all techniques were tested by the AAA team."
+        },
+        "well_formed": {
+          "pass": true,
+          "notes": ""
+        }
+      },
+      "allPass": false
+    },
+    {
+      "id": "ex-039",
+      "destination": "team/wiki/",
+      "generatedCapture": "---\ntitle: JQL for Sprint Queries\ntags: [jira, jql, sprints, atlassian]\ncreated: 2026-09-20\nconfidence: emerging\n---\n\n# JQL for Sprint Queries\n\nUse JQL instead of board or sprint IDs for sprint queries.\n\n```jql\nsprint in openSprints()\n```\n\nThis query works without knowing the board or sprint IDs. `board search` is unusable at scale on shared Atlassian instances.",
+      "judge": {
+        "depersonalized": {
+          "pass": true,
+          "notes": ""
+        },
+        "factual": {
+          "pass": false,
+          "notes": "The opening sentence is directive/recommendational ('Use JQL instead...') rather than a neutral factual statement."
+        },
+        "complete": {
+          "pass": false,
+          "notes": "It omits that this is an acli Jira best practice and that board search returns all instance boards without a project filter."
+        },
+        "well_formed": {
+          "pass": true,
+          "notes": ""
+        }
+      },
+      "allPass": false
+    },
+    {
+      "id": "ex-040",
+      "destination": "team/wiki/",
+      "generatedCapture": "---\ntitle: Verify CLI Help Before Documenting Subagent Output\ntags: [cli, documentation, subagents, confluence, jira]\ncreated: 2026-09-20\nconfidence: emerging\n---\n\n# Verify CLI Help Before Documenting Subagent Output\n\nAI-generated CLI flags can be plausible but incorrect. A Haiku subagent generated an invalid Confluence `--space-key` flag while producing an `acli` cheatsheet. Jira commands were correct because they were verified directly.\n\nRun `--help` for unfamiliar subcommands before committing command syntax to reference documentation.",
+      "judge": {
+        "depersonalized": {
+          "pass": true,
+          "notes": ""
+        },
+        "factual": {
+          "pass": false,
+          "notes": "Includes an imperative recommendation: \"Run --help for unfamiliar subcommands...\" rather than stating the process as a neutral fact."
+        },
+        "complete": {
+          "pass": true,
+          "notes": ""
+        },
+        "well_formed": {
+          "pass": true,
+          "notes": ""
+        }
+      },
+      "allPass": false
+    },
+    {
+      "id": "ex-041",
+      "destination": "team/decisions/",
+      "generatedCapture": "---\ntitle: Unified list generation strategy\ntags: [safety-rpms, list-generation, pipeline, canonical-list]\ncreated: 2026-09-20\nconfidence: emerging\n---\n\n# Unified list generation strategy\n\nEach image, architecture, and flavor generates its own list, including:\n\n- Core\n- FUSA\n- QC\n- NXP\n- Virtual\n\nA final downstream pipeline job merges the individual lists into one unified list.\n\nThe unified list is the list compared against the canonical list.",
+      "judge": {
+        "depersonalized": {
+          "pass": true,
+          "notes": ""
+        },
+        "factual": {
+          "pass": true,
+          "notes": ""
+        },
+        "complete": {
+          "pass": false,
+          "notes": "The capture omits that the downstream merge job deduplicates the lists and that the strategy captures hardware-specific packages, such as QC kernel RPMs from the QC image and NXP packages from the NXP image."
+        },
+        "well_formed": {
+          "pass": true,
+          "notes": ""
+        }
+      },
+      "allPass": false
+    },
+    {
+      "id": "ex-042",
+      "destination": "team/wiki/",
+      "generatedCapture": "---\ntitle: Filtered Packages Must Warn When Absent\ntags: [packages, image, filtering, safety, rpm]\ncreated: 2026-09-20\nconfidence: emerging\n---\n\n# Filtered Packages Must Warn When Absent\n\nThe current implementation checks the image for MDR content and cannot add packages that are not present in the image.\n\nWhen QC packages are added to the filter—`kernel-ivos-qualcomm`, `qcom-scmi`, and `downstream-dtbs`—they appear only when building the QC image. If a filtered package is not present in the image, the system should warn rather than block.",
+      "judge": {
+        "depersonalized": {
+          "pass": true,
+          "notes": ""
+        },
+        "factual": {
+          "pass": true,
+          "notes": ""
+        },
+        "complete": {
+          "pass": true,
+          "notes": ""
+        },
+        "well_formed": {
+          "pass": true,
+          "notes": ""
+        }
+      },
+      "allPass": true
+    },
+    {
+      "id": "ex-043",
+      "destination": "team/projects/",
+      "generatedCapture": "---\ntitle: Qualcomm Product Naming Approval\ntags: [product-naming, branding, qualcomm, partners]\ncreated: 2026-09-20\nconfidence: emerging\n---\n\n# Qualcomm Product Naming Approval\n\nA naming discussion with product management and branding took place on Aug 10.\n\n## Next step\n\nThe partner engineer will discuss with Qualcomm whether Qualcomm’s name can be used in the product name.\n\n## Follow-up sequence\n\nOnce Qualcomm approves the name:\n\n1. Branding finalizes the product name.\n2. Set up tags, skews, IDs, and ARA.\n3. Compose the related product materials.",
+      "judge": {
+        "depersonalized": {
+          "pass": true,
+          "notes": ""
+        },
+        "factual": {
+          "pass": true,
+          "notes": ""
+        },
+        "complete": {
+          "pass": true,
+          "notes": "Preserves the Aug 10 discussion, Qualcomm approval dependency, partner engineer next step, and the full follow-up sequence."
+        },
+        "well_formed": {
+          "pass": true,
+          "notes": ""
+        }
+      },
+      "allPass": true
+    },
+    {
+      "id": "ex-044",
+      "destination": "team/decisions/",
+      "generatedCapture": "---\ntitle: Slack Channel Structure for Release Readiness\ntags: [slack, release-readiness, communication, ai-summaries]\ncreated: 2026-09-20\nconfidence: emerging\n---\n\n# Slack Channel Structure for Release Readiness\n\n## Decision\n\nUse an ephemeral technical Slack channel for each release, with AI-generated summaries posted to the release readiness channel.\n\n## Rationale\n\n- The release readiness channel is for broad awareness.\n- The technical channel is for deep debugging and technical discussion.\n- AI summaries provide release-level visibility without requiring people to monitor both channels directly.\n\n## Follow-up\n\nAvi volunteered to create a proof of concept by the end of August.",
+      "judge": {
+        "depersonalized": {
+          "pass": true,
+          "notes": ""
+        },
+        "factual": {
+          "pass": true,
+          "notes": ""
+        },
+        "complete": {
+          "pass": false,
+          "notes": "The capture omits the specific context that this was the RHIVOS 2.0 Retro decision and does not name the target channel #automotive-release-readiness or its non-technical stakeholder audience."
+        },
+        "well_formed": {
+          "pass": true,
+          "notes": ""
+        }
+      },
+      "allPass": false
+    },
+    {
+      "id": "ex-047",
+      "destination": "team/wiki/",
+      "generatedCapture": "---\ntitle: Ride4 Image Signing Disk-Full Root Causes\ntags: [ride4, rhivos, osbuild, signing, tmpfs, kernel]\ncreated: 2026-09-20\nconfidence: emerging\n---\n\n# Ride4 Image Signing Disk-Full Root Causes\n\nThe nightly `latest-RHIVOS-2-Core` pipeline failure on ride4 ostree images has two identified causes:\n\n1. `msm_hab.ko.zst` in kernel build 249 is corrupted or misbuilt. Decompressing the module produces a 2.6 GB file.\n2. Signing runs on `/tmp`, which is backed by `tmpfs` (RAM), creating a storage limitation.\n\nIncreasing RAM from 4 GB to 8 GB resolves the `tmpfs` limitation locally. The proposed `osbuild-auto` fix is to use `tempfile.NamedTemporaryFile(dir='/var/tmp')`, moving signing temporary files to disk-backed storage as defensive hardening.",
+      "judge": {
+        "depersonalized": {
+          "pass": true,
+          "notes": ""
+        },
+        "factual": {
+          "pass": true,
+          "notes": ""
+        },
+        "complete": {
+          "pass": true,
+          "notes": ""
+        },
+        "well_formed": {
+          "pass": true,
+          "notes": ""
+        }
+      },
+      "allPass": true
+    },
+    {
+      "id": "ex-049",
+      "destination": "team/projects/",
+      "generatedCapture": "---\ntitle: FuSa October Submission at Risk\ntags: [fusa, rhivos, certification, selinux, exida]\ncreated: 2026-09-20\nconfidence: emerging\n---\n\n# FuSa October Submission at Risk\n\nThe FuSa October 31 submission is at risk. 9 of 36 features are fully closed (25%), unchanged from last week.\n\nSELinux Policy Compiler (AUTOBU-861) is the biggest risk. It includes 34 epics, with 38% completed.\n\nExida in-person witness testing is scheduled for September 24 at the RDU3 lab. The certification package submission is scheduled for October 30.",
+      "judge": {
+        "depersonalized": {
+          "pass": true,
+          "notes": ""
+        },
+        "factual": {
+          "pass": true,
+          "notes": ""
+        },
+        "complete": {
+          "pass": true,
+          "notes": ""
+        },
+        "well_formed": {
+          "pass": true,
+          "notes": ""
+        }
+      },
+      "allPass": true
+    },
+    {
+      "id": "ex-050",
+      "destination": "team/projects/",
+      "generatedCapture": "---\ntitle: Lab Cluster OCP Upgrade\ntags: [openshift, ocp, lab-cluster, upgrade, maintenance]\ncreated: 2026-09-20\nconfidence: emerging\n---\n\n# Lab Cluster OCP Upgrade\n\nThe lab cluster running OCP 4.18 reaches end of life in two weeks, on August 25.\n\nAn upgrade is required to at least OCP 4.19. OCP 4.21 or 4.22 is preferred.\n\nMiguel will coordinate the maintenance window for next week.",
+      "judge": {
+        "depersonalized": {
+          "pass": true,
+          "notes": ""
+        },
+        "factual": {
+          "pass": true,
+          "notes": ""
+        },
+        "complete": {
+          "pass": true,
+          "notes": ""
+        },
+        "well_formed": {
+          "pass": true,
+          "notes": ""
+        }
+      },
+      "allPass": true
+    },
+    {
+      "id": "ex-052",
+      "destination": "team/processes/",
+      "generatedCapture": "---\ntitle: Interim Developer VM Image Publishing\ntags: [developer-vm, brew, test-console, s3, cdn]\ncreated: 2026-09-20\nconfidence: emerging\n---\n\n# Interim Developer VM Image Publishing\n\nUntil the proper CDN publication path is set up, publish the Brew-built developer VM image to Test Console using a parallel S3 directory.\n\nProcess:\n\n1. Copy the Brew artifact to `brew-artifacts/developer-vm/`.\n2. Keep the artifact alongside the current images; do not replace the existing images.\n3. Update Test Console to use the new image path.\n4. Update the JSON file that Test Console reads for image discovery.\n\nThis is a short-term workaround while the CDN publishing path is being established. Directly copying the artifact to the image server was also considered as an alternative.",
+      "judge": {
+        "depersonalized": {
+          "pass": true,
+          "notes": ""
+        },
+        "factual": {
+          "pass": true,
+          "notes": ""
+        },
+        "complete": {
+          "pass": true,
+          "notes": ""
+        },
+        "well_formed": {
+          "pass": true,
+          "notes": ""
+        }
+      },
+      "allPass": true
+    },
+    {
+      "id": "ex-053",
+      "destination": "team/decisions/",
+      "generatedCapture": "---\ntitle: No Exceptions for RH-SDLC and Distribution Requirements\ntags: [rhelsdlc, compliance, eu-cra, distribution, security]\ncreated: 2026-09-20\nconfidence: emerging\n---\n\n# No Exceptions for RH-SDLC and Distribution Requirements\n\nCharles Timko confirmed Chris Wright’s decision on May 26, 2026:\n\n- No further RH-SDLC exceptions are permitted.\n- Rare exceptions require mandatory VP sign-off.\n- EU CRA compliance is mandatory for sales in the EU market.\n- Customer distribution from S3 is not permitted. Distribution must use a CDN or the Unified Downloader.",
+      "judge": {
+        "depersonalized": {
+          "pass": true,
+          "notes": ""
+        },
+        "factual": {
+          "pass": true,
+          "notes": ""
+        },
+        "complete": {
+          "pass": true,
+          "notes": ""
+        },
+        "well_formed": {
+          "pass": true,
+          "notes": ""
+        }
+      },
+      "allPass": true
+    },
+    {
+      "id": "ex-055",
+      "destination": "team/wiki/",
+      "generatedCapture": "---\ntitle: Upstream Fix Does Not Guarantee Downstream Unblock\ntags: [libbpf, bpf, downstream, fusa, policy]\ncreated: 2026-09-20\nconfidence: emerging\n---\n\n# Upstream Fix Does Not Guarantee Downstream Unblock\n\nAn upstream fix does not necessarily unblock the downstream pipeline for FuSa-policy-linked packages.\n\nIn the libbpf incident:\n\n- The upstream BPF denylist fix landed on July 23.\n- RHIVOS 2.1 nightlies continued to fail.\n- FA must run an official process to remove BPF from `automotive-image-builder-policy`.\n- A new policy package must then be shipped.\n- The downstream unblock occurs only after the policy RPM propagates.\n\nAn upstream merge can therefore appear resolved while downstream failures continue. The upstream fix and the policy RPM update are separate processes.",
+      "judge": {
+        "depersonalized": {
+          "pass": true,
+          "notes": ""
+        },
+        "factual": {
+          "pass": true,
+          "notes": ""
+        },
+        "complete": {
+          "pass": true,
+          "notes": ""
+        },
+        "well_formed": {
+          "pass": true,
+          "notes": ""
+        }
+      },
+      "allPass": true
+    },
+    {
+      "id": "ex-056",
+      "destination": "team/processes/",
+      "generatedCapture": "---\ntitle: Human Confirmation for AI-Generated Safety Review Outputs\ntags: [fusa, ai, safety-review, human-review, compliance]\ncreated: 2026-09-20\nconfidence: emerging\n---\n\n# Human Confirmation for AI-Generated Safety Review Outputs\n\nAI-generated output used in safety review contexts requires mandatory confirmation by a human expert.\n\nTeams must complete the human review step even under time pressure related to the October 31 submission deadline. AI-generated content must not bypass expert confirmation or be treated as approved without it.\n\nThis is an existing requirement. The requirement was reinforced because the submission is at risk and shortcuts must not be taken. Example disclaimer text was shared for use with AI-generated output.",
+      "judge": {
+        "depersonalized": {
+          "pass": true,
+          "notes": ""
+        },
+        "factual": {
+          "pass": true,
+          "notes": ""
+        },
+        "complete": {
+          "pass": true,
+          "notes": ""
+        },
+        "well_formed": {
+          "pass": true,
+          "notes": ""
+        }
+      },
+      "allPass": true
+    },
+    {
+      "id": "ex-058b",
+      "destination": "team/wiki/",
+      "generatedCapture": "---\ntitle: Meeting Load and Deep-Focus Work\ntags: [meetings, focus, burnout, role-design]\ncreated: 2026-09-20\nconfidence: emerging\n---\n\n# Meeting Load and Deep-Focus Work\n\nMeeting load alone does not cause burnout. Friction arises when meetings compete with deep-focus technical tasks for the same schedule.\n\nWhen coordination is the primary work of a role and competing technical tasks are removed, the conflict between meetings and deep-focus work disappears.",
+      "judge": {
+        "depersonalized": {
+          "pass": true,
+          "notes": ""
+        },
+        "factual": {
+          "pass": true,
+          "notes": ""
+        },
+        "complete": {
+          "pass": true,
+          "notes": "Preserves the core pattern: meeting volume alone is not the cause, schedule competition with deep-focus technical work creates friction, and removing competing technical work in coordination-focused roles resolves the conflict."
+        },
+        "well_formed": {
+          "pass": true,
+          "notes": ""
+        }
+      },
+      "allPass": true
+    },
+    {
+      "id": "ex-063",
+      "destination": "team/projects/",
+      "generatedCapture": "---\ntitle: Image Files Prioritization\ntags: [image-files, prioritization, ga, release]\ncreated: 2026-09-20\nconfidence: emerging\n---\n\n# Image Files Prioritization\n\nImage files must be prioritized. The GA date is September 1.\n\nKanitha and Eitan are associated with this prioritization.",
+      "judge": {
+        "depersonalized": {
+          "pass": true,
+          "notes": ""
+        },
+        "factual": {
+          "pass": true,
+          "notes": ""
+        },
+        "complete": {
+          "pass": false,
+          "notes": "Does not identify the RHIVOS 2.0 project or explicitly state the GA target year, September 1, 2026. It also describes Kanitha and Eitan as associated rather than owners."
+        },
+        "well_formed": {
+          "pass": true,
+          "notes": ""
+        }
+      },
+      "allPass": false
+    },
+    {
+      "id": "ex-064",
+      "destination": "team/wiki/",
+      "generatedCapture": "---\ntitle: OpenAI Luna Model Cost Efficiency\ntags: [openai, luna, cost-efficiency, performance]\ncreated: 2026-09-20\nconfidence: emerging\n---\n\n# OpenAI Luna Model Cost Efficiency\n\nLuigi completed a complex function in approximately 2 hours using the OpenAI Luna model at near-$0 cost.",
+      "judge": {
+        "depersonalized": {
+          "pass": true,
+          "notes": ""
+        },
+        "factual": {
+          "pass": true,
+          "notes": ""
+        },
+        "complete": {
+          "pass": false,
+          "notes": "Preserves the core data point but omits its stated relevance to model-selection decisions in AI initiatives where cost efficiency matters."
+        },
+        "well_formed": {
+          "pass": true,
+          "notes": ""
+        }
+      },
+      "allPass": false
+    },
+    {
+      "id": "ex-065",
+      "destination": "team/projects/",
+      "generatedCapture": "---\ntitle: AI-Assisted Change Impact Analysis\ntags: [ai, change-impact-analysis, production-issues, fusa, defect-triage]\ncreated: 2026-09-20\nconfidence: emerging\n---\n\n# AI-Assisted Change Impact Analysis\n\nIan published an AI-assisted change impact analysis program to triage hundreds of production issues.\n\nThe program intersects with FuSa and defect triage programs. Its continued relevance depends on whether the program scales.",
+      "judge": {
+        "depersonalized": {
+          "pass": true,
+          "notes": ""
+        },
+        "factual": {
+          "pass": false,
+          "notes": "The statement that the program's continued relevance depends on scaling is evaluative/editorial rather than a neutral fact."
+        },
+        "complete": {
+          "pass": false,
+          "notes": "The capture omits that the program is active in the AAA team and does not explicitly preserve the program-level context."
+        },
+        "well_formed": {
+          "pass": true,
+          "notes": ""
+        }
+      },
+      "allPass": false
+    },
+    {
+      "id": "ex-066",
+      "destination": "team/processes/",
+      "generatedCapture": "---\ntitle: Build Process Stability Monitoring\ntags: [builds, monitoring, pipeline, release-reliability]\ncreated: 2026-09-20\nconfidence: emerging\n---\n\n# Build Process Stability Monitoring\n\nExternal dependency changes repeatedly disrupt local workflows and create pipeline stability issues.\n\nPeter’s standing requirement is guaranteed stability during release periods for urgent builds.\n\nMonitoring initiatives are aligned specifically with build process stability rather than infrastructure health alone. Monitoring serves release reliability, not monitoring for its own sake.",
+      "judge": {
+        "depersonalized": {
+          "pass": true,
+          "notes": ""
+        },
+        "factual": {
+          "pass": true,
+          "notes": ""
+        },
+        "complete": {
+          "pass": true,
+          "notes": ""
+        },
+        "well_formed": {
+          "pass": true,
+          "notes": ""
+        }
+      },
+      "allPass": true
+    },
+    {
+      "id": "ex-067",
+      "destination": "team/processes/",
+      "generatedCapture": "---\ntitle: TPO Milestone Reporting Recognition\ntags: [tpo, reporting, milestones, recognition]\ncreated: 2026-09-20\nconfidence: emerging\n---\n\n# TPO Milestone Reporting Recognition\n\nWhen presenting milestones at program meetings, name the individual team members who achieved them. This provides outward-facing recognition for their work and is part of the TPO reporting workflow.",
+      "judge": {
+        "depersonalized": {
+          "pass": true,
+          "notes": ""
+        },
+        "factual": {
+          "pass": true,
+          "notes": ""
+        },
+        "complete": {
+          "pass": true,
+          "notes": ""
+        },
+        "well_formed": {
+          "pass": true,
+          "notes": ""
+        }
+      },
+      "allPass": true
+    },
+    {
+      "id": "ex-068",
+      "destination": "team/processes/",
+      "generatedCapture": "---\ntitle: Sprint Planning Jira Reconciliation Process\ntags: [sprint-planning, jira, capacity, carryover, team-process]\ncreated: 2026-09-20\nconfidence: emerging\n---\n\n# Sprint Planning Jira Reconciliation Process\n\nBefore each sprint planning session:\n\n1. Run a full-team Jira sprint query.\n2. Compare the query results against `team-state.md`.\n3. Flag discrepancies, including:\n   - Backlog tickets misclassified as sprint work\n   - Gaps where only subtasks are tracked\n   - Stale statuses\n4. Produce a carryover and capacity view for planning.\n\nAfter planning, query the new sprint to verify which work landed.\n\nThis process was repeated during preparation for Sprints 134, 135, and 136.",
+      "judge": {
+        "depersonalized": {
+          "pass": true,
+          "notes": ""
+        },
+        "factual": {
+          "pass": true,
+          "notes": ""
+        },
+        "complete": {
+          "pass": true,
+          "notes": "Preserves the recurring pre-planning query, comparison against team-state.md, discrepancy categories, carryover/capacity view, post-planning verification, and application to Sprints 134–136."
+        },
+        "well_formed": {
+          "pass": true,
+          "notes": ""
+        }
+      },
+      "allPass": true
+    }
+  ]
+}

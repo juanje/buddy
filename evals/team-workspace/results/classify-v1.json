@@ -1,0 +1,349 @@
+{
+  "generatedAt": "2026-09-20T03:02:51.898Z",
+  "metrics": {
+    "teamFpRate": 25,
+    "teamFnRate": 0,
+    "typeAccuracy": 90,
+    "subdirAccuracy": 83.33333333333334,
+    "privacyRecall": 66.66666666666666,
+    "teamFpCount": 1,
+    "teamFpTotal": 4,
+    "teamFnCount": 0,
+    "teamFnTotal": 6,
+    "typeCorrect": 9,
+    "typeTotal": 10,
+    "subdirCorrect": 5,
+    "subdirTotal": 6,
+    "privacyCorrect": 2,
+    "privacyTotal": 3,
+    "parseErrors": 0
+  },
+  "rows": [
+    {
+      "id": "ex-054",
+      "tags": [
+        "initiative-status",
+        "aaa",
+        "executive-review",
+        "program"
+      ],
+      "expected": {
+        "type": "Context",
+        "team_eligible": true,
+        "audience_filter_passed": true,
+        "destination": "team/projects/",
+        "depersonalized_capture": "AAA team executive review focus (fall 2026): Four prioritized projects — (1) Defect/CVE triage, (2) CI/CD pipeline monitoring, (3) ALE certification, (4) Scrummit. Consolidation of existing work is the mandate — no new initiatives.",
+        "personal_capture": null,
+        "reasoning": "Program-level focus decision. Factual. Useful for Toolchain engineers participating in or adjacent to AAA work."
+      },
+      "predicted": {
+        "type": "Context",
+        "team_eligible": true,
+        "audience_filter_passed": true,
+        "destination": "team/decisions/",
+        "reasoning": "Factual team decision and shared executive-review priorities that benefit teammates. The quoted personal judgment about focus should be kept out of the team capture; only the agreed priorities and ownership are routed."
+      },
+      "match": {
+        "type": true,
+        "team_eligible": true,
+        "audience_filter_passed": true,
+        "destination": false
+      },
+      "rawText": "{\"type\":\"Context\",\"team_eligible\":true,\"audience_filter_passed\":true,\"destination\":\"team/decisions/\",\"reasoning\":\"Factual team decision and shared executive-review priorities that benefit teammates. The quoted personal judgment about focus should be kept out of the team capture; only the agreed priorities and ownership are routed.\"}"
+    },
+    {
+      "id": "ex-039",
+      "tags": [
+        "gotcha",
+        "acli",
+        "jira",
+        "jql",
+        "tooling"
+      ],
+      "expected": {
+        "type": "Context",
+        "team_eligible": true,
+        "audience_filter_passed": true,
+        "destination": "team/wiki/",
+        "depersonalized_capture": "Jira acli best practice: use JQL `sprint in openSprints()` for sprint queries rather than `acli jira board search`. Board search returns all instance boards with no project filter — unusable on shared Atlassian instances. JQL approach works without knowing board/sprint IDs.",
+        "personal_capture": null,
+        "reasoning": "Concrete tool usage gotcha/best practice. Factual. Anyone using acli for sprint queries will hit the board search limitation."
+      },
+      "predicted": {
+        "type": "Context",
+        "team_eligible": true,
+        "audience_filter_passed": true,
+        "destination": "team/wiki/",
+        "reasoning": "This is a factual, broadly useful lesson about querying sprints in Atlassian: JQL avoids needing board or sprint IDs, while board search does not scale well on shared instances. It passes the factuality and teammate-benefit filters, with no privacy concerns."
+      },
+      "match": {
+        "type": true,
+        "team_eligible": true,
+        "audience_filter_passed": true,
+        "destination": true
+      },
+      "rawText": "{\"type\":\"Context\",\"team_eligible\":true,\"audience_filter_passed\":true,\"destination\":\"team/wiki/\",\"reasoning\":\"This is a factual, broadly useful lesson about querying sprints in Atlassian: JQL avoids needing board or sprint IDs, while board search does not scale well on shared instances. It passes the factuality and teammate-benefit filters, with no privacy concerns.\"}"
+    },
+    {
+      "id": "ex-062",
+      "tags": [
+        "edge-case",
+        "privacy",
+        "personal",
+        "colleague-circumstance",
+        "fusa"
+      ],
+      "expected": {
+        "type": "Context",
+        "team_eligible": false,
+        "audience_filter_passed": false,
+        "destination": null,
+        "depersonalized_capture": null,
+        "personal_capture": null,
+        "reasoning": "EDGE CASE: Privacy check on personal circumstances of a named colleague (#3). The context (Ian in a tornado shelter) reveals a personal emergency about Ian McLeod. The team-relevant fact (canonical FuSa repo not yet created) is separable — captured elsewhere without the personal detail. Q3 blocks the personal circumstance. The blocking fact is: 'Ian canonical FuSa repo still pending — blocks VROOM-40719 Tools List + gating.' That depersonalized version would be team-eligible without the tornado context."
+      },
+      "predicted": {
+        "type": "Context",
+        "team_eligible": true,
+        "audience_filter_passed": false,
+        "destination": null,
+        "reasoning": "This is a factual status update, not an action. Although the repository delay could benefit teammates, it includes sensitive personal safety/location information about being in a tornado shelter, so it does not pass the privacy check."
+      },
+      "match": {
+        "type": true,
+        "team_eligible": false,
+        "audience_filter_passed": true,
+        "destination": true
+      },
+      "rawText": "{\"type\":\"Context\",\"team_eligible\":true,\"audience_filter_passed\":false,\"destination\":null,\"reasoning\":\"This is a factual status update, not an action. Although the repository delay could benefit teammates, it includes sensitive personal safety/location information about being in a tornado shelter, so it does not pass the privacy check.\"}"
+    },
+    {
+      "id": "ex-053",
+      "tags": [
+        "decision",
+        "prodsec",
+        "policy",
+        "compliance",
+        "distribution"
+      ],
+      "expected": {
+        "type": "Context",
+        "team_eligible": true,
+        "audience_filter_passed": true,
+        "destination": "team/decisions/",
+        "depersonalized_capture": "Hard ProdSec policy (confirmed May 2026, VP-level): no more SDLC exceptions for customer-facing artifact distribution. Customer-facing content must go through CDN or Unified Downloader — S3 direct distribution is not compliant. EU CRA compliance is mandatory for EU market sales. Exceptions require VP sign-off.",
+        "personal_capture": null,
+        "reasoning": "Policy constraint from a Jira ticket thread (connector-relayed content). Factual, high authority (VP-level decision). Non-negotiable constraint for anyone working on customer-facing artifact publishing."
+      },
+      "predicted": {
+        "type": "Context",
+        "team_eligible": true,
+        "audience_filter_passed": true,
+        "destination": "team/decisions/",
+        "reasoning": "This records confirmed policy decisions and mandatory distribution/compliance constraints that benefit teammates. It is factual, shared-work context with no personal or privacy-sensitive content."
+      },
+      "match": {
+        "type": true,
+        "team_eligible": true,
+        "audience_filter_passed": true,
+        "destination": true
+      },
+      "rawText": "{\n  \"type\": \"Context\",\n  \"team_eligible\": true,\n  \"audience_filter_passed\": true,\n  \"destination\": \"team/decisions/\",\n  \"reasoning\": \"This records confirmed policy decisions and mandatory distribution/compliance constraints that benefit teammates. It is factual, shared-work context with no personal or privacy-sensitive content.\"\n}"
+    },
+    {
+      "id": "ex-047",
+      "tags": [
+        "pipeline",
+        "gotcha",
+        "kernel",
+        "tmpfs",
+        "signing"
+      ],
+      "expected": {
+        "type": "Context",
+        "team_eligible": true,
+        "audience_filter_passed": true,
+        "destination": "team/wiki/",
+        "depersonalized_capture": "Pipeline gotcha: Kernel module signing happens on `tmpfs` (`/tmp` = RAM). If kernel modules are large, this causes disk_full failures. Root cause in Jul 2026 incident: `msm_hab.ko.zst` decompressed to 2.6GB (corrupted in kernel build 249). Two lessons: (1) validate kernel module integrity in build; (2) harden: use `dir='/var/tmp'` in osbuild-auto to avoid tmpfs for signing temp files.",
+        "personal_capture": null,
+        "reasoning": "Technical diagnosis from a pipeline failure. Factual. The tmpfs signing behavior is a non-obvious constraint that can cause future incidents. High value for pipeline engineers."
+      },
+      "predicted": {
+        "type": "Context",
+        "team_eligible": true,
+        "audience_filter_passed": true,
+        "destination": "team/wiki/",
+        "reasoning": "Factual technical investigation findings and a proposed hardening fix; this benefits teammates diagnosing the shared pipeline failure. No private, personal, or evaluative content is present."
+      },
+      "match": {
+        "type": true,
+        "team_eligible": true,
+        "audience_filter_passed": true,
+        "destination": true
+      },
+      "rawText": "{\"type\":\"Context\",\"team_eligible\":true,\"audience_filter_passed\":true,\"destination\":\"team/wiki/\",\"reasoning\":\"Factual technical investigation findings and a proposed hardening fix; this benefits teammates diagnosing the shared pipeline failure. No private, personal, or evaluative content is present.\"}"
+    },
+    {
+      "id": "ex-009",
+      "tags": [
+        "edge-case",
+        "privacy",
+        "jira",
+        "person-assessment"
+      ],
+      "expected": {
+        "type": "Context",
+        "team_eligible": false,
+        "audience_filter_passed": false,
+        "destination": null,
+        "depersonalized_capture": null,
+        "personal_capture": null,
+        "reasoning": "EDGE CASE: Factual process observation, but it names Jan specifically in a way that reads as an assessment of someone's tracking habits. Q3 (privacy): the statement 'Jan Onderka has no sprint tickets' is innocuous on its own, but it implicitly surfaces work-tracking behavior of a specific person. Default-personal on ambiguity. The generalizable lesson (subtask work not appearing as own tickets) could be team wiki content without naming the person — see ex-009b."
+      },
+      "predicted": {
+        "type": "Context",
+        "team_eligible": true,
+        "audience_filter_passed": true,
+        "destination": "team/wiki/",
+        "reasoning": "Factual observation about a Jira tracking gap and how work was organized; it benefits teammates and contains no private information, opinions, or colleague assessment."
+      },
+      "match": {
+        "type": true,
+        "team_eligible": false,
+        "audience_filter_passed": false,
+        "destination": false
+      },
+      "rawText": "{\"type\":\"Context\",\"team_eligible\":true,\"audience_filter_passed\":true,\"destination\":\"team/wiki/\",\"reasoning\":\"Factual observation about a Jira tracking gap and how work was organized; it benefits teammates and contains no private information, opinions, or colleague assessment.\"}"
+    },
+    {
+      "id": "ex-018",
+      "tags": [
+        "gotcha",
+        "acli",
+        "jira",
+        "tooling"
+      ],
+      "expected": {
+        "type": "Context",
+        "team_eligible": true,
+        "audience_filter_passed": true,
+        "destination": "team/wiki/",
+        "depersonalized_capture": "Jira `acli` limitation: custom fields `AssignedTeam`, `Sub-System Group`, and `Story Points` cannot be set via `acli jira workitem create` or `edit` API. Must be set manually in Jira UI after ticket creation.",
+        "personal_capture": null,
+        "reasoning": "Technical gotcha about tooling limitation. Factual. Any team member using acli for Jira automation will hit this. High utility."
+      },
+      "predicted": {
+        "type": "Context",
+        "team_eligible": true,
+        "audience_filter_passed": true,
+        "destination": "team/wiki/",
+        "reasoning": "Factual technical observation about Jira ticket creation via acli, including an authentication expiry and custom-field API limitation that teammates could benefit from knowing. No private, emotional, preferential, or personal-strategy content appears."
+      },
+      "match": {
+        "type": true,
+        "team_eligible": true,
+        "audience_filter_passed": true,
+        "destination": true
+      },
+      "rawText": "{\"type\":\"Context\",\"team_eligible\":true,\"audience_filter_passed\":true,\"destination\":\"team/wiki/\",\"reasoning\":\"Factual technical observation about Jira ticket creation via acli, including an authentication expiry and custom-field API limitation that teammates could benefit from knowing. No private, emotional, preferential, or personal-strategy content appears.\"}"
+    },
+    {
+      "id": "ex-035",
+      "tags": [
+        "initiative-status",
+        "blocker",
+        "libbpf",
+        "fusa",
+        "pipeline"
+      ],
+      "expected": {
+        "type": "Context",
+        "team_eligible": true,
+        "audience_filter_passed": true,
+        "destination": "team/projects/",
+        "depersonalized_capture": "RHIVOS 2.1 pipeline blocker: `libbpf`/BPF is on the FuSa denylist. Fixing this requires an official FA process to remove BPF from the automotive-image-builder-policy (not just a package bump). Pipeline remains blocked until FA initiates and completes this process. Tickets: VROOM-50225, VROOM-50230.",
+        "personal_capture": null,
+        "reasoning": "Initiative status update — active blocker. Process requirement (FA official process) is non-obvious and has blocked progress. High teammate value."
+      },
+      "predicted": {
+        "type": "Context",
+        "team_eligible": true,
+        "audience_filter_passed": true,
+        "destination": "team/projects/",
+        "reasoning": "This is a factual status update about a shared RHIVOS 2.1 pipeline blockage, including the policy dependency and required release process. It benefits teammates tracking the project and contains no personal or private information."
+      },
+      "match": {
+        "type": true,
+        "team_eligible": true,
+        "audience_filter_passed": true,
+        "destination": true
+      },
+      "rawText": "{\"type\":\"Context\",\"team_eligible\":true,\"audience_filter_passed\":true,\"destination\":\"team/projects/\",\"reasoning\":\"This is a factual status update about a shared RHIVOS 2.1 pipeline blockage, including the policy dependency and required release process. It benefits teammates tracking the project and contains no personal or private information.\"}"
+    },
+    {
+      "id": "ex-058",
+      "tags": [
+        "edge-case",
+        "frustration-wrapping-diagnosis",
+        "dual-capture",
+        "personal",
+        "burnout",
+        "aaa"
+      ],
+      "expected": {
+        "type": "Reflection",
+        "team_eligible": true,
+        "audience_filter_passed": false,
+        "destination": null,
+        "depersonalized_capture": null,
+        "personal_capture": "Personal instance: AAA meeting load caused burnout → skipped Sprint Planning Jul 23. Pattern: deep technical tasks + meeting-heavy schedule = burnout cycle, not meetings per se.",
+        "reasoning": "EDGE CASE: Personal frustration wrapping a technical diagnosis (#4). The emotion ('me están quemando', burnout) is personal and Q3-blocked. Underneath is a generalizable insight: meetings + competing focus tasks = burnout, not meetings alone. Dual-capture: the separated insight goes to team/wiki/ (see ex-058b). The personal emotional instance stays personal-only."
+      },
+      "predicted": {
+        "type": "Reflection",
+        "team_eligible": false,
+        "audience_filter_passed": false,
+        "destination": null,
+        "reasoning": "Personal reflection expressing frustration, workload strain, and burnout concerns in a private document; it is not an actionable task or team-shareable context."
+      },
+      "match": {
+        "type": true,
+        "team_eligible": false,
+        "audience_filter_passed": true,
+        "destination": true
+      },
+      "rawText": "{\"type\":\"Reflection\",\"team_eligible\":false,\"audience_filter_passed\":false,\"destination\":null,\"reasoning\":\"Personal reflection expressing frustration, workload strain, and burnout concerns in a private document; it is not an actionable task or team-shareable context.\"}"
+    },
+    {
+      "id": "ex-028",
+      "tags": [
+        "personal",
+        "private",
+        "salary"
+      ],
+      "expected": {
+        "type": "Reflection",
+        "team_eligible": false,
+        "audience_filter_passed": false,
+        "destination": null,
+        "depersonalized_capture": null,
+        "personal_capture": null,
+        "reasoning": "Personal salary/bonus information. Q3 filter blocks immediately — personal financial data. Never team knowledge."
+      },
+      "predicted": {
+        "type": "Context",
+        "team_eligible": true,
+        "audience_filter_passed": false,
+        "destination": null,
+        "reasoning": "This is factual context about a personal bonus and a 1:1 with a manager. Compensation and private 1:1 information fail the privacy check, so it should not be routed to the team."
+      },
+      "match": {
+        "type": false,
+        "team_eligible": false,
+        "audience_filter_passed": true,
+        "destination": true
+      },
+      "rawText": "{\"type\":\"Context\",\"team_eligible\":true,\"audience_filter_passed\":false,\"destination\":null,\"reasoning\":\"This is factual context about a personal bonus and a 1:1 with a manager. Compensation and private 1:1 information fail the privacy check, so it should not be routed to the team.\"}"
+    }
+  ]
+}

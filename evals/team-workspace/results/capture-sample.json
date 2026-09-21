@@ -1,0 +1,90 @@
+{
+  "generatedAt": "2026-09-20T19:58:00.134Z",
+  "metrics": {
+    "depersonalizationRate": 100,
+    "factualityRate": 100,
+    "completenessRate": 66.66666666666666,
+    "wellFormedRate": 100,
+    "depersonalizedPass": 3,
+    "factualPass": 3,
+    "completePass": 2,
+    "wellFormedPass": 3,
+    "judgedTotal": 3,
+    "captureErrors": 0,
+    "judgeErrors": 0
+  },
+  "rows": [
+    {
+      "id": "ex-017",
+      "destination": "team/wiki/",
+      "generatedCapture": "---\ntitle: Developer VM QCOW2 Build Path\ntags: [qcow2, brew, rhel, konflux, developer-vm]\ncreated: 2026-09-20\nconfidence: emerging\n---\n\n# Developer VM QCOW2 Build Path\n\nThe MPDM Slack thread established the following build-path facts:\n\n- QCOW2 images are buildable in Brew.\n- RHEL has moved to Image Builder.\n- Konflux cannot yet perform package-mode QCOW2 builds.\n- The Konflux package-mode QCOW2 design document by lsedlar is in progress.\n- For speed, use Brew for QCOW2 builds.\n- The RHEL Image Builder contact is **Ondřej Budai**, who confirmed the current Konflux limitation.",
+      "judge": {
+        "depersonalized": {
+          "pass": true,
+          "notes": ""
+        },
+        "factual": {
+          "pass": true,
+          "notes": ""
+        },
+        "complete": {
+          "pass": true,
+          "notes": ""
+        },
+        "well_formed": {
+          "pass": true,
+          "notes": ""
+        }
+      },
+      "allPass": true
+    },
+    {
+      "id": "ex-040",
+      "destination": "team/wiki/",
+      "generatedCapture": "---\ntitle: Verify CLI Help Before Documenting Subagent Output\ntags: [cli, documentation, subagents, verification, confluence, jira]\ncreated: 2026-09-20\nconfidence: emerging\n---\n\n# Verify CLI Help Before Documenting Subagent Output\n\nAI-generated CLI flags can appear plausible while being incorrect. During creation of the `acli` cheatsheet, a Haiku subagent generated incorrect Confluence flags, including `--space-key`. Jira commands were correct because they were verified directly.\n\nRun `--help` on unfamiliar subcommands before committing subagent-generated CLI syntax to reference documentation.",
+      "judge": {
+        "depersonalized": {
+          "pass": true,
+          "notes": ""
+        },
+        "factual": {
+          "pass": true,
+          "notes": ""
+        },
+        "complete": {
+          "pass": true,
+          "notes": ""
+        },
+        "well_formed": {
+          "pass": true,
+          "notes": ""
+        }
+      },
+      "allPass": true
+    },
+    {
+      "id": "ex-038",
+      "destination": "team/wiki/",
+      "generatedCapture": "---\ntitle: AI Token Cost Optimization Patterns\ntags: [ai, token-cost, cli, mcp, sub-agents]\ncreated: 2026-09-20\nconfidence: emerging\n---\n\n# AI Token Cost Optimization Patterns\n\nAAA standup discussion covered approaches for reducing AI token costs:\n\n- Juanje raised the choice between CLI and MCP.\n- Allison confirmed that Scrummit migrated to CLI to reduce costs.\n- Petr proposed a sub-agent pattern in which a heavy MCP query is processed and reduced to a paragraph before being returned.\n- Ian reported that output masking reduced token usage by approximately 80%.\n- Ian is experimenting with a two-pass workflow:\n  1. Generate reasoning in Markdown.\n  2. Use Gemini Flash Light to convert the result to JSON.\n- Petr recommended requesting only specific fields and using Markdown rendering.",
+      "judge": {
+        "depersonalized": {
+          "pass": true,
+          "notes": ""
+        },
+        "factual": {
+          "pass": true,
+          "notes": ""
+        },
+        "complete": {
+          "pass": false,
+          "notes": "The capture omits that the techniques were validated in production by the AAA team, and does not specify the Jira-query context or lower-overhead rationale for CLI over MCP."
+        },
+        "well_formed": {
+          "pass": true,
+          "notes": ""
+        }
+      },
+      "allPass": false
+    }
+  ]
+}

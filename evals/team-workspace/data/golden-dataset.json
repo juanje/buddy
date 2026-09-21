@@ -1,0 +1,1610 @@
+[
+  {
+    "id": "ex-001",
+    "source": "logs/2026-09-17.md",
+    "section": "Toolchain Sprint Planning — Sprint 136",
+    "input": "**Sprint goal:** \"Create advisories for RHIVOS 2.0.z\" (proposed by Aman, agreed by team).",
+    "context": "Sprint 136 planning meeting. Aman proposed the goal; team agreed.",
+    "labels": {
+      "type": "Context",
+      "team_eligible": true,
+      "audience_filter_passed": true,
+      "destination": "team/decisions/",
+      "depersonalized_capture": "Sprint 136 goal: 'Create advisories for RHIVOS 2.0.z'. Proposed by Aman, agreed by the full team in Sprint 136 planning.",
+      "personal_capture": null,
+      "reasoning": "Factual sprint decision. All teammates benefit from knowing the sprint goal. No personal opinion or privacy concern. Q1 (factual): yes. Q2 (teammate benefit): yes. Q3 (privacy): clean."
+    },
+    "tags": [
+      "decision",
+      "sprint-planning",
+      "sprint-goal"
+    ]
+  },
+  {
+    "id": "ex-002",
+    "source": "logs/2026-09-17.md",
+    "section": "Board review — carryovers and status",
+    "input": "I did the pre-planning Jira sweep for Sprint 136 and found VROOM-22346 sitting in Ozan's sprint backlog — but nobody's working on it and it's not in our team-state doc. Brought it up in planning and we clarified it's just noise. Checked again after planning and it's still there in Sprint 136 backlog. It keeps carrying over as a phantom ticket — the kind of thing that confuses anyone doing sprint prep if they don't know it's not real work.",
+    "context": "Sprint 136 pre-planning. User runs a full-team Jira query before each sprint planning, comparing per-person tickets against team-state.md to flag discrepancies.",
+    "labels": {
+      "type": "Context",
+      "team_eligible": true,
+      "audience_filter_passed": true,
+      "destination": "team/wiki/",
+      "depersonalized_capture": "VROOM-22346 appears in Sprint Backlog within the active sprint but is not being actively worked and was not reflected in team-state. This type of ticket is noise — clarify at planning rather than treating as in-sprint work.",
+      "personal_capture": null,
+      "reasoning": "Factual observation about Jira data hygiene. Useful process tribal knowledge for anyone doing sprint prep. No personal opinion. Could help prevent the same confusion in future sprints."
+    },
+    "tags": [
+      "process",
+      "sprint-hygiene",
+      "jira"
+    ]
+  },
+  {
+    "id": "ex-003",
+    "source": "logs/2026-09-17.md",
+    "section": "S3 versioning (VROOM-53501)",
+    "input": "**Decision: remove versioning from auto-product-build-downstream bucket.** Juanje to add confirming comment on the ticket.",
+    "context": "Eitan collected stakeholder feedback; all respondents confirmed no requirement for versioning.",
+    "labels": {
+      "type": "Context",
+      "team_eligible": true,
+      "audience_filter_passed": true,
+      "destination": "team/decisions/",
+      "depersonalized_capture": "Decision: Remove S3 versioning from auto-product-build-downstream bucket (VROOM-53501). All stakeholders confirmed no requirement for versioning from their side.",
+      "personal_capture": null,
+      "reasoning": "Clean architectural decision with rationale. All questions pass. Useful for anyone reviewing S3 bucket configuration in the future."
+    },
+    "tags": [
+      "decision",
+      "s3",
+      "infrastructure"
+    ]
+  },
+  {
+    "id": "ex-004",
+    "source": "logs/2026-09-17.md",
+    "section": "Sprint overcommitment discussion",
+    "input": "Juanje raised the team's overcommitting pattern. Eitan: overcommitting > undercommitting. At least overcommitting means you've prioritized; undercommitting = no plan, random pull. Juanje counterpoint: WIP limit is the actual value — if you take 10 tickets, you open too many tabs, lose focus, nothing gets finished. One or two tickets → finish them → pick next. Backlog refinement ahead of time enables this: you already know what goes in what order. Consensus: experiment with better backlog refinement going forward.",
+    "context": "Sprint planning discussion about team process.",
+    "labels": {
+      "type": "Context",
+      "team_eligible": false,
+      "audience_filter_passed": false,
+      "destination": null,
+      "depersonalized_capture": null,
+      "personal_capture": null,
+      "reasoning": "DUAL CAPTURE CANDIDATE — but on closer inspection: the consensus decision ('experiment with better backlog refinement') is factual and team-eligible. The individual positions (Eitan's view, Juanje's view) are opinions. Q3 blocks the individual framings. Only the consensus outcome survives to team/. See ex-004b for the dual-capture breakdown. Classified personal-only here due to the dominant opinion framing in this excerpt."
+    },
+    "tags": [
+      "opinion",
+      "process",
+      "wip"
+    ]
+  },
+  {
+    "id": "ex-004b",
+    "source": "logs/2026-09-17.md",
+    "section": "Sprint overcommitment discussion",
+    "input": "Consensus: experiment with better backlog refinement going forward. No hard change in process this sprint.",
+    "context": "Outcome of sprint overcommitment discussion during Sprint 136 planning.",
+    "labels": {
+      "type": "Context",
+      "team_eligible": true,
+      "audience_filter_passed": true,
+      "destination": "team/decisions/",
+      "depersonalized_capture": "Process experiment agreed in Sprint 136 planning: invest more in backlog refinement to reduce overcommitment. No immediate hard process change; trial basis.",
+      "personal_capture": null,
+      "reasoning": "Separating the consensus decision from the opinion-laden discussion. This factual outcome is team-eligible. The individual views (ex-004) stay personal."
+    },
+    "tags": [
+      "decision",
+      "process",
+      "agile"
+    ]
+  },
+  {
+    "id": "ex-005",
+    "source": "logs/2026-09-17.md",
+    "section": "Grafana alert channel debate",
+    "input": "In Sprint 136 planning, Matt brought up that the Grafana alerts in our infra channel are noisier than expected — configured for 3-day warnings plus daily critical, but firing more frequently. Avi said Matt and Eitan own the monitoring, so it's their call. The team agreed that non-urgent tracking alerts should go to email instead of Slack — better accountability per owner, and Slack stays reserved for urgent/critical. Matt's going to investigate switching the non-critical ones to email. The noise will also calm down once the cert renewals go through.",
+    "context": "Sprint 136 planning meeting. Discussion about Grafana alert routing. Team reached agreement on routing convention.",
+    "labels": {
+      "type": "Context",
+      "team_eligible": true,
+      "audience_filter_passed": true,
+      "destination": "team/processes/",
+      "depersonalized_capture": "Alert routing convention agreed: non-urgent/tracking Grafana alerts should go to email (better owner accountability); Slack/desktop reserved for critical/urgent alerts only.",
+      "personal_capture": null,
+      "reasoning": "Process agreement about alert routing. Factual team decision. Any teammate configuring monitoring or alerts would benefit. Q1-Q3 all pass."
+    },
+    "tags": [
+      "process",
+      "monitoring",
+      "alerts",
+      "grafana"
+    ]
+  },
+  {
+    "id": "ex-006",
+    "source": "logs/2026-09-17.md",
+    "section": "Pipeline incident retrospective: RHIVOS-2.0-Core-VROOM-46538-RC1",
+    "input": "**What failed:** `promote-product-build-and-release` job failed on the S3 copy from `RHIVOS-2.0-Core-VROOM-46538-RC1/` to `RHIVOS-2.0-Core-VROOM-46538/`. **Root cause (suspected):** Race condition in the job that pushes test results — same pattern seen at RC1 and again at the final promotion run. Not fully confirmed. **Fix applied:** Juanje copied manually via AWS console.",
+    "context": "Historical pipeline failure recovered from a Jul 30 DM between Juanje and Ozan.",
+    "labels": {
+      "type": "Context",
+      "team_eligible": true,
+      "audience_filter_passed": true,
+      "destination": "team/wiki/",
+      "depersonalized_capture": "Pipeline gotcha: `promote-product-build-and-release` job can fail on S3 copy between RC path (`RHIVOS-2.0-Core-VROOM-46538-RC1/`) and final path (`RHIVOS-2.0-Core-VROOM-46538/`). Suspected cause: race condition with the test-result push job. Same pattern observed across multiple promotions. Workaround: manual S3 copy via AWS console.",
+      "personal_capture": null,
+      "reasoning": "Technical gotcha from production incident. Factual. Anyone operating the pipeline benefits. Attribution ('Juanje copied') stripped — team workspace is ownerless."
+    },
+    "tags": [
+      "pipeline",
+      "gotcha",
+      "s3",
+      "incident"
+    ]
+  },
+  {
+    "id": "ex-007",
+    "source": "logs/2026-09-17.md",
+    "section": "Chai Bot overview",
+    "input": "**Chai Bot does NOT consume individual token budget** — confirmed by Allison King. Requests go to the centralized Chai budget, not personal $300/month quota.",
+    "context": "AAA Sprint Planning. Relevant for any team member hitting token limits.",
+    "labels": {
+      "type": "Context",
+      "team_eligible": true,
+      "audience_filter_passed": true,
+      "destination": "team/wiki/",
+      "depersonalized_capture": "Chai Bot uses a centralized budget and does NOT count against individual AI token quotas ($300/month). Confirmed by AAA team. Use Chai Bot for Jira/pipeline/Slack Q&A without affecting personal token limits.",
+      "personal_capture": null,
+      "reasoning": "Factual, confirmed data point. Highly beneficial for all team members who use AI tools. Q1-Q3 pass cleanly. Classic tribal knowledge that prevents budget anxiety when using Chai."
+    },
+    "tags": [
+      "ai-tools",
+      "chai-bot",
+      "token-budget"
+    ]
+  },
+  {
+    "id": "ex-008",
+    "source": "logs/2026-09-17.md",
+    "section": "Chai Bot overview",
+    "input": "**Persona model:** system instructions + tools (65+ packages: Jira, GitLab, Sippy CI, Release Controller, etc.) + grounding data (GB-scale: Slack history, Jira, Confluence, GDocs, repos, code RAG). **How to access:** `@chai-bot` in `#chai-users` Slack.",
+    "context": "Context section providing overview of Chai Bot capabilities for the team.",
+    "labels": {
+      "type": "Context",
+      "team_eligible": true,
+      "audience_filter_passed": true,
+      "destination": "team/wiki/",
+      "depersonalized_capture": "Chai Bot: Red Hat internal AI platform with 260+ personas, 65+ tool integrations (Jira, GitLab, Sippy CI, Release Controller, Slack, Confluence, GDocs, code RAG). Access via `@chai-bot` in `#chai-users` Slack channel.",
+      "personal_capture": null,
+      "reasoning": "Factual reference data. Q1-Q3 pass. This is precisely the kind of tribal knowledge that gets lost — where a tool is, how to access it, what it can do."
+    },
+    "tags": [
+      "ai-tools",
+      "chai-bot",
+      "reference"
+    ]
+  },
+  {
+    "id": "ex-009",
+    "source": "logs/2026-09-17.md",
+    "section": "Pre-planning: Sprint 135 team-wide Jira review",
+    "input": "Jan Onderka: no sprint tickets in Jira — work was happening as subtasks under Kanitha's tickets, without own ticket tracking.",
+    "context": "Pre-planning Jira review revealed tracking gap.",
+    "labels": {
+      "type": "Context",
+      "team_eligible": false,
+      "audience_filter_passed": false,
+      "destination": null,
+      "depersonalized_capture": null,
+      "personal_capture": null,
+      "reasoning": "EDGE CASE: Factual process observation, but it names Jan specifically in a way that reads as an assessment of someone's tracking habits. Q3 (privacy): the statement 'Jan Onderka has no sprint tickets' is innocuous on its own, but it implicitly surfaces work-tracking behavior of a specific person. Default-personal on ambiguity. The generalizable lesson (subtask work not appearing as own tickets) could be team wiki content without naming the person — see ex-009b."
+    },
+    "tags": [
+      "edge-case",
+      "privacy",
+      "jira",
+      "person-assessment"
+    ]
+  },
+  {
+    "id": "ex-009b",
+    "source": "logs/2026-09-17.md",
+    "section": "Pre-planning: Sprint 135 team-wide Jira review",
+    "input": "Sprint tracking gap discovered in pre-planning Jira review: a team member had no sprint tickets in Jira because all work was happening as subtasks under another member's tickets, without own ticket tracking. This produces no individual visibility in sprint board views.",
+    "context": "Depersonalized generalization from pre-planning Jira sweep. The pattern — subtask-only work hiding individual contribution visibility — is a sprint hygiene heuristic.",
+    "labels": {
+      "type": "Context",
+      "team_eligible": true,
+      "audience_filter_passed": true,
+      "destination": "team/wiki/",
+      "depersonalized_capture": "Sprint tracking gap: work happening as subtasks under another team member's tickets produces no individual ticket visibility in sprint views. During pre-planning Jira sweeps, check for team members with no tickets who may be active on subtasks.",
+      "personal_capture": null,
+      "reasoning": "The generalizable process lesson is team-eligible once stripped of the individual's name. This is a useful sprint-prep heuristic."
+    },
+    "tags": [
+      "process",
+      "jira",
+      "sprint-hygiene",
+      "depersonalized"
+    ]
+  },
+  {
+    "id": "ex-010",
+    "source": "logs/2026-09-17.md",
+    "section": "Developer VM (VROOM-52268, Juanje → Ozan)",
+    "input": "Developer VM status from Sprint 136 planning: I transferred VROOM-52268 to Ozan for monitoring. The AIB team has it now — Boaz is building the image and Pablo knows the content and is handling testing. Once they're done, the image goes to CDN and then customer portal. Ozan will own the monitoring going forward since I'm out starting Sep 23.",
+    "context": "Sprint 136 planning board review. Handoff of developer VM monitoring ticket from user to teammate before PTO.",
+    "labels": {
+      "type": "Context",
+      "team_eligible": true,
+      "audience_filter_passed": true,
+      "destination": "team/projects/",
+      "depersonalized_capture": "VROOM-52268 (Developer VM): ownership transferred to Ozan for monitoring. AIB team (Boaz building, Pablo testing) building and testing the image. Delivery chain: AIB build → CDN → customer portal. Ozan is the current owner.",
+      "personal_capture": null,
+      "reasoning": "Initiative status update. Factual handoff information. Teammates (especially Ozan and anyone needing to follow up on developer VM) benefit. The PTO reason for transfer is context but not private — it was stated in a team meeting."
+    },
+    "tags": [
+      "initiative-status",
+      "handoff",
+      "developer-vm"
+    ]
+  },
+  {
+    "id": "ex-011",
+    "source": "logs/2026-09-17.md",
+    "section": "PO Planning — Rovo sprint reports",
+    "input": "Useful thing from PO Planning today: Rachel automates her sprint reports using Jira Rovo prompts — it generates status bars, goal status, and flags tickets with high sprint age. Totally hands-off for her. Important detail: Rovo is free, doesn't count against the AI token budget. The official requirement from Shawn is that sprint reports go on Google Drive for program visibility. Whitney reinforced that — Slack is fine for team sharing but Drive is the canonical location. Julia Williams wrote the Rovo prompt that Rachel uses. I need to grab that prompt and set up Toolchain's sprint reporting on Drive.",
+    "context": "PO Planning meeting. User is onboarding as TPO and learning the sprint reporting workflow from other POs.",
+    "labels": {
+      "type": "Context",
+      "team_eligible": true,
+      "audience_filter_passed": true,
+      "destination": "team/processes/",
+      "depersonalized_capture": "Sprint reports must be stored on Google Drive for program visibility (Shawn's requirement). Jira Rovo can automate sprint summaries (status bars, goal status, high-age ticket flags). Rovo is free — does not count against AI budget. Julia Williams authored a working Rovo prompt shared in meeting notes.",
+      "personal_capture": null,
+      "reasoning": "Process and tool information. Factual, team-eligible. Any TPO or team member setting up sprint reporting benefits. The 'Rachel uses' framing is depersonalized to the process in the team capture."
+    },
+    "tags": [
+      "process",
+      "sprint-reporting",
+      "rovo",
+      "ai-tools"
+    ]
+  },
+  {
+    "id": "ex-012",
+    "source": "logs/2026-09-17.md",
+    "section": "Execopen canonical list design gap",
+    "input": "Ian's canonical list contains 4 packages execopen doesn't detect and can't generate: `auto-boot-check`, `binutils`, `checkpolicy`, `nmstate`. `nmstate` is not even installed in the image. Ian's intent: the canonical list is **aspirational** (what should be certified), not a mirror of execopen output.",
+    "context": "MR !2 review and design gap discussion via Slack DM and MR comments.",
+    "labels": {
+      "type": "Context",
+      "team_eligible": true,
+      "audience_filter_passed": true,
+      "destination": "team/wiki/",
+      "depersonalized_capture": "Execopen canonical list design constraint: the canonical list is aspirational (what should be certified), not a mirror of execopen output. Four packages (`auto-boot-check`, `binutils`, `checkpolicy`, `nmstate`) are in the canonical list but execopen cannot detect them — `nmstate` is not installed in the image. Any pipeline test comparing execopen output against the canonical list will permanently fail on these 4 unless the list semantics or detection scope changes.",
+      "personal_capture": null,
+      "reasoning": "Critical technical gotcha. Factual, non-obvious, high teammate benefit (anyone implementing VROOM-40719 or similar). Q1-Q3 pass."
+    },
+    "tags": [
+      "gotcha",
+      "execopen",
+      "canonical-list",
+      "pipeline"
+    ]
+  },
+  {
+    "id": "ex-013",
+    "source": "logs/2026-09-17.md",
+    "section": "Execopen canonical list design gap",
+    "input": "**MR !2 approved (Sep 17):** Juanje approved Ian's canonical lists MR despite known discrepancies. Rationale: unblocks Ian, Petr, and downstream consumers (FoA, RHEL issue cloning). The lists are acknowledged as imperfect — correcting them via MR process is itself the goal.",
+    "context": "Decision to approve an imperfect MR to unblock downstream teams.",
+    "labels": {
+      "type": "Context",
+      "team_eligible": true,
+      "audience_filter_passed": true,
+      "destination": "team/decisions/",
+      "depersonalized_capture": "Decision: MR !2 (canonical lists) approved despite known discrepancies with execopen output. Rationale: unblocks Ian, Petr, and downstream consumers (FoA, RHEL issue cloning). The lists are intentionally imperfect at this stage — iterative correction via MR process is the strategy. Nightly pipeline test (VROOM-40719) will fail initially; this is expected.",
+      "personal_capture": "Personal judgment call: approved MR despite known list discrepancies — prioritizing unblocking Ian, Petr, and downstream consumers over correctness. Recorded the acknowledged debt explicitly in MR comments.",
+      "reasoning": "EDGE CASE: Meeting notes with mixed content (#11) + decision without full rationale. The MR approval is an architectural team decision (intentional tradeoff, not a bug). The personal layer is Juanje's specific reasoning as reviewer and the judgment to approve-and-document rather than block. Both layers have value: team gets the tradeoff fact, Juanje retains the decision-making context."
+    },
+    "tags": [
+      "execopen",
+      "edge-case",
+      "dual-capture",
+      "canonical-list",
+      "meeting-mixed-content",
+      "decision",
+      "tradeoff"
+    ]
+  },
+  {
+    "id": "ex-014",
+    "source": "logs/2026-09-07.md",
+    "section": "AIB meeting — VROOM-41639 knowledge transfer",
+    "input": "Juanje explained VROOM-41639 (Ozan's configurable compose / EIB compose pinning) at the AIB team meeting. Ozan had created a document explaining how to apply it, but no one had walked the AIB team through it — the document alone was too long and potentially confusing without context on what the feature is and why it exists.",
+    "context": "Gap: tooling existed (ticket closed Aug 27) but knowledge transfer to consuming team (AIB) hadn't happened.",
+    "labels": {
+      "type": "Context",
+      "team_eligible": true,
+      "audience_filter_passed": true,
+      "destination": "team/wiki/",
+      "depersonalized_capture": "Cross-team feature handoff lesson: written documentation alone is insufficient for non-obvious features. The configurable compose / EIB compose pinning (VROOM-41639) shipped Aug 27 with a doc, but AIB consumed it without context — a live walkthrough was needed to close the knowledge transfer. Ticket closure ≠ consumer readiness for complex features.",
+      "personal_capture": "Personal initiative: decided to walk the AIB team through VROOM-41639 because the written doc alone was too long and losing them — the feature was at risk of being misunderstood by consumers. Lesson retained: if a doc isn't landing, a live walkthrough is worth the time.",
+      "reasoning": "EDGE CASE: Activity report (#9) + process lesson with dual layer. Team layer: generalizable lesson — new features consumed by other teams need live walkthroughs alongside written documentation. Personal layer: Juanje's initiative to do the walkthrough and the reasoning behind it (doc wasn't landing). The personal capture preserves the decision context; the team capture preserves the pattern."
+    },
+    "tags": [
+      "edge-case",
+      "cross-team",
+      "lesson",
+      "knowledge-transfer",
+      "process",
+      "dual-capture",
+      "activity-report"
+    ]
+  },
+  {
+    "id": "ex-015",
+    "source": "logs/2026-09-07.md",
+    "section": "AAA — stepping down",
+    "input": "Juanje decided to leave the AAA team. Email to Shawn Davis and Ian McLeod sent Sep 8. Avi in CC. **Reasons:** Two sets of sprint ceremonies + other meetings leave no time for technical work. Q4 Toolchain focus, honeymoon PTO (Sep 23 – Oct 8), and new TPO role make continued AAA participation unsustainable.",
+    "context": "Personal career/workload decision.",
+    "labels": {
+      "type": "Reflection",
+      "team_eligible": false,
+      "audience_filter_passed": false,
+      "destination": null,
+      "depersonalized_capture": null,
+      "personal_capture": null,
+      "reasoning": "Personal workload and priority decision. Reflection type — never team-eligible. Even if framed as context, the reasoning is personal strategy and personal priorities (Q3 filter)."
+    },
+    "tags": [
+      "personal",
+      "career",
+      "aaa"
+    ]
+  },
+  {
+    "id": "ex-016",
+    "source": "logs/2026-09-07.md",
+    "section": "TPO Sync — Kanitha knowledge transfer",
+    "input": "**Program meeting prep:** Reviews sprint backlogs + team observations → synthesizes high-level status (not granular). Evolved from heavy Jira doc summaries to manual observation + judgment. **Agile Maturity tracking:** Maintains Google Drive directory with velocity, version, burn-up/down charts. Version reports use fixed versions on tickets → green/yellow/red for release progress.",
+    "context": "Kanitha walking through the TPO reporting workflow in a knowledge transfer session.",
+    "labels": {
+      "type": "Context",
+      "team_eligible": true,
+      "audience_filter_passed": true,
+      "destination": "team/processes/",
+      "depersonalized_capture": "TPO reporting workflow: Program meeting prep = review sprint backlogs + team observations → synthesize high-level status (not granular). Agile Maturity tracking: Google Drive directory with velocity, version, burn-up/down charts. Version reports use fixed versions on Jira tickets → green/yellow/red per release target.",
+      "personal_capture": null,
+      "reasoning": "Process documentation from knowledge transfer. Highly team-eligible — any future TPO or team member doing program prep benefits from this. Q1-Q3 pass."
+    },
+    "tags": [
+      "process",
+      "tpo",
+      "reporting",
+      "agile-maturity"
+    ]
+  },
+  {
+    "id": "ex-017",
+    "source": "logs/2026-09-07.md",
+    "section": "Developer VM Brew build — Slack Sep 7",
+    "input": "Tomas: QCOW2 buildable in Brew; RHEL moved to Image Builder — contact **Ondřej Budai**. Ondřej confirmed: **Konflux cannot do package-mode QCOW yet** (lsedlar design doc in progress). For speed → Brew.",
+    "context": "MPDM Slack thread on developer VM build path.",
+    "labels": {
+      "type": "Context",
+      "team_eligible": true,
+      "audience_filter_passed": true,
+      "destination": "team/wiki/",
+      "depersonalized_capture": "Developer VM build path (as of Sep 2026): Konflux cannot build package-mode QCOW images (design doc in progress by lsedlar). Brew can build QCOW2. For package-mode QCOW: contact Ondřej Budai (Image Builder team).",
+      "personal_capture": null,
+      "reasoning": "Technical constraint data relayed from Slack thread (ex-010 edge case type: connector-relayed content). Factual, date-bound but useful as tribal knowledge about capability gaps. Anyone building QCOW images needs to know this."
+    },
+    "tags": [
+      "edge-case-relayed",
+      "technical",
+      "konflux",
+      "brew",
+      "developer-vm"
+    ]
+  },
+  {
+    "id": "ex-018",
+    "source": "logs/2026-09-07.md",
+    "section": "acli migration",
+    "input": "Jira ticket creation via `acli`: brief auth expiry, then succeeded. Custom fields **AssignedTeam** (`rhivos-pdr-auto-toolchain`), **Sub-System Group** (`rhivos-pdr`), and **Story Points** (2) not accepted via create/edit API — manual Jira UI required on both VROOM-53478 and VROOM-53479.",
+    "context": "Afternoon session creating Jira tickets via acli CLI.",
+    "labels": {
+      "type": "Context",
+      "team_eligible": true,
+      "audience_filter_passed": true,
+      "destination": "team/wiki/",
+      "depersonalized_capture": "Jira `acli` limitation: custom fields `AssignedTeam`, `Sub-System Group`, and `Story Points` cannot be set via `acli jira workitem create` or `edit` API. Must be set manually in Jira UI after ticket creation.",
+      "personal_capture": null,
+      "reasoning": "Technical gotcha about tooling limitation. Factual. Any team member using acli for Jira automation will hit this. High utility."
+    },
+    "tags": [
+      "gotcha",
+      "acli",
+      "jira",
+      "tooling"
+    ]
+  },
+  {
+    "id": "ex-019",
+    "source": "logs/2026-09-01.md",
+    "section": "Decisions",
+    "input": "The Brew vs Konflux debate for the developer VM is settled. After the Open Sync today and the Slack thread that followed, the conclusion is clear: Konflux can only build bootc images, and bootc is immutable — even when you convert to QCOW2 via BIB, internally it's still an immutable image. But the developer VM needs to be mutable: developers need RPM install, RHSM registration, and persistent data storage. So Konflux is out for this image type. Brew is the only viable path. The Konflux prep work we did — source repo skeleton, KRD config planning — isn't wasted, it'll be useful for other images long-term. But for this specific developer VM, it's Brew.",
+    "context": "Post-Toolchain Open Sync. A multi-week Slack thread debating Brew vs Konflux was resolved when the bootc immutability constraint was confirmed in the meeting and subsequent Slack discussion.",
+    "labels": {
+      "type": "Context",
+      "team_eligible": true,
+      "audience_filter_passed": true,
+      "destination": "team/decisions/",
+      "depersonalized_capture": "Decision: Konflux is blocked for the developer VM image. Bootc images are immutable even when converted to QCOW2 via BIB. Developer VM requires mutability (RPM install, RHSM, data storage). Brew is the only viable path for this image type.",
+      "personal_capture": null,
+      "reasoning": "Clear architectural decision with technical rationale. Q1-Q3 pass. The immutability constraint is non-obvious and prevents future teams from re-investigating Konflux for mutable VM images."
+    },
+    "tags": [
+      "decision",
+      "konflux",
+      "brew",
+      "developer-vm",
+      "architecture"
+    ]
+  },
+  {
+    "id": "ex-020",
+    "source": "logs/2026-09-01.md",
+    "section": "Toolchain Open Sync — Developer VM",
+    "input": "Developer VM requirements (Pavol): Must be RHIVOS (not RHEL + additions) — `redhat-release-automotive` carries CDN certificates. Must be mutable — developers need CDN access, package install, data storage. Minimum packages: `redhat-release-automotive`, `redhat-subscription-manager`, AIB.",
+    "context": "Toolchain Open Sync meeting discussion on developer VM requirements.",
+    "labels": {
+      "type": "Context",
+      "team_eligible": true,
+      "audience_filter_passed": true,
+      "destination": "team/wiki/",
+      "depersonalized_capture": "Developer VM minimum requirements: (1) Must be RHIVOS-based (not RHEL + additions) — `redhat-release-automotive` carries CDN certificates; (2) Must be mutable (RPM install, RHSM, data storage); (3) Minimum packages: `redhat-release-automotive`, `redhat-subscription-manager`, AIB.",
+      "personal_capture": null,
+      "reasoning": "Technical requirements. Relayed by Pavol in a team meeting. Factual, teammate benefit clear. Needed by anyone building or testing the developer VM."
+    },
+    "tags": [
+      "requirements",
+      "developer-vm",
+      "technical"
+    ]
+  },
+  {
+    "id": "ex-021",
+    "source": "logs/2026-09-01.md",
+    "section": "Report Portal sunset",
+    "input": "**Decision: discontinue Report Portal for RHIVOS.** Rachel: was a workaround, maintenance mode, not helpful. Pablo Rulfi's AI skill replaces the Polarian sync — auto-links failed VROOM tickets to failed test cases in Polarian.",
+    "context": "Toolchain Open Sync decision on test reporting infrastructure.",
+    "labels": {
+      "type": "Context",
+      "team_eligible": true,
+      "audience_filter_passed": true,
+      "destination": "team/decisions/",
+      "depersonalized_capture": "Decision: Report Portal discontinued for RHIVOS. Rationale: was a workaround, now in maintenance mode and not adding value. Replacement: Pablo Rulfi's AI skill auto-links failed VROOM tickets to failed Polarian test cases.",
+      "personal_capture": null,
+      "reasoning": "Infrastructure decision with rationale and replacement. Q1-Q3 pass. Gator and anyone integrating test reporting needs to know this."
+    },
+    "tags": [
+      "decision",
+      "report-portal",
+      "test-reporting",
+      "infrastructure"
+    ]
+  },
+  {
+    "id": "ex-022",
+    "source": "logs/2026-09-01.md",
+    "section": "AAA Backlog Refinement — AI token budget",
+    "input": "**Ian:** Budget reduced from $500 to $300/mo and could go lower. Per person, per system. Team needs to measure usage in currency (not just token count) to prepare budget justification. **Recommended models:** GPT-56 Luna (~1/4 cost of Haiku, sonnet-level quality), Gemini Flash 3.7 (capable, cheap via Vertex AI). Don't auto-jump to most expensive model.",
+    "context": "AAA team budget discussion. Ian sharing recommendations with the team.",
+    "labels": {
+      "type": "Context",
+      "team_eligible": true,
+      "audience_filter_passed": true,
+      "destination": "team/wiki/",
+      "depersonalized_capture": "AI token budget: individual limit is $300/month (was $500, trend may continue downward). Usage should be measured in currency (not just token count) for budget justification. Recommended cost-efficient models: GPT-56 Luna (~1/4 cost of Haiku at sonnet quality), Gemini Flash 3.7 (cheap via Vertex AI). Default to cheaper models before escalating to expensive ones.",
+      "personal_capture": null,
+      "reasoning": "Factual budget constraint + tool recommendations. High team value — anyone using AI tools in the team needs to know the limits and alternatives."
+    },
+    "tags": [
+      "ai-tools",
+      "budget",
+      "model-selection",
+      "token-budget"
+    ]
+  },
+  {
+    "id": "ex-023",
+    "source": "logs/2026-09-01.md",
+    "section": "Pipeline-debugger usage metrics",
+    "input": "Ian asked everyone in AAA to produce cost estimates for their AI workflows — we need numbers for the models.corp business justification. I ran ccusage on my pipeline-debugger sessions. June was $46 (heavy dev month), but July and August settled at ~$9-13/month. Projected steady-state is about $10/month. 82% of tokens are cache reads. That's the number for the business case: an autonomous CI/CD diagnostic agent at $10-15/month in production. Cost might go up when we integrate it as a CI terminal job on every pipeline failure.",
+    "context": "Post-AAA Backlog Refinement — Juanje ran usage analysis to answer Ian's ask for cost estimates per AI workflow. Data feeds into models.corp business justification for service accounts.",
+    "labels": {
+      "type": "Context",
+      "team_eligible": true,
+      "audience_filter_passed": true,
+      "destination": "team/wiki/",
+      "depersonalized_capture": "Pipeline-debugger (VROOM-44416) operational cost: ~$10/month at steady state (Jun–Aug 2026 data: $67.62 total over 3 months, Jun was heavy dev/experimentation). 82% of tokens are prompt cache reads. Cost may increase when integrated as CI terminal job on every pipeline failure.",
+      "personal_capture": null,
+      "reasoning": "Cost data for a shared team tool. Factual. Useful for anyone justifying AI tool usage or planning CI integration cost impact."
+    },
+    "tags": [
+      "pipeline-debugger",
+      "cost",
+      "ai-tools",
+      "ci"
+    ]
+  },
+  {
+    "id": "ex-024",
+    "source": "logs/2026-09-01.md",
+    "section": "AAA Backlog Refinement — service accounts",
+    "input": "From the AAA budget discussion — the $300/month individual limit doesn't work for agents and pipelines that run autonomously. Ian started an application through the models.corp intake process to get dedicated service accounts for non-individual AI consumption. They had a meeting with models.corp last Thursday about it. The key thing for the team to know: if you're running an agent or pipeline that consumes AI tokens, it should go through a service account via models.corp intake, not eat into someone's personal budget.",
+    "context": "AAA Backlog Refinement Sep 1 — team discussed how to handle AI budget for automated systems that shouldn't count against individual $300/month limits.",
+    "labels": {
+      "type": "Context",
+      "team_eligible": true,
+      "audience_filter_passed": true,
+      "destination": "team/processes/",
+      "depersonalized_capture": "AI service accounts: non-individual AI consumption (agents, CI pipelines) should use dedicated service accounts via the models.corp intake process, not individual budgets. Process: submit through models.corp intake.",
+      "personal_capture": null,
+      "reasoning": "Process information about how to set up non-personal AI usage. Factual and team-actionable."
+    },
+    "tags": [
+      "process",
+      "ai-tools",
+      "service-accounts",
+      "models-corp"
+    ]
+  },
+  {
+    "id": "ex-025",
+    "source": "logs/2026-08-27.md",
+    "section": "Decisions — Brew vs Konflux framing",
+    "input": "Kanitha and I both lean Konflux for long-term — the automated CDN publication via RPA is appealing vs Brew's manual step. Tentative preference from Kanitha pending readiness info. Need to pitch Petr with generous estimates for both paths before deciding.",
+    "context": "Personal preference discussion during developer VM distribution path investigation. The factual ProdSec constraint (only Brew/Konflux → CDN is approved) is captured separately.",
+    "labels": {
+      "type": "Context",
+      "team_eligible": true,
+      "audience_filter_passed": false,
+      "destination": null,
+      "depersonalized_capture": null,
+      "personal_capture": null,
+      "reasoning": "DUAL CAPTURE — split required. The ProdSec approval chain fact (Brew/Konflux → CDN only) is team-eligible. The preference statements ('lean Konflux') are personal opinions. See ex-025a for the team part and ex-025b for the dual-capture analysis."
+    },
+    "tags": [
+      "dual-capture",
+      "opinion",
+      "architecture",
+      "prodsec"
+    ]
+  },
+  {
+    "id": "ex-025a",
+    "source": "logs/2026-08-27.md",
+    "section": "Decisions — Brew vs Konflux framing",
+    "input": "Distribution chain clarified — only `Brew/Konflux → CDN → customer portal` is ProdSec-approved. S3 → CDN is NOT approved.",
+    "context": "ProdSec constraint on customer-facing distribution path.",
+    "labels": {
+      "type": "Context",
+      "team_eligible": true,
+      "audience_filter_passed": true,
+      "destination": "team/decisions/",
+      "depersonalized_capture": "ProdSec-approved distribution path for customer-facing content: Brew or Konflux → CDN → customer portal only. Direct S3 → CDN is NOT approved. Brew requires a manual CDN publication step; Konflux automates CDN publication via RPA.",
+      "personal_capture": "Personal preference for Konflux long-term noted by team members but not committed.",
+      "reasoning": "The constraint fact is a hard ProdSec policy — critical for anyone dealing with image distribution. The preference opinions (Kanitha/Juanje lean Konflux) stay in personal space as they don't constitute a decision."
+    },
+    "tags": [
+      "decision",
+      "prodsec",
+      "distribution",
+      "cdn",
+      "dual-capture"
+    ]
+  },
+  {
+    "id": "ex-026",
+    "source": "logs/2026-08-27.md",
+    "section": "NotebookLM Konflux research",
+    "input": "**Critical gotcha:** use `push-disk-images-to-cdn` NOT `push-artifacts-to-cdn` (latter tar.gz-compresses, breaks raw QCOW2).",
+    "context": "Konflux onboarding research from NotebookLM (Victor M. recommended).",
+    "labels": {
+      "type": "Context",
+      "team_eligible": true,
+      "audience_filter_passed": true,
+      "destination": "team/wiki/",
+      "depersonalized_capture": "Konflux QCOW2 publishing gotcha: use `push-disk-images-to-cdn` task, NOT `push-artifacts-to-cdn`. The latter compresses output as tar.gz, which breaks the raw QCOW2 format.",
+      "personal_capture": null,
+      "reasoning": "Clear technical gotcha with direct operational impact. Factual. Non-obvious. The difference between the two tasks is not documented prominently — this is exactly the tribal knowledge a team workspace should capture."
+    },
+    "tags": [
+      "gotcha",
+      "konflux",
+      "qcow2",
+      "cdn",
+      "pipeline"
+    ]
+  },
+  {
+    "id": "ex-027",
+    "source": "logs/2026-08-27.md",
+    "section": "Evening session — implementation plan",
+    "input": "**rhsm-pulp access from p02:** No Activation Key needed — p02 has direct network routes to `rhsm-pulp.corp.redhat.com`. An `activation-key` secret in the tenant namespace **breaks** hermetic builds (TLS client cert interference). Use `.repo` file only.",
+    "context": "NotebookLM Konflux research, evening session.",
+    "labels": {
+      "type": "Context",
+      "team_eligible": true,
+      "audience_filter_passed": true,
+      "destination": "team/wiki/",
+      "depersonalized_capture": "Konflux p02 cluster (internal/GitLab repos): rhsm-pulp authentication requires only a `.repo` file. An `activation-key` secret in the namespace breaks hermetic builds (TLS client cert interference). Do NOT add an activation-key secret for rhsm-pulp on p02.",
+      "personal_capture": null,
+      "reasoning": "Anti-pattern gotcha. Counter-intuitive (RHEL CDN docs suggest activation keys). High impact if wrong. Exactly the kind of insight that prevents hours of debugging."
+    },
+    "tags": [
+      "gotcha",
+      "konflux",
+      "rhsm-pulp",
+      "hermetic-builds",
+      "anti-pattern"
+    ]
+  },
+  {
+    "id": "ex-028",
+    "source": "logs/2026-08-26.md",
+    "section": "1:1 Avi — Aug 26",
+    "input": "**Bonus CY26Q2** — Exceeds Performance, 125%, €3,050.16, payout Aug 26. Company VIC = 95%.",
+    "context": "1:1 with manager discussion.",
+    "labels": {
+      "type": "Reflection",
+      "team_eligible": false,
+      "audience_filter_passed": false,
+      "destination": null,
+      "depersonalized_capture": null,
+      "personal_capture": null,
+      "reasoning": "Personal salary/bonus information. Q3 filter blocks immediately — personal financial data. Never team knowledge."
+    },
+    "tags": [
+      "personal",
+      "private",
+      "salary"
+    ]
+  },
+  {
+    "id": "ex-029",
+    "source": "logs/2026-08-26.md",
+    "section": "1:1 Avi — Device compliance",
+    "input": "**Device compliance** — both Juanje devices (K59X2JGTDG, PC1MNJWG) showing non-compliant. Needs fixing — likely related to pending laptop returns.",
+    "context": "1:1 with manager.",
+    "labels": {
+      "type": "Task",
+      "team_eligible": false,
+      "audience_filter_passed": false,
+      "destination": null,
+      "depersonalized_capture": null,
+      "personal_capture": null,
+      "reasoning": "Personal task. Type = Task → never team-eligible per classification model."
+    },
+    "tags": [
+      "personal",
+      "task"
+    ]
+  },
+  {
+    "id": "ex-030",
+    "source": "logs/2026-08-26.md",
+    "section": "b4t design review — Aug 26",
+    "input": "**Opt-in fatigue** — per-capture publish proposals will be rubber-stamped or rejected wholesale; needs batch mode or heuristics (content type, recurrence signals).",
+    "context": "Design review of Buddy for Teams (b4t) concept.",
+    "labels": {
+      "type": "Maturing",
+      "team_eligible": false,
+      "audience_filter_passed": false,
+      "destination": null,
+      "depersonalized_capture": null,
+      "personal_capture": null,
+      "reasoning": "Design critique about a future product concept. Type = Maturing — not actionable yet, might become so. Not team knowledge — it's a personal analysis of a design document."
+    },
+    "tags": [
+      "personal",
+      "maturing",
+      "b4t",
+      "design"
+    ]
+  },
+  {
+    "id": "ex-031",
+    "source": "logs/2026-08-26.md",
+    "section": "1:1 Avi — TPO transition",
+    "input": "8 Kanitha EPICs need new owners — full list documented in tpo-program-coordination.md. Kanitha PTO: Sep 15–17, Sep 21–24. Juanje PTO: Sep 23 – Oct 8. Overlap risk acknowledged.",
+    "context": "1:1 with manager Avi, TPO transition planning.",
+    "labels": {
+      "type": "Context",
+      "team_eligible": true,
+      "audience_filter_passed": false,
+      "destination": null,
+      "depersonalized_capture": null,
+      "personal_capture": null,
+      "reasoning": "EDGE CASE: The overlap risk and need for EPIC ownership transfer is factual and team-relevant. However, the specific PTO dates for named individuals crosses into personal schedule information (Q3 filter). Default-personal. The generalizable fact (8 EPICs need new owners) could go to team/projects/ without dates — but without the context of WHY and WHEN, it loses utility. Classified personal due to the PTO-date-for-named-individuals concern."
+    },
+    "tags": [
+      "edge-case",
+      "privacy",
+      "tpo",
+      "handoff"
+    ]
+  },
+  {
+    "id": "ex-032",
+    "source": "logs/2026-08-19.md",
+    "section": "Activity — BASE_URL nightly rebuild",
+    "input": "Root cause: Juanje passed `BASE_URL` pointing to the latest promoted compose (to build from there instead of rebuilding the broken compose). Some pac-jobs commands skip the normal workflow when `BASE_URL` is set, which prevents generating `cat-manifests/` and copying `repo/`. Fixed manually with `aws s3 sync` copying those directories from the source compose into the nightly paths.",
+    "context": "Pipeline gotcha discovered during incident response. Brian Grech reported missing repos in rebuilt nightly.",
+    "labels": {
+      "type": "Context",
+      "team_eligible": true,
+      "audience_filter_passed": true,
+      "destination": "team/wiki/",
+      "depersonalized_capture": "Pipeline gotcha: When using `BASE_URL` override to rebuild from an existing compose, pac-jobs skips `repo/` and `cat-manifests/` generation. These directories must be manually synced from the source compose using `aws s3 sync`. Do not use `BASE_URL` override without a post-build directory sync step.",
+      "personal_capture": null,
+      "reasoning": "Operational gotcha from a real incident. Factual. Anyone doing workaround nightly rebuilds will hit this. Classic tribal knowledge."
+    },
+    "tags": [
+      "gotcha",
+      "pipeline",
+      "base-url",
+      "nightly-rebuild",
+      "pac-jobs"
+    ]
+  },
+  {
+    "id": "ex-033",
+    "source": "logs/2026-08-19.md",
+    "section": "Lessons — agent Markdown progress files",
+    "input": "In my buddy project, I found that agent-maintained Markdown progress files drift — PROGRESS.md started clean but grew into dense prose because agents naturally expand Markdown. I'm switching to a rigid JSON schema with enums for structured updates only. Narrative stays in SPEC.md.",
+    "context": "Personal AI-agent development methodology session. Lessons from buddy and cleanup-jobs side projects, not Toolchain team work.",
+    "labels": {
+      "type": "Context",
+      "team_eligible": false,
+      "audience_filter_passed": false,
+      "destination": null,
+      "depersonalized_capture": null,
+      "personal_capture": null,
+      "reasoning": "Personal methodology lesson from side projects (buddy, cleanup-jobs). First-person framing + explicit project names make scope clear. The insight is generalizable but the audience is Juanje's own AI development practice, not the Toolchain team."
+    },
+    "tags": [
+      "personal",
+      "methodology",
+      "ai-agents"
+    ]
+  },
+  {
+    "id": "ex-034",
+    "source": "logs/2026-08-17.md",
+    "section": "AMI retention regression",
+    "input": "**Root cause:** The `latest-RHIVOS-2` pipeline has been broken for days/weeks (libbpf + llvm incidents). The AMI cleanup script removes AMIs older than 5 days regardless of whether they're the latest available. When a pipeline stays broken >5 days, all its AMIs get deleted → TC can't provision. **Regression:** The retention logic should keep the last N nightlies unconditionally. This was likely lost during Matt's cleanup script refactoring (VROOM-47053).",
+    "context": "Luigi reported TC couldn't find AMIs for latest-RHIVOS-2-Core.",
+    "labels": {
+      "type": "Context",
+      "team_eligible": true,
+      "audience_filter_passed": true,
+      "destination": "team/wiki/",
+      "depersonalized_capture": "AMI retention interaction with pipeline outages: age-only retention logic deletes ALL AMIs for a broken compose after 5 days, leaving Test Console unable to provision VMs. Required behavior: keep last N nightlies unconditionally before applying age filter. Risk: cleanup scripts that only check age without 'keep-last-N' guarantee block downstream teams during extended pipeline outages.",
+      "personal_capture": null,
+      "reasoning": "Technical gotcha with cross-team impact. Factual, non-obvious interaction between two independent systems. Anyone maintaining AMI cleanup scripts needs to know this."
+    },
+    "tags": [
+      "gotcha",
+      "ami",
+      "pipeline",
+      "test-console",
+      "incident"
+    ]
+  },
+  {
+    "id": "ex-035",
+    "source": "logs/2026-08-17.md",
+    "section": "AIB Standup — libbpf",
+    "input": "**RHIVOS 2.1 pipeline blocked on policy** — `libbpf`/BPF still on the FuSa denylist downstream. Drivers pipeline fails at package-level gating. Pavol confirmed: official process on FA side required to remove BPF from policy and release new package. Until then, pipeline remains blocked.",
+    "context": "AIB standup update on RHIVOS 2.1 pipeline status.",
+    "labels": {
+      "type": "Context",
+      "team_eligible": true,
+      "audience_filter_passed": true,
+      "destination": "team/projects/",
+      "depersonalized_capture": "RHIVOS 2.1 pipeline blocker: `libbpf`/BPF is on the FuSa denylist. Fixing this requires an official FA process to remove BPF from the automotive-image-builder-policy (not just a package bump). Pipeline remains blocked until FA initiates and completes this process. Tickets: VROOM-50225, VROOM-50230.",
+      "personal_capture": null,
+      "reasoning": "Initiative status update — active blocker. Process requirement (FA official process) is non-obvious and has blocked progress. High teammate value."
+    },
+    "tags": [
+      "initiative-status",
+      "blocker",
+      "libbpf",
+      "fusa",
+      "pipeline"
+    ]
+  },
+  {
+    "id": "ex-036",
+    "source": "logs/2026-08-17.md",
+    "section": "PDR Staff — AWS cost reduction",
+    "input": "From PDR Staff today: AWS cost reduction target is 20% for CY26H2. It's best effort — not tracked at program level, no AUTOBU epic, just don't disrupt workflows. The approach is: clean up obvious waste now, then work on retention policies longer term. I raised whether we can clean up RHIVOS 1.0 artifacts — Petr said probably yes for most, but we need Steve or Bruce from FuSa to confirm which artifacts are needed as certification evidence before we delete anything. AutoSD 9 artifacts can likely be pruned completely. Petr also asked why we use S3 instead of internal storage — the answer is we need the same system for upstream/downstream, staging-to-promoted workflows. Pulp is the intended replacement but it's too slow right now, so that move is on hold.",
+    "context": "PDR Staff meeting. User attended as TPO transition onboarding. AWS cost reduction directive from engineering leadership.",
+    "labels": {
+      "type": "Context",
+      "team_eligible": true,
+      "audience_filter_passed": true,
+      "destination": "team/processes/",
+      "depersonalized_capture": "RHIVOS artifact cleanup guidance: RHIVOS 1.0 artifacts can likely be cleaned up for most, but FuSa team (Steve/Bruce) must confirm which artifacts are needed as certification evidence before deletion. AutoSD 9 can likely be pruned completely.",
+      "personal_capture": null,
+      "reasoning": "Process/constraint information about data retention. Factual. Anyone doing S3 cleanup needs to know the FuSa exception and the confirmation step required."
+    },
+    "tags": [
+      "process",
+      "aws-cost",
+      "artifact-retention",
+      "fusa"
+    ]
+  },
+  {
+    "id": "ex-037",
+    "source": "logs/2026-08-13.md",
+    "section": "Toolchain Backlog Refinement — vulnerability management",
+    "input": "Persistent vulnerabilities in UBI 10 + Python base images (data-router being removed). Decision: open policy exceptions per ESS requirements. Future: prevent installation of unknown packages.",
+    "context": "Toolchain Backlog Refinement Sprint 133/134.",
+    "labels": {
+      "type": "Context",
+      "team_eligible": true,
+      "audience_filter_passed": true,
+      "destination": "team/decisions/",
+      "depersonalized_capture": "Decision: open ESS policy exceptions for persistent vulnerabilities in UBI 10 + Python base images. Longer-term direction: prevent installation of unknown packages. Note: data-router is being removed, which eliminates one vulnerable component.",
+      "personal_capture": null,
+      "reasoning": "Security policy decision with rationale. Factual. Anyone working on container image security or policy exceptions needs this context."
+    },
+    "tags": [
+      "decision",
+      "security",
+      "ubi",
+      "policy-exception"
+    ]
+  },
+  {
+    "id": "ex-038",
+    "source": "logs/2026-08-13.md",
+    "section": "AAA standup — token optimization",
+    "input": "Juanje suggested CLI vs MCP. Allison confirmed Scrummit migrated to CLI for cost. Petr proposed sub-agent pattern (heavy MCP query → paragraph out). Ian: output masking reduced tokens ~80%; experimenting with two-pass (reasoning in markdown, Gemini Flash Light for JSONification). Petr tips: request specific fields + markdown rendering.",
+    "context": "AAA standup discussion on AI token cost optimization.",
+    "labels": {
+      "type": "Context",
+      "team_eligible": true,
+      "audience_filter_passed": true,
+      "destination": "team/wiki/",
+      "depersonalized_capture": "AI token cost reduction techniques validated in production: (1) CLI over MCP for Jira queries (lower overhead); (2) sub-agent pattern: heavy MCP query → extract paragraph → dismiss; (3) output masking (Ian: ~80% token reduction); (4) two-pass: reasoning in Markdown, cheap model for JSONification; (5) request specific fields only. All tested by AAA team.",
+      "personal_capture": null,
+      "reasoning": "Practical AI engineering techniques. Factual, relayed from team standup. High utility for anyone building or optimizing AI workflows."
+    },
+    "tags": [
+      "ai-tools",
+      "token-optimization",
+      "techniques"
+    ]
+  },
+  {
+    "id": "ex-039",
+    "source": "logs/2026-08-13.md",
+    "section": "acli migration — lessons",
+    "input": "**JQL beats board/sprint IDs for sprint queries** — `sprint in openSprints()` works without knowing board or sprint IDs; `board search` unusable at scale on shared Atlassian instances.",
+    "context": "acli migration session, lesson documented.",
+    "labels": {
+      "type": "Context",
+      "team_eligible": true,
+      "audience_filter_passed": true,
+      "destination": "team/wiki/",
+      "depersonalized_capture": "Jira acli best practice: use JQL `sprint in openSprints()` for sprint queries rather than `acli jira board search`. Board search returns all instance boards with no project filter — unusable on shared Atlassian instances. JQL approach works without knowing board/sprint IDs.",
+      "personal_capture": null,
+      "reasoning": "Concrete tool usage gotcha/best practice. Factual. Anyone using acli for sprint queries will hit the board search limitation."
+    },
+    "tags": [
+      "gotcha",
+      "acli",
+      "jira",
+      "jql",
+      "tooling"
+    ]
+  },
+  {
+    "id": "ex-040",
+    "source": "logs/2026-08-13.md",
+    "section": "acli migration — lessons",
+    "input": "**Verify CLI `--help` before documenting subagent output** — Haiku subagent generated plausible but wrong Confluence flags (`--space-key`); Jira commands were correct because verified directly. Always run `--help` on unfamiliar subcommands before committing to reference docs.",
+    "context": "Lesson from acli cheatsheet creation where AI-generated flags were incorrect.",
+    "labels": {
+      "type": "Context",
+      "team_eligible": true,
+      "audience_filter_passed": true,
+      "destination": "team/wiki/",
+      "depersonalized_capture": "AI-generated CLI documentation risk: subagents generate plausible but incorrect flags. Always verify AI-produced CLI docs with `--help` before committing to reference files. Observed: Haiku subagent invented `--space-key` for acli Confluence (doesn't exist).",
+      "personal_capture": null,
+      "reasoning": "Generalizable process lesson about AI tooling risk. High teammate value — anyone letting AI generate tool documentation faces this risk."
+    },
+    "tags": [
+      "lesson",
+      "ai-tools",
+      "cli-docs",
+      "verification"
+    ]
+  },
+  {
+    "id": "ex-041",
+    "source": "logs/2026-08-11.md",
+    "section": "Safety RPMs meeting — unified list generation",
+    "input": "Unified list generation strategy agreed: Each image/arch/flavor generates its own list (core, fusa, QC, NXP, virtual). A final downstream pipeline job merges individual lists into a unified list. Unified list = the one compared against the canonical list.",
+    "context": "Safety RPMs completion checkin meeting with Michael Ho, Petr Šabata, Martin Perina.",
+    "labels": {
+      "type": "Context",
+      "team_eligible": true,
+      "audience_filter_passed": true,
+      "destination": "team/decisions/",
+      "depersonalized_capture": "Safety RPMs unified list strategy: each image/arch/flavor (core, fusa, QC, NXP, virtual) generates its own per-target list. A downstream merge job deduplicates and unifies them. The unified list is compared against the canonical list. This naturally captures hardware-specific packages (QC kernel rpms from QC image, NXP from NXP image, etc.).",
+      "personal_capture": null,
+      "reasoning": "Architecture decision from a team meeting. Agreed across multiple stakeholders. Any engineer implementing safety list generation needs this context."
+    },
+    "tags": [
+      "decision",
+      "safety-rpms",
+      "architecture",
+      "pipeline"
+    ]
+  },
+  {
+    "id": "ex-042",
+    "source": "logs/2026-08-11.md",
+    "section": "Safety RPMs meeting — filter limitation",
+    "input": "Current implementation can't add packages not present in the image — checks image for MDR content. When adding QC packages (`kernel-ivos-qualcomm`, `qcom-scmi`, `downstream-dtbs`) to the filter, they only appear when building the QC image. If a filtered package isn't in the image, system should **warn, not block**.",
+    "context": "Safety RPMs checkin meeting — filter behavior limitation discovered.",
+    "labels": {
+      "type": "Context",
+      "team_eligible": true,
+      "audience_filter_passed": true,
+      "destination": "team/wiki/",
+      "depersonalized_capture": "Execopen filter design constraint: the filter only checks packages present in the current image. Hardware-specific packages (e.g., QC: `kernel-ivos-qualcomm`, `qcom-scmi`, `downstream-dtbs`) appear only when building their target image. Required behavior when filtered package is missing: warn, not block.",
+      "personal_capture": null,
+      "reasoning": "Technical constraint that affects how the safety list filter must be designed. Factual. Non-obvious — the filter-vs-image interaction is a subtle constraint."
+    },
+    "tags": [
+      "technical",
+      "execopen",
+      "filter",
+      "warn-not-block"
+    ]
+  },
+  {
+    "id": "ex-043",
+    "source": "logs/2026-08-11.md",
+    "section": "Toolchain Open Sync — Layer Product naming",
+    "input": "Naming discussion with product management and branding happened Aug 10. Next: partner engineer to discuss with Qualcomm whether their name can be used in the product name. Once approved → branding finalizes name → set up tags, skews, IDs, ARA, composes.",
+    "context": "Toolchain Open Sync update on Layer Product naming for Qualcomm.",
+    "labels": {
+      "type": "Context",
+      "team_eligible": true,
+      "audience_filter_passed": true,
+      "destination": "team/projects/",
+      "depersonalized_capture": "Layer Product naming (QC): blocked pending Qualcomm approval to use their name in the product name. Approval chain: Qualcomm name approval → branding finalizes → set up tags, SKUs, IDs, ARA, composes.",
+      "personal_capture": null,
+      "reasoning": "Initiative status update with approval chain. Factual. Any team member working on QC layer product configuration needs to know the dependency."
+    },
+    "tags": [
+      "initiative-status",
+      "qualcomm",
+      "layer-product",
+      "naming"
+    ]
+  },
+  {
+    "id": "ex-044",
+    "source": "logs/2026-07-30.md",
+    "section": "RHIVOS 2.0 Retro",
+    "input": "**Most-discussed topics:** Technical Slack channel vs release readiness channel — Juanje argued separation: readiness for awareness, tech channel for deep debugging. Whitney pushed back (two places to look). Avi proposed AI summaries from tech → readiness. **Consensus:** ephemeral per-release tech channel + AI summaries to readiness. Avi volunteered PoC (End of Aug).",
+    "context": "RHIVOS 2.0 Retro meeting attended by ~18 people including Gadi, Francisco, Petr.",
+    "labels": {
+      "type": "Context",
+      "team_eligible": true,
+      "audience_filter_passed": true,
+      "destination": "team/decisions/",
+      "depersonalized_capture": "Decision from RHIVOS 2.0 Retro: create ephemeral per-release technical Slack channel for deep debugging, plus AI-generated summaries surfaced in `#automotive-release-readiness` for non-technical stakeholders. Rationale: separate real-time technical noise from program-level awareness. Action: Avi to build PoC by end of August.",
+      "personal_capture": "Personal position in retro: argued strongly for two-channel separation (readiness for awareness, tech channel for deep debugging). Whitney disagreed; Avi's AI-summary proposal was the bridge that reached consensus.",
+      "reasoning": "EDGE CASE: Meeting notes with mixed content (#11). Retro produced a team decision (consensus on ephemeral tech channel structure) AND contains Juanje's explicit advocacy position with named pushback from Whitney. Team layer: the structural decision is factual and reusable. Personal layer: Juanje's argued position and the debate context."
+    },
+    "tags": [
+      "edge-case",
+      "process",
+      "slack",
+      "dual-capture",
+      "retro",
+      "meeting-mixed-content",
+      "decision",
+      "release-management"
+    ]
+  },
+  {
+    "id": "ex-045",
+    "source": "logs/2026-07-30.md",
+    "section": "Retro — TPO negotiation",
+    "input": "Juanje raised the team's overcommitting pattern... *[TPO internal context]* ...5 years ineffective PO/TPO: Liora (damaging), Steve Loranz (absent), Petr+Kanitha (nominal only). Juanje was obvious candidate in each transition, never chosen.",
+    "context": "TPO negotiation closure notes, personal reflection.",
+    "labels": {
+      "type": "Reflection",
+      "team_eligible": false,
+      "audience_filter_passed": false,
+      "destination": null,
+      "depersonalized_capture": null,
+      "personal_capture": null,
+      "reasoning": "EDGE CASE: Opinion disguised as history. The statements about past TPOs are framed as historical facts but contain evaluative assessments ('Liora: damaging', 'Steve: absent', 'Petr+Kanitha: nominal only'). Q3 blocks immediately — assessments of named colleagues. This is also personal strategy/frustration. Never team knowledge."
+    },
+    "tags": [
+      "edge-case",
+      "opinion-as-fact",
+      "personal",
+      "privacy",
+      "colleague-assessment"
+    ]
+  },
+  {
+    "id": "ex-046",
+    "source": "logs/2026-07-30.md",
+    "section": "Session 2 — Toolchain TPO dashboard",
+    "input": "I'm going to keep BOARD.md for my personal tasks, priorities, and WIP. The new toolchain project directory is for tracking what the team is doing — that's a different lens. My board is 'does this block me?' while team state is 'what is everyone working on?'",
+    "context": "Personal workflow decision during TPO dashboard setup. Juanje separating his personal task management from team operational state tracking.",
+    "labels": {
+      "type": "Context",
+      "team_eligible": false,
+      "audience_filter_passed": false,
+      "destination": null,
+      "depersonalized_capture": null,
+      "personal_capture": null,
+      "reasoning": "Personal workflow preference — how Juanje personally organizes information. Q3 (preferences and work style) blocks. This is useful guidance for Juanje but not team knowledge."
+    },
+    "tags": [
+      "personal",
+      "work-style",
+      "preference"
+    ]
+  },
+  {
+    "id": "ex-047",
+    "source": "logs/2026-07-30.md",
+    "section": "RHIVOS 2.0 nightly ride4 pipeline failure",
+    "input": "**Root cause found (18:27):** signing happens on `tmpfs` (`/tmp` = RAM). 4GB→8GB RAM fix locally. Proposed osbuild-auto fix: `tempfile.NamedTemporaryFile(dir='/var/tmp')` to use disk instead. **echanude (18:28):** `msm_hab.ko.zst` decompresses to **2.6GB** — module itself is corrupted/misbuilt in build 249. **Two issues identified:** (1) corrupted module in kernel build 249; (2) tmpfs limitation as a defensive hardening.",
+    "context": "Pipeline failure investigation — nightly latest-RHIVOS-2-Core disk_full failure on ride4 ostree images.",
+    "labels": {
+      "type": "Context",
+      "team_eligible": true,
+      "audience_filter_passed": true,
+      "destination": "team/wiki/",
+      "depersonalized_capture": "Pipeline gotcha: Kernel module signing happens on `tmpfs` (`/tmp` = RAM). If kernel modules are large, this causes disk_full failures. Root cause in Jul 2026 incident: `msm_hab.ko.zst` decompressed to 2.6GB (corrupted in kernel build 249). Two lessons: (1) validate kernel module integrity in build; (2) harden: use `dir='/var/tmp'` in osbuild-auto to avoid tmpfs for signing temp files.",
+      "personal_capture": null,
+      "reasoning": "Technical diagnosis from a pipeline failure. Factual. The tmpfs signing behavior is a non-obvious constraint that can cause future incidents. High value for pipeline engineers."
+    },
+    "tags": [
+      "pipeline",
+      "gotcha",
+      "kernel",
+      "tmpfs",
+      "signing"
+    ]
+  },
+  {
+    "id": "ex-048",
+    "source": "logs/2026-07-28.md",
+    "section": "AAA standup — deterministic wrapper",
+    "input": "pipelines-debugger concepts transferable 1:1 to his FDA wiki project — organic validation of Juanje's work beyond the specific tool.",
+    "context": "AAA standup notes reviewed. Michael Engel made this observation.",
+    "labels": {
+      "type": "Context",
+      "team_eligible": false,
+      "audience_filter_passed": false,
+      "destination": null,
+      "depersonalized_capture": null,
+      "personal_capture": null,
+      "reasoning": "EDGE CASE: Present-tense activity report + validation signal. Q2 asks: would a teammate benefit from knowing this? The fact that pipelines-debugger concepts transfer to other projects could be team-interesting. However, Q3 check: this is really Juanje's personal satisfaction/validation signal, and it references another person's project assessment without enough context to make it factual team knowledge. Default-personal."
+    },
+    "tags": [
+      "edge-case",
+      "personal",
+      "validation"
+    ]
+  },
+  {
+    "id": "ex-049",
+    "source": "logs/2026-08-11.md",
+    "section": "RHIVOS Program Meeting — FuSa Oct 31 submission",
+    "input": "**FuSa — Oct 31 submission AT RISK:** 9/36 features fully closed (25%, unchanged from last week). SELinux Policy Compiler (AUTOBU-861) is the biggest risk: 34 epics, only 38% done. Exida: in-person witness testing **Sep 24** (lab at RDU3). Certification package submission **Oct 30**.",
+    "context": "RHIVOS Program Meeting — program-level status update.",
+    "labels": {
+      "type": "Context",
+      "team_eligible": true,
+      "audience_filter_passed": true,
+      "destination": "team/projects/",
+      "depersonalized_capture": "FuSa certification timeline (as of Aug 2026): Oct 31 submission AT RISK. Status: 25% of features fully closed (9/36). Biggest risk: SELinux Policy Compiler (AUTOBU-861, 34 epics, 38% done). Key dates: Exida in-person witness testing Sep 24 at RDU3; certification package submission Oct 30.",
+      "personal_capture": null,
+      "reasoning": "Program-level status update relayed from program meeting. Factual. Highly relevant for any Toolchain engineer whose work is on the FuSa critical path. Date-bound but the pattern (AT RISK, specific dependencies) is the tribal knowledge."
+    },
+    "tags": [
+      "initiative-status",
+      "fusa",
+      "certification",
+      "program"
+    ]
+  },
+  {
+    "id": "ex-050",
+    "source": "logs/2026-08-11.md",
+    "section": "Toolchain Open Sync — Jumpstarter release",
+    "input": "**Lab cluster OCP 4.18 EOL in 2 weeks (Aug 25).** Upgrade needed to at least 4.19, ideally 4.21/4.22. Miguel to coordinate maintenance window next week.",
+    "context": "Jumpstarter section of Toolchain Open Sync.",
+    "labels": {
+      "type": "Context",
+      "team_eligible": true,
+      "audience_filter_passed": true,
+      "destination": "team/projects/",
+      "depersonalized_capture": "Lab cluster OCP version: 4.18 reached EOL Aug 25, 2026. Upgrade to at least 4.19 required (4.21/4.22 preferred). Maintenance window coordination needed.",
+      "personal_capture": null,
+      "reasoning": "Infrastructure status update. Factual. Anyone using the lab cluster or planning test work needs to know about EOL risk and upcoming maintenance."
+    },
+    "tags": [
+      "initiative-status",
+      "infrastructure",
+      "ocp",
+      "lab-cluster"
+    ]
+  },
+  {
+    "id": "ex-051",
+    "source": "logs/2026-09-07.md",
+    "section": "WAB → Buddy migration plan",
+    "input": "Buddy (work instance) for 80% conversational TPO work + Cursor/code sessions for 20% code work + agents-memory as shared bridge. Jira connector already working (tested Sep 6). Token driver: quota reduction incoming. Buddy uses ~3× fewer tokens than AB (no reflect overhead, deterministic Hebbian/commits/scheduling, leaner prompts).",
+    "context": "Juanje's personal plan to migrate the WAB AI assistant to Buddy before honeymoon.",
+    "labels": {
+      "type": "Project",
+      "team_eligible": false,
+      "audience_filter_passed": false,
+      "destination": null,
+      "depersonalized_capture": null,
+      "personal_capture": null,
+      "reasoning": "Personal AI tooling project for Juanje's individual workflow. Type = Project → never team-eligible. The Jira connector technical details are team-eligible in isolation (see ex-018 category), but the migration planning context is personal."
+    },
+    "tags": [
+      "personal",
+      "project",
+      "buddy",
+      "ai-tooling"
+    ]
+  },
+  {
+    "id": "ex-052",
+    "source": "logs/2026-09-01.md",
+    "section": "Developer VM S3 workaround",
+    "input": "In the Open Sync we discussed how to get the Brew-built developer VM image to Test Console in the short term while we figure out the CDN publishing path. The team agreed on a workaround: copy the Brew artifact to a parallel S3 directory (brew-artifacts/developer-vm/) alongside the current images — don't replace them. TC just changes the path. I flagged that this also means updating the JSON file TC reads for image discovery. Luigi's alternative was simpler — just copy to the image server directly. Either way, this is short-term only until proper CDN publication is set up.",
+    "context": "Toolchain Open Sync Sep 1 — developer VM publishing interim approach while Brew CDN path is being figured out.",
+    "labels": {
+      "type": "Context",
+      "team_eligible": true,
+      "audience_filter_passed": true,
+      "destination": "team/processes/",
+      "depersonalized_capture": "Developer VM interim publishing (Brew path): copy built QCOW2 to parallel S3 directory (`brew-artifacts/developer-vm/`) alongside existing developer VM images. Test Console must update the JSON discovery file to point to the new path. Accepted as short-term only — longer-term requires proper CDN publication.",
+      "personal_capture": null,
+      "reasoning": "Process decision with workaround rationale. Useful for Ozan (who now owns developer VM monitoring) and anyone setting up TC to test the Brew-built image."
+    },
+    "tags": [
+      "process",
+      "developer-vm",
+      "workaround",
+      "s3"
+    ]
+  },
+  {
+    "id": "ex-053",
+    "source": "logs/2026-08-26.md",
+    "section": "ProdSec investigation — no exceptions policy",
+    "input": "**No exceptions policy:** Charles Timko confirmed Chris Wright (May 26, 2026) — no more RH-SDLC exceptions. VP sign-off mandatory for rare cases. EU CRA compliance mandatory for EU market sales. Can't distribute from S3 to customers — must use CDN or Unified Downloader.",
+    "context": "ProdSec developer VM deep investigation — policy constraint from RHELDST-44190 comments.",
+    "labels": {
+      "type": "Context",
+      "team_eligible": true,
+      "audience_filter_passed": true,
+      "destination": "team/decisions/",
+      "depersonalized_capture": "Hard ProdSec policy (confirmed May 2026, VP-level): no more SDLC exceptions for customer-facing artifact distribution. Customer-facing content must go through CDN or Unified Downloader — S3 direct distribution is not compliant. EU CRA compliance is mandatory for EU market sales. Exceptions require VP sign-off.",
+      "personal_capture": null,
+      "reasoning": "Policy constraint from a Jira ticket thread (connector-relayed content). Factual, high authority (VP-level decision). Non-negotiable constraint for anyone working on customer-facing artifact publishing."
+    },
+    "tags": [
+      "decision",
+      "prodsec",
+      "policy",
+      "compliance",
+      "distribution"
+    ]
+  },
+  {
+    "id": "ex-054",
+    "source": "logs/2026-08-13.md",
+    "section": "AAA standup — executive review focus",
+    "input": "Sean's directive for AAA fall exec review: internal productization. Four priority projects agreed: (1) Defect/CVE triage (Ian), (2) CI/CD pipeline monitoring — that's my pipeline-debugger work, (3) ALE certification (Dominik/George), (4) Scrummit (Allison). Allison's right — focus on 4, not 12.",
+    "context": "AAA standup discussion. Juanje's personal involvement in AAA team's executive review preparation. Juanje later left AAA (Sep 7).",
+    "labels": {
+      "type": "Context",
+      "team_eligible": false,
+      "audience_filter_passed": false,
+      "destination": null,
+      "depersonalized_capture": null,
+      "personal_capture": null,
+      "reasoning": "AAA team internal priorities are not Toolchain team knowledge. Juanje's CI/CD pipeline monitoring is his personal cross-team commitment (later resigned from AAA). Q2 fails: would a Toolchain teammate benefit from knowing AAA's exec review focus? No."
+    },
+    "tags": [
+      "initiative-status",
+      "aaa",
+      "executive-review",
+      "program"
+    ]
+  },
+  {
+    "id": "ex-055",
+    "source": "logs/2026-08-17.md",
+    "section": "Lessons — libbpf downstream",
+    "input": "Lesson from the libbpf incident: getting a fix merged upstream doesn't mean the downstream pipeline is unblocked. The upstream denylist fix for BPF landed on Jul 23, but RHIVOS 2.1 nightlies are STILL failing because FA has to run an official process to remove BPF from the automotive-image-builder-policy and ship a new package. That's a completely separate process from the upstream merge. Anyone looking at the upstream MR would think 'this is fixed' — but it's not, and it won't be until the policy RPM propagates.",
+    "context": "Post-AIB standup Aug 17 — generalizing a non-obvious pattern from the libbpf incident: upstream fix ≠ downstream unblock for FuSa-policy-linked packages.",
+    "labels": {
+      "type": "Context",
+      "team_eligible": true,
+      "audience_filter_passed": true,
+      "destination": "team/wiki/",
+      "depersonalized_capture": "libbpf/BPF denylist removal: fixing upstream denylist is NOT sufficient to unblock RHIVOS pipelines. An official FA process must be completed to remove BPF from the automotive-image-builder-policy, followed by a new `automotive-image-builder-policy` package release. The upstream fix and the downstream policy are decoupled.",
+      "personal_capture": null,
+      "reasoning": "Non-obvious technical process constraint. Factual. 'Upstream fix landed' typically signals the blocker is resolved — this lesson corrects that assumption for FuSa-policy-linked packages."
+    },
+    "tags": [
+      "lesson",
+      "libbpf",
+      "fusa",
+      "policy",
+      "gotcha"
+    ]
+  },
+  {
+    "id": "ex-056",
+    "source": "logs/2026-08-11.md",
+    "section": "Program Meeting — AI usage clarification",
+    "input": "Reminder from the RHIVOS Program Meeting on FuSa: any AI-generated output used in safety review contexts requires mandatory human expert confirmation. They shared example disclaimer text in the meeting. The point was clear — teams must not skip the human review step even when under time pressure for the Oct 31 submission deadline. This is an existing requirement, not a new one — they're reinforcing it because the submission is at risk and they don't want shortcuts.",
+    "context": "RHIVOS Program Meeting Aug 11, FuSa section — reinforcement of existing AI usage policy in the context of at-risk Oct 31 certification submission.",
+    "labels": {
+      "type": "Context",
+      "team_eligible": true,
+      "audience_filter_passed": true,
+      "destination": "team/processes/",
+      "depersonalized_capture": "FuSa AI usage policy: AI-generated output in safety contexts requires mandatory human expert confirmation. Teams must not skip human review even under time pressure. Example disclaimer text was shared in program meeting notes.",
+      "personal_capture": null,
+      "reasoning": "Process constraint from a program meeting. Factual. Applies to anyone using AI tools for FuSa-related work."
+    },
+    "tags": [
+      "process",
+      "fusa",
+      "ai-policy",
+      "safety"
+    ]
+  },
+  {
+    "id": "ex-057",
+    "source": "user/tpo-reflection.md",
+    "section": "Historial de PO/TPO en Toolchain — por qué importa",
+    "input": "El equipo lleva **5 años sin un PO/TPO efectivo**. Este es el historial: 1. **Liora** (PO) — un desastre. Dañó mucho al equipo en su fase de formación. 2. **Steve Loranz** (PO) — como si no hubiera nadie. 3. **Petr + Kanitha** (PO + TPO) — nominalmente en el puesto, pero en la práctica ausentes. Kanitha fue un 'a ver si le gusta el puesto' — el resultado: no teníamos realmente TPO.",
+    "context": "Personal reflection written during TPO role consideration (Jul 2026). Private document in Spanish.",
+    "labels": {
+      "type": "Reflection",
+      "team_eligible": false,
+      "audience_filter_passed": false,
+      "destination": null,
+      "depersonalized_capture": null,
+      "personal_capture": null,
+      "reasoning": "EDGE CASE: Opinion disguised as fact (#1) + colleague assessments (privacy Q3 block). Statements sound like historical record but are personal evaluations: 'un desastre', 'Dañó mucho', 'como si no hubiera nadie', 'nominalmente en el puesto'. These are assessments of named colleagues — Q3 blocks unconditionally even if others agreed. 5-year frustration and never being chosen are personal strategy/emotion. Never team knowledge regardless of how factually-framed."
+    },
+    "tags": [
+      "edge-case",
+      "opinion-as-fact",
+      "colleague-assessment",
+      "personal",
+      "reflection",
+      "private"
+    ]
+  },
+  {
+    "id": "ex-058",
+    "source": "user/tpo-reflection.md",
+    "section": "En contra / riesgos",
+    "input": "Las reuniones de AAA ya me están quemando — hoy me salté el Sprint Planning porque necesitaba un break. [...] Lo que quema no es tener muchas reuniones. Lo que quema es tener **tareas técnicas que requieren foco** y no poder abordarlas por las reuniones. Eso genera frustración → buscar huecos fuera de horario → burnout.",
+    "context": "Personal reflection on AAA workload written while considering TPO offer. Private document in Spanish.",
+    "labels": {
+      "type": "Reflection",
+      "team_eligible": true,
+      "audience_filter_passed": false,
+      "destination": null,
+      "depersonalized_capture": null,
+      "personal_capture": "Personal instance: AAA meeting load caused burnout → skipped Sprint Planning Jul 23. Pattern: deep technical tasks + meeting-heavy schedule = burnout cycle, not meetings per se.",
+      "reasoning": "EDGE CASE: Personal frustration wrapping a technical diagnosis (#4). The emotion ('me están quemando', burnout) is personal and Q3-blocked. Underneath is a generalizable insight: meetings + competing focus tasks = burnout, not meetings alone. Dual-capture: the separated insight goes to team/wiki/ (see ex-058b). The personal emotional instance stays personal-only."
+    },
+    "tags": [
+      "edge-case",
+      "frustration-wrapping-diagnosis",
+      "dual-capture",
+      "personal",
+      "burnout",
+      "aaa"
+    ]
+  },
+  {
+    "id": "ex-058b",
+    "source": "user/tpo-reflection.md",
+    "section": "Insight clave: reframing del problema de las reuniones",
+    "input": "Team observation from the TPO transition: meeting load alone doesn't cause burnout — the friction comes from meetings competing with deep-focus technical tasks for the same schedule. When the role removes the competing technical tasks (coordination becomes the primary work, not interference), the conflict disappears.",
+    "context": "Organizational pattern observed during Toolchain TPO role transition. Generalized from concrete experience — applicable to any role design that mixes coordination with deep-technical work.",
+    "labels": {
+      "type": "Context",
+      "team_eligible": true,
+      "audience_filter_passed": true,
+      "destination": "team/wiki/",
+      "depersonalized_capture": "Meeting burnout pattern: the friction is not meeting volume per se — it is the coexistence of meetings with deep-focus technical tasks competing for the same schedule. When both compete, burnout follows. Implication for role design: separating coordination roles from deep-technical roles resolves the conflict. The two-mode collision disappears when technical tasks are removed from the day-to-day, not when meetings are.",
+      "personal_capture": "Personal: burnout pattern identified during AAA/TPO deliberation; resolved by accepting TPO (shifts meetings to primary work rather than interference with technical focus).",
+      "reasoning": "Rewritten as a factual organizational observation, stripped of personal emotional content and career deliberation context. The pattern (meetings + competing focus tasks = burnout; removing one variable resolves it) is generalizable team knowledge for role design and capacity planning."
+    },
+    "tags": [
+      "edge-case",
+      "frustration-wrapping-diagnosis",
+      "dual-capture",
+      "process",
+      "role-design",
+      "wiki"
+    ]
+  },
+  {
+    "id": "ex-059",
+    "source": "user/tpo-reflection.md",
+    "section": "Conversación con Maui",
+    "input": "Maui apoya la decisión. Preocupación principal: que supusiera más estrés o más horas. Juanje aclaró que no sería añadir sino **cambiar una cosa por otra**. Se alegró de que dejara AAA — ella también notaba cómo le estaba quemando. Cree que se le daría bien. Condición: que sea **cambiar, no añadir**.",
+    "context": "Private personal reflection — conversation with spouse about TPO role decision. Private document.",
+    "labels": {
+      "type": "Reflection",
+      "team_eligible": false,
+      "audience_filter_passed": false,
+      "destination": null,
+      "depersonalized_capture": null,
+      "personal_capture": null,
+      "reasoning": "EDGE CASE: Private information (#5). Explicitly private personal conversation with a non-employee. Q3 blocks immediately — involves personal relationship, spouse's observations about burnout, private emotional content. No team-relevant insight separable from the personal context. Never team knowledge."
+    },
+    "tags": [
+      "edge-case",
+      "private",
+      "personal",
+      "family"
+    ]
+  },
+  {
+    "id": "ex-060",
+    "source": "user/career/tpo-role-offer-2026-07.md",
+    "section": "Juanje reply (11:46)",
+    "input": "**Juanje Slack (11:46):** *\"Honestly, I don't see it.\"* — requested 1:1 same day.",
+    "context": "Juanje's reaction to Avi's rotation proposal (Avi proposed Q4 Ozan / Q1 Juanje rotation instead of immediate TPO). Marked confidential in source file.",
+    "labels": {
+      "type": "Reflection",
+      "team_eligible": false,
+      "audience_filter_passed": false,
+      "destination": null,
+      "depersonalized_capture": null,
+      "personal_capture": null,
+      "reasoning": "Personal position/frustration in a private 1:1 negotiation. Q3 blocks: personal strategy, frustration about the rotation proposal, and implicit critique of the proposal. The source file is marked confidential. Never team knowledge."
+    },
+    "tags": [
+      "personal",
+      "reflection",
+      "frustration",
+      "career",
+      "private"
+    ]
+  },
+  {
+    "id": "ex-061",
+    "source": "user/career/tpo-role-offer-2026-07.md",
+    "section": "Juanje's stated position (1:1)",
+    "input": "**AAA fatigue:** AAA team is well-focused with doer profiles; Juanje feels burned by meeting/demo load — skipped AAA Sprint Planning Jul 23 for a break. Could leave AAA in 1–2 sprints; would continue AI work elsewhere.",
+    "context": "Juanje's stated position in 1:1 with Avi about the TPO offer. Marked confidential.",
+    "labels": {
+      "type": "Reflection",
+      "team_eligible": false,
+      "audience_filter_passed": false,
+      "destination": null,
+      "depersonalized_capture": null,
+      "personal_capture": null,
+      "reasoning": "Personal burnout disclosure in 1:1 context. Contains: (a) personal emotional state (burned), (b) personal career strategy (leave AAA), (c) implicit characterization of teammates ('doer profiles'). Q3 blocks on all dimensions. The 1:1 context adds confidentiality. The generalizable insight (meeting/focus conflict) is already captured depersonalized in ex-058b."
+    },
+    "tags": [
+      "personal",
+      "reflection",
+      "burnout",
+      "aaa",
+      "career",
+      "private"
+    ]
+  },
+  {
+    "id": "ex-062",
+    "source": "logs/2026-08-11.md",
+    "section": "Safety RPMs meeting — Ian note",
+    "input": "**Ian:** repo not yet created, will do it (from tornado shelter).",
+    "context": "Safety RPMs checkin meeting — Ian delayed repo creation due to a tornado emergency.",
+    "labels": {
+      "type": "Context",
+      "team_eligible": false,
+      "audience_filter_passed": false,
+      "destination": null,
+      "depersonalized_capture": null,
+      "personal_capture": null,
+      "reasoning": "EDGE CASE: Privacy check on personal circumstances of a named colleague (#3). The context (Ian in a tornado shelter) reveals a personal emergency about Ian McLeod. The team-relevant fact (canonical FuSa repo not yet created) is separable — captured elsewhere without the personal detail. Q3 blocks the personal circumstance. The blocking fact is: 'Ian canonical FuSa repo still pending — blocks VROOM-40719 Tools List + gating.' That depersonalized version would be team-eligible without the tornado context."
+    },
+    "tags": [
+      "edge-case",
+      "privacy",
+      "personal",
+      "colleague-circumstance",
+      "fusa"
+    ]
+  },
+  {
+    "id": "ex-063",
+    "source": "logs/2026-08-13.md",
+    "section": "Toolchain Backlog Refinement — image files prioritization",
+    "input": "**Image files prioritization (Kanitha + Eitan):** Must prioritize — GA date September 1.",
+    "context": "Sprint 133/134 Backlog Refinement — urgent prioritization signal with only GA date as justification.",
+    "labels": {
+      "type": "Context",
+      "team_eligible": true,
+      "audience_filter_passed": true,
+      "destination": "team/projects/",
+      "depersonalized_capture": "RHIVOS 2.0 image files must be prioritized for GA target: September 1, 2026. Owners: Kanitha + Eitan.",
+      "personal_capture": null,
+      "reasoning": "EDGE CASE: Decision without explicit rationale (#8). 'Must prioritize' with only the GA date as justification — rationale is implicit (GA constraint), not stated. Classified team-eligible because the GA constraint is sufficient context for the decision to make sense. The owners are named for accountability, not as assessments."
+    },
+    "tags": [
+      "edge-case",
+      "decision-no-rationale",
+      "initiative-status",
+      "ga",
+      "rhivos"
+    ]
+  },
+  {
+    "id": "ex-064",
+    "source": "logs/2026-09-17.md",
+    "section": "AAA Sprint Planning — Luna model cost",
+    "input": "Luigi completed a complex function in ~2 hours at near-$0 cost via OpenAI Luna model.",
+    "context": "AAA Sprint Planning notes — data point about model cost efficiency relayed from a meeting.",
+    "labels": {
+      "type": "Context",
+      "team_eligible": true,
+      "audience_filter_passed": true,
+      "destination": "team/wiki/",
+      "depersonalized_capture": "Model cost data point: OpenAI Luna model completed a complex software function in ~2 hours at near-$0 cost. Relevant for model selection decisions in AI initiatives where cost efficiency matters.",
+      "personal_capture": null,
+      "reasoning": "EDGE CASE: Connector-relayed content (#10) from AAA meeting. Factual data point about model performance relayed through a meeting note. Q1-Q3 pass. The individual attribution is depersonalized — the relevant fact is the model cost/performance benchmark."
+    },
+    "tags": [
+      "edge-case",
+      "connector-relayed",
+      "ai-tools",
+      "model-selection",
+      "cost",
+      "aaa"
+    ]
+  },
+  {
+    "id": "ex-065",
+    "source": "logs/2026-09-17.md",
+    "section": "AAA Sprint Planning — Ian change impact analysis",
+    "input": "Ian published AI-assisted change impact analysis to triage hundreds of production issues. Intersects with FuSa and defect triage programs. Worth following if the program scales.",
+    "context": "AAA Sprint Planning notes review — someone else's work being tracked as a program-level signal.",
+    "labels": {
+      "type": "Context",
+      "team_eligible": true,
+      "audience_filter_passed": true,
+      "destination": "team/projects/",
+      "depersonalized_capture": "AI-assisted change impact analysis is being used to triage hundreds of production issues at program level. Intersects with FuSa and defect triage programs. Active in AAA team.",
+      "personal_capture": null,
+      "reasoning": "EDGE CASE: Present-tense activity report (#9). 'Ian published X' describes someone's current work captured as a signal. Team-eligible because the capability (AI-assisted change impact analysis at scale) is relevant for anyone working on FuSa triage or defect management. Not blocked by Q3 — no personal assessment."
+    },
+    "tags": [
+      "edge-case",
+      "activity-report",
+      "ai-tools",
+      "fusa",
+      "change-impact",
+      "aaa"
+    ]
+  },
+  {
+    "id": "ex-066",
+    "source": "logs/2026-09-07.md",
+    "section": "TPO Sync — pipeline stability requirement",
+    "input": "I raised pipeline stability during the TPO sync with Kanitha. External dependency changes keep breaking our local workflows — this has been a recurring problem. Peter's standing requirement is that we guarantee stability during release periods for urgent builds. We agreed in the sync that my monitoring initiatives should align specifically with build process stability, not just infrastructure health. That's the framing: monitoring serves release reliability, not monitoring for its own sake.",
+    "context": "TPO Sync Sep 7 (Kanitha knowledge transfer) — Juanje raising pipeline stability as a TPO priority. Peter's requirement is pre-existing; the agreement is about alignment of monitoring work.",
+    "labels": {
+      "type": "Context",
+      "team_eligible": true,
+      "audience_filter_passed": true,
+      "destination": "team/processes/",
+      "depersonalized_capture": "Release stability requirement (from leadership): pipeline must guarantee stability during release periods for urgent builds. External dependency changes frequently break local workflows. Monitoring initiatives should align with build process stability, not just infrastructure health.",
+      "personal_capture": null,
+      "reasoning": "Requirement from program leadership relayed through TPO sync. Factual. Any Toolchain engineer working on monitoring or infrastructure needs to know this stability constraint exists."
+    },
+    "tags": [
+      "process",
+      "pipeline",
+      "release-stability",
+      "tpo",
+      "monitoring"
+    ]
+  },
+  {
+    "id": "ex-067",
+    "source": "logs/2026-09-07.md",
+    "section": "TPO Sync — team recognition practice",
+    "input": "TPO reporting practice from Avi's guidance: when presenting milestones at program meetings, name the individual team members who achieved them. Gives outward-facing recognition for their work.",
+    "context": "Guidance from manager (Avi) during TPO knowledge transfer session. Adopted as part of TPO reporting workflow.",
+    "labels": {
+      "type": "Context",
+      "team_eligible": true,
+      "audience_filter_passed": true,
+      "destination": "team/processes/",
+      "depersonalized_capture": "Program presentation practice: when reporting milestones at program meetings, name the team members who achieved them — this provides outward-facing recognition for their work.",
+      "personal_capture": null,
+      "reasoning": "Practical guidance from manager relayed in TPO knowledge transfer. Factual process tip. Useful for any future TPO or team lead presenting to the program."
+    },
+    "tags": [
+      "process",
+      "tpo",
+      "recognition",
+      "program"
+    ]
+  },
+  {
+    "id": "ex-068",
+    "source": "logs/2026-09-07.md + logs/2026-08-13.md + logs/2026-09-17.md",
+    "section": "Implicit process: pre-planning Jira sweep (synthesized across logs)",
+    "input": "[Synthesized] Pattern repeated across Sprint 134, 135, and 136 prep: before each sprint planning, a full-team Jira sprint query is run, compared against team-state.md, discrepancies flagged (Backlog tickets misclassified as sprint work, subtask-only tracking gaps, stale statuses), and a carryover/capacity view produced. Post-planning: new sprint queried to verify what landed.",
+    "context": "Implicit team process reconstructed from recurrence across multiple log entries — never formally documented anywhere.",
+    "labels": {
+      "type": "Context",
+      "team_eligible": true,
+      "audience_filter_passed": true,
+      "destination": "team/processes/",
+      "depersonalized_capture": "Sprint pre-planning Jira sweep (emerged from repeated practice): (1) Query full team's current sprint in Jira (`sprint in openSprints()` JQL filtered by team); (2) Compare per-person against team-state.md or equivalent; (3) Flag discrepancies — Backlog-within-sprint noise, subtask-only tracking, stale statuses; (4) Build carryover + capacity view before planning meeting; (5) Post-planning: query new sprint to verify what actually landed. Repeatable before every sprint planning.",
+      "personal_capture": null,
+      "reasoning": "EDGE CASE: Implicit process across multiple logs (#12). This sprint prep pattern recurs across 3+ sprint cycles but was never formally documented. Synthesized from observation, not extracted from a single source. High team value: any TPO or team lead running sprint planning would benefit. Tagged as synthesized to signal this is a derived observation."
+    },
+    "tags": [
+      "edge-case",
+      "implicit-process",
+      "process",
+      "sprint-planning",
+      "jira",
+      "synthesized"
+    ]
+  }
+]
