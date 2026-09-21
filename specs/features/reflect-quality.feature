@@ -45,3 +45,15 @@ Feature: Reflect prompt captures depth, observations, and session-time log write
     Then the agents-base prompt does not contain "Do not write to `logs/` directly"
     And the agents-base prompt contains "You can write to `logs/"
     And the agents-base prompt contains "session-time writing"
+
+  @FR-REFLECT-12
+  Scenario: Process-conversation prompt includes task completion guard
+    Given the bundled process-conversation.md prompt
+    Then the process-conversation prompt contains "discussed, reorganized, or moved"
+    And the process-conversation prompt contains "explicitly confirmed"
+
+  @FR-REFLECT-12
+  Scenario: Output-only suffix reinforces task completion guard
+    Given the output-only suffix for session-end reflect
+    Then the suffix contains "discussed, reorganized, or moved"
+    And the suffix contains "explicitly confirmed"

@@ -1530,6 +1530,24 @@
           "unit_tests": 2
         }
       ]
+    },
+    {
+      "id": "FR-REFLECT-12",
+      "title": "Task completion guard in reflect",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Process-conversation prompt includes task completion guard",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Output-only suffix reinforces task completion guard",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
     }
   ]
 }

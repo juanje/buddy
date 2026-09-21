@@ -677,6 +677,7 @@ the current date on each user turn, not the session start date. Fixes #4.
 | FR-REFLECT-09 | Reflect requires user interaction, not just system turns | 2.5 ✓ |
 | FR-REFLECT-10 | Enriched reflect observations, reasoning, and concrete facts | 2.5 ✓ |
 | FR-REFLECT-11 | Active context patches via session-end reflect | 2.5 ✓ |
+| FR-REFLECT-12 | Task completion guard: reflect must not mark tasks done unless explicitly confirmed | 2.5 ✓ |
 
 **FR-REFLECT-01 — Session-end reflect finalization**
 
@@ -820,6 +821,19 @@ not session start). Omit the section when nothing volatile changed.
   and apply. Only "Right now" — "Files" stays in consolidation.
 - **Do not patch:** long-term project context, items that only need archiving,
   wording or structure polish.
+
+**FR-REFLECT-12 — Task completion guard in reflect output**
+
+The session-end reflect must not mark tasks as completed (`[x]`) unless the
+user explicitly confirmed the outcome was achieved during the session.
+Tasks that were discussed, reorganized, moved between areas, or mentioned
+in passing remain open. When in doubt, leave open.
+
+- **Scope:** prompt text in `bundled/prompts/process-conversation.md` (Step 2,
+  "Tasks captured") and `OUTPUT_ONLY_SUFFIX` in `backends/reflect-prompts.ts`.
+- **Guard text:** "A task discussed, reorganized, or moved is NOT completed.
+  Only mark [x] if the user explicitly confirmed the outcome was achieved.
+  When in doubt, leave open."
 
 **FR-REFLECT-04 — Log output sanitizer (strip tool-call artifacts)**
 

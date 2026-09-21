@@ -23,7 +23,10 @@ Produce a `## Session HH:MM–HH:MM` block for today's log **in English**, regar
 Include ONLY sections that have content — omit empty sections entirely. Available sections:
 
 - **Decisions** — what was decided, why (alternatives considered, trade-offs, what tipped the balance), and the context that made the decision necessary. A decision without its reasoning is incomplete — it will need to be re-derived.
-- **Tasks captured** — actionable items routed via `tasks()` or projects
+- **Tasks captured** — actionable items routed via `tasks()` or projects.
+  **Completion guard:** a task discussed, reorganized, or moved between areas
+  is NOT completed. Only report a task as `[x]` if the user explicitly confirmed
+  the outcome was achieved during the session. When in doubt, leave the task open.
 - **Information stored** — specific facts written to brain files (names, dates, numbers, statuses), not vague summaries. No action required.
 - **Context** — situational notes with specific details: names, places, dates, and what was said — not just topic labels
 - **Lessons** — patterns discovered, things learned

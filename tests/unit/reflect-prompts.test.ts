@@ -74,6 +74,12 @@ describe("process-conversation prompt content", () => {
     expect(prompt).toContain("Right now patches");
     expect(prompt).toContain("volatile state");
   });
+
+  it("includes task completion guard (FR-REFLECT-12)", () => {
+    const prompt = loadProcessConversationPrompt();
+    expect(prompt).toContain("discussed, reorganized, or moved");
+    expect(prompt).toContain("explicitly confirmed");
+  });
 });
 
 describe("buildReflectUserPrompt", () => {
@@ -100,5 +106,10 @@ describe("buildReflectUserPrompt", () => {
 
   it("suffix instructs Right now patches (FR-REFLECT-11)", () => {
     expect(OUTPUT_ONLY_SUFFIX).toContain("Right now patches");
+  });
+
+  it("suffix includes task completion guard (FR-REFLECT-12)", () => {
+    expect(OUTPUT_ONLY_SUFFIX).toContain("discussed, reorganized, or moved");
+    expect(OUTPUT_ONLY_SUFFIX).toContain("explicitly confirmed");
   });
 });
