@@ -14,8 +14,9 @@ import {
   REQUIRED_BRAIN_FRONTMATTER,
 } from "../shared/defaults";
 import { parseFrontmatter } from "../shared/frontmatter";
-import { brainDirPath } from "./brain-paths";
 import { BRAIN_PREFIX, BRAIN_SUBDIRS, dirPrefix } from "../shared/brain-paths";
+import { brainDirPath } from "./brain-paths";
+import { missingLearnedSkillToolKeys } from "./skill-tools";
 
 export interface BrainHealthReport {
   /**
@@ -36,6 +37,8 @@ export interface BrainHealthReport {
   missingCoreFiles: string[];
   missingIndexes: string[];
   oversizedFiles: string[];
+  /** Skill files in agent_brain/skills/ missing tool_name or tool_description (FR-SKILL-06). */
+  incompleteSkillFrontmatter: Array<{ path: string; missing: string[] }>;
 }
 
 const FRONTMATTER_BLOCK = /^---\n([\s\S]*?)\n---\n/;
@@ -145,9 +148,15 @@ function findMissingIndexes(rootDir: string): string[] {
   return missing.sort();
 }
 
+function isLearnedSkillFile(relPath: string): boolean {
+  const prefix = `${BRAIN_SUBDIRS.skills}/`;
+  return relPath.startsWith(prefix) && relPath.endsWith(".md") && !relPath.endsWith("/.gitkeep");
+}
+
 export function computeBrainHealthReport(rootDir: string): BrainHealthReport {
   const missingFrontmatter: BrainHealthReport["missingFrontmatter"] = [];
   const malformedFrontmatter: BrainHealthReport["malformedFrontmatter"] = [];
+  const incompleteSkillFrontmatter: BrainHealthReport["incompleteSkillFrontmatter"] = [];
   const oversizedFiles: string[] = [];
 
   for (const relPath of walkAllBrainMarkdown(rootDir)) {
@@ -155,6 +164,12 @@ export function computeBrainHealthReport(rootDir: string): BrainHealthReport {
     if (!(FRONTMATTER_EXEMPT_FILES as readonly string[]).includes(relPath)) {
       const missing = missingRequiredKeys(content);
       if (missing.length > 0) missingFrontmatter.push({ path: relPath, missing });
+    }
+    if (isLearnedSkillFile(relPath)) {
+      const missingSkillKeys = missingLearnedSkillToolKeys(content);
+      if (missingSkillKeys.length > 0) {
+        incompleteSkillFrontmatter.push({ path: relPath, missing: missingSkillKeys });
+      }
     }
     const problem = frontmatterProblem(content);
     if (problem) malformedFrontmatter.push({ path: relPath, problem });
@@ -182,6 +197,7 @@ export function computeBrainHealthReport(rootDir: string): BrainHealthReport {
     missingCoreFiles,
     missingIndexes,
     oversizedFiles,
+    incompleteSkillFrontmatter,
   };
 }
 
@@ -191,7 +207,8 @@ export function formatBrainHealthReportBlock(report: BrainHealthReport): string 
     report.malformedFrontmatter.length > 0 ||
     report.missingCoreFiles.length > 0 ||
     report.missingIndexes.length > 0 ||
-    report.oversizedFiles.length > 0;
+    report.oversizedFiles.length > 0 ||
+    report.incompleteSkillFrontmatter.length > 0;
 
   if (!hasIssues) return "";
 
@@ -216,6 +233,15 @@ export function formatBrainHealthReportBlock(report: BrainHealthReport): string 
     if (remaining > 0) {
       // A list of sixty is not a task, it is a wall. Later passes take the rest.
       lines.push(`(${remaining} more will be listed in later consolidations.)`);
+    }
+  }
+
+  if (report.incompleteSkillFrontmatter.length > 0) {
+    lines.push(
+      "Skill files missing tool registration fields — add these so the worker can register them as tools:",
+    );
+    for (const entry of report.incompleteSkillFrontmatter) {
+      lines.push(`- ${entry.path} — add: ${entry.missing.join(", ")}`);
     }
   }
 

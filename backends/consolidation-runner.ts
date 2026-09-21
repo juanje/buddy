@@ -75,7 +75,7 @@ import { appendDailyLog, updateLogsIndexEntry } from "./reflect";
 import { buddyAgentDir, globalConfigDir } from "./global-config";
 import { recordSessionUsage } from "./usage-tracker";
 import { buildConsolidationTools, consolidationToolNames } from "./consolidation-tools";
-import { buildSkillTools, skillToolNames } from "./skill-tools";
+import { buildAllSkillTools, skillToolNames } from "./skill-tools";
 import { ensureUserMdSectionsOnDisk } from "./brain-migration";
 import { resolveDepthModel } from "./fast-model";
 import { WIKI_DIR } from "../shared/brain-paths";
@@ -327,7 +327,7 @@ function buildMaintenanceTooling(rootDir: string): {
   customTools: ToolDefinition[];
 } {
   const promptsDir = join(globalConfigDir(), "prompts");
-  const skillTools = buildSkillTools(promptsDir, { rootDir });
+  const skillTools = buildAllSkillTools(promptsDir, rootDir);
   const consolTools = buildConsolidationTools(rootDir);
   const taskTool = buildTaskTool(rootDir);
   return {

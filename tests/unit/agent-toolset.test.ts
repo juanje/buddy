@@ -12,7 +12,7 @@
 // missing from the other is not an error anywhere: it is simply never called,
 // which is indistinguishable from a model that chose not to call it.
 
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { writeConnectorConfig } from "../../backends/connectors/credentials";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -95,5 +95,27 @@ describe("the toolset a user session is given", () => {
     const { names, customTools } = toolset();
     expect(names).toContain("jira");
     expect(customTools.map((tool) => tool.name)).toContain("jira");
+  });
+
+  it("offers learned skill tools from agent_brain/skills (FR-SKILL-06)", () => {
+    const skillsDir = join(root, "agent_brain", "skills");
+    mkdirSync(skillsDir, { recursive: true });
+    writeFileSync(
+      join(skillsDir, "session_skill.md"),
+      `---
+summary: Session skill
+tool_name: session_skill
+tool_description: Run during tests
+created: 2026-09-21
+---
+
+## Procedure
+`,
+      "utf8",
+    );
+
+    const { names, customTools } = toolset();
+    expect(names).toContain("session_skill");
+    expect(customTools.map((tool) => tool.name)).toContain("session_skill");
   });
 });

@@ -18,6 +18,7 @@ const pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8")) as { ve
 const templates = snapshotDir(join(ROOT, "templates"));
 const prompts = snapshotDir(join(ROOT, "bundled", "prompts"));
 const docs = snapshotDir(join(ROOT, "bundled", "docs"));
+const bundledTemplates = snapshotDir(join(ROOT, "bundled", "templates"));
 
 // pdfjs-dist worker source — needed at runtime for PDF extraction in compiled binary
 const pdfWorkerPath = join(ROOT, "node_modules", "pdfjs-dist", "legacy", "build", "pdf.worker.min.mjs");
@@ -34,10 +35,11 @@ writeFileSync(
     `export const EMBEDDED_TEMPLATES: Record<string, string> = ${JSON.stringify(templates, null, 2)};\n\n` +
     `export const EMBEDDED_PROMPTS: Record<string, string> = ${JSON.stringify(prompts, null, 2)};\n\n` +
     `export const EMBEDDED_DOCS: Record<string, string> = ${JSON.stringify(docs, null, 2)};\n\n` +
+    `export const EMBEDDED_BUNDLED_TEMPLATES: Record<string, string> = ${JSON.stringify(bundledTemplates, null, 2)};\n\n` +
     `export const EMBEDDED_PDF_WORKER: string = ${JSON.stringify(pdfWorkerSource)};\n`,
   "utf8",
 );
 
 console.log(
-  `Embedded assets generated: v${pkg.version}, ${Object.keys(templates).length} template files, ${Object.keys(prompts).length} prompts, ${Object.keys(docs).length} docs`,
+  `Embedded assets generated: v${pkg.version}, ${Object.keys(templates).length} instance template files, ${Object.keys(bundledTemplates).length} bundled templates, ${Object.keys(prompts).length} prompts, ${Object.keys(docs).length} docs`,
 );

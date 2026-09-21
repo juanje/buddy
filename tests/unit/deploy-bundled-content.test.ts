@@ -5,7 +5,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { bundledPromptsDir, deployBundledPrompts } from "../../backends/deploy-bundled-content";
+import {
+  bundledPromptsDir,
+  deployBundledPrompts,
+  deployBundledTemplates,
+} from "../../backends/deploy-bundled-content";
 
 describe("deployBundledPrompts", () => {
   let configDir: string;
@@ -28,5 +32,19 @@ describe("deployBundledPrompts", () => {
     for (const name of bundledNames) {
       expect(existsSync(join(promptsDir, name))).toBe(true);
     }
+  });
+});
+
+describe("deployBundledTemplates", () => {
+  let configDir: string;
+
+  afterEach(() => {
+    if (configDir) rmSync(configDir, { recursive: true, force: true });
+  });
+
+  it("deploys learned-skill template to config templates directory", () => {
+    configDir = mkdtempSync(join(tmpdir(), "buddy-deploy-templates-"));
+    deployBundledTemplates(configDir);
+    expect(existsSync(join(configDir, "templates", "learned-skill.md"))).toBe(true);
   });
 });

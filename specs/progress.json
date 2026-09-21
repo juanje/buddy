@@ -1548,6 +1548,39 @@
           "unit_tests": 1
         }
       ]
+    },
+    {
+      "id": "FR-SKILL-06",
+      "title": "Learned skills auto-registered as tools",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Learned skill with valid frontmatter is registered as tool",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Learned skill missing frontmatter fields is not registered",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Core skill name takes precedence over learned skill collision",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Frontmatter parse failure skips gracefully",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Brain health flags skill files missing tool registration fields",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
     }
   ]
 }

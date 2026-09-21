@@ -19,6 +19,7 @@ import { describe, expect, it } from "vitest";
 import { snapshotDir } from "../../scripts/snapshot-assets";
 
 import {
+  EMBEDDED_BUNDLED_TEMPLATES,
   EMBEDDED_DOCS,
   EMBEDDED_PROMPTS,
   EMBEDDED_TEMPLATES,
@@ -28,6 +29,7 @@ const ROOT = join(__dirname, "..", "..");
 
 const CASES: [string, Record<string, string>, string[]][] = [
   ["templates", EMBEDDED_TEMPLATES, ["templates"]],
+  ["bundled templates", EMBEDDED_BUNDLED_TEMPLATES, ["bundled", "templates"]],
   ["prompts", EMBEDDED_PROMPTS, ["bundled", "prompts"]],
   ["docs", EMBEDDED_DOCS, ["bundled", "docs"]],
 ];

@@ -25,7 +25,7 @@ import { findRecentAuthErrorInLogs, shouldEmitBootAuthCard } from "./auth-error"
 import { injectSessionContext } from "./context-injection";
 import { buddyAgentDir, globalConfigDir } from "./global-config";
 import { buddySessionsDir } from "./session-paths";
-import { buildSkillTools } from "./skill-tools";
+import { buildAllSkillTools } from "./skill-tools";
 import { buildFetchTools } from "./fetch-url";
 import { buildConnectorToolset } from "./connectors/index";
 import { buildTaskTool } from "./tasks/index";
@@ -79,7 +79,7 @@ export function buildAgentToolset(
   rootDir: string,
   deps: AgentToolsetDeps,
 ): { names: string[]; customTools: ToolDefinition[] } {
-  const skillTools = buildSkillTools(join(globalConfigDir(), "prompts"), { rootDir });
+  const skillTools = buildAllSkillTools(join(globalConfigDir(), "prompts"), rootDir);
   const fetchTools = buildFetchTools(rootDir);
   const fileTools = buildFileTools(rootDir, {
     confirmDelete: (absPath) =>

@@ -16,6 +16,11 @@ export function bundledDocsDir(): string {
   return join(dirname(fileURLToPath(import.meta.url)), "..", "bundled", "docs");
 }
 
+/** Bundled format references deployed to ~/.buddy/templates/ (FR-SKILL-06). */
+export function bundledTemplatesDir(): string {
+  return join(dirname(fileURLToPath(import.meta.url)), "..", "bundled", "templates");
+}
+
 function deployMarkdownFiles(
   sourceDir: string,
   targetDir: string,
@@ -46,6 +51,7 @@ function deployMarkdownFiles(
 export function deployBundledGlobalContent(configDir: string): void {
   deployBundledPrompts(configDir);
   deployBundledDocs(configDir);
+  deployBundledTemplates(configDir);
 }
 
 /** Remove .md files in targetDir that are not in the deployed set. */
@@ -88,4 +94,14 @@ export function deployBundledDocs(configDir: string): void {
     join(configDir, "docs"),
     embedded?.docs,
   );
+}
+
+/** Deploy bundled format references to ~/.buddy/templates/ (FR-SKILL-06). */
+export function deployBundledTemplates(configDir: string): void {
+  const embedded = getEmbeddedAssets();
+  const sourceDir = bundledTemplatesDir();
+  if (!existsSync(sourceDir) && !embedded?.bundledTemplates) return;
+
+  const targetDir = join(configDir, "templates");
+  deployMarkdownFiles(sourceDir, targetDir, embedded?.bundledTemplates);
 }

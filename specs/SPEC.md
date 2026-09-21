@@ -2776,6 +2776,7 @@ result — the LLM then follows the procedure.
 | FR-SKILL-03 | triage_inbox tool for inbox processing | 2 ✓ |
 | FR-SKILL-04 | Reflect child uses bundled process-conversation prompt | 2 ✓ |
 | FR-SKILL-05 | Consolidation invokes triage via tool call | 2 ✓ |
+| FR-SKILL-06 | Learned skills auto-registered as tools from agent_brain/skills/ frontmatter | 2.5 ✓ |
 
 **FR-SKILL-01 — Skill tools registered at session creation**
 
@@ -2816,6 +2817,22 @@ result — the LLM then follows the procedure.
 - **When** the consolidation maintenance session has skill tools registered
 - **Then** the LLM calls the `triage_inbox` tool instead of reading a file from disk
 - **And** the triage prompt is always the latest bundled version
+
+**FR-SKILL-06 — Learned skills auto-registered as tools**
+
+Agent-authored skills in `agent_brain/skills/*.md` with `tool_name` and
+`tool_description` in YAML frontmatter are registered as zero-input tools
+at session creation — same mechanism as core skills (FR-SKILL-01). The
+file content is returned when invoked. Files missing either field are
+passive (exist but not tools). Core skill names take precedence on collision.
+Frontmatter parse failures skip gracefully with a warning log.
+
+- **Scope:** `backends/skill-tools.ts` (new `buildLearnedSkillTools`),
+  `backends/session-boot.ts` and `backends/consolidation-runner.ts` (merge
+  into toolset), `bundled/templates/learned-skill.md` (quality template),
+  prompt updates in `agents-base.md` and `consolidation.md`, brain health
+  check for incomplete skill frontmatter.
+- **Template:** deployed to `~/.buddy/templates/` on boot refresh.
 
 **Design principles:**
 

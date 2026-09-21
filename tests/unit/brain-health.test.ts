@@ -169,6 +169,7 @@ describe("brain health linter", () => {
       missingCoreFiles: ["agent_brain/identity/SOUL.md"],
       missingIndexes: ["agent_brain/projects"],
       oversizedFiles: ["agent_brain/projects/big.md"],
+      incompleteSkillFrontmatter: [],
     });
 
     expect(block).toContain("Brain health (pre-computed):");
@@ -178,6 +179,53 @@ describe("brain health linter", () => {
     expect(block).toContain("Missing core files:");
     expect(block).toContain("Missing index.md:");
     expect(block).toContain("Oversized files:");
+  });
+
+  it("flags learned skill files missing tool registration fields (FR-SKILL-06)", () => {
+    setupRoot();
+    writeHealthyCore();
+    writeBrainFile(
+      "agent_brain/skills/complete.md",
+      `---
+summary: Complete skill
+tool_name: complete_skill
+tool_description: When to run
+created: 2026-09-21
+---
+
+## Procedure
+`,
+    );
+    writeBrainFile(
+      "agent_brain/skills/incomplete.md",
+      `---
+summary: Incomplete skill
+created: 2026-09-21
+---
+
+## Procedure
+`,
+    );
+
+    const report = computeBrainHealthReport(dir);
+    expect(report.incompleteSkillFrontmatter).toEqual([
+      {
+        path: "agent_brain/skills/incomplete.md",
+        missing: ["tool_name", "tool_description"],
+      },
+    ]);
+  });
+
+  it("does not flag non-skill brain files for tool_name", () => {
+    setupRoot();
+    writeHealthyCore();
+    writeBrainFile(
+      "agent_brain/concepts/no-tools.md",
+      "---\nsummary: Concept\ncreated: 2026-09-21\n---\n\n# Concept\n",
+    );
+
+    const report = computeBrainHealthReport(dir);
+    expect(report.incompleteSkillFrontmatter).toEqual([]);
   });
 
   it("handles empty agent_brain directory gracefully", () => {

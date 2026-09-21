@@ -3,7 +3,11 @@
 import { join } from "node:path";
 
 import { APP_VERSION } from "./app-version";
-import { deployBundledDocs, deployBundledPrompts } from "./deploy-bundled-content";
+import {
+  deployBundledDocs,
+  deployBundledPrompts,
+  deployBundledTemplates,
+} from "./deploy-bundled-content";
 import { CONFIG_FILE_NAME } from "../shared/defaults";
 import { readStateFile, updateStateFile, StateFileUnreadableError } from "./state-file";
 
@@ -37,12 +41,14 @@ export function bootRefreshIfNeeded(
     if (!(error instanceof StateFileUnreadableError)) throw error;
     console.error(`[boot-refresh] config unreadable, leaving it untouched: ${configPath}`);
     deployBundledPrompts(configDir);
+    deployBundledTemplates(configDir);
     return true;
   }
 
   if (current?.last_app_version === appVersion) return false;
 
   deployBundledPrompts(configDir);
+  deployBundledTemplates(configDir);
   updateStateFile<BuddyConfigRecord>(configPath, (config) => ({
     ...(config ?? {}),
     last_app_version: appVersion,

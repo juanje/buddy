@@ -91,6 +91,7 @@ describe("assertNoNewBrainDamage", () => {
     missingCoreFiles: [],
     missingIndexes: [],
     oversizedFiles: [],
+    incompleteSkillFrontmatter: [],
   });
 
   it("allows a run that broke nothing", () => {

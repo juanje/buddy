@@ -285,7 +285,9 @@ conversations or days):
    obvious — an agent that understands WHY a step exists can adapt when the
    exact procedure doesn't fit. Distinguish fixed steps (must always happen)
    from judgment calls (adapt based on context).
-3. Add it to the Skills section of AGENTS.md with a trigger description.
+3. Include `tool_name` and `tool_description` in frontmatter. Read
+   `~/.buddy/templates/learned-skill.md` for format and quality criteria.
+   The worker registers it automatically at next session boot.
 4. Mark the observation as resolved in the journal.
 
 **Rule candidates (seen 2+):**
@@ -431,6 +433,10 @@ issues:
   the file and use that date; if git gives no result, leave `created` empty.
   **Merge into the existing block. Never add a second `---` block** — that
   corrupts the file and the run will be recorded as failed.
+- **Incomplete skill frontmatter:** skill files need `tool_name` (snake_case,
+  verb_object) and `tool_description` (when to invoke — situations, triggers,
+  what it produces). Read `~/.buddy/templates/learned-skill.md` for format
+  reference. Fix listed files in this pass.
 - **Missing indexes:** Create `index.md` for flagged directories using file
   summaries.
 - **Oversized files:** Add an observation noting the file may benefit from
@@ -513,7 +519,7 @@ or more preferences share an underlying pattern, distill a one-line principle in
 
 **W6. Skill improvement** — review "Skill usage this week":
 1. For skills invoked this period → check logs for corrections or friction; read and enrich the skill if needed.
-2. **Do not change AGENTS.md skill listing** — skills stay permanently visible (append-only when new skills are created).
+2. **Do not remove skill files** — enrich in place when friction appears.
 
 **W7. Grouping** — review "Grouping candidates":
 1. When 3+ files share a domain → create subdirectory + `index.md` hub.

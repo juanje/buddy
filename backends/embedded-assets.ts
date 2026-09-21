@@ -11,6 +11,8 @@ export interface EmbeddedAssets {
   prompts: Record<string, string>;
   /** Self-doc pages relative to bundled/docs/ (e.g. "index.md") → content. */
   docs: Record<string, string>;
+  /** Format references relative to bundled/templates/ (e.g. "learned-skill.md") → content. */
+  bundledTemplates?: Record<string, string>;
   /** App semver from package.json at build time. */
   appVersion?: string;
   /** pdfjs-dist worker source (minified) for PDF extraction in compiled binary. */
