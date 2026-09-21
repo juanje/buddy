@@ -181,6 +181,24 @@ describe("brain health linter", () => {
     expect(block).toContain("Oversized files:");
   });
 
+  it("places skill frontmatter before generic frontmatter in health block", () => {
+    const block = formatBrainHealthReportBlock({
+      missingFrontmatter: [{ path: "agent_brain/concepts/stale.md", missing: ["summary"] }],
+      malformedFrontmatter: [],
+      missingCoreFiles: [],
+      missingIndexes: [],
+      oversizedFiles: [],
+      incompleteSkillFrontmatter: [
+        { path: "agent_brain/skills/my-skill.md", missing: ["tool_name", "tool_description"] },
+      ],
+    });
+    const skillIdx = block.indexOf("FIX FIRST");
+    const frontmatterIdx = block.indexOf("Incomplete frontmatter");
+    expect(skillIdx).toBeGreaterThan(-1);
+    expect(frontmatterIdx).toBeGreaterThan(-1);
+    expect(skillIdx).toBeLessThan(frontmatterIdx);
+  });
+
   it("flags learned skill files missing tool registration fields (FR-SKILL-06)", () => {
     setupRoot();
     writeHealthyCore();

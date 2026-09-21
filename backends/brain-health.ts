@@ -214,6 +214,19 @@ export function formatBrainHealthReportBlock(report: BrainHealthReport): string 
 
   const lines = ["Brain health (pre-computed):"];
 
+  // Skill frontmatter goes FIRST: without tool_name/tool_description the
+  // worker cannot register the skill as a tool, making it invisible to
+  // future sessions. This is more urgent than generic metadata repairs.
+  if (report.incompleteSkillFrontmatter.length > 0) {
+    lines.push(
+      "FIX FIRST — Skill files missing tool registration fields (without these, " +
+        "the skill is invisible to future sessions):",
+    );
+    for (const entry of report.incompleteSkillFrontmatter) {
+      lines.push(`- ${entry.path} — add: ${entry.missing.join(", ")}`);
+    }
+  }
+
   if (report.missingFrontmatter.length > 0) {
     // The label used to read "Missing frontmatter", which is false for almost
     // every file listed: they have a block, they are missing required *keys*.
@@ -233,15 +246,6 @@ export function formatBrainHealthReportBlock(report: BrainHealthReport): string 
     if (remaining > 0) {
       // A list of sixty is not a task, it is a wall. Later passes take the rest.
       lines.push(`(${remaining} more will be listed in later consolidations.)`);
-    }
-  }
-
-  if (report.incompleteSkillFrontmatter.length > 0) {
-    lines.push(
-      "Skill files missing tool registration fields — add these so the worker can register them as tools:",
-    );
-    for (const entry of report.incompleteSkillFrontmatter) {
-      lines.push(`- ${entry.path} — add: ${entry.missing.join(", ")}`);
     }
   }
 
