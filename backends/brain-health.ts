@@ -161,7 +161,11 @@ export function computeBrainHealthReport(rootDir: string): BrainHealthReport {
 
   for (const relPath of walkAllBrainMarkdown(rootDir)) {
     const content = readFileSync(join(rootDir, relPath), "utf8");
-    if (!(FRONTMATTER_EXEMPT_FILES as readonly string[]).includes(relPath)) {
+    const isIndexFile = relPath.endsWith("/index.md");
+    if (
+      !isIndexFile &&
+      !(FRONTMATTER_EXEMPT_FILES as readonly string[]).includes(relPath)
+    ) {
       const missing = missingRequiredKeys(content);
       if (missing.length > 0) missingFrontmatter.push({ path: relPath, missing });
     }

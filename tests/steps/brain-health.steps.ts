@@ -161,6 +161,13 @@ Then(
 );
 
 Then(
+  "the report does not list missing frontmatter for {string}",
+  function (this: BrainHealthWorld, relPath: string) {
+    assert.ok(!this.report?.missingFrontmatter.some((entry) => entry.path === relPath));
+  },
+);
+
+Then(
   "the report lists missing core file {string}",
   function (this: BrainHealthWorld, relPath: string) {
     assert.ok(this.report?.missingCoreFiles.includes(relPath));

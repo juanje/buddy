@@ -266,6 +266,7 @@ describe("executeTaskAction", () => {
   });
 
   it("config default WIP limit is 3", () => {
+    ({ configDir } = setupGlobalConfigDir());
     const result = assertSuccess(executeTaskAction(dir, "config"));
     expect(result.message).toContain("3");
     expect(result.message).toContain("overrides: none");

@@ -1609,6 +1609,19 @@
           "unit_tests": 3
         }
       ]
+    },
+    {
+      "id": "FR-BRAIN-07b",
+      "title": "index.md exempt from frontmatter checks",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "index.md files are exempt from frontmatter requirement",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
     }
   ]
 }

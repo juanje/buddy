@@ -2177,6 +2177,7 @@ detailed specification: [specs/BRAIN-SPEC.md](BRAIN-SPEC.md).
 | FR-BRAIN-05 | Observation pipeline captures and promotes patterns | 2 ✓ |
 | FR-BRAIN-06 | AGENTS.md does not declare skills — procedural prompts are skill tools (FR-SKILL) | 2 ✓ |
 | FR-BRAIN-07 | Brain health linter (structural checks, worker code) | 2 ✓ |
+| FR-BRAIN-07b | index.md under agent_brain exempt from frontmatter checks | 2 ✓ |
 | FR-BRAIN-08 | Preference tracking in USER.md (current state, no history) | 3 ✓ |
 | FR-BRAIN-09 | "What did we learn about the user?" consolidation step | 3 ✓ |
 | FR-BRAIN-10 | Cross-domain principle abstraction (weekly depth 2) | 3 ✓ |
@@ -2251,13 +2252,20 @@ detailed specification: [specs/BRAIN-SPEC.md](BRAIN-SPEC.md).
 - **Given** consolidation is about to run (or the check is invoked manually)
 - **When** the worker runs `computeBrainHealthReport()`
 - **Then** it deterministically checks (no LLM):
-  - All `agent_brain/` files have required frontmatter (including `summary` per NFR-FORMAT-01) — exception: `identity/SOUL.md` and `identity/USER.md` (always-injected at session start, no progressive disclosure needed)
+  - All `agent_brain/` files have required frontmatter (including `summary` per NFR-FORMAT-01) — exception: `identity/SOUL.md`, `identity/USER.md` (always-injected at session start), and any `index.md` under `agent_brain/` (structural navigation hubs, not knowledge pages)
   - No `agent_brain/` file has **malformed** frontmatter: a second `---` block stacked below the first, a key repeated inside one block, or an unterminated block. Distinct from the check above, which only ever asked whether frontmatter was *absent* — corruption of this shape was invisible to it, and it is exactly what a consolidation writes when it appends instead of merging (FR-CONSOL-13). A `---` used as a horizontal rule in the body is not frontmatter and must not be flagged
   - Core files exist with correct format (SOUL.md, USER.md, AGENTS.md or CLAUDE.md, deferred.md)
   - Every directory with more than one file has an `index.md` (documented exceptions: USER.md parent pattern)
   - Files exceeding size threshold are flagged for potential split
 - **And** the report is injected into the consolidation prompt (same pattern as Hebbian report) or returned to the user if invoked on demand
 - **Note:** Principle 3.2 — list/count/compare is worker code, not LLM judgment. Index generation can be fully programmatic when `summary` fields are present (NFR-FORMAT-01).
+
+**FR-BRAIN-07b — index.md exempt from frontmatter checks**
+
+- **Given** a file at `agent_brain/**/index.md` (directory navigation hub)
+- **When** `computeBrainHealthReport()` runs
+- **Then** the file is not listed in `missingFrontmatter` even without `summary`/`created`
+- **Scope:** `backends/brain-health.ts` (`computeBrainHealthReport` loop)
 
 **FR-BRAIN-08 — Preference tracking in USER.md**
 

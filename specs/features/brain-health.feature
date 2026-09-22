@@ -13,6 +13,12 @@ Feature: Brain health linter
     When the brain health report is computed
     Then the report lists missing frontmatter for "agent_brain/concepts/stale.md"
 
+  @FR-BRAIN-07b
+  Scenario: index.md files are exempt from frontmatter requirement
+    Given a brain file "agent_brain/projects/index.md" without required frontmatter
+    When the brain health report is computed
+    Then the report does not list missing frontmatter for "agent_brain/projects/index.md"
+
   Scenario: Missing core file is detected
     Given the brain is missing "agent_brain/identity/SOUL.md"
     When the brain health report is computed

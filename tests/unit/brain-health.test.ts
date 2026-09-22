@@ -57,6 +57,17 @@ describe("brain health linter", () => {
     expect(report.missingFrontmatter.map((e) => e.path)).toContain("agent_brain/concepts/stale.md");
   });
 
+  it("does not flag agent_brain index.md without required frontmatter", () => {
+    setupRoot();
+    writeHealthyCore();
+    writeBrainFile("agent_brain/projects/index.md", "# Projects index\n");
+
+    const report = computeBrainHealthReport(dir);
+    expect(report.missingFrontmatter.map((e) => e.path)).not.toContain(
+      "agent_brain/projects/index.md",
+    );
+  });
+
   it("flags files with empty summary or created values", () => {
     setupRoot();
     writeHealthyCore();
