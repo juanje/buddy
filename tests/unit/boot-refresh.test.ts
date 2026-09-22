@@ -55,6 +55,25 @@ describe("boot refresh", () => {
     expect(readFileSync(join(configDir, "prompts", "agents-base.md"), "utf8")).toBe("# custom\n");
   });
 
+  it("deploys docs even when version matches (unconditional)", () => {
+    configDir = mkdtempSync(join(tmpdir(), "buddy-boot-refresh-"));
+    mkdirSync(join(configDir, "prompts"), { recursive: true });
+    writeFileSync(join(configDir, "prompts", "agents-base.md"), "# existing\n", "utf8");
+    writeFileSync(
+      join(configDir, "config.json"),
+      JSON.stringify({ last_app_version: "0.2.0" }) + "\n",
+      "utf8",
+    );
+
+    const refreshed = bootRefreshIfNeeded(configDir, "0.2.0");
+    expect(refreshed).toBe(false);
+
+    // Docs deploy unconditionally — mirrors agent-worker.ts which calls
+    // bootDeployDocs regardless of needsRefresh.
+    bootDeployDocs(configDir);
+    expect(existsSync(join(configDir, "docs", "index.md"))).toBe(true);
+  });
+
   it("creates config.json on fresh install", () => {
     configDir = mkdtempSync(join(tmpdir(), "buddy-boot-refresh-"));
 

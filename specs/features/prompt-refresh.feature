@@ -22,6 +22,12 @@ Feature: Boot refresh on app version change
     When the boot sequence runs boot refresh
     Then prompts directory is unchanged
 
+  Scenario: Docs deploy even when version matches
+    Given config.json has last_app_version "0.2.0"
+    And the current app version is "0.2.0"
+    When the boot sequence runs boot refresh
+    Then all bundled docs are copied to the global docs directory
+
   Scenario: Fresh install with no config.json
     Given config.json does not exist
     And the current app version is "0.1.0"

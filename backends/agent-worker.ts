@@ -110,7 +110,7 @@ export interface WorkerDeps {
 export async function main(deps: WorkerDeps = {}): Promise<void> {
   const configDir = globalConfigDir();
   ensureConfigDirMode(configDir); // NFR-SEC-17, before anything is written into it
-  const needsRefresh = bootRefreshIfNeeded(configDir);
+  bootRefreshIfNeeded(configDir);
   await alignHttpDispatcherWithPi();
 
   // Started, not awaited. Building the runtime fetches the remote model
@@ -511,7 +511,10 @@ export async function main(deps: WorkerDeps = {}): Promise<void> {
   // Deploy docs after the RPC channel is up — docs are read on demand by the
   // agent, not needed for session creation. Prompts were already deployed in
   // bootRefreshIfNeeded (needed for system prompt assembly).
-  if (needsRefresh) bootDeployDocs(configDir);
+  // Unconditional: idempotent write (~14 files, ~50KB). Prevents stale docs
+  // when a previous boot wrote last_app_version but crashed before reaching
+  // this point (the version marker lives inside bootRefreshIfNeeded).
+  bootDeployDocs(configDir);
 
   if (!setupState.firstRun) {
     await startSession(setupState.config.rootDir);

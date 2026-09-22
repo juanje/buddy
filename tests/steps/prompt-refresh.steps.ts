@@ -51,8 +51,10 @@ When("the boot sequence runs boot refresh", function (this: PromptRefreshWorld) 
     ? readFileSync(promptsPath, "utf8")
     : "# stale prompt content\n";
   writeFileSync(promptsPath, "# stale prompt content\n", "utf8");
-  const refreshed = bootRefreshIfNeeded(this.globalConfigDir!, this.appVersion!);
-  if (refreshed) bootDeployDocs(this.globalConfigDir!);
+  bootRefreshIfNeeded(this.globalConfigDir!, this.appVersion!);
+  // Docs deploy unconditionally (idempotent) — prevents stale docs when a
+  // previous boot wrote last_app_version but crashed before deploying docs.
+  bootDeployDocs(this.globalConfigDir!);
 });
 
 Then("all bundled prompts are copied to the global prompts directory", function (this: PromptRefreshWorld) {
