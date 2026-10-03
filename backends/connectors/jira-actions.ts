@@ -217,6 +217,16 @@ async function refreshIssues(
   fields: string[],
 ): Promise<{ keys: string[]; syncedAt: string }> {
   const response = await client.searchJql(jql, fields);
+  return storeIssuePage(rootDir, response.issues ?? [], queryId, staleAfter);
+}
+
+/** Cache a page of fetched issues: entity store, assignee directory and query store. */
+function storeIssuePage(
+  rootDir: string,
+  issues: JiraIssue[],
+  queryId: string,
+  staleAfter: string,
+): { keys: string[]; syncedAt: string } {
   const entityStore = readEntityStore(rootDir, JIRA_DOMAIN);
   const keys: string[] = [];
   const syncedAt = new Date().toISOString();
@@ -225,7 +235,7 @@ async function refreshIssues(
   const userDir = readUserDirectory(rootDir, JIRA_DOMAIN);
   let userDirChanged = false;
 
-  for (const issue of response.issues ?? []) {
+  for (const issue of issues) {
     keys.push(issue.key);
     entityStore[issue.key] = issueToCacheEntry(issue, staleAfter);
 
@@ -261,38 +271,7 @@ async function refreshBoardIssues(
   staleAfter: string,
 ): Promise<{ keys: string[]; syncedAt: string }> {
   const response = await client.getBoardIssues(boardId, jql);
-  const entityStore = readEntityStore(rootDir, JIRA_DOMAIN);
-  const keys: string[] = [];
-  const syncedAt = new Date().toISOString();
-
-  const userDir = readUserDirectory(rootDir, JIRA_DOMAIN);
-  let userDirChanged = false;
-
-  for (const issue of response.issues ?? []) {
-    keys.push(issue.key);
-    entityStore[issue.key] = issueToCacheEntry(issue, staleAfter);
-
-    const assignee = issue.fields.assignee as
-      | { accountId?: string; displayName?: string }
-      | undefined;
-    if (assignee?.accountId && assignee.displayName) {
-      const key = assignee.displayName.toLowerCase();
-      if (!userDir[key] || userDir[key].accountId !== assignee.accountId) {
-        upsertUser(userDir, assignee.accountId, assignee.displayName);
-        userDirChanged = true;
-      }
-    }
-  }
-
-  writeEntityStore(rootDir, JIRA_DOMAIN, entityStore);
-  if (userDirChanged) writeUserDirectory(rootDir, JIRA_DOMAIN, userDir);
-  writeQueryStore(rootDir, JIRA_DOMAIN, queryId, {
-    keys,
-    synced_at: syncedAt,
-    stale_after: staleAfter,
-    source: JIRA_DOMAIN,
-  });
-  return { keys, syncedAt };
+  return storeIssuePage(rootDir, response.issues ?? [], queryId, staleAfter);
 }
 
 function buildTeamBoardJql(status?: string, assigneeAccountId?: string): string {
