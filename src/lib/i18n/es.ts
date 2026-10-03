@@ -107,10 +107,8 @@ export type LocaleStrings = {
   settingsProvider: string;
   settingsModel: string;
   settingsDirectory: string;
-  settingsVersion: string;
   settingsTabGeneral: string;
   settingsTabIntegrations: string;
-  settingsIntegrationsEmpty: string;
   settingsIntegrationActive: string;
   settingsIntegrationInactive: string;
   settingsJiraTitle: string;
@@ -315,10 +313,8 @@ export const es: LocaleStrings = {
   settingsProvider: "Proveedor de IA",
   settingsModel: "Modelo",
   settingsDirectory: "Carpeta de memoria",
-  settingsVersion: "Versión",
   settingsTabGeneral: "General",
   settingsTabIntegrations: "Integraciones",
-  settingsIntegrationsEmpty: "No hay integraciones configuradas.",
   settingsIntegrationActive: "Activo",
   settingsIntegrationInactive: "Inactivo",
   settingsJiraTitle: "Jira",
