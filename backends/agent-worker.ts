@@ -5,11 +5,11 @@
 // directly under tsx — which is why something can work in dev and fail in the
 // packaged binary.
 //
-// Detects first run (FR-SETUP-01), creates a real Pi SDK session in the
-// configured buddy directory (excludeTools: ["bash"]) and exposes WorkerAPI to
-// the frontend over kkrpc stdio transport. Includes permission layer, system
-// prompt assembly, auto-commit lifecycle, forked reflect on shutdown, and
-// heartbeat scheduler.
+// Detects first run (FR-SETUP-01), exposes WorkerAPI to the frontend over the
+// kkrpc stdio transport, queues prompts until the session is ready (FR-CHAT-13),
+// routes permission questions to the UI (FR-PERM-07) and starts the heartbeat.
+// The session itself is built in session-boot.ts; permissions, prompt assembly,
+// lifecycle (auto-commit, reflect) and the heartbeat live in their own modules.
 
 // Workaround: Pi SDK's openai-codex.js loads node:crypto and node:http via
 // async import() at module init but uses them synchronously in createState().

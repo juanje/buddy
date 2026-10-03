@@ -133,8 +133,7 @@ function frameUntrustedContent(source: string, content: string): string {
  * `parseHTML` a second time over the same document — up to 10 MB of it — purely
  * to read `document.title` for the download filename.
  *
- * The old `pageUrl` parameter is gone. It was never read; links in the
- * extracted markdown are left exactly as the page wrote them.
+ * Links in the extracted markdown are left exactly as the page wrote them.
  */
 export function htmlToMarkdown(html: string): { markdown: string; documentTitle: string } {
   const { document } = parseHTML(html);
