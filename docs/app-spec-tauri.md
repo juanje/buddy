@@ -1256,7 +1256,10 @@ buddy/
 │   │   ├── identity/USER.md
 │   │   └── skills/              # Instance skills (not consolidation.md)
 │   └── user/
-│       └── inbox.md
+│       ├── tasks.md
+│       ├── journal/
+│       ├── projects/
+│       └── workspaces/
 ├── src/                         # Frontend (Svelte 5)
 │   ├── App.svelte
 │   ├── lib/

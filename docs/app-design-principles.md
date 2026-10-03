@@ -180,7 +180,7 @@ Two owners, multiple destinations — the test is **whose content is this**, not
 |----------|-------------|---------|
 | Is this a **user artifact** — something they produce, consult, or act on? | `user/` | Plans, specs, bugs, roadmaps, drafts, documents, project files, reference notes |
 | Is this **user knowledge** they want to build on? | `user/wiki/` | Ideas, concepts, reflections, document summaries, interconnected reference |
-| Is this an **actionable item**? | `user/inbox.md` / `user/projects/` | Tasks, reminders, multi-step outcomes (GTD) |
+| Is this an **actionable item**? | `user/tasks.md` / `user/projects/` | Tasks, reminders, multi-step outcomes (GTD) |
 | Is this **agent operational knowledge** — what makes the assistant better at helping this user? | `agent_brain/` | Patterns observed, preferences learned, lessons about how to assist, project navigation context |
 
 **Disambiguation when unclear:**
@@ -194,7 +194,7 @@ A concept about "complex systems" illustrates ownership, not topic: if the agent
 
 **Operational rules:**
 - "Save this" from the user → `wiki_file` (when wiki is enabled), unless
-  clearly a task (→ inbox) or explicitly directed elsewhere.
+  clearly a task (→ tasks) or explicitly directed elsewhere.
 - User project artifacts (plans, bugs, roadmaps) → `user/projects/` or `user/`, never `agent_brain/projects/` for the artifact itself.
 - Agent self-improvement → `agent_brain/`, captured during reflect and
   consolidation. The user does not direct this.
