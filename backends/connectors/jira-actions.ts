@@ -378,6 +378,316 @@ function formatParent(fields: Record<string, unknown>): string {
   return `\nParent: ${parent.key}${summary}`;
 }
 
+/** Everything a Jira action handler needs once the connector is configured. */
+interface JiraActionContext {
+  rootDir: string;
+  client: JiraClient;
+  config: ConnectorConfig;
+  params: JiraActionParams;
+  force: boolean;
+}
+
+type JiraActionHandler = (ctx: JiraActionContext) => Promise<ConnectorResult>;
+
+function assigneeResolutionFailure(error: string): ConnectorResult {
+  return connectorResultFromError({
+    error,
+    code: 0,
+    recoverable: false,
+    suggestion: "jiraErrorGeneric",
+  });
+}
+
+async function boardAction(ctx: JiraActionContext): Promise<ConnectorResult> {
+  const { rootDir, client, params, force } = ctx;
+  const assigneeInput = params.assignee ?? "currentUser()";
+  const resolved = await resolveAssignee(client, assigneeInput, rootDir);
+  if ("error" in resolved) {
+    return assigneeResolutionFailure(resolved.error);
+  }
+  const jql = `sprint in openSprints() AND assignee = ${assigneeJql(resolved.accountId)} ORDER BY rank`;
+  const queryId = resolved.accountId === "currentUser()" ? "board" : `board_${resolved.accountId}`;
+  return serveCachedOrFetch(rootDir, queryId, force, () =>
+    refreshIssues(client, rootDir, jql, queryId, FRESHNESS.board, [
+      "summary",
+      "status",
+      "assignee",
+      "priority",
+      "duedate",
+      "updated",
+    ]),
+  );
+}
+
+async function teamBoardAction(ctx: JiraActionContext): Promise<ConnectorResult> {
+  const { rootDir, client, config, params, force } = ctx;
+  const boardId = typeof config.boardId === "string" ? config.boardId.trim() : "";
+  if (!boardId) {
+    return connectorResultFromError({
+      error: "Team board ID is not configured",
+      code: 0,
+      recoverable: false,
+      suggestion: "Set the board ID in Settings → Integrations → Jira.",
+    });
+  }
+
+  let assigneeAccountId: string | undefined;
+  if (params.assignee) {
+    const resolved = await resolveAssignee(client, params.assignee, rootDir);
+    if ("error" in resolved) {
+      return assigneeResolutionFailure(resolved.error);
+    }
+    assigneeAccountId = resolved.accountId;
+  }
+
+  const jql = buildTeamBoardJql(params.status, assigneeAccountId);
+  const queryId = teamBoardQueryId(boardId, params.status, assigneeAccountId);
+  return serveCachedOrFetch(rootDir, queryId, force, () =>
+    refreshBoardIssues(client, rootDir, boardId, jql, queryId, FRESHNESS.teamBoard),
+  );
+}
+
+async function myIssuesAction(ctx: JiraActionContext): Promise<ConnectorResult> {
+  const { rootDir, client, params, force } = ctx;
+  const assigneeInput = params.assignee ?? "currentUser()";
+  const resolved = await resolveAssignee(client, assigneeInput, rootDir);
+  if ("error" in resolved) {
+    return assigneeResolutionFailure(resolved.error);
+  }
+  const jql = `assignee = ${assigneeJql(resolved.accountId)} AND statusCategory != Done ORDER BY updated DESC`;
+  const queryId = resolved.accountId === "currentUser()" ? "my_issues" : `issues_${resolved.accountId}`;
+  return serveCachedOrFetch(rootDir, queryId, force, () =>
+    refreshIssues(client, rootDir, jql, queryId, FRESHNESS.myIssues, [
+      "summary",
+      "status",
+      "assignee",
+      "priority",
+      "duedate",
+      "updated",
+    ]),
+  );
+}
+
+async function recentChangesAction(ctx: JiraActionContext): Promise<ConnectorResult> {
+  const { rootDir, client, params, force } = ctx;
+  const days = params.days ?? 7;
+  const jql = `updated >= -${days}d ORDER BY updated DESC`;
+  return serveCachedOrFetch(rootDir, `recent_${days}d`, force, () =>
+    refreshIssues(client, rootDir, jql, `recent_${days}d`, FRESHNESS.recentChanges, [
+      "summary",
+      "status",
+      "assignee",
+      "updated",
+    ]),
+  );
+}
+
+async function periodReportAction(ctx: JiraActionContext): Promise<ConnectorResult> {
+  const { rootDir, client, params, force } = ctx;
+  if (!params.start || !params.end) {
+    return connectorResultFromError({
+      error: "period_report requires start and end dates",
+      code: 0,
+      recoverable: false,
+      suggestion: "Use params.start and params.end (YYYY-MM-DD).",
+    });
+  }
+  let userClause = "";
+  let usernameKey = "all";
+  if (params.username) {
+    const resolved = await resolveAssignee(client, params.username, rootDir);
+    if ("error" in resolved) {
+      return assigneeResolutionFailure(resolved.error);
+    }
+    userClause = ` AND assignee = ${assigneeJql(resolved.accountId)}`;
+    usernameKey = resolved.accountId;
+  }
+  const jql = `resolutiondate >= "${params.start}" AND resolutiondate <= "${params.end}"${userClause} ORDER BY resolutiondate DESC`;
+  const queryId = `period_${params.start}_${params.end}_${usernameKey}`;
+  return serveCachedOrFetch(rootDir, queryId, force, () =>
+    refreshIssues(client, rootDir, jql, queryId, FRESHNESS.periodReport, [
+      "summary",
+      "status",
+      "assignee",
+      "updated",
+      "resolutiondate",
+    ]),
+  );
+}
+
+async function issuesByKeyAction(ctx: JiraActionContext): Promise<ConnectorResult> {
+  const { rootDir, client, params, force } = ctx;
+  const keys = (params.keys ?? []).map((k) => k.toUpperCase());
+  if (keys.length === 0) {
+    return connectorResultFromError({
+      error: "issues_by_key requires params.keys",
+      code: 0,
+      recoverable: false,
+      suggestion: "Pass an array of issue keys, e.g. ['PROJ-1'].",
+    });
+  }
+  const queryId = `keys_${keys.sort().join("_")}`;
+  const query = readQueryStore(rootDir, JIRA_DOMAIN, queryId);
+  if (!force && query && queryIsFresh(query, false)) {
+    const { lines } = entitiesForKeys(rootDir, query.keys, false);
+    return connectorResultFromCache(lines.join("\n"), query, { force: false });
+  }
+  try {
+    const jql = `key in (${keys.join(",")})`;
+    const { keys: fetched, syncedAt } = await refreshIssues(
+      client,
+      rootDir,
+      jql,
+      queryId,
+      FRESHNESS.issuesByKey,
+      ["summary", "status", "assignee", "priority", "updated"],
+    );
+    const { lines } = entitiesForKeys(rootDir, fetched, false);
+    return { data: lines.join("\n"), stale: false, synced_at: syncedAt };
+  } catch (err) {
+    if (query && isNetworkError(err)) {
+      const { lines } = entitiesForKeys(rootDir, query.keys, true);
+      if (lines.length > 0) {
+        return connectorResultFromCache(lines.join("\n"), query, { force: true });
+      }
+    }
+    if (err instanceof JiraClientError) {
+      return connectorResultFromError(err.connectorError);
+    }
+    throw err;
+  }
+}
+
+async function epicChildrenAction(ctx: JiraActionContext): Promise<ConnectorResult> {
+  const { rootDir, client, params, force } = ctx;
+  const epicKey = (params.epicKey ?? params.key)?.toUpperCase();
+  if (!epicKey) {
+    return connectorResultFromError({
+      error: "epic_children requires params.epicKey or params.key",
+      code: 0,
+      recoverable: false,
+      suggestion: "Pass the epic issue key.",
+    });
+  }
+  const jql = `parent = ${epicKey} ORDER BY status`;
+  return serveCachedOrFetch(rootDir, `epic_${epicKey}`, force, () =>
+    refreshIssues(client, rootDir, jql, `epic_${epicKey}`, FRESHNESS.epicChildren, [
+      "summary",
+      "status",
+      "assignee",
+      "priority",
+      "updated",
+    ]),
+  );
+}
+
+async function issueDetailAction(ctx: JiraActionContext): Promise<ConnectorResult> {
+  const { rootDir, client, params, force } = ctx;
+  const issueKey = params.key?.toUpperCase();
+  if (!issueKey) {
+    return connectorResultFromError({
+      error: "issue_detail requires params.key",
+      code: 0,
+      recoverable: false,
+      suggestion: "Pass the issue key, e.g. PROJ-123.",
+    });
+  }
+  const entityStore = readEntityStore(rootDir, JIRA_DOMAIN);
+  const cached = entityStore[issueKey];
+  const useCache = !force && cached && !isCacheStale(cached, false);
+  try {
+    let issue: JiraIssue;
+    if (useCache) {
+      issue = {
+        key: issueKey,
+        fields: {
+          summary: cached.summary,
+          status: { name: cached.status },
+          assignee: { displayName: cached.assignee },
+          priority: { name: cached.priority },
+          updated: cached.updated,
+        },
+      };
+    } else {
+      issue = await client.getIssue(issueKey, [
+        "summary",
+        "status",
+        "assignee",
+        "priority",
+        "duedate",
+        "updated",
+        "description",
+        "issuelinks",
+        "parent",
+      ]);
+      entityStore[issueKey] = issueToCacheEntry(issue, FRESHNESS.issueDetail);
+      writeEntityStore(rootDir, JIRA_DOMAIN, entityStore);
+    }
+
+    const liveIssue = useCache
+      ? await client.getIssue(issueKey, ["description", "issuelinks", "parent"])
+      : issue;
+
+    const fields = { ...issue.fields, ...liveIssue.fields };
+    const description = renderAdfToText(fields.description);
+    const commentsResp = await client.getComments(issueKey);
+    const comments = (commentsResp.comments ?? [])
+      .map(
+        (c) =>
+          `- ${c.author?.displayName ?? "Unknown"} (${c.created ?? "?"}): ${renderAdfToText(c.body)}`,
+      )
+      .join("\n");
+
+    const header = [
+      `# ${issueKey}: ${fields.summary ?? ""}`,
+      `Status: ${statusName(fields)}`,
+      `Assignee: ${assigneeName(fields)}`,
+      `Priority: ${priorityName(fields)}`,
+      formatParent(fields),
+      formatIssueLinks(fields),
+      description ? `\nDescription:\n${description}` : "",
+      comments ? `\nComments:\n${comments}` : "",
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    return {
+      data: header,
+      stale: useCache,
+      synced_at: cached?.synced_at ?? new Date().toISOString(),
+    };
+  } catch (err) {
+    if (cached && isNetworkError(err)) {
+      return connectorResultFromCache(formatIssueLine(cached), cached, { force: true });
+    }
+    if (err instanceof JiraClientError) {
+      return connectorResultFromError(err.connectorError);
+    }
+    throw err;
+  }
+}
+
+const JIRA_ACTION_HANDLERS: Record<
+  | "board"
+  | "team_board"
+  | "my_issues"
+  | "recent_changes"
+  | "period_report"
+  | "issues_by_key"
+  | "epic_children"
+  | "issue_detail",
+  JiraActionHandler
+> = {
+  board: boardAction,
+  team_board: teamBoardAction,
+  my_issues: myIssuesAction,
+  recent_changes: recentChangesAction,
+  period_report: periodReportAction,
+  issues_by_key: issuesByKeyAction,
+  epic_children: epicChildrenAction,
+  issue_detail: issueDetailAction,
+};
+
 export async function executeJiraAction(
   rootDir: string,
   action: string,
@@ -401,286 +711,14 @@ export async function executeJiraAction(
   const client = createJiraClient(config, { fetchImpl: options?.fetchImpl });
   const force = params.force === true;
 
-  switch (action) {
-    case "board": {
-      const assigneeInput = params.assignee ?? "currentUser()";
-      const resolved = await resolveAssignee(client, assigneeInput, rootDir);
-      if ("error" in resolved) {
-        return connectorResultFromError({
-          error: resolved.error,
-          code: 0,
-          recoverable: false,
-          suggestion: "jiraErrorGeneric",
-        });
-      }
-      const jql = `sprint in openSprints() AND assignee = ${assigneeJql(resolved.accountId)} ORDER BY rank`;
-      const queryId = resolved.accountId === "currentUser()" ? "board" : `board_${resolved.accountId}`;
-      return serveCachedOrFetch(rootDir, queryId, force, () =>
-        refreshIssues(client, rootDir, jql, queryId, FRESHNESS.board, [
-          "summary",
-          "status",
-          "assignee",
-          "priority",
-          "duedate",
-          "updated",
-        ]),
-      );
-    }
-    case "team_board": {
-      const boardId = typeof config.boardId === "string" ? config.boardId.trim() : "";
-      if (!boardId) {
-        return connectorResultFromError({
-          error: "Team board ID is not configured",
-          code: 0,
-          recoverable: false,
-          suggestion: "Set the board ID in Settings → Integrations → Jira.",
-        });
-      }
-
-      let assigneeAccountId: string | undefined;
-      if (params.assignee) {
-        const resolved = await resolveAssignee(client, params.assignee, rootDir);
-        if ("error" in resolved) {
-          return connectorResultFromError({
-            error: resolved.error,
-            code: 0,
-            recoverable: false,
-            suggestion: "jiraErrorGeneric",
-          });
-        }
-        assigneeAccountId = resolved.accountId;
-      }
-
-      const jql = buildTeamBoardJql(params.status, assigneeAccountId);
-      const queryId = teamBoardQueryId(boardId, params.status, assigneeAccountId);
-      return serveCachedOrFetch(rootDir, queryId, force, () =>
-        refreshBoardIssues(client, rootDir, boardId, jql, queryId, FRESHNESS.teamBoard),
-      );
-    }
-    case "my_issues": {
-      const assigneeInput = params.assignee ?? "currentUser()";
-      const resolved = await resolveAssignee(client, assigneeInput, rootDir);
-      if ("error" in resolved) {
-        return connectorResultFromError({
-          error: resolved.error,
-          code: 0,
-          recoverable: false,
-          suggestion: "jiraErrorGeneric",
-        });
-      }
-      const jql = `assignee = ${assigneeJql(resolved.accountId)} AND statusCategory != Done ORDER BY updated DESC`;
-      const queryId = resolved.accountId === "currentUser()" ? "my_issues" : `issues_${resolved.accountId}`;
-      return serveCachedOrFetch(rootDir, queryId, force, () =>
-        refreshIssues(client, rootDir, jql, queryId, FRESHNESS.myIssues, [
-          "summary",
-          "status",
-          "assignee",
-          "priority",
-          "duedate",
-          "updated",
-        ]),
-      );
-    }
-    case "recent_changes": {
-      const days = params.days ?? 7;
-      const jql = `updated >= -${days}d ORDER BY updated DESC`;
-      return serveCachedOrFetch(rootDir, `recent_${days}d`, force, () =>
-        refreshIssues(client, rootDir, jql, `recent_${days}d`, FRESHNESS.recentChanges, [
-          "summary",
-          "status",
-          "assignee",
-          "updated",
-        ]),
-      );
-    }
-    case "period_report": {
-      if (!params.start || !params.end) {
-        return connectorResultFromError({
-          error: "period_report requires start and end dates",
-          code: 0,
-          recoverable: false,
-          suggestion: "Use params.start and params.end (YYYY-MM-DD).",
-        });
-      }
-      let userClause = "";
-      let usernameKey = "all";
-      if (params.username) {
-        const resolved = await resolveAssignee(client, params.username, rootDir);
-        if ("error" in resolved) {
-          return connectorResultFromError({
-            error: resolved.error,
-            code: 0,
-            recoverable: false,
-            suggestion: "jiraErrorGeneric",
-          });
-        }
-        userClause = ` AND assignee = ${assigneeJql(resolved.accountId)}`;
-        usernameKey = resolved.accountId;
-      }
-      const jql = `resolutiondate >= "${params.start}" AND resolutiondate <= "${params.end}"${userClause} ORDER BY resolutiondate DESC`;
-      const queryId = `period_${params.start}_${params.end}_${usernameKey}`;
-      return serveCachedOrFetch(rootDir, queryId, force, () =>
-        refreshIssues(client, rootDir, jql, queryId, FRESHNESS.periodReport, [
-          "summary",
-          "status",
-          "assignee",
-          "updated",
-          "resolutiondate",
-        ]),
-      );
-    }
-    case "issues_by_key": {
-      const keys = (params.keys ?? []).map((k) => k.toUpperCase());
-      if (keys.length === 0) {
-        return connectorResultFromError({
-          error: "issues_by_key requires params.keys",
-          code: 0,
-          recoverable: false,
-          suggestion: "Pass an array of issue keys, e.g. ['PROJ-1'].",
-        });
-      }
-      const queryId = `keys_${keys.sort().join("_")}`;
-      const query = readQueryStore(rootDir, JIRA_DOMAIN, queryId);
-      if (!force && query && queryIsFresh(query, false)) {
-        const { lines } = entitiesForKeys(rootDir, query.keys, false);
-        return connectorResultFromCache(lines.join("\n"), query, { force: false });
-      }
-      try {
-        const jql = `key in (${keys.join(",")})`;
-        const { keys: fetched, syncedAt } = await refreshIssues(
-          client,
-          rootDir,
-          jql,
-          queryId,
-          FRESHNESS.issuesByKey,
-          ["summary", "status", "assignee", "priority", "updated"],
-        );
-        const { lines } = entitiesForKeys(rootDir, fetched, false);
-        return { data: lines.join("\n"), stale: false, synced_at: syncedAt };
-      } catch (err) {
-        if (query && isNetworkError(err)) {
-          const { lines } = entitiesForKeys(rootDir, query.keys, true);
-          if (lines.length > 0) {
-            return connectorResultFromCache(lines.join("\n"), query, { force: true });
-          }
-        }
-        if (err instanceof JiraClientError) {
-          return connectorResultFromError(err.connectorError);
-        }
-        throw err;
-      }
-    }
-    case "epic_children": {
-      const epicKey = (params.epicKey ?? params.key)?.toUpperCase();
-      if (!epicKey) {
-        return connectorResultFromError({
-          error: "epic_children requires params.epicKey or params.key",
-          code: 0,
-          recoverable: false,
-          suggestion: "Pass the epic issue key.",
-        });
-      }
-      const jql = `parent = ${epicKey} ORDER BY status`;
-      return serveCachedOrFetch(rootDir, `epic_${epicKey}`, force, () =>
-        refreshIssues(client, rootDir, jql, `epic_${epicKey}`, FRESHNESS.epicChildren, [
-          "summary",
-          "status",
-          "assignee",
-          "priority",
-          "updated",
-        ]),
-      );
-    }
-    case "issue_detail": {
-      const issueKey = params.key?.toUpperCase();
-      if (!issueKey) {
-        return connectorResultFromError({
-          error: "issue_detail requires params.key",
-          code: 0,
-          recoverable: false,
-          suggestion: "Pass the issue key, e.g. PROJ-123.",
-        });
-      }
-      const entityStore = readEntityStore(rootDir, JIRA_DOMAIN);
-      const cached = entityStore[issueKey];
-      const useCache = !force && cached && !isCacheStale(cached, false);
-      try {
-        let issue: JiraIssue;
-        if (useCache) {
-          issue = {
-            key: issueKey,
-            fields: {
-              summary: cached.summary,
-              status: { name: cached.status },
-              assignee: { displayName: cached.assignee },
-              priority: { name: cached.priority },
-              updated: cached.updated,
-            },
-          };
-        } else {
-          issue = await client.getIssue(issueKey, [
-            "summary",
-            "status",
-            "assignee",
-            "priority",
-            "duedate",
-            "updated",
-            "description",
-            "issuelinks",
-            "parent",
-          ]);
-          entityStore[issueKey] = issueToCacheEntry(issue, FRESHNESS.issueDetail);
-          writeEntityStore(rootDir, JIRA_DOMAIN, entityStore);
-        }
-
-        const liveIssue = useCache
-          ? await client.getIssue(issueKey, ["description", "issuelinks", "parent"])
-          : issue;
-
-        const fields = { ...issue.fields, ...liveIssue.fields };
-        const description = renderAdfToText(fields.description);
-        const commentsResp = await client.getComments(issueKey);
-        const comments = (commentsResp.comments ?? [])
-          .map(
-            (c) =>
-              `- ${c.author?.displayName ?? "Unknown"} (${c.created ?? "?"}): ${renderAdfToText(c.body)}`,
-          )
-          .join("\n");
-
-        const header = [
-          `# ${issueKey}: ${fields.summary ?? ""}`,
-          `Status: ${statusName(fields)}`,
-          `Assignee: ${assigneeName(fields)}`,
-          `Priority: ${priorityName(fields)}`,
-          formatParent(fields),
-          formatIssueLinks(fields),
-          description ? `\nDescription:\n${description}` : "",
-          comments ? `\nComments:\n${comments}` : "",
-        ]
-          .filter(Boolean)
-          .join("\n");
-
-        return {
-          data: header,
-          stale: useCache,
-          synced_at: cached?.synced_at ?? new Date().toISOString(),
-        };
-      } catch (err) {
-        if (cached && isNetworkError(err)) {
-          return connectorResultFromCache(formatIssueLine(cached), cached, { force: true });
-        }
-        if (err instanceof JiraClientError) {
-          return connectorResultFromError(err.connectorError);
-        }
-        throw err;
-      }
-    }
-    default:
-      return connectorResultFromError({
-        error: `Unknown action '${action}'`,
-        code: 0,
-        recoverable: false,
-        suggestion: "Use action='help' to see available actions.",
-      });
+  if (!Object.hasOwn(JIRA_ACTION_HANDLERS, action)) {
+    return connectorResultFromError({
+      error: `Unknown action '${action}'`,
+      code: 0,
+      recoverable: false,
+      suggestion: "Use action='help' to see available actions.",
+    });
   }
+  const handler = JIRA_ACTION_HANDLERS[action as keyof typeof JIRA_ACTION_HANDLERS];
+  return handler({ rootDir, client, config, params, force });
 }
