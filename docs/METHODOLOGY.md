@@ -46,6 +46,7 @@ npx tsx scripts/progress.ts scenario fail FR-xxx "Scenario name"
 npx tsx scripts/progress.ts units FR-xxx "Scenario name" 3
 npx tsx scripts/progress.ts focus FR-xxx         # Switch focus
 npx tsx scripts/progress.ts add FR-xxx "Title"   # Add feature
+npx tsx scripts/progress.ts sync FR-xxx          # Register @FR-xxx scenarios from .feature files
 npx tsx scripts/progress.ts done FR-xxx          # Mark done (guarded)
 ```
 
@@ -64,6 +65,8 @@ npx tsx scripts/progress.ts done FR-xxx          # Mark done (guarded)
 
 - One-way along `CYCLE_STEPS`; cannot skip.
 - `spec_review → bdd_red`: FR-ID must appear in `specs/SPEC.md`.
+- `bdd_red → implementing`: runs `sync` first (new scenarios are registered as
+  `pending`), then requires at least one scenario.
 
 **`done`:**
 
