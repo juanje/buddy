@@ -104,28 +104,23 @@ interface ToolResultLike {
   details?: unknown;
 }
 
-function enrichResultWithRevert(result: ToolResultLike, lostHeadings: string[]): void {
+function headingRevertMessage(lostHeadings: string[]): string {
   const headingList = lostHeadings.map((h) => `"${h}"`).join(", ");
-  const message =
+  return (
     `\n\n⚠️ Write reverted: the change removed protected section heading(s) ${headingList}. ` +
     `This file is structurally protected — edits must preserve all existing headings. ` +
-    `Re-read the file and retry without removing any headings.`;
-
-  const { content } = result;
-  if (Array.isArray(content) && content.length > 0 && content[0]?.type === "text") {
-    content[0] = { type: "text", text: String(content[0].text ?? "") + message };
-  } else if (typeof content === "string") {
-    (result as { content: string }).content = content + message;
-  } else {
-    (result as { content: unknown }).content = [{ type: "text", text: message.trimStart() }];
-  }
+    `Re-read the file and retry without removing any headings.`
+  );
 }
 
-function enrichResultWithFrontmatterRevert(result: ToolResultLike): void {
-  const message =
+function frontmatterRevertMessage(): string {
+  return (
     `\n\n⚠️ Write reverted: the change stripped the YAML frontmatter block from a protected file. ` +
-    `Edits must preserve the existing frontmatter. Re-read the file and retry.`;
+    `Edits must preserve the existing frontmatter. Re-read the file and retry.`
+  );
+}
 
+function appendToToolResult(result: ToolResultLike, message: string): void {
   const { content } = result;
   if (Array.isArray(content) && content.length > 0 && content[0]?.type === "text") {
     content[0] = { type: "text", text: String(content[0].text ?? "") + message };
@@ -182,9 +177,9 @@ export function installHeadingGuardHook(
             lostHeadings: result.lostHeadings,
           });
           if (result.lostHeadings && result.lostHeadings.length > 0) {
-            enrichResultWithRevert(ctx.result, result.lostHeadings);
+            appendToToolResult(ctx.result, headingRevertMessage(result.lostHeadings));
           } else {
-            enrichResultWithFrontmatterRevert(ctx.result);
+            appendToToolResult(ctx.result, frontmatterRevertMessage());
           }
         }
       }
