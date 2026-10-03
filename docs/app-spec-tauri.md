@@ -650,7 +650,7 @@ async function runSingleDepth(depth: number) {
         sessionManager: SessionManager.create(AB_DIR),
         modelRuntime,
         resourceLoader: maintenanceLoader,
-        excludeTools: ["bash"],
+        excludeTools: [...EXCLUDED_TOOLS],
         tools: ["read", "write", "edit", "grep", "find", "ls"],
         cwd: AB_DIR,
     });
@@ -1231,7 +1231,8 @@ buddy/
 │   ├── capabilities/
 │   │   └── default.json         # Permissions for plugin-js, notification, etc.
 │   └── src/
-│       └── main.rs              # Plugin registration + menu setup
+│       ├── main.rs              # Plugin registration + menu setup
+│       └── pdf.rs               # `create_pdf` command (HTML → PDF)
 ├── backends/
 │   ├── agent-worker.ts          # Pi SDK session + kkrpc WorkerAPI
 │   ├── session-boot.ts          # Session creation, tools, lifecycle wiring
@@ -1269,10 +1270,12 @@ buddy/
 │   │   ├── FileViewer.svelte
 │   │   ├── SetupWizard.svelte
 │   │   ├── SettingsModal.svelte
+│   │   ├── markdown.ts          # Markdown → HTML renderer
 │   │   └── *-controller.ts      # Chat, settings, file viewer controllers
 │   └── utils/
-│       ├── markdown.ts          # Markdown → HTML renderer
-│       └── agent.ts             # Worker spawn + kkrpc channel
+│       ├── agent.ts             # Worker spawn + kkrpc channel
+│       ├── worker-proxy.ts      # WorkerAPI passthrough until the worker connects
+│       └── *-notify.ts          # OS notifications (budget, deferred, maintenance)
 ├── specs/                       # SPEC.md + Gherkin features
 ├── tests/                       # unit/ + steps/
 └── package.json
@@ -1291,7 +1294,6 @@ buddy/
 | Markdown          | marked + highlight.js                           | Lightweight, covers code blocks                |
 | Notifications     | tauri-plugin-notification                       | Cross-platform OS notifications                |
 | System tray       | Tauri built-in tray                             | Native tray icon + menu                        |
-| Global hotkey     | tauri-plugin-global-shortcut                    | Quick capture trigger                          |
 | Worker packaging  | Bun compile or Node SEA                         | Standalone binary, no runtime needed for users |
 
 
@@ -1302,19 +1304,23 @@ buddy/
 - `tauri` v2
 - `tauri-plugin-js` (Node.js worker management)
 - `tauri-plugin-notification`
-- `tauri-plugin-global-shortcut`
+- `tauri-plugin-dialog`, `tauri-plugin-opener`, `tauri-plugin-fs`
 
 ### TypeScript (package.json) — where all logic lives
 
 - `@earendil-works/pi-coding-agent` (Pi SDK)
 - `@tauri-apps/api` v2
-- `@tauri-apps/plugin-notification`
+- `@tauri-apps/plugin-notification`, `@tauri-apps/plugin-dialog`,
+  `@tauri-apps/plugin-fs`, `@tauri-apps/plugin-opener`
 - `tauri-plugin-js-api` (kkrpc frontend adapter)
 - `kkrpc` (type-safe RPC)
 - `simple-git` (git operations — wraps system binary with typed API)
 - `svelte` v5
 - `marked` (markdown rendering)
 - `highlight.js` (code syntax highlighting)
+- `typebox` (tool parameter schemas)
+- `@mozilla/readability`, `linkedom`, `turndown` (URL fetch: HTML → Markdown)
+- `pdf-parse` / `pdfjs-dist` (PDF text extraction)
 
 ## First-Run / Onboarding
 
