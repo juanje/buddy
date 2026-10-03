@@ -243,16 +243,15 @@ export function clearNextInScope(items: TaskItem[], area?: string, project?: str
   }
 }
 
+/** Open, not parked in "someday", and not deferred to a future due date. */
+function isActive(item: TaskItem, today: string): boolean {
+  return !item.done && item.area !== "someday" && !(item.dueDate && item.dueDate > today);
+}
+
 export function countActiveInArea(items: TaskItem[], area?: string, today?: string): number {
   const key = areaKey(area);
   const todayStr = today ?? toIsoDay(new Date());
-  return items.filter(
-    (item) =>
-      !item.done &&
-      areaKey(item.area) === key &&
-      item.area !== "someday" &&
-      !(item.dueDate && item.dueDate > todayStr),
-  ).length;
+  return items.filter((item) => areaKey(item.area) === key && isActive(item, todayStr)).length;
 }
 
 export function countActiveInScope(
@@ -262,13 +261,8 @@ export function countActiveInScope(
   today?: string,
 ): number {
   const todayStr = today ?? toIsoDay(new Date());
-  return items.filter(
-    (item) =>
-      !item.done &&
-      inSameScope(item, area, project) &&
-      item.area !== "someday" &&
-      !(item.dueDate && item.dueDate > todayStr),
-  ).length;
+  return items.filter((item) => inSameScope(item, area, project) && isActive(item, todayStr))
+    .length;
 }
 
 export function findSoleActiveInScope(
@@ -279,11 +273,7 @@ export function findSoleActiveInScope(
 ): TaskItem | undefined {
   const todayStr = today ?? toIsoDay(new Date());
   const active = items.filter(
-    (item) =>
-      !item.done &&
-      inSameScope(item, area, project) &&
-      item.area !== "someday" &&
-      !(item.dueDate && item.dueDate > todayStr),
+    (item) => inSameScope(item, area, project) && isActive(item, todayStr),
   );
   return active.length === 1 ? active[0] : undefined;
 }

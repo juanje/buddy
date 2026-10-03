@@ -74,6 +74,21 @@ function scopeLabel(area?: string, project?: string): string {
   return area ? `@${area}` : "@(general)";
 }
 
+/**
+ * After a next action leaves a scope, make the one remaining active task the
+ * next action. Returns it, or undefined when the scope has zero or several.
+ */
+function promoteSoleNext(
+  items: TaskItem[],
+  area: string | undefined,
+  project: string | undefined,
+  today: string,
+): TaskItem | undefined {
+  const sole = findSoleActiveInScope(items, area, project, today);
+  if (sole) sole.next = true;
+  return sole;
+}
+
 export function executeTaskAction(
   rootDir: string,
   action: string,
@@ -230,21 +245,17 @@ export function executeTaskAction(
       writeTasksFile(rootDir, reindexItems(items));
       if (!hadNext) return ok("Task completed.");
       const today = toIsoDay(new Date());
-      const remainingInArea = countActiveInScope(items, area, project, today);
-      if (remainingInArea === 1) {
-        const sole = findSoleActiveInScope(items, area, project, today);
-        if (sole) {
-          sole.next = true;
-          writeTasksFile(rootDir, reindexItems(items));
-          return ok(
-            `Task completed. Auto-marked "${sole.text}" as next for ${scopeLabel(area, project)}.`,
-          );
-        }
+      const sole = promoteSoleNext(items, area, project, today);
+      if (sole) {
+        writeTasksFile(rootDir, reindexItems(items));
+        return ok(
+          `Task completed. Auto-marked "${sole.text}" as next for ${scopeLabel(area, project)}.`,
+        );
       }
       return ok("Task completed.", {
         nextClearedForArea: area || "general",
         nextClearedForProject: project,
-        remainingInArea,
+        remainingInArea: countActiveInScope(items, area, project, today),
       });
     }
 
@@ -322,21 +333,17 @@ export function executeTaskAction(
       writeTasksFile(rootDir, reindexItems(items));
       if (!hadNext) return ok("Task removed.");
       const today = toIsoDay(new Date());
-      const remainingInArea = countActiveInScope(items, area, project, today);
-      if (remainingInArea === 1) {
-        const sole = findSoleActiveInScope(items, area, project, today);
-        if (sole) {
-          sole.next = true;
-          writeTasksFile(rootDir, reindexItems(items));
-          return ok(
-            `Task removed. Auto-marked "${sole.text}" as next for ${scopeLabel(area, project)}.`,
-          );
-        }
+      const sole = promoteSoleNext(items, area, project, today);
+      if (sole) {
+        writeTasksFile(rootDir, reindexItems(items));
+        return ok(
+          `Task removed. Auto-marked "${sole.text}" as next for ${scopeLabel(area, project)}.`,
+        );
       }
       return ok("Task removed.", {
         nextClearedForArea: area || "general",
         nextClearedForProject: project,
-        remainingInArea,
+        remainingInArea: countActiveInScope(items, area, project, today),
       });
     }
 
