@@ -184,7 +184,7 @@
             const body = items.length <= 1
               ? first
               : `${first} (+${items.length - 1})`;
-            if (shouldNotifyDeferredDue({ count: items.length, orientationShownThisSession })) {
+            if (shouldNotifyDeferredDue({ count: items.length })) {
               void notifyDeferredDue(items.length, {
                 title: strings.notificationTitle,
                 body,

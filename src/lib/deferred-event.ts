@@ -6,8 +6,6 @@
  */
 export function shouldNotifyDeferredDue(opts: {
   count: number;
-  orientationShownThisSession: boolean;
 }): boolean {
-  void opts.orientationShownThisSession;
   return opts.count > 0;
 }

@@ -163,10 +163,7 @@ Given("orientation was shown this session", function (this: OrientationWorld) {
 });
 
 When("due deferred items arrive after orientation", function (this: OrientationWorld) {
-  this.deferredNotificationAllowed = shouldNotifyDeferredDue({
-    count: 1,
-    orientationShownThisSession: this.orientationShownThisSession === true,
-  });
+  this.deferredNotificationAllowed = shouldNotifyDeferredDue({ count: 1 });
   this.deferredBannerShown = shouldShowDeferredBanner({
     hasOrientationCard: false,
     deferredDismissed: false,
