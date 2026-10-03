@@ -287,9 +287,3 @@ export function writeCacheFileForTest(rootDir: string, relPath: string, data: un
   assertCacheContainment(absPath, rootDir);
   writeStateFile(absPath, data);
 }
-
-/** Remove the entire connector cache tree (tests). */
-export function removeConnectorCache(rootDir: string): void {
-  const base = connectionsDir(rootDir);
-  if (existsSync(base)) rmSync(base, { recursive: true, force: true });
-}

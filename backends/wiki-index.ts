@@ -132,7 +132,3 @@ export function regenerateWikiIndex(
   writeFileSync(buddyPath(rootDir, WIKI_GLOSSARY), renderGlossary(pages, language), "utf8");
 }
 
-export function regenerateGlossary(rootDir: string, language?: WikiLanguage): void {
-  const pages = loadWikiPages(rootDir);
-  writeFileSync(buddyPath(rootDir, WIKI_GLOSSARY), renderGlossary(pages, language), "utf8");
-}

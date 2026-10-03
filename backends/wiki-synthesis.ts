@@ -27,7 +27,6 @@ import {
 } from "./wiki-file";
 import { resolveInstanceLanguage } from "./wiki-tools";
 import {
-  extractConnections,
   readWikiPageMetadata,
   slugifyTitle,
   type WikiLanguage,
@@ -190,9 +189,6 @@ export function wikiSynthesisCandidates(rootDir: string): SynthesisCandidate[] {
 
   return candidates.sort((a, b) => b.score - a.score || a.label.localeCompare(b.label));
 }
-
-/** Re-export for tests that build pages with connections from raw content. */
-export { extractConnections };
 
 export interface WikiSynthesisResult {
   state: WikiMaintenanceState;

@@ -17,17 +17,10 @@ import {
   BRAIN,
   BRAIN_DIR,
   BRAIN_SUBDIRS,
-  DOWNLOADS_DIR,
-  LOGS_ARCHIVE_DIR,
   LOGS_DIR,
   LOGS_INDEX,
-  USER_DIR,
-  WIKI_DIR,
-  WIKI_GLOSSARY,
   WIKI_INDEX,
-  WIKI_META_DIR,
   WIKI_META_LOG,
-  WORKSPACES_DIR,
   dailyLogRelPath,
 } from "../shared/brain-paths";
 
@@ -40,23 +33,14 @@ export const soulPath = (rootDir: string): string => buddyPath(rootDir, BRAIN.so
 export const userProfilePath = (rootDir: string): string => buddyPath(rootDir, BRAIN.user);
 export const deferredPath = (rootDir: string): string => buddyPath(rootDir, BRAIN.deferred);
 export const observationsPath = (rootDir: string): string => buddyPath(rootDir, BRAIN.observations);
-export const brainIndexPath = (rootDir: string): string => buddyPath(rootDir, BRAIN.index);
 
 export const brainDirPath = (rootDir: string): string => buddyPath(rootDir, BRAIN_DIR);
 export const identityDirPath = (rootDir: string): string => buddyPath(rootDir, BRAIN_SUBDIRS.identity);
-export const userDirPath = (rootDir: string): string => buddyPath(rootDir, USER_DIR);
-export const downloadsDirPath = (rootDir: string): string => buddyPath(rootDir, DOWNLOADS_DIR);
 
 export const logsDirPath = (rootDir: string): string => buddyPath(rootDir, LOGS_DIR);
 export const logsIndexPath = (rootDir: string): string => buddyPath(rootDir, LOGS_INDEX);
-export const logsArchiveDirPath = (rootDir: string): string =>
-  buddyPath(rootDir, LOGS_ARCHIVE_DIR);
 export const dailyLogPath = (rootDir: string, isoDay: string): string =>
   buddyPath(rootDir, dailyLogRelPath(isoDay));
 
-export const wikiDirPath = (rootDir: string): string => buddyPath(rootDir, WIKI_DIR);
 export const wikiIndexPath = (rootDir: string): string => buddyPath(rootDir, WIKI_INDEX);
-export const wikiGlossaryPath = (rootDir: string): string => buddyPath(rootDir, WIKI_GLOSSARY);
-export const wikiMetaDirPath = (rootDir: string): string => buddyPath(rootDir, WIKI_META_DIR);
 export const wikiMetaLogPath = (rootDir: string): string => buddyPath(rootDir, WIKI_META_LOG);
-export const workspacesDirPath = (rootDir: string): string => buddyPath(rootDir, WORKSPACES_DIR);

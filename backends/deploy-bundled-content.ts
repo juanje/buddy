@@ -47,13 +47,6 @@ function deployMarkdownFiles(
   }
 }
 
-/** Overwrite ~/.buddy/prompts/ and ~/.buddy/docs/ from bundled/embedded sources. Idempotent. */
-export function deployBundledGlobalContent(configDir: string): void {
-  deployBundledPrompts(configDir);
-  deployBundledDocs(configDir);
-  deployBundledTemplates(configDir);
-}
-
 /** Remove .md files in targetDir that are not in the deployed set. */
 function removeOrphanedMarkdown(targetDir: string, deployedNames: Set<string>): void {
   if (!existsSync(targetDir)) return;

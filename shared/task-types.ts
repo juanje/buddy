@@ -2,8 +2,6 @@
 
 export const WIP_DEFAULT = 3;
 
-export const TASKS_REL_PATH = "user/tasks.md";
-
 export interface TaskItem {
   /** 1-based positional id within the open+done list order in file */
   id: number;
