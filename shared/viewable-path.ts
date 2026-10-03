@@ -56,6 +56,29 @@ function relativeDirOf(relPath: string): string[] {
 }
 
 /**
+ * Segments of `href` relative to the buddy directory, or null when it escapes.
+ *
+ * An absolute path (or `file://` URL) must lie strictly inside `rootDir`; a
+ * relative one is resolved against `base` (the linking document's directory,
+ * relative to the root). `..` that walks past the root is a rejection, never a
+ * clamp. Both resolvers go through here so there is one containment rule.
+ */
+function toRelSegments(rootDir: string, href: string, base: string[] = []): string[] | null {
+  const stripped = href.replace(/^file:\/\//i, "");
+
+  if (isAbsolute(stripped)) {
+    const rootSegments = normalizeSegments(splitPath(rootDir));
+    const pathSegments = normalizeSegments(splitPath(stripped));
+    if (!rootSegments || !pathSegments) return null;
+    if (pathSegments.length <= rootSegments.length) return null;
+    const containedInRoot = rootSegments.every((seg, i) => pathSegments[i] === seg);
+    if (!containedInRoot) return null;
+    return pathSegments.slice(rootSegments.length);
+  }
+  return normalizeSegments([...base, ...splitPath(stripped)]);
+}
+
+/**
  * Resolve an agent-authored link to a path relative to the buddy directory,
  * or null when it must not be opened.
  *
@@ -78,22 +101,7 @@ export function resolveViewablePath(
   const href = rawHref.trim();
   if (!href || isExternalHref(href)) return null;
 
-  const stripped = href.replace(/^file:\/\//i, "");
-  let relSegments: string[] | null;
-
-  if (isAbsolute(stripped)) {
-    const rootSegments = normalizeSegments(splitPath(rootDir));
-    const pathSegments = normalizeSegments(splitPath(stripped));
-    if (!rootSegments || !pathSegments) return null;
-    if (pathSegments.length <= rootSegments.length) return null;
-    const containedInRoot = rootSegments.every((seg, i) => pathSegments[i] === seg);
-    if (!containedInRoot) return null;
-    relSegments = pathSegments.slice(rootSegments.length);
-  } else {
-    const base = fromRelPath ? relativeDirOf(fromRelPath) : [];
-    relSegments = normalizeSegments([...base, ...splitPath(stripped)]);
-  }
-
+  const relSegments = toRelSegments(rootDir, href, fromRelPath ? relativeDirOf(fromRelPath) : []);
   if (!relSegments || relSegments.length < 2) return null;
 
   const topDir = relSegments[0];
@@ -123,21 +131,7 @@ export function resolveRevealablePath(rootDir: string, relPath: string): string 
   const rootNorm = rootDir.replace(/\\/g, "/").replace(/\/+$/, "");
   if (!rootNorm) return null;
 
-  const stripped = href.replace(/^file:\/\//i, "");
-  let relSegments: string[] | null;
-
-  if (isAbsolute(stripped)) {
-    const rootSegments = normalizeSegments(splitPath(rootNorm));
-    const pathSegments = normalizeSegments(splitPath(stripped));
-    if (!rootSegments || !pathSegments) return null;
-    if (pathSegments.length <= rootSegments.length) return null;
-    const containedInRoot = rootSegments.every((seg, i) => pathSegments[i] === seg);
-    if (!containedInRoot) return null;
-    relSegments = pathSegments.slice(rootSegments.length);
-  } else {
-    relSegments = normalizeSegments(splitPath(stripped));
-  }
-
+  const relSegments = toRelSegments(rootNorm, href);
   if (!relSegments || relSegments.length < 2) return null;
 
   const topDir = relSegments[0];
