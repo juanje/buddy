@@ -10,6 +10,15 @@ import { SessionManager } from "@earendil-works/pi-coding-agent";
 
 import type { AgentEvent } from "../../shared/api";
 import { FakeSession } from "../support/fake-session";
+import {
+  declaredPiRange,
+  deepImportPaths,
+  installedPiVersion,
+  majorOf,
+  missingDeepImports,
+  piCatalogProviders,
+} from "../support/pi-sdk";
+import { WIZARD_PI_PROVIDERS } from "../../shared/provider-mapping";
 
 describe("FR-SDK-01 delta-only streaming fixtures", () => {
   it("FakeSession emits delta-only message_update without cumulative fields", () => {
@@ -43,5 +52,30 @@ describe("FR-SDK-02 session management compatibility", () => {
 
   it("SessionManager exposes forkFrom", () => {
     expect(typeof SessionManager.forkFrom).toBe("function");
+  });
+});
+
+describe("FR-SDK-04 Pi SDK 1.x integration points", () => {
+  it("package.json declares, and node_modules has, Pi 1.x", () => {
+    expect(majorOf(declaredPiRange())).toBe(1);
+    expect(majorOf(installedPiVersion())).toBe(1);
+  });
+
+  it("every literal deep import into Pi internals resolves on disk", () => {
+    expect(deepImportPaths().length).toBeGreaterThanOrEqual(3);
+    expect(missingDeepImports()).toEqual([]);
+  });
+
+  it("exports the entry points Buddy calls", async () => {
+    const pi = await import("@earendil-works/pi-coding-agent");
+    expect(typeof pi.createAgentSession).toBe("function");
+    expect(typeof pi.SessionManager.create).toBe("function");
+    expect(typeof pi.SessionManager.forkFrom).toBe("function");
+    expect(typeof pi.ModelRuntime).toBe("function");
+  });
+
+  it("the Pi catalog still knows every provider Buddy maps", async () => {
+    const providers = await piCatalogProviders();
+    for (const id of WIZARD_PI_PROVIDERS) expect(providers).toContain(id);
   });
 });

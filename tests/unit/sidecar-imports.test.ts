@@ -9,7 +9,7 @@ const ROOT = join(__dirname, "..", "..");
 const SIDECAR_IMPORT_PATHS = {
   bunOAuth: join(
     ROOT,
-    "node_modules/@earendil-works/pi-coding-agent/node_modules/@earendil-works/pi-ai/dist/bun-oauth.js",
+    "node_modules/@earendil-works/pi-ai/dist/bun-oauth.js",
   ),
   httpDispatcher: join(
     ROOT,

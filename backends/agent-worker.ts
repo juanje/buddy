@@ -19,7 +19,7 @@
 // Importing the module early forces those Promises to settle before the wizard.
 // In prod, sidecar-entry.ts imports it statically via registerBunOAuthFlows().
 // Remove when upstream fixes the race (pi-ai openai-codex.js).
-import("../node_modules/@earendil-works/pi-coding-agent/node_modules/@earendil-works/pi-ai/dist/auth/oauth/openai-codex.js").catch(() => {});
+import("../node_modules/@earendil-works/pi-ai/dist/auth/oauth/openai-codex.js").catch(() => {});
 
 import { RPCChannel } from "kkrpc";
 import { nodeStdioTransport } from "kkrpc/stdio";

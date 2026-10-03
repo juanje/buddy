@@ -15,7 +15,7 @@
 // relative paths bypass package export maps on purpose: pi-ai is a nested
 // dependency of pi-coding-agent and neither exports these entry points to us.
 
-import { registerBunOAuthFlows } from "../node_modules/@earendil-works/pi-coding-agent/node_modules/@earendil-works/pi-ai/dist/bun-oauth.js";
+import { registerBunOAuthFlows } from "../node_modules/@earendil-works/pi-ai/dist/bun-oauth.js";
 import { configureHttpDispatcher } from "../node_modules/@earendil-works/pi-coding-agent/dist/core/http-dispatcher.js";
 import { registerEmbeddedAssets } from "./embedded-assets";
 import {

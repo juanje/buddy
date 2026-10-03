@@ -1622,6 +1622,29 @@
           "unit_tests": 1
         }
       ]
+    },
+    {
+      "id": "FR-SDK-04",
+      "title": "Migrate to Pi SDK 1.0",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Buddy runs on Pi 1.x",
+          "bdd": "pass",
+          "unit_tests": 2
+        },
+        {
+          "name": "Deep imports into Pi internals still resolve",
+          "bdd": "pass",
+          "unit_tests": 2
+        },
+        {
+          "name": "Every provider Buddy maps is in the Pi catalog",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
     }
   ]
 }

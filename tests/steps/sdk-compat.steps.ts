@@ -7,6 +7,15 @@ import type { AgentEvent } from "../../shared/api";
 import type { BuddyWorld } from "../support/world";
 import { assistantBubbles } from "../support/chat-helpers";
 import { FakeSession } from "../support/fake-session";
+import {
+  declaredPiRange,
+  deepImportPaths,
+  installedPiVersion,
+  majorOf,
+  missingDeepImports,
+  piCatalogProviders,
+} from "../support/pi-sdk";
+import { WIZARD_PI_PROVIDERS } from "../../shared/provider-mapping";
 
 Given("a started session", function (this: BuddyWorld) {
   this.connect();
@@ -46,3 +55,24 @@ Then(
     assert.equal("partial" in assistantEvent!, false);
   },
 );
+
+// ── FR-SDK-04: Pi SDK 1.0 migration ────────────────────────────────────────
+
+Given("the Pi SDK dependency declared by Buddy", function () {
+  assert.ok(declaredPiRange());
+});
+
+Then("both the declared range and the installed version are 1.x", function () {
+  assert.equal(majorOf(declaredPiRange()), 1, `declared ${declaredPiRange()}`);
+  assert.equal(majorOf(installedPiVersion()), 1, `installed ${installedPiVersion()}`);
+});
+
+Then("every deep import Buddy makes into Pi internals resolves on disk", function () {
+  assert.ok(deepImportPaths().length >= 3, "expected the scan to find the known deep imports");
+  assert.deepEqual(missingDeepImports(), []);
+});
+
+Then("the Pi catalog knows every provider Buddy maps", async function () {
+  const known = await piCatalogProviders();
+  for (const id of WIZARD_PI_PROVIDERS) assert.ok(known.includes(id), `missing ${id}`);
+});

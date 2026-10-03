@@ -1740,6 +1740,7 @@ repair → `commitAll`.
 | FR-SDK-01 | Streaming works with delta-only `message_update` events | Maint ✓ |
 | FR-SDK-02 | Session management APIs remain compatible after SDK upgrade | Maint ✓ |
 | FR-SDK-03 | Sidecar deep imports resolve in the target Pi SDK version | Maint ✓ |
+| FR-SDK-04 | Buddy runs on Pi SDK 1.x with every integration point intact | Maint ✓ |
 
 **FR-SDK-01 — Delta-only streaming**
 
@@ -1767,6 +1768,23 @@ repair → `commitAll`.
 - **When** `@earendil-works/pi-coding-agent` is upgraded
 - **Then** `bun-oauth.js` and `http-dispatcher.js` paths still resolve on disk
 - **And** `sidecar-entry.ts` imports are updated if paths moved
+
+**FR-SDK-04 — Migrate to Pi SDK 1.0**
+
+- **Given** Buddy depends on `@earendil-works/pi-coding-agent`
+- **When** the dependency moves from 0.84.x to 1.x
+- **Then** the declared range and the installed version are both 1.x
+- **And** every deep import into Pi internals that Buddy relies on — in the
+  dev worker (`agent-worker.ts`, `pi-http-dispatcher.ts`) as well as the
+  sidecar (`sidecar-entry.ts`) — resolves on disk, so a moved file fails a
+  test instead of being swallowed by a `catch`
+- **And** the public entry points Buddy calls (`createAgentSession`,
+  `SessionManager.create` / `forkFrom`, `ModelRuntime`) are still exported
+- **And** the provider ids Buddy maps (`openai-codex`, `openai`, `anthropic`,
+  `google`) are still known to the Pi catalog
+
+Out of scope: adopting new models (GPT-6, Opus 5.5) and new Pi features
+(context edits, cache warming, MCP). Each is its own FR.
 
 ### 3.10 System Prompt (FR-PROMPT)
 
