@@ -29,6 +29,9 @@ export const DOWNLOADS_DIR = "downloads";
 /** The index file every discoverable brain directory carries (NFR-FORMAT-01). */
 export const INDEX_FILE = "index.md";
 
+/** Inbox left behind by the inbox -> tasks migration, awaiting a consolidation pass. */
+export const PENDING_INBOX_FILENAME = "inbox.md.pending-migration";
+
 /** Sub-areas of `agent_brain/`. */
 export const BRAIN_SUBDIRS = {
   identity: `${BRAIN_DIR}/identity`,

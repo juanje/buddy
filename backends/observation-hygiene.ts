@@ -8,6 +8,7 @@ import {
   OBSERVATION_SEEN_ONCE_STALE_DAYS,
 } from "../shared/defaults";
 import { MS_PER_DAY } from "../shared/dates";
+import { BRAIN_DIR, LOGS_DIR, USER_DIR, dirPrefix } from "../shared/brain-paths";
 import { observationsPath } from "./brain-paths";
 
 export interface ParsedObservation {
@@ -74,10 +75,12 @@ function extractReferencedPaths(text: string): string[] {
 
 function resolveObservationPath(rootDir: string, relPath: string): string {
   const cleaned = normalize(relPath.replace(/^\.\//, ""));
-  if (cleaned.startsWith("agent_brain/") || cleaned.startsWith("user/") || cleaned.startsWith("logs/")) {
+  if (cleaned.startsWith(dirPrefix(BRAIN_DIR)) ||
+    cleaned.startsWith(dirPrefix(USER_DIR)) ||
+    cleaned.startsWith(dirPrefix(LOGS_DIR))) {
     return join(rootDir, cleaned);
   }
-  return join(rootDir, "agent_brain", cleaned);
+  return join(rootDir, BRAIN_DIR, cleaned);
 }
 
 function pathExistsInInstance(rootDir: string, relPath: string): boolean {

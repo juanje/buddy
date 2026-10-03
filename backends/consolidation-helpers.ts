@@ -14,7 +14,9 @@ import { join, relative, resolve } from "node:path";
 import { addDays } from "../shared/dates";
 import { LOG_ROTATION_THRESHOLD } from "../shared/defaults";
 import { updateLogsIndexEntry } from "./reflect";
+import { INDEX_FILE, PENDING_INBOX_FILENAME } from "../shared/brain-paths";
 import { dailyLogPath, logsDirPath } from "./brain-paths";
+import { tasksFilePath } from "./tasks/task-file";
 
 const DATE_MARKER_RE = /\b(\d{4}-\d{2}-\d{2})\b/;
 const CREATED_COMMENT_RE = /<!--\s*c:\d{4}-\d{2}-\d{2}\s*-->/;
@@ -55,7 +57,7 @@ export interface UpcomingReminder {
 function listLogFiles(logsDir: string): string[] {
   if (!existsSync(logsDir)) return [];
   return readdirSync(logsDir)
-    .filter((f) => f.endsWith(".md") && f !== "index.md" && !f.startsWith("monthly_"))
+    .filter((f) => f.endsWith(".md") && f !== INDEX_FILE && !f.startsWith("monthly_"))
     .sort();
 }
 
@@ -127,7 +129,7 @@ export function rotateLogs(rootDir: string, targetDate: string): { archived: str
     const rewritten = rewriteLinksForArchive(content, logsDir, archiveDir);
     if (rewritten !== content) writeFileSync(archivedPath, rewritten);
 
-    const indexPath = join(logsDir, "index.md");
+    const indexPath = join(logsDir, INDEX_FILE);
     if (existsSync(indexPath)) {
       const index = readFileSync(indexPath, "utf8");
       const updated = index
@@ -137,7 +139,7 @@ export function rotateLogs(rootDir: string, targetDate: string): { archived: str
       writeFileSync(indexPath, updated);
     }
 
-    const archiveIndexPath = join(archiveDir, "index.md");
+    const archiveIndexPath = join(archiveDir, INDEX_FILE);
     const archiveIndexLine = `- ${file}\n`;
     if (existsSync(archiveIndexPath)) {
       appendFileSync(archiveIndexPath, archiveIndexLine);
@@ -155,7 +157,7 @@ export function rotateLogs(rootDir: string, targetDate: string): { archived: str
 }
 
 export function findDatedTaskItems(rootDir: string, targetDate: string): string[] {
-  const tasksPath = join(rootDir, "user", "tasks.md");
+  const tasksPath = tasksFilePath(rootDir);
   if (!existsSync(tasksPath)) return [];
 
   const tomorrow = addDays(targetDate, 1);
@@ -211,7 +213,6 @@ export function findUpcomingReminders(rootDir: string, targetDate: string): Upco
   return reminders;
 }
 
-const PENDING_INBOX_FILENAME = "inbox.md.pending-migration";
 
 /** FR-CONSOL-31: signal pending inbox migration in consolidation prompt header. */
 export function formatPendingInboxBlock(rootDir: string): string | undefined {

@@ -1,11 +1,11 @@
 // backends/daily-coherence.ts — Daily coherence detection (FR-CONSOL-20).
 
 import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
 
 import { toIsoDay } from "../shared/dates";
 import { dailyLogPath, deferredPath } from "./brain-paths";
 import { extractRightNowSection } from "./consolidation-snapshot";
+import { tasksFilePath } from "./tasks/task-file";
 
 export interface StalenessFlag {
   rightNowItem: string;
@@ -222,7 +222,7 @@ export function computeDailyCoherence(rootDir: string, now: Date = new Date()): 
   if (existsSync(deferredFile)) deferredContent = readFileSync(deferredFile, "utf8");
 
   let tasksContent = "";
-  const tasksFile = join(rootDir, "user", "tasks.md");
+  const tasksFile = tasksFilePath(rootDir);
   if (existsSync(tasksFile)) tasksContent = readFileSync(tasksFile, "utf8");
 
   return {

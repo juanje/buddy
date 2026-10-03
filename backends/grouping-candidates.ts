@@ -3,6 +3,7 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { INDEX_FILE } from "../shared/brain-paths";
 import { brainDirPath } from "./brain-paths";
 
 export interface GroupingCandidate {
@@ -18,7 +19,7 @@ function listRootMarkdownFiles(rootDir: string, subdir: string): string[] {
   const dir = join(brainDirPath(rootDir), subdir);
   if (!existsSync(dir)) return [];
   return readdirSync(dir, { withFileTypes: true })
-    .filter((entry) => entry.isFile() && entry.name.endsWith(".md") && entry.name !== "index.md")
+    .filter((entry) => entry.isFile() && entry.name.endsWith(".md") && entry.name !== INDEX_FILE)
     .map((entry) => entry.name);
 }
 

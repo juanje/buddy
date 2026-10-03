@@ -5,6 +5,7 @@ import { join } from "node:path";
 
 import type { ConsolidationState } from "../shared/consolidation-state";
 import { MS_PER_DAY } from "../shared/dates";
+import { INDEX_FILE } from "../shared/brain-paths";
 import { brainDirPath } from "./brain-paths";
 import { extractRightNowSection } from "./consolidation-snapshot";
 import { parseObservations } from "./observation-hygiene";
@@ -30,7 +31,7 @@ function countMarkdownRecursive(dir: string): number {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     const path = join(dir, entry.name);
     if (entry.isDirectory()) count += countMarkdownRecursive(path);
-    else if (entry.isFile() && entry.name.endsWith(".md") && entry.name !== "index.md") count += 1;
+    else if (entry.isFile() && entry.name.endsWith(".md") && entry.name !== INDEX_FILE) count += 1;
   }
   return count;
 }

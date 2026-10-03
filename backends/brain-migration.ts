@@ -1,9 +1,10 @@
 import { existsSync, mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
-import { USER_DIR } from "../shared/brain-paths";
+import { PENDING_INBOX_FILENAME, USER_DIR } from "../shared/brain-paths";
 import type { TaskItem } from "../shared/task-types";
-import { parseTaskFileContent, writeTasksFile } from "./tasks/task-file";
+import { parseTaskFileContent, tasksFilePath, writeTasksFile } from "./tasks/task-file";
+import { userProfilePath } from "./brain-paths";
 
 const PREFERENCES_HEADING = "## Preferences";
 const PRINCIPLES_HEADING = "## Principles";
@@ -64,7 +65,7 @@ export function ensureUserMdSections(content: string): string {
  * No-op when the section already exists.
  */
 export function ensureUserMdSectionsOnDisk(rootDir: string): void {
-  const userMdPath = join(rootDir, "agent_brain", "identity", "USER.md");
+  const userMdPath = userProfilePath(rootDir);
   if (!existsSync(userMdPath)) return;
   const original = readFileSync(userMdPath, "utf8");
   const updated = ensureUserMdSections(original);
@@ -178,7 +179,6 @@ export function migrateAgentsMdIfNeeded(rootDir: string): boolean {
 }
 
 const INBOX_CHECKBOX_RE = /^- \[( |x)\]\s*(.*)$/;
-const PENDING_INBOX_FILENAME = "inbox.md.pending-migration";
 const INBOX_MIGRATION_DONE_MARKER = ".inbox-migration-done";
 const STRUCTURE_LINE_RE = /^(#|\s*$|---|[\w_-]+:\s)/;
 
@@ -286,7 +286,7 @@ export function cleanupPendingInboxMigration(rootDir: string): boolean {
 
 export function migrateInboxToTasksIfNeeded(rootDir: string): boolean {
   const inboxPath = join(rootDir, USER_DIR, "inbox.md");
-  const tasksPath = join(rootDir, USER_DIR, "tasks.md");
+  const tasksPath = tasksFilePath(rootDir);
   if (!existsSync(inboxPath) || existsSync(tasksPath)) return false;
 
   const inboxContent = readFileSync(inboxPath, "utf8");

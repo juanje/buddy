@@ -2,6 +2,7 @@
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
+import { INDEX_FILE } from "../shared/brain-paths";
 import { logsDirPath, observationsPath } from "./brain-paths";
 import { toLocalIsoStamp } from "../shared/dates";
 import { replaceRightNowSection } from "./consolidation-snapshot";
@@ -117,7 +118,7 @@ export function updateLogsIndexEntry(
 ): void {
   const logsDir = logsDirPath(rootDir);
   mkdirSync(logsDir, { recursive: true });
-  const indexPath = join(logsDir, "index.md");
+  const indexPath = join(logsDir, INDEX_FILE);
 
   const logPath = join(logsDir, `${date}.md`);
   const summary =

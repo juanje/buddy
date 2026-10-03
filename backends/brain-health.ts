@@ -14,7 +14,7 @@ import {
   REQUIRED_BRAIN_FRONTMATTER,
 } from "../shared/defaults";
 import { parseFrontmatter } from "../shared/frontmatter";
-import { BRAIN_PREFIX, BRAIN_SUBDIRS, dirPrefix } from "../shared/brain-paths";
+import { BRAIN_PREFIX, BRAIN_SUBDIRS, INDEX_FILE, dirPrefix } from "../shared/brain-paths";
 import { brainDirPath } from "./brain-paths";
 import { missingLearnedSkillToolKeys } from "./skill-tools";
 
@@ -140,7 +140,7 @@ function findMissingIndexes(rootDir: string): string[] {
       (entry) => entry.endsWith(".md") && statSync(join(current, entry)).isFile(),
     );
     if (mdFiles.length <= 1) continue;
-    if (mdFiles.includes("index.md")) continue;
+    if (mdFiles.includes(INDEX_FILE)) continue;
 
     missing.push(relDir);
   }
