@@ -5,6 +5,7 @@
     patternsToDisplayText,
   } from "../../shared/jira-patterns";
   import { t } from "./i18n";
+  import { createSavedNotice, type SavedNoticeState } from "./saved-notice";
 
   let {
     config = $bindable<ConnectorConfig>({
@@ -33,56 +34,35 @@
   } = $props();
 
   let patternsText = $state(patternsToDisplayText(config.issueKeyPatterns ?? []));
-  let savedNotice = $state<"saved" | "restart" | false>(false);
-  let savedNoticeTimer: ReturnType<typeof setTimeout> | undefined;
-  let enabledToggled = $state(false);
+  let savedNotice = $state<SavedNoticeState>(false);
+  const notice = createSavedNotice((state) => {
+    savedNotice = state;
+  });
 
   $effect(() => {
     patternsText = patternsToDisplayText(config.issueKeyPatterns ?? []);
   });
 
-  function dismissSavedNotice() {
-    savedNotice = false;
-    if (savedNoticeTimer) {
-      clearTimeout(savedNoticeTimer);
-      savedNoticeTimer = undefined;
-    }
-  }
-
-  function showSavedNotice(enabledChanged: boolean) {
-    dismissSavedNotice();
-    savedNotice = enabledChanged ? "restart" : "saved";
-    savedNoticeTimer = setTimeout(() => {
-      savedNotice = false;
-      savedNoticeTimer = undefined;
-    }, 8000);
-  }
-
   function onPatternsInput(value: string) {
-    dismissSavedNotice();
+    notice.dismiss();
     patternsText = value;
     config.issueKeyPatterns = parseProjectPrefixInput(value);
   }
 
-  async function handleSave() {
-    dismissSavedNotice();
-    await onSave();
-    showSavedNotice(enabledToggled);
-    enabledToggled = false;
+  function handleSave() {
+    return notice.save(onSave);
   }
 
   function handleTest() {
-    dismissSavedNotice();
-    void onTest();
+    notice.test(onTest);
   }
 
   function handleFieldInput() {
-    dismissSavedNotice();
+    notice.fieldInput();
   }
 
   function handleToggleEnabled() {
-    dismissSavedNotice();
-    enabledToggled = true;
+    notice.toggleEnabled();
   }
 </script>
 

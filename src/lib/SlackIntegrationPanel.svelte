@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { ConnectorConfig } from "../../shared/api";
   import { t } from "./i18n";
+  import { createSavedNotice, type SavedNoticeState } from "./saved-notice";
 
   let {
     config = $bindable<ConnectorConfig>({
@@ -26,46 +27,25 @@
     onToggleShowSecrets: (show: boolean) => void;
   } = $props();
 
-  let savedNotice = $state<"saved" | "restart" | false>(false);
-  let savedNoticeTimer: ReturnType<typeof setTimeout> | undefined;
-  let enabledToggled = $state(false);
+  let savedNotice = $state<SavedNoticeState>(false);
+  const notice = createSavedNotice((state) => {
+    savedNotice = state;
+  });
 
-  function dismissSavedNotice() {
-    savedNotice = false;
-    if (savedNoticeTimer) {
-      clearTimeout(savedNoticeTimer);
-      savedNoticeTimer = undefined;
-    }
-  }
-
-  function showSavedNotice(enabledChanged: boolean) {
-    dismissSavedNotice();
-    savedNotice = enabledChanged ? "restart" : "saved";
-    savedNoticeTimer = setTimeout(() => {
-      savedNotice = false;
-      savedNoticeTimer = undefined;
-    }, 8000);
-  }
-
-  async function handleSave() {
-    dismissSavedNotice();
-    await onSave();
-    showSavedNotice(enabledToggled);
-    enabledToggled = false;
+  function handleSave() {
+    return notice.save(onSave);
   }
 
   function handleTest() {
-    dismissSavedNotice();
-    void onTest();
+    notice.test(onTest);
   }
 
   function handleFieldInput() {
-    dismissSavedNotice();
+    notice.fieldInput();
   }
 
   function handleToggleEnabled() {
-    dismissSavedNotice();
-    enabledToggled = true;
+    notice.toggleEnabled();
   }
 </script>
 
