@@ -13,10 +13,6 @@ import { focusAppWindow } from "./window-focus";
 
 const notifiedDepths = new Set<number>();
 
-export function resetMaintenanceNotifyStateForTests(): void {
-  notifiedDepths.clear();
-}
-
 export async function notifyMaintenancePaused(
   info: MaintenancePausedInfo,
   labels: { title: string; body: string },

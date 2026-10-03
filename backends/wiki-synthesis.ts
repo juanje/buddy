@@ -52,7 +52,7 @@ export const WIKI_SYNTHESIS_ORPHAN_TAG_MIN_PAGES = 3;
 export const WIKI_SYNTHESIS_CO_OCCURRENCE_MIN_PAGES = 3;
 
 /** Minimum shared tags for disconnected-cluster detection. */
-export const WIKI_SYNTHESIS_DISCONNECTED_MIN_SHARED_TAGS = 2;
+const WIKI_SYNTHESIS_DISCONNECTED_MIN_SHARED_TAGS = 2;
 
 export const WIKI_SYNTHESIS_MAX_PAGES_PER_RUN = 3;
 export const WIKI_SYNTHESIS_PAGE_GROWTH_THRESHOLD = 10;
@@ -213,7 +213,7 @@ function wikiPageCount(rootDir: string): number {
   return listWikiPageRelPaths(wikiDir).length;
 }
 
-export function daysSinceIso(iso: string | null, now: Date): number {
+function daysSinceIso(iso: string | null, now: Date): number {
   if (!iso) return Number.POSITIVE_INFINITY;
   return (now.getTime() - new Date(iso).getTime()) / (86400 * 1000);
 }
@@ -291,7 +291,7 @@ export type WikiSynthesisAgentSession = Pick<
 >;
 
 /** Install permission gate on synthesis session (NFR-SEC-14). Unattended — refuse outside paths. */
-export function installWikiSynthesisGate(
+function installWikiSynthesisGate(
   session: Pick<WikiSynthesisAgentSession, "agent">,
   rootDir: string,
 ): void {

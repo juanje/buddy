@@ -30,9 +30,8 @@ import {
 } from "./slack-url-parser";
 import { SLACK_DOMAIN, SlackUserResolver } from "./slack-users";
 
-export { SLACK_DOMAIN };
 
-export const FRESHNESS = {
+const FRESHNESS = {
   thread: "1h",
   channelHistory: "1h",
   channels: "1h",

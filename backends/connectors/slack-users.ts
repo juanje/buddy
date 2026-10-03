@@ -7,7 +7,7 @@ import { assertCacheContainment, connectionsDir } from "./cache";
 import type { SlackClient } from "./slack-client";
 
 export const SLACK_DOMAIN = "slack";
-export const SLACK_USER_CACHE_MAX = 500;
+const SLACK_USER_CACHE_MAX = 500;
 
 export interface SlackUserCacheEntry {
   displayName: string;
@@ -29,7 +29,7 @@ export function readSlackUserCache(rootDir: string): SlackUserCache {
   }
 }
 
-export function writeSlackUserCache(rootDir: string, cache: SlackUserCache): void {
+function writeSlackUserCache(rootDir: string, cache: SlackUserCache): void {
   const path = userCachePath(rootDir);
   assertCacheContainment(path, rootDir);
   mkdirSync(join(path, ".."), { recursive: true });

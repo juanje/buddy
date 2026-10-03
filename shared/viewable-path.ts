@@ -106,7 +106,7 @@ export function resolveViewablePath(
 }
 
 /** Directories the inline viewer may reveal in the native file manager (FR-CHAT-20). */
-export const REVEALABLE_DIRS = [USER_DIR, DOWNLOADS_DIR] as const;
+const REVEALABLE_DIRS = [USER_DIR, DOWNLOADS_DIR] as const;
 
 /**
  * Resolve a viewer path to an absolute path that may be revealed in the native

@@ -264,8 +264,6 @@ export const BRAIN_HEALTH_REPAIR_BUDGET = 8;
 
 /** Directories where delete/move/copy-dest are allowed (FR-DELETE-01, FR-FILE). */
 export const USER_MUTABLE_DIRS = [USER_DIR, DOWNLOADS_DIR] as const;
-/** Directories never touched by user file ops (FR-DELETE-01, FR-FILE-02). */
-export const PROTECTED_DIRS = [BRAIN_DIR, LOGS_DIR] as const;
 /** Root identity files that must never be deleted or moved (FR-DELETE-01). */
 export const IDENTITY_ROOT_FILES = ["AGENTS.md", "SOUL.md", "USER.md", "CLAUDE.md"] as const;
 

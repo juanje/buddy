@@ -5,7 +5,7 @@ import type { ActionTable } from "../../shared/connector-types";
 export type ConnectorActionDecision = "read" | "write" | "deny";
 
 /** Declarative read/write tables per domain (§4.2). Populated as connectors ship. */
-export const CONNECTOR_ACTIONS: Record<string, ActionTable> = {
+const CONNECTOR_ACTIONS: Record<string, ActionTable> = {
   jira: {
     help: "read",
     board: "read",
@@ -28,7 +28,7 @@ export const CONNECTOR_ACTIONS: Record<string, ActionTable> = {
   },
 };
 
-export const CONNECTOR_TOOL_NAMES = Object.keys(CONNECTOR_ACTIONS);
+const CONNECTOR_TOOL_NAMES = Object.keys(CONNECTOR_ACTIONS);
 
 export function isConnectorTool(toolName: string): boolean {
   return CONNECTOR_TOOL_NAMES.includes(toolName);

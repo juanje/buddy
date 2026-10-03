@@ -1,6 +1,6 @@
 // shared/slack-error-suggestions.ts — i18n keys for Slack ConnectorError.suggestion.
 
-export const SLACK_ERROR_SUGGESTION_KEYS = [
+const SLACK_ERROR_SUGGESTION_KEYS = [
   "slackError401",
   "slackError403",
   "slackError404",
@@ -17,7 +17,7 @@ export type SlackErrorSuggestionKey = (typeof SLACK_ERROR_SUGGESTION_KEYS)[numbe
 
 export type SlackErrorSuggestionMessages = Record<SlackErrorSuggestionKey, string>;
 
-export function isSlackErrorSuggestionKey(value: string): value is SlackErrorSuggestionKey {
+function isSlackErrorSuggestionKey(value: string): value is SlackErrorSuggestionKey {
   return (SLACK_ERROR_SUGGESTION_KEYS as readonly string[]).includes(value);
 }
 

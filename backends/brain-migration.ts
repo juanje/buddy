@@ -19,11 +19,11 @@ const PRINCIPLES_SCAFFOLD = `\n${PRINCIPLES_HEADING}
 Cross-domain patterns that explain multiple preferences or behaviors. Only add principles with strong evidence from several data points.
 `;
 
-export const OLD_AGENTS_MD_MARKER = "## Core behavior";
+const OLD_AGENTS_MD_MARKER = "## Core behavior";
 export const AGENTS_MD_BACKUP_REL = ".buddy/migrations/agents-md-pre-split.md";
 
 /** Core rule prefixes — rules starting with these are shipped in agents-base.md. */
-export const CORE_RULE_PREFIXES = [
+const CORE_RULE_PREFIXES = [
   "**Language:**",
   "Don't read files preemptively",
   "**Memory first.**",
@@ -83,7 +83,7 @@ interface ParsedSection {
   body: string;
 }
 
-export function parseAgentsMdSections(content: string): ParsedSection[] {
+function parseAgentsMdSections(content: string): ParsedSection[] {
   const sections: ParsedSection[] = [];
   const lines = content.split("\n");
   let current: ParsedSection | null = null;

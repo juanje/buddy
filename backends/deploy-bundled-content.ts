@@ -17,7 +17,7 @@ export function bundledDocsDir(): string {
 }
 
 /** Bundled format references deployed to ~/.buddy/templates/ (FR-SKILL-06). */
-export function bundledTemplatesDir(): string {
+function bundledTemplatesDir(): string {
   return join(dirname(fileURLToPath(import.meta.url)), "..", "bundled", "templates");
 }
 

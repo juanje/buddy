@@ -62,7 +62,7 @@ export interface ConsolidationLogEntry {
   error?: string;
 }
 
-export const CONSOLIDATION_THRESHOLDS = {
+const CONSOLIDATION_THRESHOLDS = {
   depth1: { sessions: 3, maxHours: 24 },
   depth2: { depth1Runs: 3, calendarDays: DEPTH2_CALENDAR_DAYS },
   depth3: { depth2Runs: 4, calendarDays: DEPTH3_CALENDAR_DAYS },

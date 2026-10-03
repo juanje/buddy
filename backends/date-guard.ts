@@ -5,7 +5,7 @@ import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { formatPlainDate, formatPlainTime } from "./prompt";
 import { toIsoDay } from "../shared/dates";
 
-export const CURRENT_DATE_TIME_HEADING = "# Current date and time";
+const CURRENT_DATE_TIME_HEADING = "# Current date and time";
 
 export interface BeforeAgentStartEvent {
   systemPrompt: string;

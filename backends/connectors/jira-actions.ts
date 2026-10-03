@@ -100,9 +100,9 @@ function assigneeJql(accountId: string): string {
   return accountId === "currentUser()" ? accountId : `"${accountId}"`;
 }
 
-export const JIRA_DOMAIN = "jira";
+const JIRA_DOMAIN = "jira";
 
-export const FRESHNESS = {
+const FRESHNESS = {
   board: "15m",
   teamBoard: "15m",
   myIssues: "15m",

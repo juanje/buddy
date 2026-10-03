@@ -6,7 +6,7 @@ import { splitFrontmatter } from "../shared/frontmatter";
 export const WIKI_SUMMARY_MAX_LEN = 200;
 
 /** Tags must be lowercase slugs: `complex-systems`, not `Complex Systems`. */
-export const WIKI_TAG_SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const WIKI_TAG_SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 /** Enrichment aborts when content exceeds this many lines (excluding frontmatter and Connections). */
 export const WIKI_CONTENT_LINE_GUARD = 80;
@@ -23,7 +23,7 @@ export interface WikiSectionHeadings {
 }
 
 /** Localized H2 labels for wiki pages (backend page format, not UI i18n). */
-export const WIKI_SECTION_HEADINGS: Record<WikiLanguage, WikiSectionHeadings> = {
+const WIKI_SECTION_HEADINGS: Record<WikiLanguage, WikiSectionHeadings> = {
   en: { keyPoints: "Key points", examples: "Examples", connections: "Connections" },
   es: { keyPoints: "Puntos clave", examples: "Ejemplos", connections: "Conexiones" },
 };
@@ -32,7 +32,7 @@ export function resolveWikiLanguage(language?: string): WikiLanguage {
   return language === "es" ? "es" : "en";
 }
 
-export function wikiSectionHeadings(language?: string): WikiSectionHeadings {
+function wikiSectionHeadings(language?: string): WikiSectionHeadings {
   return WIKI_SECTION_HEADINGS[resolveWikiLanguage(language)];
 }
 
@@ -352,7 +352,7 @@ export function formatWikiPage(data: WikiPageInput, language?: string): string {
   return `${lines.join("\n").replace(/\n+$/, "")}\n`;
 }
 
-export function wikiPageCategory(relPath: string): string {
+function wikiPageCategory(relPath: string): string {
   const parts = relPath.split("/");
   return parts.length > 1 ? parts[0] : "";
 }

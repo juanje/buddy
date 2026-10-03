@@ -59,7 +59,7 @@ export function bootstrapWiki(rootDir: string): void {
   writeFileSync(wikiMetaLogPath(rootDir), "# Wiki log\n\n", "utf8");
 }
 
-export function normalizeConnectionPath(href: string, pageWikiRel: string): string {
+function normalizeConnectionPath(href: string, pageWikiRel: string): string {
   const hashIndex = href.indexOf("#");
   const pathPart = (hashIndex === -1 ? href : href.slice(0, hashIndex)).trim();
   const fragment = hashIndex === -1 ? "" : href.slice(hashIndex);
@@ -82,7 +82,7 @@ export function normalizeConnectionPaths(
   }));
 }
 
-export function fileWikiConcept(
+function fileWikiConcept(
   rootDir: string,
   input: WikiFileInput,
   language?: WikiLanguage,
@@ -193,7 +193,7 @@ function createNewLinkedPage(
   );
 }
 
-export function formatWikiFileResult(output: WikiFileOutput): string {
+function formatWikiFileResult(output: WikiFileOutput): string {
   const lines = [output.summary];
   if (output.connections_added > 0) {
     lines.push(`Added ${output.connections_added} backlink(s).`);

@@ -15,7 +15,7 @@ export interface WikiMaintenanceState {
   synthesisCooldownDays: number;
 }
 
-export const DEFAULT_SYNTHESIS_COOLDOWN_DAYS = 7;
+const DEFAULT_SYNTHESIS_COOLDOWN_DAYS = 7;
 
 export function defaultWikiState(): WikiMaintenanceState {
   return {

@@ -8,9 +8,9 @@ import { STATE_FILE_MODE } from "../../shared/defaults";
 import { globalConfigDir } from "../global-config";
 import { readStateFile, writeStateFile } from "../state-file";
 
-export const INTEGRATIONS_DIR_NAME = "integrations";
+const INTEGRATIONS_DIR_NAME = "integrations";
 
-export function integrationsDir(configDir: string = globalConfigDir()): string {
+function integrationsDir(configDir: string = globalConfigDir()): string {
   return join(configDir, INTEGRATIONS_DIR_NAME);
 }
 

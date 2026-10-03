@@ -95,7 +95,7 @@ export function searchWikiPages(
   return { results, total: results.length };
 }
 
-export function formatWikiSearchResult(output: WikiSearchOutput): string {
+function formatWikiSearchResult(output: WikiSearchOutput): string {
   if (output.total === 0) return "No wiki pages matched the query.";
   const lines = [`Found ${output.total} page(s):`, ""];
   for (const page of output.results) {

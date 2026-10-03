@@ -23,7 +23,7 @@ export function slackErrorMessagesFromLocale(locale: LocaleStrings): SlackErrorS
   };
 }
 
-export function connectorErrorMessage(
+function connectorErrorMessage(
   error: ConnectorError,
   messages: SlackErrorSuggestionMessages = slackErrorMessagesFromLocale(en),
 ): string {

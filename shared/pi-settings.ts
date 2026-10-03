@@ -14,7 +14,7 @@ export interface PiSettings {
   defaultModel?: string;
 }
 
-export function piSettingsPath(rootDir: string): string {
+function piSettingsPath(rootDir: string): string {
   return join(rootDir, ".pi", "settings.json");
 }
 

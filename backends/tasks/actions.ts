@@ -2,9 +2,9 @@
 
 import type { ActionTable } from "../../shared/connector-types";
 
-export const TASK_TOOL_NAME = "tasks";
+const TASK_TOOL_NAME = "tasks";
 
-export const TASK_ACTIONS: ActionTable = {
+const TASK_ACTIONS: ActionTable = {
   help: "read",
   add: "read",
   edit: "read",

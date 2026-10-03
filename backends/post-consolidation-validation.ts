@@ -1,7 +1,7 @@
 // backends/post-consolidation-validation.ts — FR-GUARD-03: filename + link repair.
 
 import { existsSync, readFileSync, renameSync, writeFileSync } from "node:fs";
-import { basename, dirname, extname, join, relative, resolve } from "node:path";
+import { basename, dirname, extname, join, resolve } from "node:path";
 
 import { logEvent } from "./app-logger";
 
@@ -117,7 +117,7 @@ function isMarkdownPath(relPath: string): boolean {
 }
 
 /** Rename invalid new files and rewrite links in touched markdown files. */
-export function validateAndFixFilenames(
+function validateAndFixFilenames(
   rootDir: string,
   newFiles: string[],
   touchedFiles: string[],
@@ -175,7 +175,7 @@ export function validateAndFixFilenames(
 }
 
 /** Strip broken relative links in touched markdown files. */
-export function repairBrokenLinks(
+function repairBrokenLinks(
   rootDir: string,
   touchedFiles: string[],
 ): LinkRepairResult[] {
@@ -256,9 +256,4 @@ export async function listChangedFilesSince(
     newFiles: [...newFiles],
     touchedFiles: [...touched],
   };
-}
-
-/** Resolve a repo-relative path for logging. */
-export function relPathFromRoot(rootDir: string, absPath: string): string {
-  return relative(rootDir, absPath).replace(/\\/g, "/");
 }
