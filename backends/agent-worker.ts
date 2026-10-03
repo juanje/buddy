@@ -97,6 +97,45 @@ function notifyFrontend(scope: string, method: string, send: () => void): void {
   }
 }
 
+/**
+ * Every FrontendAPI method. Typed as a full record so a method added to the
+ * interface is a compile error here until it is listed — the same guarantee a
+ * hand-written object literal gave, without twelve copies of the forwarding.
+ */
+const FRONTEND_METHODS: Record<keyof FrontendAPI, true> = {
+  onAgentEvent: true,
+  onWorkerError: true,
+  onPermissionRequest: true,
+  onOAuthEvent: true,
+  onShowFile: true,
+  onDeferredDue: true,
+  onOneLiner: true,
+  onBudgetAlert: true,
+  onSessionReady: true,
+  onTopicTransitionStart: true,
+  onMaintenancePaused: true,
+  onAuthError: true,
+};
+
+/**
+ * A FrontendAPI that forwards each call to `getFrontend()`, except for the
+ * methods in `overrides`. The target is read on every call, never captured:
+ * the RPC channel that provides it is created after this object is.
+ */
+function forwardFrontend(
+  getFrontend: () => FrontendAPI,
+  overrides: Partial<FrontendAPI>,
+): FrontendAPI {
+  const forwarded: Partial<Record<keyof FrontendAPI, (...args: unknown[]) => void>> = {};
+  for (const name of Object.keys(FRONTEND_METHODS) as Array<keyof FrontendAPI>) {
+    forwarded[name] = (...args) => {
+      const target = getFrontend();
+      (target[name] as (...a: unknown[]) => void).apply(target, args);
+    };
+  }
+  return { ...forwarded, ...overrides } as FrontendAPI;
+}
+
 export interface WorkerDeps {
   /**
    * Injectable so a test can hold it pending. It reaches the network — the Pi
@@ -140,44 +179,11 @@ export async function main(deps: WorkerDeps = {}): Promise<void> {
   let frontend!: FrontendAPI;
   /** Suppress agent events during silent one-liner recap (FR-ORIENT-03). */
   let suppressAgentEvents = false;
-  const sessionFrontend: FrontendAPI = {
+  const sessionFrontend = forwardFrontend(() => frontend, {
     onAgentEvent(event) {
       if (!suppressAgentEvents) frontend.onAgentEvent(event);
     },
-    onWorkerError(error) {
-      frontend.onWorkerError(error);
-    },
-    onPermissionRequest(request) {
-      frontend.onPermissionRequest(request);
-    },
-    onOAuthEvent(event) {
-      frontend.onOAuthEvent(event);
-    },
-    onShowFile(relPath) {
-      frontend.onShowFile(relPath);
-    },
-    onDeferredDue(items) {
-      frontend.onDeferredDue(items);
-    },
-    onBudgetAlert(status) {
-      frontend.onBudgetAlert(status);
-    },
-    onSessionReady() {
-      frontend.onSessionReady();
-    },
-    onTopicTransitionStart() {
-      frontend.onTopicTransitionStart();
-    },
-    onMaintenancePaused(info) {
-      frontend.onMaintenancePaused(info);
-    },
-    onAuthError(event) {
-      frontend.onAuthError(event);
-    },
-    onOneLiner(text) {
-      frontend.onOneLiner(text);
-    },
-  };
+  });
 
   // Pending permission questions: id → resolver (FR-PERM-07). The tool call
   // awaits inside the beforeToolCall hook until the user answers in the chat.
