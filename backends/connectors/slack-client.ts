@@ -2,6 +2,7 @@
 
 import type { ConnectorConfig, ConnectorError } from "../../shared/connector-types";
 import { PROVIDER_REQUEST_TIMEOUT_MS } from "../../shared/defaults";
+import { createNetworkErrorHelpers } from "./network-errors";
 
 export type SlackFetch = (url: string, init?: RequestInit) => Promise<Response>;
 
@@ -168,31 +169,12 @@ export function mapSlackHttpError(status: number, retryAfter?: string | null): C
   };
 }
 
-export function mapNetworkError(err: unknown): ConnectorError {
-  if (err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError")) {
-    return {
-      error: "Slack did not respond in time",
-      code: 0,
-      recoverable: true,
-      suggestion: "slackErrorTimeout",
-    };
-  }
-  return {
-    error: err instanceof Error ? err.message : String(err),
-    code: 0,
-    recoverable: true,
-    suggestion: "slackErrorNetwork",
-  };
-}
-
-export function isNetworkError(err: unknown): boolean {
-  if (err instanceof SlackClientError) return false;
-  if (err instanceof TypeError) return true;
-  if (err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError")) {
-    return true;
-  }
-  return false;
-}
+export const { mapNetworkError, isNetworkError } = createNetworkErrorHelpers({
+  service: "Slack",
+  timeoutSuggestion: "slackErrorTimeout",
+  networkSuggestion: "slackErrorNetwork",
+  clientErrorClass: SlackClientError,
+});
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));

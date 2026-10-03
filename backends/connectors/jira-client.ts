@@ -2,6 +2,7 @@
 
 import type { ConnectorConfig, ConnectorError } from "../../shared/connector-types";
 import { PROVIDER_REQUEST_TIMEOUT_MS } from "../../shared/defaults";
+import { createNetworkErrorHelpers } from "./network-errors";
 
 export type JiraFetch = (url: string, init?: RequestInit) => Promise<Response>;
 
@@ -81,31 +82,12 @@ export function mapJiraHttpError(status: number, retryAfter?: string | null): Co
   };
 }
 
-export function mapNetworkError(err: unknown): ConnectorError {
-  if (err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError")) {
-    return {
-      error: "Jira did not respond in time",
-      code: 0,
-      recoverable: true,
-      suggestion: "jiraErrorTimeout",
-    };
-  }
-  return {
-    error: err instanceof Error ? err.message : String(err),
-    code: 0,
-    recoverable: true,
-    suggestion: "jiraErrorNetwork",
-  };
-}
-
-export function isNetworkError(err: unknown): boolean {
-  if (err instanceof JiraClientError) return false;
-  if (err instanceof TypeError) return true;
-  if (err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError")) {
-    return true;
-  }
-  return false;
-}
+export const { mapNetworkError, isNetworkError } = createNetworkErrorHelpers({
+  service: "Jira",
+  timeoutSuggestion: "jiraErrorTimeout",
+  networkSuggestion: "jiraErrorNetwork",
+  clientErrorClass: JiraClientError,
+});
 
 export interface JiraUser {
   accountId: string;
