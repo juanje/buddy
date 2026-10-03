@@ -277,6 +277,251 @@ async function registerChannelFromUse(
   }
 }
 
+/** Everything a Slack action handler needs once the connector is configured. */
+interface SlackActionContext {
+  rootDir: string;
+  client: SlackClient;
+  params: SlackActionParams;
+  options?: ExecuteSlackActionOptions;
+  force: boolean;
+}
+
+type SlackActionHandler = (ctx: SlackActionContext) => Promise<ConnectorResult>;
+
+async function threadAction(ctx: SlackActionContext): Promise<ConnectorResult> {
+  const { rootDir, client, params, force } = ctx;
+  if (!params.url) {
+    return connectorResultFromError({
+      error: "thread requires params.url",
+      code: 0,
+      recoverable: false,
+      suggestion: "Pass a Slack thread URL or channel ID with thread timestamp.",
+    });
+  }
+  let ref;
+  try {
+    ref = parseSlackUrl(params.url);
+  } catch (err) {
+    return connectorResultFromError({
+      error: err instanceof Error ? err.message : String(err),
+      code: 0,
+      recoverable: false,
+      suggestion: "slackErrorGeneric",
+    });
+  }
+  if (!ref.threadTs) {
+    return connectorResultFromError({
+      error: "URL does not reference a thread",
+      code: 0,
+      recoverable: false,
+      suggestion: "Use a Slack thread URL that includes a message timestamp.",
+    });
+  }
+
+  const fileId = threadFileId(ref.channelId, ref.threadTs);
+  const cached = readThreadFile(rootDir, SLACK_DOMAIN, fileId);
+  if (!force && cached && !isCacheStale(cached.meta, false)) {
+    const relPath = relThreadPath(fileId);
+    return connectorResultFromCache(
+      `Cached thread at ${relPath}\nMessages: ${(cached.body.match(/^## /gm) ?? []).length}\nRead the file locally for full content.`,
+      cached.meta,
+      { force: false },
+    );
+  }
+
+  try {
+    const messages = await fetchAllReplies(client, ref.channelId, ref.threadTs);
+    const body = await renderThreadMarkdown(client, rootDir, ref.channelId, messages);
+    const syncedAt = new Date().toISOString();
+    writeThreadFile(
+      rootDir,
+      SLACK_DOMAIN,
+      fileId,
+      { synced_at: syncedAt, stale_after: FRESHNESS.thread, source: SLACK_DOMAIN },
+      body,
+    );
+    await registerChannelFromUse(client, rootDir, ref.channelId);
+    const relPath = relThreadPath(fileId);
+    return {
+      data: `Thread saved to ${relPath}\nMessages: ${messages.length}\nRead the file locally for full content.`,
+      stale: false,
+      synced_at: syncedAt,
+    };
+  } catch (err) {
+    if (cached && isNetworkError(err)) {
+      const relPath = relThreadPath(fileId);
+      return connectorResultFromCache(
+        `Cached thread at ${relPath}\nRead the file locally for full content.`,
+        cached.meta,
+        { force: true },
+      );
+    }
+    if (err instanceof SlackClientError) {
+      return connectorResultFromError(err.connectorError);
+    }
+    throw err;
+  }
+}
+
+async function channelHistoryAction(ctx: SlackActionContext): Promise<ConnectorResult> {
+  const { rootDir, client, params, options, force } = ctx;
+  const channelInput = params.channel ?? params.url;
+  if (!channelInput) {
+    return connectorResultFromError({
+      error: "channel_history requires params.channel",
+      code: 0,
+      recoverable: false,
+      suggestion: "Pass a channel name, ID, or Slack URL.",
+    });
+  }
+
+  let channelId: string;
+  try {
+    channelId = parseSlackUrl(channelInput).channelId;
+  } catch {
+    channelId = channelInput.startsWith("#") ? channelInput.slice(1) : channelInput;
+  }
+
+  const now = options?.now?.() ?? new Date();
+  let oldest: string;
+  let latest: string;
+  let dateLabel: string;
+
+  if (params.date) {
+    const start = new Date(`${params.date}T00:00:00.000Z`);
+    const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
+    oldest = String(start.getTime() / 1000);
+    latest = String(end.getTime() / 1000);
+    dateLabel = params.date;
+  } else {
+    const days = params.days ?? 1;
+    const start = new Date(now);
+    start.setUTCHours(0, 0, 0, 0);
+    start.setUTCDate(start.getUTCDate() - (days - 1));
+    oldest = String(start.getTime() / 1000);
+    latest = String(now.getTime() / 1000);
+    dateLabel =
+      days === 1
+        ? start.toISOString().slice(0, 10)
+        : `${start.toISOString().slice(0, 10)}-${now.toISOString().slice(0, 10)}`;
+  }
+
+  const fileId = channelFileId(channelId, dateLabel);
+  const cached = readThreadFile(rootDir, SLACK_DOMAIN, fileId);
+  if (!force && cached && !isCacheStale(cached.meta, false)) {
+    const relPath = relThreadPath(fileId);
+    return connectorResultFromCache(
+      `Cached channel history at ${relPath}\nRead the file locally for full content.`,
+      cached.meta,
+      { force: false },
+    );
+  }
+
+  const limit = params.limit ?? 500;
+  try {
+    const messages = await fetchChannelHistory(client, channelId, oldest, latest, limit);
+    const body = await renderChannelMarkdown(client, rootDir, channelId, dateLabel, messages);
+    const syncedAt = new Date().toISOString();
+    writeThreadFile(
+      rootDir,
+      SLACK_DOMAIN,
+      fileId,
+      { synced_at: syncedAt, stale_after: FRESHNESS.channelHistory, source: SLACK_DOMAIN },
+      body,
+    );
+    await registerChannelFromUse(client, rootDir, channelId);
+    const relPath = relThreadPath(fileId);
+    return {
+      data: `Channel history saved to ${relPath}\nMessages: ${messages.length}\nRead the file locally for full content.`,
+      stale: false,
+      synced_at: syncedAt,
+    };
+  } catch (err) {
+    if (cached && isNetworkError(err)) {
+      const relPath = relThreadPath(fileId);
+      return connectorResultFromCache(
+        `Cached channel history at ${relPath}\nRead the file locally for full content.`,
+        cached.meta,
+        { force: true },
+      );
+    }
+    if (err instanceof SlackClientError) {
+      return connectorResultFromError(err.connectorError);
+    }
+    throw err;
+  }
+}
+
+async function channelsAction(ctx: SlackActionContext): Promise<ConnectorResult> {
+  const { rootDir, client, force } = ctx;
+  const entityStore = readEntityStore(rootDir, SLACK_DOMAIN);
+  const cachedMeta = entityStore.__channels_list__ as EntityStore[string] | undefined;
+  if (!force && cachedMeta && !isCacheStale(cachedMeta, false)) {
+    const lines = Object.values(entityStore)
+      .filter((e) => e.id && e.id !== "__channels_list__")
+      .map((e) => `${e.name ?? e.id} (${e.id}) — ${e.num_members ?? 0} members`);
+    return connectorResultFromCache(lines.join("\n"), cachedMeta, { force: false });
+  }
+
+  try {
+    const allChannels: Array<{
+      id: string;
+      name?: string;
+      is_private?: boolean;
+      num_members?: number;
+    }> = [];
+    let cursor: string | undefined;
+    while (true) {
+      const page = await client.conversationsList({ limit: 200, cursor });
+      allChannels.push(...page.channels);
+      cursor = page.nextCursor;
+      if (!cursor) break;
+    }
+
+    const syncedAt = new Date().toISOString();
+    const nextStore: EntityStore = {
+      __channels_list__: {
+        synced_at: syncedAt,
+        stale_after: FRESHNESS.channels,
+        source: SLACK_DOMAIN,
+        id: "__channels_list__",
+        name: "channels_list",
+      },
+    };
+    for (const ch of allChannels) {
+      nextStore[ch.id] = channelEntityKey(ch);
+    }
+    writeEntityStore(rootDir, SLACK_DOMAIN, nextStore);
+
+    const lines = allChannels.map(
+      (ch) => `${ch.name ? `#${ch.name}` : ch.id} (${ch.id}) — ${ch.num_members ?? 0} members`,
+    );
+    return {
+      data: lines.join("\n") || "(no channels)",
+      stale: false,
+      synced_at: syncedAt,
+    };
+  } catch (err) {
+    if (cachedMeta && isNetworkError(err)) {
+      const lines = Object.values(entityStore)
+        .filter((e) => e.id && e.id !== "__channels_list__")
+        .map((e) => `${e.name ?? e.id} (${e.id})`);
+      return connectorResultFromCache(lines.join("\n"), cachedMeta, { force: true });
+    }
+    if (err instanceof SlackClientError) {
+      return connectorResultFromError(err.connectorError);
+    }
+    throw err;
+  }
+}
+
+const SLACK_ACTION_HANDLERS: Record<"thread" | "channel_history" | "channels", SlackActionHandler> =
+  {
+    thread: threadAction,
+    channel_history: channelHistoryAction,
+    channels: channelsAction,
+  };
+
 export async function executeSlackAction(
   rootDir: string,
   action: string,
@@ -300,234 +545,14 @@ export async function executeSlackAction(
   const client = createSlackClient(config, { fetchImpl: options?.fetchImpl });
   const force = params.force === true;
 
-  switch (action) {
-    case "thread": {
-      if (!params.url) {
-        return connectorResultFromError({
-          error: "thread requires params.url",
-          code: 0,
-          recoverable: false,
-          suggestion: "Pass a Slack thread URL or channel ID with thread timestamp.",
-        });
-      }
-      let ref;
-      try {
-        ref = parseSlackUrl(params.url);
-      } catch (err) {
-        return connectorResultFromError({
-          error: err instanceof Error ? err.message : String(err),
-          code: 0,
-          recoverable: false,
-          suggestion: "slackErrorGeneric",
-        });
-      }
-      if (!ref.threadTs) {
-        return connectorResultFromError({
-          error: "URL does not reference a thread",
-          code: 0,
-          recoverable: false,
-          suggestion: "Use a Slack thread URL that includes a message timestamp.",
-        });
-      }
-
-      const fileId = threadFileId(ref.channelId, ref.threadTs);
-      const cached = readThreadFile(rootDir, SLACK_DOMAIN, fileId);
-      if (!force && cached && !isCacheStale(cached.meta, false)) {
-        const relPath = relThreadPath(fileId);
-        return connectorResultFromCache(
-          `Cached thread at ${relPath}\nMessages: ${(cached.body.match(/^## /gm) ?? []).length}\nRead the file locally for full content.`,
-          cached.meta,
-          { force: false },
-        );
-      }
-
-      try {
-        const messages = await fetchAllReplies(client, ref.channelId, ref.threadTs);
-        const body = await renderThreadMarkdown(client, rootDir, ref.channelId, messages);
-        const syncedAt = new Date().toISOString();
-        writeThreadFile(
-          rootDir,
-          SLACK_DOMAIN,
-          fileId,
-          { synced_at: syncedAt, stale_after: FRESHNESS.thread, source: SLACK_DOMAIN },
-          body,
-        );
-        await registerChannelFromUse(client, rootDir, ref.channelId);
-        const relPath = relThreadPath(fileId);
-        return {
-          data: `Thread saved to ${relPath}\nMessages: ${messages.length}\nRead the file locally for full content.`,
-          stale: false,
-          synced_at: syncedAt,
-        };
-      } catch (err) {
-        if (cached && isNetworkError(err)) {
-          const relPath = relThreadPath(fileId);
-          return connectorResultFromCache(
-            `Cached thread at ${relPath}\nRead the file locally for full content.`,
-            cached.meta,
-            { force: true },
-          );
-        }
-        if (err instanceof SlackClientError) {
-          return connectorResultFromError(err.connectorError);
-        }
-        throw err;
-      }
-    }
-    case "channel_history": {
-      const channelInput = params.channel ?? params.url;
-      if (!channelInput) {
-        return connectorResultFromError({
-          error: "channel_history requires params.channel",
-          code: 0,
-          recoverable: false,
-          suggestion: "Pass a channel name, ID, or Slack URL.",
-        });
-      }
-
-      let channelId: string;
-      try {
-        channelId = parseSlackUrl(channelInput).channelId;
-      } catch {
-        channelId = channelInput.startsWith("#") ? channelInput.slice(1) : channelInput;
-      }
-
-      const now = options?.now?.() ?? new Date();
-      let oldest: string;
-      let latest: string;
-      let dateLabel: string;
-
-      if (params.date) {
-        const start = new Date(`${params.date}T00:00:00.000Z`);
-        const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
-        oldest = String(start.getTime() / 1000);
-        latest = String(end.getTime() / 1000);
-        dateLabel = params.date;
-      } else {
-        const days = params.days ?? 1;
-        const start = new Date(now);
-        start.setUTCHours(0, 0, 0, 0);
-        start.setUTCDate(start.getUTCDate() - (days - 1));
-        oldest = String(start.getTime() / 1000);
-        latest = String(now.getTime() / 1000);
-        dateLabel =
-          days === 1
-            ? start.toISOString().slice(0, 10)
-            : `${start.toISOString().slice(0, 10)}-${now.toISOString().slice(0, 10)}`;
-      }
-
-      const fileId = channelFileId(channelId, dateLabel);
-      const cached = readThreadFile(rootDir, SLACK_DOMAIN, fileId);
-      if (!force && cached && !isCacheStale(cached.meta, false)) {
-        const relPath = relThreadPath(fileId);
-        return connectorResultFromCache(
-          `Cached channel history at ${relPath}\nRead the file locally for full content.`,
-          cached.meta,
-          { force: false },
-        );
-      }
-
-      const limit = params.limit ?? 500;
-      try {
-        const messages = await fetchChannelHistory(client, channelId, oldest, latest, limit);
-        const body = await renderChannelMarkdown(client, rootDir, channelId, dateLabel, messages);
-        const syncedAt = new Date().toISOString();
-        writeThreadFile(
-          rootDir,
-          SLACK_DOMAIN,
-          fileId,
-          { synced_at: syncedAt, stale_after: FRESHNESS.channelHistory, source: SLACK_DOMAIN },
-          body,
-        );
-        await registerChannelFromUse(client, rootDir, channelId);
-        const relPath = relThreadPath(fileId);
-        return {
-          data: `Channel history saved to ${relPath}\nMessages: ${messages.length}\nRead the file locally for full content.`,
-          stale: false,
-          synced_at: syncedAt,
-        };
-      } catch (err) {
-        if (cached && isNetworkError(err)) {
-          const relPath = relThreadPath(fileId);
-          return connectorResultFromCache(
-            `Cached channel history at ${relPath}\nRead the file locally for full content.`,
-            cached.meta,
-            { force: true },
-          );
-        }
-        if (err instanceof SlackClientError) {
-          return connectorResultFromError(err.connectorError);
-        }
-        throw err;
-      }
-    }
-    case "channels": {
-      const entityStore = readEntityStore(rootDir, SLACK_DOMAIN);
-      const cachedMeta = entityStore.__channels_list__ as EntityStore[string] | undefined;
-      if (!force && cachedMeta && !isCacheStale(cachedMeta, false)) {
-        const lines = Object.values(entityStore)
-          .filter((e) => e.id && e.id !== "__channels_list__")
-          .map((e) => `${e.name ?? e.id} (${e.id}) — ${e.num_members ?? 0} members`);
-        return connectorResultFromCache(lines.join("\n"), cachedMeta, { force: false });
-      }
-
-      try {
-        const allChannels: Array<{
-          id: string;
-          name?: string;
-          is_private?: boolean;
-          num_members?: number;
-        }> = [];
-        let cursor: string | undefined;
-        while (true) {
-          const page = await client.conversationsList({ limit: 200, cursor });
-          allChannels.push(...page.channels);
-          cursor = page.nextCursor;
-          if (!cursor) break;
-        }
-
-        const syncedAt = new Date().toISOString();
-        const nextStore: EntityStore = {
-          __channels_list__: {
-            synced_at: syncedAt,
-            stale_after: FRESHNESS.channels,
-            source: SLACK_DOMAIN,
-            id: "__channels_list__",
-            name: "channels_list",
-          },
-        };
-        for (const ch of allChannels) {
-          nextStore[ch.id] = channelEntityKey(ch);
-        }
-        writeEntityStore(rootDir, SLACK_DOMAIN, nextStore);
-
-        const lines = allChannels.map(
-          (ch) => `${ch.name ? `#${ch.name}` : ch.id} (${ch.id}) — ${ch.num_members ?? 0} members`,
-        );
-        return {
-          data: lines.join("\n") || "(no channels)",
-          stale: false,
-          synced_at: syncedAt,
-        };
-      } catch (err) {
-        if (cachedMeta && isNetworkError(err)) {
-          const lines = Object.values(entityStore)
-            .filter((e) => e.id && e.id !== "__channels_list__")
-            .map((e) => `${e.name ?? e.id} (${e.id})`);
-          return connectorResultFromCache(lines.join("\n"), cachedMeta, { force: true });
-        }
-        if (err instanceof SlackClientError) {
-          return connectorResultFromError(err.connectorError);
-        }
-        throw err;
-      }
-    }
-    default:
-      return connectorResultFromError({
-        error: `Unknown action '${action}'`,
-        code: 0,
-        recoverable: false,
-        suggestion: "Use action='help' to see available actions.",
-      });
+  if (!Object.hasOwn(SLACK_ACTION_HANDLERS, action)) {
+    return connectorResultFromError({
+      error: `Unknown action '${action}'`,
+      code: 0,
+      recoverable: false,
+      suggestion: "Use action='help' to see available actions.",
+    });
   }
+  const handler = SLACK_ACTION_HANDLERS[action as keyof typeof SLACK_ACTION_HANDLERS];
+  return handler({ rootDir, client, params, options, force });
 }
