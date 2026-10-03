@@ -36,3 +36,37 @@ Feature: Export viewed file as PDF
     When the file viewer opens "user/notes.md"
     And I activate "Export PDF"
     Then no PDF file is written
+
+  Scenario: Save dialog starts in the operating system downloads directory
+    Given the operating system downloads directory is "/home/ana/Descargas"
+    When a PDF save is offered for "notas.pdf"
+    Then the save dialog default path is "/home/ana/Descargas/notas.pdf"
+    And the save dialog default path is not a bare filename
+
+  Scenario: Save dialog keeps the downloads folder name the operating system returned
+    Given the operating system downloads directory is "/home/ana/Downloads"
+    When a PDF save is offered for "notes.pdf"
+    Then the save dialog default path is "/home/ana/Downloads/notes.pdf"
+
+  Scenario: Save dialog still opens when the operating system has no downloads directory
+    Given the operating system has no downloads directory
+    And the home directory is "/home/ana"
+    When a PDF save is offered for "notas.pdf"
+    Then the save dialog default path is "/home/ana/notas.pdf"
+
+  Scenario: Next PDF export opens in the directory the user confirmed
+    Given the operating system downloads directory is "/home/ana/Descargas"
+    And the next PDF save will be confirmed at "/home/ana/Documentos/notas.pdf"
+    When a PDF save is offered for "notas.pdf"
+    And a PDF save is offered for "otra.pdf"
+    Then the save dialog default path is "/home/ana/Documentos/otra.pdf"
+    And the first save dialog default path was "/home/ana/Descargas/notas.pdf"
+
+  Scenario: Cancelling the save dialog does not change the starting directory
+    Given the operating system downloads directory is "/home/ana/Descargas"
+    And the next PDF save will be cancelled
+    When a PDF save is offered for "notas.pdf"
+    Then the save dialog default path is "/home/ana/Descargas/notas.pdf"
+    And no PDF file is written
+    When a PDF save is offered for "otra.pdf"
+    Then the save dialog default path is "/home/ana/Descargas/otra.pdf"

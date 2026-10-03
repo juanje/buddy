@@ -1232,7 +1232,8 @@ buddy/
 │   │   └── default.json         # Permissions for plugin-js, notification, etc.
 │   └── src/
 │       ├── main.rs              # Plugin registration + menu setup
-│       └── pdf.rs               # `create_pdf` command (HTML → PDF)
+│       ├── pdf.rs               # `create_pdf` command (HTML → PDF); macOS backend
+│       └── pdf_linux.rs         # Linux backend: WebKitGTK print-to-file
 ├── backends/
 │   ├── agent-worker.ts          # Pi SDK session + kkrpc WorkerAPI
 │   ├── session-boot.ts          # Session creation, tools, lifecycle wiring
@@ -1305,6 +1306,8 @@ buddy/
 - `tauri-plugin-js` (Node.js worker management)
 - `tauri-plugin-notification`
 - `tauri-plugin-dialog`, `tauri-plugin-opener`, `tauri-plugin-fs`
+- macOS only: `objc2-*` bindings (WebKit, PDFKit) for PDF export
+- Linux only: `gtk`, `webkit2gtk`, `gettext-sys` for PDF export
 
 ### TypeScript (package.json) — where all logic lives
 

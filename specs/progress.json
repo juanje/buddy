@@ -26,9 +26,34 @@
           "name": "Export cancelled by user writes nothing",
           "bdd": "pass",
           "unit_tests": 1
+        },
+        {
+          "name": "Save dialog starts in the operating system downloads directory",
+          "bdd": "pass",
+          "unit_tests": 2
+        },
+        {
+          "name": "Save dialog keeps the downloads folder name the operating system returned",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Next PDF export opens in the directory the user confirmed",
+          "bdd": "pass",
+          "unit_tests": 2
+        },
+        {
+          "name": "Cancelling the save dialog does not change the starting directory",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Save dialog still opens when the operating system has no downloads directory",
+          "bdd": "pass",
+          "unit_tests": 2
         }
       ],
-      "note": "macOS createPDF(); Linux deferred"
+      "note": "macOS createPDF(); Linux is FR-CHAT-21 (WebKitGTK print-to-file)"
     },
     {
       "id": "FR-PERM-06b",
@@ -1641,6 +1666,34 @@
         },
         {
           "name": "Every provider Buddy maps is in the Pi catalog",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
+    },
+    {
+      "id": "FR-CHAT-21",
+      "title": "Export viewed markdown as PDF on Linux",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Export PDF available on Linux for markdown",
+          "bdd": "pass",
+          "unit_tests": 3
+        },
+        {
+          "name": "Export PDF hidden on Linux for plain text",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Export PDF hidden on Windows for markdown",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Export PDF still available on macOS for markdown",
           "bdd": "pass",
           "unit_tests": 1
         }

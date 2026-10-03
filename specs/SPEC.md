@@ -102,6 +102,7 @@ rootDir (git repo — user/agent content only)
 | FR-CHAT-18 | Export the viewed file as PDF | 3 ✓ |
 | FR-CHAT-19 | Tokenizer artifact stripping in assistant output | 2 ✓ |
 | FR-CHAT-20 | Reveal file in native file manager from inline viewer | 3 ✓ |
+| FR-CHAT-21 | Export viewed markdown as PDF on Linux | 3 ✓ |
 
 **FR-CHAT-01 — Streaming message display**
 
@@ -421,14 +422,17 @@ the tool surfaces a file the agent could already read, to the user who owns it.
 - **And** the source file on disk is untouched
 - **But when** the open file is plain text (not markdown)
 - **Then** the export action is not shown
-- **And** on Linux the export action is not shown
 - **And** if the user cancels the save dialog, no file is written
+- **And** the dialog starts in the operating system's downloads directory, using that directory's real path — on Linux, xdg-user-dirs, so a Spanish desktop opens `Descargas` and an English one opens `Downloads`. Buddy does not hardcode the folder name and does not pass a bare filename, which would open the process working directory
+- **And** when the operating system reports no downloads directory, the dialog starts in the home directory; if neither resolves, it still opens with just the file name rather than failing silently
+- **And** after the user confirms a folder, the next export starts in that folder
+- **And** cancelling does not change the starting folder
 
 **Spike (Sep 13 2026).** `window.print()` does not work in WKWebView: the print
 dialog opens with a blank preview and a disabled Print button. The working
 path is a Tauri command that creates an offscreen `WKWebView`, loads the
-rendered HTML, and calls `createPDF()`. Linux (WebKitGTK print-to-file) is
-deferred; the button is hidden there until that implementation exists.
+rendered HTML, and calls `createPDF()`. Linux export is **FR-CHAT-21**
+(WebKitGTK print-to-file).
 
 **Why not a PDF library.** The HTML is already rendered for the viewer. An
 offscreen WebView reuses that rendering so the PDF keeps selectable text and
@@ -445,6 +449,24 @@ sending. A report or article Buddy helped write is trapped for any recipient
 without a markdown renderer — and "send it to someone" is the ordinary next
 step for the target user. FR-CHAT-15 compounds with it: with frontmatter no
 longer rendered, the exported PDF carries no bookkeeping metadata.
+
+**FR-CHAT-21 — Export viewed markdown as PDF on Linux**
+
+Linux users get the same **Export PDF** control in the inline file viewer as
+macOS users: the app renders the open markdown document and writes a PDF only
+where the user chooses via the native save dialog. This is a UI action, not an
+agent tool (same model as FR-CHAT-18). Windows remains without PDF export until
+a viable WebView print path exists.
+
+**Why a separate FR.** FR-CHAT-18 shipped the macOS backend (`createPDF` tiling).
+Linux uses WebKitGTK `WebKitPrintOperation` with the GTK virtual file printer;
+the frontend contract (`create_pdf` → bytes → save dialog) is shared, including
+where the save dialog opens (FR-CHAT-18).
+
+**Spike (Oct 3 2026).** Offscreen `WebKitWebView`, hardware acceleration
+disabled, `print()` to localized "Print to File" printer name via
+`dgettext("gtk30", "Print to File")`. Native pagination honors CSS
+`break-inside: avoid`; no macOS-style rect tiling.
 
 **FR-CHAT-19 — Tokenizer artifact stripping**
 

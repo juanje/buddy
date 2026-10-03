@@ -29,6 +29,11 @@ objc2-core-foundation = { version = "0.3", features = ["CFCGTypes"] }
 block2 = "0.6"
 dispatch = "0.2"
 
+[target.'cfg(target_os = "linux")'.dependencies]
+gtk = { version = "0.18", features = ["v3_24"] }
+webkit2gtk = "2.0.1"
+gettext-sys = "0.22"
+
 [[bin]]
 name = "buddy"
 path = "src/main.rs"

@@ -4,16 +4,26 @@
 // (NFR-SEC-09). Reveal and PDF export are user clicks, not agent actions.
 
 import { invoke } from "@tauri-apps/api/core";
+import { downloadDir, homeDir } from "@tauri-apps/api/path";
 import { save } from "@tauri-apps/plugin-dialog";
 import { writeFile } from "@tauri-apps/plugin-fs";
 import { revealItemInDir } from "@tauri-apps/plugin-opener";
 
 import type { WorkerAPI } from "../../shared/api";
 import { createFileViewerController, type FileViewerController } from "./file-viewer-controller";
+import { createPdfSaver } from "./pdf-save-path";
+import { platformSupportsPdf } from "./platform-support-pdf";
 
-function platformSupportsPdf(): boolean {
-  return typeof navigator !== "undefined" && /Mac|macOS|Macintosh/i.test(navigator.userAgent);
-}
+const pdfSaver = createPdfSaver({
+  downloadsDirectory: downloadDir,
+  homeDirectory: homeDir,
+  openDialog: (defaultPath) =>
+    save({
+      defaultPath,
+      filters: [{ name: "PDF", extensions: ["pdf"] }],
+    }),
+  writeFile: (path, data) => writeFile(path, data),
+});
 
 export function createDefaultFileViewerController(
   worker: Pick<WorkerAPI, "readViewableFile">,
@@ -24,18 +34,12 @@ export function createDefaultFileViewerController(
     // Needed to resolve links written inside a document (FR-CHAT-12).
     rootDir,
     revealInFileManager: (absPath) => revealItemInDir(absPath),
-    platformSupportsPdf: platformSupportsPdf(),
+    platformSupportsPdf:
+      typeof navigator !== "undefined" && platformSupportsPdf(navigator.userAgent),
     createPdf: async (html) => {
       const bytes = await invoke<number[]>("create_pdf", { html });
       return Uint8Array.from(bytes);
     },
-    savePdf: async (suggestedName, data) => {
-      const path = await save({
-        defaultPath: suggestedName,
-        filters: [{ name: "PDF", extensions: ["pdf"] }],
-      });
-      if (!path) return;
-      await writeFile(path, data);
-    },
+    savePdf: (suggestedName, data) => pdfSaver.save(suggestedName, data),
   });
 }

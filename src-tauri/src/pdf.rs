@@ -4,13 +4,17 @@
 // printOperationWithPrintInfo paginates correctly but runOperation() deadlocks
 // the main thread (beach ball, invoke never returns). createPDF is async and
 // does not paginate — each call is one page of the given rect.
-// Other platforms: not implemented; the UI hides the button there.
+// Linux: offscreen WebKitWebView + WebKitPrintOperation to file (FR-CHAT-21).
+// Windows: button hidden; no backend yet.
 
 use tauri::command;
 
+#[cfg(target_os = "macos")]
 const A4_WIDTH: f64 = 595.28;
+#[cfg(any(target_os = "macos", test))]
 const A4_HEIGHT: f64 = 841.89;
 
+#[cfg(any(target_os = "macos", test))]
 #[derive(Debug, Clone, Copy)]
 struct BlockBox {
     top: f64,
@@ -20,6 +24,7 @@ struct BlockBox {
 /// Place page starts so a cut that would split a block moves up to that
 /// block's top. Blocks taller than a page are sliced. Used by the macOS
 /// exporter; tested here because createPDF itself ignores CSS break-inside.
+#[cfg(any(target_os = "macos", test))]
 fn snap_page_starts(height: f64, page_h: f64, blocks: &[BlockBox]) -> Vec<f64> {
     let height = height.max(page_h);
     let min_slice = page_h * 0.35;
@@ -43,17 +48,28 @@ fn snap_page_starts(height: f64, page_h: f64, blocks: &[BlockBox]) -> Vec<f64> {
     starts
 }
 
+#[cfg(target_os = "linux")]
+#[path = "pdf_linux.rs"]
+mod pdf_linux;
+
 #[command]
-pub async fn create_pdf(html: String) -> Result<Vec<u8>, String> {
+pub async fn create_pdf(app: tauri::AppHandle, html: String) -> Result<Vec<u8>, String> {
     #[cfg(target_os = "macos")]
     {
+        let _ = &app;
         tauri::async_runtime::spawn_blocking(move || macos::html_to_pdf(html))
             .await
             .map_err(|e| e.to_string())?
     }
-    #[cfg(not(target_os = "macos"))]
+    #[cfg(target_os = "linux")]
     {
-        let _ = html;
+        tauri::async_runtime::spawn_blocking(move || pdf_linux::html_to_pdf_with_app(app, html))
+            .await
+            .map_err(|e| e.to_string())?
+    }
+    #[cfg(all(not(target_os = "macos"), not(target_os = "linux")))]
+    {
+        let _ = (app, html);
         Err("PDF export is not available on this platform yet".into())
     }
 }
