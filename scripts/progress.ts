@@ -11,10 +11,11 @@
  *   npx tsx scripts/progress.ts units FR-xxx "Scenario name" 3
  *   npx tsx scripts/progress.ts focus FR-xxx
  *   npx tsx scripts/progress.ts add FR-xxx "Title"
+ *   npx tsx scripts/progress.ts sync FR-xxx
  *   npx tsx scripts/progress.ts done FR-xxx
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -185,6 +186,19 @@ export function cmdAdvance(
       );
     }
   }
+  if (feature.cycle_step === "bdd_red" && nextStep === "implementing") {
+    const synced = cmdSync(data, featureId);
+    if (feature.scenarios.length === 0) {
+      throw new ProgressError(
+        `Cannot advance: ${featureId} has no scenarios. Write the .feature file and tag scenarios with @${featureId}, or register them with 'scenario'.`,
+      );
+    }
+    if (synced.length > 0) {
+      process.stderr.write(
+        `Auto-synced ${synced.length} scenario(s) from feature files: ${synced.join(", ")}\n`,
+      );
+    }
+  }
   feature.cycle_step = nextStep;
   if (feature.status === "pending") {
     feature.status = "in_progress";
@@ -225,6 +239,42 @@ export function cmdUnits(
     throw new ProgressError(`Scenario '${name}' not found in ${featureId}.`);
   }
   scenario.unit_tests = count;
+}
+
+export function scanFeatureFiles(featureId: string, featuresDir?: string): string[] {
+  const dir = featuresDir ?? join(ROOT, "specs", "features");
+  if (!existsSync(dir)) return [];
+  const tag = `@${featureId}`;
+  const names: string[] = [];
+  for (const file of readdirSync(dir).filter((f) => f.endsWith(".feature"))) {
+    const lines = readFileSync(join(dir, file), "utf8").split("\n");
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].trim() === tag || lines[i].trim().split(/\s+/).includes(tag)) {
+        for (let j = i + 1; j < lines.length; j++) {
+          const m = lines[j].match(/^\s*Scenario(?:\s+Outline)?:\s*(.+)/);
+          if (m) {
+            names.push(m[1].trim());
+            break;
+          }
+          if (lines[j].trim() && !lines[j].trim().startsWith("@")) break;
+        }
+      }
+    }
+  }
+  return names;
+}
+
+export function cmdSync(data: ProgressData, featureId: string, featuresDir?: string): string[] {
+  const feature = requireFeature(data, featureId);
+  const discovered = scanFeatureFiles(featureId, featuresDir);
+  const added: string[] = [];
+  for (const name of discovered) {
+    if (!feature.scenarios.find((s) => s.name === name)) {
+      feature.scenarios.push({ name, bdd: "pending", unit_tests: 0 });
+      added.push(name);
+    }
+  }
+  return added;
 }
 
 export function cmdFocus(data: ProgressData, featureId: string): void {
@@ -327,6 +377,14 @@ export function runCli(argv: string[], progressFile = DEFAULT_PROGRESS_FILE): vo
       cmdAdd(data, featureId, title);
       save(data, progressFile);
       print(`Added: ${featureId} — ${title}`);
+    } else if (cmd === "sync" && argv.length >= 2) {
+      const added = cmdSync(data, argv[1]);
+      save(data, progressFile);
+      if (added.length === 0) {
+        print(`${argv[1]}: all scenarios already registered.`);
+      } else {
+        print(`${argv[1]}: synced ${added.length} scenario(s): ${added.join(", ")}`);
+      }
     } else if (cmd === "done" && argv.length >= 2) {
       cmdDone(data, argv[1]);
       save(data, progressFile);
@@ -353,6 +411,7 @@ Usage:
   npx tsx scripts/progress.ts units FR-xxx "Scenario name" 3
   npx tsx scripts/progress.ts focus FR-xxx
   npx tsx scripts/progress.ts add FR-xxx "Title"
+  npx tsx scripts/progress.ts sync FR-xxx
   npx tsx scripts/progress.ts done FR-xxx
 `;
 

@@ -4,7 +4,7 @@
 // around these functions.
 
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -15,8 +15,10 @@ import {
   cmdDone,
   cmdFocus,
   cmdScenario,
+  cmdSync,
   load,
   save,
+  scanFeatureFiles,
   type ProgressData,
 } from "../../scripts/progress";
 
@@ -111,6 +113,7 @@ describe("cmdAdvance", () => {
     writeFileSync(specFile, "| FR-TEST-01 | Title | 1 |\n");
     expect(() => cmdAdvance(data, "FR-TEST-01", specFile)).not.toThrow();
     expect(data.features[0].cycle_step).toBe("bdd_red");
+    cmdScenario(data, "fail", "FR-TEST-01", "A test scenario");
     expect(() => cmdAdvance(data, "FR-TEST-01", specFile)).not.toThrow();
     expect(data.features[0].cycle_step).toBe("implementing");
     // Cannot jump from spec_review to implementing in one advance - already at implementing
@@ -136,6 +139,44 @@ describe("cmdAdvance", () => {
   it("rejects advance when already at done cycle step", () => {
     const data = feature("FR-TEST-01", { cycle_step: "done", status: "done" });
     expect(() => cmdAdvance(data, "FR-TEST-01", specFile)).toThrow(ProgressError);
+  });
+
+  it("rejects advance from bdd_red without scenarios", () => {
+    const data = feature("FR-TEST-01", { cycle_step: "bdd_red" });
+    expect(() => cmdAdvance(data, "FR-TEST-01", specFile)).toThrow(ProgressError);
+    expect(() => cmdAdvance(data, "FR-TEST-01", specFile)).toThrow(/no scenarios/);
+  });
+});
+
+describe("cmdSync", () => {
+  it("discovers scenarios from feature files tagged with the FR-ID", () => {
+    const featuresDir = join(dir, "features");
+    mkdirSync(featuresDir, { recursive: true });
+    writeFileSync(
+      join(featuresDir, "test.feature"),
+      [
+        "Feature: Test",
+        "",
+        "  @FR-TEST-01",
+        "  Scenario: First scenario",
+        "    Given something",
+        "",
+        "  @FR-TEST-01",
+        "  Scenario: Second scenario",
+        "    Given something else",
+        "",
+        "  Scenario: Untagged scenario",
+        "    Given nothing",
+      ].join("\n"),
+    );
+    const names = scanFeatureFiles("FR-TEST-01", featuresDir);
+    expect(names).toEqual(["First scenario", "Second scenario"]);
+
+    const data = feature("FR-TEST-01", { cycle_step: "bdd_red" });
+    const added = cmdSync(data, "FR-TEST-01", featuresDir);
+    expect(added).toEqual(["First scenario", "Second scenario"]);
+    expect(data.features[0].scenarios).toHaveLength(2);
+    expect(data.features[0].scenarios[0].bdd).toBe("pending");
   });
 });
 
