@@ -8,6 +8,7 @@ import { toIsoDay } from "../shared/dates";
 import { WIKI_DIR } from "../shared/brain-paths";
 import { buddyPath, wikiIndexPath, wikiMetaLogPath } from "./brain-paths";
 import { slugifyTitle, validateWikiSummary, validateWikiTags, type WikiLanguage } from "./wiki-format";
+import { invokeTextTool } from "./tool-invoke";
 import { runPostWriteWikiHealth } from "./wiki-check";
 import { regenerateWikiIndex } from "./wiki-index";
 import {
@@ -250,18 +251,6 @@ export async function executeWikiFileTool(
   tools: ToolDefinition[],
   args: WikiFileInput,
 ): Promise<{ text: string; details: WikiFileOutput }> {
-  const tool = tools.find((t) => t.name === "wiki_file");
-  if (!tool) throw new Error("wiki_file tool not registered");
-  const result = await tool.execute(
-    "test-call",
-    args,
-    new AbortController().signal,
-    () => {},
-    {} as never,
-  );
-  const text = result.content
-    .filter((block): block is { type: "text"; text: string } => block.type === "text")
-    .map((block) => block.text)
-    .join("\n");
-  return { text, details: result.details as unknown as WikiFileOutput };
+  const { text, details } = await invokeTextTool(tools, "wiki_file", args);
+  return { text, details: details as WikiFileOutput };
 }

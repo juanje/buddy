@@ -13,6 +13,7 @@ import {
   parseWikiFrontmatter,
   type WikiPageMetadata,
 } from "./wiki-format";
+import { invokeTextTool } from "./tool-invoke";
 import { listWikiPageRelPaths } from "./wiki-index";
 
 export type WikiSearchScope = "tags" | "titles" | "content" | "all";
@@ -146,18 +147,6 @@ export async function executeWikiSearchTool(
   tools: ToolDefinition[],
   args: { query: string; scope?: WikiSearchScope },
 ): Promise<{ text: string; details: WikiSearchOutput }> {
-  const tool = tools.find((t) => t.name === "wiki_search");
-  if (!tool) throw new Error("wiki_search tool not registered");
-  const result = await tool.execute(
-    "test-call",
-    args,
-    new AbortController().signal,
-    () => {},
-    {} as never,
-  );
-  const text = result.content
-    .filter((block): block is { type: "text"; text: string } => block.type === "text")
-    .map((block) => block.text)
-    .join("\n");
-  return { text, details: result.details as unknown as WikiSearchOutput };
+  const { text, details } = await invokeTextTool(tools, "wiki_search", args);
+  return { text, details: details as WikiSearchOutput };
 }
