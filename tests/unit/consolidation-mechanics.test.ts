@@ -17,7 +17,7 @@ import {
   computeStaleObservations,
   extractDaySummaryKeyThemes,
   extractRipeObservations,
-  findDatedInboxItems,
+  findDatedTaskItems,
   findPendingLogs,
   findUpcomingReminders,
   formatPendingLogsBlock,
@@ -251,7 +251,7 @@ describe("consolidation mechanics", () => {
         "- Call doctor 2026-07-24\n- Later task 2026-07-30\n- Today item 2026-07-23\n",
       );
 
-      const items = findDatedInboxItems(dir, "2026-07-23");
+      const items = findDatedTaskItems(dir, "2026-07-23");
       expect(items).toEqual([
         "- Call doctor 2026-07-24",
         "- Today item 2026-07-23",
@@ -260,11 +260,11 @@ describe("consolidation mechanics", () => {
 
     it("returns empty when tasks.md is missing or has no matches", () => {
       setupRoot();
-      expect(findDatedInboxItems(dir, "2026-07-23")).toEqual([]);
+      expect(findDatedTaskItems(dir, "2026-07-23")).toEqual([]);
 
       mkdirSync(join(dir, "user"), { recursive: true });
       writeFileSync(join(dir, "user", "tasks.md"), "- No dates here\n");
-      expect(findDatedInboxItems(dir, "2026-07-23")).toEqual([]);
+      expect(findDatedTaskItems(dir, "2026-07-23")).toEqual([]);
     });
 
     it("ignores created-date HTML comments without inline due date", () => {
@@ -275,7 +275,7 @@ describe("consolidation mechanics", () => {
         "- [ ] >> Buy milk @personal <!-- c:2026-07-23 -->\n",
       );
 
-      expect(findDatedInboxItems(dir, "2026-07-23")).toEqual([]);
+      expect(findDatedTaskItems(dir, "2026-07-23")).toEqual([]);
     });
 
     it("matches inline due date when created comment is also present", () => {
@@ -286,7 +286,7 @@ describe("consolidation mechanics", () => {
         "- [ ] Pay rent 2026-07-24 @personal <!-- c:2026-07-20 -->\n",
       );
 
-      expect(findDatedInboxItems(dir, "2026-07-23")).toEqual([
+      expect(findDatedTaskItems(dir, "2026-07-23")).toEqual([
         "- [ ] Pay rent 2026-07-24 @personal <!-- c:2026-07-20 -->",
       ]);
     });

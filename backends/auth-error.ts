@@ -28,9 +28,6 @@ export function extractAuthErrorFromEvents(events: readonly AgentEvent[]): strin
   return undefined;
 }
 
-/** Alias used in specs and tests (FR-AUTH-02). */
-export const detectAuthErrorInEvents = extractAuthErrorFromEvents;
-
 /** Map an auth error message to a Buddy provider id when possible. */
 export function providerFromAuthMessage(message: string): SetupProviderId {
   const forMatch = message.match(/\bfor\s+([\w-]+)/i);

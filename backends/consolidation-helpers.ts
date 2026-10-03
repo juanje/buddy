@@ -173,9 +173,6 @@ export function findDatedTaskItems(rootDir: string, targetDate: string): string[
     });
 }
 
-/** @deprecated Use findDatedTaskItems */
-export const findDatedInboxItems = findDatedTaskItems;
-
 function extractActiveContextSection(agentsContent: string): string {
   const match = agentsContent.match(
     /(?:^|\n)###\s+Right now\b([\s\S]*?)(?=\n###\s+Files\b|\n##\s+|\n---\s*$|$)/i,

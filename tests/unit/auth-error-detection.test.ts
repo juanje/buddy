@@ -3,7 +3,6 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  detectAuthErrorInEvents,
   extractAuthErrorFromEvents,
   providerFromAuthMessage,
   toAuthErrorEvent,
@@ -25,7 +24,7 @@ describe("isAuthError", () => {
   });
 });
 
-describe("detectAuthErrorInEvents", () => {
+describe("extractAuthErrorFromEvents", () => {
   it("finds message_end with auth stopReason error", () => {
     const events: AgentEvent[] = [
       {
@@ -37,7 +36,7 @@ describe("detectAuthErrorInEvents", () => {
         },
       } as AgentEvent,
     ];
-    expect(detectAuthErrorInEvents(events)).toBe("OAuth refresh failed for anthropic");
+    expect(extractAuthErrorFromEvents(events)).toBe("OAuth refresh failed for anthropic");
     expect(extractAuthErrorFromEvents(events)).toBe("OAuth refresh failed for anthropic");
   });
 
@@ -52,7 +51,7 @@ describe("detectAuthErrorInEvents", () => {
         },
       } as AgentEvent,
     ];
-    expect(detectAuthErrorInEvents(events)).toBeUndefined();
+    expect(extractAuthErrorFromEvents(events)).toBeUndefined();
   });
 });
 

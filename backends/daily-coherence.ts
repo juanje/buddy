@@ -209,9 +209,6 @@ export function detectTaskCoherence(
   return flags;
 }
 
-/** @deprecated Use detectTaskCoherence */
-export const detectInboxCoherence = detectTaskCoherence;
-
 export function computeDailyCoherence(rootDir: string, now: Date = new Date()): DailyCoherenceResult {
   const rightNowContent = extractRightNowSection(readAgentsMd(rootDir));
   const logContent = readTodayLog(rootDir, now);
