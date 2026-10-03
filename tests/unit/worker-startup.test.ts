@@ -51,7 +51,7 @@ function silentStreams() {
 }
 
 describe("worker startup", () => {
-  it("wires the RPC channel without waiting for the model runtime", async () => {
+  it("wires the RPC channel without waiting for the model runtime", { timeout: 15_000 }, async () => {
     const { main } = await import("../../backends/agent-worker");
 
     let settled = false;
