@@ -175,7 +175,7 @@ function validateAndFixFilenames(
 }
 
 /** Strip broken relative links in touched markdown files. */
-function repairBrokenLinks(
+function stripBrokenLinks(
   rootDir: string,
   touchedFiles: string[],
 ): LinkRepairResult[] {
@@ -219,7 +219,7 @@ export function runPostConsolidationValidation(
 
   const renamedPaths = new Map(renames.map((r) => [r.from, r.to]));
   const filesAfterRename = normalizedTouched.map((p) => renamedPaths.get(p) ?? p);
-  const linkRepairs = repairBrokenLinks(rootDir, filesAfterRename);
+  const linkRepairs = stripBrokenLinks(rootDir, filesAfterRename);
 
   return { renames, linkRepairs };
 }

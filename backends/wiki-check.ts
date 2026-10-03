@@ -265,7 +265,7 @@ function rewritePageConnections(
   );
 }
 
-function repairBrokenLinks(
+function repointBrokenWikiLinks(
   rootDir: string,
   report: WikiHealthReport,
   pagePaths: string[],
@@ -327,7 +327,7 @@ export function wikiRepairLinks(
     }
   }
 
-  brokenLinksFixed = repairBrokenLinks(rootDir, report, pagePaths, language);
+  brokenLinksFixed = repointBrokenWikiLinks(rootDir, report, pagePaths, language);
 
   if (report.orphans.length > 0 || report.ghosts.length > 0) {
     regenerateWikiIndex(rootDir, now, language);
