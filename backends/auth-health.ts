@@ -3,30 +3,12 @@
 import { isAuthError, PROVIDER_REQUEST_TIMEOUT_MS } from "../shared/defaults";
 import { WIZARD_PI_PROVIDERS } from "../shared/provider-mapping";
 import { purgeStaleCredential, readStoredCredential } from "./provider-auth";
+import { withTimeout } from "./with-timeout";
 
 export type AuthProbeResult = { healthy: true } | { healthy: false; reason: string };
 
 export interface ModelRuntimeProbeLike {
   getAvailable(providerId?: string): Promise<readonly unknown[]>;
-}
-
-function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
-  return new Promise<T>((resolve, reject) => {
-    const timer = setTimeout(
-      () => reject(new Error("The provider did not respond in time.")),
-      timeoutMs,
-    );
-    promise.then(
-      (value) => {
-        clearTimeout(timer);
-        resolve(value);
-      },
-      (error) => {
-        clearTimeout(timer);
-        reject(error);
-      },
-    );
-  });
 }
 
 /** Probe whether stored OAuth credentials still work for a provider. */

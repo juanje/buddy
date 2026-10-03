@@ -8,6 +8,7 @@ import {
   type ModelChoice,
 } from "../shared/model-catalog";
 import { type AuthType, toPiProviderId } from "../shared/provider-mapping";
+import { withTimeout } from "./with-timeout";
 
 export interface ModelRuntimeLike {
   getAvailable(providerId?: string): Promise<readonly { id: string; name?: string }[]>;
@@ -26,33 +27,6 @@ function fromCatalog(provider: SetupProviderId): ModelInfo[] {
 }
 
 /**
- * Reject after `timeoutMs` rather than waiting on `promise` forever.
- *
- * `getAvailable` goes over the network but takes no signal, so the timeout has
- * to wrap it. The underlying request is not cancelled — it is abandoned, and
- * its result ignored — which is acceptable here precisely because the fallback
- * is a static catalog: nothing is lost by giving up on it.
- */
-function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
-  return new Promise<T>((resolve, reject) => {
-    const timer = setTimeout(
-      () => reject(new Error("The provider did not respond in time.")),
-      timeoutMs,
-    );
-    promise.then(
-      (value) => {
-        clearTimeout(timer);
-        resolve(value);
-      },
-      (error) => {
-        clearTimeout(timer);
-        reject(error);
-      },
-    );
-  });
-}
-
-/**
  * List models: live SDK first, curated catalog if empty, unavailable or slow.
  *
  * NFR-REL-09: bounded. This is called from the wizard's model step, which shows
@@ -68,6 +42,10 @@ export async function listModelsForProvider(
 ): Promise<ModelInfo[]> {
   const piProvider = toPiProviderId(provider, authType);
   try {
+    // `getAvailable` goes over the network but takes no signal, so the timeout
+    // has to wrap it. The request is abandoned, not cancelled — acceptable here
+    // precisely because the fallback is a static catalog: nothing is lost by
+    // giving up on it.
     const available = await withTimeout(runtime.getAvailable(piProvider), timeoutMs);
     if (available.length > 0) {
       const recommended = recommendedModelFor(provider)?.id;
