@@ -34,6 +34,7 @@ import {
 } from "./wiki-format";
 import { listWikiPageRelPaths } from "./wiki-index";
 import { resolveWikiLinkTarget } from "./wiki-reconcile";
+import { chainToolHooks } from "./tool-hooks";
 
 export type SynthesisCandidateType = "orphan-tag" | "co-occurrence" | "disconnected-cluster";
 
@@ -296,13 +297,14 @@ function installWikiSynthesisGate(
   rootDir: string,
 ): void {
   const gate = createPermissionGate(rootDir, async () => false);
-  const originalBeforeToolCall = session.agent.beforeToolCall;
-  session.agent.beforeToolCall = async (ctx, signal) => {
-    const prior = await originalBeforeToolCall?.(ctx, signal);
-    if (prior?.block) return prior;
-    const blocked = await gate.check(ctx.toolCall.name, ctx.args);
-    return blocked ?? prior;
-  };
+  chainToolHooks(session, {
+    before: async (ctx, signal, originalBeforeToolCall) => {
+      const prior = await originalBeforeToolCall(ctx, signal);
+      if (prior?.block) return prior;
+      const blocked = await gate.check(ctx.toolCall.name, ctx.args);
+      return blocked ?? prior;
+    },
+  });
 }
 
 async function openRealWikiSynthesisSession(config: {

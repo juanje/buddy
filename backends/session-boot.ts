@@ -35,6 +35,7 @@ import { buildWikiTools } from "./wiki-tools";
 import { SessionLifecycle } from "./session-lifecycle";
 import { installEditRecoveryHook } from "./edit-recovery";
 import { installHeadingGuardHook } from "./heading-guard";
+import { chainToolHooks } from "./tool-hooks";
 import { persistLiveSession } from "./crash-recovery";
 import {
   cleanupPendingInboxMigration,
@@ -266,13 +267,14 @@ export async function bootSession(
       getPersistentAllowedPaths: context.persistentAllowedPaths,
     },
   );
-  const originalBeforeToolCall = session.agent.beforeToolCall;
-  session.agent.beforeToolCall = async (ctx, signal) => {
-    const prior = await originalBeforeToolCall?.(ctx, signal);
-    if (prior?.block) return prior;
-    const blocked = await gate.check(ctx.toolCall.name, ctx.args);
-    return blocked ?? prior;
-  };
+  chainToolHooks(session, {
+    before: async (ctx, signal, originalBeforeToolCall) => {
+      const prior = await originalBeforeToolCall(ctx, signal);
+      if (prior?.block) return prior;
+      const blocked = await gate.check(ctx.toolCall.name, ctx.args);
+      return blocked ?? prior;
+    },
+  });
   installHeadingGuardHook(session, rootDir, lifecycle.tracker.sessionId);
   installEditRecoveryHook(session);
 

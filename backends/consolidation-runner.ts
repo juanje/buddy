@@ -63,6 +63,7 @@ import { logEvent } from "./app-logger";
 import { installHeadingGuardHook } from "./heading-guard";
 import { createHebbianGuard } from "./hebbian-guard";
 import { installEditRecoveryHook } from "./edit-recovery";
+import { chainToolHooks } from "./tool-hooks";
 import { buddySessionsDir } from "./session-paths";
 import {
   listChangedFilesSince,
@@ -121,22 +122,23 @@ export function installMaintenanceGate(
   const policy = createMaintenancePermissionPolicy();
   const gate = createPermissionGate(rootDir, policy.askUser);
   const wikiAbs = resolve(rootDir, WIKI_DIR);
-  const originalBeforeToolCall = session.agent.beforeToolCall;
-  session.agent.beforeToolCall = async (ctx, signal) => {
-    const prior = await originalBeforeToolCall?.(ctx, signal);
-    if (prior?.block) return prior;
+  chainToolHooks(session, {
+    before: async (ctx, signal, originalBeforeToolCall) => {
+      const prior = await originalBeforeToolCall(ctx, signal);
+      if (prior?.block) return prior;
 
-    for (const rawPath of pathArgsOf(ctx.toolCall.name, ctx.args)) {
-      const abs = resolve(rootDir, rawPath);
-      if (isContained(abs, wikiAbs)) {
-        await policy.askUser({ kind: "outside", op: "read", path: abs });
-        return { block: true, reason: "Wiki files are maintained by their own lifecycle." };
+      for (const rawPath of pathArgsOf(ctx.toolCall.name, ctx.args)) {
+        const abs = resolve(rootDir, rawPath);
+        if (isContained(abs, wikiAbs)) {
+          await policy.askUser({ kind: "outside", op: "read", path: abs });
+          return { block: true, reason: "Wiki files are maintained by their own lifecycle." };
+        }
       }
-    }
 
-    const blocked = await gate.check(ctx.toolCall.name, ctx.args);
-    return blocked ?? prior;
-  };
+      const blocked = await gate.check(ctx.toolCall.name, ctx.args);
+      return blocked ?? prior;
+    },
+  });
   return policy;
 }
 
@@ -152,29 +154,24 @@ export function installMaintenanceHebbianGuard(
 ): void {
   const guard = createHebbianGuard(rootDir);
 
-  const originalBefore = session.agent.beforeToolCall;
-  session.agent.beforeToolCall = async (ctx, signal) => {
-    const name = ctx.toolCall.name;
-    if (name === "write" || name === "edit") {
-      const path = (ctx.args as Record<string, unknown>)?.path;
-      if (typeof path === "string") guard.capture(path);
-    }
-    return originalBefore?.(ctx, signal);
-  };
-
-  const originalAfter = (session.agent as unknown as Record<string, unknown>).afterToolCall as
-    | ((ctx: unknown, signal?: AbortSignal) => Promise<unknown>) | undefined;
-  (session.agent as unknown as Record<string, unknown>).afterToolCall = async (
-    ctx: { toolCall: { name: string }; args: unknown; isError: boolean },
-    signal?: AbortSignal,
-  ) => {
-    const name = ctx.toolCall.name;
-    if ((name === "write" || name === "edit") && !ctx.isError) {
-      const path = (ctx.args as Record<string, unknown>)?.path;
-      if (typeof path === "string") guard.restore(path);
-    }
-    return originalAfter?.(ctx, signal);
-  };
+  chainToolHooks(session, {
+    before: (ctx, signal, prior) => {
+      const name = ctx.toolCall.name;
+      if (name === "write" || name === "edit") {
+        const path = (ctx.args as Record<string, unknown>)?.path;
+        if (typeof path === "string") guard.capture(path);
+      }
+      return prior(ctx, signal);
+    },
+    after: (ctx, signal, prior) => {
+      const name = ctx.toolCall.name;
+      if ((name === "write" || name === "edit") && !ctx.isError) {
+        const path = (ctx.args as Record<string, unknown>)?.path;
+        if (typeof path === "string") guard.restore(path);
+      }
+      return prior(ctx, signal);
+    },
+  });
 }
 
 /**

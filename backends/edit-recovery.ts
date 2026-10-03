@@ -1,10 +1,6 @@
 // backends/edit-recovery.ts — FR-GUARD-02: edit-failure recovery hints.
 
-export interface EditRecoveryInstallable {
-  agent: {
-    afterToolCall?: unknown;
-  };
-}
+import { chainToolHooks, type ToolHookSession } from "./tool-hooks";
 
 export interface ToolResultLike {
   content: unknown;
@@ -68,32 +64,14 @@ export function enrichEditToolResult(result: ToolResultLike): ToolResultLike | u
  * Chains with existing afterToolCall hooks — same pattern as the heading and
  * Hebbian guards on the maintenance session.
  */
-export function installEditRecoveryHook(session: EditRecoveryInstallable): void {
-  const originalAfter = (session.agent as unknown as Record<string, unknown>).afterToolCall as
-    | ((
-        ctx: {
-          toolCall: { name: string };
-          args: unknown;
-          result: ToolResultLike;
-          isError: boolean;
-        },
-        signal?: AbortSignal,
-      ) => Promise<{ content: unknown; details?: unknown; isError?: boolean } | undefined>)
-    | undefined;
-
-  (session.agent as unknown as Record<string, unknown>).afterToolCall = async (
-    ctx: {
-      toolCall: { name: string };
-      args: unknown;
-      result: ToolResultLike;
-      isError: boolean;
+export function installEditRecoveryHook(session: ToolHookSession): void {
+  chainToolHooks(session, {
+    after: (ctx, signal, prior) => {
+      if (ctx.toolCall.name === "edit" && ctx.isError) {
+        const enriched = enrichEditToolResult(ctx.result);
+        if (enriched) ctx.result = enriched as typeof ctx.result;
+      }
+      return prior(ctx, signal);
     },
-    signal?: AbortSignal,
-  ) => {
-    if (ctx.toolCall.name === "edit" && ctx.isError) {
-      const enriched = enrichEditToolResult(ctx.result);
-      if (enriched) ctx.result = enriched;
-    }
-    return originalAfter?.(ctx, signal);
-  };
+  });
 }

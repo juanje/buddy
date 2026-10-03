@@ -12,6 +12,7 @@ import { resolve } from "node:path";
 import { HEADING_GUARD_DAILY_LOG_RE, PROTECTED_FILES } from "../shared/defaults";
 import { toBuddyRelPath } from "../shared/path-utils";
 import { logEvent } from "./app-logger";
+import { chainToolHooks, type ToolHookSession } from "./tool-hooks";
 
 export interface HeadingGuardResult {
   reverted: boolean;
@@ -92,13 +93,6 @@ export function createHeadingGuard(rootDir: string): HeadingGuard {
 
 // --- afterToolCall hook (FR-GUARD-01c) ---
 
-export interface HeadingGuardInstallable {
-  agent: {
-    beforeToolCall?: unknown;
-    afterToolCall?: unknown;
-  };
-}
-
 interface ToolResultLike {
   content: unknown;
   details?: unknown;
@@ -138,52 +132,43 @@ function appendToToolResult(result: ToolResultLike, message: string): void {
  * knows the write was rolled back and can retry correctly.
  */
 export function installHeadingGuardHook(
-  session: HeadingGuardInstallable,
+  session: ToolHookSession,
   rootDir: string,
   sessionId?: string,
 ): void {
   const guard = createHeadingGuard(rootDir);
 
-  const originalBefore = session.agent.beforeToolCall as
-    | ((ctx: unknown, signal?: AbortSignal) => Promise<unknown>) | undefined;
-  session.agent.beforeToolCall = async (
-    ctx: { toolCall: { name: string }; args: unknown },
-    signal?: AbortSignal,
-  ) => {
-    const name = ctx.toolCall.name;
-    if (name === "write" || name === "edit") {
-      const path = (ctx.args as Record<string, unknown>)?.path;
-      if (typeof path === "string") guard.capture(path);
-    }
-    return originalBefore?.(ctx, signal);
-  };
-
-  const originalAfter = (session.agent as unknown as Record<string, unknown>).afterToolCall as
-    | ((ctx: unknown, signal?: AbortSignal) => Promise<unknown>) | undefined;
-  (session.agent as unknown as Record<string, unknown>).afterToolCall = async (
-    ctx: { toolCall: { name: string }; args: unknown; result: ToolResultLike; isError: boolean },
-    signal?: AbortSignal,
-  ) => {
-    const name = ctx.toolCall.name;
-    if ((name === "write" || name === "edit") && !ctx.isError) {
-      const path = (ctx.args as Record<string, unknown>)?.path;
-      if (typeof path === "string") {
-        const result = guard.check(path);
-        if (result.reverted) {
-          logEvent(rootDir, {
-            event: "heading_guard_revert",
-            session: sessionId ?? "unknown",
-            path,
-            lostHeadings: result.lostHeadings,
-          });
-          if (result.lostHeadings && result.lostHeadings.length > 0) {
-            appendToToolResult(ctx.result, headingRevertMessage(result.lostHeadings));
-          } else {
-            appendToToolResult(ctx.result, frontmatterRevertMessage());
+  chainToolHooks(session, {
+    before: (ctx, signal, prior) => {
+      const name = ctx.toolCall.name;
+      if (name === "write" || name === "edit") {
+        const path = (ctx.args as Record<string, unknown>)?.path;
+        if (typeof path === "string") guard.capture(path);
+      }
+      return prior(ctx, signal);
+    },
+    after: (ctx, signal, prior) => {
+      const name = ctx.toolCall.name;
+      if ((name === "write" || name === "edit") && !ctx.isError) {
+        const path = (ctx.args as Record<string, unknown>)?.path;
+        if (typeof path === "string") {
+          const result = guard.check(path);
+          if (result.reverted) {
+            logEvent(rootDir, {
+              event: "heading_guard_revert",
+              session: sessionId ?? "unknown",
+              path,
+              lostHeadings: result.lostHeadings,
+            });
+            if (result.lostHeadings && result.lostHeadings.length > 0) {
+              appendToToolResult(ctx.result, headingRevertMessage(result.lostHeadings));
+            } else {
+              appendToToolResult(ctx.result, frontmatterRevertMessage());
+            }
           }
         }
       }
-    }
-    return originalAfter?.(ctx, signal);
-  };
+      return prior(ctx, signal);
+    },
+  });
 }
