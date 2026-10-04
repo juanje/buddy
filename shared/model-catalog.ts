@@ -59,9 +59,3 @@ export function fastModelForProvider(provider: string): string | undefined {
 export function fastModelForPiProvider(piProviderId: string): string | undefined {
   return fastModelForProvider(fromPiProviderId(piProviderId) ?? piProviderId);
 }
-
-/** Model id for consolidation at a given depth (FR-CONSOL-15). */
-export function modelForDepth(provider: string, depth: number): string | undefined {
-  if (depth <= 2) return fastModelForProvider(provider);
-  return defaultModelForProvider(provider);
-}

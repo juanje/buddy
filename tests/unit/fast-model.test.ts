@@ -7,7 +7,7 @@ import { join } from "node:path";
 
 import type { ModelRuntime } from "@earendil-works/pi-coding-agent";
 
-import { resolveFastTierModel } from "../../backends/fast-model";
+import { resolveDepthModel, resolveFastTierModel } from "../../backends/fast-model";
 import { writePiSettings } from "../../shared/pi-settings";
 
 function runtimeWith(
@@ -71,5 +71,39 @@ describe("resolveFastTierModel", () => {
     );
     expect(result.model).toBeUndefined();
     expect(result.thinkingLevel).toBe("off");
+  });
+});
+
+describe("resolveDepthModel (FR-CONSOL-15)", () => {
+  const dirs: string[] = [];
+
+  afterEach(() => {
+    for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true });
+  });
+
+  function anthropicInstance(): string {
+    const root = mkdtempSync(join(tmpdir(), "depth-model-"));
+    dirs.push(root);
+    writePiSettings(root, { provider: "anthropic", model: "claude-sonnet-5" });
+    return root;
+  }
+
+  const runtime = runtimeWith([
+    { id: "claude-haiku-4-5", provider: "anthropic" },
+    { id: "claude-sonnet-5", provider: "anthropic" },
+  ]);
+
+  it("uses the fast tier with thinking off at depths 1 and 2", async () => {
+    const root = anthropicInstance();
+    for (const depth of [1, 2]) {
+      const result = await resolveDepthModel(depth, root, runtime);
+      expect(result.model?.id).toBe("claude-haiku-4-5");
+      expect(result.thinkingLevel).toBe("off");
+    }
+  });
+
+  it("leaves depth 3 on the configured model with default thinking", async () => {
+    const result = await resolveDepthModel(3, anthropicInstance(), runtime);
+    expect(result).toEqual({});
   });
 });

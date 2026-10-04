@@ -1286,8 +1286,9 @@ instruction cannot govern behaviour that no model controls.
 - **Given** a consolidation is about to run at depth N
 - **When** the maintenance session is created
 - **Then** the model is resolved from the depth by a single function
-  (`modelForDepth(provider, depth)` in `shared/model-catalog.ts`, beside
-  `fastModelForProvider`), and passed explicitly to the session
+  (`resolveDepthModel(depth, rootDir, modelRuntime)` in
+  `backends/fast-model.ts`, built on `resolveFastTierModel`), and passed
+  explicitly to the session
 - **And** depths 1 and 2 use the provider's fast tier with
   `thinkingLevel: "off"`; depth 3 uses the configured model with default
   thinking
