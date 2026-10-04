@@ -10,8 +10,6 @@ export interface ConnectorConfig {
   token?: string;
   /** Secondary secret (Slack xoxd cookie). */
   cookie?: string;
-  /** Issue key patterns for bulk refresh, e.g. ["VROOM-\\d+"]. */
-  issueKeyPatterns?: string[];
   /** Jira Agile board ID for team_board action. */
   boardId?: string;
   [key: string]: unknown;
@@ -19,7 +17,7 @@ export interface ConnectorConfig {
 
 /** A Jira configuration with nothing filled in yet (fresh object per call). */
 export function emptyJiraConfig(): ConnectorConfig {
-  return { enabled: false, baseUrl: "", email: "", token: "", issueKeyPatterns: [] };
+  return { enabled: false, baseUrl: "", email: "", token: "" };
 }
 
 /** A Slack configuration with nothing filled in yet (fresh object per call). */

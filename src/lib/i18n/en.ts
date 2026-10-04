@@ -128,7 +128,6 @@ export const en: LocaleStrings = {
   settingsJiraToken: "API token",
   settingsJiraShowToken: "Show token",
   settingsJiraHideToken: "Hide token",
-  settingsJiraKeyPatterns: "Project prefixes (comma-separated)",
   settingsJiraBoardId: "Board ID (optional)",
   settingsJiraBoardIdHint: "Find the ID in Jira → Boards → Board settings.",
   settingsJiraTestConnection: "Test connection",

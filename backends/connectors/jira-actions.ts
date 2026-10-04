@@ -335,21 +335,6 @@ export function jiraHelpText(): string {
 Set \`params.force: true\` to bypass cache freshness.`;
 }
 
-export function extractIssueKeys(text: string, patterns: string[]): string[] {
-  const keys = new Set<string>();
-  for (const pattern of patterns) {
-    try {
-      const re = new RegExp(`\\b(${pattern})\\b`, "gi");
-      for (const match of text.matchAll(re)) {
-        if (match[1]) keys.add(match[1].toUpperCase());
-      }
-    } catch {
-      // Invalid pattern — skip.
-    }
-  }
-  return [...keys];
-}
-
 function formatIssueLinks(fields: Record<string, unknown>): string {
   const links = fields.issuelinks as
     | Array<{

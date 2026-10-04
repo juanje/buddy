@@ -1,10 +1,6 @@
 <script lang="ts">
   import type { ConnectorConfig } from "../../shared/api";
   import { emptyJiraConfig } from "../../shared/connector-types";
-  import {
-    parseProjectPrefixInput,
-    patternsToDisplayText,
-  } from "../../shared/jira-patterns";
   import { t } from "./i18n";
   import { createSavedNotice, type SavedNoticeState } from "./saved-notice";
 
@@ -28,21 +24,10 @@
     onToggleShowToken: (show: boolean) => void;
   } = $props();
 
-  let patternsText = $state(patternsToDisplayText(config.issueKeyPatterns ?? []));
   let savedNotice = $state<SavedNoticeState>(false);
   const notice = createSavedNotice((state) => {
     savedNotice = state;
   });
-
-  $effect(() => {
-    patternsText = patternsToDisplayText(config.issueKeyPatterns ?? []);
-  });
-
-  function onPatternsInput(value: string) {
-    notice.dismiss();
-    patternsText = value;
-    config.issueKeyPatterns = parseProjectPrefixInput(value);
-  }
 
   function handleSave() {
     return notice.save(onSave);
@@ -103,16 +88,6 @@
     <button type="button" class="link" onclick={() => onToggleShowToken(!showToken)}>
       {showToken ? $t.settingsJiraHideToken : $t.settingsJiraShowToken}
     </button>
-    <label class="field">
-      <span>{$t.settingsJiraKeyPatterns}</span>
-      <input
-        type="text"
-        value={patternsText}
-        oninput={(e) => onPatternsInput(e.currentTarget.value)}
-        spellcheck="false"
-        placeholder="PROJ, TEAM"
-      />
-    </label>
     <label class="field">
       <span>{$t.settingsJiraBoardId}</span>
       <input

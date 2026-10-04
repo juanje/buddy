@@ -142,7 +142,6 @@ describe("Jira config loads when switching to integrations tab", () => {
       baseUrl: "https://jira.example.com",
       email: "user@example.com",
       token: "secret",
-      issueKeyPatterns: ["PROJ-\\d+"],
     };
 
     const controller = createSettingsController({
@@ -168,7 +167,6 @@ describe("Jira config loads when switching to integrations tab", () => {
     expect(loaded.baseUrl).toBe("https://jira.example.com");
     expect(loaded.email).toBe("user@example.com");
     expect(loaded.token).toBe("secret");
-    expect(loaded.issueKeyPatterns).toEqual(["PROJ-\\d+"]);
   });
 });
 

@@ -45,7 +45,7 @@
 
   $effect(() => {
     const loaded = $jiraConfig;
-    jiraDraft = { ...loaded, issueKeyPatterns: [...(loaded.issueKeyPatterns ?? [])] };
+    jiraDraft = { ...loaded };
   });
 
   let slackDraft = $state<ConnectorConfig>(emptySlackConfig());

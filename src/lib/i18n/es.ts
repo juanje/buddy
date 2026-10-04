@@ -118,7 +118,6 @@ export type LocaleStrings = {
   settingsJiraToken: string;
   settingsJiraShowToken: string;
   settingsJiraHideToken: string;
-  settingsJiraKeyPatterns: string;
   settingsJiraBoardId: string;
   settingsJiraBoardIdHint: string;
   settingsJiraTestConnection: string;
@@ -324,7 +323,6 @@ export const es: LocaleStrings = {
   settingsJiraToken: "Token de API",
   settingsJiraShowToken: "Mostrar token",
   settingsJiraHideToken: "Ocultar token",
-  settingsJiraKeyPatterns: "Prefijos de proyecto (separados por comas)",
   settingsJiraBoardId: "ID del tablero (opcional)",
   settingsJiraBoardIdHint: "Encuéntralo en Jira → Tableros → Configuración del tablero.",
   settingsJiraTestConnection: "Probar conexión",

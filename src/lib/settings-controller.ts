@@ -424,7 +424,6 @@ export function createSettingsController(options: {
         baseUrl: loaded?.baseUrl ?? "",
         email: loaded?.email ?? "",
         token: loaded?.token ?? "",
-        issueKeyPatterns: loaded?.issueKeyPatterns ?? [],
         boardId: loaded?.boardId ?? "",
       });
       jiraTestStatus.set("idle");

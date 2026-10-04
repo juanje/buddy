@@ -6,8 +6,7 @@ The Jira connector lets Buddy read your issues, sprints, and project activity di
 
 1. Open **Settings → Integrations** and enable Jira.
 2. Enter your Jira URL (e.g. `https://your-org.atlassian.net`), your email, and an API token. You can generate a token from [Atlassian account settings](https://id.atlassian.com/manage-profile/security/api-tokens).
-3. Add your project prefixes — the short codes that appear before issue numbers (e.g. `PROJ`, `TEAM`). Buddy uses these to recognize issue keys in conversation.
-4. Test the connection and save. Restart the session to activate.
+3. Test the connection and save. Restart the session to activate.
 
 ## What you can ask
 

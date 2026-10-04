@@ -7,7 +7,6 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import {
   executeJiraAction,
-  extractIssueKeys,
   formatIssueLine,
   issueToCacheEntry,
   jiraHelpText,
@@ -30,7 +29,6 @@ const config = {
   baseUrl: "https://jira.example.com",
   email: "user@example.com",
   token: "secret",
-  issueKeyPatterns: ["PROJ-\\d+"],
 };
 
 function mockFetch(body: unknown, status = 200) {
@@ -191,10 +189,6 @@ describe("jira actions (FR-JIRA-02/03/05)", () => {
     const result = await executeJiraAction(rootDir, "board", {}, { fetchImpl, config });
     expect(result.stale).toBe(true);
     expect(result.data).toContain("PROJ-1");
-  });
-
-  it("extracts issue keys from text using config patterns", () => {
-    expect(extractIssueKeys("Fix PROJ-42 and proj-99", ["PROJ-\\d+"])).toEqual(["PROJ-42", "PROJ-99"]);
   });
 
   it("formats issue lines for display", () => {
