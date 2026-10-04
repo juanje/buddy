@@ -1,9 +1,9 @@
 // backends/maintenance.ts — Lock management for reflect and consolidation (FR-REFLECT-02).
 
 import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 
-import { LOCK_STALE_MS } from "../shared/defaults";
+import { LOCK_STALE_MS, MAINTENANCE_LOCK_PATH } from "../shared/defaults";
 import { toLocalIsoStamp } from "../shared/dates";
 
 export interface MaintenanceLock {
@@ -12,7 +12,7 @@ export interface MaintenanceLock {
 }
 
 export function lockPath(rootDir: string): string {
-  return join(rootDir, ".buddy", "maintenance.lock");
+  return join(rootDir, MAINTENANCE_LOCK_PATH);
 }
 
 function readLock(rootDir: string): MaintenanceLock | null {
@@ -53,7 +53,7 @@ export function isLockStale(rootDir: string, now = Date.now()): boolean {
  */
 export function acquireLock(rootDir: string): boolean {
   const path = lockPath(rootDir);
-  mkdirSync(join(rootDir, ".buddy"), { recursive: true });
+  mkdirSync(dirname(path), { recursive: true });
 
   const payload: MaintenanceLock = { pid: process.pid, timestamp: toLocalIsoStamp(new Date()) };
   const write = () => writeFileSync(path, JSON.stringify(payload), { encoding: "utf8", flag: "wx" });

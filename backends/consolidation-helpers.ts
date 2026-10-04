@@ -14,7 +14,7 @@ import { join, relative, resolve } from "node:path";
 import { addDays } from "../shared/dates";
 import { LOG_ROTATION_THRESHOLD } from "../shared/defaults";
 import { updateLogsIndexEntry } from "./reflect";
-import { INDEX_FILE, PENDING_INBOX_FILENAME } from "../shared/brain-paths";
+import { INDEX_FILE, PENDING_INBOX_FILENAME, USER_DIR } from "../shared/brain-paths";
 import { dailyLogPath, logsArchiveDirPath, logsDirPath } from "./brain-paths";
 import { tasksFilePath } from "./tasks/task-file";
 
@@ -213,7 +213,7 @@ export function findUpcomingReminders(rootDir: string, targetDate: string): Upco
 
 /** FR-CONSOL-31: signal pending inbox migration in consolidation prompt header. */
 export function formatPendingInboxBlock(rootDir: string): string | undefined {
-  const pendingPath = join(rootDir, "user", PENDING_INBOX_FILENAME);
+  const pendingPath = join(rootDir, USER_DIR, PENDING_INBOX_FILENAME);
   if (!existsSync(pendingPath)) return undefined;
 
   const content = readFileSync(pendingPath, "utf8");

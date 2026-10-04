@@ -161,6 +161,8 @@ export const CONSOLIDATION_STATE_PATH = ".buddy/consolidation-state.json";
 export const WIKI_STATE_PATH = ".buddy/wiki-state.json";
 /** Consolidation run journal (FR-CONSOL-06). */
 export const CONSOLIDATION_LOG_PATH = ".buddy/consolidation-log.json";
+/** Reflect/consolidation mutual-exclusion lock (FR-REFLECT-02). */
+export const MAINTENANCE_LOCK_PATH = ".buddy/maintenance.lock";
 /**
  * Consecutive failures at one depth before it is abandoned and the user is told
  * (FR-CONSOL-09). Each attempt is a billed LLM call, so this is a spend ceiling

@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
-import { PENDING_INBOX_FILENAME, USER_DIR } from "../shared/brain-paths";
+import { PENDING_INBOX_FILENAME, USER_DIR, WORKSPACES_DIR } from "../shared/brain-paths";
 import type { TaskItem } from "../shared/task-types";
 import { parseTaskFileContent, tasksFilePath, writeTasksFile } from "./tasks/task-file";
 import { userProfilePath } from "./brain-paths";
@@ -259,10 +259,10 @@ export function migrateAgentsWorkspacesReference(rootDir: string): boolean {
   const agentsPath = join(rootDir, "AGENTS.md");
   if (!existsSync(agentsPath)) return false;
 
-  mkdirSync(join(rootDir, USER_DIR, "workspaces"), { recursive: true });
+  mkdirSync(join(rootDir, WORKSPACES_DIR), { recursive: true });
 
   const content = readFileSync(agentsPath, "utf8");
-  if (content.includes("user/workspaces/")) return false;
+  if (content.includes(`${WORKSPACES_DIR}/`)) return false;
   if (!AGENTS_TASKS_NAV_RE.test(content)) return false;
 
   const updated = content.replace(AGENTS_TASKS_NAV_RE, `$1\n${WORKSPACES_NAV_LINE}`);
