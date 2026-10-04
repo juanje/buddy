@@ -123,6 +123,17 @@ The full quality gate is three commands, all of which must pass before a
 commit: `npx tsc --noEmit`, `npx vite build` (the only one that checks
 `.svelte`) and `npm test`.
 
+The native shell has its own Rust tests (PDF pagination and, on Linux, PDF
+export). They need the sidecar to exist (`npm run build:worker` once) and a
+built frontend (`npx vite build`), since Tauri checks both at compile time:
+
+```bash
+cd src-tauri && cargo test     # headless Linux: xvfb-run -a cargo test
+```
+
+CI runs them on Linux under `xvfb`; the macOS PDF backend is only exercised by
+the release build.
+
 ### Releasing
 
 Set the version with `npm run version:set <semver>`, write

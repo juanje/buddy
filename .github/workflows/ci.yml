@@ -58,6 +58,64 @@ jobs:
       - name: Tests (unit + BDD)
         run: npm test
 
+  rust:
+    name: Rust tests (Linux)
+    # Same image as the Linux release build, so the WebKitGTK it links against
+    # is the one that ships. Without this job the Rust shell was only ever
+    # compiled when a tag was pushed, and its tests never ran at all.
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+
+      # The release build's list, plus xvfb: the PDF export test needs a
+      # display, and without one it returns early and proves nothing.
+      - name: Install Linux system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            libgtk-3-dev \
+            libsoup-3.0-dev \
+            libjavascriptcoregtk-4.1-dev \
+            xvfb
+
+      # tauri::generate_context! embeds ../dist at compile time.
+      - name: Build frontend
+        run: |
+          npm ci
+          npx vite build
+
+      # Tauri checks that the externalBin sidecar exists when it compiles. The
+      # tests never start it, so an empty stand-in avoids building the worker
+      # with bun just to satisfy that check.
+      - name: Sidecar stand-in
+        run: |
+          source scripts/sidecar-target.sh
+          mkdir -p src-tauri/binaries
+          printf '#!/bin/sh\nexit 0\n' > "src-tauri/binaries/agent-worker-${SIDECAR_TARGET}"
+          chmod +x "src-tauri/binaries/agent-worker-${SIDECAR_TARGET}"
+
+      - name: Tests
+        working-directory: src-tauri
+        run: xvfb-run -a cargo test
+
 # Deliberately no "did the run leave stray processes behind" step. A
 # `pgrep -f 'reflect-child|agent-worker'` sweep passes on a clean CI runner and
 # fails on any developer machine with the app installed and open — it matches
