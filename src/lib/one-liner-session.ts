@@ -25,6 +25,11 @@ export function recordOneLinerReceived(
   };
 }
 
+/** The first-open orientation card was shown (FR-ORIENT-03). */
+export function recordOrientationShown(state: OneLinerSessionState): OneLinerSessionState {
+  return { ...state, orientationShownThisSession: true };
+}
+
 export function clearOneLinerOnTopicTransition(
   state: OneLinerSessionState,
 ): OneLinerSessionState {

@@ -12,6 +12,7 @@ import {
   createOneLinerSessionState,
   isOneLinerVisible,
   recordOneLinerReceived,
+  recordOrientationShown,
   shouldRequestOneLiner,
 } from "../../src/lib/one-liner-session";
 
@@ -204,5 +205,15 @@ describe("one-liner session (FR-ORIENT-04)", () => {
     expect(state.lastOneLiner).toBe(null);
     expect(isOneLinerVisible(state.lastOneLiner, null, 0)).toBe(false);
     expect(shouldRequestOneLiner(state)).toBe(false);
+  });
+
+  it("requests the recap only once orientation has been shown", () => {
+    const initial = createOneLinerSessionState();
+    expect(shouldRequestOneLiner(initial)).toBe(false);
+
+    const shown = recordOrientationShown(initial);
+    expect(shown.orientationShownThisSession).toBe(true);
+    expect(shouldRequestOneLiner(shown)).toBe(true);
+    expect(initial.orientationShownThisSession).toBe(false);
   });
 });

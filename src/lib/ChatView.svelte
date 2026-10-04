@@ -9,6 +9,7 @@
   import ToolActivity from "./ToolActivity.svelte";
   import WelcomeBanner from "./WelcomeBanner.svelte";
   import LastSessionSummary from "./LastSessionSummary.svelte";
+  import { isOneLinerVisible } from "./one-liner-session";
   import DeferredBanner from "./DeferredBanner.svelte";
   import ClosureDoneButton from "./ClosureDoneButton.svelte";
   import FileViewer from "./FileViewer.svelte";
@@ -114,7 +115,7 @@
   {/if}
   <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
   <div class="chat" bind:this={container} onscroll={handleScroll} onclick={handleChatClick}>
-    {#if oneLiner && !orientationData && $messages.length === 0}
+    {#if isOneLinerVisible(oneLiner, orientationData, $messages.length)}
       <LastSessionSummary text={oneLiner} />
     {/if}
     <WelcomeBanner

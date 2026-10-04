@@ -27,6 +27,13 @@
   import { formatBudgetNotificationBody, notifyBudgetAlert } from "./utils/budget-notify";
   import { notifyMaintenancePaused } from "./utils/maintenance-notify";
   import { shouldNotifyDeferredDue } from "./lib/deferred-event";
+  import {
+    clearOneLinerOnTopicTransition,
+    createOneLinerSessionState,
+    recordOneLinerReceived,
+    recordOrientationShown,
+    shouldRequestOneLiner,
+  } from "./lib/one-liner-session";
   import { t } from "./lib/i18n";
   import type {
     AgentEvent,
@@ -49,9 +56,7 @@
   let deferredItems: DeferredItemView[] = $state([]);
   let orientationData: OrientationData | null = $state(null);
   /** Sticky flag: card was shown this launch (survives dismiss before session ready). */
-  let orientationShownThisSession = $state(false);
-  let oneLinerFetchedOnce = $state(false);
-  let lastOneLiner: string | null = $state(null);
+  let oneLinerSession = $state(createOneLinerSessionState());
   let setupOAuthHandler: ((event: OAuthUIEvent) => void) | undefined = $state();
   let appConfig = $state<SetupConfig | undefined>();
   let settingsController = $state<SettingsController | undefined>();
@@ -176,7 +181,7 @@
           onDeferredDue(items) {
             devLog(`deferred due: ${items.length} item(s)`);
             deferredItems = items;
-            if (!orientationShownThisSession && items.length > 0) {
+            if (!oneLinerSession.orientationShownThisSession && items.length > 0) {
               controller?.showDeferredBanner();
             }
             const strings = get(t);
@@ -193,21 +198,20 @@
           },
           onOneLiner(text: string) {
             devLog(`one-liner: ${text}`);
-            lastOneLiner = text;
-            oneLinerFetchedOnce = true;
+            oneLinerSession = recordOneLinerReceived(oneLinerSession, text);
           },
           onSessionReady() {
             devLog("session ready");
             sessionPreparing = false;
             clearTimeout(preparingTimer);
             controller?.endTopicTransition();
-            if (orientationShownThisSession && lastOneLiner === null && !oneLinerFetchedOnce) {
+            if (shouldRequestOneLiner(oneLinerSession)) {
               void workerProxy.requestOneLiner();
             }
           },
           onTopicTransitionStart() {
             devLog("topic transition start");
-            lastOneLiner = null;
+            oneLinerSession = clearOneLinerOnTopicTransition(oneLinerSession);
             controller?.beginTopicTransition();
             sessionPreparing = true;
             clearTimeout(preparingTimer);
@@ -259,7 +263,7 @@
           sessionPreparing = true;
         }, SESSION_PREPARING_NOTICE_MS);
         orientationData = await connection.api.getOrientationData();
-        if (orientationData) orientationShownThisSession = true;
+        if (orientationData) oneLinerSession = recordOrientationShown(oneLinerSession);
         deferredItems = orientationData ? [] : await connection.api.getDeferredItems();
         try {
           const usage = await connection.api.getUsage();
@@ -382,7 +386,7 @@
           applySetupConfig(setupState.config);
         }
         orientationData = await workerProxy.getOrientationData();
-        if (orientationData) orientationShownThisSession = true;
+        if (orientationData) oneLinerSession = recordOrientationShown(oneLinerSession);
         deferredItems = orientationData ? [] : await workerProxy.getDeferredItems();
       }}
       onSetupFailed={() => (view = "setup")}
@@ -400,10 +404,10 @@
         {controller}
         {scroll}
         {orientationData}
-        orientationShownThisSession={orientationShownThisSession}
+        orientationShownThisSession={oneLinerSession.orientationShownThisSession}
         onDismissOrientation={() => void dismissOrientationCard()}
         deferredItems={orientationData ? [] : deferredItems}
-        oneLiner={lastOneLiner}
+        oneLiner={oneLinerSession.lastOneLiner}
         rootDir={appConfig?.rootDir ?? ""}
         fileViewer={fileViewerController}
         onOpenSettings={() => settingsController?.openSettings()}
