@@ -2,11 +2,10 @@
 
 import { describe, expect, it } from "vitest";
 
-import { defaultConsolidationState } from "../../shared/consolidation-state";
+import { advanceCounters, defaultConsolidationState } from "../../shared/consolidation-state";
 import {
   formatSkillUsageBlock,
   recordSkillInvocation,
-  resetPeriodCounters,
 } from "../../backends/skill-usage-tracking";
 
 describe("skill usage tracking", () => {
@@ -18,7 +17,7 @@ describe("skill usage tracking", () => {
     expect(updated.skillUsage?.process_conversation.totalInvocations).toBe(1);
   });
 
-  it("resets period counters", () => {
+  it("resets period counters when a depth-2 run completes", () => {
     const state = defaultConsolidationState();
     state.skillUsage = {
       triage_inbox: {
@@ -27,7 +26,7 @@ describe("skill usage tracking", () => {
         totalInvocations: 8,
       },
     };
-    resetPeriodCounters(state);
+    advanceCounters(state, 2);
     expect(state.skillUsage.triage_inbox.invokedThisPeriod).toBe(0);
     expect(state.skillUsage.triage_inbox.totalInvocations).toBe(8);
   });

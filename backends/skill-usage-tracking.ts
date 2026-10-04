@@ -20,16 +20,6 @@ export function recordSkillInvocation(
   return { ...state, skillUsage };
 }
 
-/** Reset per-period counters after each depth-2 run. */
-export function resetPeriodCounters(state: ConsolidationState): void {
-  if (!state.skillUsage) return;
-  for (const name of Object.keys(state.skillUsage)) {
-    const entry = state.skillUsage[name];
-    if (!entry) continue;
-    state.skillUsage[name] = { ...entry, invokedThisPeriod: 0 };
-  }
-}
-
 export function formatSkillUsageBlock(
   skillUsage: Record<string, SkillUsageEntry> | undefined,
 ): string {

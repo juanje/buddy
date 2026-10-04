@@ -228,7 +228,7 @@ export function recordDepthFailure(
   now: Date = new Date(),
 ): DepthFailureState {
   const key = String(depth);
-  const current = state.failures?.[key]?.count ?? 0;
+  const current = depthFailureCount(state, depth);
   const next: DepthFailureState = {
     count: current + 1,
     lastFailureAt: toLocalIsoStamp(now),
