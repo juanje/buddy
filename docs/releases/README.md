@@ -13,7 +13,7 @@ red during one — which is when the notes are meant to be written.
 ## The process
 
 ```bash
-npm run version:set 0.2.0          # writes all five files that carry the version
+npm run version:set 0.2.0          # writes every file that carries the version, package-lock.json included
 $EDITOR docs/releases/v0.2.0.md    # start from the template below
 npx tsc --noEmit && npx vite build && npm test
 git commit -am "chore(release): v0.2.0 — <title>"

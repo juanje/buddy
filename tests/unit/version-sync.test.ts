@@ -39,6 +39,21 @@ function cargoLockVersion(): string {
   return match[1];
 }
 
+/**
+ * package-lock.json repeats the version twice: at the top level and in the
+ * root package entry (`packages[""]`). npm only rewrites them on an install,
+ * which a release does not run — v0.1.53 shipped with the lock still at 0.1.52.
+ */
+function npmLockVersions(): { top: string; root: string } {
+  const lock = JSON.parse(read("package-lock.json")) as {
+    version: string;
+    packages: Record<string, { version?: string }>;
+  };
+  const root = lock.packages[""]?.version;
+  if (!root) throw new Error('no packages[""].version in package-lock.json');
+  return { top: lock.version, root };
+}
+
 function embeddedVersion(): string {
   const match = /EMBEDDED_APP_VERSION = "([^"]+)"/.exec(
     read("backends", "embedded-assets.generated.ts"),
@@ -70,6 +85,8 @@ describe("app version (NFR-MIGRATE-07)", () => {
     ["src-tauri/Cargo.toml — shown in the About dialog", cargoVersion],
     ["backends/embedded-assets.generated.ts — reported by the sidecar", embeddedVersion],
     ["src-tauri/Cargo.lock — committed, and cargo will not fix it before the tag", cargoLockVersion],
+    ["package-lock.json (top level) — npm only rewrites it on install", () => npmLockVersions().top],
+    ['package-lock.json (packages[""]) — the root package entry', () => npmLockVersions().root],
   ])("matches package.json in %s", (_where, actual) => {
     expect(actual()).toBe(packageVersion());
   });
@@ -77,7 +94,8 @@ describe("app version (NFR-MIGRATE-07)", () => {
   it("reads a real version from each file rather than silently matching nothing", () => {
     // Each reader throws on a missing match, but a regex that started matching
     // the wrong thing could return a value that happens to agree. Cheap guard.
-    for (const value of [tauriConfVersion(), cargoVersion(), embeddedVersion(), cargoLockVersion()]) {
+    const { top, root } = npmLockVersions();
+    for (const value of [tauriConfVersion(), cargoVersion(), embeddedVersion(), cargoLockVersion(), top, root]) {
       expect(value).toMatch(SEMVER);
     }
   });

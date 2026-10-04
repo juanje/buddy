@@ -2,10 +2,11 @@
 //
 //   npm run version:set 0.1.9
 //
-// package.json is the source; tauri.conf.json, Cargo.toml and the embedded
-// snapshot restate it for three different consumers. Bumping by hand is four
-// edits with no failure mode for forgetting one — v0.1.8 shipped having missed
-// the snapshot. tests/unit/version-sync.test.ts fails when they disagree; this
+// package.json is the source; tauri.conf.json, Cargo.toml, Cargo.lock,
+// package-lock.json and the embedded snapshot restate it. Bumping by hand has
+// no failure mode for forgetting one — v0.1.8 shipped having missed the
+// snapshot, v0.1.53 the npm lock. No `npm install` is needed: it could
+// re-resolve dependencies in the middle of a release. tests/unit/version-sync.test.ts fails when they disagree; this
 // is how you make them agree.
 
 import { readFileSync, writeFileSync } from "node:fs";
@@ -68,6 +69,19 @@ edit("src-tauri/Cargo.toml", (source) => {
   if (!/^version\s*=\s*"[^"]*"/m.test(pkgSection)) return null;
   const patched = pkgSection.replace(/^version\s*=\s*"[^"]*"/m, `version = "${version}"`);
   return source.slice(0, sectionStart) + patched + source.slice(end);
+});
+
+edit("package-lock.json", (source) => {
+  // Two copies: the top-level "version" and the root package entry,
+  // packages[""]. npm rewrites them only on an install, which a release does
+  // not run — v0.1.53 shipped with both still at 0.1.52. Patched as text, like
+  // the others, so dependency entries (which have their own "version") and the
+  // file's formatting are left alone.
+  const top = setJsonVersion(source);
+  if (top === null) return null;
+  const rootEntry = /("packages"\s*:\s*\{\s*""\s*:\s*\{[^{}]*?"version"\s*:\s*)"[^"]*"/;
+  if (!rootEntry.test(top)) return null;
+  return top.replace(rootEntry, `$1"${version}"`);
 });
 
 edit("src-tauri/Cargo.lock", (source) => {
