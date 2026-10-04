@@ -17,6 +17,7 @@ import {
   BRAIN,
   BRAIN_DIR,
   BRAIN_SUBDIRS,
+  LOGS_ARCHIVE_DIR,
   LOGS_DIR,
   LOGS_INDEX,
   WIKI_INDEX,
@@ -39,6 +40,8 @@ export const identityDirPath = (rootDir: string): string => buddyPath(rootDir, B
 
 export const logsDirPath = (rootDir: string): string => buddyPath(rootDir, LOGS_DIR);
 export const logsIndexPath = (rootDir: string): string => buddyPath(rootDir, LOGS_INDEX);
+export const logsArchiveDirPath = (rootDir: string): string =>
+  buddyPath(rootDir, LOGS_ARCHIVE_DIR);
 export const dailyLogPath = (rootDir: string, isoDay: string): string =>
   buddyPath(rootDir, dailyLogRelPath(isoDay));
 

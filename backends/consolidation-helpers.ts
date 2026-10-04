@@ -15,7 +15,7 @@ import { addDays } from "../shared/dates";
 import { LOG_ROTATION_THRESHOLD } from "../shared/defaults";
 import { updateLogsIndexEntry } from "./reflect";
 import { INDEX_FILE, PENDING_INBOX_FILENAME } from "../shared/brain-paths";
-import { dailyLogPath, logsDirPath } from "./brain-paths";
+import { dailyLogPath, logsArchiveDirPath, logsDirPath } from "./brain-paths";
 import { tasksFilePath } from "./tasks/task-file";
 
 const DATE_MARKER_RE = /\b(\d{4}-\d{2}-\d{2})\b/;
@@ -119,7 +119,7 @@ export function rotateLogs(rootDir: string, targetDate: string): { archived: str
   for (const file of toArchive) {
     const dateMatch = file.match(/^(\d{4}-\d{2})/);
     const monthDir = dateMatch ? dateMatch[1] : targetDate.slice(0, 7);
-    const archiveDir = join(logsDir, "archive", monthDir);
+    const archiveDir = join(logsArchiveDirPath(rootDir), monthDir);
     mkdirSync(archiveDir, { recursive: true });
 
     renameSync(join(logsDir, file), join(archiveDir, file));

@@ -3,7 +3,7 @@
 
 export type SavedNoticeState = "saved" | "restart" | false;
 
-export const SAVED_NOTICE_MS = 8000;
+const SAVED_NOTICE_MS = 8000;
 
 export interface SavedNotice {
   /** Hide the notice and cancel its auto-dismiss timer. */
