@@ -248,12 +248,6 @@ function isActive(item: TaskItem, today: string): boolean {
   return !item.done && item.area !== "someday" && !(item.dueDate && item.dueDate > today);
 }
 
-export function countActiveInArea(items: TaskItem[], area?: string, today?: string): number {
-  const key = areaKey(area);
-  const todayStr = today ?? toIsoDay(new Date());
-  return items.filter((item) => areaKey(item.area) === key && isActive(item, todayStr)).length;
-}
-
 export function countActiveInScope(
   items: TaskItem[],
   area?: string,

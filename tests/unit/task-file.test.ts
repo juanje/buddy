@@ -10,7 +10,6 @@ import {
   buildListResult,
   buildUntaggedClusters,
   clearNextInScope,
-  countActiveInArea,
   countActiveInScope,
   countActiveNext,
   findSoleActiveInScope,
@@ -214,7 +213,7 @@ created: 2026-01-15
   });
 });
 
-describe("countActiveInArea", () => {
+describe("countActiveInScope (area)", () => {
   it("excludes someday and future-dated items in the area", () => {
     const today = toIsoDay(new Date());
     const future = addDays(today, 10);
@@ -225,7 +224,7 @@ describe("countActiveInArea", () => {
       { id: 4, text: "Future", done: false, next: false, area: "work", dueDate: future },
       { id: 5, text: "Done", done: true, next: false, area: "work" },
     ];
-    expect(countActiveInArea(items, "work", today)).toBe(2);
+    expect(countActiveInScope(items, "work", undefined, today)).toBe(2);
   });
 });
 
