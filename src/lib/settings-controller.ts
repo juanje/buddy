@@ -11,6 +11,7 @@ import type {
   SetupConfig,
   UsageReport,
 } from "../../shared/api";
+import { emptyJiraConfig, emptySlackConfig } from "../../shared/connector-types";
 import { DEFAULT_MONTHLY_BUDGET } from "../../shared/defaults";
 import { resolveJiraErrorSuggestion } from "../../shared/jira-error-suggestions";
 import { resolveSlackErrorSuggestion } from "../../shared/slack-error-suggestions";
@@ -203,22 +204,12 @@ export function createSettingsController(options: {
   const providerAddedNotice = writable(false);
   const usage = writable<UsageReport | undefined>(undefined);
   const usageLoading = writable(false);
-  const jiraConfig = writable<ConnectorConfig>({
-    enabled: false,
-    baseUrl: "",
-    email: "",
-    token: "",
-    issueKeyPatterns: [],
-  });
+  const jiraConfig = writable<ConnectorConfig>(emptyJiraConfig());
   const jiraTesting = writable(false);
   const jiraTestStatus = writable<"idle" | "ok" | "error">("idle");
   const jiraTestError = writable<string | undefined>(undefined);
   const jiraShowToken = writable(false);
-  const slackConfig = writable<ConnectorConfig>({
-    enabled: false,
-    token: "",
-    cookie: "",
-  });
+  const slackConfig = writable<ConnectorConfig>(emptySlackConfig());
   const slackTesting = writable(false);
   const slackTestStatus = writable<"idle" | "ok" | "error">("idle");
   const slackTestError = writable<string | undefined>(undefined);

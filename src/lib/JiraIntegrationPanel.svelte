@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { ConnectorConfig } from "../../shared/api";
+  import { emptyJiraConfig } from "../../shared/connector-types";
   import {
     parseProjectPrefixInput,
     patternsToDisplayText,
@@ -8,13 +9,7 @@
   import { createSavedNotice, type SavedNoticeState } from "./saved-notice";
 
   let {
-    config = $bindable<ConnectorConfig>({
-      enabled: true,
-      baseUrl: "",
-      email: "",
-      token: "",
-      issueKeyPatterns: [],
-    }),
+    config = $bindable<ConnectorConfig>(emptyJiraConfig()),
     testing = false,
     testStatus = "idle" as "idle" | "ok" | "error",
     testError = undefined as string | undefined,

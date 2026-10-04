@@ -1,14 +1,11 @@
 <script lang="ts">
   import type { ConnectorConfig } from "../../shared/api";
+  import { emptySlackConfig } from "../../shared/connector-types";
   import { t } from "./i18n";
   import { createSavedNotice, type SavedNoticeState } from "./saved-notice";
 
   let {
-    config = $bindable<ConnectorConfig>({
-      enabled: false,
-      token: "",
-      cookie: "",
-    }),
+    config = $bindable<ConnectorConfig>(emptySlackConfig()),
     testing = false,
     testStatus = "idle" as "idle" | "ok" | "error",
     testError = undefined as string | undefined,

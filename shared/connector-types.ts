@@ -17,6 +17,16 @@ export interface ConnectorConfig {
   [key: string]: unknown;
 }
 
+/** A Jira configuration with nothing filled in yet (fresh object per call). */
+export function emptyJiraConfig(): ConnectorConfig {
+  return { enabled: false, baseUrl: "", email: "", token: "", issueKeyPatterns: [] };
+}
+
+/** A Slack configuration with nothing filled in yet (fresh object per call). */
+export function emptySlackConfig(): ConnectorConfig {
+  return { enabled: false, token: "", cookie: "" };
+}
+
 export type ActionClassification = "read" | "write";
 
 /** Declarative action → read/write table for one connector domain. */

@@ -10,6 +10,7 @@
     type SettingsProviderId,
   } from "./settings-controller";
   import type { ConnectorConfig } from "../../shared/api";
+  import { emptyJiraConfig, emptySlackConfig } from "../../shared/connector-types";
 
   let { controller }: { controller: SettingsController } = $props();
 
@@ -40,24 +41,14 @@
   const slackTestError = $derived(controller.slackTestError);
   const slackShowSecrets = $derived(controller.slackShowSecrets);
 
-  let jiraDraft = $state<ConnectorConfig>({
-    enabled: false,
-    baseUrl: "",
-    email: "",
-    token: "",
-    issueKeyPatterns: [],
-  });
+  let jiraDraft = $state<ConnectorConfig>(emptyJiraConfig());
 
   $effect(() => {
     const loaded = $jiraConfig;
     jiraDraft = { ...loaded, issueKeyPatterns: [...(loaded.issueKeyPatterns ?? [])] };
   });
 
-  let slackDraft = $state<ConnectorConfig>({
-    enabled: false,
-    token: "",
-    cookie: "",
-  });
+  let slackDraft = $state<ConnectorConfig>(emptySlackConfig());
 
   $effect(() => {
     const loaded = $slackConfig;
