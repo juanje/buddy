@@ -35,6 +35,14 @@ export interface ToolHooks {
   ) => ReturnType<AfterToolHook>;
 }
 
+/** The target path of a `write` or `edit` call, or undefined for any other call. */
+export function writeTargetPath(ctx: { toolCall: { name: string }; args: unknown }): string | undefined {
+  const name = ctx.toolCall.name;
+  if (name !== "write" && name !== "edit") return undefined;
+  const path = (ctx.args as Record<string, unknown>)?.path;
+  return typeof path === "string" ? path : undefined;
+}
+
 /**
  * Install `hooks` on the session, preserving any hook already there as `prior`
  * (a no-op returning `undefined` when there was none).

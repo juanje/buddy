@@ -63,7 +63,7 @@ import { logEvent } from "./app-logger";
 import { installHeadingGuardHook } from "./heading-guard";
 import { createHebbianGuard } from "./hebbian-guard";
 import { installEditRecoveryHook } from "./edit-recovery";
-import { chainToolHooks } from "./tool-hooks";
+import { chainToolHooks, writeTargetPath } from "./tool-hooks";
 import { buddySessionsDir } from "./session-paths";
 import {
   listChangedFilesSince,
@@ -156,19 +156,13 @@ export function installMaintenanceHebbianGuard(
 
   chainToolHooks(session, {
     before: (ctx, signal, prior) => {
-      const name = ctx.toolCall.name;
-      if (name === "write" || name === "edit") {
-        const path = (ctx.args as Record<string, unknown>)?.path;
-        if (typeof path === "string") guard.capture(path);
-      }
+      const path = writeTargetPath(ctx);
+      if (path !== undefined) guard.capture(path);
       return prior(ctx, signal);
     },
     after: (ctx, signal, prior) => {
-      const name = ctx.toolCall.name;
-      if ((name === "write" || name === "edit") && !ctx.isError) {
-        const path = (ctx.args as Record<string, unknown>)?.path;
-        if (typeof path === "string") guard.restore(path);
-      }
+      const path = writeTargetPath(ctx);
+      if (path !== undefined && !ctx.isError) guard.restore(path);
       return prior(ctx, signal);
     },
   });

@@ -12,7 +12,7 @@ import { resolve } from "node:path";
 import { HEADING_GUARD_DAILY_LOG_RE, PROTECTED_FILES } from "../shared/defaults";
 import { toBuddyRelPath } from "../shared/path-utils";
 import { logEvent } from "./app-logger";
-import { chainToolHooks, type ToolHookSession } from "./tool-hooks";
+import { chainToolHooks, writeTargetPath, type ToolHookSession } from "./tool-hooks";
 
 export interface HeadingGuardResult {
   reverted: boolean;
@@ -140,31 +140,25 @@ export function installHeadingGuardHook(
 
   chainToolHooks(session, {
     before: (ctx, signal, prior) => {
-      const name = ctx.toolCall.name;
-      if (name === "write" || name === "edit") {
-        const path = (ctx.args as Record<string, unknown>)?.path;
-        if (typeof path === "string") guard.capture(path);
-      }
+      const path = writeTargetPath(ctx);
+      if (path !== undefined) guard.capture(path);
       return prior(ctx, signal);
     },
     after: (ctx, signal, prior) => {
-      const name = ctx.toolCall.name;
-      if ((name === "write" || name === "edit") && !ctx.isError) {
-        const path = (ctx.args as Record<string, unknown>)?.path;
-        if (typeof path === "string") {
-          const result = guard.check(path);
-          if (result.reverted) {
-            logEvent(rootDir, {
-              event: "heading_guard_revert",
-              session: sessionId ?? "unknown",
-              path,
-              lostHeadings: result.lostHeadings,
-            });
-            if (result.lostHeadings && result.lostHeadings.length > 0) {
-              appendToToolResult(ctx.result, headingRevertMessage(result.lostHeadings));
-            } else {
-              appendToToolResult(ctx.result, frontmatterRevertMessage());
-            }
+      const path = writeTargetPath(ctx);
+      if (path !== undefined && !ctx.isError) {
+        const result = guard.check(path);
+        if (result.reverted) {
+          logEvent(rootDir, {
+            event: "heading_guard_revert",
+            session: sessionId ?? "unknown",
+            path,
+            lostHeadings: result.lostHeadings,
+          });
+          if (result.lostHeadings && result.lostHeadings.length > 0) {
+            appendToToolResult(ctx.result, headingRevertMessage(result.lostHeadings));
+          } else {
+            appendToToolResult(ctx.result, frontmatterRevertMessage());
           }
         }
       }
