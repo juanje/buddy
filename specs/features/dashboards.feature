@@ -156,3 +156,130 @@ Feature: Dashboard resolution
     When the dashboard is resolved for today "2026-10-07"
     Then segment 1 widget result is an error mentioning "jira"
     And segment 1 widget result is an error mentioning "tasks"
+
+  @FR-DASH-04
+  Scenario: Where filters tasks by area
+    Given an initialized buddy git repository
+    And tasks.md with mixed states for dashboard resolution
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: table
+        source: tasks
+        where: area = @personal
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-07"
+    Then segment 1 widget row count is 3
+
+  @FR-DASH-04
+  Scenario: Where compares deferred dates with a relative bound
+    Given an initialized buddy git repository
+    And deferred.md with one due item
+    And deferred.md with a far future item
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: table
+        source: deferred
+        where: date <= +7d
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-07"
+    Then segment 1 widget row count is 1
+
+  @FR-DASH-04
+  Scenario: Range limits rows by the source date field
+    Given an initialized buddy git repository
+    And deferred.md with one due item
+    And deferred.md with a far future item
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: table
+        source: deferred
+        range: -30d..today
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-07"
+    Then segment 1 widget row count is 1
+
+  @FR-DASH-04
+  Scenario: Group and count follow enum order
+    Given an initialized buddy git repository
+    And tasks.md with mixed states for dashboard resolution
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: counter
+        source: tasks
+        group: state
+        count: true
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-07"
+    Then segment 1 widget group value keys are "next", "open", "scheduled", "parked"
+
+  @FR-DASH-04
+  Scenario: Sort and limit apply before grouping
+    Given an initialized buddy git repository
+    And tasks.md with many open tasks for sort limit
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: table
+        source: tasks
+        where: state = open
+        sort: text desc
+        limit: 2
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-07"
+    Then segment 1 widget row count is 2
+    And segment 1 first widget row text is "Zulu task"
+
+  @FR-DASH-04
+  Scenario: Sum requires a numeric field
+    Given an initialized buddy git repository
+    And tasks.md with mixed states for dashboard resolution
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: counter
+        source: tasks
+        sum: text
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-07"
+    Then segment 1 widget result is an error mentioning "numeric"
+
+  @FR-DASH-04
+  Scenario: Unknown query field names available fields
+    Given an initialized buddy git repository
+    And tasks.md with mixed states for dashboard resolution
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: table
+        source: tasks
+        where: not_a_field = x
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-07"
+    Then segment 1 widget result is an error mentioning "not_a_field"
+    And segment 1 widget result is an error mentioning "state"
+
+  @FR-DASH-04
+  Scenario: Empty filter value suggests quoting hash values
+    Given an initialized buddy git repository
+    And tasks.md with mixed states for dashboard resolution
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: table
+        source: tasks
+        where: 'project = '
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-07"
+    Then segment 1 widget result is an error mentioning "quote"

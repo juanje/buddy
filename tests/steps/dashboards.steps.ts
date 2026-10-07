@@ -66,6 +66,22 @@ Given("deferred.md with one due item", function (this: DashboardWorld) {
   writeFileSync(path, `${existing.trimEnd()}\n${line}\n`, "utf8");
 });
 
+Given("deferred.md with a far future item", function (this: DashboardWorld) {
+  const path = deferredPath(root.call(this));
+  const line = "- **info** (2027-01-01, user): Later.";
+  const existing = existsSync(path) ? readFileSync(path, "utf8") : "---\ncreated: 2026-01-01\n---\n\n";
+  writeFileSync(path, `${existing.trimEnd()}\n${line}\n`, "utf8");
+});
+
+Given("tasks.md with many open tasks for sort limit", function (this: DashboardWorld) {
+  const items: TaskItem[] = [
+    { id: 1, text: "Alpha task", done: false, next: false, area: "personal" },
+    { id: 2, text: "Zulu task", done: false, next: false, area: "personal" },
+    { id: 3, text: "Middle task", done: false, next: false, area: "personal" },
+  ];
+  writeTasksFile(root.call(this), items, "2026-01-01");
+});
+
 Given("a dashboard file with body:", function (this: DashboardWorld, body: string) {
   this.dashboardBody = [
     "---",
@@ -182,6 +198,33 @@ Then(
   function (this: DashboardWorld, index: number, type: string) {
     const rows = widgetRows.call(this, index);
     assert.ok(rows.some((r) => r.type === type));
+  },
+);
+
+Then("segment {int} widget row count is {int}", function (this: DashboardWorld, index: number, count: number) {
+  assert.equal(widgetRows.call(this, index).length, count);
+});
+
+Then(
+  "segment {int} widget group value keys are {string}, {string}, {string}, {string}",
+  function (this: DashboardWorld, index: number, a: string, b: string, c: string, d: string) {
+    const seg = segments.call(this)[index - 1];
+    assert.equal(seg.kind, "widget");
+    if (seg.kind === "widget") {
+      assert.equal(seg.result.kind, "group_values");
+      if (seg.result.kind === "group_values") {
+        const keys = seg.result.groups.map((g) => g.key ?? "null");
+        assert.deepEqual(keys, [a, b, c, d]);
+      }
+    }
+  },
+);
+
+Then(
+  "segment {int} first widget row text is {string}",
+  function (this: DashboardWorld, index: number, text: string) {
+    const rows = widgetRows.call(this, index);
+    assert.equal(String(rows[0]?.text), text);
   },
 );
 
