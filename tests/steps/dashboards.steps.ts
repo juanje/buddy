@@ -2,8 +2,13 @@
 
 import { Given, Then, When } from "@cucumber/cucumber";
 import assert from "node:assert/strict";
+import { existsSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 
+import { deferredPath } from "../../backends/brain-paths";
 import { resolveDashboardContent } from "../../backends/dashboard/resolve";
+import { writeTasksFile } from "../../backends/tasks/task-file";
+import type { TaskItem } from "../../shared/task-types";
 import type { ResolvedDashboard, ResolvedSegment } from "../../shared/dashboard/types";
 import type { BuddyWorld } from "../support/world";
 
@@ -12,6 +17,54 @@ interface DashboardWorld extends BuddyWorld {
   dashboardBody?: string;
   resolved?: ResolvedDashboard;
 }
+
+function root(this: DashboardWorld): string {
+  assert.ok(this.buddyDir, "buddyDir required");
+  return this.buddyDir;
+}
+
+Given("tasks.md with mixed states for dashboard resolution", function (this: DashboardWorld) {
+  const items: TaskItem[] = [
+    { id: 1, text: "Next one", done: false, next: true, area: "personal" },
+    { id: 2, text: "Open one", done: false, next: false, area: "personal" },
+    {
+      id: 3,
+      text: "Later",
+      done: false,
+      next: false,
+      area: "personal",
+      dueDate: "2026-12-01",
+    },
+    { id: 4, text: "Someday", done: false, next: false, area: "someday" },
+  ];
+  writeTasksFile(root.call(this), items, "2026-01-01");
+});
+
+Given("tasks.md with a stale open task", function (this: DashboardWorld) {
+  const items: TaskItem[] = [
+    {
+      id: 1,
+      text: "Old task",
+      done: false,
+      next: false,
+      area: "personal",
+      created: "2025-08-01",
+    },
+  ];
+  writeTasksFile(root.call(this), items, "2025-08-01");
+});
+
+Given("tasks.md does not exist", function (this: DashboardWorld) {
+  const path = join(root.call(this), "user", "tasks.md");
+  if (existsSync(path)) unlinkSync(path);
+});
+
+Given("deferred.md with one due item", function (this: DashboardWorld) {
+  const path = deferredPath(root.call(this));
+  const existing = existsSync(path) ? readFileSync(path, "utf8") : "---\ncreated: 2026-01-01\n---\n\n";
+  const line = "- **reminder** (2026-10-05, user): Call back.";
+  writeFileSync(path, `${existing.trimEnd()}\n${line}\n`, "utf8");
+});
 
 Given("a dashboard file with body:", function (this: DashboardWorld, body: string) {
   this.dashboardBody = [
@@ -89,3 +142,61 @@ Then("segment {int} widget result is an error", function (this: DashboardWorld, 
     assert.equal(seg.result.kind, "error");
   }
 });
+
+function widgetRows(this: DashboardWorld, index: number): Record<string, unknown>[] {
+  const seg = segments.call(this)[index - 1];
+  assert.equal(seg.kind, "widget");
+  if (seg.kind !== "widget") return [];
+  assert.equal(seg.result.kind, "rows");
+  if (seg.result.kind === "rows") return seg.result.rows;
+  return [];
+}
+
+Then(
+  "segment {int} widget rows include states {string}, {string}, {string}, {string}",
+  function (
+    this: DashboardWorld,
+    index: number,
+    a: string,
+    b: string,
+    c: string,
+    d: string,
+  ) {
+    const states = new Set(widgetRows.call(this, index).map((r) => String(r.state)));
+    for (const expected of [a, b, c, d]) {
+      assert.ok(states.has(expected), `missing state ${expected}, got ${[...states].join(",")}`);
+    }
+  },
+);
+
+Then(
+  "segment {int} widget rows include stale_days at least {int}",
+  function (this: DashboardWorld, index: number, min: number) {
+    const rows = widgetRows.call(this, index);
+    assert.ok(rows.some((r) => typeof r.stale_days === "number" && r.stale_days >= min));
+  },
+);
+
+Then(
+  "segment {int} widget rows include deferred type {string}",
+  function (this: DashboardWorld, index: number, type: string) {
+    const rows = widgetRows.call(this, index);
+    assert.ok(rows.some((r) => r.type === type));
+  },
+);
+
+Then(
+  "segment {int} is a table widget with {int} rows and no error",
+  function (this: DashboardWorld, index: number, count: number) {
+    const seg = segments.call(this)[index - 1];
+    assert.equal(seg.kind, "widget");
+    if (seg.kind === "widget") {
+      assert.equal(seg.spec.view, "table");
+      assert.notEqual(seg.result.kind, "error");
+      assert.equal(seg.result.kind, "rows");
+      if (seg.result.kind === "rows") {
+        assert.equal(seg.result.rows.length, count);
+      }
+    }
+  },
+);

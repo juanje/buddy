@@ -83,3 +83,76 @@ Feature: Dashboard resolution
       """
     When the dashboard is resolved for today "2026-10-07"
     Then segment 1 widget result is an error mentioning "fence"
+
+  @FR-DASH-05
+  Scenario: Tasks source exposes derived state
+    Given an initialized buddy git repository
+    And tasks.md with mixed states for dashboard resolution
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: table
+        source: tasks
+        columns: [text, state]
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-07"
+    Then segment 1 widget rows include states "next", "open", "scheduled", "parked"
+
+  @FR-DASH-05
+  Scenario: Tasks source includes stale_days for aged open items
+    Given an initialized buddy git repository
+    And tasks.md with a stale open task
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: table
+        source: tasks
+        columns: [text, stale_days]
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-07"
+    Then segment 1 widget rows include stale_days at least 31
+
+  @FR-DASH-05
+  Scenario: Deferred source exposes queue fields
+    Given an initialized buddy git repository
+    And deferred.md with one due item
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: table
+        source: deferred
+        columns: [type, date, source, text]
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-07"
+    Then segment 1 widget rows include deferred type "reminder"
+
+  @FR-DASH-05
+  Scenario: Missing tasks file yields zero rows without error
+    Given an initialized buddy git repository
+    And tasks.md does not exist
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: table
+        source: tasks
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-07"
+    Then segment 1 is a table widget with 0 rows and no error
+
+  @FR-DASH-05
+  Scenario: Unknown source is a widget error listing known sources
+    Given an initialized buddy git repository
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: table
+        source: jira
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-07"
+    Then segment 1 widget result is an error mentioning "jira"
+    And segment 1 widget result is an error mentioning "tasks"
