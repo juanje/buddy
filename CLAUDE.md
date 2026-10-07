@@ -193,6 +193,11 @@ something is already broken.
 - **A path constant is not a containment check.** Naming a directory says
   nothing about where a string points. `backends/containment.ts` is the only
   authority, and it resolves symlinks (NFR-SEC-15/16).
+- **`systemPromptOverride` replaces only the preamble.** The Pi SDK still
+  injects `AGENTS.md` from `cwd` and parents, skills, extensions, templates,
+  themes, and `APPEND_SYSTEM.md` unless discovery flags are off (NFR-SEC-21).
+  Build every session loader with `createBuddyResourceLoader()` — never
+  `new DefaultResourceLoader()` in production code.
 
 ## Where things are
 
