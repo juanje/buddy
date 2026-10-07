@@ -1,4 +1,4 @@
-// shared/dashboard/schema.ts — Widget validation (FR-DASH-01).
+// shared/dashboard/schema.ts — Widget validation (FR-DASH-01, FR-DASH-10).
 
 import type { WidgetSpec, WidgetWidth } from "./types";
 
@@ -6,7 +6,9 @@ const V1_VIEWS = new Set(["kanban", "list", "table", "counter", "text", "status"
 
 const QUERY_KEYS = ["where", "group", "sort", "limit", "count", "sum", "range"] as const;
 
-const COMMON_KEYS = new Set(["view", "source", "title", "width", ...QUERY_KEYS]);
+const INLINE_KEYS = ["updated", "basis", "rows"] as const;
+
+const COMMON_KEYS = new Set(["view", "source", "title", "width", ...QUERY_KEYS, ...INLINE_KEYS]);
 
 const VIEW_EXTRA_KEYS: Record<string, Set<string>> = {
   kanban: new Set(["fields", "group"]),
@@ -14,7 +16,7 @@ const VIEW_EXTRA_KEYS: Record<string, Set<string>> = {
   table: new Set(["columns"]),
   counter: new Set(["delta"]),
   text: new Set(["text"]),
-  status: new Set(["label", "state", "reason"]),
+  status: new Set([]),
 };
 
 export type ValidateWidgetResult = {
@@ -59,18 +61,22 @@ export function validateWidgetSpec(rawItem: Record<string, unknown>): ValidateWi
     return { error: widthParsed };
   }
 
+  const source = asString(rawItem.source);
+
   if (view === "text") {
     const text = asString(rawItem.text);
     if (text === undefined) {
       return { error: "Text view requires key 'text'" };
     }
-  } else if (!asString(rawItem.source)) {
+  } else if (source === "inline") {
+    // FR-DASH-09: metadata validated in resolve with view-params
+  } else if (!source) {
     return { error: `View '${view}' requires key 'source'` };
   }
 
   const spec: WidgetSpec = {
     view,
-    source: asString(rawItem.source),
+    source,
     title: asString(rawItem.title),
     width: (widthParsed as WidgetWidth) ?? "full",
     raw: rawItem,

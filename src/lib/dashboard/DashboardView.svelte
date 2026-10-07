@@ -1,44 +1,71 @@
 <script lang="ts">
-  import type { ResolvedDashboard, ResolvedSegment } from "../../../shared/dashboard/types";
+  import type { ResolvedDashboard } from "../../../shared/dashboard/types";
   import { renderMarkdown } from "../markdown";
+  import { t } from "../i18n";
+  import { buildDashboardViewModel, type DashboardWidgetVm } from "./view-model";
+  import CounterView from "./CounterView.svelte";
+  import ErrorCard from "./ErrorCard.svelte";
+  import KanbanView from "./KanbanView.svelte";
+  import ListView from "./ListView.svelte";
+  import ProvenanceLine from "./ProvenanceLine.svelte";
+  import StatusView from "./StatusView.svelte";
+  import TableView from "./TableView.svelte";
+  import TextView from "./TextView.svelte";
+  import { getLocale } from "../i18n";
 
   let { model }: { model: ResolvedDashboard } = $props();
 
-  function widgetTitle(seg: Extract<ResolvedSegment, { kind: "widget" }>): string {
-    return seg.spec.title ?? seg.spec.view;
+  const vm = $derived(
+    buildDashboardViewModel(model, getLocale(), $t.dashboardEmptyWidget),
+  );
+
+  function widthClass(widget: DashboardWidgetVm): string {
+    return `width-${widget.width ?? "full"}`;
   }
 </script>
 
 <div class="dashboard">
-  {#each model.segments as segment (segment)}
-    {#if segment.kind === "text"}
-      <section class="prose free-text">{@html renderMarkdown(segment.markdown)}</section>
-    {:else if segment.kind === "widget"}
-      <section class="widget-card width-{segment.spec.width ?? "full"}">
-        <h3>{widgetTitle(segment)}</h3>
-        {#if segment.result.kind === "error"}
-          <p class="widget-error">{segment.result.message}</p>
-        {:else if segment.result.kind === "text"}
-          <div class="prose">{@html renderMarkdown(segment.result.text)}</div>
-        {:else if segment.result.kind === "rows"}
-          <p class="muted">{segment.result.rows.length} row(s)</p>
-          <ul>
-            {#each segment.result.rows.slice(0, 8) as row, i (i)}
-              <li>{String(row.text ?? JSON.stringify(row))}</li>
-            {/each}
-          </ul>
-        {:else if segment.result.kind === "value"}
-          <p class="counter">{segment.result.value}</p>
-        {:else if segment.result.kind === "group_values"}
-          <ul>
-            {#each segment.result.groups as g (g.key)}
-              <li>{g.key ?? "(null)"}: {g.value}</li>
-            {/each}
-          </ul>
-        {:else if segment.result.kind === "groups"}
-          <p class="muted">{segment.result.groups.length} group(s)</p>
-        {/if}
-      </section>
+  {#if vm.title}
+    <header>
+      <h1>{vm.title}</h1>
+      {#if vm.summary}
+        <p class="summary">{vm.summary}</p>
+      {/if}
+    </header>
+  {/if}
+
+  {#each vm.rows as row (row)}
+    {#if row.kind === "text"}
+      <section class="prose free-text">{@html renderMarkdown(row.markdown)}</section>
+    {:else}
+      <div class="widget-row">
+        {#each row.widgets as widget (widget.title + widget.kind)}
+          <section class="widget-card {widthClass(widget)}" class:inline-widget={widget.kind !== "error" && widget.provenance}>
+            {#if widget.kind !== "error"}
+              <h3>{widget.title}</h3>
+              {#if widget.provenance}
+                <ProvenanceLine provenance={widget.provenance} />
+              {/if}
+            {/if}
+
+            {#if widget.kind === "error"}
+              <ErrorCard title={widget.title} message={widget.message} />
+            {:else if widget.kind === "kanban"}
+              <KanbanView columns={widget.columns} emptyLabel={$t.dashboardEmptyWidget} />
+            {:else if widget.kind === "list"}
+              <ListView items={widget.items} emptyLabel={$t.dashboardEmptyWidget} />
+            {:else if widget.kind === "table"}
+              <TableView columns={widget.columns} rows={widget.rows} emptyLabel={$t.dashboardEmptyWidget} />
+            {:else if widget.kind === "counter"}
+              <CounterView value={widget.value} delta={widget.delta} />
+            {:else if widget.kind === "textWidget"}
+              <TextView markdown={widget.markdown} />
+            {:else if widget.kind === "status"}
+              <StatusView cards={widget.cards} emptyLabel={$t.dashboardEmptyWidget} />
+            {/if}
+          </section>
+        {/each}
+      </div>
     {/if}
   {/each}
 </div>
@@ -49,43 +76,44 @@
     flex-direction: column;
     gap: 16px;
   }
+  header h1 {
+    margin: 0 0 4px;
+    font-size: 20px;
+  }
+  .summary {
+    margin: 0;
+    color: var(--muted);
+    font-size: 14px;
+  }
+  .widget-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: stretch;
+  }
   .widget-card {
     border: 1px solid var(--border);
     border-radius: 10px;
     padding: 12px 14px;
     background: var(--bg-secondary);
+    box-sizing: border-box;
+    flex: 1 1 100%;
+  }
+  .widget-card.inline-widget {
+    border-style: dashed;
+    background: color-mix(in srgb, var(--bg-secondary) 92%, var(--accent) 8%);
   }
   .widget-card.width-half {
-    width: calc(50% - 8px);
-    display: inline-block;
-    vertical-align: top;
+    flex: 1 1 calc(50% - 8px);
+    max-width: calc(50% - 8px);
   }
   .widget-card.width-third {
-    width: calc(33.333% - 8px);
-    display: inline-block;
-    vertical-align: top;
+    flex: 1 1 calc(33.333% - 8px);
+    max-width: calc(33.333% - 8px);
   }
   h3 {
     margin: 0 0 8px;
     font-size: 14px;
     font-weight: 600;
-  }
-  .widget-error {
-    color: var(--error-fg);
-    background: var(--error-bg);
-    border-radius: 8px;
-    padding: 8px 10px;
-    margin: 0;
-    font-size: 13px;
-  }
-  .muted {
-    color: var(--muted);
-    font-size: 13px;
-    margin: 0 0 6px;
-  }
-  .counter {
-    font-size: 28px;
-    font-weight: 600;
-    margin: 0;
   }
 </style>

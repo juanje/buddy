@@ -19,6 +19,16 @@ describe("i18n", () => {
     setLocale("es");
   });
 
+  it("has dashboard strings in both locales", () => {
+    setLocale("es");
+    expect(get(t).dashboardEmptyWidget).toBeTruthy();
+    expect(get(t).dashboardBasedOn).toContain("{basis}");
+    setLocale("en");
+    expect(get(t).dashboardEmptyWidget).toBeTruthy();
+    expect(get(t).dashboardBasedOn).toContain("{basis}");
+    setLocale("es");
+  });
+
   it("has a task-remove permission title distinct from outside title", () => {
     setLocale("es");
     const es = get(t);

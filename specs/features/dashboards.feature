@@ -361,6 +361,195 @@ Feature: Dashboard resolution
     Then the file viewer has a resolved dashboard
     And the dashboard widget mentions escaping
 
+  @FR-DASH-10
+  Scenario: Kanban without group is a widget error
+    Given an initialized buddy git repository
+    And tasks.md with mixed states for dashboard resolution
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: kanban
+        source: tasks
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-07"
+    Then segment 1 widget result is an error mentioning "group"
+
+  @FR-DASH-10
+  Scenario: Table columns with unknown field is a widget error
+    Given an initialized buddy git repository
+    And tasks.md with mixed states for dashboard resolution
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: table
+        source: tasks
+        columns: [text, not_a_column]
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-07"
+    Then segment 1 widget result is an error mentioning "not_a_column"
+
+  @FR-DASH-10
+  Scenario: Counter delta without range is a widget error
+    Given an initialized buddy git repository
+    And tasks.md with mixed states for dashboard resolution
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: counter
+        source: tasks
+        count: true
+        delta: true
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-07"
+    Then segment 1 widget result is an error mentioning "range"
+
+  @FR-DASH-10
+  Scenario: Counter delta compares to the previous period
+    Given an initialized buddy git repository
+    And deferred.md with one due item
+    And deferred.md with a far future item
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: counter
+        source: deferred
+        count: true
+        range: -7d..today
+        delta: true
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-07"
+    Then segment 1 widget value is 1 with delta 1
+
+  @FR-DASH-10
+  Scenario: Text widget script tags are not raw HTML in resolved text
+    Given an initialized buddy git repository
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: text
+        text: "Hello <script>alert(1)</script>"
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-07"
+    Then segment 1 text widget markdown contains "<script>"
+
+  @FR-DASH-03
+  Scenario: Broken widget between good ones still leaves neighbors resolved
+    Given an initialized buddy git repository
+    And tasks.md with mixed states for dashboard resolution
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: table
+        source: tasks
+        columns: [text, state]
+      - view: kanban
+        source: tasks
+      - view: table
+        source: tasks
+        columns: [text, state]
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-07"
+    Then segment 1 is a table widget with 4 rows and no error
+    And segment 2 widget result is an error mentioning "group"
+    And segment 3 is a table widget with 4 rows and no error
+
+  @FR-DASH-03
+  Scenario: Empty tasks source is not a widget error
+    Given an initialized buddy git repository
+    And tasks.md does not exist
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: table
+        source: tasks
+        columns: [text, state]
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-07"
+    Then segment 1 is a table widget with 0 rows and no error
+
+  @FR-DASH-03
+  Scenario: All widgets broken but free text remains
+    Given an initialized buddy git repository
+    And a dashboard file with body:
+      """
+      Still readable.
+
+      ```dashboard
+      - view: kanban
+        source: tasks
+      ```
+
+      ```dashboard
+      - view: counter
+        source: tasks
+        delta: true
+        count: true
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-07"
+    Then segment 1 is text "Still readable."
+    And segment 2 widget result is an error
+    And segment 3 widget result is an error
+
+  @FR-DASH-09
+  Scenario: Inline source requires updated and basis
+    Given an initialized buddy git repository
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: status
+        source: inline
+        updated: 2026-09-28
+        basis: Weekly review
+        rows:
+          - label: Release
+            state: ok
+            reason: On track
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-07"
+    Then segment 1 widget has provenance age days 9
+    And segment 1 widget rows count is 1
+
+  @FR-DASH-09
+  Scenario: Inline missing basis is a widget error
+    Given an initialized buddy git repository
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: status
+        source: inline
+        updated: 2026-10-01
+        rows:
+          - label: X
+            state: ok
+            reason: Y
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-07"
+    Then segment 1 widget result is an error mentioning "basis"
+
+  @FR-DASH-09
+  Scenario: Text widget without source has no provenance
+    Given an initialized buddy git repository
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: text
+        text: Free note
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-07"
+    Then segment 1 is a text widget without error
+    And segment 1 widget has no provenance
+
   @FR-DASH-02
   Scenario: Ordinary markdown still offers export PDF when supported
     Given a filesystem buddy root at "/tmp/buddy-dash-view-6"

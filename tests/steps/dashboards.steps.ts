@@ -243,3 +243,63 @@ Then(
     }
   },
 );
+
+Then(
+  "segment {int} widget value is {int} with delta {int}",
+  function (this: DashboardWorld, index: number, value: number, delta: number) {
+    const seg = segments.call(this)[index - 1];
+    assert.equal(seg.kind, "widget");
+    if (seg.kind === "widget") {
+      assert.equal(seg.result.kind, "value");
+      if (seg.result.kind === "value") {
+        assert.equal(seg.result.value, value);
+        assert.equal(seg.result.delta, delta);
+      }
+    }
+  },
+);
+
+Then(
+  "segment {int} text widget markdown contains {string}",
+  function (this: DashboardWorld, index: number, fragment: string) {
+    const seg = segments.call(this)[index - 1];
+    assert.equal(seg.kind, "widget");
+    if (seg.kind === "widget") {
+      assert.equal(seg.result.kind, "text");
+      if (seg.result.kind === "text") {
+        assert.ok(seg.result.text.includes(fragment), seg.result.text);
+      }
+    }
+  },
+);
+
+Then(
+  "segment {int} widget has provenance age days {int}",
+  function (this: DashboardWorld, index: number, days: number) {
+    const seg = segments.call(this)[index - 1];
+    assert.equal(seg.kind, "widget");
+    if (seg.kind === "widget") {
+      assert.ok(seg.provenance, "expected provenance");
+      assert.equal(seg.provenance!.ageDays, days);
+    }
+  },
+);
+
+Then("segment {int} widget has no provenance", function (this: DashboardWorld, index: number) {
+  const seg = segments.call(this)[index - 1];
+  assert.equal(seg.kind, "widget");
+  if (seg.kind === "widget") {
+    assert.equal(seg.provenance, undefined);
+  }
+});
+
+Then("segment {int} widget rows count is {int}", function (this: DashboardWorld, index: number, count: number) {
+  const seg = segments.call(this)[index - 1];
+  assert.equal(seg.kind, "widget");
+  if (seg.kind === "widget") {
+    assert.equal(seg.result.kind, "rows");
+    if (seg.result.kind === "rows") {
+      assert.equal(seg.result.rows.length, count);
+    }
+  }
+});

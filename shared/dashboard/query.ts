@@ -1,38 +1,19 @@
-// shared/dashboard/query.ts — Widget query engine (FR-DASH-04).
+// shared/dashboard/query.ts — Widget query engine (FR-DASH-04, FR-DASH-10).
 
-import { addDays, toIsoDay } from "../dates";
 import type { FieldType, SourceDefinition } from "./source-fields";
+import { coerceIsoDay, parseRelativeDateBound } from "./query-dates";
+import { parseDateRange, previousPeriodOfSameLength } from "./range";
 import type { WidgetResult, WidgetSpec } from "./types";
 
 export type QueryOutcome =
   | { ok: true; result: WidgetResult }
   | { ok: false; message: string };
 
+export { addMonths } from "./query-dates";
+
 type Clause = { field: string; op: string; value: string };
 
 const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
-
-export function addMonths(isoDay: string, months: number): string {
-  const [y, m, d] = isoDay.split("-").map(Number);
-  const date = new Date(y, m - 1 + months, 1);
-  const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-  date.setDate(Math.min(d, lastDay));
-  return toIsoDay(date);
-}
-
-function parseRelativeDate(token: string, today: string): string | undefined {
-  const t = token.trim().toLowerCase();
-  if (t === "today") return today;
-  const m = /^([+-])(\d+)([dwm])$/.exec(t);
-  if (!m) return undefined;
-  const sign = m[1] === "-" ? -1 : 1;
-  const n = sign * Number(m[2]);
-  const unit = m[3];
-  if (unit === "d") return addDays(today, n);
-  if (unit === "w") return addDays(today, n * 7);
-  if (unit === "m") return addMonths(today, n);
-  return undefined;
-}
 
 function normalizeCompareValue(raw: string): string {
   let v = raw.trim();
@@ -76,13 +57,6 @@ function assertField(def: SourceDefinition, field: string): QueryOutcome | undef
   return undefined;
 }
 
-function coerceDate(value: unknown, today: string): string | undefined {
-  if (value === undefined || value === null || value === "") return undefined;
-  const s = String(value);
-  if (ISO_DAY.test(s)) return s;
-  return parseRelativeDate(s, today);
-}
-
 function compareClause(
   row: Record<string, unknown>,
   clause: Clause,
@@ -94,8 +68,9 @@ function compareClause(
   const rhs = normalizeCompareValue(clause.value);
 
   if (fType.kind === "date") {
-    const left = coerceDate(raw, today);
-    const right = parseRelativeDate(clause.value, today) ?? (ISO_DAY.test(rhs) ? rhs : undefined);
+    const left = coerceIsoDay(raw, today);
+    const right =
+      parseRelativeDateBound(clause.value, today) ?? (ISO_DAY.test(rhs) ? rhs : undefined);
     if (!left || !right) {
       if (clause.op === "!=") return true;
       return false;
@@ -132,9 +107,10 @@ function compareClause(
   }
 }
 
-function applyRange(
+function applyRangeBounds(
   rows: Record<string, unknown>[],
-  range: string,
+  start: string,
+  end: string,
   def: SourceDefinition,
   today: string,
 ): Record<string, unknown>[] | QueryOutcome {
@@ -144,26 +120,24 @@ function applyRange(
   }
   const err = assertField(def, dateField);
   if (err) return err;
+  return rows.filter((row) => {
+    const d = coerceIsoDay(row[dateField], today);
+    if (!d) return false;
+    return d >= start && d <= end;
+  });
+}
 
-  let start: string | undefined;
-  let end: string | undefined;
-  const trimmed = range.trim();
-  if (trimmed.includes("..")) {
-    const [a, b] = trimmed.split("..").map((s) => s.trim());
-    start = parseRelativeDate(a, today) ?? (ISO_DAY.test(a) ? a : undefined);
-    end = parseRelativeDate(b, today) ?? (ISO_DAY.test(b) ? b : undefined);
-  } else {
-    start = parseRelativeDate(trimmed, today) ?? (ISO_DAY.test(trimmed) ? trimmed : undefined);
-    end = today;
-  }
-  if (!start || !end) {
+function applyRange(
+  rows: Record<string, unknown>[],
+  range: string,
+  def: SourceDefinition,
+  today: string,
+): Record<string, unknown>[] | QueryOutcome {
+  const parsed = parseDateRange(range, today);
+  if (!parsed) {
     return { ok: false, message: `Cannot parse range '${range}'` };
   }
-  return rows.filter((row) => {
-    const d = coerceDate(row[dateField], today);
-    if (!d) return false;
-    return d >= start! && d <= end!;
-  });
+  return applyRangeBounds(rows, parsed.start, parsed.end, def, today);
 }
 
 function applySort(
@@ -204,17 +178,21 @@ function groupKeysInOrder(field: string, def: SourceDefinition, rows: Record<str
   return [...keys].sort();
 }
 
-export function applyWidgetQuery(
-  rows: Record<string, unknown>[],
+function rangeStringFromBounds(start: string, end: string): string {
+  return `${start}..${end}`;
+}
+
+function filterWorkingSet(
+  initialRows: Record<string, unknown>[],
   spec: WidgetSpec,
-  _sourceName: string,
   sourceDef: SourceDefinition,
   today: string,
-): QueryOutcome {
-  let working = [...rows];
+  rangeOverride?: string,
+): Record<string, unknown>[] | QueryOutcome {
+  let working = [...initialRows];
   const raw = spec.raw;
-
-  const range = typeof raw.range === "string" ? raw.range : undefined;
+  const range =
+    rangeOverride ?? (typeof raw.range === "string" ? raw.range : undefined);
   if (range) {
     const ranged = applyRange(working, range, sourceDef, today);
     if (!Array.isArray(ranged)) return ranged;
@@ -251,6 +229,15 @@ export function applyWidgetQuery(
     working = working.slice(0, limit);
   }
 
+  return working;
+}
+
+function aggregateValue(
+  working: Record<string, unknown>[],
+  spec: WidgetSpec,
+  sourceDef: SourceDefinition,
+): QueryOutcome {
+  const raw = spec.raw;
   const group = typeof raw.group === "string" ? raw.group : undefined;
   const count = raw.count === true;
   const sumField = typeof raw.sum === "string" ? raw.sum : undefined;
@@ -305,4 +292,50 @@ export function applyWidgetQuery(
   }
 
   return { ok: true, result: { kind: "rows", rows: working } };
+}
+
+export function applyWidgetQuery(
+  rows: Record<string, unknown>[],
+  spec: WidgetSpec,
+  _sourceName: string,
+  sourceDef: SourceDefinition,
+  today: string,
+): QueryOutcome {
+  const raw = spec.raw;
+  const wantDelta = raw.delta === true;
+  const range = typeof raw.range === "string" ? raw.range : undefined;
+
+  const working = filterWorkingSet(rows, spec, sourceDef, today);
+  if (!Array.isArray(working)) return working;
+
+  const outcome = aggregateValue(working, spec, sourceDef);
+  if (!outcome.ok || !wantDelta || !range) {
+    return outcome;
+  }
+
+  if (outcome.result.kind !== "value") {
+    return outcome;
+  }
+
+  const parsed = parseDateRange(range, today);
+  if (!parsed) {
+    return { ok: false, message: `Cannot parse range '${range}'` };
+  }
+  const prev = previousPeriodOfSameLength(parsed);
+  const prevRange = rangeStringFromBounds(prev.start, prev.end);
+  const prevWorking = filterWorkingSet(rows, spec, sourceDef, today, prevRange);
+  if (!Array.isArray(prevWorking)) return prevWorking;
+  const prevOutcome = aggregateValue(prevWorking, spec, sourceDef);
+  if (!prevOutcome.ok || prevOutcome.result.kind !== "value") {
+    return outcome;
+  }
+
+  return {
+    ok: true,
+    result: {
+      kind: "value",
+      value: outcome.result.value,
+      delta: outcome.result.value - prevOutcome.result.value,
+    },
+  };
 }

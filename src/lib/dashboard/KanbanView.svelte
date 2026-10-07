@@ -1,0 +1,83 @@
+<script lang="ts">
+  import type { KanbanColumnVm } from "./view-model";
+
+  let { columns, emptyLabel }: { columns: KanbanColumnVm[]; emptyLabel: string } = $props();
+</script>
+
+{#if columns.every((c) => c.cards.length === 0)}
+  <p class="empty">{emptyLabel}</p>
+{:else}
+  <div class="kanban">
+    {#each columns as col (col.label)}
+      <section class="column">
+        <h4>{col.label}</h4>
+        <ul>
+          {#each col.cards as card, i (i)}
+            <li>
+              <span class="card-text">{card.text}</span>
+              {#if card.chips.length > 0}
+                <span class="chips">
+                  {#each card.chips as chip (chip)}
+                    <span class="chip">{chip}</span>
+                  {/each}
+                </span>
+              {/if}
+            </li>
+          {/each}
+        </ul>
+      </section>
+    {/each}
+  </div>
+{/if}
+
+<style>
+  .kanban {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+  }
+  .column {
+    flex: 1;
+    min-width: 140px;
+  }
+  h4 {
+    margin: 0 0 8px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--muted);
+  }
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  li {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 10px;
+    background: var(--bg);
+    font-size: 13px;
+  }
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 6px;
+  }
+  .chip {
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 999px;
+    background: var(--bg-secondary);
+  }
+  .empty {
+    color: var(--muted);
+    font-size: 13px;
+    margin: 0;
+  }
+</style>

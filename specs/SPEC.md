@@ -4055,14 +4055,14 @@ and inline content.
 |----|-------------|-------|
 | FR-DASH-01 | Dashboard file format: `type: dashboard`, free text + fenced `dashboard` blocks, `width` layout | 3 S1 ✓ |
 | FR-DASH-02 | Viewer renders dashboards read-only in wide mode, resolved by the worker | 3 S2 ✓ |
-| FR-DASH-03 | A failing widget shows its own error; the rest of the dashboard renders | 3 S2 |
+| FR-DASH-03 | A failing widget shows its own error; the rest of the dashboard renders | 3 S2 ✓ |
 | FR-DASH-04 | Query: `where`, `group`, `sort`, `limit`, `count`/`sum`, `range`; strict filter grammar with relative dates | 3 S1 ✓ |
 | FR-DASH-05 | Built-in sources: `tasks` (derived state) and `deferred` | 3 S1 ✓ |
 | FR-DASH-06 | Generic primitive: sections (any markdown with headings and list items) | 3 S3 |
 | FR-DASH-07 | Generic primitive: records (folder of `.md` files, frontmatter as row) | 3 S7 |
 | FR-DASH-08 | Generic primitive: series (CSV parsed by code) | 3 S4 |
-| FR-DASH-09 | Inline content carries date and basis, renders distinct, shows its age | 3 S2 |
-| FR-DASH-10 | Views v1: kanban, list, table, counter, text, status | 3 S2 |
+| FR-DASH-09 | Inline content carries date and basis, renders distinct, shows its age | 3 S2 ✓ |
+| FR-DASH-10 | Views v1: kanban, list, table, counter, text, status | 3 S2 ✓ |
 | FR-DASH-11 | Views v2 (own SVG): bar, line, progress, calendar heatmap, timeline | 3 S5 |
 | FR-DASH-12 | `dashboard()` tool: help, fields, check, validate, create, update | 3 S3 |
 | FR-DASH-13 | Shipped templates and self-docs examples | 3 S3 |

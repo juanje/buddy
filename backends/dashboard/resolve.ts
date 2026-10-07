@@ -6,12 +6,21 @@ import { validateWidgetSpec } from "../../shared/dashboard/schema";
 import type {
   ResolvedDashboard,
   ResolvedSegment,
+  WidgetProvenance,
   WidgetResult,
   WidgetSpec,
 } from "../../shared/dashboard/types";
 import { parseDashboardYamlBlock } from "../../shared/dashboard/yaml-blocks";
 import { applyWidgetQuery } from "../../shared/dashboard/query";
+import {
+  ageDaysFromUpdated,
+  inferInlineSourceDefinition,
+  parseInlineRows,
+  validateInlineMetadata,
+} from "../../shared/dashboard/inline-source";
+import type { SourceDefinition } from "../../shared/dashboard/source-fields";
 import { sourceDefinition } from "../../shared/dashboard/source-fields";
+import { validateViewParams } from "../../shared/dashboard/view-params";
 import { loadSourceRows } from "./sources";
 
 function resolveTextWidget(spec: WidgetSpec): WidgetResult {
@@ -19,36 +28,114 @@ function resolveTextWidget(spec: WidgetSpec): WidgetResult {
   return { kind: "text", text: typeof text === "string" ? text : "" };
 }
 
-function resolveWidgetData(rootDir: string, spec: WidgetSpec, today: string): WidgetResult {
+function inlineProvenance(raw: Record<string, unknown>, today: string): WidgetProvenance | undefined {
+  const updated = raw.updated;
+  const basis = raw.basis;
+  if (typeof updated !== "string" || typeof basis !== "string") return undefined;
+  return {
+    updated,
+    basis,
+    ageDays: ageDaysFromUpdated(updated, today),
+  };
+}
+
+function loadInlineSource(
+  spec: WidgetSpec,
+  today: string,
+): { ok: true; rows: Record<string, unknown>[]; def: SourceDefinition; provenance: WidgetProvenance } | { ok: false; message: string } {
+  const metaErr = validateInlineMetadata(spec.raw);
+  if (metaErr) return { ok: false, message: metaErr };
+
   if (spec.view === "text") {
-    return resolveTextWidget(spec);
+    const text = spec.raw.text;
+    if (typeof text !== "string") {
+      return { ok: false, message: "Inline text view requires 'text' markdown content" };
+    }
+    const provenance = inlineProvenance(spec.raw, today)!;
+    return {
+      ok: true,
+      rows: [],
+      def: { fields: { text: { kind: "string" } } },
+      provenance,
+    };
   }
+
+  const parsed = parseInlineRows(spec.raw);
+  if (typeof parsed === "string") return { ok: false, message: parsed };
+  const provenance = inlineProvenance(spec.raw, today)!;
+  return {
+    ok: true,
+    rows: parsed,
+    def: inferInlineSourceDefinition(parsed),
+    provenance,
+  };
+}
+
+function resolveWidgetData(
+  rootDir: string,
+  spec: WidgetSpec,
+  today: string,
+): { result: WidgetResult; provenance?: WidgetProvenance } {
+  if (spec.view === "text" && !spec.source) {
+    return { result: resolveTextWidget(spec) };
+  }
+
+  if (spec.source === "inline") {
+    const loaded = loadInlineSource(spec, today);
+    if (!loaded.ok) {
+      return { result: { kind: "error", message: loaded.message } };
+    }
+    const viewErr2 = validateViewParams(spec, loaded.def);
+    if (viewErr2) {
+      return { result: { kind: "error", message: viewErr2 } };
+    }
+    if (spec.view === "text") {
+      return {
+        result: { kind: "text", text: String(spec.raw.text) },
+        provenance: loaded.provenance,
+      };
+    }
+    const queried = applyWidgetQuery(loaded.rows, spec, "inline", loaded.def, today);
+    if (!queried.ok) {
+      return { result: { kind: "error", message: queried.message } };
+    }
+    return { result: queried.result, provenance: loaded.provenance };
+  }
+
   const source = spec.source;
   if (!source) {
-    return { kind: "error", message: `View '${spec.view}' requires a source` };
+    return { result: { kind: "error", message: `View '${spec.view}' requires a source` } };
   }
   const loaded = loadSourceRows(rootDir, source, today);
   if (!loaded.ok) {
-    return { kind: "error", message: loaded.message };
+    return { result: { kind: "error", message: loaded.message } };
   }
   const def = sourceDefinition(source);
   if (!def) {
-    return { kind: "error", message: `Unknown source '${source}'` };
+    return { result: { kind: "error", message: `Unknown source '${source}'` } };
+  }
+  const viewErr3 = validateViewParams(spec, def);
+  if (viewErr3) {
+    return { result: { kind: "error", message: viewErr3 } };
   }
   const queried = applyWidgetQuery(loaded.rows, spec, source, def, today);
   if (!queried.ok) {
-    return { kind: "error", message: queried.message };
+    return { result: { kind: "error", message: queried.message } };
   }
-  return queried.result;
+  return { result: queried.result };
 }
 
-function widgetSegment(spec: WidgetSpec, result: WidgetResult): ResolvedSegment {
-  return { kind: "widget", spec, result };
+function widgetSegment(
+  spec: WidgetSpec,
+  result: WidgetResult,
+  provenance?: WidgetProvenance,
+): ResolvedSegment {
+  return { kind: "widget", spec, result, provenance };
 }
 
-function errorWidget(message: string): ResolvedSegment {
-  const spec: WidgetSpec = { view: "text", width: "full", raw: {} };
-  return widgetSegment(spec, { kind: "error", message });
+function errorWidget(message: string, spec?: WidgetSpec): ResolvedSegment {
+  const fallback: WidgetSpec = spec ?? { view: "text", width: "full", raw: {} };
+  return widgetSegment(fallback, { kind: "error", message });
 }
 
 export function resolveDashboardContent(
@@ -86,8 +173,8 @@ export function resolveDashboardContent(
         segments.push(widgetSegment(fallback, { kind: "error", message: validated.error! }));
         continue;
       }
-      const result = resolveWidgetData(rootDir, validated.spec, todayStr);
-      segments.push(widgetSegment(validated.spec, result));
+      const resolved = resolveWidgetData(rootDir, validated.spec, todayStr);
+      segments.push(widgetSegment(validated.spec, resolved.result, resolved.provenance));
     }
   }
 

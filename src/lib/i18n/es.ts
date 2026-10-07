@@ -187,6 +187,8 @@ export type LocaleStrings = {
   maintenancePausedTitle: string;
   maintenancePausedBody: string;
   notificationTitle: string;
+  dashboardEmptyWidget: string;
+  dashboardBasedOn: string;
   fileViewerClose: string;
   fileViewerBack: string;
   fileViewerLoading: string;
@@ -390,6 +392,8 @@ export const es: LocaleStrings = {
   maintenancePausedTitle: "Buddy — mantenimiento en pausa",
   maintenancePausedBody: "No he podido organizar mi memoria varias veces seguidas, así que he dejado de intentarlo para no gastar tu presupuesto. Todo lo que hemos hablado sigue guardado.",
   notificationTitle: "buddy",
+  dashboardEmptyWidget: "Sin datos",
+  dashboardBasedOn: "Basado en: {basis}",
   fileViewerClose: "Cerrar",
   fileViewerBack: "Atrás",
   fileViewerLoading: "Cargando archivo…",

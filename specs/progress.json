@@ -1882,23 +1882,81 @@
     {
       "id": "FR-DASH-03",
       "title": "Dashboard widget-level errors",
-      "status": "pending",
-      "cycle_step": "spec_review",
-      "scenarios": []
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Broken widget between good ones still leaves neighbors resolved",
+          "bdd": "pass",
+          "unit_tests": 2
+        },
+        {
+          "name": "Empty tasks source is not a widget error",
+          "bdd": "pass",
+          "unit_tests": 2
+        },
+        {
+          "name": "All widgets broken but free text remains",
+          "bdd": "pass",
+          "unit_tests": 2
+        }
+      ]
     },
     {
       "id": "FR-DASH-09",
       "title": "Dashboard inline content with date, basis and age",
-      "status": "pending",
-      "cycle_step": "spec_review",
-      "scenarios": []
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Inline source requires updated and basis",
+          "bdd": "pass",
+          "unit_tests": 2
+        },
+        {
+          "name": "Inline missing basis is a widget error",
+          "bdd": "pass",
+          "unit_tests": 2
+        },
+        {
+          "name": "Text widget without source has no provenance",
+          "bdd": "pass",
+          "unit_tests": 2
+        }
+      ]
     },
     {
       "id": "FR-DASH-10",
       "title": "Dashboard views v1: kanban, list, table, counter, text, status",
-      "status": "pending",
-      "cycle_step": "spec_review",
-      "scenarios": []
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Kanban without group is a widget error",
+          "bdd": "pass",
+          "unit_tests": 2
+        },
+        {
+          "name": "Table columns with unknown field is a widget error",
+          "bdd": "pass",
+          "unit_tests": 2
+        },
+        {
+          "name": "Counter delta without range is a widget error",
+          "bdd": "pass",
+          "unit_tests": 2
+        },
+        {
+          "name": "Counter delta compares to the previous period",
+          "bdd": "pass",
+          "unit_tests": 2
+        },
+        {
+          "name": "Text widget script tags are not raw HTML in resolved text",
+          "bdd": "pass",
+          "unit_tests": 2
+        }
+      ]
     },
     {
       "id": "FR-DASH-06",

@@ -14,10 +14,16 @@ export type WidgetSpec = {
 export type WidgetResult =
   | { kind: "rows"; rows: Record<string, unknown>[] }
   | { kind: "groups"; groups: Array<{ key: string | null; rows: Record<string, unknown>[] }> }
-  | { kind: "value"; value: number }
+  | { kind: "value"; value: number; delta?: number }
   | { kind: "group_values"; groups: Array<{ key: string | null; value: number }> }
   | { kind: "text"; text: string }
   | { kind: "error"; message: string };
+
+export type WidgetProvenance = {
+  updated: string;
+  basis: string;
+  ageDays: number;
+};
 
 export type ResolvedTextSegment = { kind: "text"; markdown: string };
 
@@ -25,6 +31,7 @@ export type ResolvedWidgetSegment = {
   kind: "widget";
   spec: WidgetSpec;
   result: WidgetResult;
+  provenance?: WidgetProvenance;
 };
 
 export type ResolvedSegment = ResolvedTextSegment | ResolvedWidgetSegment;

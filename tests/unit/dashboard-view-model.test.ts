@@ -1,0 +1,89 @@
+// tests/unit/dashboard-view-model.test.ts — FR-DASH-10 view-model
+
+import { describe, expect, it } from "vitest";
+
+import type { ResolvedDashboard } from "../../shared/dashboard/types";
+import { setLocale } from "../../src/lib/i18n";
+import {
+  buildDashboardViewModel,
+  layoutWidgetRows,
+  statusTone,
+  taskStateLabel,
+  type DashboardWidgetVm,
+} from "../../src/lib/dashboard/view-model";
+
+describe("taskStateLabel", () => {
+  it("localizes task states in Spanish", () => {
+    setLocale("es");
+    expect(taskStateLabel("next", "es")).toBe("Siguiente");
+    expect(taskStateLabel("open", "es")).toBe("Abierta");
+  });
+});
+
+describe("layoutWidgetRows", () => {
+  it("places two half widgets on one row", () => {
+    const half = (title: string): DashboardWidgetVm => ({
+      kind: "counter",
+      title,
+      width: "half",
+      value: 1,
+      empty: false,
+    });
+    const rows = layoutWidgetRows([half("A"), half("B")]);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toHaveLength(2);
+  });
+});
+
+describe("buildDashboardViewModel kanban", () => {
+  it("orders task state columns and Spanish labels", () => {
+    setLocale("es");
+    const model: ResolvedDashboard = {
+      today: "2026-10-07",
+      segments: [
+        {
+          kind: "widget",
+          spec: {
+            view: "kanban",
+            source: "tasks",
+            width: "full",
+            raw: { view: "kanban", source: "tasks", group: "state" },
+          },
+          result: {
+            kind: "groups",
+            groups: [
+              { key: "open", rows: [{ text: "One" }] },
+              { key: "next", rows: [{ text: "Two" }] },
+              { key: "scheduled", rows: [] },
+              { key: "parked", rows: [] },
+            ],
+          },
+        },
+      ],
+    };
+    const vm = buildDashboardViewModel(model, "es", "Vacío");
+    const row = vm.rows.find((r) => r.kind === "widgetRow");
+    expect(row?.kind).toBe("widgetRow");
+    if (row?.kind === "widgetRow") {
+      const kanban = row.widgets[0];
+      expect(kanban.kind).toBe("kanban");
+      if (kanban.kind === "kanban") {
+        expect(kanban.columns.map((c) => c.label)).toEqual([
+          "Siguiente",
+          "Abierta",
+          "Programada",
+          "Aparcada",
+        ]);
+      }
+    }
+  });
+});
+
+describe("statusTone", () => {
+  it("maps known states", () => {
+    expect(statusTone("ok")).toBe("ok");
+    expect(statusTone("warn")).toBe("warn");
+    expect(statusTone("bad")).toBe("bad");
+    expect(statusTone("weird")).toBe("unknown");
+  });
+});
