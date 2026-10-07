@@ -1730,9 +1730,35 @@
     {
       "id": "FR-DASH-01",
       "title": "Dashboard file format and resolved model",
-      "status": "pending",
-      "cycle_step": "spec_review",
-      "scenarios": []
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Document order and default widget width",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Unknown widget key is an error for that widget only",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Unknown view is a widget error",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Invalid YAML marks every widget in the block as errored",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Unclosed dashboard fence is a widget error",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
     },
     {
       "id": "FR-DASH-05",

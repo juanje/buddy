@@ -36,7 +36,8 @@
     "svelte": "^5.0.0",
     "tauri-plugin-js-api": "^0.2.0",
     "turndown": "^7.2.4",
-    "typebox": "^1.1.38"
+    "typebox": "^1.1.38",
+    "yaml": "^2.9.1"
   },
   "devDependencies": {
     "@cucumber/cucumber": "^13.2.0",
