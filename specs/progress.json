@@ -1844,9 +1844,40 @@
     {
       "id": "FR-DASH-02",
       "title": "Viewer renders dashboards read-only in wide mode",
-      "status": "pending",
-      "cycle_step": "spec_review",
-      "scenarios": []
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Dashboard under user/dashboards opens wide with a resolved model",
+          "bdd": "pass",
+          "unit_tests": 2
+        },
+        {
+          "name": "Same content outside user/dashboards renders as markdown",
+          "bdd": "pass",
+          "unit_tests": 2
+        },
+        {
+          "name": "File in dashboards without type stays markdown",
+          "bdd": "pass",
+          "unit_tests": 2
+        },
+        {
+          "name": "resolveDashboard rejects files outside user/dashboards",
+          "bdd": "pass",
+          "unit_tests": 2
+        },
+        {
+          "name": "Tasks source through an escaping symlink is a widget error",
+          "bdd": "pass",
+          "unit_tests": 2
+        },
+        {
+          "name": "Ordinary markdown still offers export PDF when supported",
+          "bdd": "pass",
+          "unit_tests": 2
+        }
+      ]
     },
     {
       "id": "FR-DASH-03",

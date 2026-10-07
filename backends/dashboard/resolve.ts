@@ -91,5 +91,5 @@ export function resolveDashboardContent(
     }
   }
 
-  return { title, summary, segments };
+  return { title, summary, today: todayStr, segments };
 }

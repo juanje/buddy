@@ -4054,7 +4054,7 @@ and inline content.
 | ID | Description | Phase |
 |----|-------------|-------|
 | FR-DASH-01 | Dashboard file format: `type: dashboard`, free text + fenced `dashboard` blocks, `width` layout | 3 S1 ✓ |
-| FR-DASH-02 | Viewer renders dashboards read-only in wide mode, resolved by the worker | 3 S2 |
+| FR-DASH-02 | Viewer renders dashboards read-only in wide mode, resolved by the worker | 3 S2 ✓ |
 | FR-DASH-03 | A failing widget shows its own error; the rest of the dashboard renders | 3 S2 |
 | FR-DASH-04 | Query: `where`, `group`, `sort`, `limit`, `count`/`sum`, `range`; strict filter grammar with relative dates | 3 S1 ✓ |
 | FR-DASH-05 | Built-in sources: `tasks` (derived state) and `deferred` | 3 S1 ✓ |
@@ -4109,8 +4109,8 @@ and inline content.
 - Sources are read under the same containment as the viewer (`isContained`,
   symlinks resolved). No source escapes the buddy directory.
 - Dashboards render in a wide mode of the viewer; the standard width is too
-  narrow for a kanban. Back, links inside free text, Show in folder and Export
-  PDF keep working.
+  narrow for a kanban. Back, links inside free text and Show in folder keep
+  working. Export PDF is hidden for dashboards until FR-DASH-15.
 - Rendering involves no model call. Worker reads for a dashboard are not
   agent tool calls, so they leave Hebbian metadata untouched.
 - The view is read-only: no control in it writes to any file.

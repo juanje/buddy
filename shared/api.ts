@@ -1,6 +1,7 @@
 // shared/api.ts — Type-safe contract between frontend and worker (kkrpc).
 
 import type { ConnectorConfig } from "./connector-types";
+import type { ResolvedDashboard } from "./dashboard/types";
 import type { TaskItem } from "./task-types";
 
 export type { ConnectorConfig };
@@ -257,6 +258,11 @@ export interface WorkerAPI {
    * no filesystem access of its own (NFR-SEC-09).
    */
   readViewableFile(href: string): Promise<string>;
+  /**
+   * Resolve a dashboard file to a view model (FR-DASH-02). Validates containment
+   * and requires `user/dashboards/` + `type: dashboard`.
+   */
+  resolveDashboard(href: string): Promise<ResolvedDashboard>;
   /** Load Jira integration config (FR-JIRA-04). */
   loadJiraConfig(): Promise<ConnectorConfig | undefined>;
   /** Persist Jira integration config (FR-JIRA-04). */

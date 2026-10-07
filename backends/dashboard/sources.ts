@@ -2,12 +2,14 @@
 
 import { existsSync, readFileSync } from "node:fs";
 
+import { isContained } from "../containment";
 import { deferredPath } from "../brain-paths";
 import { parseDeferredItems } from "../deferred";
 import {
   buildListResult,
   readTasksFile,
   taskState,
+  tasksFilePath,
 } from "../tasks/task-file";
 import { listKnownSourceNames } from "../../shared/dashboard/source-fields";
 
@@ -21,13 +23,29 @@ export function loadSourceRows(
   today: string,
 ): SourceLoadResult {
   if (source === "tasks") {
+    const path = tasksFilePath(rootDir);
+    const blocked = assertSourcePath(rootDir, path, "tasks");
+    if (blocked) return blocked;
     return { ok: true, rows: loadTasksRows(rootDir, today) };
   }
   if (source === "deferred") {
+    const path = deferredPath(rootDir);
+    const blocked = assertSourcePath(rootDir, path, "deferred");
+    if (blocked) return blocked;
     return { ok: true, rows: loadDeferredRows(rootDir) };
   }
   const known = listKnownSourceNames().join(", ");
   return { ok: false, message: `Unknown source '${source}'. Known sources: ${known}` };
+}
+
+function assertSourcePath(rootDir: string, absPath: string, label: string): SourceLoadResult | undefined {
+  if (!isContained(absPath, rootDir)) {
+    return {
+      ok: false,
+      message: `Cannot read ${label}: path escapes the buddy directory`,
+    };
+  }
+  return undefined;
 }
 
 export function loadTasksRows(rootDir: string, today: string): Record<string, unknown>[] {

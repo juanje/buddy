@@ -2,6 +2,7 @@
 
 import { describe, expect, it, vi } from "vitest";
 
+import { resolveDashboardContent } from "../../backends/dashboard/resolve";
 import { createFileViewerController } from "../../src/lib/file-viewer-controller";
 import { routeLocalLinkClick } from "../../src/lib/local-link-handler";
 import { isViewableFile } from "../../src/lib/local-path";
@@ -185,6 +186,30 @@ describe("FileViewerController export PDF (FR-CHAT-18)", () => {
     });
 
     await controller.openFile("user/notes.md");
+    expect(readStore(controller.canExportPdf)).toBe(false);
+  });
+
+  it("opens dashboards in wide mode via resolveDashboard", async () => {
+    const md = `---
+type: dashboard
+---
+\`\`\`dashboard
+- view: text
+  text: Hi
+\`\`\`
+`;
+    const readViewableFile = vi.fn(async () => md);
+    const resolveDashboard = vi.fn(async () =>
+      resolveDashboardContent("/tmp/root", md, "2026-10-07"),
+    );
+    const controller = createFileViewerController({
+      readViewableFile,
+      resolveDashboard,
+    });
+
+    await controller.openFile("user/dashboards/b.md");
+    expect(readStore(controller.wide)).toBe(true);
+    expect(readStore(controller.dashboard)?.segments.length).toBeGreaterThan(0);
     expect(readStore(controller.canExportPdf)).toBe(false);
   });
 

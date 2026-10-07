@@ -3,6 +3,7 @@
   import { get } from "svelte/store";
   import type { FileViewerController } from "./file-viewer-controller";
   import { renderMarkdown } from "./markdown";
+  import DashboardView from "./dashboard/DashboardView.svelte";
   import { t } from "./i18n";
 
   let { controller }: { controller: FileViewerController } = $props();
@@ -19,6 +20,8 @@
   const canGoBack = $derived(controller.canGoBack);
   const canReveal = $derived(controller.canReveal);
   const canExportPdf = $derived(controller.canExportPdf);
+  const wide = $derived(controller.wide);
+  const dashboard = $derived(controller.dashboard);
 
   function onBackdropClick(event: MouseEvent) {
     if (event.target === event.currentTarget) {
@@ -54,7 +57,7 @@
 
 {#if $open}
   <div class="backdrop" onclick={onBackdropClick} role="presentation">
-    <div class="panel" role="dialog" aria-labelledby="file-viewer-title">
+    <div class="panel" class:wide={$wide} role="dialog" aria-labelledby="file-viewer-title">
       <header class="header">
         {#if $canGoBack}
           <button
@@ -87,6 +90,8 @@
           <p class="muted">{$t.fileViewerLoading}</p>
         {:else if $error}
           <p class="error">{$t.fileViewerError.replace("{message}", $error)}</p>
+        {:else if $dashboard}
+          <DashboardView model={$dashboard} />
         {:else if $isMarkdown}
           <div class="markdown prose">{@html renderMarkdown($content)}</div>
         {:else}
@@ -137,6 +142,9 @@
     border-radius: 12px;
     background: var(--bg);
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+  }
+  .panel.wide {
+    width: min(1280px, 100%);
   }
   .header {
     display: flex;

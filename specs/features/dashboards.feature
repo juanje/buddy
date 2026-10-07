@@ -283,3 +283,90 @@ Feature: Dashboard resolution
       """
     When the dashboard is resolved for today "2026-10-07"
     Then segment 1 widget result is an error mentioning "quote"
+
+  @FR-DASH-02
+  Scenario: Dashboard under user/dashboards opens wide with a resolved model
+    Given a filesystem buddy root at "/tmp/buddy-dash-view-1"
+    And a readable file "user/dashboards/board.md" with content:
+      """
+      ---
+      type: dashboard
+      ---
+      ```dashboard
+      - view: table
+        source: tasks
+      ```
+      """
+    And tasks.md exists at buddy root with one open task
+    When the dashboard test viewer opens "user/dashboards/board.md"
+    Then the file viewer is in wide mode
+    And the file viewer has a resolved dashboard
+    And the file viewer does not offer export PDF
+
+  @FR-DASH-02
+  Scenario: Same content outside user/dashboards renders as markdown
+    Given a filesystem buddy root at "/tmp/buddy-dash-view-2"
+    And a readable file "user/wiki/board.md" with content:
+      """
+      ---
+      type: dashboard
+      ---
+      Body only
+      """
+    When the dashboard test viewer opens "user/wiki/board.md"
+    Then the file viewer is not in wide mode
+    And the file viewer has no resolved dashboard
+
+  @FR-DASH-02
+  Scenario: File in dashboards without type stays markdown
+    Given a filesystem buddy root at "/tmp/buddy-dash-view-3"
+    And a readable file "user/dashboards/notes.md" with content:
+      """
+      ---
+      summary: Notes
+      ---
+      Plain
+      """
+    When the dashboard test viewer opens "user/dashboards/notes.md"
+    Then the file viewer is not in wide mode
+    And the file viewer has no resolved dashboard
+
+  @FR-DASH-02
+  Scenario: resolveDashboard rejects files outside user/dashboards
+    Given a filesystem buddy root at "/tmp/buddy-dash-view-4"
+    And a readable file "user/wiki/board.md" with content:
+      """
+      ---
+      type: dashboard
+      ---
+      """
+    When resolveDashboard is called for "user/wiki/board.md"
+    Then resolveDashboard fails
+
+  @FR-DASH-02
+  Scenario: Tasks source through an escaping symlink is a widget error
+    Given a filesystem buddy root at "/tmp/buddy-dash-view-5"
+    And the user tasks file is a symlink outside the buddy root
+    And a readable file "user/dashboards/board.md" with content:
+      """
+      ---
+      type: dashboard
+      ---
+      ```dashboard
+      - view: table
+        source: tasks
+      ```
+      """
+    When the dashboard test viewer opens "user/dashboards/board.md"
+    Then the file viewer has a resolved dashboard
+    And the dashboard widget mentions escaping
+
+  @FR-DASH-02
+  Scenario: Ordinary markdown still offers export PDF when supported
+    Given a filesystem buddy root at "/tmp/buddy-dash-view-6"
+    And a readable file "user/notes/doc.md" with content:
+      """
+      # Hello
+      """
+    When the dashboard test viewer opens "user/notes/doc.md"
+    Then the file viewer offers export PDF

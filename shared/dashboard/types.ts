@@ -32,5 +32,7 @@ export type ResolvedSegment = ResolvedTextSegment | ResolvedWidgetSegment;
 export type ResolvedDashboard = {
   title?: string;
   summary?: string;
+  /** Local calendar day used for relative dates (FR-DASH-04, FR-DASH-09). */
+  today: string;
   segments: ResolvedSegment[];
 };

@@ -26,11 +26,12 @@ const pdfSaver = createPdfSaver({
 });
 
 export function createDefaultFileViewerController(
-  worker: Pick<WorkerAPI, "readViewableFile">,
+  worker: Pick<WorkerAPI, "readViewableFile" | "resolveDashboard">,
   rootDir: () => string,
 ): FileViewerController {
   return createFileViewerController({
     readViewableFile: (relPath) => worker.readViewableFile(relPath),
+    resolveDashboard: (relPath) => worker.resolveDashboard(relPath),
     // Needed to resolve links written inside a document (FR-CHAT-12).
     rootDir,
     revealInFileManager: (absPath) => revealItemInDir(absPath),

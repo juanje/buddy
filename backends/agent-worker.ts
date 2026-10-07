@@ -71,6 +71,7 @@ import { bootDeployDocs, bootRefreshIfNeeded } from "./boot-refresh";
 import { pruneSessionArtifacts } from "./session-log-prune";
 import { createUsageTracker, resolveMonthlyBudget, type UsageTracker } from "./usage-tracker";
 import { createPromptQueue } from "./prompt-queue";
+import { resolveViewableDashboard } from "./dashboard/viewable-dashboard";
 import { readViewableFile } from "./viewable-file";
 import {
   loadJiraConfig,
@@ -454,6 +455,12 @@ export async function main(deps: WorkerDeps = {}): Promise<void> {
           throw new Error("App is not configured");
         }
         return readViewableFile(setupState.config.rootDir, href);
+      },
+      async resolveDashboard(href: string) {
+        if (setupState.firstRun) {
+          throw new Error("App is not configured");
+        }
+        return resolveViewableDashboard(setupState.config.rootDir, href);
       },
       async loadJiraConfig() {
         return loadJiraConfig();

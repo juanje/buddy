@@ -5,6 +5,8 @@ import { get, writable, type Readable } from "svelte/store";
 import { basename } from "../utils/path";
 import { splitFrontmatter } from "../../shared/frontmatter";
 import { resolveRevealablePath, resolveViewablePath } from "../../shared/viewable-path";
+import type { ResolvedDashboard } from "../../shared/dashboard/types";
+import { isDashboardDocument } from "../../shared/dashboard/document";
 import { renderMarkdown } from "./markdown";
 import { buildPdfHtml } from "./pdf-html";
 
@@ -14,6 +16,8 @@ export interface FileViewerDeps {
    * worker RPC — the frontend has no filesystem capability (NFR-SEC-09).
    */
   readViewableFile(relPath: string): Promise<string>;
+  /** Resolve a dashboard file (FR-DASH-02). Omitted in tests that only cover markdown. */
+  resolveDashboard?: (relPath: string) => Promise<ResolvedDashboard>;
   /** Buddy directory, needed to resolve links found inside a document. */
   rootDir?: () => string;
   /**
@@ -58,6 +62,10 @@ export interface FileViewerController {
    * platforms that implement createPDF — macOS today). FR-CHAT-18.
    */
   canExportPdf: Readable<boolean>;
+  /** True when the panel uses dashboard wide layout (FR-DASH-02). */
+  wide: Readable<boolean>;
+  /** Resolved dashboard model when viewing a dashboard; otherwise undefined. */
+  dashboard: Readable<ResolvedDashboard | undefined>;
   /** Open a file by path relative to the buddy directory. Starts a new history. */
   openFile(relPath: string): Promise<void>;
   /**
@@ -87,6 +95,8 @@ export function createFileViewerController(deps: FileViewerDeps): FileViewerCont
   const canGoBackStore = writable(false);
   const canRevealStore = writable(false);
   const canExportPdfStore = writable(false);
+  const wideStore = writable(false);
+  const dashboardStore = writable<ResolvedDashboard | undefined>(undefined);
 
   /** Documents visited before the current one, most recent last. */
   let history: string[] = [];
@@ -104,6 +114,8 @@ export function createFileViewerController(deps: FileViewerDeps): FileViewerCont
     const isMarkdown = /\.md$/i.test(relPath);
     isMarkdownStore.set(isMarkdown);
     canExportPdfStore.set(Boolean(isMarkdown && deps.platformSupportsPdf));
+    wideStore.set(false);
+    dashboardStore.set(undefined);
     contentStore.set("");
     summaryStore.set(undefined);
     errorStore.set(undefined);
@@ -119,6 +131,12 @@ export function createFileViewerController(deps: FileViewerDeps): FileViewerCont
         const { fields, body } = splitFrontmatter(text);
         contentStore.set(body);
         summaryStore.set(fields.summary);
+        if (isDashboardDocument(relPath, fields) && deps.resolveDashboard) {
+          const model = await deps.resolveDashboard(relPath);
+          dashboardStore.set(model);
+          wideStore.set(true);
+          canExportPdfStore.set(false);
+        }
       } else {
         contentStore.set(text);
       }
@@ -181,6 +199,8 @@ export function createFileViewerController(deps: FileViewerDeps): FileViewerCont
     canGoBackStore.set(false);
     canRevealStore.set(false);
     canExportPdfStore.set(false);
+    wideStore.set(false);
+    dashboardStore.set(undefined);
     openStore.set(false);
     filePathStore.set("");
     fileNameStore.set("");
@@ -203,6 +223,8 @@ export function createFileViewerController(deps: FileViewerDeps): FileViewerCont
     canGoBack: { subscribe: canGoBackStore.subscribe },
     canReveal: { subscribe: canRevealStore.subscribe },
     canExportPdf: { subscribe: canExportPdfStore.subscribe },
+    wide: { subscribe: wideStore.subscribe },
+    dashboard: { subscribe: dashboardStore.subscribe },
     openFile,
     followLink,
     back,
