@@ -10,24 +10,26 @@ import type {
   WidgetSpec,
 } from "../../shared/dashboard/types";
 import { parseDashboardYamlBlock } from "../../shared/dashboard/yaml-blocks";
+import { loadSourceRows } from "./sources";
 
 function resolveTextWidget(spec: WidgetSpec): WidgetResult {
   const text = spec.raw.text;
   return { kind: "text", text: typeof text === "string" ? text : "" };
 }
 
-function resolveWidgetData(
-  _rootDir: string,
-  spec: WidgetSpec,
-  _today: string,
-): WidgetResult {
+function resolveWidgetData(rootDir: string, spec: WidgetSpec, today: string): WidgetResult {
   if (spec.view === "text") {
     return resolveTextWidget(spec);
   }
-  return {
-    kind: "error",
-    message: `View '${spec.view}' data resolution is not available yet`,
-  };
+  const source = spec.source;
+  if (!source) {
+    return { kind: "error", message: `View '${spec.view}' requires a source` };
+  }
+  const loaded = loadSourceRows(rootDir, source, today);
+  if (!loaded.ok) {
+    return { kind: "error", message: loaded.message };
+  }
+  return { kind: "rows", rows: loaded.rows };
 }
 
 function widgetSegment(spec: WidgetSpec, result: WidgetResult): ResolvedSegment {

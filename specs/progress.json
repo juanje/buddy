@@ -1763,9 +1763,35 @@
     {
       "id": "FR-DASH-05",
       "title": "Dashboard sources: tasks (derived state) and deferred",
-      "status": "pending",
-      "cycle_step": "spec_review",
-      "scenarios": []
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Tasks source exposes derived state",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Tasks source includes stale_days for aged open items",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Deferred source exposes queue fields",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Missing tasks file yields zero rows without error",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Unknown source is a widget error listing known sources",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
     },
     {
       "id": "FR-DASH-04",

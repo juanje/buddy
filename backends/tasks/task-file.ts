@@ -317,3 +317,14 @@ export function isActiveNextItem(item: TaskItem, today: string): boolean {
     !(item.dueDate && item.dueDate > today)
   );
 }
+
+export type TaskDashboardState = "next" | "open" | "scheduled" | "parked";
+
+/** Derived task state for dashboards (FR-DASH-05). First match wins. */
+export function taskState(item: TaskItem, today: string): TaskDashboardState {
+  if (item.done) return "open";
+  if (item.area === "someday") return "parked";
+  if (item.dueDate && item.dueDate > today) return "scheduled";
+  if (item.next) return "next";
+  return "open";
+}
