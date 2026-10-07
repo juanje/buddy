@@ -2,7 +2,6 @@
 
 import {
   createAgentSession,
-  DefaultResourceLoader,
   SessionManager,
   defineTool,
   type ModelRuntime,
@@ -19,6 +18,7 @@ import { buddyPath } from "./brain-paths";
 import { resolveFastTierModel } from "./fast-model";
 import { commitAll } from "./git";
 import { buddyAgentDir } from "./global-config";
+import { createBuddyResourceLoader } from "./resource-loader";
 import { createPermissionGate } from "./permissions";
 import { buddySessionsDir } from "./session-paths";
 import {
@@ -314,13 +314,11 @@ export async function openRealWikiSynthesisSession(config: {
   counters: { created: number; rejected: boolean };
 }): Promise<WikiSynthesisAgentSession> {
   const modelOptions = await resolveFastTierModel(config.rootDir, config.modelRuntime, "off");
-  const resourceLoader = new DefaultResourceLoader({
+  const resourceLoader = await createBuddyResourceLoader({
     cwd: config.rootDir,
-    agentDir: buddyAgentDir(),
-    systemPromptOverride: () =>
+    systemPrompt: () =>
       "You evaluate wiki synthesis candidates and file approved concepts using wiki_file only.",
   });
-  await resourceLoader.reload();
 
   const cappedTools = buildCappedWikiFileTools(
     config.rootDir,

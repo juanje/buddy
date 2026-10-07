@@ -30,7 +30,6 @@ import { join, resolve } from "node:path";
 import type { ModelRuntime } from "@earendil-works/pi-coding-agent";
 import {
   createAgentSession,
-  DefaultResourceLoader,
   SessionManager,
 } from "@earendil-works/pi-coding-agent";
 
@@ -39,6 +38,7 @@ import { collectAssistantText } from "../backends/pi-utils";
 import { createBuddyModelRuntime, defaultAuthPath } from "../backends/provider-auth";
 import { bootRefreshIfNeeded } from "../backends/boot-refresh";
 import { buddyAgentDir, globalConfigDir, globalConfigPath } from "../backends/global-config";
+import { createBuddyResourceLoader } from "../backends/resource-loader";
 import { buddySessionsDir } from "../backends/session-paths";
 import { resolveSessionModel } from "../backends/model-switch";
 import type { AuthType } from "../shared/provider-mapping";
@@ -190,12 +190,10 @@ async function askModel(
   sessionDir: string,
   verbose: boolean,
 ): Promise<string> {
-  const rl = new DefaultResourceLoader({
+  const rl = await createBuddyResourceLoader({
     cwd: sessionDir,
-    agentDir: buddyAgentDir(),
-    systemPromptOverride: () => EVAL_SYSTEM_PROMPT,
+    systemPrompt: () => EVAL_SYSTEM_PROMPT,
   });
-  await rl.reload();
 
   const { session } = await createAgentSession({
     cwd: sessionDir,

@@ -11,7 +11,6 @@
 
 import {
   createAgentSession,
-  DefaultResourceLoader,
   SessionManager,
 } from "@earendil-works/pi-coding-agent";
 
@@ -19,6 +18,7 @@ import { execSync } from "node:child_process";
 import { existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { buddyAgentDir, globalConfigDir } from "./global-config";
+import { createBuddyResourceLoader } from "./resource-loader";
 import type { AgentEvent } from "../shared/api";
 import {
   GIT_COMMIT_PREFIX,
@@ -106,12 +106,10 @@ export async function runReflect(
   const sm = SessionManager.forkFrom(forkedSessionFile, rootDir, forkDir);
 
   // Fork-only context: no system prompt injection — the fork already has the conversation.
-  const resourceLoader = new DefaultResourceLoader({
+  const resourceLoader = await createBuddyResourceLoader({
     cwd: rootDir,
-    agentDir: buddyAgentDir(), // NFR-SEC-19
-    systemPromptOverride: () => undefined,
+    systemPrompt: () => undefined,
   });
-  await resourceLoader.reload();
 
   const modelRuntime = await createBuddyModelRuntime();
 

@@ -23,7 +23,8 @@ Feature: SDK resource discovery disabled (NFR-SEC-21)
 
   Scenario: Wiki synthesis session system prompt excludes SDK-discovered resources
     When the wiki synthesis agent session is created
-    Then the session system prompt is the wiki synthesis instruction only
+    Then the session system prompt contains the wiki synthesis instruction
+    And the session system prompt does not contain the root AGENTS marker
     And the session system prompt does not advertise decoy skills
 
   Scenario: Reflect session system prompt excludes SDK-discovered resources

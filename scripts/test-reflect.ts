@@ -14,7 +14,6 @@ import { basename, join, resolve } from "node:path";
 import { ModelRuntime } from "@earendil-works/pi-coding-agent";
 import {
   createAgentSession,
-  DefaultResourceLoader,
   SessionManager,
 } from "@earendil-works/pi-coding-agent";
 
@@ -24,6 +23,7 @@ import { alignHttpDispatcherWithPi } from "../backends/pi-http-dispatcher";
 import { createBuddyModelRuntime, defaultAuthPath } from "../backends/provider-auth";
 import { bootRefreshIfNeeded } from "../backends/boot-refresh";
 import { buddyAgentDir, globalConfigDir, globalConfigPath } from "../backends/global-config";
+import { createBuddyResourceLoader } from "../backends/resource-loader";
 import { buddySessionsDir } from "../backends/session-paths";
 import { resolveSessionModel } from "../backends/model-switch";
 import type { AuthType } from "../shared/provider-mapping";
@@ -123,12 +123,10 @@ async function runReflectEval(fixturePath: string, dryRun: boolean): Promise<str
   const brainDir = createMinimalBrainDir();
   const sysPrompt = assembleMaintenancePrompt(brainDir);
 
-  const rl = new DefaultResourceLoader({
+  const rl = await createBuddyResourceLoader({
     cwd: brainDir,
-    agentDir: buddyAgentDir(), // NFR-SEC-19
-    systemPromptOverride: () => sysPrompt,
+    systemPrompt: () => sysPrompt,
   });
-  await rl.reload();
 
   const modelRuntime = await createBuddyModelRuntime();
   const appConfig = readStateFile<SetupConfig>(globalConfigPath());

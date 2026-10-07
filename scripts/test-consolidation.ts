@@ -22,7 +22,6 @@ import { ModelRuntime } from "@earendil-works/pi-coding-agent";
 
 import {
   createAgentSession,
-  DefaultResourceLoader,
   SessionManager,
 } from "@earendil-works/pi-coding-agent";
 
@@ -40,6 +39,7 @@ import { assembleMaintenancePrompt } from "../backends/prompt";
 import { createBuddyModelRuntime, defaultAuthPath } from "../backends/provider-auth";
 import { bootRefreshIfNeeded } from "../backends/boot-refresh";
 import { buddyAgentDir, globalConfigDir, globalConfigPath } from "../backends/global-config";
+import { createBuddyResourceLoader } from "../backends/resource-loader";
 import { buddySessionsDir } from "../backends/session-paths";
 import { resolveSessionModel } from "../backends/model-switch";
 import type { AuthType } from "../shared/provider-mapping";
@@ -425,12 +425,10 @@ async function main(): Promise<void> {
         console.log(sysPrompt.slice(0, 500));
         if (sysPrompt.length > 500) console.log("...(truncated)");
 
-        const rl = new DefaultResourceLoader({
+        const rl = await createBuddyResourceLoader({
           cwd: rd,
-          agentDir: buddyAgentDir(), // NFR-SEC-19
-          systemPromptOverride: () => sysPrompt,
+          systemPrompt: () => sysPrompt,
         });
-        await rl.reload();
 
         const promptsDir = join(globalConfigDir(), "prompts");
         const skillTools = buildSkillTools(promptsDir, { rootDir: rd });

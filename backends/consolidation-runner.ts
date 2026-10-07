@@ -2,7 +2,6 @@
 
 import {
   createAgentSession,
-  DefaultResourceLoader,
   SessionManager,
   type ModelRuntime,
   type ToolDefinition,
@@ -75,6 +74,7 @@ import { createPermissionGate, type PermissionRequest } from "./permissions";
 import { assembleMaintenancePrompt } from "./prompt";
 import { appendDailyLog, updateLogsIndexEntry } from "./reflect";
 import { buddyAgentDir, globalConfigDir } from "./global-config";
+import { createBuddyResourceLoader } from "./resource-loader";
 import { recordSessionUsage } from "./usage-tracker";
 import { buildConsolidationTools, consolidationToolNames } from "./consolidation-tools";
 import { buildAllSkillTools, skillToolNames } from "./skill-tools";
@@ -347,12 +347,10 @@ export async function openRealMaintenanceSession(config: {
   const { rootDir, modelRuntime, depth } = config;
   const depthModelOptions = await resolveDepthModel(depth, rootDir, modelRuntime);
   const systemPrompt = assembleMaintenancePrompt(rootDir);
-  const resourceLoader = new DefaultResourceLoader({
+  const resourceLoader = await createBuddyResourceLoader({
     cwd: rootDir,
-    agentDir: buddyAgentDir(), // NFR-SEC-19
-    systemPromptOverride: () => systemPrompt,
+    systemPrompt: () => systemPrompt,
   });
-  await resourceLoader.reload();
 
   const { toolNames, customTools } = buildMaintenanceTooling(rootDir);
 

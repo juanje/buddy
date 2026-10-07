@@ -18,7 +18,6 @@ import { basename, join } from "node:path";
 
 import {
   createAgentSession,
-  DefaultResourceLoader,
   SessionManager,
 } from "@earendil-works/pi-coding-agent";
 
@@ -31,6 +30,7 @@ import { alignHttpDispatcherWithPi } from "../backends/pi-http-dispatcher";
 import { collectAssistantText } from "../backends/pi-utils";
 import { createBuddyModelRuntime } from "../backends/provider-auth";
 import { buddyAgentDir } from "../backends/global-config";
+import { createBuddyResourceLoader } from "../backends/resource-loader";
 import { buildReflectUserPrompt, extractObservationsSection } from "../backends/reflect-prompts";
 import {
   appendReflectObservations,
@@ -105,12 +105,10 @@ Options:
   const forkDir = join(rootDir, REFLECT_SESSIONS_DIR);
   const sm = SessionManager.forkFrom(forkedSessionFile, rootDir, forkDir);
 
-  const resourceLoader = new DefaultResourceLoader({
+  const resourceLoader = await createBuddyResourceLoader({
     cwd: rootDir,
-    agentDir: buddyAgentDir(),
-    systemPromptOverride: () => undefined,
+    systemPrompt: () => undefined,
   });
-  await resourceLoader.reload();
 
   const modelRuntime = await createBuddyModelRuntime();
 

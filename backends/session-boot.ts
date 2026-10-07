@@ -2,7 +2,6 @@
 
 import {
   createAgentSession,
-  DefaultResourceLoader,
   ModelRuntime,
   SessionManager,
   type ToolDefinition,
@@ -24,6 +23,7 @@ import { createDateGuardExtension } from "./date-guard";
 import { findRecentAuthErrorInLogs, shouldEmitBootAuthCard } from "./auth-error";
 import { injectSessionContext } from "./context-injection";
 import { buddyAgentDir, globalConfigDir } from "./global-config";
+import { createBuddyResourceLoader } from "./resource-loader";
 import { buddySessionsDir } from "./session-paths";
 import { buildAllSkillTools } from "./skill-tools";
 import { buildFetchTools } from "./fetch-url";
@@ -216,13 +216,11 @@ export async function bootSession(
   const sessionStart = new Date();
   const { prompt } = assembleSystemPrompt(rootDir, sessionStart);
   const sessionContext = assembleSessionContext(rootDir, sessionStart);
-  const resourceLoader = new DefaultResourceLoader({
+  const resourceLoader = await createBuddyResourceLoader({
     cwd: rootDir,
-    agentDir: buddyAgentDir(), // NFR-SEC-19
-    systemPromptOverride: () => prompt,
+    systemPrompt: () => prompt,
     extensionFactories: [createDateGuardExtension(sessionStart)],
   });
-  await resourceLoader.reload();
 
   const toolset = buildAgentToolset(rootDir, {
     requestPermission: context.requestPermission,

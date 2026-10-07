@@ -1,12 +1,7 @@
 // tests/support/resource-isolation-capture.ts — NFR-SEC-21 session system prompt capture.
-// Uses the same session openers as production (chat wiring mirrors session-boot.ts).
+// Uses the same session openers as production.
 
-import {
-  createAgentSession,
-  DefaultResourceLoader,
-  ModelRuntime,
-  SessionManager,
-} from "@earendil-works/pi-coding-agent";
+import { createAgentSession, ModelRuntime, SessionManager } from "@earendil-works/pi-coding-agent";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -17,6 +12,7 @@ import { buddySessionsDir } from "../../backends/session-paths";
 import { buildAgentToolset } from "../../backends/session-boot";
 import { openRealMaintenanceSession } from "../../backends/consolidation-runner";
 import { openRealWikiSynthesisSession } from "../../backends/wiki-synthesis";
+import { createBuddyResourceLoader } from "../../backends/resource-loader";
 import { EXCLUDED_TOOLS } from "../../shared/defaults";
 import { initTestGitRepo } from "./test-git";
 
@@ -27,6 +23,15 @@ export const DECOY_SKILL_MARKER = "NFRSEC21_DECOY_SKILL_MARKER";
 
 export const WIKI_SYNTHESIS_INSTRUCTION =
   "You evaluate wiki synthesis candidates and file approved concepts using wiki_file only.";
+
+// Minimal model handle for offline test runtime — full Model shape not needed here.
+const TEST_MODEL = { id: "test-model", provider: "buddy-test" } as never;
+
+type PiSession = Awaited<ReturnType<typeof createAgentSession>>["session"];
+
+function readSystemPrompt(session: PiSession): string {
+  return session.systemPrompt;
+}
 
 function writeSkill(dir: string, name: string): void {
   mkdirSync(dir, { recursive: true });
@@ -88,20 +93,17 @@ export async function createTestModelRuntime(): Promise<ModelRuntime> {
   });
 }
 
-/** Same loader wiring as backends/session-boot.ts (pre-NFR-SEC-21 fix). */
 export async function captureChatSystemPrompt(
   rootDir: string,
   modelRuntime: ModelRuntime,
 ): Promise<string> {
   const sessionStart = new Date("2026-10-07T12:00:00Z");
   const { prompt } = assembleSystemPrompt(rootDir, sessionStart);
-  const resourceLoader = new DefaultResourceLoader({
+  const resourceLoader = await createBuddyResourceLoader({
     cwd: rootDir,
-    agentDir: buddyAgentDir(),
-    systemPromptOverride: () => prompt,
+    systemPrompt: () => prompt,
     extensionFactories: [createDateGuardExtension(sessionStart)],
   });
-  await resourceLoader.reload();
 
   const toolset = buildAgentToolset(rootDir, {
     requestPermission: async () => true,
@@ -118,10 +120,10 @@ export async function captureChatSystemPrompt(
     tools: toolset.names,
     customTools: toolset.customTools,
     modelRuntime,
-    model: { id: "test-model", provider: "buddy-test" },
+    model: TEST_MODEL,
     thinkingLevel: "off",
   });
-  return session.systemPrompt;
+  return readSystemPrompt(session);
 }
 
 export async function captureMaintenanceSystemPrompt(
@@ -129,7 +131,7 @@ export async function captureMaintenanceSystemPrompt(
   modelRuntime: ModelRuntime,
 ): Promise<string> {
   const session = await openRealMaintenanceSession({ rootDir, modelRuntime, depth: 1 });
-  return session.systemPrompt;
+  return readSystemPrompt(session as PiSession);
 }
 
 export async function captureWikiSynthesisSystemPrompt(
@@ -141,7 +143,7 @@ export async function captureWikiSynthesisSystemPrompt(
     modelRuntime,
     counters: { created: 0, rejected: false },
   });
-  return session.systemPrompt;
+  return readSystemPrompt(session as PiSession);
 }
 
 export async function captureReflectSystemPrompt(
@@ -153,12 +155,10 @@ export async function captureReflectSystemPrompt(
   mkdirSync(forkDir, { recursive: true });
   const sm = SessionManager.forkFrom(forkFile, rootDir, forkDir);
 
-  const resourceLoader = new DefaultResourceLoader({
+  const resourceLoader = await createBuddyResourceLoader({
     cwd: rootDir,
-    agentDir: buddyAgentDir(),
-    systemPromptOverride: () => undefined,
+    systemPrompt: () => undefined,
   });
-  await resourceLoader.reload();
 
   const { session } = await createAgentSession({
     cwd: rootDir,
@@ -167,10 +167,10 @@ export async function captureReflectSystemPrompt(
     sessionManager: sm,
     noTools: "all",
     modelRuntime,
-    model: { id: "test-model", provider: "buddy-test" },
+    model: TEST_MODEL,
     thinkingLevel: "minimal",
   });
-  return session.systemPrompt;
+  return readSystemPrompt(session);
 }
 
 export async function prepareBuddyRoot(rootDir: string): Promise<void> {

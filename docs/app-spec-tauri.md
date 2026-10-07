@@ -133,13 +133,12 @@ const AB_DIR = process.env.AB_DIR || "~/buddy";
 
 const modelRuntime = await ModelRuntime.create();
 
-// System prompt via ResourceLoader (Pi SDK requires this pattern)
-const resourceLoader = new DefaultResourceLoader({
+// System prompt via Buddy resource loader (NFR-SEC-21: SDK discovery off)
+const resourceLoader = await createBuddyResourceLoader({
     cwd: AB_DIR,
-    agentDir: `${homedir()}/.pi/agent`,
-    systemPromptOverride: () => assembledSystemPrompt,  // identity + rules only (FR-PROMPT-01)
+    systemPrompt: () => assembledSystemPrompt,  // identity + rules only (FR-PROMPT-01)
+    extensionFactories: [createDateGuardExtension(sessionStart)],
 });
-await resourceLoader.reload();
 
 // Fresh session every launch (E5 decision: continuity via file memory, not session resume)
 const sessionManager = SessionManager.create(AB_DIR);
@@ -246,7 +245,7 @@ The worker builds prompts in two phases at session start (not per turn).
 4. **USER.md** — user profile
 5. **Date/time** — current timestamp
 
-Passed to Pi via `DefaultResourceLoader({ systemPromptOverride })`.
+Passed to Pi via `createBuddyResourceLoader({ systemPrompt })` (NFR-SEC-21).
 
 **Phase 2 — Session context (episodic, FR-PROMPT-02/04):**
 
@@ -264,11 +263,11 @@ First session with `personalizationPending`: skip injection; warm handoff only.
 const { prompt } = assembleSystemPrompt(rootDir);
 const sessionContext = assembleSessionContext(rootDir);
 
-const resourceLoader = new DefaultResourceLoader({
+const resourceLoader = await createBuddyResourceLoader({
     cwd: rootDir,
-    systemPromptOverride: () => prompt,
+    systemPrompt: () => prompt,
+    extensionFactories: [createDateGuardExtension(sessionStart)],
 });
-await resourceLoader.reload();
 
 const { session } = await createAgentSession({ /* ... */ });
 const sessionLike = asPiSessionLike(session);
@@ -639,12 +638,10 @@ async function runConsolidation(targetDepth: number, state: ConsolidationState) 
 
 async function runSingleDepth(depth: number) {
     // Separate Pi session — never the user's live session
-    const maintenanceLoader = new DefaultResourceLoader({
+    const maintenanceLoader = await createBuddyResourceLoader({
         cwd: AB_DIR,
-        agentDir: `${homedir()}/.pi/agent`,
-        systemPromptOverride: () => assembleMaintenancePrompt(AB_DIR, depth),
+        systemPrompt: () => assembleMaintenancePrompt(AB_DIR, depth),
     });
-    await maintenanceLoader.reload();
 
     const maintenanceResult = await createAgentSession({
         sessionManager: SessionManager.create(AB_DIR),
@@ -1844,15 +1841,15 @@ All critical APIs verified against Pi source code. Summary:
 | `session.setModel/setThinkingLevel` | Both confirmed | `setModel` async; `setThinkingLevel` sync |
 | `excludeTools: ["bash"]` | Confirmed | Clean way to disable bash at session creation |
 | `tools: ["read", ...]` | Confirmed | Explicit active tool list (SDK default is only read/bash/edit/write; grep/find/ls must be explicitly activated) |
-| System prompt | Via `DefaultResourceLoader({ systemPromptOverride: () => prompt })` | Not a direct `createAgentSession` param |
+| System prompt | Via `createBuddyResourceLoader({ systemPrompt: () => prompt })` (NFR-SEC-21) | Not a direct `createAgentSession` param |
 | Cost/usage data | On `AssistantMessage.usage` in `message_end` events | Full token + cost breakdown |
 | Extensions in SDK mode | Fully operational | Extensions load and run normally |
 
 **Key patterns for the app:**
-- System prompt: `DefaultResourceLoader({ systemPromptOverride: () => assembled })` → `createAgentSession({ resourceLoader })`
+- System prompt: `createBuddyResourceLoader({ systemPrompt: () => assembled })` → `createAgentSession({ resourceLoader })`
 - Bash disabled: `createAgentSession({ excludeTools: ["bash"] })`
 - Fresh session: `SessionManager.create(cwd)` every launch (E5 decision)
-- Forked reflect: `SessionManager.forkFrom(sessionFile, rootDir, forkDir)` in background child → separate JSONL, no live session pollution. The reflect child does NOT use a ResourceLoader — the fork carries all context; the only input is the bundled `process-conversation.md` prompt with an output-only suffix (FR-SKILL-04).
+- Forked reflect: `SessionManager.forkFrom(sessionFile, rootDir, forkDir)` in background child → separate JSONL, no live session pollution. Reflect uses `createBuddyResourceLoader` with an empty system prompt override; the fork carries conversation context. User message is the bundled reflect prompt (FR-SKILL-04).
 - Hook chaining: save `session.agent.beforeToolCall`, install ours, delegate to original
 - Hebbian tracking: `tool_execution_end` via `session.subscribe()` — tracks file accesses
 - Event names: `compaction_start/end` (not `session_compact`); no `model_select` in subscribe events

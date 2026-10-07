@@ -305,7 +305,9 @@ is an inefficiency that was also present, just invisible, on the cloud path.
   providers").
 - Local context window: 32,768 (SPEC §3.23).
 - Buddy structural overhead: ~7.5k (modeled) confirmed at ~9.2k startup on
-  fresh instance (structural + minimal episodic).
+  fresh instance (structural + minimal episodic). NFR-SEC-21 (2026-10-07) removed
+  duplicate `AGENTS.md` injection via the SDK's `project_context`; re-measure on
+  next instrumentation pass.
 - Tool choice accuracy: 18/18 correct (Qwen 27B session, 13 available tools).
 - Reliability defects: FR-HEBB-06/07, FR-CONSOL-12 — dated incidents.
 

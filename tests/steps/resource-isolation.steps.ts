@@ -126,7 +126,7 @@ Then("the session system prompt does not advertise decoy skills", function (this
   assert.ok(!this.systemPrompt.includes("home-skill"));
 });
 
-Then("the session system prompt is the wiki synthesis instruction only", function (this: ResourceIsolationWorld) {
+Then("the session system prompt contains the wiki synthesis instruction", function (this: ResourceIsolationWorld) {
   assert.ok(this.systemPrompt);
-  assert.equal(this.systemPrompt.trim(), WIKI_SYNTHESIS_INSTRUCTION);
+  assert.ok(this.systemPrompt.includes(WIKI_SYNTHESIS_INSTRUCTION));
 });
