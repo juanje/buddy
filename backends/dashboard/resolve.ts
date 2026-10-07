@@ -10,6 +10,8 @@ import type {
   WidgetSpec,
 } from "../../shared/dashboard/types";
 import { parseDashboardYamlBlock } from "../../shared/dashboard/yaml-blocks";
+import { applyWidgetQuery } from "../../shared/dashboard/query";
+import { sourceDefinition } from "../../shared/dashboard/source-fields";
 import { loadSourceRows } from "./sources";
 
 function resolveTextWidget(spec: WidgetSpec): WidgetResult {
@@ -29,7 +31,15 @@ function resolveWidgetData(rootDir: string, spec: WidgetSpec, today: string): Wi
   if (!loaded.ok) {
     return { kind: "error", message: loaded.message };
   }
-  return { kind: "rows", rows: loaded.rows };
+  const def = sourceDefinition(source);
+  if (!def) {
+    return { kind: "error", message: `Unknown source '${source}'` };
+  }
+  const queried = applyWidgetQuery(loaded.rows, spec, source, def, today);
+  if (!queried.ok) {
+    return { kind: "error", message: queried.message };
+  }
+  return queried.result;
 }
 
 function widgetSegment(spec: WidgetSpec, result: WidgetResult): ResolvedSegment {

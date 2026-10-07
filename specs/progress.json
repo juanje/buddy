@@ -1796,9 +1796,50 @@
     {
       "id": "FR-DASH-04",
       "title": "Dashboard query: where/group/sort/limit/count/sum/range",
-      "status": "pending",
-      "cycle_step": "spec_review",
-      "scenarios": []
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Where filters tasks by area",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Where compares deferred dates with a relative bound",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Range limits rows by the source date field",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Group and count follow enum order",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Sort and limit apply before grouping",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Sum requires a numeric field",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Unknown query field names available fields",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Empty filter value suggests quoting hash values",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
     },
     {
       "id": "FR-DASH-02",
