@@ -339,7 +339,7 @@ export function getMaintenanceSessionToolNames(rootDir: string): string[] {
   return buildMaintenanceTooling(rootDir).toolNames;
 }
 
-async function openRealMaintenanceSession(config: {
+export async function openRealMaintenanceSession(config: {
   rootDir: string;
   modelRuntime: ModelRuntime;
   depth: number;

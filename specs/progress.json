@@ -1702,8 +1702,8 @@
     {
       "id": "NFR-SEC-21",
       "title": "Buddy prompt contains only what Buddy assembles",
-      "status": "pending",
-      "cycle_step": "spec_review",
+      "status": "in_progress",
+      "cycle_step": "bdd_red",
       "scenarios": []
     }
   ]

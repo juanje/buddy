@@ -307,7 +307,7 @@ function installWikiSynthesisGate(
   });
 }
 
-async function openRealWikiSynthesisSession(config: {
+export async function openRealWikiSynthesisSession(config: {
   rootDir: string;
   modelRuntime: ModelRuntime;
   language?: WikiLanguage;
