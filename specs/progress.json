@@ -1,5 +1,5 @@
 {
-  "current_focus": null,
+  "current_focus": "NFR-SEC-21",
   "features": [
     {
       "id": "FR-CHAT-18",
@@ -1698,6 +1698,13 @@
           "unit_tests": 1
         }
       ]
+    },
+    {
+      "id": "NFR-SEC-21",
+      "title": "Buddy prompt contains only what Buddy assembles",
+      "status": "pending",
+      "cycle_step": "spec_review",
+      "scenarios": []
     }
   ]
 }
