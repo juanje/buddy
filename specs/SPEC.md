@@ -4031,6 +4031,327 @@ consolidation prompt skips the deferred nudge for areas marked `null`.
   `backends/active-fronts.ts` (annotated block output),
   `bundled/prompts/consolidation.md` (respect per-area limits).
 
+### 3.30 Dashboards (FR-DASH)
+
+A dashboard is a saved query over files Buddy already keeps, rendered by code
+as a read-only view. The agent writes a short declarative definition once;
+every later view is computed from the files at open time and costs zero
+tokens.
+
+**Why code renders, not the model.** Agent-written HTML would be
+attacker-influenced (the agent ingests untrusted content through `fetch_url`,
+the same reasoning as FR-CHAT-11), would cost hundreds of tokens per view, and
+would carry model-done arithmetic. The main-window CSP stays as it is.
+
+**What dashboards are not.** Not a BI tool over raw sources: dashboards never
+read connectors (Jira already has dashboards; Buddy's value is the view of
+what it has synthesized). Not editable: no writes from the view. Not a
+database: no joins between sources; crossing information is the agent's job,
+written as inline content or as a derived file. No user-organization file or
+format is assumed: the code knows only Buddy-owned files, generic primitives,
+and inline content.
+
+| ID | Description | Phase |
+|----|-------------|-------|
+| FR-DASH-01 | Dashboard file format: `type: dashboard`, free text + fenced `dashboard` blocks, `width` layout | 3 S1 |
+| FR-DASH-02 | Viewer renders dashboards read-only in wide mode, resolved by the worker | 3 S2 |
+| FR-DASH-03 | A failing widget shows its own error; the rest of the dashboard renders | 3 S2 |
+| FR-DASH-04 | Query: `where`, `group`, `sort`, `limit`, `count`/`sum`, `range`; strict filter grammar with relative dates | 3 S1 |
+| FR-DASH-05 | Built-in sources: `tasks` (derived state) and `deferred` | 3 S1 |
+| FR-DASH-06 | Generic primitive: sections (any markdown with headings and list items) | 3 S3 |
+| FR-DASH-07 | Generic primitive: records (folder of `.md` files, frontmatter as row) | 3 S7 |
+| FR-DASH-08 | Generic primitive: series (CSV parsed by code) | 3 S4 |
+| FR-DASH-09 | Inline content carries date and basis, renders distinct, shows its age | 3 S2 |
+| FR-DASH-10 | Views v1: kanban, list, table, counter, text, status | 3 S2 |
+| FR-DASH-11 | Views v2 (own SVG): bar, line, progress, calendar heatmap, timeline | 3 S5 |
+| FR-DASH-12 | `dashboard()` tool: help, fields, check, validate, create, update | 3 S3 |
+| FR-DASH-13 | Shipped templates and self-docs examples | 3 S3 |
+| FR-DASH-14 | Freeze: dated snapshot with resolved rows inline | 3 S7 |
+| FR-DASH-15 | Export: static HTML from the rendered dashboard + PDF, date range, sensitive warning | 3 S7 |
+| FR-DASH-16 | Consolidation refreshes only `refresh`-tagged inline blocks | 3 S6 |
+| FR-DASH-17 | Git-history source (e.g. tasks completed per week) | 4 |
+| FR-DASH-18 | Built-in sources: `projects`, `logs`, `journal` | 3 S3 |
+| FR-DASH-19 | Direct file-tool writes into `user/dashboards/` denied; reads allowed | 3 S3 |
+
+**FR-DASH-01 — Dashboard file format**
+
+- A dashboard is a `.md` file under `user/dashboards/` whose frontmatter has
+  `type: dashboard`. Optional `title` and `summary`.
+- The body is markdown: free text interleaved with fenced code blocks whose
+  info string is `dashboard`. Each block holds a YAML list; each list item
+  is one widget.
+- A widget declares `view` and, except for `text`, `source`. Optional:
+  `title`, `width` (`full` | `half` | `third`, default `full`), the query keys
+  of FR-DASH-04, and view parameters (FR-DASH-10).
+- Layout is a vertical flow in document order. Consecutive widgets narrower
+  than `full` share a row when they fit.
+- Blocks are parsed with the `yaml` library. The flat frontmatter parser
+  (`shared/frontmatter.ts`) stays flat; it is not extended to read lists.
+- Parsing is strict: an unknown key, an unknown view or source, or a value of
+  the wrong type is an error of that widget, with a message that says what to
+  change. A block that is not valid YAML is an error of every widget in it,
+  never of the whole dashboard.
+- The parser produces a resolved model: an ordered list of text segments and
+  widgets. The parser and the query engine are browser-safe modules in
+  `shared/`, so the viewer path and `dashboard(action='validate')` run the
+  same code.
+
+**FR-DASH-02 — Viewer renders dashboards**
+
+- Opening a file through any viewer path (`show_file`, a chat link, a link
+  inside a viewed document) renders it as a dashboard when it is under
+  `user/dashboards/` and declares `type: dashboard`. Anywhere else, the same
+  file renders as ordinary markdown: only that directory is covered by the
+  write denial of FR-DASH-19.
+- The frontend has no filesystem capability (NFR-SEC-09). A worker RPC
+  resolves the dashboard: it reads each source, runs each query and returns
+  the resolved model. The frontend only renders it.
+- Sources are read under the same containment as the viewer (`isContained`,
+  symlinks resolved). No source escapes the buddy directory.
+- Dashboards render in a wide mode of the viewer; the standard width is too
+  narrow for a kanban. Back, links inside free text, Show in folder and Export
+  PDF keep working.
+- Rendering involves no model call. Worker reads for a dashboard are not
+  agent tool calls, so they leave Hebbian metadata untouched.
+- The view is read-only: no control in it writes to any file.
+
+**FR-DASH-03 — Widget-level errors**
+
+- A widget that cannot be resolved (missing file, unknown field, malformed
+  block, source that no longer fits its primitive) renders as an error card in
+  its place, with the widget title and the reason.
+- Every other widget and all free text render normally.
+- A source that resolves to zero rows is not an error: the widget renders its
+  empty state.
+
+**FR-DASH-04 — Query**
+
+- Per widget, applied in this order: `range`, `where`, `sort`, `limit`,
+  `group`, then `count` or `sum`.
+- `where` is a string expression parsed by code: comparisons joined by `and`.
+  Operators: `=`, `!=`, `<`, `<=`, `>`, `>=`, `contains`. Values: bare words,
+  quoted strings, numbers, ISO dates (`YYYY-MM-DD`) and relative dates
+  (`today`, `+7d`, `-90d`, `-4w`, `-3m`, relative to the local day).
+  `@name` and `#name` are accepted as values and compare against the bare
+  name, so `area = @personal` reads as the task format does.
+- `range` limits rows by the source's date field: `-30d..today`,
+  `2026-01-01..2026-03-31`, or a single relative bound (`-90d`).
+- `sort` is a field with optional `asc` | `desc` (default `asc`); `limit` is a
+  positive integer; `group` is a field; `count: true` or `sum: <field>`
+  reduce rows to a value, per group when grouped.
+- Each source declares its fields and types. A field the source does not
+  declare is a widget error naming the fields that exist. `or` and joins
+  across sources are not supported.
+
+**FR-DASH-05 — Built-in sources: tasks and deferred**
+
+- `tasks` reads `user/tasks.md` through the `tasks()` parser. Fields: `text`,
+  `area`, `project`, `due`, `created`, `state`, `stale_days`. `tasks.md` has no
+  state field; `state` is derived, first match wins: `parked` (area
+  `someday`), `scheduled` (due date after today), `next` (`>>` marker), `open`.
+  This is the precedence `isActiveNextItem` already applies.
+- Done items are excluded: daily cleanup removes them from the file
+  (FR-TASKM-44), so a live read cannot report them consistently. History of
+  completed tasks is FR-DASH-17.
+- `deferred` reads `agent_brain/deferred.md` through the deferred parser.
+  Fields: `type`, `date`, `source`, `text`. Date field: `date`.
+- When a built-in file does not exist, the source has zero rows.
+
+**FR-DASH-06 — Generic primitive: sections**
+
+- `source: sections` with `path` reads any markdown file the viewer could open.
+  `##` headings are groups; list and checkbox items under a heading are rows
+  (`text`, `group`, `done` for checkboxes); `key: value` sub-bullets become
+  fields of their row; other sub-bullets are `detail`.
+- A file fits the primitive when it has at least one `##` heading with at
+  least one list item under it.
+
+**FR-DASH-07 — Generic primitive: records**
+
+- `source: records` with `path` to a folder: each `.md` file is a row, its
+  frontmatter fields are the row's fields.
+
+**FR-DASH-08 — Generic primitive: series**
+
+- `source: series` with `path` to a `.csv` file: the header names the fields,
+  types are inferred by code. The model never reads the rows.
+
+**FR-DASH-09 — Inline content**
+
+- `source: inline` carries its content in the widget: `rows` (a list of maps)
+  or `text` (markdown). It requires `updated` (date) and `basis` (one line:
+  what the content was derived from).
+- Inline widgets render visually distinct from widgets fed by files, with
+  their basis and age ("updated 9 days ago").
+- A `text` view without `source` is free-standing prose and needs neither
+  field.
+
+**FR-DASH-10 — Views v1**
+
+- `kanban`: columns from `group`; cards show `text` plus chips for the other
+  fields listed in `fields`. For `tasks` grouped by `state`, column order is
+  `next`, `open`, `scheduled`, `parked`.
+- `list`: one row per item with optional `fields`.
+- `table`: `columns` lists the fields shown, in order.
+- `counter`: a single number from `count` or `sum`. With `range`, an optional
+  `delta: true` shows the change against the preceding period of the same
+  length.
+- `text`: markdown, rendered with the same sanitizer as the chat (NFR-SEC-10).
+- `status`: one card per row with `label`, `state` (`ok` | `warn` | `bad` |
+  `unknown`) and `reason`.
+- Strings from files and inline content are rendered as text, never as HTML.
+- Labels are localized (EN/ES).
+
+**FR-DASH-11 — Views v2**
+
+- `bar` (stacked, optional limit line), `line`, `progress` / countdown,
+  `calendar` heatmap and `timeline`, drawn as Buddy's own SVG components. No
+  chart library: output stays consistent and exportable as static SVG.
+
+**FR-DASH-12 — `dashboard()` tool**
+
+- One Pi tool with the action dispatcher pattern of `tasks()` and the
+  connectors. Nothing is added to the system prompt; `help` is the discovery.
+- `help`: sources, views, query syntax, and a minimal example.
+- `fields`: the fields and types of a source. For a file-backed primitive,
+  field names and inferred types only; no rows reach the model.
+- `check`: whether a file fits a primitive. When it does not, the answer says
+  so and offers the derived route: a file the agent maintains in a shape that
+  fits.
+- `validate`: the errors FR-DASH-01/04 would produce, each fixable.
+- `create` / `update`: validate, then write atomically into `user/dashboards/`.
+  An invalid definition is refused with the same errors and nothing is
+  written.
+
+**FR-DASH-13 — Templates and examples**
+
+- Shipped templates built only on Buddy-owned files (at least "my tasks" and
+  "my week"). `dashboard(action='create')` with a template name writes it
+  without the model composing anything.
+- A self-docs page in `~/.buddy/docs/` describes what dashboards can do.
+  `~/.buddy/docs/` is outside `VIEWABLE_DIRS`, so example dashboards use only
+  inline data and are copied into `user/dashboards/examples/` when the user
+  asks what is possible.
+- Examples show patterns (a board, a sprint record, an incident log) as
+  examples, not as formats Buddy expects.
+
+**FR-DASH-14 — Freeze**
+
+- On explicit request, a dated copy at `user/dashboards/<name>/<date>.md`
+  with every live source converted to inline rows.
+
+**FR-DASH-15 — Export**
+
+- Self-contained HTML (inline CSS and SVG, no JavaScript) serialized from the
+  dashboard as rendered in the frontend, and PDF through the FR-CHAT-18/21
+  pipeline, for a chosen date range. Buddy never renders `.html`; the user
+  reaches the file through Show in folder (FR-CHAT-20).
+- A warning before export when any source is registered as sensitive
+  (FR-DATA-08).
+
+**FR-DASH-16 — Inline refresh in consolidation**
+
+- Inline blocks may declare `refresh: daily | weekly`. Consolidation updates
+  only those blocks, never on view.
+
+**FR-DASH-17 — Git-history source**
+
+- Aggregates over a Buddy file's git history, e.g. tasks completed per week.
+  Computed on open and cached.
+
+**FR-DASH-18 — Built-in sources: projects, logs, journal**
+
+- `projects` reads `user/projects/`. Fields computed by code only: `name`
+  (file name), `summary`, `open_tasks` and `next_action` (from tasks tagged
+  `#<name>`). Other project frontmatter is written by the model and is not
+  exposed.
+- `logs` reads `logs/index.md` (`- YYYY-MM-DD: status — summary` lines):
+  `date`, `status`, `summary`.
+- `journal` reads entry dates from `user/journal/YYYY/MM/DD.md`: `date`.
+
+**FR-DASH-19 — Dashboards are written only through `dashboard()`**
+
+- `write` and `edit` on any path under `user/dashboards/` are denied, as is
+  using it as the destination of `copy_file` or `move_file`. The refusal
+  points at `dashboard(action='update')`.
+- `read`, `ls`, `find` and `grep` stay allowed. `delete_file` keeps its
+  confirmation card.
+- **Why:** FR-DASH-12 validates before writing. A free write would let an
+  invalid dashboard reach the user without anyone disobeying an instruction,
+  which is a failure only code can prevent (same reasoning as FR-TASKM-11).
+
+### 3.31 Agent-maintained data (FR-DATA)
+
+Some dashboards need data that no Buddy file holds yet: a log the agent
+appends to when the user mentions something, or a value inferred daily from
+conversations. The agent writes it and code reads it. A per-user registry is
+the contract between them. It is built from use: an entry is added when the
+agent and the user agree where something lives and what shape it has. Nothing
+is pre-seeded.
+
+| ID | Description | Phase |
+|----|-------------|-------|
+| FR-DATA-01 | Registry `user/data/index.md`: entry format, protected from delete and move | 3 S4 |
+| FR-DATA-02 | `data()` tool: help, define, list | 3 S4 |
+| FR-DATA-03 | `append` / `correct`: schema-validated atomic writes; direct writes to registered paths denied | 3 S4 |
+| FR-DATA-04 | `on_mention` mode: active entries in one session-context line | 3 S6 |
+| FR-DATA-05 | `consolidation` mode: worker block of due entries and pending days, fast tier | 3 S6 |
+| FR-DATA-06 | `snapshot` mode: heartbeat aggregate of a Buddy file, zero tokens, gaps not interpolated | 3 S7 |
+| FR-DATA-07 | Inferred rows carry `origin` and `basis`; the widget adds the indicative notice | 3 S4 |
+| FR-DATA-08 | `sensitive` flag feeds the export warning | 3 S7 |
+
+**FR-DATA-01 — Registry**
+
+- `user/data/index.md`, human-readable. Each entry: path (file or folder),
+  kind (`sections` | `records` | `series`), schema (headings, frontmatter
+  fields or columns), update mode (`on_mention` | `consolidation` |
+  `snapshot` | `on_request`), one to three lines of instructions for agent
+  modes, `inferred`, `sensitive`.
+- Series default to `user/data/<name>.csv`. Data lives apart from dashboards
+  because it outlives them and several dashboards can share it.
+- The registry and the files it lists are user space: maintenance never
+  prunes or relocates them.
+
+**FR-DATA-02 — `data()` discovery and definition**
+
+- Same dispatcher pattern as `tasks()`. `help`, `define` (add or change an
+  entry), `list`.
+
+**FR-DATA-03 — Validated writes**
+
+- `append` and `correct` validate against the entry's schema and write
+  atomically. A correction stays in git history.
+- `write` and `edit` on any registered path are denied, reading the registry
+  at call time; the refusal points at `data()`.
+
+**FR-DATA-04 — `on_mention` mode**
+
+- Active `on_mention` entries are listed in a single line of the session
+  context, so the agent knows what to record when the user mentions it.
+
+**FR-DATA-05 — `consolidation` mode**
+
+- Daily consolidation receives a worker-computed block of entries due and the
+  days pending, and writes from that day's logs and journal on the fast tier.
+  A day without conversation produces no row; the gap is correct.
+
+**FR-DATA-06 — `snapshot` mode**
+
+- The heartbeat appends an aggregate of a Buddy file (e.g. open items per
+  day) at zero tokens. It needs the app running; gaps are shown, never
+  interpolated.
+
+**FR-DATA-07 — Inferred rows**
+
+- Rows written for an entry marked `inferred` carry `origin`
+  (`explicit` | `inferred`) and `basis`. Widgets fed by them add an
+  "indicative" notice themselves; the notice does not depend on the model.
+
+**FR-DATA-08 — Sensitive data**
+
+- An entry marked `sensitive` triggers the export warning of FR-DASH-15 for
+  any dashboard that reads it.
+
 ---
 
 ## 4. Non-Functional Requirements

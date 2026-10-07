@@ -1726,6 +1726,90 @@
           "unit_tests": 6
         }
       ]
+    },
+    {
+      "id": "FR-DASH-01",
+      "title": "Dashboard file format and resolved model",
+      "status": "pending",
+      "cycle_step": "spec_review",
+      "scenarios": []
+    },
+    {
+      "id": "FR-DASH-05",
+      "title": "Dashboard sources: tasks (derived state) and deferred",
+      "status": "pending",
+      "cycle_step": "spec_review",
+      "scenarios": []
+    },
+    {
+      "id": "FR-DASH-04",
+      "title": "Dashboard query: where/group/sort/limit/count/sum/range",
+      "status": "pending",
+      "cycle_step": "spec_review",
+      "scenarios": []
+    },
+    {
+      "id": "FR-DASH-02",
+      "title": "Viewer renders dashboards read-only in wide mode",
+      "status": "pending",
+      "cycle_step": "spec_review",
+      "scenarios": []
+    },
+    {
+      "id": "FR-DASH-03",
+      "title": "Dashboard widget-level errors",
+      "status": "pending",
+      "cycle_step": "spec_review",
+      "scenarios": []
+    },
+    {
+      "id": "FR-DASH-09",
+      "title": "Dashboard inline content with date, basis and age",
+      "status": "pending",
+      "cycle_step": "spec_review",
+      "scenarios": []
+    },
+    {
+      "id": "FR-DASH-10",
+      "title": "Dashboard views v1: kanban, list, table, counter, text, status",
+      "status": "pending",
+      "cycle_step": "spec_review",
+      "scenarios": []
+    },
+    {
+      "id": "FR-DASH-06",
+      "title": "Dashboard primitive: sections",
+      "status": "pending",
+      "cycle_step": "spec_review",
+      "scenarios": []
+    },
+    {
+      "id": "FR-DASH-18",
+      "title": "Dashboard sources: projects, logs, journal",
+      "status": "pending",
+      "cycle_step": "spec_review",
+      "scenarios": []
+    },
+    {
+      "id": "FR-DASH-12",
+      "title": "dashboard() tool: help, fields, check, validate, create, update",
+      "status": "pending",
+      "cycle_step": "spec_review",
+      "scenarios": []
+    },
+    {
+      "id": "FR-DASH-19",
+      "title": "Direct file-tool writes into user/dashboards/ denied",
+      "status": "pending",
+      "cycle_step": "spec_review",
+      "scenarios": []
+    },
+    {
+      "id": "FR-DASH-13",
+      "title": "Dashboard templates and self-docs examples",
+      "status": "pending",
+      "cycle_step": "spec_review",
+      "scenarios": []
     }
   ]
 }
