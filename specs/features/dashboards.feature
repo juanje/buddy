@@ -204,6 +204,36 @@ Feature: Dashboard resolution
     And segment 1 widget result is an error mentioning "tasks"
 
   @FR-DASH-04
+  Scenario: Where filters overdue tasks by overdue_days
+    Given an initialized buddy git repository
+    And tasks.md with one overdue and other open tasks
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: table
+        source: tasks
+        where: overdue_days >= 1
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-07"
+    Then segment 1 widget row count is 1
+
+  @FR-DASH-04
+  Scenario: Where rejects non-numeric value on numeric field
+    Given an initialized buddy git repository
+    And tasks.md with a stale open task
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: table
+        source: tasks
+        where: stale_days > abc
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-07"
+    Then segment 1 widget result is an error mentioning "not a number"
+
+  @FR-DASH-04
   Scenario: Where filters tasks by area
     Given an initialized buddy git repository
     And tasks.md with mixed states for dashboard resolution

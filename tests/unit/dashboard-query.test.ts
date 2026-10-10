@@ -37,6 +37,37 @@ describe("applyWidgetQuery", () => {
     if (!out.ok) expect(out.message).toMatch(/numeric/i);
   });
 
+  it("filters numeric fields with >=", () => {
+    const rowsNum = [
+      { text: "Late", overdue_days: 15 },
+      { text: "Fresh", overdue_days: 0 },
+    ];
+    const out = applyWidgetQuery(
+      rowsNum,
+      spec({ where: "overdue_days >= 1" }),
+      "tasks",
+      TASKS_SOURCE,
+      today,
+    );
+    expect(out.ok).toBe(true);
+    if (out.ok && out.result.kind === "rows") {
+      expect(out.result.rows).toHaveLength(1);
+      expect(out.result.rows[0]?.text).toBe("Late");
+    }
+  });
+
+  it("rejects non-numeric filter values on number fields", () => {
+    const out = applyWidgetQuery(
+      rows,
+      spec({ where: "stale_days > abc" }),
+      "tasks",
+      TASKS_SOURCE,
+      today,
+    );
+    expect(out.ok).toBe(false);
+    if (!out.ok) expect(out.message).toMatch(/not a number/i);
+  });
+
   it("groups enum fields in declared order", () => {
     const many = [
       { text: "1", state: "open" },

@@ -1854,8 +1854,19 @@
           "name": "Empty filter value suggests quoting hash values",
           "bdd": "pass",
           "unit_tests": 1
+        },
+        {
+          "name": "Where filters overdue tasks by overdue_days",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Where rejects non-numeric value on numeric field",
+          "bdd": "pass",
+          "unit_tests": 2
         }
-      ]
+      ],
+      "note": "reopened: numeric where comparisons"
     },
     {
       "id": "FR-DASH-02",

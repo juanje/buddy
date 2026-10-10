@@ -57,6 +57,23 @@ function assertField(def: SourceDefinition, field: string): QueryOutcome | undef
   return undefined;
 }
 
+function validateNumericWhereClause(
+  clause: Clause,
+  def: SourceDefinition,
+): QueryOutcome | undefined {
+  const fType = fieldType(def, clause.field);
+  if (fType?.kind !== "number") return undefined;
+  if (clause.op === "contains") {
+    return { ok: false, message: `Field '${clause.field}' is numeric and does not support 'contains'` };
+  }
+  if (!["=", "!=", "<", "<=", ">", ">="].includes(clause.op)) return undefined;
+  const rhs = normalizeCompareValue(clause.value);
+  if (Number.isNaN(Number(rhs))) {
+    return { ok: false, message: `Filter value '${rhs}' is not a number` };
+  }
+  return undefined;
+}
+
 function compareClause(
   row: Record<string, unknown>,
   clause: Clause,
@@ -66,6 +83,31 @@ function compareClause(
   const fType = fieldType(def, clause.field)!;
   const raw = row[clause.field];
   const rhs = normalizeCompareValue(clause.value);
+
+  if (fType.kind === "number") {
+    if (typeof raw !== "number") {
+      if (clause.op === "!=") return true;
+      return false;
+    }
+    const rightNum = Number(normalizeCompareValue(clause.value));
+    if (Number.isNaN(rightNum)) return false;
+    switch (clause.op) {
+      case "=":
+        return raw === rightNum;
+      case "!=":
+        return raw !== rightNum;
+      case "<":
+        return raw < rightNum;
+      case "<=":
+        return raw <= rightNum;
+      case ">":
+        return raw > rightNum;
+      case ">=":
+        return raw >= rightNum;
+      default:
+        return false;
+    }
+  }
 
   if (fType.kind === "date") {
     const left = coerceIsoDay(raw, today);
@@ -211,6 +253,8 @@ function filterWorkingSet(
     for (const clause of clauses) {
       const err = assertField(sourceDef, clause.field);
       if (err) return err;
+      const numErr = validateNumericWhereClause(clause, sourceDef);
+      if (numErr) return numErr;
     }
     working = working.filter((row) =>
       clauses.every((c) => compareClause(row, c, sourceDef, today)),

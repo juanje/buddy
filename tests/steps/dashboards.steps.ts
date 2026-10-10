@@ -54,6 +54,22 @@ Given("tasks.md with mixed states for dashboard resolution", function (this: Das
   writeTasksFile(root.call(this), items, "2026-01-01");
 });
 
+Given("tasks.md with one overdue and other open tasks", function (this: DashboardWorld) {
+  const items: TaskItem[] = [
+    {
+      id: 1,
+      text: "Overdue item",
+      done: false,
+      next: false,
+      area: "personal",
+      dueDate: "2026-09-22",
+    },
+    { id: 2, text: "Open one", done: false, next: false, area: "personal" },
+    { id: 3, text: "Next one", done: false, next: true, area: "work" },
+  ];
+  writeTasksFile(root.call(this), items, "2026-01-01");
+});
+
 Given("tasks.md with an overdue open task", function (this: DashboardWorld) {
   const items: TaskItem[] = [
     {

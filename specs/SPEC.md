@@ -4133,8 +4133,10 @@ and inline content.
 - Per widget, applied in this order: `range`, `where`, `sort`, `limit`,
   `group`, then `count` or `sum`.
 - `where` is a string expression parsed by code: comparisons joined by `and`.
-  Operators: `=`, `!=`, `<`, `<=`, `>`, `>=`, `contains`. Values: bare words,
-  quoted strings, numbers, ISO dates (`YYYY-MM-DD`) and relative dates
+  Operators: `=`, `!=`, `<`, `<=`, `>`, `>=`, `contains`. Numeric fields use
+  numeric comparison for `<`, `<=`, `>`, and `>=`; a non-numeric filter value
+  is a widget error. Values: bare words, quoted strings, numbers, ISO dates
+  (`YYYY-MM-DD`) and relative dates
   (`today`, `+7d`, `-90d`, `-4w`, `-3m`, relative to the local day).
   `@name` and `#name` are accepted as values and compare against the bare
   name, so `area = @personal` reads as the task format does.
