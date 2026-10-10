@@ -177,3 +177,22 @@ Feature: Dashboard tool
     And a permission layer for tasks file access
     When the agent deletes "user/dashboards/board.md" via permission gate
     Then the permission gate allows the dashboard read
+
+  @FR-DASH-13
+  Scenario: Create with template writes a dashboard that resolves
+    Given an initialized buddy git repository
+    When dashboard action "create" is invoked with name "tareas" and template "mis-tareas"
+    Then dashboard tool succeeded
+    And dashboard file "user/dashboards/tareas.md" exists
+
+  @FR-DASH-13
+  Scenario: Examples copies dashboards that resolve
+    Given an initialized buddy git repository
+    When dashboard action "examples" is invoked
+    Then dashboard tool succeeded
+    And dashboard file "user/dashboards/examples/tablero-inline.md" exists
+
+  @FR-DASH-13
+  Scenario: Dashboard documentation appears in the bundled docs index
+    Given the bundled docs index
+    Then the bundled docs index links to dashboards.md

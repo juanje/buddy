@@ -2212,9 +2212,25 @@
     {
       "id": "FR-DASH-13",
       "title": "Dashboard templates and self-docs examples",
-      "status": "pending",
-      "cycle_step": "spec_review",
-      "scenarios": []
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Create with template writes a dashboard that resolves",
+          "bdd": "pass",
+          "unit_tests": 2
+        },
+        {
+          "name": "Examples copies dashboards that resolve",
+          "bdd": "pass",
+          "unit_tests": 2
+        },
+        {
+          "name": "Dashboard documentation appears in the bundled docs index",
+          "bdd": "pass",
+          "unit_tests": 2
+        }
+      ]
     }
   ]
 }

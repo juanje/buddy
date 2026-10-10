@@ -4,6 +4,7 @@ import { DataTable, Given, Then, When } from "@cucumber/cucumber";
 import assert from "node:assert/strict";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { parse as parseYaml } from "yaml";
 
 import {
@@ -50,6 +51,31 @@ When(
     });
   },
 );
+
+When(
+  "dashboard action {string} is invoked with name {string} and template {string}",
+  function (this: DashboardToolWorld, action: string, name: string, template: string) {
+    this.dashboardToolResult = executeDashboardAction(root.call(this), action, { name, template });
+  },
+);
+
+Given("the bundled docs index", function () {
+  // no-op anchor for doc index scenario
+});
+
+Then("the bundled docs index links to dashboards.md", function () {
+  const indexPath = join(
+    fileURLToPath(import.meta.url),
+    "..",
+    "..",
+    "..",
+    "bundled",
+    "docs",
+    "index.md",
+  );
+  const text = readFileSync(indexPath, "utf8");
+  assert.ok(text.includes("dashboards.md"));
+});
 
 When(
   "dashboard action {string} is invoked for dashboard {string} widget {string} with:",
@@ -110,3 +136,4 @@ Then(
     assert.ok(text.includes(fragment), text);
   },
 );
+

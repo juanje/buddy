@@ -13,6 +13,8 @@ export interface EmbeddedAssets {
   docs: Record<string, string>;
   /** Format references relative to bundled/templates/ (e.g. "learned-skill.md") → content. */
   bundledTemplates?: Record<string, string>;
+  /** Dashboard templates relative to bundled/dashboards/ (e.g. "mis-tareas.md") → content. */
+  dashboards?: Record<string, string>;
   /** App semver from package.json at build time. */
   appVersion?: string;
   /** pdfjs-dist worker source (minified) for PDF extraction in compiled binary. */

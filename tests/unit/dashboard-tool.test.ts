@@ -119,6 +119,20 @@ Intro stays.
     expect(saved).not.toMatch(/Old/);
   });
 
+  it("create with template mis-tareas", () => {
+    dir = mkdtempSync(join(tmpdir(), "dash-tool-"));
+    const out = executeDashboardAction(dir, "create", { name: "tareas", template: "mis-tareas" });
+    expect(out.ok).toBe(true);
+    expect(existsSync(join(dir, "user/dashboards/tareas.md"))).toBe(true);
+  });
+
+  it("examples copies bundled dashboards", () => {
+    dir = mkdtempSync(join(tmpdir(), "dash-tool-"));
+    const out = executeDashboardAction(dir, "examples");
+    expect(out.ok).toBe(true);
+    expect(existsSync(join(dir, "user/dashboards/examples/tablero-inline.md"))).toBe(true);
+  });
+
   it("update ambiguous title fails", () => {
     dir = mkdtempSync(join(tmpdir(), "dash-tool-"));
     const content = `---

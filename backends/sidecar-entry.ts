@@ -21,6 +21,7 @@ import { registerEmbeddedAssets } from "./embedded-assets";
 import {
   EMBEDDED_APP_VERSION,
   EMBEDDED_BUNDLED_TEMPLATES,
+  EMBEDDED_DASHBOARDS,
   EMBEDDED_DOCS,
   EMBEDDED_PDF_WORKER,
   EMBEDDED_PROMPTS,
@@ -66,6 +67,7 @@ registerEmbeddedAssets({
   prompts: EMBEDDED_PROMPTS,
   docs: EMBEDDED_DOCS,
   bundledTemplates: EMBEDDED_BUNDLED_TEMPLATES,
+  dashboards: EMBEDDED_DASHBOARDS,
   appVersion: EMBEDDED_APP_VERSION,
   pdfWorker: EMBEDDED_PDF_WORKER,
 });

@@ -17,6 +17,11 @@ import {
 import { ViewableFileError, readViewableFile } from "../viewable-file";
 import { loadSectionsSource } from "./sections-load";
 import {
+  listExampleDashboardPaths,
+  resolveDashboardTemplate,
+  bundledDashboardContent,
+} from "./bundled-dashboards";
+import {
   collectDashboardValidationIssues,
   formatValidationIssues,
 } from "./validate-content";
@@ -28,7 +33,7 @@ const HELP_TEXT = `dashboard() actions:
 - validate(content) — validation errors for dashboard markdown
 - create(name, content | template) — write user/dashboards/<name>.md after validation
 - update(name, widget_title, widget | content) — replace one widget or the whole file
-- examples — copy bundled example dashboards (see help after FR-DASH-13)`;
+- examples — copy bundled example dashboards to user/dashboards/examples/`;
 
 export type DashboardActionParams = {
   source?: string;
@@ -156,10 +161,19 @@ function validateAction(rootDir: string, params: DashboardActionParams): Dashboa
 function createAction(rootDir: string, params: DashboardActionParams): DashboardActionResult {
   const name = params.name;
   if (!name) return err("create requires params.name");
-  if (params.template) {
-    return err(`Unknown template '${params.template}'. Use action='help' — templates ship with examples (FR-DASH-13).`);
+  if (params.template && params.content) {
+    return err("Use either params.content or params.template, not both.");
   }
-  const rawContent = params.content;
+  let rawContent = params.content;
+  if (params.template) {
+    const fromTemplate = resolveDashboardTemplate(params.template);
+    if (!fromTemplate) {
+      return err(
+        `Unknown template '${params.template}'. Available: mis-tareas, mi-semana.`,
+      );
+    }
+    rawContent = fromTemplate;
+  }
   if (!rawContent) return err("create requires params.content or params.template");
   const rel = dashboardRelPath(name);
   const abs = join(rootDir, rel);
@@ -209,8 +223,33 @@ const HANDLERS: Record<
   validate: validateAction,
   create: createAction,
   update: updateAction,
-  examples: () => err("examples is not available yet (FR-DASH-13)."),
+  examples: examplesAction,
 };
+
+function examplesAction(rootDir: string): DashboardActionResult {
+  const paths = listExampleDashboardPaths();
+  if (paths.length === 0) {
+    return err("No bundled example dashboards found.");
+  }
+  const written: string[] = [];
+  for (const rel of paths) {
+    const content = bundledDashboardContent(rel);
+    if (!content) continue;
+    const base = rel.replace(/^examples\//, "").replace(/\.md$/, "");
+    const targetRel = `${DASHBOARDS_DIR_PREFIX}examples/${base}.md`;
+    const abs = join(rootDir, targetRel);
+    if (existsSync(abs)) {
+      return err(`Example already exists: ${targetRel}. Remove it first or copy manually.`);
+    }
+    const issues = collectDashboardValidationIssues(rootDir, content);
+    if (issues.length > 0) {
+      return err(`Bundled example '${rel}' is invalid:\n${formatValidationIssues(issues)}`);
+    }
+    writeAtomic(rootDir, targetRel, content);
+    written.push(targetRel);
+  }
+  return ok(`Copied ${written.length} example dashboard(s):\n${written.map((p) => `- ${p}`).join("\n")}`);
+}
 
 export function classifyDashboardAction(action: string): "allow" | "deny" {
   return Object.hasOwn(HANDLERS, action) ? "allow" : "deny";
