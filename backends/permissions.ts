@@ -135,6 +135,19 @@ export function evaluateToolCall(
     return { action: "allow" };
   }
 
+  // FR-DASH-19: copy_file and move_file are in neither READ_TOOLS nor
+  // WRITE_TOOLS, so their destination is checked before the file-tool exit.
+  if (toolName === "copy_file" || toolName === "move_file") {
+    const dest = (args as { destination?: unknown } | undefined)?.destination;
+    if (
+      typeof dest === "string" &&
+      dest.trim() !== "" &&
+      isUserDashboardFile(resolve(rootDir, expandHome(dest, home)), rootDir)
+    ) {
+      return { action: "deny", reason: DASHBOARD_TOOL_MESSAGE };
+    }
+  }
+
   const op: PermissionOp | undefined = WRITE_TOOLS.has(toolName)
     ? "write"
     : READ_TOOLS.has(toolName)
@@ -150,19 +163,9 @@ export function evaluateToolCall(
     return { action: "allow" }; // pathless: operates on the session cwd (buddy directory)
   }
 
-  if (toolName === "copy_file" || toolName === "move_file") {
-    const dest = rawPaths[1];
-    if (dest) {
-      const absDest = resolve(rootDir, expandHome(dest, home));
-      if (isUserDashboardFile(absDest, rootDir)) {
-        return { action: "deny", reason: DASHBOARD_TOOL_MESSAGE };
-      }
-    }
-  }
-
   let pendingAsk: PermissionDecision | undefined;
   for (const rawPath of rawPaths) {
-    if ((toolName === "write" || toolName === "edit") && op === "write") {
+    if (op === "write") {
       const absPath = resolve(rootDir, expandHome(rawPath, home));
       if (isUserDashboardFile(absPath, rootDir)) {
         return { action: "deny", reason: DASHBOARD_TOOL_MESSAGE };
@@ -243,23 +246,6 @@ export function createPermissionGate(
         const absPath = resolve(rootDir, expandHome(rawPath, home));
         if (isDenylistedPath(absPath, home)) {
           return { block: true, reason: `Access to ${absPath} is not allowed.` };
-        }
-      }
-      if (toolName === "copy_file" || toolName === "move_file") {
-        const dest = rawPaths[1];
-        if (dest) {
-          const absDest = resolve(rootDir, expandHome(dest, home));
-          if (isUserDashboardFile(absDest, rootDir)) {
-            return { block: true, reason: DASHBOARD_TOOL_MESSAGE };
-          }
-        }
-      }
-      if (toolName === "write" || toolName === "edit") {
-        for (const rawPath of rawPaths) {
-          const absPath = resolve(rootDir, expandHome(rawPath, home));
-          if (isUserDashboardFile(absPath, rootDir)) {
-            return { block: true, reason: DASHBOARD_TOOL_MESSAGE };
-          }
         }
       }
       if (sessionAllowedPaths && READ_TOOLS.has(toolName) && rawPaths.length > 0) {
