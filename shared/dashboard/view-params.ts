@@ -32,6 +32,10 @@ export function validateViewParams(
     if (metaErr) return metaErr;
   }
 
+  if (view !== "counter" && (raw.count !== undefined || raw.sum !== undefined)) {
+    return `'count' and 'sum' reduce rows to numbers, which only view 'counter' renders. Use view: counter (with 'group' for one number per group), or drop count/sum to show rows in '${view}'`;
+  }
+
   if (raw.delta === true && typeof raw.range !== "string") {
     return "Counter delta requires a 'range' filter";
   }

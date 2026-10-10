@@ -2048,9 +2048,14 @@
           "name": "Task areas and projects render as in tasks.md",
           "bdd": "pass",
           "unit_tests": 4
+        },
+        {
+          "name": "Count on a row view is a widget error pointing at counter",
+          "bdd": "pass",
+          "unit_tests": 3
         }
       ],
-      "note": "reopened: tasks area and project display as @ and #"
+      "note": "reopened: count/sum on row views rendered empty instead of erroring (manual test 2026-10-10)"
     },
     {
       "id": "FR-DASH-06",

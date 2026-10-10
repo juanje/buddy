@@ -811,6 +811,21 @@ Feature: Dashboard resolution
     Then the kanban workflow columns are ordered
 
   @FR-DASH-10
+  Scenario: Count on a row view is a widget error pointing at counter
+    Given an initialized buddy git repository
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: table
+        source: tasks
+        group: area
+        count: true
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-07"
+    Then segment 1 widget result is an error mentioning "view: counter"
+
+  @FR-DASH-10
   Scenario: Kanban order must be a list
     Given an initialized buddy git repository
     And a dashboard file with body:
