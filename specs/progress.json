@@ -1876,8 +1876,19 @@
           "name": "Ordinary markdown still offers export PDF when supported",
           "bdd": "pass",
           "unit_tests": 2
+        },
+        {
+          "name": "Dashboard viewer uses full window layout",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Ordinary markdown uses modal layout",
+          "bdd": "pass",
+          "unit_tests": 1
         }
-      ]
+      ],
+      "note": "reopened: full window layout"
     },
     {
       "id": "FR-DASH-03",

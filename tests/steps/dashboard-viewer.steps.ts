@@ -103,6 +103,14 @@ Then("the file viewer is not in wide mode", function (this: DashViewerWorld) {
   assert.equal(readStore(this.fileViewer!.wide), false);
 });
 
+Then("the file viewer layout is fullWindow", function (this: DashViewerWorld) {
+  assert.equal(readStore(this.fileViewer!.layout), "fullWindow");
+});
+
+Then("the file viewer layout is modal", function (this: DashViewerWorld) {
+  assert.equal(readStore(this.fileViewer!.layout), "modal");
+});
+
 Then("the file viewer has a resolved dashboard", function (this: DashViewerWorld) {
   const model = readStore(this.fileViewer!.dashboard);
   assert.ok(model);

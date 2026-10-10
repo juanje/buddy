@@ -208,6 +208,7 @@ type: dashboard
     });
 
     await controller.openFile("user/dashboards/b.md");
+    expect(readStore(controller.layout)).toBe("fullWindow");
     expect(readStore(controller.wide)).toBe(true);
     expect(readStore(controller.dashboard)?.segments.length).toBeGreaterThan(0);
     expect(readStore(controller.canExportPdf)).toBe(false);

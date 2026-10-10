@@ -20,7 +20,7 @@
   const canGoBack = $derived(controller.canGoBack);
   const canReveal = $derived(controller.canReveal);
   const canExportPdf = $derived(controller.canExportPdf);
-  const wide = $derived(controller.wide);
+  const layout = $derived(controller.layout);
   const dashboard = $derived(controller.dashboard);
 
   function onBackdropClick(event: MouseEvent) {
@@ -56,8 +56,18 @@
 </script>
 
 {#if $open}
-  <div class="backdrop" onclick={onBackdropClick} role="presentation">
-    <div class="panel" class:wide={$wide} role="dialog" aria-labelledby="file-viewer-title">
+  <div
+    class="backdrop"
+    class:full-window={$layout === "fullWindow"}
+    onclick={onBackdropClick}
+    role="presentation"
+  >
+    <div
+      class="panel"
+      class:full-window={$layout === "fullWindow"}
+      role="dialog"
+      aria-labelledby="file-viewer-title"
+    >
       <header class="header">
         {#if $canGoBack}
           <button
@@ -133,6 +143,11 @@
     padding: 24px;
     background: rgba(0, 0, 0, 0.45);
   }
+  .backdrop.full-window {
+    padding: 0;
+    align-items: stretch;
+    justify-content: stretch;
+  }
   .panel {
     width: min(860px, 100%);
     max-height: min(80vh, 900px);
@@ -143,8 +158,14 @@
     background: var(--bg);
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
   }
-  .panel.wide {
-    width: min(1280px, 100%);
+  .panel.full-window {
+    width: 100%;
+    max-width: none;
+    max-height: none;
+    height: 100%;
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
   }
   .header {
     display: flex;

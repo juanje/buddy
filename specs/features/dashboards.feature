@@ -551,6 +551,34 @@ Feature: Dashboard resolution
     And segment 1 widget has no provenance
 
   @FR-DASH-02
+  Scenario: Dashboard viewer uses full window layout
+    Given a filesystem buddy root at "/tmp/buddy-dash-view-7"
+    And a readable file "user/dashboards/board.md" with content:
+      """
+      ---
+      type: dashboard
+      ---
+      ```dashboard
+      - view: text
+        text: Hi
+      ```
+      """
+    When the dashboard test viewer opens "user/dashboards/board.md"
+    Then the file viewer is in wide mode
+    And the file viewer layout is fullWindow
+
+  @FR-DASH-02
+  Scenario: Ordinary markdown uses modal layout
+    Given a filesystem buddy root at "/tmp/buddy-dash-view-8"
+    And a readable file "user/notes/doc.md" with content:
+      """
+      # Hello
+      """
+    When the dashboard test viewer opens "user/notes/doc.md"
+    Then the file viewer is not in wide mode
+    And the file viewer layout is modal
+
+  @FR-DASH-02
   Scenario: Ordinary markdown still offers export PDF when supported
     Given a filesystem buddy root at "/tmp/buddy-dash-view-6"
     And a readable file "user/notes/doc.md" with content:

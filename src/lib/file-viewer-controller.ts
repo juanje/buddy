@@ -10,6 +10,8 @@ import { isDashboardDocument } from "../../shared/dashboard/document";
 import { renderMarkdown } from "./markdown";
 import { buildPdfHtml } from "./pdf-html";
 
+export type FileViewerLayout = "modal" | "fullWindow";
+
 export interface FileViewerDeps {
   /**
    * Read a viewable file by its path relative to the buddy directory. Backed by
@@ -62,7 +64,9 @@ export interface FileViewerController {
    * platforms that implement createPDF — macOS today). FR-CHAT-18.
    */
   canExportPdf: Readable<boolean>;
-  /** True when the panel uses dashboard wide layout (FR-DASH-02). */
+  /** Dashboard full window vs standard modal (FR-DASH-02). */
+  layout: Readable<FileViewerLayout>;
+  /** True when layout is fullWindow (BDD compatibility). */
   wide: Readable<boolean>;
   /** Resolved dashboard model when viewing a dashboard; otherwise undefined. */
   dashboard: Readable<ResolvedDashboard | undefined>;
@@ -95,7 +99,7 @@ export function createFileViewerController(deps: FileViewerDeps): FileViewerCont
   const canGoBackStore = writable(false);
   const canRevealStore = writable(false);
   const canExportPdfStore = writable(false);
-  const wideStore = writable(false);
+  const layoutStore = writable<FileViewerLayout>("modal");
   const dashboardStore = writable<ResolvedDashboard | undefined>(undefined);
 
   /** Documents visited before the current one, most recent last. */
@@ -114,7 +118,7 @@ export function createFileViewerController(deps: FileViewerDeps): FileViewerCont
     const isMarkdown = /\.md$/i.test(relPath);
     isMarkdownStore.set(isMarkdown);
     canExportPdfStore.set(Boolean(isMarkdown && deps.platformSupportsPdf));
-    wideStore.set(false);
+    layoutStore.set("modal");
     dashboardStore.set(undefined);
     contentStore.set("");
     summaryStore.set(undefined);
@@ -134,7 +138,7 @@ export function createFileViewerController(deps: FileViewerDeps): FileViewerCont
         if (isDashboardDocument(relPath, fields) && deps.resolveDashboard) {
           const model = await deps.resolveDashboard(relPath);
           dashboardStore.set(model);
-          wideStore.set(true);
+          layoutStore.set("fullWindow");
           canExportPdfStore.set(false);
         }
       } else {
@@ -199,7 +203,7 @@ export function createFileViewerController(deps: FileViewerDeps): FileViewerCont
     canGoBackStore.set(false);
     canRevealStore.set(false);
     canExportPdfStore.set(false);
-    wideStore.set(false);
+    layoutStore.set("modal");
     dashboardStore.set(undefined);
     openStore.set(false);
     filePathStore.set("");
@@ -223,7 +227,13 @@ export function createFileViewerController(deps: FileViewerDeps): FileViewerCont
     canGoBack: { subscribe: canGoBackStore.subscribe },
     canReveal: { subscribe: canRevealStore.subscribe },
     canExportPdf: { subscribe: canExportPdfStore.subscribe },
-    wide: { subscribe: wideStore.subscribe },
+    layout: { subscribe: layoutStore.subscribe },
+    wide: {
+      subscribe: (fn) =>
+        layoutStore.subscribe((layout) => {
+          fn(layout === "fullWindow");
+        }),
+    },
     dashboard: { subscribe: dashboardStore.subscribe },
     openFile,
     followLink,
