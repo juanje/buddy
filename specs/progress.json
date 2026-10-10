@@ -1790,8 +1790,14 @@
           "name": "Unknown source is a widget error listing known sources",
           "bdd": "pass",
           "unit_tests": 1
+        },
+        {
+          "name": "Tasks source omits due date from row text",
+          "bdd": "pass",
+          "unit_tests": 2
         }
-      ]
+      ],
+      "note": "reopened: task row text omits due date"
     },
     {
       "id": "FR-DASH-04",

@@ -85,6 +85,22 @@ Feature: Dashboard resolution
     Then segment 1 widget result is an error mentioning "fence"
 
   @FR-DASH-05
+  Scenario: Tasks source omits due date from row text
+    Given an initialized buddy git repository
+    And tasks.md with a due date embedded in line text
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: table
+        source: tasks
+        columns: [text, due]
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-07"
+    Then segment 1 first widget row text is "Actualizar el portátil del trabajo."
+    And segment 1 first widget row due is "2026-09-22"
+
+  @FR-DASH-05
   Scenario: Tasks source exposes derived state
     Given an initialized buddy git repository
     And tasks.md with mixed states for dashboard resolution

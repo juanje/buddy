@@ -12,6 +12,7 @@ import {
   tasksFilePath,
 } from "../tasks/task-file";
 import { listKnownSourceNames } from "../../shared/dashboard/source-fields";
+import { taskRowDisplayText } from "./task-row-text";
 
 export type SourceLoadResult =
   | { ok: true; rows: Record<string, unknown>[] }
@@ -55,7 +56,7 @@ export function loadTasksRows(rootDir: string, today: string): Record<string, un
   for (const item of enriched) {
     if (item.done) continue;
     const row: Record<string, unknown> = {
-      text: item.text,
+      text: taskRowDisplayText(item.text, item.dueDate),
       area: item.area ?? "",
       project: item.project ?? "",
       due: item.dueDate ?? "",

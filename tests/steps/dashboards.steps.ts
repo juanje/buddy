@@ -23,6 +23,20 @@ function root(this: DashboardWorld): string {
   return this.buddyDir;
 }
 
+Given("tasks.md with a due date embedded in line text", function (this: DashboardWorld) {
+  const items: TaskItem[] = [
+    {
+      id: 1,
+      text: "Actualizar el portátil del trabajo. 2026-09-22",
+      done: false,
+      next: false,
+      area: "work",
+      dueDate: "2026-09-22",
+    },
+  ];
+  writeTasksFile(root.call(this), items, "2026-01-01");
+});
+
 Given("tasks.md with mixed states for dashboard resolution", function (this: DashboardWorld) {
   const items: TaskItem[] = [
     { id: 1, text: "Next one", done: false, next: true, area: "personal" },
@@ -225,6 +239,14 @@ Then(
   function (this: DashboardWorld, index: number, text: string) {
     const rows = widgetRows.call(this, index);
     assert.equal(String(rows[0]?.text), text);
+  },
+);
+
+Then(
+  "segment {int} first widget row due is {string}",
+  function (this: DashboardWorld, index: number, due: string) {
+    const rows = widgetRows.call(this, index);
+    assert.equal(String(rows[0]?.due), due);
   },
 );
 

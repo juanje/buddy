@@ -4150,10 +4150,12 @@ and inline content.
 **FR-DASH-05 — Built-in sources: tasks and deferred**
 
 - `tasks` reads `user/tasks.md` through the `tasks()` parser. Fields: `text`,
-  `area`, `project`, `due`, `created`, `state`, `stale_days`. `tasks.md` has no
-  state field; `state` is derived, first match wins: `parked` (area
-  `someday`), `scheduled` (due date after today), `next` (`>>` marker), `open`.
-  This is the precedence `isActiveNextItem` already applies.
+  `area`, `project`, `due`, `created`, `state`, `stale_days`. The `text` field
+  omits the due date ISO token (the parser keeps it inside the stored line for
+  round-trip writes). `tasks.md` has no state field; `state` is derived, first
+  match wins: `parked` (area `someday`), `scheduled` (due date after today),
+  `next` (`>>` marker), `open`. This is the precedence `isActiveNextItem`
+  already applies.
 - Done items are excluded: daily cleanup removes them from the file
   (FR-TASKM-44), so a live read cannot report them consistently. History of
   completed tasks is FR-DASH-17.
