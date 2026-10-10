@@ -7,7 +7,7 @@ import { toIsoDay } from "../../shared/dates";
 import { DASHBOARDS_DIR_PREFIX } from "../../shared/dashboard/document";
 import { inferInlineSourceDefinition } from "../../shared/dashboard/inline-source";
 import { sectionsFit } from "../../shared/dashboard/sections";
-import { replaceWidgetByTitle } from "../../shared/dashboard/rebuild";
+import { replaceWidgetByTitle, setFrontmatterField } from "../../shared/dashboard/rebuild";
 import {
   listKnownSourceNames,
   sourceDefinition,
@@ -32,7 +32,10 @@ const HELP_TEXT = `dashboard() actions:
 - check(path) — whether a markdown file fits the sections primitive
 - validate(content) — validation errors for dashboard markdown
 - create(name, content | template) — write user/dashboards/<name>.md after validation
-- update(name, widget_title, widget | content) — replace one widget or the whole file
+- update(name, ...) — validated before writing; one of:
+    title?, summary? — change the dashboard header only
+    widget_title + widget — replace the one widget with that title
+    content — rewrite the whole file
 - examples — copy bundled example dashboards to user/dashboards/examples/`;
 
 export type DashboardActionParams = {
@@ -43,6 +46,8 @@ export type DashboardActionParams = {
   template?: string;
   widget_title?: string;
   widget?: Record<string, unknown>;
+  title?: string;
+  summary?: string;
 };
 
 export type DashboardActionResult = { ok: true; text: string } | { ok: false; text: string };
@@ -197,18 +202,38 @@ function updateAction(rootDir: string, params: DashboardActionParams): Dashboard
   if (!existsSync(abs)) return err(`Dashboard not found: ${rel}`);
   const existing = readFileSync(abs, "utf8");
 
+  const header: Array<["title" | "summary", string]> = [];
+  for (const key of ["title", "summary"] as const) {
+    const value = params[key];
+    if (value === undefined) continue;
+    if (typeof value !== "string" || value.trim() === "" || /[\r\n]/.test(value)) {
+      return err(`params.${key} must be a non-empty single line`);
+    }
+    header.push([key, value.trim()]);
+  }
+
   let nextContent: string;
   if (params.content) {
     nextContent = ensureDashboardFile(params.content, name.replace(/\.md$/i, ""));
-  } else {
+  } else if (params.widget_title || params.widget) {
     const title = params.widget_title;
     const widget = params.widget;
     if (!title || !widget) {
-      return err("update requires params.widget_title and params.widget, or params.content");
+      return err("update with a widget requires both params.widget_title and params.widget");
     }
     const replaced = replaceWidgetByTitle(existing, title, widget);
     if (!replaced.ok) return err(replaced.message);
     nextContent = replaced.content;
+  } else if (header.length > 0) {
+    nextContent = existing;
+  } else {
+    return err(
+      "update requires one of: params.title/summary (header only), " +
+        "params.widget_title + params.widget (one widget), or params.content (whole file)",
+    );
+  }
+  for (const [key, value] of header) {
+    nextContent = setFrontmatterField(nextContent, key, value);
   }
 
   const issues = collectDashboardValidationIssues(rootDir, nextContent);

@@ -143,6 +143,45 @@ Feature: Dashboard tool
     Then dashboard tool failed
     And dashboard tool output mentions "Multiple widgets"
 
+  @FR-DASH-12
+  Scenario: Update title changes only the header
+    Given an initialized buddy git repository
+    And dashboard file "head.md" with content:
+      """
+      ---
+      type: dashboard
+      title: Old title
+      ---
+      Free text stays.
+
+      ```dashboard
+      - view: text
+        text:   Spacing kept
+      ```
+      """
+    When dashboard action "update" is invoked for dashboard "head" with title "Mis tareas de hoy"
+    Then dashboard tool succeeded
+    And dashboard file "head.md" contains "title: Mis tareas de hoy"
+    And dashboard file "head.md" body is unchanged
+
+  @FR-DASH-12
+  Scenario: Update with nothing to change lists the update forms
+    Given an initialized buddy git repository
+    And dashboard file "head.md" with content:
+      """
+      ---
+      type: dashboard
+      title: Old title
+      ---
+      ```dashboard
+      - view: text
+        text: Body
+      ```
+      """
+    When dashboard action "update" is invoked for dashboard "head" with no changes
+    Then dashboard tool failed
+    And dashboard tool output mentions "title/summary"
+
   @FR-DASH-19
   Scenario: Write to user dashboards is denied
     Given an initialized buddy git repository
