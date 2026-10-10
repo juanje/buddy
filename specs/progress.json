@@ -2173,8 +2173,14 @@
           "name": "Update with ambiguous title fails",
           "bdd": "pass",
           "unit_tests": 1
+        },
+        {
+          "name": "Update title changes only the header",
+          "bdd": "pass",
+          "unit_tests": 3
         }
-      ]
+      ],
+      "note": "reopened: no way to change dashboard title/summary; agent gave up after write denial (chat test 2026-10-10)"
     },
     {
       "id": "FR-DASH-19",

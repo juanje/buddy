@@ -6,6 +6,22 @@ import { splitFrontmatter } from "../frontmatter";
 import { parseDashboardParts, type ParsedDashboardPart } from "./parse";
 import { parseDashboardYamlBlock } from "./yaml-blocks";
 
+/**
+ * Set one frontmatter key, touching only that line. The body and every other
+ * line stay byte-for-byte; a file without frontmatter gets a minimal block.
+ */
+export function setFrontmatterField(content: string, key: string, value: string): string {
+  const line = `${key}: ${value}`;
+  const match = /^---\r?\n([\s\S]*?)\r?\n---/.exec(content);
+  if (!match) return `---\n${line}\n---\n\n${content}`;
+  const lines = match[1].split(/\r?\n/);
+  const idx = lines.findIndex((l) => l.slice(0, l.indexOf(":")).trim() === key);
+  if (idx >= 0) lines[idx] = line;
+  else lines.push(line);
+  const block = `---\n${lines.join("\n")}\n---`;
+  return block + content.slice(match[0].length);
+}
+
 export function formatDashboardBody(parts: ParsedDashboardPart[]): string {
   const chunks: string[] = [];
   for (const part of parts) {

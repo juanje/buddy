@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import { existsSync, mkdirSync, readFileSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { createPermissionGate, evaluateToolCall, type PermissionGate } from "../../backends/permissions";
+import { DASHBOARD_TOOL_MESSAGE, createPermissionGate, evaluateToolCall, type PermissionGate } from "../../backends/permissions";
 import { buildSkillTools, skillToolNames } from "../../backends/skill-tools";
 import { computeActiveFronts } from "../../backends/active-fronts";
 import { executeTaskAction } from "../../backends/tasks/task-actions";
@@ -523,7 +523,7 @@ Then("the permission gate blocks with dashboard tool message", function (this: T
   assert.ok(this.permOutcome?.block, "expected the tool call to be blocked");
   assert.equal(
     this.permOutcome?.reason,
-    "Use dashboard(action='update') to create and modify dashboards.",
+    DASHBOARD_TOOL_MESSAGE,
   );
 });
 

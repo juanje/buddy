@@ -4243,7 +4243,14 @@ and inline content.
 - `validate`: the errors FR-DASH-01/04 would produce, each fixable.
 - `create` / `update`: validate, then write atomically into `user/dashboards/`.
   An invalid definition is refused with the same errors and nothing is
-  written.
+  written. `update` takes one of: `title` / `summary` (changes only those
+  frontmatter lines, the rest of the file byte-for-byte), `widget_title` +
+  `widget` (replaces the one widget with that title), or `content` (rewrites
+  the file).
+- `examples`: copies the bundled example dashboards (FR-DASH-13) into
+  `user/dashboards/examples/`.
+- The FR-DASH-19 refusal names these forms, so a denied `write` or `edit`
+  leads to the right call instead of a dead end.
 
 **FR-DASH-13 — Templates and examples**
 
