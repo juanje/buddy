@@ -2,8 +2,8 @@
 
 import { Given, Then, When } from "@cucumber/cucumber";
 import assert from "node:assert/strict";
-import { existsSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 
 import { deferredPath } from "../../backends/brain-paths";
 import { resolveDashboardContent } from "../../backends/dashboard/resolve";
@@ -146,6 +146,15 @@ Given("tasks.md with many open tasks for sort limit", function (this: DashboardW
   ];
   writeTasksFile(root.call(this), items, "2026-01-01");
 });
+
+Given(
+  "a sections markdown file at {string} with content:",
+  function (this: DashboardWorld, relPath: string, content: string) {
+    const abs = join(root.call(this), relPath);
+    mkdirSync(dirname(abs), { recursive: true });
+    writeFileSync(abs, content.trim() + "\n", "utf8");
+  },
+);
 
 Given("a dashboard file with body:", function (this: DashboardWorld, body: string) {
   this.dashboardBody = [
@@ -307,6 +316,30 @@ Then(
   function (this: DashboardWorld, index: number, due: string) {
     const rows = widgetRows.call(this, index);
     assert.equal(String(rows[0]?.due), due);
+  },
+);
+
+Then(
+  "segment {int} first widget row group is {string}",
+  function (this: DashboardWorld, index: number, group: string) {
+    const rows = widgetRows.call(this, index);
+    assert.equal(String(rows[0]?.group), group);
+  },
+);
+
+Then(
+  "segment {int} first widget row owner is {string}",
+  function (this: DashboardWorld, index: number, owner: string) {
+    const rows = widgetRows.call(this, index);
+    assert.equal(String(rows[0]?.owner), owner);
+  },
+);
+
+Then(
+  "segment {int} first widget row done is {string}",
+  function (this: DashboardWorld, index: number, done: string) {
+    const rows = widgetRows.call(this, index);
+    assert.equal(String(rows[0]?.done), done);
   },
 );
 

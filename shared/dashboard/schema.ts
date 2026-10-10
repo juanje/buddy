@@ -8,7 +8,17 @@ const QUERY_KEYS = ["where", "group", "sort", "limit", "count", "sum", "range"] 
 
 const INLINE_KEYS = ["updated", "basis", "rows"] as const;
 
-const COMMON_KEYS = new Set(["view", "source", "title", "width", ...QUERY_KEYS, ...INLINE_KEYS]);
+const FILE_SOURCE_KEYS = ["path"] as const;
+
+const COMMON_KEYS = new Set([
+  "view",
+  "source",
+  "title",
+  "width",
+  ...QUERY_KEYS,
+  ...INLINE_KEYS,
+  ...FILE_SOURCE_KEYS,
+]);
 
 const VIEW_EXTRA_KEYS: Record<string, Set<string>> = {
   kanban: new Set(["fields", "group", "order"]),
@@ -70,6 +80,10 @@ export function validateWidgetSpec(rawItem: Record<string, unknown>): ValidateWi
     }
   } else if (source === "inline") {
     // FR-DASH-09: metadata validated in resolve with view-params
+  } else if (source === "sections") {
+    if (!asString(rawItem.path)) {
+      return { error: "sections source requires key 'path'" };
+    }
   } else if (!source) {
     return { error: `View '${view}' requires key 'source'` };
   }

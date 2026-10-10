@@ -21,6 +21,7 @@ import {
 import type { SourceDefinition } from "../../shared/dashboard/source-fields";
 import { sourceDefinition } from "../../shared/dashboard/source-fields";
 import { validateViewParams } from "../../shared/dashboard/view-params";
+import { loadSectionsSource } from "./sections-load";
 import { loadSourceRows } from "./sources";
 
 function resolveTextWidget(spec: WidgetSpec): WidgetResult {
@@ -78,6 +79,26 @@ function resolveWidgetData(
 ): { result: WidgetResult; provenance?: WidgetProvenance } {
   if (spec.view === "text" && !spec.source) {
     return { result: resolveTextWidget(spec) };
+  }
+
+  if (spec.source === "sections") {
+    const path = spec.raw.path;
+    if (typeof path !== "string" || path.trim() === "") {
+      return { result: { kind: "error", message: "sections source requires key 'path'" } };
+    }
+    const loaded = loadSectionsSource(rootDir, path);
+    if (!loaded.ok) {
+      return { result: { kind: "error", message: loaded.message } };
+    }
+    const viewErr = validateViewParams(spec, loaded.def);
+    if (viewErr) {
+      return { result: { kind: "error", message: viewErr } };
+    }
+    const queried = applyWidgetQuery(loaded.rows, spec, "sections", loaded.def, today);
+    if (!queried.ok) {
+      return { result: { kind: "error", message: queried.message } };
+    }
+    return { result: queried.result };
   }
 
   if (spec.source === "inline") {

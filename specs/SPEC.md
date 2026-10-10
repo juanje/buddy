@@ -4058,7 +4058,7 @@ and inline content.
 | FR-DASH-03 | A failing widget shows its own error; the rest of the dashboard renders | 3 S2 ✓ |
 | FR-DASH-04 | Query: `where`, `group`, `sort`, `limit`, `count`/`sum`, `range`; strict filter grammar with relative dates | 3 S1 ✓ |
 | FR-DASH-05 | Built-in sources: `tasks` (derived state) and `deferred` | 3 S1 ✓ |
-| FR-DASH-06 | Generic primitive: sections (any markdown with headings and list items) | 3 S3 |
+| FR-DASH-06 | Generic primitive: sections (any markdown with headings and list items) | 3 S3 ✓ |
 | FR-DASH-07 | Generic primitive: records (folder of `.md` files, frontmatter as row) | 3 S7 |
 | FR-DASH-08 | Generic primitive: series (CSV parsed by code) | 3 S4 |
 | FR-DASH-09 | Inline content carries date and basis, renders distinct, shows its age | 3 S2 ✓ |

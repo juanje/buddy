@@ -2055,9 +2055,35 @@
     {
       "id": "FR-DASH-06",
       "title": "Dashboard primitive: sections",
-      "status": "pending",
-      "cycle_step": "spec_review",
-      "scenarios": []
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Sections source groups rows by heading",
+          "bdd": "pass",
+          "unit_tests": 4
+        },
+        {
+          "name": "Sections checkbox rows include done",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Sections key value sub-bullets become fields",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Sections file that does not fit is a widget error",
+          "bdd": "pass",
+          "unit_tests": 2
+        },
+        {
+          "name": "Sections path outside buddy root is a widget error",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
     },
     {
       "id": "FR-DASH-18",

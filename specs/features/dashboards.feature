@@ -847,6 +847,107 @@ Feature: Dashboard resolution
     And the file viewer layout is modal
     And the file viewer has a header close button
 
+  @FR-DASH-06
+  Scenario: Sections source groups rows by heading
+    Given an initialized buddy git repository
+    And a sections markdown file at "user/notes/board.md" with content:
+      """
+      ## Doing
+      - First
+      ## Next
+      - Second
+      """
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: table
+        source: sections
+        path: user/notes/board.md
+        columns: [text, group]
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-07"
+    Then segment 1 is a table widget with 2 rows and no error
+    And segment 1 first widget row text is "First"
+    And segment 1 first widget row group is "Doing"
+
+  @FR-DASH-06
+  Scenario: Sections checkbox rows include done
+    Given an initialized buddy git repository
+    And a sections markdown file at "user/notes/checks.md" with content:
+      """
+      ## Tasks
+      - [x] Finished
+      - [ ] Open
+      """
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: table
+        source: sections
+        path: user/notes/checks.md
+        columns: [text, done]
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-07"
+    Then segment 1 is a table widget with 2 rows and no error
+    And segment 1 first widget row done is "true"
+
+  @FR-DASH-06
+  Scenario: Sections key value sub-bullets become fields
+    Given an initialized buddy git repository
+    And a sections markdown file at "user/notes/meta.md" with content:
+      """
+      ## Items
+      - Ship release
+        - owner: Ana
+      """
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: table
+        source: sections
+        path: user/notes/meta.md
+        columns: [text, owner]
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-07"
+    Then segment 1 first widget row owner is "Ana"
+
+  @FR-DASH-06
+  Scenario: Sections file that does not fit is a widget error
+    Given an initialized buddy git repository
+    And a sections markdown file at "user/notes/plain.md" with content:
+      """
+      Just prose, no headings with lists.
+      """
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: list
+        source: sections
+        path: user/notes/plain.md
+        fields: [text]
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-07"
+    Then segment 1 widget result is an error mentioning "sections primitive"
+
+  @FR-DASH-06
+  Scenario: Sections path outside buddy root is a widget error
+    Given an initialized buddy git repository
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: list
+        source: sections
+        path: ../../../etc/passwd
+        fields: [text]
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-07"
+    Then segment 1 widget result is an error mentioning "cannot be opened"
+
   @FR-DASH-02
   Scenario: Ordinary markdown still offers export PDF when supported
     Given a filesystem buddy root at "/tmp/buddy-dash-view-6"
