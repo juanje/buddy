@@ -42,6 +42,48 @@ Feature: Dashboard tool
     Then dashboard tool output mentions "user/data/plain-sections.md"
 
   @FR-DASH-12
+  Scenario: Validate reports block and widget position
+    Given an initialized buddy git repository
+    When dashboard action "validate" is invoked with content:
+      """
+      ---
+      type: dashboard
+      ---
+      ```dashboard
+      - view: text
+        text: OK
+      ```
+
+      ```dashboard
+      - view: text
+        text: A
+      - view: table
+        source: tasks
+        columns: [bad_field]
+      ```
+      """
+    Then dashboard tool failed
+    And dashboard tool output mentions "block 2, widget 2"
+
+  @FR-DASH-12
+  Scenario: Validate reports schema error once
+    Given an initialized buddy git repository
+    When dashboard action "validate" is invoked with content:
+      """
+      ---
+      type: dashboard
+      ---
+      ```dashboard
+      - view: table
+        source: tasks
+        columns: [not_a_field]
+      ```
+      """
+    Then dashboard tool failed
+    And dashboard tool output mentions "not_a_field"
+    And dashboard tool output mentions "not_a_field" once
+
+  @FR-DASH-12
   Scenario: Validate reports field errors
     Given an initialized buddy git repository
     When dashboard action "validate" is invoked with content:
@@ -90,6 +132,43 @@ Feature: Dashboard tool
       """
     Then dashboard tool failed
     And dashboard file "user/dashboards/bad.md" does not exist
+
+  @FR-DASH-12
+  Scenario: Update touches only the affected dashboard block
+    Given an initialized buddy git repository
+    And dashboard file "surgical.md" with content:
+      """
+      ---
+      type: dashboard
+      ---
+      Free line stays.
+
+      ```dashboard
+      - view: text
+        title: Keep spacing
+        text: |
+            indented
+      # yaml comment stays
+      ```
+
+      ```dashboard
+      - view: text
+        title: Target
+        text: Old
+      ```
+      """
+    When dashboard action "update" is invoked for dashboard "surgical" widget "Target" with:
+      """
+      view: text
+      title: Target
+      text: New
+      """
+    Then dashboard tool succeeded
+    And dashboard file "surgical.md" contains "Free line stays."
+    And dashboard file "surgical.md" contains "# yaml comment stays"
+    And dashboard file "surgical.md" contains "indented"
+    And dashboard file "surgical.md" contains "New"
+    And dashboard file "surgical.md" does not contain "Old"
 
   @FR-DASH-12
   Scenario: Update widget preserves free text

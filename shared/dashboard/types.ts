@@ -27,11 +27,19 @@ export type WidgetProvenance = {
 
 export type ResolvedTextSegment = { kind: "text"; markdown: string };
 
+export type WidgetPosition = {
+  /** 1-based index among ```dashboard blocks only. */
+  block: number;
+  /** 1-based widget index inside the block, when the error is widget-scoped. */
+  widget?: number;
+};
+
 export type ResolvedWidgetSegment = {
   kind: "widget";
   spec: WidgetSpec;
   result: WidgetResult;
   provenance?: WidgetProvenance;
+  position?: WidgetPosition;
 };
 
 export type ResolvedSegment = ResolvedTextSegment | ResolvedWidgetSegment;

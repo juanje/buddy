@@ -4,7 +4,21 @@ import { splitFrontmatter } from "../frontmatter";
 
 export type ParsedDashboardPart =
   | { kind: "text"; markdown: string }
-  | { kind: "dashboard_block"; yaml: string; fenceError?: string };
+  | {
+      kind: "dashboard_block";
+      /** 1-based index among ```dashboard blocks in the body. */
+      block: number;
+      yaml: string;
+      fenceError?: string;
+      /** 1-based line in the body where the opening fence starts. */
+      startLine: number;
+      /** 1-based line in the body where the closing fence ends. */
+      endLine: number;
+      /** 1-based first line of YAML inside the fence (inclusive). */
+      yamlStartLine: number;
+      /** 1-based last line of YAML inside the fence (inclusive). */
+      yamlEndLine: number;
+    };
 
 export type ParsedDashboardDocument = {
   title?: string;
@@ -21,6 +35,7 @@ export function parseDashboardParts(body: string): ParsedDashboardPart[] {
   const lines = body.split(/\r?\n/);
   let textBuf: string[] = [];
   let i = 0;
+  let blockNum = 0;
 
   const flushText = (): void => {
     const markdown = textBuf.join("\n").trim();
@@ -32,12 +47,26 @@ export function parseDashboardParts(body: string): ParsedDashboardPart[] {
     const line = lines[i];
     if (OPEN_DASHBOARD.test(line.trim())) {
       flushText();
+      blockNum += 1;
+      const startLine = i + 1;
       i += 1;
+      const yamlStartLine = i + 1;
       const yamlLines: string[] = [];
       let closed = false;
       while (i < lines.length) {
         if (CLOSE_FENCE.test(lines[i].trim())) {
           closed = true;
+          const endLine = i + 1;
+          const yamlEndLine = yamlLines.length > 0 ? i : yamlStartLine - 1;
+          parts.push({
+            kind: "dashboard_block",
+            block: blockNum,
+            yaml: yamlLines.join("\n"),
+            startLine,
+            endLine,
+            yamlStartLine,
+            yamlEndLine,
+          });
           i += 1;
           break;
         }
@@ -47,11 +76,14 @@ export function parseDashboardParts(body: string): ParsedDashboardPart[] {
       if (!closed) {
         parts.push({
           kind: "dashboard_block",
+          block: blockNum,
           yaml: yamlLines.join("\n"),
           fenceError: "Unclosed ```dashboard fence",
+          startLine,
+          endLine: lines.length,
+          yamlStartLine,
+          yamlEndLine: lines.length,
         });
-      } else {
-        parts.push({ kind: "dashboard_block", yaml: yamlLines.join("\n") });
       }
       continue;
     }

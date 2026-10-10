@@ -65,6 +65,80 @@ type: dashboard
     expect(out.text).toMatch(/not_a_field/i);
   });
 
+  it("validate cites block and widget position", () => {
+    dir = mkdtempSync(join(tmpdir(), "dash-tool-"));
+    const content = `---
+type: dashboard
+---
+\`\`\`dashboard
+- view: text
+  text: OK
+\`\`\`
+
+\`\`\`dashboard
+- view: text
+  text: A
+- view: table
+  source: tasks
+  columns: [bad_field]
+\`\`\``;
+    const out = executeDashboardAction(dir, "validate", { content });
+    expect(out.ok).toBe(false);
+    expect(out.text).toMatch(/block 2, widget 2/);
+  });
+
+  it("validate reports a schema error once", () => {
+    dir = mkdtempSync(join(tmpdir(), "dash-tool-"));
+    const content = `---
+type: dashboard
+---
+\`\`\`dashboard
+- view: table
+  source: tasks
+  columns: [not_a_field]
+\`\`\``;
+    const out = executeDashboardAction(dir, "validate", { content });
+    expect(out.ok).toBe(false);
+    expect(out.text.split("not_a_field").length - 1).toBe(1);
+  });
+
+  it("update replaces yaml only in the affected block", () => {
+    dir = mkdtempSync(join(tmpdir(), "dash-tool-"));
+    const initial = `---
+type: dashboard
+---
+Free line stays.
+
+\`\`\`dashboard
+- view: text
+  title: Keep spacing
+  text: |
+      indented
+# yaml comment stays
+\`\`\`
+
+\`\`\`dashboard
+- view: text
+  title: Target
+  text: Old
+\`\`\`
+`;
+    executeDashboardAction(dir, "create", { name: "surgical", content: initial });
+    const before = readFileSync(join(dir, "user/dashboards/surgical.md"), "utf8");
+    const out = executeDashboardAction(dir, "update", {
+      name: "surgical",
+      widget_title: "Target",
+      widget: { view: "text", title: "Target", text: "New" },
+    });
+    expect(out.ok).toBe(true);
+    const after = readFileSync(join(dir, "user/dashboards/surgical.md"), "utf8");
+    const block1Before = before.split("```dashboard")[1]?.split("```dashboard")[0] ?? "";
+    const block1After = after.split("```dashboard")[1]?.split("```dashboard")[0] ?? "";
+    expect(block1After).toBe(block1Before);
+    expect(after).toMatch(/New/);
+    expect(after).not.toMatch(/Old/);
+  });
+
   it("create valid writes atomically", () => {
     dir = mkdtempSync(join(tmpdir(), "dash-tool-"));
     const content = `---

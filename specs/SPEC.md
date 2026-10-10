@@ -4240,7 +4240,10 @@ and inline content.
 - `check`: whether a file fits a primitive. When it does not, the answer says
   so and offers the derived route: a file the agent maintains in a shape that
   fits.
-- `validate`: the errors FR-DASH-01/04 would produce, each fixable.
+- `validate`: the errors FR-DASH-01/04 would produce, each fixable. Messages
+  cite `block N, widget M`, where N counts only ` ```dashboard ` fences
+  (starting at 1) and M counts widgets inside that block (starting at 1).
+  Each distinct error appears once.
 - `create` / `update`: validate, then write atomically into `user/dashboards/`.
   An invalid definition is refused with the same errors and nothing is
   written. `update` takes one of: `title` / `summary` (changes only those

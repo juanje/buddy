@@ -146,6 +146,15 @@ Then("dashboard tool output mentions {string}", function (this: DashboardToolWor
   assert.ok(this.dashboardToolResult?.text.includes(fragment), this.dashboardToolResult?.text);
 });
 
+Then(
+  "dashboard tool output mentions {string} once",
+  function (this: DashboardToolWorld, fragment: string) {
+    const text = this.dashboardToolResult?.text ?? "";
+    const count = text.split(fragment).length - 1;
+    assert.equal(count, 1, `expected "${fragment}" once in:\n${text}`);
+  },
+);
+
 Then("dashboard tool output does not mention {string}", function (this: DashboardToolWorld, fragment: string) {
   assert.ok(!this.dashboardToolResult?.text.includes(fragment), this.dashboardToolResult?.text);
 });
@@ -163,6 +172,14 @@ Then(
   function (this: DashboardToolWorld, fileName: string, fragment: string) {
     const text = readFileSync(join(root.call(this), "user/dashboards", fileName), "utf8");
     assert.ok(text.includes(fragment), text);
+  },
+);
+
+Then(
+  "dashboard file {string} does not contain {string}",
+  function (this: DashboardToolWorld, fileName: string, fragment: string) {
+    const text = readFileSync(join(root.call(this), "user/dashboards", fileName), "utf8");
+    assert.ok(!text.includes(fragment), text);
   },
 );
 

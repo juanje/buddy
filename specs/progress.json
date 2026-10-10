@@ -2132,7 +2132,7 @@
         {
           "name": "Help lists sources",
           "bdd": "pass",
-          "unit_tests": 9
+          "unit_tests": 1
         },
         {
           "name": "Fields does not return rows",
@@ -2183,9 +2183,24 @@
           "name": "Update with nothing to change lists the update forms",
           "bdd": "pass",
           "unit_tests": 1
+        },
+        {
+          "name": "Validate reports block and widget position",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Validate reports schema error once",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Update touches only the affected dashboard block",
+          "bdd": "pass",
+          "unit_tests": 1
         }
       ],
-      "note": "reopened: update cannot change dashboard title/summary without rewriting the file"
+      "note": "reopened: validate position and surgical update"
     },
     {
       "id": "FR-DASH-19",

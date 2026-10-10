@@ -6,6 +6,7 @@ import { validateWidgetSpec } from "../../shared/dashboard/schema";
 import type {
   ResolvedDashboard,
   ResolvedSegment,
+  ResolvedWidgetSegment,
   WidgetProvenance,
   WidgetResult,
   WidgetSpec,
@@ -150,13 +151,18 @@ function widgetSegment(
   spec: WidgetSpec,
   result: WidgetResult,
   provenance?: WidgetProvenance,
+  position?: ResolvedWidgetSegment["position"],
 ): ResolvedSegment {
-  return { kind: "widget", spec, result, provenance };
+  return { kind: "widget", spec, result, provenance, position };
 }
 
-function errorWidget(message: string, spec?: WidgetSpec): ResolvedSegment {
+function errorWidget(
+  message: string,
+  spec?: WidgetSpec,
+  position?: ResolvedWidgetSegment["position"],
+): ResolvedSegment {
   const fallback: WidgetSpec = spec ?? { view: "text", width: "full", raw: {} };
-  return widgetSegment(fallback, { kind: "error", message });
+  return widgetSegment(fallback, { kind: "error", message }, undefined, position);
 }
 
 export function resolveDashboardContent(
@@ -174,16 +180,20 @@ export function resolveDashboardContent(
       segments.push({ kind: "text", markdown: part.markdown });
       continue;
     }
+    const blockPos = { block: part.block };
     if (part.fenceError) {
-      segments.push(errorWidget(part.fenceError));
+      segments.push(errorWidget(part.fenceError, undefined, blockPos));
       continue;
     }
     const parsed = parseDashboardYamlBlock(part.yaml);
     if (!parsed.ok) {
-      segments.push(errorWidget(parsed.message));
+      segments.push(errorWidget(parsed.message, undefined, blockPos));
       continue;
     }
+    let widgetNum = 0;
     for (const item of parsed.items) {
+      widgetNum += 1;
+      const widgetPos = { block: part.block, widget: widgetNum };
       const validated = validateWidgetSpec(item);
       if (validated.error || !validated.spec) {
         const fallback: WidgetSpec = {
@@ -191,11 +201,15 @@ export function resolveDashboardContent(
           width: "full",
           raw: item,
         };
-        segments.push(widgetSegment(fallback, { kind: "error", message: validated.error! }));
+        segments.push(
+          widgetSegment(fallback, { kind: "error", message: validated.error! }, undefined, widgetPos),
+        );
         continue;
       }
       const resolved = resolveWidgetData(rootDir, validated.spec, todayStr);
-      segments.push(widgetSegment(validated.spec, resolved.result, resolved.provenance));
+      segments.push(
+        widgetSegment(validated.spec, resolved.result, resolved.provenance, widgetPos),
+      );
     }
   }
 

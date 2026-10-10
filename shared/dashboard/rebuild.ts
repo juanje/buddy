@@ -2,9 +2,10 @@
 
 import { stringify } from "yaml";
 
-import { splitFrontmatter } from "../frontmatter";
-import { parseDashboardParts, type ParsedDashboardPart } from "./parse";
+import { parseDashboardParts } from "./parse";
 import { parseDashboardYamlBlock } from "./yaml-blocks";
+
+const FRONTMATTER_RE = /^---\r?\n[\s\S]*?\r?\n---(\r?\n)?/;
 
 /**
  * Set one frontmatter key, touching only that line. The body and every other
@@ -21,22 +22,18 @@ export function setFrontmatterField(content: string, key: string, value: string)
   return `---\n${lines.join("\n")}\n---` + content.slice(match[0].length);
 }
 
-export function formatDashboardBody(parts: ParsedDashboardPart[]): string {
-  const chunks: string[] = [];
-  for (const part of parts) {
-    if (part.kind === "text") {
-      chunks.push(part.markdown);
-      continue;
-    }
-    if (part.fenceError) {
-      chunks.push("```dashboard", part.yaml, "```");
-      continue;
-    }
-    const parsed = parseDashboardYamlBlock(part.yaml);
-    const yamlBody = parsed.ok ? stringify(parsed.items).trim() : part.yaml;
-    chunks.push("```dashboard", yamlBody, "```");
-  }
-  return chunks.join("\n\n");
+function bodySlice(content: string): { prefix: string; body: string } {
+  const match = FRONTMATTER_RE.exec(content);
+  if (!match) return { prefix: "", body: content };
+  return { prefix: content.slice(0, match[0].length), body: content.slice(match[0].length) };
+}
+
+function replaceYamlInBody(body: string, yamlStartLine: number, yamlEndLine: number, newYaml: string): string {
+  const lines = body.split(/\r?\n/);
+  const yamlLines = newYaml.length > 0 ? newYaml.split(/\r?\n/) : [];
+  const before = lines.slice(0, yamlStartLine - 1);
+  const after = lines.slice(yamlEndLine);
+  return [...before, ...yamlLines, ...after].join("\n");
 }
 
 export function replaceWidgetByTitle(
@@ -44,26 +41,21 @@ export function replaceWidgetByTitle(
   widgetTitle: string,
   replacement: Record<string, unknown>,
 ): { ok: true; content: string } | { ok: false; message: string } {
-  const { fields, body } = splitFrontmatter(content);
+  const { prefix, body } = bodySlice(content);
   const parts = parseDashboardParts(body);
   let matches = 0;
-  let replaced = false;
+  let targetPart: Extract<(typeof parts)[number], { kind: "dashboard_block" }> | undefined;
 
   for (const part of parts) {
     if (part.kind !== "dashboard_block" || part.fenceError) continue;
     const parsed = parseDashboardYamlBlock(part.yaml);
     if (!parsed.ok) continue;
-    const nextItems = parsed.items.map((item) => {
+    for (const item of parsed.items) {
       const title = typeof item.title === "string" ? item.title : undefined;
       if (title === widgetTitle) {
         matches += 1;
-        replaced = true;
-        return replacement;
+        targetPart = part;
       }
-      return item;
-    });
-    if (replaced) {
-      part.yaml = stringify(nextItems).trim();
     }
   }
 
@@ -74,12 +66,16 @@ export function replaceWidgetByTitle(
     return { ok: false, message: `Multiple widgets titled '${widgetTitle}' — titles must be unique for update` };
   }
 
-  const newBody = formatDashboardBody(parts);
-  const front =
-    Object.keys(fields).length > 0
-      ? `---\n${Object.entries(fields)
-          .map(([k, v]) => `${k}: ${v}`)
-          .join("\n")}\n---\n\n`
-      : "";
-  return { ok: true, content: front + newBody };
+  const part = targetPart!;
+  const parsed = parseDashboardYamlBlock(part.yaml);
+  if (!parsed.ok) {
+    return { ok: false, message: parsed.message };
+  }
+  const nextItems = parsed.items.map((item) => {
+    const title = typeof item.title === "string" ? item.title : undefined;
+    return title === widgetTitle ? replacement : item;
+  });
+  const newYaml = stringify(nextItems).trim();
+  const newBody = replaceYamlInBody(body, part.yamlStartLine, part.yamlEndLine, newYaml);
+  return { ok: true, content: prefix + newBody };
 }
