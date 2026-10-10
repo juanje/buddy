@@ -2033,9 +2033,14 @@
           "name": "Table headers humanize inline field names",
           "bdd": "pass",
           "unit_tests": 1
+        },
+        {
+          "name": "Widget without title renders no heading",
+          "bdd": "pass",
+          "unit_tests": 3
         }
       ],
-      "note": "reopened: widget unique keys"
+      "note": "reopened: optional widget title without view name fallback"
     },
     {
       "id": "FR-DASH-06",

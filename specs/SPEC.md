@@ -4199,6 +4199,9 @@ and inline content.
 
 - Each rendered widget has a stable unique key so repeated titles or views do
   not collide in the UI.
+- `title` on a widget is optional. Without it, the widget renders with no
+  heading; error cards use a localized view label (for example "Contador"), not
+  the internal view name.
 - `kanban`: columns from `group`; cards show `text` plus chips for the other
   fields listed in `fields`. Optional `order` lists column values first, including
   empty columns; remaining values follow. For `tasks` grouped by `state` without

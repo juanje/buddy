@@ -304,6 +304,17 @@ Then(
   },
 );
 
+Then("the first widget has no display title", function (this: DashboardWorld) {
+  assert.ok(this.viewModel, "view model required");
+  const row = this.viewModel.rows.find((r) => r.kind === "widgetRow");
+  assert.equal(row?.kind, "widgetRow");
+  if (row?.kind === "widgetRow") {
+    const widget = row.widgets[0];
+    assert.notEqual(widget.kind, "error");
+    assert.equal(widget.title, undefined);
+  }
+});
+
 Then("the dashboard widget keys are distinct", function (this: DashboardWorld) {
   assert.ok(this.viewModel, "view model required");
   const keys = widgetKeysFromViewModel(this.viewModel);

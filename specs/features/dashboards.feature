@@ -728,6 +728,21 @@ Feature: Dashboard resolution
     And the table header for due is "Vence"
 
   @FR-DASH-10
+  Scenario: Widget without title renders no heading
+    Given an initialized buddy git repository
+    And tasks.md with mixed states for dashboard resolution
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: counter
+        source: tasks
+        count: true
+      ```
+      """
+    When the dashboard view model is built for locale "es"
+    Then the first widget has no display title
+
+  @FR-DASH-10
   Scenario: Table headers humanize inline field names
     Given an initialized buddy git repository
     And a dashboard file with body:

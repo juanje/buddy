@@ -1,7 +1,7 @@
 // src/lib/dashboard/view-model.ts — Dashboard layout and view shaping (FR-DASH-10, FR-DASH-03).
 
 import type { AppLocale } from "../i18n";
-import { humanizeFieldLabel, overdueLabel } from "./field-labels";
+import { humanizeFieldLabel, overdueLabel, viewLabel } from "./field-labels";
 import type {
   ResolvedDashboard,
   ResolvedWidgetSegment,
@@ -19,12 +19,12 @@ export type DashboardRow =
 
 export type DashboardWidgetVm =
   | { kind: "error"; key: string; title: string; message: string; width: WidgetWidth; provenance?: WidgetProvenance }
-  | { kind: "kanban"; key: string; title: string; width: WidgetWidth; columns: KanbanColumnVm[]; empty: boolean; provenance?: WidgetProvenance }
-  | { kind: "list"; key: string; title: string; width: WidgetWidth; items: ListItemVm[]; empty: boolean; provenance?: WidgetProvenance }
+  | { kind: "kanban"; key: string; title?: string; width: WidgetWidth; columns: KanbanColumnVm[]; empty: boolean; provenance?: WidgetProvenance }
+  | { kind: "list"; key: string; title?: string; width: WidgetWidth; items: ListItemVm[]; empty: boolean; provenance?: WidgetProvenance }
   | {
       kind: "table";
       key: string;
-      title: string;
+      title?: string;
       width: WidgetWidth;
       headers: TableHeaderVm[];
       rows: Record<string, string>[];
@@ -34,7 +34,7 @@ export type DashboardWidgetVm =
   | {
       kind: "counter";
       key: string;
-      title: string;
+      title?: string;
       width: WidgetWidth;
       value?: number;
       delta?: number;
@@ -42,8 +42,8 @@ export type DashboardWidgetVm =
       empty: boolean;
       provenance?: WidgetProvenance;
     }
-  | { kind: "textWidget"; key: string; title: string; width: WidgetWidth; markdown: string; provenance?: WidgetProvenance; inlineStyle: boolean }
-  | { kind: "status"; key: string; title: string; width: WidgetWidth; cards: StatusCardVm[]; empty: boolean; provenance?: WidgetProvenance };
+  | { kind: "textWidget"; key: string; title?: string; width: WidgetWidth; markdown: string; provenance?: WidgetProvenance; inlineStyle: boolean }
+  | { kind: "status"; key: string; title?: string; width: WidgetWidth; cards: StatusCardVm[]; empty: boolean; provenance?: WidgetProvenance };
 
 export type TableHeaderVm = { key: string; label: string };
 export type CounterGroupVm = { label: string; value: number };
@@ -99,8 +99,13 @@ export function formatAgeDays(ageDays: number, locale: AppLocale): string {
     : `updated ${ageDays} days ago`;
 }
 
-function widgetTitle(spec: WidgetSpec): string {
-  return spec.title ?? spec.view;
+function widgetHeadingTitle(spec: WidgetSpec): string | undefined {
+  const trimmed = spec.title?.trim();
+  return trimmed ? trimmed : undefined;
+}
+
+function widgetErrorTitle(spec: WidgetSpec, locale: AppLocale): string {
+  return widgetHeadingTitle(spec) ?? viewLabel(spec.view, locale);
 }
 
 function humanizeColumnKey(key: string): string {
@@ -157,39 +162,46 @@ function buildWidgetVm(
   widgetKey: string,
 ): DashboardWidgetVm {
   const { spec, result, provenance } = seg;
-  const title = widgetTitle(spec);
+  const headingTitle = widgetHeadingTitle(spec);
   const width = spec.width ?? "full";
 
   if (result.kind === "error") {
-    return { kind: "error", key: widgetKey, title, message: result.message, width, provenance };
+    return {
+      kind: "error",
+      key: widgetKey,
+      title: widgetErrorTitle(spec, locale),
+      message: result.message,
+      width,
+      provenance,
+    };
   }
 
   switch (spec.view) {
     case "kanban":
-      return buildKanban(widgetKey, title, width, spec, result, locale, provenance);
+      return buildKanban(widgetKey, headingTitle, width, spec, result, locale, provenance);
     case "list":
-      return buildList(widgetKey, title, width, spec, result, provenance);
+      return buildList(widgetKey, headingTitle, width, spec, result, provenance);
     case "table":
-      return buildTable(widgetKey, title, width, spec, result, locale, provenance);
+      return buildTable(widgetKey, headingTitle, width, spec, result, locale, provenance);
     case "counter":
-      return buildCounter(widgetKey, title, width, spec, result, locale, provenance);
+      return buildCounter(widgetKey, headingTitle, width, spec, result, locale, provenance);
     case "text":
       return {
         kind: "textWidget",
         key: widgetKey,
-        title,
+        title: headingTitle,
         width,
         markdown: result.kind === "text" ? result.text : "",
         provenance,
         inlineStyle: Boolean(provenance),
       };
     case "status":
-      return buildStatus(widgetKey, title, width, result, provenance);
+      return buildStatus(widgetKey, headingTitle, width, result, provenance);
     default:
       return {
         kind: "error",
         key: widgetKey,
-        title,
+        title: widgetErrorTitle(spec, locale),
         message: `Unsupported view '${spec.view}'`,
         width,
         provenance,
@@ -234,7 +246,7 @@ function kanbanColumnOrder(
 
 function buildKanban(
   key: string,
-  title: string,
+  title: string | undefined,
   width: WidgetWidth,
   spec: WidgetSpec,
   result: WidgetResult,
@@ -271,7 +283,7 @@ function buildKanban(
 
 function buildList(
   key: string,
-  title: string,
+  title: string | undefined,
   width: WidgetWidth,
   spec: WidgetSpec,
   result: WidgetResult,
@@ -291,7 +303,7 @@ function buildList(
 
 function buildTable(
   key: string,
-  title: string,
+  title: string | undefined,
   width: WidgetWidth,
   spec: WidgetSpec,
   result: WidgetResult,
@@ -319,7 +331,7 @@ function buildTable(
 
 function buildCounter(
   key: string,
-  title: string,
+  title: string | undefined,
   width: WidgetWidth,
   spec: WidgetSpec,
   result: WidgetResult,
@@ -361,7 +373,7 @@ function buildCounter(
 
 function buildStatus(
   key: string,
-  title: string,
+  title: string | undefined,
   width: WidgetWidth,
   result: WidgetResult,
   provenance?: WidgetProvenance,

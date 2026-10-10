@@ -55,6 +55,30 @@ export function humanizeFieldLabel(
   return spaced.charAt(0).toUpperCase() + spaced.slice(1);
 }
 
+const VIEW_LABELS: Record<AppLocale, Record<string, string>> = {
+  en: {
+    kanban: "Kanban",
+    list: "List",
+    table: "Table",
+    counter: "Counter",
+    text: "Text",
+    status: "Status",
+  },
+  es: {
+    kanban: "Kanban",
+    list: "Lista",
+    table: "Tabla",
+    counter: "Contador",
+    text: "Texto",
+    status: "Estado",
+  },
+};
+
+/** Localized view name for error cards when a widget has no title (FR-DASH-10). */
+export function viewLabel(view: string, locale: AppLocale): string {
+  return VIEW_LABELS[locale][view] ?? humanizeFieldLabel(view, undefined, locale);
+}
+
 export function overdueLabel(days: number, locale: AppLocale): string {
   if (locale === "es") {
     return days === 1 ? "vencida hace 1 día" : `vencida hace ${days} días`;

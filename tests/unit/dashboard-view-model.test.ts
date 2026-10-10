@@ -80,6 +80,62 @@ describe("buildDashboardViewModel kanban", () => {
   });
 });
 
+describe("buildDashboardViewModel widget titles", () => {
+  it("omits heading title when the widget spec has no title", () => {
+    const model: ResolvedDashboard = {
+      today: "2026-10-07",
+      segments: [
+        {
+          kind: "widget",
+          spec: {
+            view: "counter",
+            source: "tasks",
+            width: "full",
+            raw: { view: "counter", source: "tasks", count: true },
+          },
+          result: { kind: "value", value: 3 },
+        },
+      ],
+    };
+    const vm = buildDashboardViewModel(model, "es", "Vacío");
+    const row = vm.rows.find((r) => r.kind === "widgetRow");
+    expect(row?.kind).toBe("widgetRow");
+    if (row?.kind === "widgetRow") {
+      expect(row.widgets[0]?.kind).toBe("counter");
+      if (row.widgets[0]?.kind === "counter") {
+        expect(row.widgets[0].title).toBeUndefined();
+      }
+    }
+  });
+
+  it("uses a localized view label on error widgets without title", () => {
+    const model: ResolvedDashboard = {
+      today: "2026-10-07",
+      segments: [
+        {
+          kind: "widget",
+          spec: {
+            view: "kanban",
+            source: "tasks",
+            width: "full",
+            raw: { view: "kanban", source: "tasks" },
+          },
+          result: { kind: "error", message: "group required" },
+        },
+      ],
+    };
+    const vm = buildDashboardViewModel(model, "es", "Vacío");
+    const row = vm.rows.find((r) => r.kind === "widgetRow");
+    if (row?.kind === "widgetRow") {
+      const widget = row.widgets[0];
+      expect(widget.kind).toBe("error");
+      if (widget.kind === "error") {
+        expect(widget.title).toBe("Kanban");
+      }
+    }
+  });
+});
+
 describe("statusTone", () => {
   it("maps known states", () => {
     expect(statusTone("ok")).toBe("ok");

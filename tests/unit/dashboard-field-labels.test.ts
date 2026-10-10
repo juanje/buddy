@@ -2,7 +2,7 @@
 
 import { describe, expect, it } from "vitest";
 
-import { humanizeFieldLabel, overdueLabel } from "../../src/lib/dashboard/field-labels";
+import { humanizeFieldLabel, overdueLabel, viewLabel } from "../../src/lib/dashboard/field-labels";
 
 describe("humanizeFieldLabel", () => {
   it("localizes tasks source fields in Spanish", () => {
@@ -12,6 +12,13 @@ describe("humanizeFieldLabel", () => {
 
   it("capitalizes inline field names", () => {
     expect(humanizeFieldLabel("paso", "inline", "es")).toBe("Paso");
+  });
+});
+
+describe("viewLabel", () => {
+  it("localizes view names for error cards", () => {
+    expect(viewLabel("counter", "es")).toBe("Contador");
+    expect(viewLabel("counter", "en")).toBe("Counter");
   });
 });
 

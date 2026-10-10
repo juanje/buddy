@@ -33,7 +33,9 @@
         {#each row.widgets as widget (widget.key)}
           <section class="widget-card {widthClass(widget)}" class:inline-widget={widget.kind !== "error" && widget.provenance}>
             {#if widget.kind !== "error"}
-              <h3>{widget.title}</h3>
+              {#if widget.title}
+                <h3>{widget.title}</h3>
+              {/if}
               {#if widget.provenance}
                 <ProvenanceLine provenance={widget.provenance} />
               {/if}
