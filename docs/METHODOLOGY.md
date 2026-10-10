@@ -2,7 +2,8 @@
 
 Buddy ships feature by feature. Each in-flight FR is tracked in
 `specs/progress.json` and advanced only through `scripts/progress.ts`.
-Done features leave the file; git history retains them.
+Shipped features stay in `progress.json` with `status: done`; git history
+retains the work either way.
 
 ## The cycle
 
@@ -48,6 +49,7 @@ npx tsx scripts/progress.ts focus FR-xxx         # Switch focus
 npx tsx scripts/progress.ts add FR-xxx "Title"   # Add feature
 npx tsx scripts/progress.ts sync FR-xxx          # Register @FR-xxx scenarios from .feature files
 npx tsx scripts/progress.ts done FR-xxx          # Mark done (guarded)
+npx tsx scripts/progress.ts reopen FR-xxx "reason"  # Amend a done FR (back to spec_review)
 ```
 
 ### State transitions
@@ -55,7 +57,7 @@ npx tsx scripts/progress.ts done FR-xxx          # Mark done (guarded)
 | Field | Values | Notes |
 |-------|--------|-------|
 | `status` | `pending`, `in_progress`, `blocked`, `deferred`, `done` | `advance` sets `pending` → `in_progress` |
-| `cycle_step` | `spec_review` → `bdd_red` → `implementing` → `bdd_green` → `done` | One-way; no skipping |
+| `cycle_step` | `spec_review` → `bdd_red` → `implementing` → `bdd_green` → `done` | Forward only; no skipping. `reopen` resets a done feature to `spec_review`. |
 | `scenarios[].bdd` | `pending` → `fail` → `pass` | Updated via `scenario` command |
 | `scenarios[].unit_tests` | non-negative integer | Updated via `units` command |
 
@@ -73,6 +75,24 @@ npx tsx scripts/progress.ts done FR-xxx          # Mark done (guarded)
 - At least one scenario.
 - Every scenario: `bdd === "pass"` and `unit_tests >= 1`.
 - Clears `current_focus` if this feature was focused.
+
+**`reopen`:**
+
+- Feature must exist and be `status: done` with `cycle_step: done`.
+- Non-empty reason required; stored as `note: reopened: <reason>` (one line).
+- Sets `status: in_progress`, `cycle_step: spec_review`, `current_focus` to this FR.
+- Existing scenarios and their `bdd` / `unit_tests` are kept (regression).
+- Fails if another in-progress feature currently has focus.
+- Does not remove the ✓ from `SPEC.md`; amend the FR text before advancing.
+
+### Amending a done FR
+
+When shipped behavior must change (bugfix or spec amendment):
+
+1. `reopen FR-xxx "short reason"`
+2. Update the FR prose in `specs/SPEC.md` (keep ✓ until the cycle completes).
+3. Add or extend `.feature` scenarios; run BDD red → TDD → green.
+4. `done FR-xxx` when every scenario (old and new) passes with unit tests.
 
 ---
 

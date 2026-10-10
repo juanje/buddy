@@ -13,6 +13,7 @@
  *   npx tsx scripts/progress.ts add FR-xxx "Title"
  *   npx tsx scripts/progress.ts sync FR-xxx
  *   npx tsx scripts/progress.ts done FR-xxx
+ *   npx tsx scripts/progress.ts reopen FR-xxx "reason"
  */
 
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -295,6 +296,29 @@ export function cmdAdd(data: ProgressData, featureId: string, title: string): vo
   });
 }
 
+export function cmdReopen(data: ProgressData, featureId: string, reason: string): void {
+  const feature = requireFeature(data, featureId);
+  const trimmed = reason.trim();
+  if (!trimmed) {
+    throw new ProgressError("Reopen requires a non-empty reason.");
+  }
+  if (feature.status !== "done" || feature.cycle_step !== "done") {
+    throw new ProgressError(`Cannot reopen: ${featureId} is not done.`);
+  }
+  if (data.current_focus && data.current_focus !== featureId) {
+    const focused = findFeature(data, data.current_focus);
+    if (focused?.status === "in_progress") {
+      throw new ProgressError(
+        `Cannot reopen: focus is on in-progress feature '${data.current_focus}'. Finish or defer it first.`,
+      );
+    }
+  }
+  feature.status = "in_progress";
+  feature.cycle_step = "spec_review";
+  feature.note = `reopened: ${trimmed}`;
+  data.current_focus = featureId;
+}
+
 export function cmdDone(data: ProgressData, featureId: string): void {
   const feature = requireFeature(data, featureId);
   if (feature.scenarios.length === 0) {
@@ -389,6 +413,12 @@ export function runCli(argv: string[], progressFile = DEFAULT_PROGRESS_FILE): vo
       cmdDone(data, argv[1]);
       save(data, progressFile);
       print(`${argv[1]}: marked done ✓`);
+    } else if (cmd === "reopen" && argv.length >= 3) {
+      const featureId = argv[1];
+      const reason = argv.slice(2).join(" ");
+      cmdReopen(data, featureId, reason);
+      save(data, progressFile);
+      print(`${featureId}: done → spec_review (reopened: ${reason.trim()})`);
     } else {
       die(`Unknown command or missing arguments: ${argv.join(" ")}`);
     }
@@ -413,6 +443,7 @@ Usage:
   npx tsx scripts/progress.ts add FR-xxx "Title"
   npx tsx scripts/progress.ts sync FR-xxx
   npx tsx scripts/progress.ts done FR-xxx
+  npx tsx scripts/progress.ts reopen FR-xxx "reason"
 `;
 
 const isMain =

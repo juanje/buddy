@@ -14,8 +14,10 @@ import {
   cmdAdvance,
   cmdDone,
   cmdFocus,
+  cmdReopen,
   cmdScenario,
   cmdSync,
+  cmdUnits,
   load,
   save,
   scanFeatureFiles,
@@ -177,6 +179,90 @@ describe("cmdSync", () => {
     expect(added).toEqual(["First scenario", "Second scenario"]);
     expect(data.features[0].scenarios).toHaveLength(2);
     expect(data.features[0].scenarios[0].bdd).toBe("pending");
+  });
+});
+
+describe("cmdReopen", () => {
+  it("rejects when the feature is not done", () => {
+    const data = feature("FR-TEST-01", {
+      status: "in_progress",
+      cycle_step: "implementing",
+    });
+    expect(() => cmdReopen(data, "FR-TEST-01", "fix bug")).toThrow(ProgressError);
+    expect(() => cmdReopen(data, "FR-TEST-01", "fix bug")).toThrow(/not done/);
+  });
+
+  it("rejects unknown feature id", () => {
+    const data = emptyProgress();
+    expect(() => cmdReopen(data, "FR-NOPE", "reason")).toThrow(ProgressError);
+  });
+
+  it("rejects empty reason", () => {
+    const data = feature("FR-TEST-01", {
+      status: "done",
+      cycle_step: "done",
+      scenarios: [{ name: "Scenario A", bdd: "pass", unit_tests: 1 }],
+    });
+    expect(() => cmdReopen(data, "FR-TEST-01", "   ")).toThrow(ProgressError);
+    expect(() => cmdReopen(data, "FR-TEST-01", "   ")).toThrow(/reason/);
+  });
+
+  it("rejects when another in_progress feature has focus", () => {
+    const data: ProgressData = {
+      current_focus: "FR-OTHER-01",
+      features: [
+        {
+          id: "FR-OTHER-01",
+          title: "Other",
+          status: "in_progress",
+          cycle_step: "implementing",
+          scenarios: [{ name: "S", bdd: "fail", unit_tests: 1 }],
+        },
+        {
+          id: "FR-TEST-01",
+          title: "Done one",
+          status: "done",
+          cycle_step: "done",
+          scenarios: [{ name: "Scenario A", bdd: "pass", unit_tests: 2 }],
+        },
+      ],
+    };
+    expect(() => cmdReopen(data, "FR-TEST-01", "amend viewer")).toThrow(ProgressError);
+    expect(() => cmdReopen(data, "FR-TEST-01", "amend viewer")).toThrow(/focus/);
+  });
+
+  it("returns to spec_review, keeps scenarios, sets note and focus", () => {
+    const data = feature("FR-TEST-01", {
+      status: "done",
+      cycle_step: "done",
+      scenarios: [{ name: "Scenario A", bdd: "pass", unit_tests: 3 }],
+    });
+    cmdReopen(data, "FR-TEST-01", "full window mode");
+    const f = data.features[0];
+    expect(f.status).toBe("in_progress");
+    expect(f.cycle_step).toBe("spec_review");
+    expect(f.note).toBe("reopened: full window mode");
+    expect(f.scenarios).toEqual([{ name: "Scenario A", bdd: "pass", unit_tests: 3 }]);
+    expect(data.current_focus).toBe("FR-TEST-01");
+  });
+
+  it("allows advance after reopen and done still requires all scenarios passing", () => {
+    const data = feature("FR-TEST-01", {
+      status: "done",
+      cycle_step: "done",
+      scenarios: [{ name: "Scenario A", bdd: "pass", unit_tests: 1 }],
+    });
+    cmdReopen(data, "FR-TEST-01", "new acceptance");
+    writeFileSync(specFile, "| FR-TEST-01 | Title | 1 |\n");
+    cmdAdvance(data, "FR-TEST-01", specFile);
+    expect(data.features[0].cycle_step).toBe("bdd_red");
+    cmdScenario(data, "pending", "FR-TEST-01", "Scenario B");
+    expect(() => cmdDone(data, "FR-TEST-01")).toThrow(/not passing/);
+    cmdScenario(data, "pass", "FR-TEST-01", "Scenario B");
+    cmdUnits(data, "FR-TEST-01", "Scenario B", 1);
+    cmdDone(data, "FR-TEST-01");
+    expect(data.features[0].status).toBe("done");
+    expect(data.features[0].scenarios).toHaveLength(2);
   });
 });
 

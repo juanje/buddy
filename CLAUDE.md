@@ -30,6 +30,10 @@ For each feature, strictly in order:
 
 Advance between steps using `npx tsx scripts/progress.ts advance FR-xxx`.
 
+To change a feature already marked `done`, use
+`npx tsx scripts/progress.ts reopen FR-xxx "reason"` — not `add`, and never
+edit `progress.json` by hand.
+
 Full operational reference: `docs/METHODOLOGY.md`.
 
 ### spec_review
