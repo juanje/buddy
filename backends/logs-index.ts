@@ -11,7 +11,7 @@ export type LogIndexRow = {
 function parseLogIndexLine(rest: string): Pick<LogIndexRow, "status" | "summary"> {
   const trimmed = rest.trim();
   if (!trimmed) return { summary: "" };
-  const withSummary = /^(\S+)\s+(?:\u2014|—|-\s)\s+(.*)$/.exec(trimmed);
+  const withSummary = /^(\S+)\s+(?:—|-)\s+(.*)$/.exec(trimmed);
   if (withSummary) {
     return { status: withSummary[1], summary: withSummary[2].trim() };
   }

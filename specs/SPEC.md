@@ -4296,7 +4296,8 @@ and inline content.
   `#<name>`). Other project frontmatter is written by the model and is not
   exposed.
 - `logs` reads `logs/index.md` (`- YYYY-MM-DD: status` with optional
-  ` — summary`): `date`, `status`, `summary` (empty when omitted).
+  em dash or hyphen separator and `summary`): `date`, `status`, `summary`
+  (empty when omitted).
 - `journal` reads entry dates from `user/journal/YYYY/MM/DD.md`: `date`.
 
 **FR-DASH-19 — Dashboards are written only through `dashboard()`**

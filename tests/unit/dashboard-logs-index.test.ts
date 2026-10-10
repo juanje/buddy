@@ -24,6 +24,18 @@ describe("parseLogsIndex", () => {
     expect(rows).toEqual([{ date: "2026-10-03", status: "active", summary: "" }]);
   });
 
+  it("accepts a hyphen separator between status and summary", () => {
+    const rows = parseLogsIndex("- 2026-10-04: active - Hyphen summary\n");
+    expect(rows).toEqual([
+      { date: "2026-10-04", status: "active", summary: "Hyphen summary" },
+    ]);
+  });
+
+  it("parses em dash summary that contains a hyphen", () => {
+    const rows = parseLogsIndex("- 2026-10-05: active — A - B\n");
+    expect(rows).toEqual([{ date: "2026-10-05", status: "active", summary: "A - B" }]);
+  });
+
   it("lastLogIndexDate returns the last dated row", () => {
     const rows = parseLogsIndex("- 2026-10-01: active\n- 2026-10-02: maintenance\n");
     expect(lastLogIndexDate(rows)).toBe("2026-10-02");

@@ -2126,9 +2126,14 @@
           "name": "Logs source accepts index line without summary",
           "bdd": "pass",
           "unit_tests": 1
+        },
+        {
+          "name": "Logs source accepts hyphen separator",
+          "bdd": "pass",
+          "unit_tests": 1
         }
       ],
-      "note": "reopened: unified parseLogsIndex"
+      "note": "reopened: hyphen separator lost summary"
     },
     {
       "id": "FR-DASH-12",
