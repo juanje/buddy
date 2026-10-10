@@ -54,6 +54,8 @@ Feature: Dashboard tool
         text: OK
       ```
 
+      Between blocks.
+
       ```dashboard
       - view: text
         text: A
@@ -74,14 +76,20 @@ Feature: Dashboard tool
       type: dashboard
       ---
       ```dashboard
-      - view: table
-        source: tasks
-        columns: [not_a_field]
+      - view: text
+        text: OK
+      ```
+
+      Some prose.
+
+      ```dashboard
+      - view: nope
       ```
       """
     Then dashboard tool failed
-    And dashboard tool output mentions "not_a_field"
-    And dashboard tool output mentions "not_a_field" once
+    And dashboard tool output mentions "Unknown view 'nope'"
+    And dashboard tool output mentions "Unknown view 'nope'" once
+    And dashboard tool output mentions "block 2, widget 1"
 
   @FR-DASH-12
   Scenario: Validate reports field errors
@@ -164,9 +172,7 @@ Feature: Dashboard tool
       text: New
       """
     Then dashboard tool succeeded
-    And dashboard file "surgical.md" contains "Free line stays."
-    And dashboard file "surgical.md" contains "# yaml comment stays"
-    And dashboard file "surgical.md" contains "indented"
+    And dashboard file "surgical.md" outside dashboard block 2 is unchanged
     And dashboard file "surgical.md" contains "New"
     And dashboard file "surgical.md" does not contain "Old"
 

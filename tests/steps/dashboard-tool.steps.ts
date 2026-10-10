@@ -11,12 +11,48 @@ import {
   executeDashboardAction,
   type DashboardActionResult,
 } from "../../backends/dashboard/dashboard-tool-actions";
+import { parseDashboardParts } from "../../shared/dashboard/parse";
 import type { BuddyWorld } from "../support/world";
 
 interface DashboardToolWorld extends BuddyWorld {
   buddyDir?: string;
   dashboardToolResult?: DashboardActionResult;
   originalBody?: string;
+  originalContent?: string;
+}
+
+const FRONTMATTER_RE = /^---\r?\n[\s\S]*?\r?\n---(\r?\n)?/;
+
+function bodyAfterFrontmatter(text: string): string {
+  const m = FRONTMATTER_RE.exec(text);
+  return m ? text.slice(m[0].length) : text;
+}
+
+function dashboardBlockYaml(content: string, blockNum: number): string {
+  const body = bodyAfterFrontmatter(content);
+  const part = parseDashboardParts(body).find(
+    (p) => p.kind === "dashboard_block" && p.block === blockNum,
+  );
+  assert.ok(part && part.kind === "dashboard_block", `dashboard block ${blockNum} not found`);
+  return part.yaml;
+}
+
+function replaceDashboardBlockYaml(content: string, blockNum: number, yaml: string): string {
+  const fm = FRONTMATTER_RE.exec(content);
+  const prefix = fm ? fm[0] : "";
+  const body = content.slice(prefix.length);
+  const part = parseDashboardParts(body).find(
+    (p) => p.kind === "dashboard_block" && p.block === blockNum,
+  );
+  assert.ok(part && part.kind === "dashboard_block", `dashboard block ${blockNum} not found`);
+  const lines = body.split(/\r?\n/);
+  const yamlLines = yaml.length > 0 ? yaml.split(/\r?\n/) : [];
+  const newBody = [
+    ...lines.slice(0, part.yamlStartLine - 1),
+    ...yamlLines,
+    ...lines.slice(part.yamlEndLine),
+  ].join("\n");
+  return prefix + newBody;
 }
 
 function root(this: DashboardToolWorld): string {
@@ -102,8 +138,10 @@ Given(
     const rel = `user/dashboards/${fileName}`;
     const abs = join(root.call(this), rel);
     mkdirSync(join(root.call(this), "user", "dashboards"), { recursive: true });
-    writeFileSync(abs, content.trim() + "\n", "utf8");
-    this.originalBody = bodyAfterFrontmatter(content.trim() + "\n");
+    const saved = content.trim() + "\n";
+    writeFileSync(abs, saved, "utf8");
+    this.originalContent = saved;
+    this.originalBody = bodyAfterFrontmatter(saved);
   },
 );
 
@@ -129,10 +167,16 @@ Then("dashboard file {string} body is unchanged", function (this: DashboardToolW
   assert.equal(bodyAfterFrontmatter(text), this.originalBody);
 });
 
-function bodyAfterFrontmatter(text: string): string {
-  const m = /^---\r?\n[\s\S]*?\r?\n---/.exec(text);
-  return m ? text.slice(m[0].length) : text;
-}
+Then(
+  "dashboard file {string} outside dashboard block {int} is unchanged",
+  function (this: DashboardToolWorld, fileName: string, blockNum: number) {
+    assert.ok(this.originalContent, "originalContent required from Given dashboard file");
+    const after = readFileSync(join(root.call(this), "user/dashboards", fileName), "utf8");
+    const yamlBefore = dashboardBlockYaml(this.originalContent, blockNum);
+    const normalized = replaceDashboardBlockYaml(after, blockNum, yamlBefore);
+    assert.equal(normalized, this.originalContent);
+  },
+);
 
 Then("dashboard tool succeeded", function (this: DashboardToolWorld) {
   assert.ok(this.dashboardToolResult?.ok);

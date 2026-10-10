@@ -5,8 +5,30 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
+import { stringify } from "yaml";
 
 import { executeDashboardAction } from "../../backends/dashboard/dashboard-tool-actions";
+import { parseDashboardParts } from "../../shared/dashboard/parse";
+
+const FRONTMATTER_RE = /^---\r?\n[\s\S]*?\r?\n---(\r?\n)?/;
+
+function replaceDashboardBlockYaml(content: string, blockNum: number, yaml: string): string {
+  const fm = FRONTMATTER_RE.exec(content);
+  const prefix = fm ? fm[0] : "";
+  const body = content.slice(prefix.length);
+  const part = parseDashboardParts(body).find(
+    (p) => p.kind === "dashboard_block" && p.block === blockNum,
+  );
+  if (!part || part.kind !== "dashboard_block") throw new Error(`block ${blockNum} missing`);
+  const lines = body.split(/\r?\n/);
+  const yamlLines = yaml.length > 0 ? yaml.split(/\r?\n/) : [];
+  return (
+    prefix +
+    [...lines.slice(0, part.yamlStartLine - 1), ...yamlLines, ...lines.slice(part.yamlEndLine)].join(
+      "\n",
+    )
+  );
+}
 
 describe("dashboard tool", () => {
   let dir: string;
@@ -76,6 +98,8 @@ type: dashboard
   text: OK
 \`\`\`
 
+Between blocks.
+
 \`\`\`dashboard
 - view: text
   text: A
@@ -94,13 +118,19 @@ type: dashboard
 type: dashboard
 ---
 \`\`\`dashboard
-- view: table
-  source: tasks
-  columns: [not_a_field]
+- view: text
+  text: OK
+\`\`\`
+
+Some prose.
+
+\`\`\`dashboard
+- view: nope
 \`\`\``;
     const out = executeDashboardAction(dir, "validate", { content });
     expect(out.ok).toBe(false);
-    expect(out.text.split("not_a_field").length - 1).toBe(1);
+    expect(out.text.split("Unknown view 'nope'").length - 1).toBe(1);
+    expect(out.text).toMatch(/block 2, widget 1/);
   });
 
   it("update replaces yaml only in the affected block", () => {
@@ -133,11 +163,9 @@ Free line stays.
     });
     expect(out.ok).toBe(true);
     const after = readFileSync(join(dir, "user/dashboards/surgical.md"), "utf8");
-    const block1Before = before.split("```dashboard")[1]?.split("```dashboard")[0] ?? "";
-    const block1After = after.split("```dashboard")[1]?.split("```dashboard")[0] ?? "";
-    expect(block1After).toBe(block1Before);
-    expect(after).toMatch(/New/);
-    expect(after).not.toMatch(/Old/);
+    const newYaml = stringify([{ view: "text", title: "Target", text: "New" }]).trim();
+    const expected = replaceDashboardBlockYaml(before, 2, newYaml);
+    expect(after).toBe(expected);
   });
 
   it("create valid writes atomically", () => {

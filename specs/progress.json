@@ -2212,7 +2212,7 @@
           "unit_tests": 1
         }
       ],
-      "note": "reopened: validate position and surgical update"
+      "note": "reopened: tests reproduce the bug, not the fix"
     },
     {
       "id": "FR-DASH-19",
