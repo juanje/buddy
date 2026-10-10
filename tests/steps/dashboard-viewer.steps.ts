@@ -112,6 +112,14 @@ Then("the file viewer layout is modal", function (this: DashViewerWorld) {
   assert.equal(readStore(this.fileViewer!.layout), "modal");
 });
 
+Then("the file viewer has no header close button", function (this: DashViewerWorld) {
+  assert.equal(readStore(this.fileViewer!.showHeaderClose), false);
+});
+
+Then("the file viewer has a header close button", function (this: DashViewerWorld) {
+  assert.equal(readStore(this.fileViewer!.showHeaderClose), true);
+});
+
 Then("the file viewer header title is {string}", function (this: DashViewerWorld, title: string) {
   assert.equal(readStore(this.fileViewer!.headerTitle), title);
 });

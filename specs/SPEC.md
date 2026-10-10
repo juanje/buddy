@@ -4110,8 +4110,10 @@ and inline content.
   symlinks resolved). No source escapes the buddy directory.
 - Dashboards open in **full window** mode: the viewer covers the entire app
   window (not a centered modal). Ordinary markdown and plain text stay in the
-  standard modal panel. Back, links inside free text and Show in folder keep
-  working. Export PDF is hidden for dashboards until FR-DASH-15.
+  standard modal panel. In full window mode the header has no Close button; the
+  footer Close button and Escape still dismiss the viewer. Back, links inside
+  free text and Show in folder keep working. Export PDF is hidden for dashboards
+  until FR-DASH-15.
 - Rendering involves no model call. Worker reads for a dashboard are not
   agent tool calls, so they leave Hebbian metadata untouched.
 - The view is read-only: no control in it writes to any file.

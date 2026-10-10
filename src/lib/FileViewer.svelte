@@ -22,6 +22,7 @@
   const canReveal = $derived(controller.canReveal);
   const canExportPdf = $derived(controller.canExportPdf);
   const layout = $derived(controller.layout);
+  const showHeaderClose = $derived(controller.showHeaderClose);
   const dashboard = $derived(controller.dashboard);
 
   function onBackdropClick(event: MouseEvent) {
@@ -90,9 +91,11 @@
           {/if}
           <p class="path" title={$filePath}>{$filePath}</p>
         </div>
-        <button type="button" class="close" onclick={() => controller.close()}>
-          {$t.fileViewerClose}
-        </button>
+        {#if $showHeaderClose}
+          <button type="button" class="close" onclick={() => controller.close()}>
+            {$t.fileViewerClose}
+          </button>
+        {/if}
       </header>
 
       <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->

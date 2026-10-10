@@ -797,6 +797,24 @@ Feature: Dashboard resolution
     And the file viewer layout is fullWindow
 
   @FR-DASH-02
+  Scenario: Full window dashboard hides header close button
+    Given a filesystem buddy root at "/tmp/buddy-dash-view-10"
+    And a readable file "user/dashboards/board.md" with content:
+      """
+      ---
+      type: dashboard
+      title: Board
+      ---
+      ```dashboard
+      - view: text
+        text: Hi
+      ```
+      """
+    When the dashboard test viewer opens "user/dashboards/board.md"
+    Then the file viewer layout is fullWindow
+    And the file viewer has no header close button
+
+  @FR-DASH-02
   Scenario: Ordinary markdown uses modal layout
     Given a filesystem buddy root at "/tmp/buddy-dash-view-8"
     And a readable file "user/notes/doc.md" with content:
@@ -806,6 +824,7 @@ Feature: Dashboard resolution
     When the dashboard test viewer opens "user/notes/doc.md"
     Then the file viewer is not in wide mode
     And the file viewer layout is modal
+    And the file viewer has a header close button
 
   @FR-DASH-02
   Scenario: Ordinary markdown still offers export PDF when supported

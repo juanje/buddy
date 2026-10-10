@@ -210,8 +210,18 @@ type: dashboard
     await controller.openFile("user/dashboards/b.md");
     expect(readStore(controller.layout)).toBe("fullWindow");
     expect(readStore(controller.wide)).toBe(true);
+    expect(readStore(controller.showHeaderClose)).toBe(false);
     expect(readStore(controller.dashboard)?.segments.length).toBeGreaterThan(0);
     expect(readStore(controller.canExportPdf)).toBe(false);
+  });
+
+  it("shows header close for ordinary markdown in modal layout", async () => {
+    const readViewableFile = vi.fn(async () => "# Hello");
+    const controller = createFileViewerController({ readViewableFile });
+
+    await controller.openFile("user/notes/doc.md");
+    expect(readStore(controller.layout)).toBe("modal");
+    expect(readStore(controller.showHeaderClose)).toBe(true);
   });
 
   it("calls createPdf and savePdf with a .pdf filename", async () => {

@@ -70,6 +70,8 @@ export interface FileViewerController {
   layout: Readable<FileViewerLayout>;
   /** True when layout is fullWindow (BDD compatibility). */
   wide: Readable<boolean>;
+  /** False in full window mode; header Close is hidden (FR-DASH-02). */
+  showHeaderClose: Readable<boolean>;
   /** Resolved dashboard model when viewing a dashboard; otherwise undefined. */
   dashboard: Readable<ResolvedDashboard | undefined>;
   /** Open a file by path relative to the buddy directory. Starts a new history. */
@@ -241,6 +243,12 @@ export function createFileViewerController(deps: FileViewerDeps): FileViewerCont
       subscribe: (fn) =>
         layoutStore.subscribe((layout) => {
           fn(layout === "fullWindow");
+        }),
+    },
+    showHeaderClose: {
+      subscribe: (fn) =>
+        layoutStore.subscribe((layout) => {
+          fn(layout !== "fullWindow");
         }),
     },
     dashboard: { subscribe: dashboardStore.subscribe },

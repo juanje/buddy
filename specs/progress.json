@@ -1918,9 +1918,14 @@
           "name": "Dashboard title appears in the header only once",
           "bdd": "pass",
           "unit_tests": 1
+        },
+        {
+          "name": "Full window dashboard hides header close button",
+          "bdd": "pass",
+          "unit_tests": 2
         }
       ],
-      "note": "reopened: header title once"
+      "note": "reopened: single close button in full window"
     },
     {
       "id": "FR-DASH-03",
