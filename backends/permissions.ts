@@ -44,10 +44,7 @@ const IDENTITY_FILES = ["SOUL.md"];
 /** Agent-managed config paths that must never be modified by the agent (NFR-SEC-06). */
 const PROTECTED_CONFIG_RELPATHS = [join(".pi", "settings.json")];
 const TASK_FILE_RELPATH = `${USER_DIR}/tasks.md`;
-export const DASHBOARD_TOOL_MESSAGE =
-  "Dashboards are written only through the dashboard() tool. Use dashboard(action='update', params={name, ...}) " +
-  "with title/summary to change the header, widget_title + widget to replace one widget, or content to rewrite " +
-  "the file; dashboard(action='create') for a new one. Do this instead of giving up.";
+const DASHBOARD_TOOL_MESSAGE = "Use dashboard(action='update') to create and modify dashboards.";
 
 function isTaskFile(absPath: string, rootDir: string): boolean {
   return resolve(rootDir, TASK_FILE_RELPATH) === absPath;

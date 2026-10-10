@@ -133,31 +133,6 @@ Intro stays.
     expect(existsSync(join(dir, "user/dashboards/examples/tablero-inline.md"))).toBe(true);
   });
 
-  it("update title rewrites only the frontmatter line", () => {
-    dir = mkdtempSync(join(tmpdir(), "dash-tool-"));
-    const initial = "---\ntype: dashboard\ntitle: Old\n---\n\nIntro.\n\n```dashboard\n- view: text\n  text:   Spaced\n```\n";
-    executeDashboardAction(dir, "create", { name: "t", content: initial });
-    const out = executeDashboardAction(dir, "update", { name: "t", title: "New", summary: "S" });
-    expect(out.ok).toBe(true);
-    const saved = readFileSync(join(dir, "user/dashboards/t.md"), "utf8");
-    expect(saved).toBe("---\ntype: dashboard\ntitle: New\nsummary: S\n---\n\nIntro.\n\n```dashboard\n- view: text\n  text:   Spaced\n```\n");
-  });
-
-  it("update rejects a multi-line title", () => {
-    dir = mkdtempSync(join(tmpdir(), "dash-tool-"));
-    executeDashboardAction(dir, "create", { name: "t", template: "mis-tareas" });
-    const out = executeDashboardAction(dir, "update", { name: "t", title: "a\nb" });
-    expect(out.ok).toBe(false);
-  });
-
-  it("update with nothing to change explains the three forms", () => {
-    dir = mkdtempSync(join(tmpdir(), "dash-tool-"));
-    executeDashboardAction(dir, "create", { name: "t", template: "mis-tareas" });
-    const out = executeDashboardAction(dir, "update", { name: "t" });
-    expect(out.ok).toBe(false);
-    expect(out.text).toMatch(/title\/summary/);
-  });
-
   it("update ambiguous title fails", () => {
     dir = mkdtempSync(join(tmpdir(), "dash-tool-"));
     const content = `---

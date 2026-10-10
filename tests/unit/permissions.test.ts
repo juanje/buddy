@@ -5,7 +5,7 @@ import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { DASHBOARD_TOOL_MESSAGE, evaluateToolCall, createPermissionGate } from "../../backends/permissions";
+import { evaluateToolCall, createPermissionGate } from "../../backends/permissions";
 import { DENYLIST_BASENAMES, DENYLIST_HOME_DIRS } from "../../shared/defaults";
 
 // A real directory, not a fabricated "/home/u". Containment resolves symlinks
@@ -44,7 +44,7 @@ describe("evaluateToolCall", () => {
   });
 
   it("denies write and edit under user/dashboards (FR-DASH-19)", () => {
-    const reason = DASHBOARD_TOOL_MESSAGE;
+    const reason = "Use dashboard(action='update') to create and modify dashboards.";
     expect(evaluate("write", { path: `${AB}/user/dashboards/board.md` })).toEqual({
       action: "deny",
       reason,

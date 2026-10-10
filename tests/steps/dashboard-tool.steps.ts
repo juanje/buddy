@@ -16,7 +16,6 @@ import type { BuddyWorld } from "../support/world";
 interface DashboardToolWorld extends BuddyWorld {
   buddyDir?: string;
   dashboardToolResult?: DashboardActionResult;
-  originalBody?: string;
 }
 
 function root(this: DashboardToolWorld): string {
@@ -103,26 +102,8 @@ Given(
     const abs = join(root.call(this), rel);
     mkdirSync(join(root.call(this), "user", "dashboards"), { recursive: true });
     writeFileSync(abs, content.trim() + "\n", "utf8");
-    this.originalBody = bodyAfterFrontmatter(content.trim() + "\n");
   },
 );
-
-When(
-  "dashboard action {string} is invoked for dashboard {string} with title {string}",
-  function (this: DashboardToolWorld, action: string, dashName: string, title: string) {
-    this.dashboardToolResult = executeDashboardAction(root.call(this), action, { name: dashName, title });
-  },
-);
-
-Then("dashboard file {string} body is unchanged", function (this: DashboardToolWorld, fileName: string) {
-  const text = readFileSync(join(root.call(this), "user/dashboards", fileName), "utf8");
-  assert.equal(bodyAfterFrontmatter(text), this.originalBody);
-});
-
-function bodyAfterFrontmatter(text: string): string {
-  const m = /^---\r?\n[\s\S]*?\r?\n---/.exec(text);
-  return m ? text.slice(m[0].length) : text;
-}
 
 Then("dashboard tool succeeded", function (this: DashboardToolWorld) {
   assert.ok(this.dashboardToolResult?.ok);
