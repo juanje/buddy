@@ -2281,14 +2281,15 @@
         {
           "name": "Wip source flags an area over its limit",
           "bdd": "pass",
-          "unit_tests": 2
+          "unit_tests": 1
         },
         {
           "name": "Wip source renders as status cards",
           "bdd": "pass",
-          "unit_tests": 2
+          "unit_tests": 1
         }
-      ]
+      ],
+      "note": "reopened: wip status unit test and counts"
     }
   ]
 }

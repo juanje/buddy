@@ -134,6 +134,26 @@ describe("loadSourceRows", () => {
     }
   });
 
+  it("loadWipRows exposes label state and reason for status cards", () => {
+    dir = mkdtempSync(join(tmpdir(), "dash-src-"));
+    writeTasksFile(
+      dir,
+      [
+        { id: 1, text: "a", done: false, next: false, area: "work", project: "p1" },
+        { id: 2, text: "b", done: false, next: false, area: "work", project: "p2" },
+        { id: 3, text: "c", done: false, next: false, area: "work", project: "p3" },
+        { id: 4, text: "d", done: false, next: false, area: "work" },
+        { id: 5, text: "e", done: false, next: false, area: "home", project: "p4" },
+      ],
+      "2026-01-01",
+    );
+    const rows = loadWipRows(dir, { wipLimit: 3 });
+    const work = rows.find((r) => r.area === "work");
+    const home = rows.find((r) => r.area === "home");
+    expect(work).toMatchObject({ label: "@work", state: "bad", reason: "4 / 3" });
+    expect(home).toMatchObject({ label: "@home", state: "ok", reason: "1 / 3" });
+  });
+
   it("loadWipRows compares fronts with the limit and honours no-limit overrides", () => {
     dir = mkdtempSync(join(tmpdir(), "dash-src-"));
     writeTasksFile(
