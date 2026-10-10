@@ -11,7 +11,7 @@
 // The layer installs as a chained `beforeToolCall` hook: an earlier hook's
 // block wins; otherwise our decision applies.
 
-import { basename, join, resolve } from "node:path";
+import { basename, join, relative, resolve } from "node:path";
 import { homedir } from "node:os";
 import type { AllowedEntry } from "./allowed-paths";
 import { isPathPersistentlyAllowed } from "./allowed-paths";
@@ -23,6 +23,7 @@ import { classifyConnectorAction, isConnectorTool } from "./connectors/actions";
 import { classifyTaskAction, isTaskTool } from "./tasks/actions";
 import { isContained } from "./containment";
 import { globalConfigDir } from "./global-config";
+import { isDashboardPath } from "../shared/dashboard/document";
 import { identityDirPath } from "./brain-paths";
 
 export type PermissionOp = "read" | "write";
@@ -43,9 +44,16 @@ const IDENTITY_FILES = ["SOUL.md"];
 /** Agent-managed config paths that must never be modified by the agent (NFR-SEC-06). */
 const PROTECTED_CONFIG_RELPATHS = [join(".pi", "settings.json")];
 const TASK_FILE_RELPATH = `${USER_DIR}/tasks.md`;
+const DASHBOARD_TOOL_MESSAGE = "Use dashboard(action='update') to create and modify dashboards.";
 
 function isTaskFile(absPath: string, rootDir: string): boolean {
   return resolve(rootDir, TASK_FILE_RELPATH) === absPath;
+}
+
+function isUserDashboardFile(absPath: string, rootDir: string): boolean {
+  if (!isContained(absPath, rootDir)) return false;
+  const rel = relative(rootDir, absPath).replace(/\\/g, "/");
+  return isDashboardPath(rel);
 }
 
 function connectorActionFromArgs(args: unknown): string | undefined {
@@ -142,8 +150,24 @@ export function evaluateToolCall(
     return { action: "allow" }; // pathless: operates on the session cwd (buddy directory)
   }
 
+  if (toolName === "copy_file" || toolName === "move_file") {
+    const dest = rawPaths[1];
+    if (dest) {
+      const absDest = resolve(rootDir, expandHome(dest, home));
+      if (isUserDashboardFile(absDest, rootDir)) {
+        return { action: "deny", reason: DASHBOARD_TOOL_MESSAGE };
+      }
+    }
+  }
+
   let pendingAsk: PermissionDecision | undefined;
   for (const rawPath of rawPaths) {
+    if ((toolName === "write" || toolName === "edit") && op === "write") {
+      const absPath = resolve(rootDir, expandHome(rawPath, home));
+      if (isUserDashboardFile(absPath, rootDir)) {
+        return { action: "deny", reason: DASHBOARD_TOOL_MESSAGE };
+      }
+    }
     const decision = evaluateOnePath(rawPath, op, rootDir, home, configDir);
     if (decision.action === "deny") return decision;
     if (decision.action === "ask" && !pendingAsk) pendingAsk = decision;
@@ -219,6 +243,23 @@ export function createPermissionGate(
         const absPath = resolve(rootDir, expandHome(rawPath, home));
         if (isDenylistedPath(absPath, home)) {
           return { block: true, reason: `Access to ${absPath} is not allowed.` };
+        }
+      }
+      if (toolName === "copy_file" || toolName === "move_file") {
+        const dest = rawPaths[1];
+        if (dest) {
+          const absDest = resolve(rootDir, expandHome(dest, home));
+          if (isUserDashboardFile(absDest, rootDir)) {
+            return { block: true, reason: DASHBOARD_TOOL_MESSAGE };
+          }
+        }
+      }
+      if (toolName === "write" || toolName === "edit") {
+        for (const rawPath of rawPaths) {
+          const absPath = resolve(rootDir, expandHome(rawPath, home));
+          if (isUserDashboardFile(absPath, rootDir)) {
+            return { block: true, reason: DASHBOARD_TOOL_MESSAGE };
+          }
         }
       }
       if (sessionAllowedPaths && READ_TOOLS.has(toolName) && rawPaths.length > 0) {

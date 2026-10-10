@@ -142,3 +142,38 @@ Feature: Dashboard tool
       """
     Then dashboard tool failed
     And dashboard tool output mentions "Multiple widgets"
+
+  @FR-DASH-19
+  Scenario: Write to user dashboards is denied
+    Given an initialized buddy git repository
+    And a permission layer for tasks file access
+    When the agent writes "user/dashboards/board.md" via permission gate
+    Then the permission gate blocks with dashboard tool message
+
+  @FR-DASH-19
+  Scenario: Edit of user dashboards is denied
+    Given an initialized buddy git repository
+    And a permission layer for tasks file access
+    When the agent edits "user/dashboards/board.md" via permission gate
+    Then the permission gate blocks with dashboard tool message
+
+  @FR-DASH-19
+  Scenario: Copy into user dashboards is denied
+    Given an initialized buddy git repository
+    And a permission layer for tasks file access
+    When the agent copies "user/notes/a.md" to "user/dashboards/a.md" via permission gate
+    Then the permission gate blocks with dashboard tool message
+
+  @FR-DASH-19
+  Scenario: Read of user dashboards is allowed
+    Given an initialized buddy git repository
+    And a permission layer for tasks file access
+    When the agent reads "user/dashboards/board.md" via permission gate
+    Then the permission gate allows the dashboard read
+
+  @FR-DASH-19
+  Scenario: Delete of user dashboards asks for confirmation
+    Given an initialized buddy git repository
+    And a permission layer for tasks file access
+    When the agent deletes "user/dashboards/board.md" via permission gate
+    Then the permission gate allows the dashboard read

@@ -502,6 +502,39 @@ Then("the permission gate blocks with tasks tool message", function (this: Tasks
   );
 });
 
+When(
+  "the agent copies {string} to {string} via permission gate",
+  async function (this: TasksWorld, source: string, dest: string) {
+    this.permOutcome = await this.permGate!.check("copy_file", {
+      source,
+      destination: dest,
+    });
+  },
+);
+
+When(
+  "the agent deletes {string} via permission gate",
+  async function (this: TasksWorld, relPath: string) {
+    this.permOutcome = await this.permGate!.check("delete_file", { path: relPath });
+  },
+);
+
+Then("the permission gate blocks with dashboard tool message", function (this: TasksWorld) {
+  assert.ok(this.permOutcome?.block, "expected the tool call to be blocked");
+  assert.equal(
+    this.permOutcome?.reason,
+    "Use dashboard(action='update') to create and modify dashboards.",
+  );
+});
+
+Then("the permission gate allows the dashboard read", function (this: TasksWorld) {
+  assert.equal(this.permOutcome, undefined);
+});
+
+Then("the permission gate asks for delete confirmation", function (this: TasksWorld) {
+  assert.ok(this.permOutcome?.block, "expected delete to require confirmation");
+});
+
 Then("the toolset offers tasks", function (this: TasksWorld) {
   assert.ok((this as { toolNames?: string[] }).toolNames?.includes("tasks"));
 });

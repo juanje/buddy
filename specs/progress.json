@@ -2174,9 +2174,40 @@
     {
       "id": "FR-DASH-19",
       "title": "Direct file-tool writes into user/dashboards/ denied",
-      "status": "pending",
-      "cycle_step": "spec_review",
-      "scenarios": []
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Write to user dashboards is denied",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Edit of user dashboards is denied",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Copy into user dashboards is denied",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Read of user dashboards is allowed",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Delete of user dashboards asks for confirmation",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Delete of user dashboards is not blocked by the dashboard write rule",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
     },
     {
       "id": "FR-DASH-13",
