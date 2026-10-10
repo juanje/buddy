@@ -2121,9 +2121,55 @@
     {
       "id": "FR-DASH-12",
       "title": "dashboard() tool: help, fields, check, validate, create, update",
-      "status": "pending",
-      "cycle_step": "spec_review",
-      "scenarios": []
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Help lists sources",
+          "bdd": "pass",
+          "unit_tests": 9
+        },
+        {
+          "name": "Fields does not return rows",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Check positive for sections file",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Check negative offers derived path",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Validate reports field errors",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Create valid dashboard writes file",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Create invalid dashboard does not write",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Update widget preserves free text",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Update with ambiguous title fails",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
     },
     {
       "id": "FR-DASH-19",

@@ -28,6 +28,7 @@ import { buddySessionsDir } from "./session-paths";
 import { buildAllSkillTools } from "./skill-tools";
 import { buildFetchTools } from "./fetch-url";
 import { buildConnectorToolset } from "./connectors/index";
+import { buildDashboardTool } from "./dashboard/index";
 import { buildTaskTool } from "./tasks/index";
 import { buildFileTools } from "./file-tools";
 import { buildShowFileTools } from "./show-file-tool";
@@ -93,6 +94,7 @@ export function buildAgentToolset(
   const wikiTools = buildWikiTools(rootDir);
   const connectorTools = buildConnectorToolset(rootDir);
   const taskTool = buildTaskTool(rootDir);
+  const dashboardTool = buildDashboardTool(rootDir);
 
   const customTools = [
     ...skillTools,
@@ -102,6 +104,7 @@ export function buildAgentToolset(
     ...wikiTools,
     ...connectorTools,
     taskTool,
+    dashboardTool,
   ];
   return {
     names: [...AGENT_TOOLS, ...customTools.map((tool) => tool.name)],

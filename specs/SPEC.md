@@ -4064,7 +4064,7 @@ and inline content.
 | FR-DASH-09 | Inline content carries date and basis, renders distinct, shows its age | 3 S2 ✓ |
 | FR-DASH-10 | Views v1: kanban, list, table, counter, text, status | 3 S2 ✓ |
 | FR-DASH-11 | Views v2 (own SVG): bar, line, progress, calendar heatmap, timeline | 3 S5 |
-| FR-DASH-12 | `dashboard()` tool: help, fields, check, validate, create, update | 3 S3 |
+| FR-DASH-12 | `dashboard()` tool: help, fields, check, validate, create, update | 3 S3 ✓ |
 | FR-DASH-13 | Shipped templates and self-docs examples | 3 S3 |
 | FR-DASH-14 | Freeze: dated snapshot with resolved rows inline | 3 S7 |
 | FR-DASH-15 | Export: static HTML from the rendered dashboard + PDF, date range, sensitive warning | 3 S7 |
