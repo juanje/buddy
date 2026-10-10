@@ -54,6 +54,20 @@ Given("tasks.md with mixed states for dashboard resolution", function (this: Das
   writeTasksFile(root.call(this), items, "2026-01-01");
 });
 
+Given("tasks.md with an overdue open task", function (this: DashboardWorld) {
+  const items: TaskItem[] = [
+    {
+      id: 1,
+      text: "Overdue item",
+      done: false,
+      next: false,
+      area: "personal",
+      dueDate: "2026-09-22",
+    },
+  ];
+  writeTasksFile(root.call(this), items, "2026-01-01");
+});
+
 Given("tasks.md with a stale open task", function (this: DashboardWorld) {
   const items: TaskItem[] = [
     {
@@ -249,6 +263,21 @@ Then(
     assert.equal(String(rows[0]?.due), due);
   },
 );
+
+Then(
+  "segment {int} first widget row overdue_days is {int}",
+  function (this: DashboardWorld, index: number, days: number) {
+    const rows = widgetRows.call(this, index);
+    assert.equal(rows[0]?.overdue_days, days);
+  },
+);
+
+Then("segment {int} widget rows have no overdue_days field", function (this: DashboardWorld, index: number) {
+  const rows = widgetRows.call(this, index);
+  for (const row of rows) {
+    assert.equal(row.overdue_days, undefined);
+  }
+});
 
 Then(
   "segment {int} is a table widget with {int} rows and no error",

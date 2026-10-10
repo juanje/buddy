@@ -12,7 +12,7 @@ import {
   tasksFilePath,
 } from "../tasks/task-file";
 import { listKnownSourceNames } from "../../shared/dashboard/source-fields";
-import { taskRowDisplayText } from "./task-row-text";
+import { overdueDaysForTask, taskRowDisplayText } from "./task-row-text";
 
 export type SourceLoadResult =
   | { ok: true; rows: Record<string, unknown>[] }
@@ -65,6 +65,10 @@ export function loadTasksRows(rootDir: string, today: string): Record<string, un
     };
     if (item.staleDays !== undefined) {
       row.stale_days = item.staleDays;
+    }
+    const overdue = overdueDaysForTask(item.dueDate, today);
+    if (overdue !== undefined) {
+      row.overdue_days = overdue;
     }
     rows.push(row);
   }

@@ -27,6 +27,7 @@ export const TASKS_SOURCE: SourceDefinition = {
       values: ["next", "open", "scheduled", "parked"],
     },
     stale_days: { kind: "number" },
+    overdue_days: { kind: "number" },
   },
 };
 

@@ -4155,7 +4155,8 @@ and inline content.
   round-trip writes). `tasks.md` has no state field; `state` is derived, first
   match wins: `parked` (area `someday`), `scheduled` (due date after today),
   `next` (`>>` marker), `open`. This is the precedence `isActiveNextItem`
-  already applies.
+  already applies. Lateness is never a `state` value: when `due` is before
+  today, the row includes numeric `overdue_days` (today minus `due`, in days).
 - Done items are excluded: daily cleanup removes them from the file
   (FR-TASKM-44), so a live read cannot report them consistently. History of
   completed tasks is FR-DASH-17.

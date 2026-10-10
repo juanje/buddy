@@ -101,6 +101,36 @@ Feature: Dashboard resolution
     And segment 1 first widget row due is "2026-09-22"
 
   @FR-DASH-05
+  Scenario: Tasks source exposes overdue_days for past due dates
+    Given an initialized buddy git repository
+    And tasks.md with an overdue open task
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: table
+        source: tasks
+        columns: [text, overdue_days]
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-07"
+    Then segment 1 first widget row overdue_days is 15
+
+  @FR-DASH-05
+  Scenario: Tasks source omits overdue_days when not overdue
+    Given an initialized buddy git repository
+    And tasks.md with mixed states for dashboard resolution
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: table
+        source: tasks
+        columns: [text, overdue_days]
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-07"
+    Then segment 1 widget rows have no overdue_days field
+
+  @FR-DASH-05
   Scenario: Tasks source exposes derived state
     Given an initialized buddy git repository
     And tasks.md with mixed states for dashboard resolution

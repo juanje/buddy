@@ -1795,9 +1795,19 @@
           "name": "Tasks source omits due date from row text",
           "bdd": "pass",
           "unit_tests": 2
+        },
+        {
+          "name": "Tasks source exposes overdue_days for past due dates",
+          "bdd": "pass",
+          "unit_tests": 3
+        },
+        {
+          "name": "Tasks source omits overdue_days when not overdue",
+          "bdd": "pass",
+          "unit_tests": 1
         }
       ],
-      "note": "reopened: task row text omits due date"
+      "note": "reopened: overdue_days derived field"
     },
     {
       "id": "FR-DASH-04",
