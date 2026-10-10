@@ -2,7 +2,12 @@
 
 import { describe, expect, it } from "vitest";
 
-import { humanizeFieldLabel, overdueLabel, viewLabel } from "../../src/lib/dashboard/field-labels";
+import {
+  displayFieldValue,
+  humanizeFieldLabel,
+  overdueLabel,
+  viewLabel,
+} from "../../src/lib/dashboard/field-labels";
 
 describe("humanizeFieldLabel", () => {
   it("localizes tasks source fields in Spanish", () => {
@@ -12,6 +17,22 @@ describe("humanizeFieldLabel", () => {
 
   it("capitalizes inline field names", () => {
     expect(humanizeFieldLabel("paso", "inline", "es")).toBe("Paso");
+  });
+});
+
+describe("displayFieldValue", () => {
+  it("prefixes tasks area and project like tasks.md", () => {
+    expect(displayFieldValue("area", "work", "tasks")).toBe("@work");
+    expect(displayFieldValue("project", "alpha", "tasks")).toBe("#alpha");
+  });
+
+  it("leaves other sources and fields unchanged", () => {
+    expect(displayFieldValue("area", "work", "inline")).toBe("work");
+    expect(displayFieldValue("text", "hello", "tasks")).toBe("hello");
+  });
+
+  it("returns empty for blank values", () => {
+    expect(displayFieldValue("area", "  ", "tasks")).toBe("");
   });
 });
 

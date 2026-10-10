@@ -40,6 +40,19 @@ const DEFERRED_FIELDS: Record<AppLocale, Record<string, string>> = {
   },
 };
 
+/** Display task field values like tasks.md (@area, #project). FR-DASH-10 */
+export function displayFieldValue(
+  field: string,
+  value: string,
+  source: string | undefined,
+): string {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  if (source === "tasks" && field === "area") return `@${trimmed}`;
+  if (source === "tasks" && field === "project") return `#${trimmed}`;
+  return trimmed;
+}
+
 export function humanizeFieldLabel(
   field: string,
   source: string | undefined,

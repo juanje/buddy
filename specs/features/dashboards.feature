@@ -646,6 +646,27 @@ Feature: Dashboard resolution
     Then the dashboard widget keys are distinct
 
   @FR-DASH-10
+  Scenario: Task areas and projects render as in tasks.md
+    Given an initialized buddy git repository
+    And tasks.md with area and project tags for dashboard display
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: counter
+        source: tasks
+        count: true
+        group: area
+      - view: kanban
+        source: tasks
+        group: state
+        fields: [area, project]
+      ```
+      """
+    When the dashboard view model is built for locale "es"
+    Then the grouped counter label for personal is "@personal"
+    And a kanban card has chips "@personal" and "#alpha"
+
+  @FR-DASH-10
   Scenario: Counter with group shows one value per area
     Given an initialized buddy git repository
     And tasks.md with one overdue and other open tasks

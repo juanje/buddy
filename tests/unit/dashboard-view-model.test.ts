@@ -80,6 +80,41 @@ describe("buildDashboardViewModel kanban", () => {
   });
 });
 
+describe("buildDashboardViewModel task field display", () => {
+  it("prefixes counter group labels for tasks area", () => {
+    const model: ResolvedDashboard = {
+      today: "2026-10-07",
+      segments: [
+        {
+          kind: "widget",
+          spec: {
+            view: "counter",
+            source: "tasks",
+            width: "full",
+            raw: { view: "counter", source: "tasks", count: true, group: "area" },
+          },
+          result: {
+            kind: "group_values",
+            groups: [
+              { key: "personal", value: 2 },
+              { key: "work", value: 1 },
+            ],
+          },
+        },
+      ],
+    };
+    const vm = buildDashboardViewModel(model, "es", "Vacío");
+    const row = vm.rows.find((r) => r.kind === "widgetRow");
+    if (row?.kind === "widgetRow") {
+      const counter = row.widgets[0];
+      expect(counter.kind).toBe("counter");
+      if (counter.kind === "counter") {
+        expect(counter.groups?.map((g) => g.label)).toEqual(["@personal", "@work"]);
+      }
+    }
+  });
+});
+
 describe("buildDashboardViewModel widget titles", () => {
   it("omits heading title when the widget spec has no title", () => {
     const model: ResolvedDashboard = {

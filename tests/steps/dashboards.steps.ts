@@ -77,6 +77,20 @@ Given("tasks.md with one overdue and other open tasks", function (this: Dashboar
   writeTasksFile(root.call(this), items, "2026-01-01");
 });
 
+Given("tasks.md with area and project tags for dashboard display", function (this: DashboardWorld) {
+  const items: TaskItem[] = [
+    {
+      id: 1,
+      text: "Tagged task",
+      done: false,
+      next: true,
+      area: "personal",
+      project: "alpha",
+    },
+  ];
+  writeTasksFile(root.call(this), items, "2026-01-01");
+});
+
 Given("tasks.md with an overdue open task", function (this: DashboardWorld) {
   const items: TaskItem[] = [
     {
@@ -301,6 +315,39 @@ Then(
   function (this: DashboardWorld, index: number, days: number) {
     const rows = widgetRows.call(this, index);
     assert.equal(rows[0]?.overdue_days, days);
+  },
+);
+
+Then(
+  "the grouped counter label for {word} is {string}",
+  function (this: DashboardWorld, _areaKey: string, expected: string) {
+    assert.ok(this.viewModel, "view model required");
+    const counter = this.viewModel.rows
+      .flatMap((r) => (r.kind === "widgetRow" ? r.widgets : []))
+      .find((w) => w.kind === "counter");
+    assert.equal(counter?.kind, "counter");
+    if (counter?.kind === "counter") {
+      const group = counter.groups?.find((g) => g.label === expected);
+      assert.ok(group, `expected group label ${expected}`);
+    }
+  },
+);
+
+Then(
+  "a kanban card has chips {string} and {string}",
+  function (this: DashboardWorld, chipA: string, chipB: string) {
+    assert.ok(this.viewModel, "view model required");
+    const kanban = this.viewModel.rows
+      .flatMap((r) => (r.kind === "widgetRow" ? r.widgets : []))
+      .find((w) => w.kind === "kanban");
+    assert.equal(kanban?.kind, "kanban");
+    if (kanban?.kind === "kanban") {
+      const cards = kanban.columns.flatMap((c) => c.cards);
+      const match = cards.some(
+        (card) => card.chips.includes(chipA) && card.chips.includes(chipB),
+      );
+      assert.ok(match, `expected chips ${chipA} and ${chipB} on a card`);
+    }
   },
 );
 

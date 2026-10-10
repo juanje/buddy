@@ -4220,6 +4220,8 @@ and inline content.
   `unknown`) and `reason`.
 - Strings from files and inline content are rendered as text, never as HTML.
 - Labels are localized (EN/ES).
+- For `tasks`, displayed `area` and `project` values use `@` and `#` prefixes
+  as in `tasks.md` (group labels, kanban chips, list fields, table cells).
 
 **FR-DASH-11 — Views v2**
 

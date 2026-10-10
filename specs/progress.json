@@ -2043,9 +2043,14 @@
           "name": "Widget without title renders no heading",
           "bdd": "pass",
           "unit_tests": 3
+        },
+        {
+          "name": "Task areas and projects render as in tasks.md",
+          "bdd": "pass",
+          "unit_tests": 4
         }
       ],
-      "note": "reopened: optional widget title without view name fallback"
+      "note": "reopened: tasks area and project display as @ and #"
     },
     {
       "id": "FR-DASH-06",

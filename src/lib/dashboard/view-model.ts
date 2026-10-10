@@ -1,7 +1,12 @@
 // src/lib/dashboard/view-model.ts — Dashboard layout and view shaping (FR-DASH-10, FR-DASH-03).
 
 import type { AppLocale } from "../i18n";
-import { humanizeFieldLabel, overdueLabel, viewLabel } from "./field-labels";
+import {
+  displayFieldValue,
+  humanizeFieldLabel,
+  overdueLabel,
+  viewLabel,
+} from "./field-labels";
 import type {
   ResolvedDashboard,
   ResolvedWidgetSegment,
@@ -116,13 +121,23 @@ function humanizeColumnKey(key: string): string {
 function columnLabel(
   key: string | null,
   groupField: string | undefined,
+  source: string | undefined,
   locale: AppLocale,
 ): string {
   if (key === null) return nullGroupLabel(locale);
   if (groupField === "state" && specIsTasksState(key)) {
     return taskStateLabel(key, locale);
   }
+  if (source === "tasks" && groupField && (groupField === "area" || groupField === "project")) {
+    return displayFieldValue(groupField, key, source);
+  }
   return humanizeColumnKey(key);
+}
+
+function formatCell(field: string, value: unknown, source: string | undefined): string {
+  const text = cellText(value);
+  if (!text) return "";
+  return displayFieldValue(field, text, source);
 }
 
 function specIsTasksState(key: string): boolean {
@@ -264,12 +279,12 @@ function buildKanban(
       const rows = group?.rows ?? [];
       columns.push({
         key: colKey ?? null,
-        label: columnLabel(colKey ?? null, groupField, locale),
+        label: columnLabel(colKey ?? null, groupField, spec.source, locale),
         cards: rows.map((row) => ({
           text: cellText(row.text),
           chips: fieldList
             .filter((f) => f !== "text" && f !== "overdue_days")
-            .map((f) => cellText(row[f]))
+            .map((f) => formatCell(f, row[f], spec.source))
             .filter(Boolean),
           overdueDays: overdueFromRow(row),
         })),
@@ -294,7 +309,7 @@ function buildList(
     result.kind === "rows"
       ? result.rows.map((row) => ({
           primary: cellText(row.text ?? row.label ?? Object.values(row)[0]),
-          fields: fields.map((f) => cellText(row[f])).filter(Boolean),
+          fields: fields.map((f) => formatCell(f, row[f], spec.source)).filter(Boolean),
           overdueDays: overdueFromRow(row),
         }))
       : [];
@@ -321,7 +336,7 @@ function buildTable(
       ? result.rows.map((row) => {
           const out: Record<string, string> = {};
           for (const col of columns) {
-            out[col] = cellText(row[col]);
+            out[col] = formatCell(col, row[col], spec.source);
           }
           return out;
         })
@@ -342,7 +357,7 @@ function buildCounter(
 
   if (result.kind === "group_values") {
     const groups: CounterGroupVm[] = result.groups.map((g) => ({
-      label: columnLabel(g.key, groupField, locale),
+      label: columnLabel(g.key, groupField, spec.source, locale),
       value: g.value,
     }));
     return {
