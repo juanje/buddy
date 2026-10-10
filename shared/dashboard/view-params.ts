@@ -40,6 +40,12 @@ export function validateViewParams(
     if (typeof raw.group !== "string") {
       return "Kanban view requires key 'group'";
     }
+    if (raw.order !== undefined && !Array.isArray(raw.order)) {
+      return "Kanban key 'order' must be a list of column values";
+    }
+    if (Array.isArray(raw.order) && raw.order.some((v) => typeof v !== "string")) {
+      return "Kanban key 'order' must be a list of column values";
+    }
     if (sourceDef) {
       const err = assertFieldsExist([raw.group], sourceDef, "group");
       if (err) return err;

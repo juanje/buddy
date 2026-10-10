@@ -10,12 +10,19 @@ import { resolveDashboardContent } from "../../backends/dashboard/resolve";
 import { writeTasksFile } from "../../backends/tasks/task-file";
 import type { TaskItem } from "../../shared/task-types";
 import type { ResolvedDashboard, ResolvedSegment } from "../../shared/dashboard/types";
+import {
+  buildDashboardViewModel,
+  widgetKeysFromViewModel,
+  type DashboardViewModel,
+} from "../../src/lib/dashboard/view-model";
+import type { AppLocale } from "../../src/lib/i18n";
 import type { BuddyWorld } from "../support/world";
 
 interface DashboardWorld extends BuddyWorld {
   buddyDir?: string;
   dashboardBody?: string;
   resolved?: ResolvedDashboard;
+  viewModel?: DashboardViewModel;
 }
 
 function root(this: DashboardWorld): string {
@@ -142,6 +149,15 @@ When("the dashboard is resolved for today {string}", function (this: DashboardWo
   assert.ok(this.buddyDir && this.dashboardBody, "dashboard setup required");
   this.resolved = resolveDashboardContent(this.buddyDir, this.dashboardBody, today);
 });
+
+When(
+  "the dashboard view model is built for locale {string}",
+  function (this: DashboardWorld, locale: string) {
+    assert.ok(this.buddyDir && this.dashboardBody, "dashboard setup required");
+    this.resolved = resolveDashboardContent(this.buddyDir, this.dashboardBody, "2026-10-07");
+    this.viewModel = buildDashboardViewModel(this.resolved, locale as AppLocale, "Vacío");
+  },
+);
 
 function segments(this: DashboardWorld): ResolvedSegment[] {
   assert.ok(this.resolved, "dashboard not resolved");
@@ -285,6 +301,79 @@ Then(
   function (this: DashboardWorld, index: number, days: number) {
     const rows = widgetRows.call(this, index);
     assert.equal(rows[0]?.overdue_days, days);
+  },
+);
+
+Then("the dashboard widget keys are distinct", function (this: DashboardWorld) {
+  assert.ok(this.viewModel, "view model required");
+  const keys = widgetKeysFromViewModel(this.viewModel);
+  assert.equal(keys.length, new Set(keys).size);
+});
+
+Then(
+  "segment {int} widget group value for {word} is {int}",
+  function (this: DashboardWorld, index: number, area: string, value: number) {
+    const seg = segments.call(this)[index - 1];
+    assert.equal(seg.kind, "widget");
+    if (seg.kind === "widget") {
+      assert.equal(seg.result.kind, "group_values");
+      if (seg.result.kind === "group_values") {
+        const group = seg.result.groups.find((g) => g.key === area);
+        assert.ok(group, `missing group ${area}`);
+        assert.equal(group!.value, value);
+      }
+    }
+  },
+);
+
+Then("the first kanban card has overdue days {int}", function (this: DashboardWorld, days: number) {
+  assert.ok(this.viewModel, "view model required");
+  const row = this.viewModel.rows.find((r) => r.kind === "widgetRow");
+  assert.equal(row?.kind, "widgetRow");
+  if (row?.kind === "widgetRow") {
+    const kanban = row.widgets[0];
+    assert.equal(kanban.kind, "kanban");
+    if (kanban.kind === "kanban") {
+      const card = kanban.columns.flatMap((c) => c.cards)[0];
+      assert.equal(card?.overdueDays, days);
+    }
+  }
+});
+
+Then("the kanban workflow columns are ordered", function (this: DashboardWorld) {
+  assert.ok(this.viewModel, "view model required");
+  const row = this.viewModel.rows.find((r) => r.kind === "widgetRow");
+  assert.equal(row?.kind, "widgetRow");
+  if (row?.kind === "widgetRow") {
+    const kanban = row.widgets[0];
+    assert.equal(kanban.kind, "kanban");
+    if (kanban.kind === "kanban") {
+      assert.deepEqual(kanban.columns.map((col) => col.label), [
+        "New",
+        "In progress",
+        "Blocked",
+        "Done",
+      ]);
+      assert.equal(kanban.columns[0]?.cards.length, 0);
+      assert.equal(kanban.columns[1]?.cards.length, 1);
+    }
+  }
+});
+
+Then(
+  'the table header for {word} is {string}',
+  function (this: DashboardWorld, field: string, label: string) {
+    assert.ok(this.viewModel, "view model required");
+    const row = this.viewModel.rows.find((r) => r.kind === "widgetRow");
+    assert.equal(row?.kind, "widgetRow");
+    if (row?.kind === "widgetRow") {
+      const table = row.widgets[0];
+      assert.equal(table.kind, "table");
+      if (table.kind === "table") {
+        const header = table.headers.find((h) => h.key === field);
+        assert.equal(header?.label, label);
+      }
+    }
   },
 );
 

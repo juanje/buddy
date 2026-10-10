@@ -4197,14 +4197,19 @@ and inline content.
 
 **FR-DASH-10 — Views v1**
 
+- Each rendered widget has a stable unique key so repeated titles or views do
+  not collide in the UI.
 - `kanban`: columns from `group`; cards show `text` plus chips for the other
-  fields listed in `fields`. For `tasks` grouped by `state`, column order is
-  `next`, `open`, `scheduled`, `parked`.
-- `list`: one row per item with optional `fields`.
-- `table`: `columns` lists the fields shown, in order.
-- `counter`: a single number from `count` or `sum`. With `range`, an optional
-  `delta: true` shows the change against the preceding period of the same
-  length.
+  fields listed in `fields`. Optional `order` lists column values first, including
+  empty columns; remaining values follow. For `tasks` grouped by `state` without
+  `order`, column order is `next`, `open`, `scheduled`, `parked`. Columns scroll
+  vertically when long. Cards with `overdue_days` show a localized overdue marker.
+- `list`: one row per item with optional `fields`; overdue marker same as kanban.
+- `table`: `columns` lists the fields shown, in order; headers are localized for
+  built-in sources and humanized for inline or unknown fields; layout is automatic.
+- `counter`: a single number from `count` or `sum`, or one number per group when
+  `group` is set (`count` or `sum`). With `range`, an optional `delta: true`
+  shows the change against the preceding period of the same length.
 - `text`: markdown, rendered with the same sanitizer as the chat (NFR-SEC-10).
 - `status`: one card per row with `label`, `state` (`ok` | `warn` | `bad` |
   `unknown`) and `reason`.

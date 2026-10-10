@@ -1,7 +1,10 @@
 <script lang="ts">
   import type { KanbanColumnVm } from "./view-model";
+  import { getLocale } from "../i18n";
+  import { overdueLabel } from "./view-model";
 
   let { columns, emptyLabel }: { columns: KanbanColumnVm[]; emptyLabel: string } = $props();
+  const locale = $derived(getLocale());
 </script>
 
 {#if columns.every((c) => c.cards.length === 0)}
@@ -13,8 +16,11 @@
         <h4>{col.label}</h4>
         <ul>
           {#each col.cards as card, i (i)}
-            <li>
+            <li class:overdue={card.overdueDays !== undefined}>
               <span class="card-text">{card.text}</span>
+              {#if card.overdueDays !== undefined}
+                <span class="overdue-tag">{overdueLabel(card.overdueDays, locale)}</span>
+              {/if}
               {#if card.chips.length > 0}
                 <span class="chips">
                   {#each card.chips as chip (chip)}
@@ -39,6 +45,9 @@
   .column {
     flex: 1;
     min-width: 140px;
+    display: flex;
+    flex-direction: column;
+    max-height: 320px;
   }
   h4 {
     margin: 0 0 8px;
@@ -47,6 +56,7 @@
     text-transform: uppercase;
     letter-spacing: 0.03em;
     color: var(--muted);
+    flex-shrink: 0;
   }
   ul {
     list-style: none;
@@ -55,6 +65,9 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
+    overflow-y: auto;
+    min-height: 0;
+    flex: 1;
   }
   li {
     border: 1px solid var(--border);
@@ -62,6 +75,15 @@
     padding: 8px 10px;
     background: var(--bg);
     font-size: 13px;
+  }
+  li.overdue {
+    border-left: 3px solid var(--error-fg);
+  }
+  .overdue-tag {
+    display: block;
+    margin-top: 4px;
+    font-size: 11px;
+    color: var(--error-fg);
   }
   .chips {
     display: flex;

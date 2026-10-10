@@ -293,6 +293,25 @@ function aggregateValue(
     if (fType.kind !== "number") {
       return { ok: false, message: `Field '${sumField}' is not numeric` };
     }
+    if (group) {
+      const gErr = assertField(sourceDef, group);
+      if (gErr) return gErr;
+      const keys = groupKeysInOrder(group, sourceDef, working);
+      const groups = keys.map((key) => {
+        const rowsInGroup = working.filter((row) => {
+          const v = row[group];
+          const k = v === undefined || v === null || v === "" ? "null" : String(v);
+          return k === key;
+        });
+        let total = 0;
+        for (const row of rowsInGroup) {
+          const v = row[sumField];
+          if (typeof v === "number") total += v;
+        }
+        return { key: key === "null" ? null : key, value: total };
+      });
+      return { ok: true, result: { kind: "group_values", groups } };
+    }
     let total = 0;
     for (const row of working) {
       const v = row[sumField];

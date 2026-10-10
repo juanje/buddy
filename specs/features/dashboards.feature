@@ -626,6 +626,125 @@ Feature: Dashboard resolution
     Then segment 1 is a text widget without error
     And segment 1 widget has no provenance
 
+  @FR-DASH-10
+  Scenario: Dashboard assigns unique keys to widgets without titles
+    Given an initialized buddy git repository
+    And deferred.md with one due item
+    And tasks.md does not exist
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: counter
+        source: deferred
+        count: true
+      - view: counter
+        source: tasks
+        count: true
+      ```
+      """
+    When the dashboard view model is built for locale "es"
+    Then the dashboard widget keys are distinct
+
+  @FR-DASH-10
+  Scenario: Counter with group shows one value per area
+    Given an initialized buddy git repository
+    And tasks.md with one overdue and other open tasks
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: counter
+        source: tasks
+        count: true
+        group: area
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-07"
+    Then segment 1 widget group value for personal is 2
+
+  @FR-DASH-10
+  Scenario: Kanban card shows overdue marker in view model
+    Given an initialized buddy git repository
+    And tasks.md with an overdue open task
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: kanban
+        source: tasks
+        group: state
+      ```
+      """
+    When the dashboard view model is built for locale "en"
+    Then the first kanban card has overdue days 15
+
+  @FR-DASH-10
+  Scenario: Kanban order includes empty workflow columns
+    Given an initialized buddy git repository
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: kanban
+        source: inline
+        updated: 2026-10-01
+        basis: Test
+        group: status
+        order: [new, in_progress, blocked, done]
+        rows:
+          - text: One
+            status: in_progress
+      ```
+      """
+    When the dashboard view model is built for locale "en"
+    Then the kanban workflow columns are ordered
+
+  @FR-DASH-10
+  Scenario: Kanban order must be a list
+    Given an initialized buddy git repository
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: kanban
+        source: tasks
+        group: state
+        order: new
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-07"
+    Then segment 1 widget result is an error mentioning "order"
+
+  @FR-DASH-10
+  Scenario: Table headers are localized for tasks source
+    Given an initialized buddy git repository
+    And tasks.md with mixed states for dashboard resolution
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: table
+        source: tasks
+        columns: [text, due]
+      ```
+      """
+    When the dashboard view model is built for locale "es"
+    Then the table header for text is "Tarea"
+    And the table header for due is "Vence"
+
+  @FR-DASH-10
+  Scenario: Table headers humanize inline field names
+    Given an initialized buddy git repository
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: table
+        source: inline
+        updated: 2026-10-01
+        basis: Test
+        columns: [paso]
+        rows:
+          - paso: Uno
+      ```
+      """
+    When the dashboard view model is built for locale "es"
+    Then the table header for paso is "Paso"
+
   @FR-DASH-02
   Scenario: Dashboard title appears in the header only once
     Given a filesystem buddy root at "/tmp/buddy-dash-view-9"

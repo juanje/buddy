@@ -30,7 +30,7 @@
       <section class="prose free-text">{@html renderMarkdown(row.markdown)}</section>
     {:else}
       <div class="widget-row">
-        {#each row.widgets as widget (widget.title + widget.kind)}
+        {#each row.widgets as widget (widget.key)}
           <section class="widget-card {widthClass(widget)}" class:inline-widget={widget.kind !== "error" && widget.provenance}>
             {#if widget.kind !== "error"}
               <h3>{widget.title}</h3>
@@ -46,9 +46,9 @@
             {:else if widget.kind === "list"}
               <ListView items={widget.items} emptyLabel={$t.dashboardEmptyWidget} />
             {:else if widget.kind === "table"}
-              <TableView columns={widget.columns} rows={widget.rows} emptyLabel={$t.dashboardEmptyWidget} />
+              <TableView headers={widget.headers} rows={widget.rows} emptyLabel={$t.dashboardEmptyWidget} />
             {:else if widget.kind === "counter"}
-              <CounterView value={widget.value} delta={widget.delta} />
+              <CounterView value={widget.value} delta={widget.delta} groups={widget.groups} />
             {:else if widget.kind === "textWidget"}
               <TextView markdown={widget.markdown} />
             {:else if widget.kind === "status"}

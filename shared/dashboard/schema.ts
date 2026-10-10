@@ -11,7 +11,7 @@ const INLINE_KEYS = ["updated", "basis", "rows"] as const;
 const COMMON_KEYS = new Set(["view", "source", "title", "width", ...QUERY_KEYS, ...INLINE_KEYS]);
 
 const VIEW_EXTRA_KEYS: Record<string, Set<string>> = {
-  kanban: new Set(["fields", "group"]),
+  kanban: new Set(["fields", "group", "order"]),
   list: new Set(["fields"]),
   table: new Set(["columns"]),
   counter: new Set(["delta"]),

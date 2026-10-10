@@ -24,6 +24,7 @@ describe("layoutWidgetRows", () => {
   it("places two half widgets on one row", () => {
     const half = (title: string): DashboardWidgetVm => ({
       kind: "counter",
+      key: title,
       title,
       width: "half",
       value: 1,

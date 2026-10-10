@@ -1,9 +1,11 @@
 <script lang="ts">
+  import type { TableHeaderVm } from "./view-model";
+
   let {
-    columns,
+    headers,
     rows,
     emptyLabel,
-  }: { columns: string[]; rows: Record<string, string>[]; emptyLabel: string } = $props();
+  }: { headers: TableHeaderVm[]; rows: Record<string, string>[]; emptyLabel: string } = $props();
 </script>
 
 {#if rows.length === 0}
@@ -13,16 +15,16 @@
     <table>
       <thead>
         <tr>
-          {#each columns as col (col)}
-            <th>{col}</th>
+          {#each headers as col (col.key)}
+            <th>{col.label}</th>
           {/each}
         </tr>
       </thead>
       <tbody>
         {#each rows as row, i (i)}
           <tr>
-            {#each columns as col (col)}
-              <td>{row[col] ?? ""}</td>
+            {#each headers as col (col.key)}
+              <td>{row[col.key] ?? ""}</td>
             {/each}
           </tr>
         {/each}
@@ -39,6 +41,7 @@
     width: 100%;
     border-collapse: collapse;
     font-size: 13px;
+    table-layout: auto;
   }
   th,
   td {

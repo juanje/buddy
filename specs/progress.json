@@ -1998,8 +1998,44 @@
           "name": "Text widget script tags are not raw HTML in resolved text",
           "bdd": "pass",
           "unit_tests": 2
+        },
+        {
+          "name": "Dashboard assigns unique keys to widgets without titles",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Counter with group shows one value per area",
+          "bdd": "pass",
+          "unit_tests": 2
+        },
+        {
+          "name": "Kanban card shows overdue marker in view model",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Kanban order includes empty workflow columns",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Kanban order must be a list",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Table headers are localized for tasks source",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Table headers humanize inline field names",
+          "bdd": "pass",
+          "unit_tests": 1
         }
-      ]
+      ],
+      "note": "reopened: widget unique keys"
     },
     {
       "id": "FR-DASH-06",
