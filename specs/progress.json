@@ -2066,7 +2066,7 @@
         {
           "name": "Sections source groups rows by heading",
           "bdd": "pass",
-          "unit_tests": 4
+          "unit_tests": 1
         },
         {
           "name": "Sections checkbox rows include done",
@@ -2081,14 +2081,15 @@
         {
           "name": "Sections file that does not fit is a widget error",
           "bdd": "pass",
-          "unit_tests": 2
+          "unit_tests": 3
         },
         {
           "name": "Sections path outside buddy root is a widget error",
           "bdd": "pass",
           "unit_tests": 1
         }
-      ]
+      ],
+      "note": "reopened: real unit counts"
     },
     {
       "id": "FR-DASH-18",

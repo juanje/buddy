@@ -2,7 +2,7 @@
 
 import { describe, expect, it } from "vitest";
 
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -48,6 +48,20 @@ describe("parseSections", () => {
 });
 
 describe("loadSectionsSource", () => {
+  it("returns error when file does not fit sections primitive", () => {
+    const dir = mkdtempSync(join(tmpdir(), "dash-sec-"));
+    try {
+      const rel = "user/notes/plain.md";
+      mkdirSync(join(dir, "user", "notes"), { recursive: true });
+      writeFileSync(join(dir, rel), "Plain prose only.\n", "utf8");
+      const out = loadSectionsSource(dir, rel);
+      expect(out.ok).toBe(false);
+      if (!out.ok) expect(out.message.toLowerCase()).toMatch(/sections primitive/);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it("rejects paths outside the buddy directory", () => {
     const dir = mkdtempSync(join(tmpdir(), "dash-sec-"));
     try {
