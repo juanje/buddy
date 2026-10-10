@@ -2256,19 +2256,20 @@
         {
           "name": "Create with template writes a dashboard that resolves",
           "bdd": "pass",
-          "unit_tests": 2
+          "unit_tests": 1
         },
         {
           "name": "Examples copies dashboards that resolve",
           "bdd": "pass",
-          "unit_tests": 2
+          "unit_tests": 1
         },
         {
           "name": "Dashboard documentation appears in the bundled docs index",
           "bdd": "pass",
-          "unit_tests": 2
+          "unit_tests": 1
         }
-      ]
+      ],
+      "note": "reopened: docs index unit test and counts"
     },
     {
       "id": "FR-DASH-20",

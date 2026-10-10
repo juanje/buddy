@@ -3,6 +3,7 @@
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { executeDashboardAction } from "../../backends/dashboard/dashboard-tool-actions";
@@ -191,6 +192,19 @@ Intro stays.
     expect(saved).toMatch(/Intro stays/);
     expect(saved).toMatch(/New/);
     expect(saved).not.toMatch(/Old/);
+  });
+
+  it("bundled docs index links to dashboards.md", () => {
+    const indexPath = join(
+      fileURLToPath(import.meta.url),
+      "..",
+      "..",
+      "..",
+      "bundled",
+      "docs",
+      "index.md",
+    );
+    expect(readFileSync(indexPath, "utf8")).toContain("dashboards.md");
   });
 
   it("create with template mis-tareas", () => {
