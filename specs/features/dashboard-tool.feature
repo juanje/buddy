@@ -211,11 +211,20 @@ Feature: Dashboard tool
     Then the permission gate allows the dashboard read
 
   @FR-DASH-19
-  Scenario: Delete of user dashboards asks for confirmation
+  Scenario: Delete of user dashboards is not blocked by the dashboard write rule
     Given an initialized buddy git repository
     And a permission layer for tasks file access
     When the agent deletes "user/dashboards/board.md" via permission gate
     Then the permission gate allows the dashboard read
+
+  @FR-DASH-19
+  Scenario: Delete of user dashboards asks for confirmation
+    Given an initialized buddy git repository
+    And file tools are available
+    And a file "user/dashboards/board.md" with content "keep"
+    When delete_file is called with path "user/dashboards/board.md" and deletion is denied
+    Then "user/dashboards/board.md" exists
+    And the delete tool result contains "declined"
 
   @FR-DASH-13
   Scenario: Create with template writes a dashboard that resolves

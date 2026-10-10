@@ -211,6 +211,16 @@ describe("file tool execution", () => {
     expect(existsSync(join(rootDir, "user/notes.md"))).toBe(true);
   });
 
+  it("deleteWorkspaceFile keeps user/dashboards file when not confirmed (FR-DASH-19)", async () => {
+    await setupRepo();
+    mkdirSync(join(rootDir, "user/dashboards"), { recursive: true });
+    writeFileSync(join(rootDir, "user/dashboards/board.md"), "keep");
+
+    const result = await deleteWorkspaceFile(rootDir, "user/dashboards/board.md", async () => false);
+    expect(result).toContain("declined");
+    expect(existsSync(join(rootDir, "user/dashboards/board.md"))).toBe(true);
+  });
+
   it("copyWorkspaceFile copies external bytes without reading into LLM", async () => {
     await setupRepo();
     externalDir = mkdtempSync(join(tmpdir(), "buddy-filetools-ext-"));

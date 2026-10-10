@@ -2223,7 +2223,8 @@
           "bdd": "pass",
           "unit_tests": 1
         }
-      ]
+      ],
+      "note": "reopened: separate delete gate and confirmation scenarios"
     },
     {
       "id": "FR-DASH-13",

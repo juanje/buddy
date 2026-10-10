@@ -43,23 +43,40 @@ describe("evaluateToolCall", () => {
     expect(evaluate("write", { path: `${AB}/user/notes.md` })).toEqual({ action: "allow" });
   });
 
-  it("denies write and edit under user/dashboards (FR-DASH-19)", () => {
+  it("denies write under user/dashboards (FR-DASH-19)", () => {
     const reason = "Use dashboard(action='update') to create and modify dashboards.";
     expect(evaluate("write", { path: `${AB}/user/dashboards/board.md` })).toEqual({
       action: "deny",
       reason,
     });
+  });
+
+  it("denies edit under user/dashboards (FR-DASH-19)", () => {
+    const reason = "Use dashboard(action='update') to create and modify dashboards.";
     expect(evaluate("edit", { path: "user/dashboards/board.md" })).toEqual({
       action: "deny",
       reason,
     });
+  });
+
+  it("denies copy into user/dashboards (FR-DASH-19)", () => {
+    const reason = "Use dashboard(action='update') to create and modify dashboards.";
     expect(
       evaluate("copy_file", {
         source: "user/notes/a.md",
         destination: "user/dashboards/a.md",
       }),
     ).toEqual({ action: "deny", reason });
+  });
+
+  it("allows read of user/dashboards (FR-DASH-19)", () => {
     expect(evaluate("read", { path: "user/dashboards/board.md" })).toEqual({ action: "allow" });
+  });
+
+  it("allows delete_file on user/dashboards without the dashboard write rule (FR-DASH-19)", () => {
+    expect(evaluate("delete_file", { path: "user/dashboards/board.md" })).toEqual({
+      action: "allow",
+    });
   });
 
   it("denies direct file-tool access to user/tasks.md (FR-TASKM-11)", () => {
