@@ -42,6 +42,8 @@ export interface FileViewerController {
   open: Readable<boolean>;
   filePath: Readable<string>;
   fileName: Readable<string>;
+  /** Header h2: dashboard frontmatter title or file name (FR-DASH-02). */
+  headerTitle: Readable<string>;
   content: Readable<string>;
   /**
    * The `summary` frontmatter field of the open document, when it has one
@@ -91,6 +93,7 @@ export function createFileViewerController(deps: FileViewerDeps): FileViewerCont
   const openStore = writable(false);
   const filePathStore = writable("");
   const fileNameStore = writable("");
+  const headerTitleStore = writable("");
   const contentStore = writable("");
   const summaryStore = writable<string | undefined>(undefined);
   const errorStore = writable<string | undefined>(undefined);
@@ -113,7 +116,9 @@ export function createFileViewerController(deps: FileViewerDeps): FileViewerCont
   async function load(relPath: string): Promise<void> {
     openStore.set(true);
     filePathStore.set(relPath);
-    fileNameStore.set(basename(relPath));
+    const name = basename(relPath);
+    fileNameStore.set(name);
+    headerTitleStore.set(name);
     updateCanReveal(relPath);
     const isMarkdown = /\.md$/i.test(relPath);
     isMarkdownStore.set(isMarkdown);
@@ -140,6 +145,8 @@ export function createFileViewerController(deps: FileViewerDeps): FileViewerCont
           dashboardStore.set(model);
           layoutStore.set("fullWindow");
           canExportPdfStore.set(false);
+          const dashTitle = fields.title?.trim();
+          headerTitleStore.set(dashTitle || basename(relPath));
         }
       } else {
         contentStore.set(text);
@@ -208,6 +215,7 @@ export function createFileViewerController(deps: FileViewerDeps): FileViewerCont
     openStore.set(false);
     filePathStore.set("");
     fileNameStore.set("");
+    headerTitleStore.set("");
     contentStore.set("");
     summaryStore.set(undefined);
     errorStore.set(undefined);
@@ -219,6 +227,7 @@ export function createFileViewerController(deps: FileViewerDeps): FileViewerCont
     open: { subscribe: openStore.subscribe },
     filePath: { subscribe: filePathStore.subscribe },
     fileName: { subscribe: fileNameStore.subscribe },
+    headerTitle: { subscribe: headerTitleStore.subscribe },
     content: { subscribe: contentStore.subscribe },
     summary: { subscribe: summaryStore.subscribe },
     error: { subscribe: errorStore.subscribe },

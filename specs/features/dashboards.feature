@@ -551,6 +551,25 @@ Feature: Dashboard resolution
     And segment 1 widget has no provenance
 
   @FR-DASH-02
+  Scenario: Dashboard title appears in the header only once
+    Given a filesystem buddy root at "/tmp/buddy-dash-view-9"
+    And a readable file "user/dashboards/prueba.md" with content:
+      """
+      ---
+      type: dashboard
+      title: Prueba
+      summary: Resumen corto
+      ---
+      ```dashboard
+      - view: text
+        text: Cuerpo
+      ```
+      """
+    When the dashboard test viewer opens "user/dashboards/prueba.md"
+    Then the file viewer header title is "Prueba"
+    And the dashboard view model has no document title
+
+  @FR-DASH-02
   Scenario: Dashboard viewer uses full window layout
     Given a filesystem buddy root at "/tmp/buddy-dash-view-7"
     And a readable file "user/dashboards/board.md" with content:

@@ -31,8 +31,6 @@ export type ListItemVm = { primary: string; fields: string[] };
 export type StatusCardVm = { label: string; state: StatusTone; reason: string };
 
 export type DashboardViewModel = {
-  title?: string;
-  summary?: string;
   rows: DashboardRow[];
 };
 
@@ -335,7 +333,7 @@ export function buildDashboardViewModel(
   }
   flushWidgets();
 
-  return { title: model.title, summary: model.summary, rows };
+  return { rows };
 }
 
 export function segmentCount(model: ResolvedDashboard): number {

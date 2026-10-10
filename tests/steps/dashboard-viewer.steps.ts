@@ -8,6 +8,7 @@ import { dirname, join } from "node:path";
 import { resolveViewableDashboard } from "../../backends/dashboard/viewable-dashboard";
 import { writeTasksFile } from "../../backends/tasks/task-file";
 import { createFileViewerController } from "../../src/lib/file-viewer-controller";
+import { buildDashboardViewModel } from "../../src/lib/dashboard/view-model";
 import type { ResolvedDashboard } from "../../shared/dashboard/types";
 import type { BuddyWorld } from "../support/world";
 
@@ -109,6 +110,16 @@ Then("the file viewer layout is fullWindow", function (this: DashViewerWorld) {
 
 Then("the file viewer layout is modal", function (this: DashViewerWorld) {
   assert.equal(readStore(this.fileViewer!.layout), "modal");
+});
+
+Then("the file viewer header title is {string}", function (this: DashViewerWorld, title: string) {
+  assert.equal(readStore(this.fileViewer!.headerTitle), title);
+});
+
+Then("the dashboard view model has no document title", function (this: DashViewerWorld) {
+  const model = readStore(this.fileViewer!.dashboard) as ResolvedDashboard;
+  const vm = buildDashboardViewModel(model, "es", "Sin datos");
+  assert.deepEqual(Object.keys(vm).sort(), ["rows"]);
 });
 
 Then("the file viewer has a resolved dashboard", function (this: DashViewerWorld) {

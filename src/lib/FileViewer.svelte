@@ -11,6 +11,7 @@
   const open = $derived(controller.open);
   const filePath = $derived(controller.filePath);
   const fileName = $derived(controller.fileName);
+  const headerTitle = $derived(controller.headerTitle);
   const content = $derived(controller.content);
   const summary = $derived(controller.summary);
   const error = $derived(controller.error);
@@ -81,7 +82,7 @@
           </button>
         {/if}
         <div class="title-wrap">
-          <h2 id="file-viewer-title">{$fileName}</h2>
+          <h2 id="file-viewer-title">{$headerTitle}</h2>
           <!-- The file's own one-line description, lifted out of the frontmatter
                that no longer renders in the body (FR-CHAT-15). -->
           {#if $summary}

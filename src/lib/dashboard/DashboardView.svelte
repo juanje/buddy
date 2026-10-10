@@ -25,15 +25,6 @@
 </script>
 
 <div class="dashboard">
-  {#if vm.title}
-    <header>
-      <h1>{vm.title}</h1>
-      {#if vm.summary}
-        <p class="summary">{vm.summary}</p>
-      {/if}
-    </header>
-  {/if}
-
   {#each vm.rows as row (row)}
     {#if row.kind === "text"}
       <section class="prose free-text">{@html renderMarkdown(row.markdown)}</section>

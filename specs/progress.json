@@ -1886,9 +1886,14 @@
           "name": "Ordinary markdown uses modal layout",
           "bdd": "pass",
           "unit_tests": 1
+        },
+        {
+          "name": "Dashboard title appears in the header only once",
+          "bdd": "pass",
+          "unit_tests": 1
         }
       ],
-      "note": "reopened: full window layout"
+      "note": "reopened: header title once"
     },
     {
       "id": "FR-DASH-03",

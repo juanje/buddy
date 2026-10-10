@@ -4115,6 +4115,9 @@ and inline content.
 - Rendering involves no model call. Worker reads for a dashboard are not
   agent tool calls, so they leave Hebbian metadata untouched.
 - The view is read-only: no control in it writes to any file.
+- The viewer header shows the dashboard `title` from frontmatter (falling
+  back to the file name) and the optional `summary`. The dashboard body does
+  not repeat them.
 
 **FR-DASH-03 — Widget-level errors**
 
