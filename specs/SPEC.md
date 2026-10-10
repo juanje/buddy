@@ -4072,6 +4072,7 @@ and inline content.
 | FR-DASH-17 | Git-history source (e.g. tasks completed per week) | 4 |
 | FR-DASH-18 | Built-in sources: `projects`, `logs`, `journal` | 3 S3 ✓ |
 | FR-DASH-19 | Direct file-tool writes into `user/dashboards/` denied; reads allowed | 3 S3 ✓ |
+| FR-DASH-20 | Built-in source: `wip` (active fronts per area vs WIP limit) | 3 S3 ✓ |
 
 **FR-DASH-01 — Dashboard file format**
 
@@ -4300,6 +4301,20 @@ and inline content.
 - **Why:** FR-DASH-12 validates before writing. A free write would let an
   invalid dashboard reach the user without anyone disobeying an instruction,
   which is a failure only code can prevent (same reasoning as FR-TASKM-11).
+
+**FR-DASH-20 — Built-in source: wip**
+
+- `wip` gives one row per area with active fronts, counted as FR-TASKM-41
+  does (distinct `#project` slugs with open, non-someday, non-future items,
+  plus one for loose items). Fields: `area`, `fronts`, `limit`, `over_by`
+  (`fronts − limit`), and `label` / `state` (`ok` | `bad`) / `reason` so the
+  `status` view renders it directly.
+- `limit` comes from the configured WIP limit and per-area overrides
+  (FR-TASKM-46). An area whose override is "no limit" has no `limit` or
+  `over_by` and is always `ok`.
+- **Why:** WIP is computed by code from `tasks.md` and the config. Without a
+  source, the model wrote the limit as inline text it had not read, and
+  counted next actions instead of fronts.
 
 ### 3.31 Agent-maintained data (FR-DATA)
 

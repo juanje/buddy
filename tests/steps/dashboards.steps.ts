@@ -1,6 +1,6 @@
 // tests/steps/dashboards.steps.ts — FR-DASH BDD steps.
 
-import { Given, Then, When } from "@cucumber/cucumber";
+import { After, Given, Then, When } from "@cucumber/cucumber";
 import assert from "node:assert/strict";
 import {
   existsSync,
@@ -14,7 +14,9 @@ import { dirname, join } from "node:path";
 
 import { deferredPath, logsIndexPath } from "../../backends/brain-paths";
 import { resolveDashboardContent } from "../../backends/dashboard/resolve";
+import { writeTaskWipLimit } from "../../backends/tasks/task-config";
 import { writeTasksFile } from "../../backends/tasks/task-file";
+import { setupGlobalConfigDir, teardownGlobalConfigDir } from "../support/global-config";
 import type { TaskItem } from "../../shared/task-types";
 import type { ResolvedDashboard, ResolvedSegment } from "../../shared/dashboard/types";
 import {
@@ -30,6 +32,7 @@ interface DashboardWorld extends BuddyWorld {
   dashboardBody?: string;
   resolved?: ResolvedDashboard;
   viewModel?: DashboardViewModel;
+  wipConfigDir?: string;
 }
 
 function root(this: DashboardWorld): string {
@@ -161,6 +164,57 @@ Given(
       },
     ];
     writeTasksFile(root.call(this), items, "2026-01-01");
+  },
+);
+
+Given("a global WIP limit of {int}", function (this: DashboardWorld, limit: number) {
+  this.wipConfigDir = setupGlobalConfigDir().configDir;
+  writeTaskWipLimit(limit);
+});
+
+After(function (this: DashboardWorld) {
+  if (this.wipConfigDir) {
+    teardownGlobalConfigDir(this.wipConfigDir);
+    this.wipConfigDir = undefined;
+  }
+});
+
+Given(
+  "tasks.md with {int} projects in area {string} and {int} project in area {string}",
+  function (this: DashboardWorld, nA: number, areaA: string, nB: number, areaB: string) {
+    const items: TaskItem[] = [];
+    let id = 1;
+    for (const [n, area] of [
+      [nA, areaA],
+      [nB, areaB],
+    ] as const) {
+      for (let i = 0; i < n; i += 1) {
+        items.push({ id, text: `Step ${id}`, done: false, next: false, area, project: `${area}-p${i}` });
+        id += 1;
+      }
+    }
+    writeTasksFile(root.call(this), items, "2026-01-01");
+  },
+);
+
+Then(
+  "segment {int} first widget row area is {string}",
+  function (this: DashboardWorld, index: number, area: string) {
+    assert.equal(String(widgetRows.call(this, index)[0]?.area), area);
+  },
+);
+
+Then(
+  "segment {int} first widget row over_by is {int}",
+  function (this: DashboardWorld, index: number, n: number) {
+    assert.equal(widgetRows.call(this, index)[0]?.over_by, n);
+  },
+);
+
+Then(
+  "segment {int} first widget row state is {string}",
+  function (this: DashboardWorld, index: number, state: string) {
+    assert.equal(String(widgetRows.call(this, index)[0]?.state), state);
   },
 );
 

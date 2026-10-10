@@ -296,6 +296,41 @@ Feature: Dashboard resolution
     Then segment 1 is a table widget with 1 rows and no error
     And segment 1 first widget row summary is "Recent entry"
 
+  @FR-DASH-20
+  Scenario: Wip source flags an area over its limit
+    Given an initialized buddy git repository
+    And a global WIP limit of 3
+    And tasks.md with 4 projects in area "work" and 1 project in area "home"
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: table
+        source: wip
+        where: over_by > 0
+        columns: [area, fronts, limit, over_by]
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-07"
+    Then segment 1 is a table widget with 1 rows and no error
+    And segment 1 first widget row area is "work"
+    And segment 1 first widget row over_by is 1
+
+  @FR-DASH-20
+  Scenario: Wip source renders as status cards
+    Given an initialized buddy git repository
+    And a global WIP limit of 3
+    And tasks.md with 4 projects in area "work" and 1 project in area "home"
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: status
+        source: wip
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-07"
+    Then segment 1 widget rows count is 2
+    And segment 1 first widget row state is "bad"
+
   @FR-DASH-04
   Scenario: Where filters overdue tasks by overdue_days
     Given an initialized buddy git repository

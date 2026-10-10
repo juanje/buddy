@@ -2236,6 +2236,24 @@
           "unit_tests": 2
         }
       ]
+    },
+    {
+      "id": "FR-DASH-20",
+      "title": "Dashboard source: wip",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Wip source flags an area over its limit",
+          "bdd": "pass",
+          "unit_tests": 2
+        },
+        {
+          "name": "Wip source renders as status cards",
+          "bdd": "pass",
+          "unit_tests": 2
+        }
+      ]
     }
   ]
 }

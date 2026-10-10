@@ -12,7 +12,7 @@ export type SourceDefinition = {
 };
 
 /** Built-in source names known to the dashboard engine. */
-export const BUILTIN_SOURCE_NAMES = ["tasks", "deferred", "projects", "logs", "journal"] as const;
+export const BUILTIN_SOURCE_NAMES = ["tasks", "deferred", "projects", "logs", "journal", "wip"] as const;
 
 export const TASKS_SOURCE: SourceDefinition = {
   dateField: "due",
@@ -66,7 +66,21 @@ export const JOURNAL_SOURCE: SourceDefinition = {
   },
 };
 
+/** Active fronts per area against the WIP limit (FR-DASH-20). Shaped for `status` too. */
+export const WIP_SOURCE: SourceDefinition = {
+  fields: {
+    area: { kind: "string" },
+    fronts: { kind: "number" },
+    limit: { kind: "number" },
+    over_by: { kind: "number" },
+    label: { kind: "string" },
+    state: { kind: "enum", values: ["ok", "bad"] },
+    reason: { kind: "string" },
+  },
+};
+
 export function sourceDefinition(name: string): SourceDefinition | undefined {
+  if (name === "wip") return WIP_SOURCE;
   if (name === "tasks") return TASKS_SOURCE;
   if (name === "deferred") return DEFERRED_SOURCE;
   if (name === "projects") return PROJECTS_SOURCE;

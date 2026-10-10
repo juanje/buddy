@@ -14,6 +14,9 @@ import {
   tasksFilePath,
 } from "../tasks/task-file";
 import { listKnownSourceNames } from "../../shared/dashboard/source-fields";
+import { computeActiveFronts } from "../active-fronts";
+import { readTaskConfig } from "../tasks/task-config";
+import type { TaskConfig } from "../../shared/task-types";
 import { parseLogsIndex } from "./logs-index";
 import { overdueDaysForTask, taskRowDisplayText } from "./task-row-text";
 
@@ -46,6 +49,9 @@ export function loadSourceRows(
   }
   if (source === "journal") {
     return { ok: true, rows: loadJournalRows(rootDir) };
+  }
+  if (source === "wip") {
+    return { ok: true, rows: loadWipRows(rootDir) };
   }
   const known = listKnownSourceNames().join(", ");
   return { ok: false, message: `Unknown source '${source}'. Known sources: ${known}` };
@@ -130,6 +136,34 @@ export function loadProjectsRows(rootDir: string): Record<string, unknown>[] {
     });
   }
   return rows;
+}
+
+/**
+ * One row per area with active fronts (FR-DASH-20). `limit` and `over_by` are
+ * absent for areas whose override is `null` (no limit). Same counting as the
+ * consolidation WIP check, so the dashboard and the deferred nudge agree.
+ */
+export function loadWipRows(rootDir: string, config: TaskConfig = readTaskConfig()): Record<string, unknown>[] {
+  const { perArea } = computeActiveFronts(rootDir);
+  return perArea
+    .map(({ area, count }) => {
+      const label = area === "(general)" ? area : `@${area}`;
+      const override = config.wipLimitOverrides?.[area];
+      if (override === null) {
+        return { area, fronts: count, label, state: "ok", reason: `${count}` };
+      }
+      const limit = override ?? config.wipLimit;
+      return {
+        area,
+        fronts: count,
+        limit,
+        over_by: count - limit,
+        label,
+        state: count > limit ? "bad" : "ok",
+        reason: `${count} / ${limit}`,
+      };
+    })
+    .sort((a, b) => b.fronts - a.fronts || a.area.localeCompare(b.area));
 }
 
 export function loadLogsRows(rootDir: string): Record<string, unknown>[] {

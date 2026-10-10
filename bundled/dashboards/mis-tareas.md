@@ -16,4 +16,8 @@ summary: Tablero mínimo sobre tasks.md
   source: tasks
   count: true
   where: state = next
+
+- view: status
+  title: WIP por área
+  source: wip
 ```

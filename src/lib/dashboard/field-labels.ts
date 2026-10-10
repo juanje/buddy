@@ -40,6 +40,11 @@ const DEFERRED_FIELDS: Record<AppLocale, Record<string, string>> = {
   },
 };
 
+const WIP_FIELDS: Record<AppLocale, Record<string, string>> = {
+  en: { area: "Area", fronts: "Active fronts", limit: "Limit", over_by: "Over by" },
+  es: { area: "Área", fronts: "Frentes activos", limit: "Límite", over_by: "Exceso" },
+};
+
 /** Display task field values like tasks.md (@area, #project). FR-DASH-10 */
 export function displayFieldValue(
   field: string,
@@ -48,7 +53,7 @@ export function displayFieldValue(
 ): string {
   const trimmed = value.trim();
   if (!trimmed) return "";
-  if (source === "tasks" && field === "area") return `@${trimmed}`;
+  if ((source === "tasks" || source === "wip") && field === "area") return `@${trimmed}`;
   if (source === "tasks" && field === "project") return `#${trimmed}`;
   return trimmed;
 }
@@ -63,6 +68,9 @@ export function humanizeFieldLabel(
   }
   if (source === "deferred" && DEFERRED_FIELDS[locale][field]) {
     return DEFERRED_FIELDS[locale][field];
+  }
+  if (source === "wip" && WIP_FIELDS[locale][field]) {
+    return WIP_FIELDS[locale][field];
   }
   const spaced = field.replace(/_/g, " ");
   return spaced.charAt(0).toUpperCase() + spaced.slice(1);

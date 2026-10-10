@@ -12,6 +12,7 @@ import {
   loadProjectsRows,
   loadSourceRows,
   loadTasksRows,
+  loadWipRows,
 } from "../../backends/dashboard/sources";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -91,6 +92,32 @@ describe("loadSourceRows", () => {
   it("loadLogsRows returns empty when logs index missing", () => {
     dir = mkdtempSync(join(tmpdir(), "dash-src-"));
     expect(loadLogsRows(dir)).toEqual([]);
+  });
+
+  it("loadWipRows compares fronts with the limit and honours no-limit overrides", () => {
+    dir = mkdtempSync(join(tmpdir(), "dash-src-"));
+    writeTasksFile(
+      dir,
+      [
+        { id: 1, text: "a", done: false, next: false, area: "work", project: "p1" },
+        { id: 2, text: "b", done: false, next: false, area: "work", project: "p2" },
+        { id: 3, text: "c", done: false, next: false, area: "work" },
+        { id: 4, text: "d", done: false, next: false, area: "blog", project: "p3" },
+        { id: 5, text: "e", done: false, next: false, area: "blog", project: "p4" },
+      ],
+      "2026-01-01",
+    );
+    const rows = loadWipRows(dir, { wipLimit: 2, wipLimitOverrides: { blog: null } });
+    const work = rows.find((r) => r.area === "work");
+    const blog = rows.find((r) => r.area === "blog");
+    expect(work).toMatchObject({ fronts: 3, limit: 2, over_by: 1, state: "bad", label: "@work" });
+    expect(blog).toMatchObject({ fronts: 2, state: "ok" });
+    expect(blog?.limit).toBeUndefined();
+  });
+
+  it("loadWipRows is empty without tasks", () => {
+    dir = mkdtempSync(join(tmpdir(), "dash-src-"));
+    expect(loadWipRows(dir, { wipLimit: 3 })).toEqual([]);
   });
 
   it("loadProjectsRows reads summary and open task counts", () => {
