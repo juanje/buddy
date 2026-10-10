@@ -2088,9 +2088,35 @@
     {
       "id": "FR-DASH-18",
       "title": "Dashboard sources: projects, logs, journal",
-      "status": "pending",
-      "cycle_step": "spec_review",
-      "scenarios": []
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Projects source exposes computed task fields",
+          "bdd": "pass",
+          "unit_tests": 3
+        },
+        {
+          "name": "Logs source parses logs index lines",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Journal source lists entry dates",
+          "bdd": "pass",
+          "unit_tests": 2
+        },
+        {
+          "name": "Missing journal directory yields zero rows",
+          "bdd": "pass",
+          "unit_tests": 2
+        },
+        {
+          "name": "Logs source respects range filter",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
     },
     {
       "id": "FR-DASH-12",

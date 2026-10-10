@@ -41,9 +41,37 @@ export const DEFERRED_SOURCE: SourceDefinition = {
   },
 };
 
+export const PROJECTS_SOURCE: SourceDefinition = {
+  fields: {
+    name: { kind: "string" },
+    summary: { kind: "string" },
+    open_tasks: { kind: "number" },
+    next_action: { kind: "string" },
+  },
+};
+
+export const LOGS_SOURCE: SourceDefinition = {
+  dateField: "date",
+  fields: {
+    date: { kind: "date" },
+    status: { kind: "string" },
+    summary: { kind: "string" },
+  },
+};
+
+export const JOURNAL_SOURCE: SourceDefinition = {
+  dateField: "date",
+  fields: {
+    date: { kind: "date" },
+  },
+};
+
 export function sourceDefinition(name: string): SourceDefinition | undefined {
   if (name === "tasks") return TASKS_SOURCE;
   if (name === "deferred") return DEFERRED_SOURCE;
+  if (name === "projects") return PROJECTS_SOURCE;
+  if (name === "logs") return LOGS_SOURCE;
+  if (name === "journal") return JOURNAL_SOURCE;
   return undefined;
 }
 

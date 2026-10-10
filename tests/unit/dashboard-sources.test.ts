@@ -5,7 +5,16 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it, afterEach } from "vitest";
 
-import { loadDeferredRows, loadSourceRows, loadTasksRows } from "../../backends/dashboard/sources";
+import {
+  loadDeferredRows,
+  loadJournalRows,
+  loadLogsRows,
+  loadProjectsRows,
+  loadSourceRows,
+  loadTasksRows,
+} from "../../backends/dashboard/sources";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { writeTasksFile } from "../../backends/tasks/task-file";
 import { taskState } from "../../backends/tasks/task-file";
 
@@ -67,5 +76,44 @@ describe("loadSourceRows", () => {
   it("loadDeferredRows returns empty when file missing", () => {
     dir = mkdtempSync(join(tmpdir(), "dash-src-"));
     expect(loadDeferredRows(dir)).toEqual([]);
+  });
+
+  it("loadProjectsRows returns empty when projects directory missing", () => {
+    dir = mkdtempSync(join(tmpdir(), "dash-src-"));
+    expect(loadProjectsRows(dir)).toEqual([]);
+  });
+
+  it("loadJournalRows returns empty when journal directory missing", () => {
+    dir = mkdtempSync(join(tmpdir(), "dash-src-"));
+    expect(loadJournalRows(dir)).toEqual([]);
+  });
+
+  it("loadLogsRows returns empty when logs index missing", () => {
+    dir = mkdtempSync(join(tmpdir(), "dash-src-"));
+    expect(loadLogsRows(dir)).toEqual([]);
+  });
+
+  it("loadProjectsRows reads summary and open task counts", () => {
+    dir = mkdtempSync(join(tmpdir(), "dash-src-"));
+    const projectsDir = join(dir, "user", "projects");
+    mkdirSync(projectsDir, { recursive: true });
+    writeFileSync(
+      join(projectsDir, "demo.md"),
+      "---\nsummary: Demo project\ncreated: 2026-01-01\n---\n",
+      "utf8",
+    );
+    writeTasksFile(
+      dir,
+      [
+        { id: 1, text: "Step one", done: false, next: true, area: "work", project: "demo" },
+        { id: 2, text: "Step two", done: false, next: false, area: "work", project: "demo" },
+      ],
+      "2026-01-01",
+    );
+    const rows = loadProjectsRows(dir);
+    expect(rows[0]?.name).toBe("demo");
+    expect(rows[0]?.summary).toBe("Demo project");
+    expect(rows[0]?.open_tasks).toBe(2);
+    expect(rows[0]?.next_action).toBe("Step one");
   });
 });

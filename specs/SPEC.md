@@ -4070,7 +4070,7 @@ and inline content.
 | FR-DASH-15 | Export: static HTML from the rendered dashboard + PDF, date range, sensitive warning | 3 S7 |
 | FR-DASH-16 | Consolidation refreshes only `refresh`-tagged inline blocks | 3 S6 |
 | FR-DASH-17 | Git-history source (e.g. tasks completed per week) | 4 |
-| FR-DASH-18 | Built-in sources: `projects`, `logs`, `journal` | 3 S3 |
+| FR-DASH-18 | Built-in sources: `projects`, `logs`, `journal` | 3 S3 ✓ |
 | FR-DASH-19 | Direct file-tool writes into `user/dashboards/` denied; reads allowed | 3 S3 |
 
 **FR-DASH-01 — Dashboard file format**

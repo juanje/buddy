@@ -203,6 +203,99 @@ Feature: Dashboard resolution
     Then segment 1 widget result is an error mentioning "jira"
     And segment 1 widget result is an error mentioning "tasks"
 
+  @FR-DASH-18
+  Scenario: Projects source exposes computed task fields
+    Given an initialized buddy git repository
+    And a project file "alpha.md" with summary "Alpha outcome"
+    And tasks.md with open tasks for project "alpha"
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: table
+        source: projects
+        columns: [name, summary, open_tasks, next_action]
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-07"
+    Then segment 1 is a table widget with 1 rows and no error
+    And segment 1 first widget row name is "alpha"
+    And segment 1 first widget row summary is "Alpha outcome"
+    And segment 1 first widget row open_tasks is 2
+    And segment 1 first widget row next_action is "Next alpha step"
+
+  @FR-DASH-18
+  Scenario: Logs source parses logs index lines
+    Given an initialized buddy git repository
+    And logs index with lines:
+      """
+      - 2026-10-01: active — First day
+      - 2026-10-02: maintenance — Weekly run
+      """
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: table
+        source: logs
+        columns: [date, status, summary]
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-07"
+    Then segment 1 is a table widget with 2 rows and no error
+    And segment 1 first widget row status is "active"
+
+  @FR-DASH-18
+  Scenario: Journal source lists entry dates
+    Given an initialized buddy git repository
+    And a journal entry at "2026/10/01.md"
+    And a journal entry at "2026/10/05.md"
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: table
+        source: journal
+        columns: [date]
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-07"
+    Then segment 1 is a table widget with 2 rows and no error
+    And segment 1 first widget row date is "2026-10-01"
+
+  @FR-DASH-18
+  Scenario: Missing journal directory yields zero rows
+    Given an initialized buddy git repository
+    And user journal directory does not exist
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: counter
+        source: journal
+        count: true
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-07"
+    Then segment 1 widget value is 0
+
+  @FR-DASH-18
+  Scenario: Logs source respects range filter
+    Given an initialized buddy git repository
+    And logs index with lines:
+      """
+      - 2026-09-20: active — Old entry
+      - 2026-10-05: active — Recent entry
+      """
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: table
+        source: logs
+        range: -14d..today
+        columns: [date, summary]
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-07"
+    Then segment 1 is a table widget with 1 rows and no error
+    And segment 1 first widget row summary is "Recent entry"
+
   @FR-DASH-04
   Scenario: Where filters overdue tasks by overdue_days
     Given an initialized buddy git repository

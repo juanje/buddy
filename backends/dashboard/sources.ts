@@ -1,9 +1,11 @@
 // backends/dashboard/sources.ts — Load rows for built-in sources (FR-DASH-05).
 
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 
 import { isContained } from "../containment";
-import { deferredPath } from "../brain-paths";
+import { deferredPath, logsIndexPath } from "../brain-paths";
+import { parseFrontmatter } from "../../shared/frontmatter";
 import { parseDeferredItems } from "../deferred";
 import {
   buildListResult,
@@ -12,6 +14,7 @@ import {
   tasksFilePath,
 } from "../tasks/task-file";
 import { listKnownSourceNames } from "../../shared/dashboard/source-fields";
+import { parseLogsIndex } from "./logs-index";
 import { overdueDaysForTask, taskRowDisplayText } from "./task-row-text";
 
 export type SourceLoadResult =
@@ -34,6 +37,15 @@ export function loadSourceRows(
     const blocked = assertSourcePath(rootDir, path, "deferred");
     if (blocked) return blocked;
     return { ok: true, rows: loadDeferredRows(rootDir) };
+  }
+  if (source === "projects") {
+    return { ok: true, rows: loadProjectsRows(rootDir) };
+  }
+  if (source === "logs") {
+    return { ok: true, rows: loadLogsRows(rootDir) };
+  }
+  if (source === "journal") {
+    return { ok: true, rows: loadJournalRows(rootDir) };
   }
   const known = listKnownSourceNames().join(", ");
   return { ok: false, message: `Unknown source '${source}'. Known sources: ${known}` };
@@ -85,4 +97,84 @@ export function loadDeferredRows(rootDir: string): Record<string, unknown>[] {
     source: item.source,
     text: item.text,
   }));
+}
+
+export function loadProjectsRows(rootDir: string): Record<string, unknown>[] {
+  const projectsDir = join(rootDir, "user", "projects");
+  if (!existsSync(projectsDir)) return [];
+  const { items } = readTasksFile(rootDir);
+  const openTasks = items.filter((item) => !item.done);
+
+  let files: string[];
+  try {
+    files = readdirSync(projectsDir).filter((f) => f.endsWith(".md")).sort();
+  } catch {
+    return [];
+  }
+
+  const rows: Record<string, unknown>[] = [];
+  for (const file of files) {
+    const name = file.replace(/\.md$/, "");
+    const abs = join(projectsDir, file);
+    if (!isContained(abs, rootDir)) continue;
+    const content = readFileSync(abs, "utf8");
+    const fm = parseFrontmatter(content);
+    const projectTasks = openTasks.filter((t) => t.project === name);
+    const nextMarked = projectTasks.find((t) => t.next);
+    const next_action = nextMarked?.text ?? projectTasks[0]?.text ?? "";
+    rows.push({
+      name,
+      summary: fm.summary ?? "",
+      open_tasks: projectTasks.length,
+      next_action,
+    });
+  }
+  return rows;
+}
+
+export function loadLogsRows(rootDir: string): Record<string, unknown>[] {
+  const path = logsIndexPath(rootDir);
+  if (!isContained(path, rootDir)) return [];
+  if (!existsSync(path)) return [];
+  return parseLogsIndex(readFileSync(path, "utf8")).map((row) => ({ ...row }));
+}
+
+export function loadJournalRows(rootDir: string): Record<string, unknown>[] {
+  const base = join(rootDir, "user", "journal");
+  if (!existsSync(base)) return [];
+  const rows: Record<string, unknown>[] = [];
+
+  const walk = (dir: string) => {
+    let entries;
+    try {
+      entries = readdirSync(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const ent of entries) {
+      const abs = join(dir, ent.name);
+      if (!isContained(abs, rootDir)) continue;
+      if (ent.isDirectory()) {
+        walk(abs);
+        continue;
+      }
+      const isoFromName = /^(\d{4}-\d{2}-\d{2})\.md$/.exec(ent.name);
+      if (isoFromName) {
+        rows.push({ date: isoFromName[1] });
+        continue;
+      }
+      const dayFile = /^(\d{2})\.md$/.exec(ent.name);
+      if (dayFile) {
+        const monthDir = dir.split(/[/\\]/).pop();
+        const yearDir = dir.split(/[/\\]/).slice(-2, -1)[0];
+        if (monthDir && yearDir && /^\d{4}$/.test(yearDir) && /^\d{2}$/.test(monthDir)) {
+          rows.push({ date: `${yearDir}-${monthDir}-${dayFile[1]}` });
+        }
+      }
+    }
+  };
+
+  walk(base);
+  rows.sort((a, b) => String(a.date).localeCompare(String(b.date)));
+  return rows;
 }

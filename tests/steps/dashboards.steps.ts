@@ -2,10 +2,17 @@
 
 import { Given, Then, When } from "@cucumber/cucumber";
 import assert from "node:assert/strict";
-import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  unlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { dirname, join } from "node:path";
 
-import { deferredPath } from "../../backends/brain-paths";
+import { deferredPath, logsIndexPath } from "../../backends/brain-paths";
 import { resolveDashboardContent } from "../../backends/dashboard/resolve";
 import { writeTasksFile } from "../../backends/tasks/task-file";
 import type { TaskItem } from "../../shared/task-types";
@@ -117,6 +124,66 @@ Given("tasks.md with a stale open task", function (this: DashboardWorld) {
     },
   ];
   writeTasksFile(root.call(this), items, "2025-08-01");
+});
+
+Given(
+  "a project file {string} with summary {string}",
+  function (this: DashboardWorld, fileName: string, summary: string) {
+    const dir = join(root.call(this), "user", "projects");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(
+      join(dir, fileName),
+      `---\nsummary: ${summary}\ncreated: 2026-01-01\n---\n\n# Project\n`,
+      "utf8",
+    );
+  },
+);
+
+Given(
+  "tasks.md with open tasks for project {string}",
+  function (this: DashboardWorld, project: string) {
+    const items: TaskItem[] = [
+      {
+        id: 1,
+        text: "Next alpha step",
+        done: false,
+        next: true,
+        area: "work",
+        project,
+      },
+      {
+        id: 2,
+        text: "Other alpha step",
+        done: false,
+        next: false,
+        area: "work",
+        project,
+      },
+    ];
+    writeTasksFile(root.call(this), items, "2026-01-01");
+  },
+);
+
+Given("logs index with lines:", function (this: DashboardWorld, body: string) {
+  const path = logsIndexPath(root.call(this));
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, `${body.trim()}\n`, "utf8");
+});
+
+Given(
+  "a journal entry at {string}",
+  function (this: DashboardWorld, relPath: string) {
+    const abs = join(root.call(this), "user", "journal", relPath);
+    mkdirSync(dirname(abs), { recursive: true });
+    writeFileSync(abs, "# Journal\n", "utf8");
+  },
+);
+
+Given("user journal directory does not exist", function (this: DashboardWorld) {
+  const dir = join(root.call(this), "user", "journal");
+  if (existsSync(dir)) {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 Given("tasks.md does not exist", function (this: DashboardWorld) {
@@ -340,6 +407,68 @@ Then(
   function (this: DashboardWorld, index: number, done: string) {
     const rows = widgetRows.call(this, index);
     assert.equal(String(rows[0]?.done), done);
+  },
+);
+
+Then(
+  "segment {int} first widget row name is {string}",
+  function (this: DashboardWorld, index: number, name: string) {
+    const rows = widgetRows.call(this, index);
+    assert.equal(String(rows[0]?.name), name);
+  },
+);
+
+Then(
+  "segment {int} first widget row summary is {string}",
+  function (this: DashboardWorld, index: number, summary: string) {
+    const rows = widgetRows.call(this, index);
+    assert.equal(String(rows[0]?.summary), summary);
+  },
+);
+
+Then(
+  "segment {int} first widget row open_tasks is {int}",
+  function (this: DashboardWorld, index: number, count: number) {
+    const rows = widgetRows.call(this, index);
+    assert.equal(rows[0]?.open_tasks, count);
+  },
+);
+
+Then(
+  "segment {int} first widget row next_action is {string}",
+  function (this: DashboardWorld, index: number, text: string) {
+    const rows = widgetRows.call(this, index);
+    assert.equal(String(rows[0]?.next_action), text);
+  },
+);
+
+Then(
+  "segment {int} first widget row status is {string}",
+  function (this: DashboardWorld, index: number, status: string) {
+    const rows = widgetRows.call(this, index);
+    assert.equal(String(rows[0]?.status), status);
+  },
+);
+
+Then(
+  "segment {int} first widget row date is {string}",
+  function (this: DashboardWorld, index: number, date: string) {
+    const rows = widgetRows.call(this, index);
+    assert.equal(String(rows[0]?.date), date);
+  },
+);
+
+Then(
+  "segment {int} widget value is {int}",
+  function (this: DashboardWorld, index: number, value: number) {
+    const seg = segments.call(this)[index - 1];
+    assert.equal(seg.kind, "widget");
+    if (seg.kind === "widget") {
+      assert.equal(seg.result.kind, "value");
+      if (seg.result.kind === "value") {
+        assert.equal(seg.result.value, value);
+      }
+    }
   },
 );
 
