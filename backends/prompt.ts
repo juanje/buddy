@@ -11,6 +11,7 @@ import { globalConfigDir } from "./global-config";
 import { getEmbeddedAssets } from "./embedded-assets";
 import { defaultTemplatesDir } from "./create-buddy";
 import { dailyLogPath, deferredPath, logsDirPath, logsIndexPath, soulPath, userProfilePath } from "./brain-paths";
+import { lastLogIndexDate, parseLogsIndex } from "./logs-index";
 import { BRAIN } from "../shared/brain-paths";
 
 export function formatPlainDate(d: Date): string {
@@ -233,11 +234,7 @@ function findLastLog(rootDir: string, indexContent: string | undefined): string 
     return findMostRecentLogFile(rootDir);
   }
 
-  let lastDate: string | undefined;
-  for (const line of indexContent.split("\n")) {
-    const match = /^- (\d{4}-\d{2}-\d{2})/.exec(line);
-    if (match) lastDate = match[1];
-  }
+  const lastDate = lastLogIndexDate(parseLogsIndex(indexContent));
 
   if (lastDate) {
     return readIfExists(dailyLogPath(rootDir, lastDate));

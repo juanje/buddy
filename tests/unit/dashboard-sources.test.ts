@@ -5,6 +5,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it, afterEach } from "vitest";
 
+import { applyWidgetQuery } from "../../shared/dashboard/query";
+import { sourceDefinition } from "../../shared/dashboard/source-fields";
 import {
   loadDeferredRows,
   loadJournalRows,
@@ -89,9 +91,47 @@ describe("loadSourceRows", () => {
     expect(loadJournalRows(dir)).toEqual([]);
   });
 
+  it("loadJournalRows lists entry dates from journal files", () => {
+    dir = mkdtempSync(join(tmpdir(), "dash-src-"));
+    const dayDir = join(dir, "user", "journal", "2026", "10");
+    mkdirSync(dayDir, { recursive: true });
+    writeFileSync(join(dayDir, "01.md"), "# Oct 1\n", "utf8");
+    writeFileSync(join(dayDir, "05.md"), "# Oct 5\n", "utf8");
+    const dates = loadJournalRows(dir).map((row) => row.date);
+    expect(dates.sort()).toEqual(["2026-10-01", "2026-10-05"]);
+  });
+
   it("loadLogsRows returns empty when logs index missing", () => {
     dir = mkdtempSync(join(tmpdir(), "dash-src-"));
     expect(loadLogsRows(dir)).toEqual([]);
+  });
+
+  it("logs source range filter keeps rows inside the window", () => {
+    dir = mkdtempSync(join(tmpdir(), "dash-src-"));
+    mkdirSync(join(dir, "logs"), { recursive: true });
+    writeFileSync(
+      join(dir, "logs", "index.md"),
+      "- 2026-09-20: active — Old entry\n- 2026-10-05: active — Recent entry\n",
+      "utf8",
+    );
+    const rows = loadLogsRows(dir);
+    const def = sourceDefinition("logs")!;
+    const queried = applyWidgetQuery(
+      rows,
+      {
+        view: "table",
+        source: "logs",
+        raw: { range: "-14d..today", columns: ["date", "summary"] },
+      },
+      "logs",
+      def,
+      "2026-10-07",
+    );
+    expect(queried.ok).toBe(true);
+    if (queried.ok && queried.result.kind === "rows") {
+      expect(queried.result.rows).toHaveLength(1);
+      expect(queried.result.rows[0]?.summary).toBe("Recent entry");
+    }
   });
 
   it("loadWipRows compares fronts with the limit and honours no-limit overrides", () => {

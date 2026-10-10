@@ -9,7 +9,7 @@ import { parseFrontmatter } from "../shared/frontmatter";
 import { brainDirPath, logsIndexPath } from "./brain-paths";
 import { BRAIN, BRAIN_PREFIX, BRAIN_SUBDIRS, INDEX_SUFFIX, dirPrefix } from "../shared/brain-paths";
 
-const LOG_INDEX_ACTIVE_RE = /^-\s+(\d{4}-\d{2}-\d{2}):\s+active\b/;
+import { activeLogIndexDates, parseLogsIndex } from "./logs-index";
 
 const BRAIN_EXCLUDED_PREFIXES = [
   dirPrefix(BRAIN_SUBDIRS.identity),
@@ -69,12 +69,7 @@ function readLogsIndex(rootDir: string): string {
 }
 
 function parseActiveSessionDates(indexContent: string): string[] {
-  const dates: string[] = [];
-  for (const line of indexContent.split("\n")) {
-    const match = LOG_INDEX_ACTIVE_RE.exec(line.trim());
-    if (match) dates.push(match[1]);
-  }
-  return dates;
+  return activeLogIndexDates(parseLogsIndex(indexContent));
 }
 
 function countActiveSessionsSince(activeDates: string[], sinceDate: string): number {

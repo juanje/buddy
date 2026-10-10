@@ -2099,7 +2099,7 @@
         {
           "name": "Projects source exposes computed task fields",
           "bdd": "pass",
-          "unit_tests": 3
+          "unit_tests": 1
         },
         {
           "name": "Logs source parses logs index lines",
@@ -2109,19 +2109,25 @@
         {
           "name": "Journal source lists entry dates",
           "bdd": "pass",
-          "unit_tests": 2
+          "unit_tests": 1
         },
         {
           "name": "Missing journal directory yields zero rows",
           "bdd": "pass",
-          "unit_tests": 2
+          "unit_tests": 1
         },
         {
           "name": "Logs source respects range filter",
           "bdd": "pass",
           "unit_tests": 1
+        },
+        {
+          "name": "Logs source accepts index line without summary",
+          "bdd": "pass",
+          "unit_tests": 1
         }
-      ]
+      ],
+      "note": "reopened: unified parseLogsIndex"
     },
     {
       "id": "FR-DASH-12",

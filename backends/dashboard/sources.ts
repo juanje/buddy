@@ -17,7 +17,7 @@ import { listKnownSourceNames } from "../../shared/dashboard/source-fields";
 import { computeActiveFronts } from "../active-fronts";
 import { readTaskConfig } from "../tasks/task-config";
 import type { TaskConfig } from "../../shared/task-types";
-import { parseLogsIndex } from "./logs-index";
+import { parseLogsIndex } from "../logs-index";
 import { overdueDaysForTask, taskRowDisplayText } from "./task-row-text";
 
 export type SourceLoadResult =

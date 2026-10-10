@@ -4295,8 +4295,8 @@ and inline content.
   (file name), `summary`, `open_tasks` and `next_action` (from tasks tagged
   `#<name>`). Other project frontmatter is written by the model and is not
   exposed.
-- `logs` reads `logs/index.md` (`- YYYY-MM-DD: status — summary` lines):
-  `date`, `status`, `summary`.
+- `logs` reads `logs/index.md` (`- YYYY-MM-DD: status` with optional
+  ` — summary`): `date`, `status`, `summary` (empty when omitted).
 - `journal` reads entry dates from `user/journal/YYYY/MM/DD.md`: `date`.
 
 **FR-DASH-19 — Dashboards are written only through `dashboard()`**

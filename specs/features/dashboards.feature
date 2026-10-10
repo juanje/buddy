@@ -224,6 +224,27 @@ Feature: Dashboard resolution
     And segment 1 first widget row next_action is "Next alpha step"
 
   @FR-DASH-18
+  Scenario: Logs source accepts index line without summary
+    Given an initialized buddy git repository
+    And logs index with lines:
+      """
+      - 2026-10-03: active
+      """
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: table
+        source: logs
+        columns: [date, status, summary]
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-07"
+    Then segment 1 is a table widget with 1 rows and no error
+    And segment 1 first widget row date is "2026-10-03"
+    And segment 1 first widget row status is "active"
+    And segment 1 first widget row summary is ""
+
+  @FR-DASH-18
   Scenario: Logs source parses logs index lines
     Given an initialized buddy git repository
     And logs index with lines:
