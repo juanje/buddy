@@ -2285,9 +2285,14 @@
           "name": "Help shows where syntax",
           "bdd": "pass",
           "unit_tests": 1
+        },
+        {
+          "name": "Create keeps the given frontmatter and adds the dashboard type",
+          "bdd": "pass",
+          "unit_tests": 1
         }
       ],
-      "note": "reopened: help had no where syntax; agent guessed == and query:"
+      "note": "reopened: create prepended a second frontmatter when type was missing"
     },
     {
       "id": "FR-DASH-19",

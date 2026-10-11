@@ -234,6 +234,25 @@ Feature: Dashboard tool
     And dashboard file "user/dashboards/demo.md" exists
 
   @FR-DASH-12
+  Scenario: Create keeps the given frontmatter and adds the dashboard type
+    Given an initialized buddy git repository
+    When dashboard action "create" is invoked with name "paises-4" and content:
+      """
+      ---
+      title: Países 4
+      summary: Países por región
+      ---
+      ```dashboard
+      - view: text
+        text: Hello
+      ```
+      """
+    Then dashboard tool succeeded
+    And dashboard file "paises-4.md" contains "type: dashboard"
+    And dashboard file "paises-4.md" contains "title: Países 4"
+    And dashboard file "paises-4.md" does not contain "title: paises-4"
+
+  @FR-DASH-12
   Scenario: Create invalid dashboard does not write
     Given an initialized buddy git repository
     When dashboard action "create" is invoked with name "bad" and content:

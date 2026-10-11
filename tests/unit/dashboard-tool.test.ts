@@ -379,6 +379,19 @@ type: dashboard
     expect(out.text).toMatch(/list: fields/);
   });
 
+  it("create adds type to the given frontmatter instead of prepending one", () => {
+    dir = mkdtempSync(join(tmpdir(), "dash-tool-"));
+    const content =
+      "---\ntitle: Países 4\nsummary: Países por región\n---\n```dashboard\n- view: text\n  text: Hello\n```\n";
+    const out = executeDashboardAction(dir, "create", { name: "paises-4", content });
+    expect(out.ok).toBe(true);
+    const text = readFileSync(join(dir, "user/dashboards/paises-4.md"), "utf8");
+    expect(text.match(/^---$/gm)).toHaveLength(2);
+    expect(text).toContain("type: dashboard");
+    expect(text).toContain("title: Países 4");
+    expect(text).toContain("summary: Países por región");
+  });
+
   it("help shows where syntax", () => {
     dir = mkdtempSync(join(tmpdir(), "dash-tool-"));
     const out = executeDashboardAction(dir, "help");

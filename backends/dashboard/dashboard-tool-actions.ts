@@ -131,6 +131,9 @@ function writeAtomic(rootDir: string, relPath: string, content: string): void {
 
 function ensureDashboardFile(content: string, name: string): string {
   if (content.includes("type: dashboard")) return content;
+  if (/^---\r?\n[\s\S]*?\r?\n---/.test(content)) {
+    return content.replace(/^---\r?\n/, "---\ntype: dashboard\n");
+  }
   return `---\ntype: dashboard\ntitle: ${name}\n---\n\n${content.trim()}\n`;
 }
 

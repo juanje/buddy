@@ -4308,7 +4308,9 @@ and inline content.
   Each distinct error appears once.
 - `create` / `update`: validate, then write atomically into `user/dashboards/`.
   An invalid definition is refused with the same errors and nothing is
-  written. `update` takes one of: `title` / `summary` (changes only those
+  written. Content whose frontmatter lacks `type: dashboard` gets that line
+  added to the same frontmatter (its `title` and `summary` kept); a second
+  frontmatter block is never prepended. `update` takes one of: `title` / `summary` (changes only those
   frontmatter lines; the rest of the file stays byte-for-byte), `widget_title`
   + `widget` (replaces the one widget with that title), or `content`
   (rewrites the file).
