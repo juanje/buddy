@@ -3,8 +3,16 @@
 import { describe, expect, it } from "vitest";
 
 import { addMonths, applyWidgetQuery } from "../../shared/dashboard/query";
-import { TASKS_SOURCE } from "../../shared/dashboard/source-fields";
+import { TASKS_SOURCE, type SourceDefinition } from "../../shared/dashboard/source-fields";
 import type { WidgetSpec } from "../../shared/dashboard/types";
+
+const REGIONS_SOURCE: SourceDefinition = {
+  fields: {
+    name: { kind: "string" },
+    region: { kind: "string" },
+    "sub-region": { kind: "string" },
+  },
+};
 
 describe("addMonths", () => {
   it("clamps to last day of target month", () => {
@@ -66,6 +74,50 @@ describe("applyWidgetQuery", () => {
     );
     expect(out.ok).toBe(false);
     if (!out.ok) expect(out.message).toMatch(/not a number/i);
+  });
+
+  it("rejects where as a non-string value", () => {
+    const out = applyWidgetQuery(
+      rows,
+      spec({ where: { region: "Europe" } }),
+      "series",
+      TASKS_SOURCE,
+      today,
+    );
+    expect(out.ok).toBe(false);
+    if (!out.ok) expect(out.message).toMatch(/where must be a string/i);
+  });
+
+  it("rejects double equals in where with a hint", () => {
+    const regionRows = [{ name: "Spain", region: "Europe" }];
+    const out = applyWidgetQuery(
+      regionRows,
+      spec({ where: "region == Europe" }),
+      "series",
+      REGIONS_SOURCE,
+      today,
+    );
+    expect(out.ok).toBe(false);
+    if (!out.ok) expect(out.message).toMatch(/Use '=' instead of '=='/);
+  });
+
+  it("filters hyphenated field names in where", () => {
+    const regionRows = [
+      { name: "Spain", region: "Europe", "sub-region": "Southern Europe" },
+      { name: "Norway", region: "Europe", "sub-region": "Northern Europe" },
+    ];
+    const out = applyWidgetQuery(
+      regionRows,
+      spec({ where: "sub-region = Southern Europe" }),
+      "series",
+      REGIONS_SOURCE,
+      today,
+    );
+    expect(out.ok).toBe(true);
+    if (out.ok && out.result.kind === "rows") {
+      expect(out.result.rows).toHaveLength(1);
+      expect(out.result.rows[0]?.name).toBe("Spain");
+    }
   });
 
   it("groups enum fields in declared order", () => {

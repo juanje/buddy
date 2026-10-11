@@ -529,6 +529,68 @@ Feature: Dashboard resolution
     When the dashboard is resolved for today "2026-10-07"
     Then segment 1 widget result is an error mentioning "quote"
 
+  @FR-DASH-04
+  Scenario: Where as a map is a widget error
+    Given an initialized buddy git repository
+    And a csv file at "user/data/where-map.csv" with content:
+      """
+      name,region
+      Spain,Europe
+      """
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: table
+        source: series
+        path: user/data/where-map.csv
+        where:
+          region: Europe
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-07"
+    Then segment 1 widget result is an error mentioning "where must be a string"
+
+  @FR-DASH-04
+  Scenario: Where with double equals suggests single equals
+    Given an initialized buddy git repository
+    And a csv file at "user/data/where-eq.csv" with content:
+      """
+      name,region
+      Spain,Europe
+      """
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: table
+        source: series
+        path: user/data/where-eq.csv
+        where: region == Europe
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-07"
+    Then segment 1 widget result is an error mentioning "Use '='"
+
+  @FR-DASH-04
+  Scenario: Where accepts hyphenated field names
+    Given an initialized buddy git repository
+    And a csv file at "user/data/where-hyphen.csv" with content:
+      """
+      name,region,sub-region
+      Spain,Europe,Southern Europe
+      Norway,Europe,Northern Europe
+      """
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: table
+        source: series
+        path: user/data/where-hyphen.csv
+        where: sub-region = Southern Europe
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-07"
+    Then segment 1 widget row count is 1
+
   @FR-DASH-02
   Scenario: Dashboard under user/dashboards opens wide with a resolved model
     Given a filesystem buddy root at "/tmp/buddy-dash-view-1"

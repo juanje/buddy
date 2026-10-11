@@ -4151,7 +4151,14 @@ and inline content.
 
 - Per widget, applied in this order: `range`, `where`, `sort`, `limit`,
   `group`, then `count` or `sum`.
+- `where`, `sort`, `group`, and `range` must be strings in the widget YAML. A
+  map, list, or other type is a widget error stating the expected form (for
+  example `where must be a string like 'region = Europe'`).
 - `where` is a string expression parsed by code: comparisons joined by `and`.
+  Field names may include hyphens (for example `sub-region = Southern Europe`).
+  Double equals (`==`) is a widget error with a hint to use single `=`
+  (for example `Use '=' instead of '==' (where: region = Europe)`). A filter
+  value that starts with `=` is treated the same way.
   Operators: `=`, `!=`, `<`, `<=`, `>`, `>=`, `contains`. Numeric fields use
   numeric comparison for `<`, `<=`, `>`, and `>=`; a non-numeric filter value
   is a widget error. Values: bare words, quoted strings, numbers, ISO dates

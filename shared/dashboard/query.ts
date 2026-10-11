@@ -24,17 +24,30 @@ function normalizeCompareValue(raw: string): string {
   return v;
 }
 
+const WHERE_DOUBLE_EQUALS_HINT =
+  "Use '=' instead of '==' (where: region = Europe)";
+
+function rejectDoubleEqualsInWhere(part: string): void {
+  if (part.includes("==")) {
+    throw new Error(WHERE_DOUBLE_EQUALS_HINT);
+  }
+}
+
 function splitWhereClauses(where: string): Clause[] {
   const parts = where.split(/\s+and\s+/i).map((p) => p.trim()).filter(Boolean);
   const clauses: Clause[] = [];
   for (const part of parts) {
+    rejectDoubleEqualsInWhere(part);
     const match =
-      /^(\w+)\s*(=|!=|<=|>=|<|>|contains)\s*(.*)$/i.exec(part) ??
-      /^(\w+)\s*(=|!=|<=|>=|<|>)\s*$/i.exec(part);
+      /^([\w-]+)\s*(=|!=|<=|>=|<|>|contains)\s*(.*)$/i.exec(part) ??
+      /^([\w-]+)\s*(=|!=|<=|>=|<|>)\s*$/i.exec(part);
     if (!match) {
       throw new Error(`Cannot parse where clause '${part}'`);
     }
     const value = (match[3] ?? "").trim();
+    if (value.startsWith("=")) {
+      throw new Error(WHERE_DOUBLE_EQUALS_HINT);
+    }
     if (value === "" && (match[2] === "=" || match[2] === "!=")) {
       throw new Error(
         "Filter value is empty. Quote values that start with # or @ (for example where: 'project = #buddy').",
@@ -224,6 +237,24 @@ function rangeStringFromBounds(start: string, end: string): string {
   return `${start}..${end}`;
 }
 
+function expectQueryStringField(
+  raw: Record<string, unknown>,
+  key: "where" | "sort" | "group" | "range",
+): QueryOutcome | undefined {
+  const val = raw[key];
+  if (val === undefined) return undefined;
+  if (typeof val !== "string") {
+    const messages: Record<typeof key, string> = {
+      where: "where must be a string like 'region = Europe'",
+      sort: "sort must be a string like 'due desc'",
+      group: "group must be a string like 'region'",
+      range: "range must be a string like '-30d..today'",
+    };
+    return { ok: false, message: messages[key] };
+  }
+  return undefined;
+}
+
 function filterWorkingSet(
   initialRows: Record<string, unknown>[],
   spec: WidgetSpec,
@@ -233,6 +264,10 @@ function filterWorkingSet(
 ): Record<string, unknown>[] | QueryOutcome {
   let working = [...initialRows];
   const raw = spec.raw;
+  for (const key of ["where", "sort", "range"] as const) {
+    const err = expectQueryStringField(raw, key);
+    if (err) return err;
+  }
   const range =
     rangeOverride ?? (typeof raw.range === "string" ? raw.range : undefined);
   if (range) {
@@ -282,6 +317,8 @@ function aggregateValue(
   sourceDef: SourceDefinition,
 ): QueryOutcome {
   const raw = spec.raw;
+  const groupErr = expectQueryStringField(raw, "group");
+  if (groupErr) return groupErr;
   const group = typeof raw.group === "string" ? raw.group : undefined;
   const count = raw.count === true;
   const sumField = typeof raw.sum === "string" ? raw.sum : undefined;

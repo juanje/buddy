@@ -1864,9 +1864,24 @@
           "name": "Where rejects non-numeric value on numeric field",
           "bdd": "pass",
           "unit_tests": 2
+        },
+        {
+          "name": "Where as a map is a widget error",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Where with double equals suggests single equals",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Where accepts hyphenated field names",
+          "bdd": "pass",
+          "unit_tests": 1
         }
       ],
-      "note": "reopened: numeric where comparisons"
+      "note": "reopened: map where ignored and == matched nothing silently"
     },
     {
       "id": "FR-DASH-02",
