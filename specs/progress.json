@@ -2058,9 +2058,19 @@
           "name": "Long table shows 50 rows and offers more",
           "bdd": "pass",
           "unit_tests": 2
+        },
+        {
+          "name": "List does not repeat the primary field",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Table show-more counts the remaining rows",
+          "bdd": "pass",
+          "unit_tests": 2
         }
       ],
-      "note": "reopened: table pages rows 50 at a time"
+      "note": "reopened: list repeats primary field; show-more label ignores remaining"
     },
     {
       "id": "FR-DASH-06",

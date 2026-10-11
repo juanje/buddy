@@ -166,6 +166,16 @@ function cellText(value: unknown): string {
   return String(value);
 }
 
+function listPrimaryFieldKey(row: Record<string, unknown>): string {
+  if (row.text !== undefined && row.text !== null && String(row.text).trim() !== "") {
+    return "text";
+  }
+  if (row.label !== undefined && row.label !== null && String(row.label).trim() !== "") {
+    return "label";
+  }
+  return Object.keys(row)[0] ?? "";
+}
+
 function overdueFromRow(row: Record<string, unknown>): number | undefined {
   const v = row.overdue_days;
   return typeof v === "number" && v > 0 ? v : undefined;
@@ -304,14 +314,21 @@ function buildList(
   result: WidgetResult,
   provenance?: WidgetProvenance,
 ): DashboardWidgetVm {
-  const fields = listFields(spec).filter((f) => f !== "overdue_days");
+  const fieldList = listFields(spec).filter((f) => f !== "overdue_days");
   const items: ListItemVm[] =
     result.kind === "rows"
-      ? result.rows.map((row) => ({
-          primary: cellText(row.text ?? row.label ?? Object.values(row)[0]),
-          fields: fields.map((f) => formatCell(f, row[f], spec.source)).filter(Boolean),
-          overdueDays: overdueFromRow(row),
-        }))
+      ? result.rows.map((row) => {
+          const primaryKey = listPrimaryFieldKey(row);
+          const primary = cellText(
+            primaryKey ? row[primaryKey] : (row.text ?? row.label ?? Object.values(row)[0]),
+          );
+          const extraFields = fieldList.filter((f) => f !== primaryKey);
+          return {
+            primary,
+            fields: extraFields.map((f) => formatCell(f, row[f], spec.source)).filter(Boolean),
+            overdueDays: overdueFromRow(row),
+          };
+        })
       : [];
   return { kind: "list", key, title, width, items, empty: items.length === 0, provenance };
 }
@@ -499,12 +516,13 @@ export function tablePageMeta(
   shown: number,
   total: number,
   locale: AppLocale,
-): { visibleCount: number; hasMore: boolean; footerText: string } {
+): { visibleCount: number; hasMore: boolean; footerText: string; nextCount: number } {
   const visibleCount = Math.min(shown, total);
   const hasMore = visibleCount < total;
+  const nextCount = hasMore ? Math.min(TABLE_PAGE_SIZE, total - visibleCount) : 0;
   const footerText =
     locale === "es"
       ? `${visibleCount} de ${total} filas`
       : `${visibleCount} of ${total} rows`;
-  return { visibleCount, hasMore, footerText };
+  return { visibleCount, hasMore, footerText, nextCount };
 }

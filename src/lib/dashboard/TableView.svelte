@@ -26,6 +26,7 @@
 
   const visibleRows = $derived(tablePageSlice(rows, shown));
   const page = $derived(tablePageMeta(shown, rows.length, locale));
+  const showMoreText = $derived(showMoreLabel.replace("{count}", String(page.nextCount)));
 
   function showMore() {
     shown = Math.min(rows.length, shown + TABLE_PAGE_SIZE);
@@ -58,7 +59,7 @@
   {#if page.hasMore}
     <p class="table-footer">
       <span>{page.footerText}</span>
-      <button type="button" class="table-more" onclick={showMore}>{showMoreLabel}</button>
+      <button type="button" class="table-more" onclick={showMore}>{showMoreText}</button>
     </p>
   {/if}
 {/if}

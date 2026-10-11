@@ -887,6 +887,44 @@ Feature: Dashboard resolution
     Then the kanban workflow columns are ordered
 
   @FR-DASH-10
+  Scenario: List does not repeat the primary field
+    Given an initialized buddy git repository
+    And a csv file at "user/data/list-dedup.csv" with content:
+      """
+      name,region
+      Fiji,Oceania
+      Spain,Europe
+      """
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: list
+        source: series
+        path: user/data/list-dedup.csv
+        fields: [name, region]
+      ```
+      """
+    When the dashboard view model is built for locale "en"
+    Then segment 1 first list item fields are "Oceania"
+
+  @FR-DASH-10
+  Scenario: Table show-more counts the remaining rows
+    Given an initialized buddy git repository
+    And a csv file at "user/data/show-more-51.csv" with 51 numbered rows and columns "date, note"
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: table
+        source: series
+        path: user/data/show-more-51.csv
+        columns: [date, note]
+      ```
+      """
+    When the dashboard view model is built for locale "en"
+    And table pagination is at the default for segment 1
+    Then segment 1 table next page size is 1
+
+  @FR-DASH-10
   Scenario: Long table shows 50 rows and offers more
     Given an initialized buddy git repository
     And a csv file at "user/data/long-table.csv" with 120 numbered rows and columns "date, note"

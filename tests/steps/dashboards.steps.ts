@@ -367,6 +367,37 @@ Then(
   },
 );
 
+function listWidgetItems(vm: DashboardViewModel, segmentNum: number) {
+  let index = 0;
+  for (const row of vm.rows) {
+    if (row.kind !== "widgetRow") continue;
+    for (const widget of row.widgets) {
+      index += 1;
+      if (index === segmentNum && widget.kind === "list") return widget.items;
+    }
+  }
+  throw new Error(`list widget ${segmentNum} not found`);
+}
+
+Then(
+  "segment {int} first list item fields are {string}",
+  function (this: DashboardWorld, segmentNum: number, expected: string) {
+    assert.ok(this.viewModel, "viewModel required");
+    const items = listWidgetItems(this.viewModel, segmentNum);
+    assert.equal(items[0]?.fields.join(" · "), expected);
+  },
+);
+
+Then(
+  "segment {int} table next page size is {int}",
+  function (this: DashboardWorld, segmentNum: number, size: number) {
+    assert.ok(this.viewModel, "viewModel required");
+    const all = tableWidgetRows(this.viewModel, segmentNum);
+    const meta = tablePageMeta(this.tablePaginationShown ?? TABLE_PAGE_SIZE, all.length, "en");
+    assert.equal(meta.nextCount, size);
+  },
+);
+
 Given("a dashboard file with body:", function (this: DashboardWorld, body: string) {
   this.dashboardBody = [
     "---",

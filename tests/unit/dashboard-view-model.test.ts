@@ -190,10 +190,52 @@ describe("table pagination", () => {
     const meta = tablePageMeta(TABLE_PAGE_SIZE, 120, "en");
     expect(meta.hasMore).toBe(true);
     expect(meta.footerText).toBe("50 of 120 rows");
+    expect(meta.nextCount).toBe(50);
   });
 
   it("clears hasMore when all rows are shown", () => {
     const meta = tablePageMeta(120, 120, "en");
     expect(meta.hasMore).toBe(false);
+    expect(meta.nextCount).toBe(0);
+  });
+
+  it("next page size is the remaining rows when fewer than 50", () => {
+    expect(tablePageMeta(TABLE_PAGE_SIZE, 51, "en").nextCount).toBe(1);
+  });
+});
+
+describe("list view model", () => {
+  it("does not repeat the primary field in list meta", () => {
+    const model: ResolvedDashboard = {
+      title: "T",
+      segments: [
+        {
+          kind: "widget",
+          spec: {
+            view: "list",
+            source: "series",
+            raw: {
+              view: "list",
+              source: "series",
+              path: "user/data/x.csv",
+              fields: ["name", "region"],
+            },
+          },
+          result: {
+            kind: "rows",
+            rows: [{ name: "Fiji", region: "Oceania" }],
+          },
+        },
+      ],
+    };
+    const vm = buildDashboardViewModel(model, "en", "T");
+    const list = vm.rows
+      .flatMap((r) => (r.kind === "widgetRow" ? r.widgets : []))
+      .find((w) => w.kind === "list");
+    expect(list?.kind).toBe("list");
+    if (list?.kind === "list") {
+      expect(list.items[0]?.primary).toBe("Fiji");
+      expect(list.items[0]?.fields).toEqual(["Oceania"]);
+    }
   });
 });
