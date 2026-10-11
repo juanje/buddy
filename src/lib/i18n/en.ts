@@ -198,6 +198,8 @@ export const en: LocaleStrings = {
   dashboardEmptyWidget: "No data",
   dashboardTableShowMore: "Show {count} more",
   dashboardBasedOn: "Based on: {basis}",
+  dashboardIndicativeNotice:
+    "Includes data inferred from conversation; review before relying on it.",
   fileViewerClose: "Close",
   fileViewerBack: "Back",
   fileViewerLoading: "Loading file…",

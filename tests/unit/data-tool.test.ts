@@ -246,4 +246,67 @@ describe("executeDataAction", () => {
       expect(out.text).toContain("append");
     }
   });
+
+  it("inferred define append without origin fails and does not create csv", () => {
+    dir = mkdtempSync(join(tmpdir(), "data-tool-"));
+    executeDataAction(dir, "define", {
+      name: "migranas",
+      kind: "series",
+      key: ["fecha", "hora"],
+      columns: { fecha: "date", hora: "string", intensidad: "number" },
+      inferred: true,
+    });
+    const out = executeDataAction(dir, "append", {
+      name: "migranas",
+      values: { fecha: "2026-10-11", hora: "09:00", intensidad: 6 },
+    });
+    expect(out.ok).toBe(false);
+    expect(existsSync(join(dir, "user/data/migranas.csv"))).toBe(false);
+  });
+
+  it("inferred append writes origin and basis columns at end", () => {
+    dir = mkdtempSync(join(tmpdir(), "data-tool-"));
+    executeDataAction(dir, "define", {
+      name: "migranas",
+      kind: "series",
+      key: ["fecha", "hora"],
+      columns: { fecha: "date", hora: "string", intensidad: "number" },
+      inferred: true,
+    });
+    const out = executeDataAction(dir, "append", {
+      name: "migranas",
+      values: {
+        fecha: "2026-10-11",
+        hora: "09:00",
+        intensidad: 6,
+        origin: "inferred",
+        basis: "deducido del chat",
+      },
+    });
+    expect(out.ok).toBe(true);
+    const csv = readFileSync(join(dir, "user/data/migranas.csv"), "utf8");
+    expect(csv).toContain("fecha,hora,intensidad,origin,basis");
+    expect(csv).toContain("inferred,deducido del chat");
+  });
+
+  it("explicit origin append writes origin and empty basis", () => {
+    dir = mkdtempSync(join(tmpdir(), "data-tool-"));
+    executeDataAction(dir, "define", {
+      name: "migranas",
+      kind: "series",
+      key: ["fecha", "hora"],
+      columns: { fecha: "date", hora: "string", intensidad: "number" },
+      inferred: true,
+    });
+    executeDataAction(dir, "append", {
+      name: "migranas",
+      values: {
+        fecha: "2026-10-11",
+        hora: "09:00",
+        intensidad: 6,
+        origin: "explicit",
+      },
+    });
+    expect(readFileSync(join(dir, "user/data/migranas.csv"), "utf8")).toMatch(/explicit,/);
+  });
 });

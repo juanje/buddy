@@ -220,3 +220,47 @@ Feature: Data tool
     When data action "help" is invoked
     Then data tool output mentions "values:{"
     And data tool output mentions "append"
+
+  @FR-DATA-07
+  Scenario: Inferred define append without origin fails and does not create CSV
+    Given an initialized buddy git repository
+    When data action "define" is invoked with json:
+      """
+      {"name":"migranas","kind":"series","key":["fecha","hora"],"columns":{"fecha":"date","hora":"string","intensidad":"number"},"inferred":true}
+      """
+    Then data tool succeeded
+    When data action "append" is invoked with json:
+      """
+      {"name":"migranas","values":{"fecha":"2026-10-11","hora":"09:00","intensidad":6}}
+      """
+    Then data tool failed
+    And data file "user/data/migranas.csv" does not exist
+
+  @FR-DATA-07
+  Scenario: Inferred append writes origin and basis columns at end
+    Given an initialized buddy git repository
+    When data action "define" is invoked with json:
+      """
+      {"name":"migranas","kind":"series","key":["fecha","hora"],"columns":{"fecha":"date","hora":"string","intensidad":"number"},"inferred":true}
+      """
+    When data action "append" is invoked with json:
+      """
+      {"name":"migranas","values":{"fecha":"2026-10-11","hora":"09:00","intensidad":6,"origin":"inferred","basis":"deducido del chat"}}
+      """
+    Then data tool succeeded
+    And data file "user/data/migranas.csv" contains "fecha,hora,intensidad,origin,basis"
+    And data file "user/data/migranas.csv" contains "inferred,deducido del chat"
+
+  @FR-DATA-07
+  Scenario: Explicit origin append writes origin and empty basis
+    Given an initialized buddy git repository
+    When data action "define" is invoked with json:
+      """
+      {"name":"migranas","kind":"series","key":["fecha","hora"],"columns":{"fecha":"date","hora":"string","intensidad":"number"},"inferred":true}
+      """
+    When data action "append" is invoked with json:
+      """
+      {"name":"migranas","values":{"fecha":"2026-10-11","hora":"09:00","intensidad":6,"origin":"explicit"}}
+      """
+    Then data tool succeeded
+    And data file "user/data/migranas.csv" contains "explicit,"

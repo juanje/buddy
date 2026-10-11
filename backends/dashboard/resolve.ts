@@ -78,7 +78,7 @@ function resolveWidgetData(
   rootDir: string,
   spec: WidgetSpec,
   today: string,
-): { result: WidgetResult; provenance?: WidgetProvenance } {
+): { result: WidgetResult; provenance?: WidgetProvenance; indicative?: boolean } {
   if (spec.view === "text" && !spec.source) {
     return { result: resolveTextWidget(spec) };
   }
@@ -100,7 +100,7 @@ function resolveWidgetData(
     if (!queried.ok) {
       return { result: { kind: "error", message: queried.message } };
     }
-    return { result: queried.result };
+    return { result: queried.result, indicative: queried.indicative };
   }
 
   if (spec.source === "series") {
@@ -120,7 +120,7 @@ function resolveWidgetData(
     if (!queried.ok) {
       return { result: { kind: "error", message: queried.message } };
     }
-    return { result: queried.result };
+    return { result: queried.result, indicative: queried.indicative };
   }
 
   if (spec.source === "inline") {
@@ -142,7 +142,11 @@ function resolveWidgetData(
     if (!queried.ok) {
       return { result: { kind: "error", message: queried.message } };
     }
-    return { result: queried.result, provenance: loaded.provenance };
+    return {
+      result: queried.result,
+      provenance: loaded.provenance,
+      indicative: queried.indicative,
+    };
   }
 
   const source = spec.source;
@@ -165,7 +169,7 @@ function resolveWidgetData(
   if (!queried.ok) {
     return { result: { kind: "error", message: queried.message } };
   }
-  return { result: queried.result };
+  return { result: queried.result, indicative: queried.indicative };
 }
 
 function widgetSegment(
@@ -173,8 +177,9 @@ function widgetSegment(
   result: WidgetResult,
   provenance?: WidgetProvenance,
   position?: ResolvedWidgetSegment["position"],
+  indicative?: boolean,
 ): ResolvedSegment {
-  return { kind: "widget", spec, result, provenance, position };
+  return { kind: "widget", spec, result, provenance, indicative, position };
 }
 
 function errorWidget(
@@ -229,7 +234,13 @@ export function resolveDashboardContent(
       }
       const resolved = resolveWidgetData(rootDir, validated.spec, todayStr);
       segments.push(
-        widgetSegment(validated.spec, resolved.result, resolved.provenance, widgetPos),
+        widgetSegment(
+          validated.spec,
+          resolved.result,
+          resolved.provenance,
+          widgetPos,
+          resolved.indicative,
+        ),
       );
     }
   }

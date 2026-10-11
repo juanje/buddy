@@ -39,6 +39,9 @@
               {#if widget.provenance}
                 <ProvenanceLine provenance={widget.provenance} />
               {/if}
+              {#if widget.indicative}
+                <p class="indicative-notice">{$t.dashboardIndicativeNotice}</p>
+              {/if}
             {/if}
 
             {#if widget.kind === "error"}
@@ -109,6 +112,12 @@
   .widget-card.width-third {
     flex: 1 1 calc(33.333% - 8px);
     max-width: calc(33.333% - 8px);
+  }
+  .indicative-notice {
+    margin: 0 0 8px;
+    font-size: 12px;
+    color: var(--muted);
+    font-style: italic;
   }
   h3 {
     margin: 0 0 8px;

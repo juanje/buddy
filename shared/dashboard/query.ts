@@ -6,8 +6,12 @@ import { parseDateRange, previousPeriodOfSameLength } from "./range";
 import type { WidgetResult, WidgetSpec } from "./types";
 
 export type QueryOutcome =
-  | { ok: true; result: WidgetResult }
+  | { ok: true; result: WidgetResult; indicative?: boolean }
   | { ok: false; message: string };
+
+export function filteredRowsHaveInferredOrigin(rows: Record<string, unknown>[]): boolean {
+  return rows.some((row) => row.origin === "inferred");
+}
 
 export { addMonths } from "./query-dates";
 
@@ -408,8 +412,11 @@ export function applyWidgetQuery(
   const working = filterWorkingSet(rows, spec, sourceDef, today);
   if (!Array.isArray(working)) return working;
 
+  const indicative = filteredRowsHaveInferredOrigin(working);
+
   const outcome = aggregateValue(working, spec, sourceDef);
   if (!outcome.ok || !wantDelta || !range) {
+    if (outcome.ok && indicative) return { ...outcome, indicative: true };
     return outcome;
   }
 
@@ -427,11 +434,13 @@ export function applyWidgetQuery(
   if (!Array.isArray(prevWorking)) return prevWorking;
   const prevOutcome = aggregateValue(prevWorking, spec, sourceDef);
   if (!prevOutcome.ok || prevOutcome.result.kind !== "value") {
+    if (indicative) return { ...outcome, indicative: true };
     return outcome;
   }
 
   return {
     ok: true,
+    indicative: indicative ? true : undefined,
     result: {
       kind: "value",
       value: outcome.result.value,

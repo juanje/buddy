@@ -1377,6 +1377,73 @@ Feature: Dashboard resolution
     When the dashboard is resolved for today "2026-10-07"
     Then segment 1 widget result is an error mentioning "cannot be opened"
 
+  @FR-DATA-07
+  Scenario: Series table shows indicative notice when filtered rows include inferred origin
+    Given an initialized buddy git repository
+    And a csv file at "user/data/migranas.csv" with content:
+      """
+      fecha,hora,intensidad,origin,basis
+      2026-10-11,09:00,6,inferred,chat
+      2026-10-12,10:00,4,explicit,
+      """
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: table
+        source: series
+        path: user/data/migranas.csv
+        columns: [fecha, hora, intensidad]
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-11"
+    Then segment 1 is a table widget with 2 rows and no error
+    And segment 1 widget is indicative
+
+  @FR-DATA-07
+  Scenario: Series table filtered to explicit rows has no indicative notice
+    Given an initialized buddy git repository
+    And a csv file at "user/data/migranas.csv" with content:
+      """
+      fecha,hora,intensidad,origin,basis
+      2026-10-11,09:00,6,inferred,chat
+      2026-10-12,10:00,4,explicit,
+      """
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: table
+        source: series
+        path: user/data/migranas.csv
+        where: origin = explicit
+        columns: [fecha, hora, intensidad]
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-11"
+    Then segment 1 widget row count is 1
+    And segment 1 widget is not indicative
+
+  @FR-DATA-07
+  Scenario: Series counter shows indicative notice when count includes inferred rows
+    Given an initialized buddy git repository
+    And a csv file at "user/data/migranas.csv" with content:
+      """
+      fecha,hora,intensidad,origin,basis
+      2026-10-11,09:00,6,inferred,chat
+      2026-10-12,10:00,4,explicit,
+      """
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: counter
+        source: series
+        path: user/data/migranas.csv
+        count: true
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-11"
+    Then segment 1 widget value is 2
+    And segment 1 widget is indicative
+
   @FR-DASH-08
   Scenario: Series column with leading zeros stays text
     Given an initialized buddy git repository

@@ -852,6 +852,20 @@ Then(
   },
 );
 
+Then("segment {int} widget is indicative", function (this: DashboardWorld, index: number) {
+  assert.ok(this.resolved, "resolved dashboard missing");
+  const seg = this.resolved.segments[index - 1];
+  assert.equal(seg?.kind, "widget");
+  if (seg?.kind === "widget") assert.equal(seg.indicative, true);
+});
+
+Then("segment {int} widget is not indicative", function (this: DashboardWorld, index: number) {
+  assert.ok(this.resolved, "resolved dashboard missing");
+  const seg = this.resolved.segments[index - 1];
+  assert.equal(seg?.kind, "widget");
+  if (seg?.kind === "widget") assert.ok(!seg.indicative);
+});
+
 Then("segment {int} widget has no provenance", function (this: DashboardWorld, index: number) {
   const seg = segments.call(this)[index - 1];
   assert.equal(seg.kind, "widget");

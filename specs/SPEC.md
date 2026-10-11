@@ -4411,7 +4411,7 @@ is pre-seeded.
 | FR-DATA-04 | `on_mention` mode: active entries in one session-context line | 3 S6 |
 | FR-DATA-05 | `consolidation` mode: worker block of due entries and pending days, fast tier | 3 S6 |
 | FR-DATA-06 | `snapshot` mode: heartbeat aggregate of a Buddy file, zero tokens, gaps not interpolated | 3 S7 |
-| FR-DATA-07 | Inferred rows carry `origin` and `basis`; the widget adds the indicative notice | 3 S4 |
+| FR-DATA-07 | Inferred rows carry `origin` and `basis`; the widget adds the indicative notice | 3 S4 ✓ |
 | FR-DATA-08 | `sensitive` flag feeds the export warning | 3 S7 |
 
 **FR-DATA-01 — Registry**
@@ -4500,9 +4500,18 @@ is pre-seeded.
 
 **FR-DATA-07 — Inferred rows**
 
-- Rows written for an entry marked `inferred` carry `origin`
-  (`explicit` | `inferred`) and `basis`. Widgets fed by them add an
-  "indicative" notice themselves; the notice does not depend on the model.
+- With `inferred: true`, the CSV ends with columns `origin` and `basis`
+  after the declared columns. `append` requires `origin` (`explicit` or
+  `inferred`). `basis` is required when `origin` is `inferred`; when
+  `origin` is `explicit` and `basis` is omitted, it is stored empty.
+  `origin` and `basis` are not declared in `columns` (FR-DATA-01).
+- With `inferred: false`, no extra columns (FR-DATA-03).
+- When resolving a widget with `source: series`, if any row in the
+  filtered set (before aggregation) has `origin: inferred`, the widget
+  segment carries `indicative: true`. Counter widgets show the notice
+  even when aggregated results no longer expose row fields. The UI renders
+  a dedicated line beside provenance, localized (`es` / `en`); it is not
+  the per-row `basis` text.
 
 **FR-DATA-08 — Sensitive data**
 

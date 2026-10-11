@@ -190,6 +190,7 @@ export type LocaleStrings = {
   dashboardEmptyWidget: string;
   dashboardTableShowMore: string;
   dashboardBasedOn: string;
+  dashboardIndicativeNotice: string;
   fileViewerClose: string;
   fileViewerBack: string;
   fileViewerLoading: string;
@@ -396,6 +397,8 @@ export const es: LocaleStrings = {
   dashboardEmptyWidget: "Sin datos",
   dashboardTableShowMore: "Ver {count} más",
   dashboardBasedOn: "Basado en: {basis}",
+  dashboardIndicativeNotice:
+    "Incluye datos inferidos de la conversación; revísalos antes de confiar en ellos.",
   fileViewerClose: "Cerrar",
   fileViewerBack: "Atrás",
   fileViewerLoading: "Cargando archivo…",

@@ -2611,9 +2611,40 @@
     {
       "id": "FR-DATA-07",
       "title": "Inferred rows carry origin and basis; the widget shows the notice",
-      "status": "pending",
-      "cycle_step": "spec_review",
-      "scenarios": []
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Series table shows indicative notice when filtered rows include inferred origin",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Series table filtered to explicit rows has no indicative notice",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Series counter shows indicative notice when count includes inferred rows",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Inferred define append without origin fails and does not create CSV",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Inferred append writes origin and basis columns at end",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Explicit origin append writes origin and empty basis",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
     }
   ]
 }

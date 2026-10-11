@@ -179,6 +179,23 @@ function validateRowAgainstSchema(
     return `Unexpected column '${col}' in values`;
   }
 
+  if (entry.inferred) {
+    const origin = values.origin;
+    if (origin !== "explicit" && origin !== "inferred") {
+      return "origin must be 'explicit' or 'inferred'";
+    }
+    row.origin = String(origin);
+    if (origin === "inferred") {
+      if (values.basis === undefined || values.basis === null || String(values.basis).trim() === "") {
+        return "basis is required when origin is 'inferred'";
+      }
+      row.basis = normalizeStringField(values.basis);
+    } else {
+      row.basis =
+        values.basis === undefined || values.basis === null ? "" : normalizeStringField(values.basis);
+    }
+  }
+
   return row;
 }
 

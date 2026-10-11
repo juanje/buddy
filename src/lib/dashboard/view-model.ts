@@ -23,9 +23,35 @@ export type DashboardRow =
   | { kind: "widgetRow"; widgets: DashboardWidgetVm[] };
 
 export type DashboardWidgetVm =
-  | { kind: "error"; key: string; title: string; message: string; width: WidgetWidth; provenance?: WidgetProvenance }
-  | { kind: "kanban"; key: string; title?: string; width: WidgetWidth; columns: KanbanColumnVm[]; empty: boolean; provenance?: WidgetProvenance }
-  | { kind: "list"; key: string; title?: string; width: WidgetWidth; items: ListItemVm[]; empty: boolean; provenance?: WidgetProvenance }
+  | {
+      kind: "error";
+      key: string;
+      title: string;
+      message: string;
+      width: WidgetWidth;
+      provenance?: WidgetProvenance;
+      indicative?: boolean;
+    }
+  | {
+      kind: "kanban";
+      key: string;
+      title?: string;
+      width: WidgetWidth;
+      columns: KanbanColumnVm[];
+      empty: boolean;
+      provenance?: WidgetProvenance;
+      indicative?: boolean;
+    }
+  | {
+      kind: "list";
+      key: string;
+      title?: string;
+      width: WidgetWidth;
+      items: ListItemVm[];
+      empty: boolean;
+      provenance?: WidgetProvenance;
+      indicative?: boolean;
+    }
   | {
       kind: "table";
       key: string;
@@ -35,6 +61,7 @@ export type DashboardWidgetVm =
       rows: Record<string, string>[];
       empty: boolean;
       provenance?: WidgetProvenance;
+      indicative?: boolean;
     }
   | {
       kind: "counter";
@@ -46,9 +73,28 @@ export type DashboardWidgetVm =
       groups?: CounterGroupVm[];
       empty: boolean;
       provenance?: WidgetProvenance;
+      indicative?: boolean;
     }
-  | { kind: "textWidget"; key: string; title?: string; width: WidgetWidth; markdown: string; provenance?: WidgetProvenance; inlineStyle: boolean }
-  | { kind: "status"; key: string; title?: string; width: WidgetWidth; cards: StatusCardVm[]; empty: boolean; provenance?: WidgetProvenance };
+  | {
+      kind: "textWidget";
+      key: string;
+      title?: string;
+      width: WidgetWidth;
+      markdown: string;
+      provenance?: WidgetProvenance;
+      inlineStyle: boolean;
+      indicative?: boolean;
+    }
+  | {
+      kind: "status";
+      key: string;
+      title?: string;
+      width: WidgetWidth;
+      cards: StatusCardVm[];
+      empty: boolean;
+      provenance?: WidgetProvenance;
+      indicative?: boolean;
+    };
 
 export type TableHeaderVm = { key: string; label: string };
 export type CounterGroupVm = { label: string; value: number };
@@ -181,56 +227,84 @@ function overdueFromRow(row: Record<string, unknown>): number | undefined {
   return typeof v === "number" && v > 0 ? v : undefined;
 }
 
+function withIndicative<T extends DashboardWidgetVm>(vm: T, indicative?: boolean): T {
+  return indicative ? { ...vm, indicative: true } : vm;
+}
+
 function buildWidgetVm(
   seg: ResolvedWidgetSegment,
   locale: AppLocale,
   widgetKey: string,
 ): DashboardWidgetVm {
-  const { spec, result, provenance } = seg;
+  const { spec, result, provenance, indicative } = seg;
   const headingTitle = widgetHeadingTitle(spec);
   const width = spec.width ?? "full";
 
   if (result.kind === "error") {
-    return {
-      kind: "error",
-      key: widgetKey,
-      title: widgetErrorTitle(spec, locale),
-      message: result.message,
-      width,
-      provenance,
-    };
+    return withIndicative(
+      {
+        kind: "error",
+        key: widgetKey,
+        title: widgetErrorTitle(spec, locale),
+        message: result.message,
+        width,
+        provenance,
+      },
+      indicative,
+    );
   }
 
   switch (spec.view) {
     case "kanban":
-      return buildKanban(widgetKey, headingTitle, width, spec, result, locale, provenance);
+      return withIndicative(
+        buildKanban(widgetKey, headingTitle, width, spec, result, locale, provenance),
+        indicative,
+      );
     case "list":
-      return buildList(widgetKey, headingTitle, width, spec, result, provenance);
+      return withIndicative(
+        buildList(widgetKey, headingTitle, width, spec, result, provenance),
+        indicative,
+      );
     case "table":
-      return buildTable(widgetKey, headingTitle, width, spec, result, locale, provenance);
+      return withIndicative(
+        buildTable(widgetKey, headingTitle, width, spec, result, locale, provenance),
+        indicative,
+      );
     case "counter":
-      return buildCounter(widgetKey, headingTitle, width, spec, result, locale, provenance);
+      return withIndicative(
+        buildCounter(widgetKey, headingTitle, width, spec, result, locale, provenance),
+        indicative,
+      );
     case "text":
-      return {
-        kind: "textWidget",
-        key: widgetKey,
-        title: headingTitle,
-        width,
-        markdown: result.kind === "text" ? result.text : "",
-        provenance,
-        inlineStyle: Boolean(provenance),
-      };
+      return withIndicative(
+        {
+          kind: "textWidget",
+          key: widgetKey,
+          title: headingTitle,
+          width,
+          markdown: result.kind === "text" ? result.text : "",
+          provenance,
+          inlineStyle: Boolean(provenance),
+        },
+        indicative,
+      );
     case "status":
-      return buildStatus(widgetKey, headingTitle, width, result, provenance);
+      return withIndicative(
+        buildStatus(widgetKey, headingTitle, width, result, provenance),
+        indicative,
+      );
     default:
-      return {
-        kind: "error",
-        key: widgetKey,
-        title: widgetErrorTitle(spec, locale),
-        message: `Unsupported view '${spec.view}'`,
-        width,
-        provenance,
-      };
+      return withIndicative(
+        {
+          kind: "error",
+          key: widgetKey,
+          title: widgetErrorTitle(spec, locale),
+          message: `Unsupported view '${spec.view}'`,
+          width,
+          provenance,
+        },
+        indicative,
+      );
   }
 }
 

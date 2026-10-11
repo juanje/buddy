@@ -39,6 +39,8 @@ export type ResolvedWidgetSegment = {
   spec: WidgetSpec;
   result: WidgetResult;
   provenance?: WidgetProvenance;
+  /** True when filtered series rows include origin:inferred (FR-DATA-07). */
+  indicative?: boolean;
   position?: WidgetPosition;
 };
 
