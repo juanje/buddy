@@ -2726,6 +2726,34 @@
           "unit_tests": 1
         }
       ]
+    },
+    {
+      "id": "FR-DATA-05",
+      "title": "consolidation block for due series days",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Day with log and no row is pending",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Day without log is not pending",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Entry without a single date key is reported",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "List consolidation entry without inactive suffix",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
     }
   ]
 }

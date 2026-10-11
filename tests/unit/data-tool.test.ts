@@ -27,7 +27,7 @@ describe("executeDataAction", () => {
     }
   });
 
-  it("define registers a series entry and list shows inactive mode for consolidation", () => {
+  it("define registers a series entry and list shows mode", () => {
     dir = mkdtempSync(join(tmpdir(), "data-tool-"));
     const def = executeDataAction(dir, "define", {
       name: "migraines",
@@ -44,7 +44,7 @@ describe("executeDataAction", () => {
     if (list.ok) {
       expect(list.text).toContain("migraines");
       expect(list.text).toContain("user/data/migraines.csv");
-      expect(list.text).toContain("inactive until sprint 6");
+      expect(list.text).toContain("mode consolidation");
     }
   });
 

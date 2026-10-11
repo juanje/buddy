@@ -10,6 +10,8 @@ import { readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 import { computeActiveFronts, formatActiveFrontsBlock } from "./active-fronts";
+import { formatConsolidationSeriesBlock } from "../shared/data/consolidation-series";
+import { loadRegistryFromRoot } from "../shared/data/registry-lookup";
 import { readTaskConfig } from "./tasks/task-config";
 
 import {
@@ -253,6 +255,10 @@ export async function buildConsolidationPrompt(
   const coherenceBlock = formatDailyCoherenceBlock(computeDailyCoherence(rootDir, now));
   const taskConfig = readTaskConfig();
   const activeFrontsBlock = formatActiveFrontsBlock(computeActiveFronts(rootDir), taskConfig);
+  const consolidationSeriesBlock =
+    depth === 1
+      ? formatConsolidationSeriesBlock(rootDir, loadRegistryFromRoot(rootDir), date)
+      : undefined;
 
   const blocks = [
     `Date: ${date}`,
@@ -265,6 +271,7 @@ export async function buildConsolidationPrompt(
     healthBlock || undefined,
     ripeBlock,
     activeFrontsBlock,
+    consolidationSeriesBlock,
   ].filter(Boolean);
 
   if (depth >= 2) {

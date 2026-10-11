@@ -4427,7 +4427,7 @@ is pre-seeded.
 | FR-DATA-02 | `data()` tool: help, define, list | 3 S4 ✓ |
 | FR-DATA-03 | `append` / `correct`: schema-validated atomic writes; direct writes to registered paths denied | 3 S4 ✓ |
 | FR-DATA-04 | `on_mention` mode: active entries in one session-context line | 3 S6 ✓ |
-| FR-DATA-05 | `consolidation` mode: worker block of due entries and pending days, fast tier | 3 S6 |
+| FR-DATA-05 | `consolidation` mode: worker block of due entries and pending days, fast tier | 3 S6 ✓ |
 | FR-DATA-06 | `snapshot` mode: heartbeat aggregate of a Buddy file, zero tokens, gaps not interpolated | 3 S7 |
 | FR-DATA-07 | Inferred rows carry `origin` and `basis`; the widget adds the indicative notice | 3 S4 ✓ |
 | FR-DATA-08 | `sensitive` flag feeds the export warning | 3 S7 |
@@ -4515,9 +4515,23 @@ is pre-seeded.
 
 **FR-DATA-05 — `consolidation` mode**
 
-- Daily consolidation receives a worker-computed block of entries due and the
-  days pending, and writes from that day's logs and journal on the fast tier.
-  A day without conversation produces no row; the gap is correct.
+- Depth-1 consolidation prompt includes a worker-computed block for each
+  registry entry with `mode: consolidation`.
+- An entry is programmable when its `key` includes exactly one column typed
+  `date`. Otherwise the block names the entry and says days cannot be computed.
+- A **pending day** has a daily log (`logs/YYYY-MM-DD.md`) or journal entry
+  (`user/journal/YYYY/MM/DD.md`), is today or earlier, and has no CSV row with
+  that date in the date key column. Days without log or journal are omitted.
+- When the CSV file is missing or has no data rows, only the last 14 calendar
+  days are scanned for activity. When the CSV has rows, any day with activity
+  since the first row may be pending. At most 14 pending dates are listed; if
+  more exist, the block ends with `+N older days omitted`.
+- The block lists name, path, `inferred`, `instructions`, and pending dates.
+  It tells the agent to write each date with `data(append)` only for listed
+  days and not to invent rows. With `inferred: true`, append must use
+  `origin: inferred` and a `basis` drawn from that day's log or journal.
+- `data(list)` no longer appends `(inactive until sprint 6)` for
+  `consolidation` or `on_request`.
 
 **FR-DATA-06 — `snapshot` mode**
 

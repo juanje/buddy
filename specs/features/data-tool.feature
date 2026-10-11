@@ -27,7 +27,7 @@ Feature: Data tool
     When data action "list" is invoked
     Then data tool output mentions "migraines"
     And data tool output mentions "user/data/migraines.csv"
-    And data tool output mentions "inactive until sprint 6"
+    And data tool output mentions "mode consolidation"
 
   @FR-DATA-02
   Scenario: Define accepts a columns map and a key list
