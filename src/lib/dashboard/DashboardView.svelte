@@ -11,6 +11,11 @@
   import StatusView from "./StatusView.svelte";
   import TableView from "./TableView.svelte";
   import TextView from "./TextView.svelte";
+  import BarChartView from "./BarChartView.svelte";
+  import LineChartView from "./LineChartView.svelte";
+  import ProgressChartView from "./ProgressChartView.svelte";
+  import CalendarHeatmapView from "./CalendarHeatmapView.svelte";
+  import TimelineView from "./TimelineView.svelte";
   import { getLocale } from "../i18n";
 
   let { model }: { model: ResolvedDashboard } = $props();
@@ -64,6 +69,21 @@
               <TextView markdown={widget.markdown} />
             {:else if widget.kind === "status"}
               <StatusView cards={widget.cards} emptyLabel={$t.dashboardEmptyWidget} />
+            {:else if widget.kind === "bar"}
+              <BarChartView chart={widget.chart} emptyLabel={$t.dashboardEmptyWidget} />
+            {:else if widget.kind === "line"}
+              <LineChartView chart={widget.chart} emptyLabel={$t.dashboardEmptyWidget} />
+            {:else if widget.kind === "progress"}
+              <ProgressChartView
+                data={widget.data}
+                countdown={widget.countdown}
+                countdownLabel={(days, until) =>
+                  $t.dashboardProgressCountdown.replace("{days}", String(days)).replace("{until}", until)}
+              />
+            {:else if widget.kind === "calendar"}
+              <CalendarHeatmapView chart={widget.chart} emptyLabel={$t.dashboardEmptyWidget} />
+            {:else if widget.kind === "timeline"}
+              <TimelineView chart={widget.chart} emptyLabel={$t.dashboardEmptyWidget} />
             {/if}
           </section>
         {/each}

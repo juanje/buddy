@@ -191,6 +191,7 @@ export type LocaleStrings = {
   dashboardTableShowMore: string;
   dashboardBasedOn: string;
   dashboardIndicativeNotice: string;
+  dashboardProgressCountdown: string;
   fileViewerClose: string;
   fileViewerBack: string;
   fileViewerLoading: string;
@@ -399,6 +400,7 @@ export const es: LocaleStrings = {
   dashboardBasedOn: "Basado en: {basis}",
   dashboardIndicativeNotice:
     "Incluye datos inferidos de la conversación; revísalos antes de confiar en ellos.",
+  dashboardProgressCountdown: "Faltan {days} días (hasta {until})",
   fileViewerClose: "Cerrar",
   fileViewerBack: "Atrás",
   fileViewerLoading: "Cargando archivo…",

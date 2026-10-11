@@ -2645,6 +2645,59 @@
           "unit_tests": 1
         }
       ]
+    },
+    {
+      "id": "FR-DASH-11",
+      "title": "SVG bar, line, progress, calendar, and timeline views",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Help mentions bar and threshold",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Bar view with count and group produces one bar per group",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Bar view with stack and threshold",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Bar view without group is a widget error",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Line view orders points by x",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Progress view with sum and max",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Progress countdown until date",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Calendar view sums value by date",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Timeline view sorts by date and keeps labels",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
     }
   ]
 }

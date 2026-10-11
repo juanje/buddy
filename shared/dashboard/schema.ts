@@ -3,6 +3,8 @@
 import type { WidgetSpec, WidgetWidth } from "./types";
 
 const V1_VIEWS = new Set(["kanban", "list", "table", "counter", "text", "status"]);
+const V2_VIEWS = new Set(["bar", "line", "progress", "calendar", "timeline"]);
+const ALL_VIEWS = new Set([...V1_VIEWS, ...V2_VIEWS]);
 
 const QUERY_KEYS = ["where", "group", "sort", "limit", "count", "sum", "range"] as const;
 
@@ -27,13 +29,21 @@ export const VIEW_EXTRA_KEYS: Record<string, Set<string>> = {
   counter: new Set(["delta"]),
   text: new Set(["text"]),
   status: new Set([]),
+  bar: new Set(["stack", "threshold"]),
+  line: new Set(["x", "y", "series"]),
+  progress: new Set(["max", "until", "since"]),
+  calendar: new Set(["date", "value"]),
+  timeline: new Set(["date", "label", "end"]),
 };
 
 /** One-line hint for dashboard() help (FR-DASH-12). */
 export function dashboardViewFieldKeyHelp(): string {
   return (
     "View field keys: table: columns; list: fields; kanban: fields; counter: count or sum (optional delta); " +
-    "text: text; status: label/state/reason from source rows."
+    "text: text; status: label/state/reason from source rows; " +
+    "bar: group + count or sum (optional stack, threshold); line: x, y (optional series); " +
+    "progress: max + count or sum, or until countdown (optional since); calendar: date (optional value); " +
+    "timeline: date, label (optional end)."
   );
 }
 
@@ -72,8 +82,8 @@ export function validateWidgetSpec(rawItem: Record<string, unknown>): ValidateWi
   if (!view) {
     return { error: "Widget is missing required key 'view'" };
   }
-  if (!V1_VIEWS.has(view)) {
-    return { error: `Unknown view '${view}'. Allowed views: ${[...V1_VIEWS].join(", ")}` };
+  if (!ALL_VIEWS.has(view)) {
+    return { error: `Unknown view '${view}'. Allowed views: ${[...ALL_VIEWS].join(", ")}` };
   }
 
   const allowed = allowedKeysForView(view);
@@ -104,6 +114,8 @@ export function validateWidgetSpec(rawItem: Record<string, unknown>): ValidateWi
     if (!asString(rawItem.path)) {
       return { error: "series source requires key 'path'" };
     }
+  } else if (view === "progress" && asString(rawItem.until)) {
+    // countdown mode without source (FR-DASH-11)
   } else if (!source) {
     return { error: `View '${view}' requires key 'source'` };
   }

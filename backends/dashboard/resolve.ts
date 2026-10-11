@@ -83,6 +83,14 @@ function resolveWidgetData(
     return { result: resolveTextWidget(spec) };
   }
 
+  if (spec.view === "progress" && typeof spec.raw.until === "string" && !spec.source) {
+    const viewErr = validateViewParams(spec, undefined);
+    if (viewErr) {
+      return { result: { kind: "error", message: viewErr } };
+    }
+    return { result: { kind: "rows", rows: [] } };
+  }
+
   if (spec.source === "sections") {
     const path = spec.raw.path;
     if (typeof path !== "string" || path.trim() === "") {

@@ -852,6 +852,116 @@ Then(
   },
 );
 
+function ensureViewModel(this: DashboardWorld): DashboardViewModel {
+  assert.ok(this.resolved, "resolved dashboard missing");
+  if (!this.viewModel) {
+    this.viewModel = buildDashboardViewModel(this.resolved, "en", "No data");
+  }
+  return this.viewModel;
+}
+
+function widgetVmAt(this: DashboardWorld, index: number) {
+  const vm = ensureViewModel.call(this);
+  let n = 0;
+  for (const row of vm.rows) {
+    if (row.kind !== "widgetRow") continue;
+    for (const w of row.widgets) {
+      n += 1;
+      if (n === index) return w;
+    }
+  }
+  throw new Error(`widget segment ${index} not found`);
+}
+
+When("the dashboard view model is built", function (this: DashboardWorld) {
+  ensureViewModel.call(this);
+});
+
+Then(
+  "segment {int} widget kind is {string}",
+  function (this: DashboardWorld, index: number, kind: string) {
+    assert.equal(widgetVmAt.call(this, index).kind, kind);
+  },
+);
+
+Then(
+  "segment {int} bar group {string} has total {int}",
+  function (this: DashboardWorld, index: number, group: string, total: number) {
+    const w = widgetVmAt.call(this, index);
+    assert.equal(w.kind, "bar");
+    if (w.kind !== "bar") return;
+    const bar = w.chart.bars.find((b) => b.label === group);
+    assert.ok(bar, `group ${group} missing`);
+    assert.equal(bar!.total, total);
+  },
+);
+
+Then(
+  "segment {int} bar threshold is {int}",
+  function (this: DashboardWorld, index: number, threshold: number) {
+    const w = widgetVmAt.call(this, index);
+    assert.equal(w.kind, "bar");
+    if (w.kind === "bar") assert.equal(w.chart.threshold, threshold);
+  },
+);
+
+Then(
+  "segment {int} line chart x values are {string}",
+  function (this: DashboardWorld, index: number, csv: string) {
+    const w = widgetVmAt.call(this, index);
+    assert.equal(w.kind, "line");
+    if (w.kind !== "line") return;
+    const xs = w.chart.points.map((p) => p.x).join(",");
+    assert.equal(xs, csv);
+  },
+);
+
+Then(
+  "segment {int} progress data is value {int} max {int}",
+  function (this: DashboardWorld, index: number, value: number, max: number) {
+    const w = widgetVmAt.call(this, index);
+    assert.equal(w.kind, "progress");
+    if (w.kind !== "progress") return;
+    assert.ok(w.data);
+    assert.equal(w.data!.value, value);
+    assert.equal(w.data!.max, max);
+  },
+);
+
+Then(
+  "segment {int} progress countdown days is {int}",
+  function (this: DashboardWorld, index: number, days: number) {
+    const w = widgetVmAt.call(this, index);
+    assert.equal(w.kind, "progress");
+    if (w.kind !== "progress") return;
+    assert.ok(w.countdown);
+    assert.equal(w.countdown!.daysRemaining, days);
+  },
+);
+
+Then(
+  "segment {int} calendar day {string} value is {int}",
+  function (this: DashboardWorld, index: number, day: string, value: number) {
+    const w = widgetVmAt.call(this, index);
+    assert.equal(w.kind, "calendar");
+    if (w.kind !== "calendar") return;
+    const cell = w.chart.cells.find((c) => c.date === day);
+    assert.ok(cell, `day ${day} missing`);
+    assert.equal(cell!.value, value);
+  },
+);
+
+Then(
+  "segment {int} timeline labels are {string}",
+  function (this: DashboardWorld, index: number, csv: string) {
+    const w = widgetVmAt.call(this, index);
+    assert.equal(w.kind, "timeline");
+    if (w.kind !== "timeline") return;
+    const labels = w.chart.events.map((e) => e.label).join(",");
+    assert.equal(labels, csv);
+  },
+);
+
 Then("segment {int} widget is indicative", function (this: DashboardWorld, index: number) {
   assert.ok(this.resolved, "resolved dashboard missing");
   const seg = this.resolved.segments[index - 1];

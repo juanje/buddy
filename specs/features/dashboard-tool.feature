@@ -500,3 +500,10 @@ Feature: Dashboard tool
     And the bundled dashboards doc contains "where: date >= -30d"
     And the bundled dashboards doc contains "sum:"
     And the bundled dashboards doc contains "fields(source='series'"
+
+  @FR-DASH-11
+  Scenario: Help mentions bar and threshold
+    Given an initialized buddy git repository
+    When dashboard action "help" is invoked
+    Then dashboard tool output mentions "bar"
+    And dashboard tool output mentions "threshold"

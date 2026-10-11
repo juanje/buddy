@@ -1444,6 +1444,189 @@ Feature: Dashboard resolution
     Then segment 1 widget value is 2
     And segment 1 widget is indicative
 
+  @FR-DASH-11
+  Scenario: Bar view with count and group produces one bar per group
+    Given an initialized buddy git repository
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: bar
+        source: inline
+        updated: 2026-10-11
+        basis: test
+        group: region
+        count: true
+        rows:
+          - region: A
+          - region: A
+          - region: B
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-11"
+    And the dashboard view model is built
+    Then segment 1 widget kind is "bar"
+    And segment 1 bar group "A" has total 2
+    And segment 1 bar group "B" has total 1
+
+  @FR-DASH-11
+  Scenario: Bar view with stack and threshold
+    Given an initialized buddy git repository
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: bar
+        source: inline
+        updated: 2026-10-11
+        basis: test
+        group: area
+        stack: kind
+        sum: amount
+        threshold: 10
+        rows:
+          - area: work
+            kind: a
+            amount: 3
+          - area: work
+            kind: b
+            amount: 4
+          - area: home
+            kind: a
+            amount: 5
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-11"
+    And the dashboard view model is built
+    Then segment 1 widget kind is "bar"
+    And segment 1 bar threshold is 10
+    And segment 1 bar group "work" has total 7
+
+  @FR-DASH-11
+  Scenario: Bar view without group is a widget error
+    Given an initialized buddy git repository
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: bar
+        source: inline
+        updated: 2026-10-11
+        basis: test
+        count: true
+        rows:
+          - region: A
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-11"
+    Then segment 1 widget result is an error mentioning "group"
+
+  @FR-DASH-11
+  Scenario: Line view orders points by x
+    Given an initialized buddy git repository
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: line
+        source: inline
+        updated: 2026-10-11
+        basis: test
+        x: date
+        y: value
+        rows:
+          - date: 2026-10-02
+            value: 2
+          - date: 2026-10-01
+            value: 1
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-11"
+    And the dashboard view model is built
+    Then segment 1 widget kind is "line"
+    And segment 1 line chart x values are "2026-10-01,2026-10-02"
+
+  @FR-DASH-11
+  Scenario: Progress view with sum and max
+    Given an initialized buddy git repository
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: progress
+        source: inline
+        updated: 2026-10-11
+        basis: test
+        sum: amount
+        max: 30
+        rows:
+          - amount: 10
+          - amount: 5
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-11"
+    And the dashboard view model is built
+    Then segment 1 widget kind is "progress"
+    And segment 1 progress data is value 15 max 30
+
+  @FR-DASH-11
+  Scenario: Progress countdown until date
+    Given an initialized buddy git repository
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: progress
+        until: 2026-10-20
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-11"
+    And the dashboard view model is built
+    Then segment 1 widget kind is "progress"
+    And segment 1 progress countdown days is 9
+
+  @FR-DASH-11
+  Scenario: Calendar view sums value by date
+    Given an initialized buddy git repository
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: calendar
+        source: inline
+        updated: 2026-10-11
+        basis: test
+        date: day
+        value: amount
+        rows:
+          - day: 2026-10-10
+            amount: 3
+          - day: 2026-10-10
+            amount: 4
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-11"
+    And the dashboard view model is built
+    Then segment 1 widget kind is "calendar"
+    And segment 1 calendar day "2026-10-10" value is 7
+
+  @FR-DASH-11
+  Scenario: Timeline view sorts by date and keeps labels
+    Given an initialized buddy git repository
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: timeline
+        source: inline
+        updated: 2026-10-11
+        basis: test
+        date: when
+        label: title
+        rows:
+          - when: 2026-10-12
+            title: Later
+          - when: 2026-10-09
+            title: First
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-11"
+    And the dashboard view model is built
+    Then segment 1 widget kind is "timeline"
+    And segment 1 timeline labels are "First,Later"
+
   @FR-DASH-08
   Scenario: Series column with leading zeros stays text
     Given an initialized buddy git repository

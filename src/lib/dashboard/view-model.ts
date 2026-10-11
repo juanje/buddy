@@ -15,6 +15,21 @@ import type {
   WidgetSpec,
   WidgetWidth,
 } from "../../../shared/dashboard/types";
+import {
+  buildBarChartModel,
+  buildCalendarChartModel,
+  buildLineChartModel,
+  buildProgressCountdownModel,
+  buildProgressDataModel,
+  buildTimelineChartModel,
+  progressIsCountdown,
+  type BarChartModel,
+  type CalendarChartModel,
+  type LineChartModel,
+  type ProgressCountdownModel,
+  type ProgressDataModel,
+  type TimelineChartModel,
+} from "../../../shared/dashboard/views-v2-model";
 
 export type StatusTone = "ok" | "warn" | "bad" | "unknown";
 
@@ -91,6 +106,57 @@ export type DashboardWidgetVm =
       title?: string;
       width: WidgetWidth;
       cards: StatusCardVm[];
+      empty: boolean;
+      provenance?: WidgetProvenance;
+      indicative?: boolean;
+    }
+  | {
+      kind: "bar";
+      key: string;
+      title?: string;
+      width: WidgetWidth;
+      chart: BarChartModel;
+      empty: boolean;
+      provenance?: WidgetProvenance;
+      indicative?: boolean;
+    }
+  | {
+      kind: "line";
+      key: string;
+      title?: string;
+      width: WidgetWidth;
+      chart: LineChartModel;
+      empty: boolean;
+      provenance?: WidgetProvenance;
+      indicative?: boolean;
+    }
+  | {
+      kind: "progress";
+      key: string;
+      title?: string;
+      width: WidgetWidth;
+      data?: ProgressDataModel;
+      countdown?: ProgressCountdownModel;
+      empty: boolean;
+      provenance?: WidgetProvenance;
+      indicative?: boolean;
+    }
+  | {
+      kind: "calendar";
+      key: string;
+      title?: string;
+      width: WidgetWidth;
+      chart: CalendarChartModel;
+      empty: boolean;
+      provenance?: WidgetProvenance;
+      indicative?: boolean;
+    }
+  | {
+      kind: "timeline";
+      key: string;
+      title?: string;
+      width: WidgetWidth;
+      chart: TimelineChartModel;
       empty: boolean;
       provenance?: WidgetProvenance;
       indicative?: boolean;
@@ -231,10 +297,130 @@ function withIndicative<T extends DashboardWidgetVm>(vm: T, indicative?: boolean
   return indicative ? { ...vm, indicative: true } : vm;
 }
 
+function rowsFromResult(result: WidgetResult): Record<string, unknown>[] {
+  return result.kind === "rows" ? result.rows : [];
+}
+
+function buildBarVm(
+  key: string,
+  title: string | undefined,
+  width: WidgetWidth,
+  spec: WidgetSpec,
+  result: WidgetResult,
+  provenance?: WidgetProvenance,
+): DashboardWidgetVm {
+  const built = buildBarChartModel(rowsFromResult(result), spec);
+  if (typeof built === "string") {
+    return { kind: "error", key, title: title ?? "", message: built, width, provenance };
+  }
+  return {
+    kind: "bar",
+    key,
+    title,
+    width,
+    chart: built,
+    empty: built.bars.every((b) => b.total === 0),
+    provenance,
+  };
+}
+
+function buildLineVm(
+  key: string,
+  title: string | undefined,
+  width: WidgetWidth,
+  spec: WidgetSpec,
+  result: WidgetResult,
+  provenance?: WidgetProvenance,
+): DashboardWidgetVm {
+  const built = buildLineChartModel(rowsFromResult(result), spec);
+  if (typeof built === "string") {
+    return { kind: "error", key, title: title ?? "", message: built, width, provenance };
+  }
+  return {
+    kind: "line",
+    key,
+    title,
+    width,
+    chart: built,
+    empty: built.points.length === 0,
+    provenance,
+  };
+}
+
+function buildProgressVm(
+  key: string,
+  title: string | undefined,
+  width: WidgetWidth,
+  spec: WidgetSpec,
+  result: WidgetResult,
+  today: string,
+  provenance?: WidgetProvenance,
+): DashboardWidgetVm {
+  if (progressIsCountdown(spec.raw)) {
+    const built = buildProgressCountdownModel(spec, today);
+    if (typeof built === "string") {
+      return { kind: "error", key, title: title ?? "", message: built, width, provenance };
+    }
+    return { kind: "progress", key, title, width, countdown: built, empty: false, provenance };
+  }
+  const built = buildProgressDataModel(rowsFromResult(result), spec);
+  if (typeof built === "string") {
+    return { kind: "error", key, title: title ?? "", message: built, width, provenance };
+  }
+  return { kind: "progress", key, title, width, data: built, empty: false, provenance };
+}
+
+function buildCalendarVm(
+  key: string,
+  title: string | undefined,
+  width: WidgetWidth,
+  spec: WidgetSpec,
+  result: WidgetResult,
+  provenance?: WidgetProvenance,
+): DashboardWidgetVm {
+  const built = buildCalendarChartModel(rowsFromResult(result), spec);
+  if (typeof built === "string") {
+    return { kind: "error", key, title: title ?? "", message: built, width, provenance };
+  }
+  return {
+    kind: "calendar",
+    key,
+    title,
+    width,
+    chart: built,
+    empty: built.cells.length === 0,
+    provenance,
+  };
+}
+
+function buildTimelineVm(
+  key: string,
+  title: string | undefined,
+  width: WidgetWidth,
+  spec: WidgetSpec,
+  result: WidgetResult,
+  provenance?: WidgetProvenance,
+): DashboardWidgetVm {
+  const built = buildTimelineChartModel(rowsFromResult(result), spec);
+  if (typeof built === "string") {
+    return { kind: "error", key, title: title ?? "", message: built, width, provenance };
+  }
+  return {
+    kind: "timeline",
+    key,
+    title,
+    width,
+    chart: built,
+    empty: built.events.length === 0,
+    provenance,
+  };
+}
+
 function buildWidgetVm(
   seg: ResolvedWidgetSegment,
   locale: AppLocale,
   widgetKey: string,
+  today: string,
 ): DashboardWidgetVm {
   const { spec, result, provenance, indicative } = seg;
   const headingTitle = widgetHeadingTitle(spec);
@@ -291,6 +477,31 @@ function buildWidgetVm(
     case "status":
       return withIndicative(
         buildStatus(widgetKey, headingTitle, width, result, provenance),
+        indicative,
+      );
+    case "bar":
+      return withIndicative(
+        buildBarVm(widgetKey, headingTitle, width, spec, result, provenance),
+        indicative,
+      );
+    case "line":
+      return withIndicative(
+        buildLineVm(widgetKey, headingTitle, width, spec, result, provenance),
+        indicative,
+      );
+    case "progress":
+      return withIndicative(
+        buildProgressVm(widgetKey, headingTitle, width, spec, result, today, provenance),
+        indicative,
+      );
+    case "calendar":
+      return withIndicative(
+        buildCalendarVm(widgetKey, headingTitle, width, spec, result, provenance),
+        indicative,
+      );
+    case "timeline":
+      return withIndicative(
+        buildTimelineVm(widgetKey, headingTitle, width, spec, result, provenance),
         indicative,
       );
     default:
@@ -568,7 +779,7 @@ export function buildDashboardViewModel(
       rows.push({ kind: "text", markdown: segment.markdown });
       continue;
     }
-    widgetBuffer.push(buildWidgetVm(segment, locale, `w-${widgetIndex++}`));
+    widgetBuffer.push(buildWidgetVm(segment, locale, `w-${widgetIndex++}`, model.today));
   }
   flushWidgets();
 

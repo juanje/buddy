@@ -200,6 +200,7 @@ export const en: LocaleStrings = {
   dashboardBasedOn: "Based on: {basis}",
   dashboardIndicativeNotice:
     "Includes data inferred from conversation; review before relying on it.",
+  dashboardProgressCountdown: "{days} days remaining (until {until})",
   fileViewerClose: "Close",
   fileViewerBack: "Back",
   fileViewerLoading: "Loading file…",

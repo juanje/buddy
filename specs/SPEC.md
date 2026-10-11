@@ -4079,7 +4079,7 @@ and inline content.
 | FR-DASH-08 | Generic primitive: series (CSV parsed by code) | 3 S4a ✓ |
 | FR-DASH-09 | Inline content carries date and basis, renders distinct, shows its age | 3 S2 ✓ |
 | FR-DASH-10 | Views v1: kanban, list, table, counter, text, status | 3 S2 ✓ |
-| FR-DASH-11 | Views v2 (own SVG): bar, line, progress, calendar heatmap, timeline | 3 S5 |
+| FR-DASH-11 | Views v2 (own SVG): bar, line, progress, calendar heatmap, timeline | 3 S5 ✓ |
 | FR-DASH-12 | `dashboard()` tool: help, fields, check, validate, create, update | 3 S3 ✓ |
 | FR-DASH-13 | Shipped templates and self-docs examples | 3 S3 ✓ |
 | FR-DASH-14 | Freeze: dated snapshot with resolved rows inline | 3 S7 |
@@ -4269,9 +4269,27 @@ and inline content.
 
 **FR-DASH-11 — Views v2**
 
-- `bar` (stacked, optional limit line), `line`, `progress` / countdown,
-  `calendar` heatmap and `timeline`, drawn as Buddy's own SVG components. No
-  chart library: output stays consistent and exportable as static SVG.
+- Five views as Buddy SVG Svelte components (no chart library): `bar`, `line`,
+  `progress`, `calendar`, `timeline`. They consume the filtered row set from
+  the query engine (`where`, `sort`, `limit`, `range`) without the counter
+  aggregation path.
+- **`bar`:** requires `group` and either `count: true` or `sum` with a numeric
+  field. One bar per distinct `group` value in first-seen row order. Optional
+  `stack` field name stacks segments inside each bar. Optional numeric
+  `threshold` draws a reference line (distinct from row `limit`).
+- **`line`:** requires `x` (date field) and `y` (numeric field). Points with
+  the same `x` merge by summing `y`. Optional `series` splits into multiple
+  polylines.
+- **`progress`:** either (a) `max` with `count: true` or `sum` on filtered
+  rows, yielding value/max/fraction, or (b) countdown mode with `until`
+  (`YYYY-MM-DD`) and optional `since`, no `source`, days remaining from the
+  dashboard `today`. The two modes are mutually exclusive.
+- **`calendar`:** requires `date`. Without `value`, each day counts rows; with
+  `value`, sums that numeric field per day.
+- **`timeline`:** requires `date` and `label`; optional `end` date for ranges.
+  Events sorted by `date`.
+- Validation errors are widget-scoped (FR-DASH-03). `dashboard()` `help`
+  documents v2 keys alongside v1.
 
 **FR-DASH-12 — `dashboard()` tool**
 

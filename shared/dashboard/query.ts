@@ -4,6 +4,7 @@ import type { FieldType, SourceDefinition } from "./source-fields";
 import { coerceIsoDay, parseRelativeDateBound } from "./query-dates";
 import { parseDateRange, previousPeriodOfSameLength } from "./range";
 import type { WidgetResult, WidgetSpec } from "./types";
+import { v2UsesFilteredRows } from "./views-v2-model";
 
 export type QueryOutcome =
   | { ok: true; result: WidgetResult; indicative?: boolean }
@@ -413,6 +414,10 @@ export function applyWidgetQuery(
   if (!Array.isArray(working)) return working;
 
   const indicative = filteredRowsHaveInferredOrigin(working);
+
+  if (v2UsesFilteredRows(spec.view, raw)) {
+    return { ok: true, result: { kind: "rows", rows: working }, indicative: indicative ? true : undefined };
+  }
 
   const outcome = aggregateValue(working, spec, sourceDef);
   if (!outcome.ok || !wantDelta || !range) {
