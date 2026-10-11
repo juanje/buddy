@@ -103,6 +103,7 @@ rootDir (git repo — user/agent content only)
 | FR-CHAT-19 | Tokenizer artifact stripping in assistant output | 2 ✓ |
 | FR-CHAT-20 | Reveal file in native file manager from inline viewer | 3 ✓ |
 | FR-CHAT-21 | Export viewed markdown as PDF on Linux | 3 ✓ |
+| FR-CHAT-22 | CSV files open in the inline viewer as a table | 3 S4a ✓ |
 
 **FR-CHAT-01 — Streaming message display**
 
@@ -175,8 +176,7 @@ rootDir (git repo — user/agent content only)
 
 - **Given** the user clicks a local file link that resolves to a viewable file (FR-CHAT-11)
 - **When** the file exists and is readable
-- **Then** a read-only panel/modal opens inside Buddy showing the file content rendered as markdown (for `.md`), plain text (for `.txt`), or plain text (for `.csv` until FR-CHAT-22)
-- **Changed (Oct 11):** `.csv` follows the same visibility rules as `.md` and `.txt`; until FR-CHAT-22 the viewer shows CSV bytes as plain text
+- **Then** a read-only panel/modal opens inside Buddy showing the file content rendered as markdown (for `.md`), plain text (for `.txt`), or a paginated table for `.csv` (FR-CHAT-22)
 - **And** the panel includes a "Close" button
 - **And** the panel has **no** "Open externally" affordance (withdrawn, FR-CHAT-11)
 - **And** the file content is read by the worker, not by the frontend (NFR-SEC-09)
@@ -191,7 +191,7 @@ Supersedes the system-opener behavior originally specified in FR-CHAT-09/10.
 - **When** the target is a `.md`, `.txt`, or `.csv` file inside the buddy directory, under
   `agent_brain/`, `user/`, `downloads/` or `logs/`
 - **Then** it opens in the inline viewer (FR-CHAT-10)
-- **Changed (Oct 11):** `.csv` is a viewable extension for the same directories; until FR-CHAT-22 it renders as plain text in the viewer
+- **Changed (Oct 11):** `.csv` is a viewable extension for the same directories; FR-CHAT-22 renders it as a table in full-window mode
 - **But when** the target is any other file type (`.pdf`, `.png`, `.command`, …)
 - **Then** it is **not** clickable; the path renders as plain text so the user can
   locate it with their own file manager
@@ -469,6 +469,20 @@ where the save dialog opens (FR-CHAT-18).
 disabled, `print()` to localized "Print to File" printer name via
 `dgettext("gtk30", "Print to File")`. Native pagination honors CSS
 `break-inside: avoid`; no macOS-style rect tiling.
+
+**FR-CHAT-22 — CSV files open in the inline viewer as a table**
+
+- **Given** the user opens a viewable `.csv` file under the same directories as
+  FR-CHAT-11
+- **When** the inline viewer loads it
+- **Then** the viewer uses full-window layout with the file name as the header
+  title, a single table widget whose columns match the CSV header in file order,
+  rows in file order, paginated 50 at a time (FR-DASH-10), and no PDF export
+- **And when** the file has more rows than the worker safety cap (5000 by
+  default), only the first cap rows load and a text line reads
+  `Showing {cap} of {total} rows`
+- **But when** the CSV is malformed, the table widget shows the parse error and
+  the viewer still opens
 
 **FR-CHAT-19 — Tokenizer artifact stripping**
 

@@ -1277,6 +1277,34 @@ Feature: Dashboard resolution
     When the dashboard is resolved for today "2026-10-07"
     Then segment 1 widget result is an error mentioning "cannot be opened"
 
+  @FR-CHAT-22
+  Scenario: CSV link opens as a table in full window
+    Given a filesystem buddy root at "/tmp/buddy-dash-csv-1"
+    And a readable file "user/data/sample.csv" with content:
+      """
+      amount,label
+      10,Alpha
+      20,Beta
+      """
+    When the dashboard test viewer opens "user/data/sample.csv"
+    Then the file viewer layout is fullWindow
+    And the file viewer header title is "sample.csv"
+    And the file viewer has a resolved dashboard
+    And the file viewer does not offer export PDF
+
+  @FR-CHAT-22
+  Scenario: Malformed CSV shows a widget error in the viewer
+    Given a filesystem buddy root at "/tmp/buddy-dash-csv-bad"
+    And a readable file "user/data/broken.csv" with content:
+      """
+      a,b
+      "open,2
+      """
+    When the dashboard test viewer opens "user/data/broken.csv"
+    Then the file viewer layout is fullWindow
+    And the file viewer has a resolved dashboard
+    And the dashboard widget mentions "line"
+
   @FR-DASH-02
   Scenario: Ordinary markdown still offers export PDF when supported
     Given a filesystem buddy root at "/tmp/buddy-dash-view-6"

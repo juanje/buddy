@@ -123,6 +123,7 @@ export function createFileViewerController(deps: FileViewerDeps): FileViewerCont
     headerTitleStore.set(name);
     updateCanReveal(relPath);
     const isMarkdown = /\.md$/i.test(relPath);
+    const isCsv = /\.csv$/i.test(relPath);
     isMarkdownStore.set(isMarkdown);
     canExportPdfStore.set(Boolean(isMarkdown && deps.platformSupportsPdf));
     layoutStore.set("modal");
@@ -133,6 +134,15 @@ export function createFileViewerController(deps: FileViewerDeps): FileViewerCont
     loadingStore.set(true);
 
     try {
+      if (isCsv && deps.resolveDashboard) {
+        const model = await deps.resolveDashboard(relPath);
+        dashboardStore.set(model);
+        layoutStore.set("fullWindow");
+        canExportPdfStore.set(false);
+        headerTitleStore.set(name);
+        return;
+      }
+
       const text = await deps.readViewableFile(relPath);
       // Frontmatter is metadata, and markdown renders it as a rule plus a
       // setext heading — the biggest thing on the page (FR-CHAT-15). Plain text

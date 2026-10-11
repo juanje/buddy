@@ -166,3 +166,18 @@ Then(
     }
   },
 );
+
+Then(
+  "the dashboard widget mentions {string}",
+  function (this: DashViewerWorld, fragment: string) {
+    const model = readStore(this.fileViewer!.dashboard) as ResolvedDashboard;
+    const widget = model.segments.find((s) => s.kind === "widget");
+    assert.equal(widget?.kind, "widget");
+    if (widget?.kind === "widget") {
+      assert.equal(widget.result.kind, "error");
+      if (widget.result.kind === "error") {
+        assert.match(widget.result.message, new RegExp(fragment, "i"));
+      }
+    }
+  },
+);

@@ -83,6 +83,29 @@ describe("FileViewerController", () => {
     expect(readStore(controller.content)).toBe("Plain notes");
   });
 
+  it("opens csv via resolveDashboard in full window", async () => {
+    const readViewableFile = vi.fn(async () => "should not be called");
+    const resolveDashboard = vi.fn(async () => ({
+      today: "2026-10-07",
+      segments: [
+        {
+          kind: "widget" as const,
+          spec: { view: "table", source: "series", raw: {} },
+          result: { kind: "rows" as const, rows: [{ label: "A" }] },
+        },
+      ],
+    }));
+    const controller = createFileViewerController({ readViewableFile, resolveDashboard });
+
+    await controller.openFile("user/data/sample.csv");
+
+    expect(resolveDashboard).toHaveBeenCalledWith("user/data/sample.csv");
+    expect(readViewableFile).not.toHaveBeenCalled();
+    expect(readStore(controller.layout)).toBe("fullWindow");
+    expect(readStore(controller.dashboard)?.segments).toHaveLength(1);
+    expect(readStore(controller.canExportPdf)).toBe(false);
+  });
+
   it("closes and clears state", async () => {
     const readViewableFile = vi.fn(async () => "# Title");
     const controller = createFileViewerController({ readViewableFile });

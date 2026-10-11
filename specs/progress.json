@@ -2348,6 +2348,24 @@
           "unit_tests": 1
         }
       ]
+    },
+    {
+      "id": "FR-CHAT-22",
+      "title": "CSV files open in the inline viewer as a table",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "CSV link opens as a table in full window",
+          "bdd": "pass",
+          "unit_tests": 2
+        },
+        {
+          "name": "Malformed CSV shows a widget error in the viewer",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
     }
   ]
 }
