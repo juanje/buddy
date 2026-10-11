@@ -23,9 +23,14 @@ export function validateSeriesHeader(header: string[]): string | undefined {
   return undefined;
 }
 
+function hasLeadingZeroCode(value: string): boolean {
+  return /^0\d/.test(value.trim());
+}
+
 function inferColumnType(values: string[]): FieldType {
   const nonEmpty = values.filter((v) => v.trim() !== "");
   if (nonEmpty.length === 0) return { kind: "string" };
+  if (nonEmpty.some((v) => hasLeadingZeroCode(v))) return { kind: "string" };
   if (nonEmpty.every((v) => ISO_DAY.test(v))) return { kind: "date" };
   if (nonEmpty.every((v) => /^-?\d+(\.\d+)?$/.test(v))) return { kind: "number" };
   return { kind: "string" };

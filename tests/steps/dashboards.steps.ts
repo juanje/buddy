@@ -571,6 +571,14 @@ Then(
 );
 
 Then(
+  "segment {int} first widget row code is {string}",
+  function (this: DashboardWorld, index: number, code: string) {
+    const rows = widgetRows.call(this, index);
+    assert.equal(String(rows[0]?.code), code);
+  },
+);
+
+Then(
   "segment {int} first widget row summary is {string}",
   function (this: DashboardWorld, index: number, summary: string) {
     const rows = widgetRows.call(this, index);

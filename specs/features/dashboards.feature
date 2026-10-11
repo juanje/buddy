@@ -1277,6 +1277,27 @@ Feature: Dashboard resolution
     When the dashboard is resolved for today "2026-10-07"
     Then segment 1 widget result is an error mentioning "cannot be opened"
 
+  @FR-DASH-08
+  Scenario: Series column with leading zeros stays text
+    Given an initialized buddy git repository
+    And a csv file at "user/data/codes.csv" with content:
+      """
+      code,label
+      004,A
+      012,B
+      """
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: table
+        source: series
+        path: user/data/codes.csv
+        columns: [code, label]
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-07"
+    Then segment 1 first widget row code is "004"
+
   @FR-CHAT-22
   Scenario: CSV link opens as a table in full window
     Given a filesystem buddy root at "/tmp/buddy-dash-csv-1"

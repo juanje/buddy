@@ -50,6 +50,22 @@ describe("inferSeriesDefinition", () => {
     const def = inferSeriesDefinition(["mix"], [{ mix: "1" }, { mix: "two" }]);
     expect(def.fields.mix).toEqual({ kind: "string" });
   });
+
+  it("keeps leading-zero codes as string", () => {
+    const def = inferSeriesDefinition(
+      ["code"],
+      [{ code: "004" }, { code: "012" }],
+    );
+    expect(def.fields.code).toEqual({ kind: "string" });
+  });
+
+  it("still infers plain numbers including zero and decimals", () => {
+    const def = inferSeriesDefinition(
+      ["n"],
+      [{ n: "0" }, { n: "10" }, { n: "0.5" }],
+    );
+    expect(def.fields.n).toEqual({ kind: "number" });
+  });
 });
 
 describe("castSeriesRows", () => {

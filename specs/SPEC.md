@@ -4205,9 +4205,10 @@ and inline content.
   header row names the fields. Duplicate or empty header names are a widget
   error. The model never reads the rows.
 - Types are inferred per column from non-empty cell values: `number` when every
-  value is numeric (decimal point allowed), `date` when every value is
-  `YYYY-MM-DD`, otherwise `string`. An all-empty column is `string`. Empty
-  cells omit the field on that row.
+  value is numeric (decimal point allowed) and none have a leading zero before
+  another digit (for example `004` stays text), `date` when every value is
+  `YYYY-MM-DD`, otherwise `string`. Values `0` and `0.5` remain numbers. An
+  all-empty column is `string`. Empty cells omit the field on that row.
 - `dateField` is the column named `date` when it is a date column; otherwise
   the first date-typed column; otherwise none.
 - Malformed CSV (unclosed quotes, inconsistent column counts) is a widget error

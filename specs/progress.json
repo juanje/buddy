@@ -2371,8 +2371,14 @@
           "name": "Series path outside buddy root is a widget error",
           "bdd": "pass",
           "unit_tests": 1
+        },
+        {
+          "name": "Series column with leading zeros stays text",
+          "bdd": "pass",
+          "unit_tests": 2
         }
-      ]
+      ],
+      "note": "reopened: leading-zero codes lost their zeros"
     },
     {
       "id": "FR-CHAT-22",
