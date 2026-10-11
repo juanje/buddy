@@ -2457,6 +2457,51 @@
           "unit_tests": 1
         }
       ]
+    },
+    {
+      "id": "FR-DATA-01",
+      "title": "Registry user/data/index.md format, protected from delete and move",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Parse skips a broken entry and keeps valid ones",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Delete of data registry index is rejected",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Move of data registry index is rejected",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Write to data registry index is denied",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Edit of data registry index is denied",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Copy into data registry index is denied",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
+    },
+    {
+      "id": "FR-DATA-02",
+      "title": "data tool help, define, and list",
+      "status": "pending",
+      "cycle_step": "spec_review",
+      "scenarios": []
     }
   ]
 }

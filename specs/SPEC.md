@@ -4416,15 +4416,28 @@ is pre-seeded.
 
 **FR-DATA-01 — Registry**
 
-- `user/data/index.md`, human-readable. Each entry: path (file or folder),
-  kind (`sections` | `records` | `series`), schema (headings, frontmatter
-  fields or columns), update mode (`on_mention` | `consolidation` |
-  `snapshot` | `on_request`), one to three lines of instructions for agent
-  modes, `inferred`, `sensitive`.
+- `user/data/index.md`, human-readable. Each entry is a `## <name>` heading
+  (slug: `^[a-z][a-z0-9-]*$`, unique) followed by a fenced ` ```data ` block
+  containing one YAML mapping, parsed with the same `yaml` library as
+  dashboards. Prose between entries is ignored. A parse or validation error
+  in one entry is reported for that entry only; other entries still load.
+- Fields: `path` (default `user/data/<name>.csv`; must stay under
+  `user/data/` and end in `.csv`), `kind` (`series` only in sprint 4b),
+  `key` (column name or list of names, each listed in `columns`),
+  `columns` (map of name → `string` | `number` | `date`; no duplicate names;
+  `origin` and `basis` are reserved), `mode` (`on_mention` | `consolidation`
+  | `on_request`, default `on_request`; `snapshot` is an error),
+  `inferred` and `sensitive` (boolean, default `false`), optional
+  `instructions` (at most three lines and 400 characters).
 - Series default to `user/data/<name>.csv`. Data lives apart from dashboards
   because it outlives them and several dashboards can share it.
 - The registry and the files it lists are user space: maintenance never
   prunes or relocates them.
+- `user/data/index.md` cannot be deleted or moved. Direct `write` and
+  `edit`, and `copy_file` / `move_file` whose destination is that path, are
+  denied with `Use data(action='define') to change the data registry.`
+  Reads are allowed. The file is not added to the heading-guard protected
+  list; only `data(define)` may rewrite it (FR-DATA-02).
 
 **FR-DATA-02 — `data()` discovery and definition**
 

@@ -24,6 +24,10 @@ import { classifyTaskAction, isTaskTool } from "./tasks/actions";
 import { isContained } from "./containment";
 import { globalConfigDir } from "./global-config";
 import { isDashboardPath } from "../shared/dashboard/document";
+import {
+  DATA_REGISTRY_TOOL_MESSAGE,
+  isDataRegistryPath,
+} from "../shared/data/registry-path";
 import { identityDirPath } from "./brain-paths";
 
 export type PermissionOp = "read" | "write";
@@ -54,6 +58,12 @@ function isUserDashboardFile(absPath: string, rootDir: string): boolean {
   if (!isContained(absPath, rootDir)) return false;
   const rel = relative(rootDir, absPath).replace(/\\/g, "/");
   return isDashboardPath(rel);
+}
+
+function isDataRegistryFile(absPath: string, rootDir: string): boolean {
+  if (!isContained(absPath, rootDir)) return false;
+  const rel = relative(rootDir, absPath).replace(/\\/g, "/");
+  return isDataRegistryPath(rel);
 }
 
 function connectorActionFromArgs(args: unknown): string | undefined {
@@ -139,12 +149,14 @@ export function evaluateToolCall(
   // WRITE_TOOLS, so their destination is checked before the file-tool exit.
   if (toolName === "copy_file" || toolName === "move_file") {
     const dest = (args as { destination?: unknown } | undefined)?.destination;
-    if (
-      typeof dest === "string" &&
-      dest.trim() !== "" &&
-      isUserDashboardFile(resolve(rootDir, expandHome(dest, home)), rootDir)
-    ) {
-      return { action: "deny", reason: DASHBOARD_TOOL_MESSAGE };
+    if (typeof dest === "string" && dest.trim() !== "") {
+      const absDest = resolve(rootDir, expandHome(dest, home));
+      if (isUserDashboardFile(absDest, rootDir)) {
+        return { action: "deny", reason: DASHBOARD_TOOL_MESSAGE };
+      }
+      if (isDataRegistryFile(absDest, rootDir)) {
+        return { action: "deny", reason: DATA_REGISTRY_TOOL_MESSAGE };
+      }
     }
   }
 
@@ -169,6 +181,9 @@ export function evaluateToolCall(
       const absPath = resolve(rootDir, expandHome(rawPath, home));
       if (isUserDashboardFile(absPath, rootDir)) {
         return { action: "deny", reason: DASHBOARD_TOOL_MESSAGE };
+      }
+      if (isDataRegistryFile(absPath, rootDir)) {
+        return { action: "deny", reason: DATA_REGISTRY_TOOL_MESSAGE };
       }
     }
     const decision = evaluateOnePath(rawPath, op, rootDir, home, configDir);

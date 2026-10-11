@@ -22,6 +22,7 @@ import {
 import { BRAIN_PREFIX, LOGS_DIR } from "../shared/brain-paths";
 import { expandHome } from "../shared/path-utils";
 import { rewriteBrokenLinks } from "./consolidation-relocate";
+import { isDataRegistryPath } from "../shared/data/registry-path";
 import { containedRelPath, isContained } from "./containment";
 import { gitClient } from "./git";
 import { evaluateToolCall } from "./permissions";
@@ -51,6 +52,7 @@ function isAbsolutePath(path: string): boolean {
 
 /** FR-DELETE-02 / FR-FILE-03: denylist for delete/move (same structural hubs as heading guard + all logs/). */
 export function isFileOpProtected(relPath: string): boolean {
+  if (isDataRegistryPath(relPath)) return true;
   if ((PROTECTED_FILES as readonly string[]).includes(relPath)) return true;
   if (HEADING_GUARD_DAILY_LOG_RE.test(relPath)) return true;
   if (relPath === LOGS_DIR || relPath.startsWith(`${LOGS_DIR}/`)) return true;
@@ -95,6 +97,9 @@ export function validateCopyDestination(
 ): ResolvedWorkspacePath {
   const resolved = assertInsideRoot(rootDir, resolveInputPath(rootDir, rawPath, home));
   if (!isUserMutablePath(resolved.relPath)) {
+    throw new FileToolError(`Copy destination is not allowed: ${resolved.relPath}`);
+  }
+  if (isDataRegistryPath(resolved.relPath)) {
     throw new FileToolError(`Copy destination is not allowed: ${resolved.relPath}`);
   }
   return resolved;
