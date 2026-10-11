@@ -8,7 +8,7 @@ const ALL_VIEWS = new Set([...V1_VIEWS, ...V2_VIEWS]);
 
 const QUERY_KEYS = ["where", "group", "sort", "limit", "count", "sum", "range"] as const;
 
-const INLINE_KEYS = ["updated", "basis", "rows"] as const;
+const INLINE_KEYS = ["updated", "basis", "rows", "refresh"] as const;
 
 const FILE_SOURCE_KEYS = ["path"] as const;
 

@@ -22,23 +22,39 @@ Given("buddy file {string} exists with content {string}", function (this: Consol
   writeFileSync(abs, content, "utf8");
 });
 
+async function buildPromptForDepth(
+  world: ConsolidationDataWorld,
+  depth: number,
+  isoDay: string,
+): Promise<void> {
+  assert.ok(world.buddyDir);
+  if (!world.globalConfigDir) {
+    ({ configDir: world.globalConfigDir } = setupGlobalConfigDir({
+      consolidationSkill: "# Skill\n\nDo consolidation.\n",
+    }));
+  }
+  writeFileSync(join(world.buddyDir, "AGENTS.md"), "# Rules\n");
+  world.consolidationPrompt = await buildConsolidationPrompt(
+    world.buddyDir,
+    depth,
+    new Date(`${isoDay}T12:00:00`),
+  );
+}
+
 When(
-  "the depth 1 consolidation prompt is built for {string}",
-  async function (this: ConsolidationDataWorld, isoDay: string) {
-    assert.ok(this.buddyDir);
-    if (!this.globalConfigDir) {
-      ({ configDir: this.globalConfigDir } = setupGlobalConfigDir({
-        consolidationSkill: "# Skill\n\nDo consolidation.\n",
-      }));
-    }
-    writeFileSync(join(this.buddyDir, "AGENTS.md"), "# Rules\n");
-    this.consolidationPrompt = await buildConsolidationPrompt(
-      this.buddyDir,
-      1,
-      new Date(`${isoDay}T12:00:00`),
-    );
+  "the depth {int} consolidation prompt is built for {string}",
+  async function (this: ConsolidationDataWorld, depth: number, isoDay: string) {
+    await buildPromptForDepth(this, depth, isoDay);
   },
 );
+
+Given("dashboard file {string} with body:", function (this: ConsolidationDataWorld, rel: string, body: string) {
+  assert.ok(this.buddyDir);
+  const abs = join(this.buddyDir, rel);
+  mkdirSync(join(abs, ".."), { recursive: true });
+  const content = ["---", "type: dashboard", "title: Test", "summary: Test", "---", "", body.trim()].join("\n");
+  writeFileSync(abs, content, "utf8");
+});
 
 Then("the consolidation prompt mentions {string}", function (this: ConsolidationDataWorld, fragment: string) {
   assert.ok(this.consolidationPrompt?.includes(fragment), this.consolidationPrompt);

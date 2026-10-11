@@ -4084,7 +4084,7 @@ and inline content.
 | FR-DASH-13 | Shipped templates and self-docs examples | 3 S3 ✓ |
 | FR-DASH-14 | Freeze: dated snapshot with resolved rows inline | 3 S7 |
 | FR-DASH-15 | Export: static HTML from the rendered dashboard + PDF, date range, sensitive warning | 3 S7 |
-| FR-DASH-16 | Consolidation refreshes only `refresh`-tagged inline blocks | 3 S6 |
+| FR-DASH-16 | Consolidation refreshes only `refresh`-tagged inline blocks | 3 S6 ✓ |
 | FR-DASH-17 | Git-history source (e.g. tasks completed per week) | 4 |
 | FR-DASH-18 | Built-in sources: `projects`, `logs`, `journal` | 3 S3 ✓ |
 | FR-DASH-19 | Direct file-tool writes into `user/dashboards/` denied; reads allowed | 3 S3 ✓ |
@@ -4368,8 +4368,16 @@ and inline content.
 
 **FR-DASH-16 — Inline refresh in consolidation**
 
-- Inline blocks may declare `refresh: daily | weekly`. Consolidation updates
-  only those blocks, never on view.
+- Widgets with `source: inline` may declare `refresh: daily | weekly`.
+  `refresh` on any other source is a widget error; the rest of the dashboard
+  still renders.
+- **Stale:** `daily` when `updated` is before today; `weekly` when
+  `updated` is seven or more days before today. Without a valid `updated`,
+  the widget already fails inline validation and is not listed.
+- Depth-1 consolidation lists stale `daily` widgets; depth-2 lists stale
+  `weekly` widgets. Each line gives dashboard path, widget title, `refresh`,
+  and `updated`. The block tells the agent to run `dashboard(update)` for
+  that widget only. Opening a dashboard never refreshes inline blocks.
 
 **FR-DASH-17 — Git-history source**
 

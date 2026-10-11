@@ -2754,6 +2754,34 @@
           "unit_tests": 1
         }
       ]
+    },
+    {
+      "id": "FR-DASH-16",
+      "title": "refresh tagged inline widgets during consolidation",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Daily refresh stale yesterday appears at depth 1",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Daily refresh updated today is not listed at depth 1",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Weekly refresh appears at depth 2 after seven days",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Refresh on tasks source is a widget error",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
     }
   ]
 }

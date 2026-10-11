@@ -484,6 +484,14 @@ Then("segment {int} widget result is an error", function (this: DashboardWorld, 
   }
 });
 
+Then("segment {int} widget result is not an error", function (this: DashboardWorld, index: number) {
+  const seg = segments.call(this)[index - 1];
+  assert.equal(seg.kind, "widget");
+  if (seg.kind === "widget") {
+    assert.notEqual(seg.result.kind, "error");
+  }
+});
+
 function widgetRows(this: DashboardWorld, index: number): Record<string, unknown>[] {
   const seg = segments.call(this)[index - 1];
   assert.equal(seg.kind, "widget");

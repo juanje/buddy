@@ -12,6 +12,7 @@ import { join, resolve } from "node:path";
 import { computeActiveFronts, formatActiveFrontsBlock } from "./active-fronts";
 import { formatConsolidationSeriesBlock } from "../shared/data/consolidation-series";
 import { loadRegistryFromRoot } from "../shared/data/registry-lookup";
+import { formatStaleRefreshWidgetsBlock } from "../shared/dashboard/inline-refresh";
 import { readTaskConfig } from "./tasks/task-config";
 
 import {
@@ -259,6 +260,8 @@ export async function buildConsolidationPrompt(
     depth === 1
       ? formatConsolidationSeriesBlock(rootDir, loadRegistryFromRoot(rootDir), date)
       : undefined;
+  const staleRefreshBlock =
+    depth === 1 || depth === 2 ? formatStaleRefreshWidgetsBlock(rootDir, date, depth) : undefined;
 
   const blocks = [
     `Date: ${date}`,
@@ -272,6 +275,7 @@ export async function buildConsolidationPrompt(
     ripeBlock,
     activeFrontsBlock,
     consolidationSeriesBlock,
+    staleRefreshBlock,
   ].filter(Boolean);
 
   if (depth >= 2) {

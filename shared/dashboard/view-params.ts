@@ -30,6 +30,15 @@ export function validateViewParams(
   const view = spec.view;
   const source = spec.source;
 
+  if (raw.refresh !== undefined) {
+    if (source !== "inline") {
+      return "Key 'refresh' is only allowed with source: inline";
+    }
+    if (raw.refresh !== "daily" && raw.refresh !== "weekly") {
+      return "Inline refresh must be 'daily' or 'weekly'";
+    }
+  }
+
   if (source === "inline") {
     const metaErr = validateInlineMetadata(raw);
     if (metaErr) return metaErr;
