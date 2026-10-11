@@ -8,6 +8,9 @@ import {
   buildDashboardViewModel,
   layoutWidgetRows,
   statusTone,
+  TABLE_PAGE_SIZE,
+  tablePageMeta,
+  tablePageSlice,
   taskStateLabel,
   type DashboardWidgetVm,
 } from "../../src/lib/dashboard/view-model";
@@ -177,5 +180,20 @@ describe("statusTone", () => {
     expect(statusTone("warn")).toBe("warn");
     expect(statusTone("bad")).toBe("bad");
     expect(statusTone("weird")).toBe("unknown");
+  });
+});
+
+describe("table pagination", () => {
+  it("shows the first page and more footer", () => {
+    const rows = Array.from({ length: 120 }, (_, i) => i);
+    expect(tablePageSlice(rows, TABLE_PAGE_SIZE)).toHaveLength(50);
+    const meta = tablePageMeta(TABLE_PAGE_SIZE, 120, "en");
+    expect(meta.hasMore).toBe(true);
+    expect(meta.footerText).toBe("50 of 120 rows");
+  });
+
+  it("clears hasMore when all rows are shown", () => {
+    const meta = tablePageMeta(120, 120, "en");
+    expect(meta.hasMore).toBe(false);
   });
 });

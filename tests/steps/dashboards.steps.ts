@@ -21,6 +21,9 @@ import type { TaskItem } from "../../shared/task-types";
 import type { ResolvedDashboard, ResolvedSegment } from "../../shared/dashboard/types";
 import {
   buildDashboardViewModel,
+  TABLE_PAGE_SIZE,
+  tablePageMeta,
+  tablePageSlice,
   widgetKeysFromViewModel,
   type DashboardViewModel,
 } from "../../src/lib/dashboard/view-model";
@@ -33,6 +36,8 @@ interface DashboardWorld extends BuddyWorld {
   resolved?: ResolvedDashboard;
   viewModel?: DashboardViewModel;
   wipConfigDir?: string;
+  tablePaginationShown?: number;
+  tablePaginationLocale?: AppLocale;
 }
 
 function root(this: DashboardWorld): string {
@@ -283,6 +288,82 @@ Given(
     const abs = join(root.call(this), relPath);
     mkdirSync(dirname(abs), { recursive: true });
     writeFileSync(abs, content.trim() + "\n", "utf8");
+  },
+);
+
+Given(
+  "a csv file at {string} with {int} numbered rows and columns {string}",
+  function (this: DashboardWorld, relPath: string, count: number, columnList: string) {
+    const cols = columnList.split(",").map((c) => c.trim());
+    const lines = [cols.join(",")];
+    for (let i = 1; i <= count; i++) {
+      const day = String((i % 28) + 1).padStart(2, "0");
+      const cells = cols.map((col, j) =>
+        j === 0 ? `2026-10-${day}` : col === "note" ? `row-${i}` : `${col}-${i}`,
+      );
+      lines.push(cells.join(","));
+    }
+    const abs = join(root.call(this), relPath);
+    mkdirSync(dirname(abs), { recursive: true });
+    writeFileSync(abs, lines.join("\n") + "\n", "utf8");
+  },
+);
+
+function tableWidgetRows(vm: DashboardViewModel, segmentNum: number): Record<string, string>[] {
+  let index = 0;
+  for (const row of vm.rows) {
+    if (row.kind !== "widgetRow") continue;
+    for (const widget of row.widgets) {
+      index += 1;
+      if (index === segmentNum && widget.kind === "table") return widget.rows;
+    }
+  }
+  throw new Error(`table widget ${segmentNum} not found`);
+}
+
+function visibleTableRows(world: DashboardWorld, segmentNum: number): Record<string, string>[] {
+  assert.ok(world.viewModel, "viewModel required");
+  const all = tableWidgetRows(world.viewModel, segmentNum);
+  const shown = world.tablePaginationShown ?? TABLE_PAGE_SIZE;
+  return tablePageSlice(all, shown);
+}
+
+When(
+  "table pagination is at the default for segment {int}",
+  function (this: DashboardWorld, _segmentNum: number) {
+    this.tablePaginationShown = TABLE_PAGE_SIZE;
+    this.tablePaginationLocale = "en";
+  },
+);
+
+When("table pagination shows more for segment {int}", function (this: DashboardWorld, _segmentNum: number) {
+  this.tablePaginationShown = (this.tablePaginationShown ?? TABLE_PAGE_SIZE) + TABLE_PAGE_SIZE;
+});
+
+Then(
+  "segment {int} table visible row count is {int}",
+  function (this: DashboardWorld, segmentNum: number, count: number) {
+    assert.equal(visibleTableRows(this, segmentNum).length, count);
+  },
+);
+
+Then(
+  "segment {int} table pagination has more",
+  function (this: DashboardWorld, segmentNum: number) {
+    assert.ok(this.viewModel, "viewModel required");
+    const all = tableWidgetRows(this.viewModel, segmentNum);
+    const meta = tablePageMeta(this.tablePaginationShown ?? TABLE_PAGE_SIZE, all.length, "en");
+    assert.ok(meta.hasMore);
+  },
+);
+
+Then(
+  "segment {int} table pagination has no more",
+  function (this: DashboardWorld, segmentNum: number) {
+    assert.ok(this.viewModel, "viewModel required");
+    const all = tableWidgetRows(this.viewModel, segmentNum);
+    const meta = tablePageMeta(this.tablePaginationShown ?? TABLE_PAGE_SIZE, all.length, "en");
+    assert.ok(!meta.hasMore);
   },
 );
 

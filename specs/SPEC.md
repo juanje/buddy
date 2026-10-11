@@ -4227,6 +4227,10 @@ and inline content.
 - `list`: one row per item with optional `fields`; overdue marker same as kanban.
 - `table`: `columns` lists the fields shown, in order; headers are localized for
   built-in sources and humanized for inline or unknown fields; layout is automatic.
+  When a table has more than 50 rows, the UI shows the first 50 and a footer
+  "{shown} of {total} rows · Show 50 more" (localized). Each click adds 50 rows
+  until all are visible, then the control disappears. Widget `limit` is applied
+  by the engine before rendering, so a `limit` of 50 or fewer never shows the control.
 - `counter`: a single number from `count` or `sum`, or one number per group when
   `group` is set (`count` or `sum`). With `range`, an optional `delta: true`
   shows the change against the preceding period of the same length.

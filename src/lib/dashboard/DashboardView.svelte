@@ -48,7 +48,13 @@
             {:else if widget.kind === "list"}
               <ListView items={widget.items} emptyLabel={$t.dashboardEmptyWidget} />
             {:else if widget.kind === "table"}
-              <TableView headers={widget.headers} rows={widget.rows} emptyLabel={$t.dashboardEmptyWidget} />
+              <TableView
+                headers={widget.headers}
+                rows={widget.rows}
+                emptyLabel={$t.dashboardEmptyWidget}
+                showMoreLabel={$t.dashboardTableShowMore}
+                locale={getLocale()}
+              />
             {:else if widget.kind === "counter"}
               <CounterView value={widget.value} delta={widget.delta} groups={widget.groups} />
             {:else if widget.kind === "textWidget"}

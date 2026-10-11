@@ -487,3 +487,24 @@ export function buildDashboardViewModel(
 export function segmentCount(model: ResolvedDashboard): number {
   return model.segments.length;
 }
+
+/** Table UI page size (FR-DASH-10). */
+export const TABLE_PAGE_SIZE = 50;
+
+export function tablePageSlice<T>(rows: T[], shown: number): T[] {
+  return rows.slice(0, Math.max(0, shown));
+}
+
+export function tablePageMeta(
+  shown: number,
+  total: number,
+  locale: AppLocale,
+): { visibleCount: number; hasMore: boolean; footerText: string } {
+  const visibleCount = Math.min(shown, total);
+  const hasMore = visibleCount < total;
+  const footerText =
+    locale === "es"
+      ? `${visibleCount} de ${total} filas`
+      : `${visibleCount} of ${total} rows`;
+  return { visibleCount, hasMore, footerText };
+}

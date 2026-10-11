@@ -196,6 +196,7 @@ export const en: LocaleStrings = {
   maintenancePausedBody: "I could not organise my memory several times in a row, so I have stopped trying rather than spend your budget on it. Everything we talked about is still saved.",
   notificationTitle: "buddy",
   dashboardEmptyWidget: "No data",
+  dashboardTableShowMore: "Show 50 more",
   dashboardBasedOn: "Based on: {basis}",
   fileViewerClose: "Close",
   fileViewerBack: "Back",

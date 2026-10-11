@@ -1,11 +1,35 @@
 <script lang="ts">
+  import type { AppLocale } from "../i18n";
   import type { TableHeaderVm } from "./view-model";
+  import { TABLE_PAGE_SIZE, tablePageMeta, tablePageSlice } from "./view-model";
 
   let {
     headers,
     rows,
     emptyLabel,
-  }: { headers: TableHeaderVm[]; rows: Record<string, string>[]; emptyLabel: string } = $props();
+    showMoreLabel,
+    locale = "en",
+  }: {
+    headers: TableHeaderVm[];
+    rows: Record<string, string>[];
+    emptyLabel: string;
+    showMoreLabel: string;
+    locale?: AppLocale;
+  } = $props();
+
+  let shown = $state(TABLE_PAGE_SIZE);
+
+  $effect(() => {
+    rows;
+    shown = TABLE_PAGE_SIZE;
+  });
+
+  const visibleRows = $derived(tablePageSlice(rows, shown));
+  const page = $derived(tablePageMeta(shown, rows.length, locale));
+
+  function showMore() {
+    shown = Math.min(rows.length, shown + TABLE_PAGE_SIZE);
+  }
 </script>
 
 {#if rows.length === 0}
@@ -21,7 +45,7 @@
         </tr>
       </thead>
       <tbody>
-        {#each rows as row, i (i)}
+        {#each visibleRows as row, i (i)}
           <tr>
             {#each headers as col (col.key)}
               <td>{row[col.key] ?? ""}</td>
@@ -31,6 +55,12 @@
       </tbody>
     </table>
   </div>
+  {#if page.hasMore}
+    <p class="table-footer">
+      <span>{page.footerText}</span>
+      <button type="button" class="table-more" onclick={showMore}>{showMoreLabel}</button>
+    </p>
+  {/if}
 {/if}
 
 <style>
@@ -58,5 +88,26 @@
     color: var(--muted);
     font-size: 13px;
     margin: 0;
+  }
+  .table-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin: 8px 0 0;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .table-more {
+    font: inherit;
+    color: var(--accent);
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    text-decoration: underline;
+  }
+  .table-more:hover {
+    opacity: 0.85;
   }
 </style>

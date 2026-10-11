@@ -887,6 +887,29 @@ Feature: Dashboard resolution
     Then the kanban workflow columns are ordered
 
   @FR-DASH-10
+  Scenario: Long table shows 50 rows and offers more
+    Given an initialized buddy git repository
+    And a csv file at "user/data/long-table.csv" with 120 numbered rows and columns "date, note"
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: table
+        source: series
+        path: user/data/long-table.csv
+        columns: [date, note]
+      ```
+      """
+    When the dashboard view model is built for locale "en"
+    And table pagination is at the default for segment 1
+    Then segment 1 table visible row count is 50
+    And segment 1 table pagination has more
+    When table pagination shows more for segment 1
+    Then segment 1 table visible row count is 100
+    When table pagination shows more for segment 1
+    Then segment 1 table visible row count is 120
+    And segment 1 table pagination has no more
+
+  @FR-DASH-10
   Scenario: Count on a row view is a widget error pointing at counter
     Given an initialized buddy git repository
     And a dashboard file with body:

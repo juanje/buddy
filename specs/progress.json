@@ -2053,9 +2053,14 @@
           "name": "Count on a row view is a widget error pointing at counter",
           "bdd": "pass",
           "unit_tests": 3
+        },
+        {
+          "name": "Long table shows 50 rows and offers more",
+          "bdd": "pass",
+          "unit_tests": 2
         }
       ],
-      "note": "reopened: count/sum on row views rendered empty instead of erroring (manual test 2026-10-10)"
+      "note": "reopened: table pages rows 50 at a time"
     },
     {
       "id": "FR-DASH-06",
