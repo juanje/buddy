@@ -401,3 +401,11 @@ Feature: Dashboard tool
   Scenario: Dashboard documentation appears in the bundled docs index
     Given the bundled docs index
     Then the bundled docs index links to dashboards.md
+
+  @FR-DASH-13
+  Scenario: Dashboard docs show query and series examples
+    Given the bundled docs index
+    Then the bundled dashboards doc contains "where: region = Europe"
+    And the bundled dashboards doc contains "where: date >= -30d"
+    And the bundled dashboards doc contains "sum:"
+    And the bundled dashboards doc contains "fields(source='series'"

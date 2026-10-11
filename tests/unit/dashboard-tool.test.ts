@@ -351,6 +351,22 @@ type: dashboard
     expect(out.text).toMatch(/params=\{/);
   });
 
+  it("bundled dashboards doc shows query and series examples", () => {
+    const docPath = join(
+      fileURLToPath(import.meta.url),
+      "..",
+      "..",
+      "bundled",
+      "docs",
+      "dashboards.md",
+    );
+    const text = readFileSync(docPath, "utf8");
+    expect(text).toContain("where: region = Europe");
+    expect(text).toContain("where: date >= -30d");
+    expect(text).toContain("sum:");
+    expect(text).toContain("fields(source='series'");
+  });
+
   it("check on a dashboard file points to validate", () => {
     dir = mkdtempSync(join(tmpdir(), "dash-tool-"));
     const rel = "user/dashboards/board.md";

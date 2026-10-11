@@ -2298,9 +2298,14 @@
           "name": "Dashboard documentation appears in the bundled docs index",
           "bdd": "pass",
           "unit_tests": 1
+        },
+        {
+          "name": "Dashboard docs show query and series examples",
+          "bdd": "pass",
+          "unit_tests": 1
         }
       ],
-      "note": "reopened: docs index unit test and counts"
+      "note": "reopened: docs had no where or series examples"
     },
     {
       "id": "FR-DASH-20",

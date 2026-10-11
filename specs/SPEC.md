@@ -4299,7 +4299,10 @@ and inline content.
 - Shipped templates built only on Buddy-owned files (at least "my tasks" and
   "my week"). `dashboard(action='create')` with a template name writes it
   without the model composing anything.
-- A self-docs page in `~/.buddy/docs/` describes what dashboards can do.
+- A self-docs page in `~/.buddy/docs/` describes what dashboards can do,
+  including query examples (`where` by text and relative date, `sum`, `group`
+  with `count` in `counter`) and a `source: series` example that shows
+  discovering fields via `fields(source='series', ...)`.
   `~/.buddy/docs/` is outside `VIEWABLE_DIRS`, so example dashboards use only
   inline data and are copied into `user/dashboards/examples/` when the user
   asks what is possible.

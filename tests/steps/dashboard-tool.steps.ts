@@ -114,6 +114,20 @@ Then("the bundled docs index links to dashboards.md", function () {
   assert.ok(text.includes("dashboards.md"));
 });
 
+Then("the bundled dashboards doc contains {string}", function (fragment: string) {
+  const docPath = join(
+    fileURLToPath(import.meta.url),
+    "..",
+    "..",
+    "..",
+    "bundled",
+    "docs",
+    "dashboards.md",
+  );
+  const text = readFileSync(docPath, "utf8");
+  assert.ok(text.includes(fragment), `expected in dashboards.md:\n${fragment}\n\ngot:\n${text}`);
+});
+
 When(
   "dashboard action {string} is invoked for dashboard {string} widget {string} with:",
   function (
