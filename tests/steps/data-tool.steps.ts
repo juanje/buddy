@@ -50,6 +50,10 @@ Then("data tool output mentions {string}", function (this: DataToolWorld, fragme
   assert.ok(this.dataToolResult?.text.includes(fragment), this.dataToolResult?.text);
 });
 
+Then("data tool output does not mention {string}", function (this: DataToolWorld, fragment: string) {
+  assert.ok(!this.dataToolResult?.text.includes(fragment), this.dataToolResult?.text);
+});
+
 Then("data file {string} exists", function (this: DataToolWorld, rel: string) {
   assert.ok(existsSync(join(root.call(this), rel)));
 });

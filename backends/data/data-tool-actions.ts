@@ -39,7 +39,7 @@ function helpAction(): DataActionResult {
   define does not create the CSV.
   Example: params={name:'migranas', kind:'series', key:['fecha','hora'], columns:{fecha:'date', hora:'string', intensidad:'number'}}
   Column types: string, number, date. The name is a slug (lowercase ascii, hyphens).
-- list — entry names, paths, and modes (inactive until sprint 6)
+- list — entry names, paths, and modes (consolidation modes show inactive until activated)
 - append(name, values:{...}) — add one row to a registered series CSV
   Example: params={name:'migranas', values:{fecha:'2026-10-11', hora:'09:00', intensidad:7}}
 - correct(name, key:{...}, set:{...}) — update non-key fields on an existing row
@@ -183,10 +183,13 @@ function listAction(rootDir: string): DataActionResult {
   if (parsed.entries.length === 0 && parsed.errors.length === 0) {
     return ok("No entries registered.");
   }
-  const lines = parsed.entries.map(
-    (e) =>
-      `- ${e.name} (${e.path}) mode ${e.mode} (inactive until sprint 6)`,
-  );
+  const lines = parsed.entries.map((e) => {
+    const inactive =
+      e.mode === "consolidation" || e.mode === "on_request"
+        ? " (inactive until sprint 6)"
+        : "";
+    return `- ${e.name} (${e.path}) mode ${e.mode}${inactive}`;
+  });
   const errLines = parsed.errors.map((e) => `- ${e.name}: ${e.message} (skipped)`);
   return ok([...lines, ...errLines].join("\n"));
 }

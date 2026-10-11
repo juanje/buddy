@@ -21,7 +21,7 @@ Feature: Data tool
       | column_date | date                   |
       | column_time | string                 |
       | column_intensity | number          |
-      | mode        | on_mention             |
+      | mode        | consolidation          |
     Then data tool succeeded
     And data file "user/data/index.md" exists
     When data action "list" is invoked

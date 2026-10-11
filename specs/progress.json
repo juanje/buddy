@@ -2698,6 +2698,34 @@
           "unit_tests": 1
         }
       ]
+    },
+    {
+      "id": "FR-DATA-04",
+      "title": "on_mention entries in session context",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Two on mention entries appear in one session context line",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Consolidation mode entry is not listed in session context",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Empty registry has no active on mention section",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "List on mention entry without inactive suffix",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
     }
   ]
 }

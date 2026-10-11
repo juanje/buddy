@@ -13,6 +13,8 @@ import { defaultTemplatesDir } from "./create-buddy";
 import { dailyLogPath, deferredPath, logsDirPath, logsIndexPath, soulPath, userProfilePath } from "./brain-paths";
 import { lastLogIndexDate, parseLogsIndex } from "./logs-index";
 import { BRAIN } from "../shared/brain-paths";
+import { loadRegistryFromRoot } from "../shared/data/registry-lookup";
+import { formatOnMentionSessionSection, onMentionEntries } from "../shared/data/on-mention-session";
 
 export function formatPlainDate(d: Date): string {
   return d.toLocaleDateString("en-GB", {
@@ -211,6 +213,11 @@ export function assembleSessionContext(rootDir: string, now: Date = new Date()):
         `These deferred items are due or overdue. Bring them up proactively ` +
         `at the start of the conversation:\n\n${lines.join("\n")}`,
     );
+  }
+
+  const onMentionBlock = formatOnMentionSessionSection(onMentionEntries(loadRegistryFromRoot(rootDir)));
+  if (onMentionBlock) {
+    sections.push(onMentionBlock);
   }
 
   if (personalizationPending) {

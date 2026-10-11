@@ -27,7 +27,7 @@ describe("executeDataAction", () => {
     }
   });
 
-  it("define registers a series entry and list shows inactive mode", () => {
+  it("define registers a series entry and list shows inactive mode for consolidation", () => {
     dir = mkdtempSync(join(tmpdir(), "data-tool-"));
     const def = executeDataAction(dir, "define", {
       name: "migraines",
@@ -36,7 +36,7 @@ describe("executeDataAction", () => {
       column_date: "date",
       column_time: "string",
       column_intensity: "number",
-      mode: "on_mention",
+      mode: "consolidation",
     });
     expect(def.ok).toBe(true);
     const list = executeDataAction(dir, "list");

@@ -65,3 +65,15 @@ Then("the session context includes the last session log", function (this: Contex
   assert.match(this.sessionContext!.message, /# Last session log/);
   assert.match(this.sessionContext!.message, /FR-PROMPT split/);
 });
+
+Then("the session context includes active on mention data", function (this: ContextWorld) {
+  assert.match(this.sessionContext!.message, /# Active data to record on mention/);
+});
+
+Then("the session context has no active on mention data section", function (this: ContextWorld) {
+  assert.doesNotMatch(this.sessionContext!.message, /# Active data to record on mention/);
+});
+
+Then("the session context message mentions {string}", function (this: ContextWorld, fragment: string) {
+  assert.ok(this.sessionContext!.message.includes(fragment), this.sessionContext!.message);
+});

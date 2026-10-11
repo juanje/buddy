@@ -4426,7 +4426,7 @@ is pre-seeded.
 | FR-DATA-01 | Registry `user/data/index.md`: entry format, protected from delete and move | 3 S4 ✓ |
 | FR-DATA-02 | `data()` tool: help, define, list | 3 S4 ✓ |
 | FR-DATA-03 | `append` / `correct`: schema-validated atomic writes; direct writes to registered paths denied | 3 S4 ✓ |
-| FR-DATA-04 | `on_mention` mode: active entries in one session-context line | 3 S6 |
+| FR-DATA-04 | `on_mention` mode: active entries in one session-context line | 3 S6 ✓ |
 | FR-DATA-05 | `consolidation` mode: worker block of due entries and pending days, fast tier | 3 S6 |
 | FR-DATA-06 | `snapshot` mode: heartbeat aggregate of a Buddy file, zero tokens, gaps not interpolated | 3 S7 |
 | FR-DATA-07 | Inferred rows carry `origin` and `basis`; the widget adds the indicative notice | 3 S4 ✓ |
@@ -4501,8 +4501,17 @@ is pre-seeded.
 
 **FR-DATA-04 — `on_mention` mode**
 
-- Active `on_mention` entries are listed in a single line of the session
-  context, so the agent knows what to record when the user mentions it.
+- Entries with `mode: on_mention` appear in the hidden session-start context
+  (FR-PROMPT-02) when at least one exists. Other modes do not appear there.
+- Section heading: `# Active data to record on mention`. Body is one line:
+  `name (path) — first line of instructions` per entry, joined with `; `.
+  Without instructions: `name (path)` only.
+- The section body is capped at 400 characters. If it does not fit with
+  instructions, drop instructions and keep `name (path)` only. If it still
+  does not fit, keep leading entries and end with ` (+N more)`.
+- `data(list)` no longer appends `(inactive until sprint 6)` for
+  `on_mention` entries. Other modes keep the suffix until their behaviour
+  ships (FR-DATA-05 for `consolidation` and `on_request`).
 
 **FR-DATA-05 — `consolidation` mode**
 
