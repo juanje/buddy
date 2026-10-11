@@ -4315,7 +4315,9 @@ and inline content.
   discovering fields via `fields(source='series', ...)`.
   `~/.buddy/docs/` is outside `VIEWABLE_DIRS`, so example dashboards use only
   inline data and are copied into `user/dashboards/examples/` when the user
-  asks what is possible.
+  asks what is possible. The `examples` action copies missing files, leaves
+  existing ones unchanged, and succeeds listing both copied and already-present
+  paths.
 - Examples show patterns (a board, a sprint record, an incident log) as
   examples, not as formats Buddy expects.
 

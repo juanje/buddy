@@ -249,6 +249,17 @@ Intro stays.
     expect(existsSync(join(dir, "user/dashboards/examples/tablero-inline.md"))).toBe(true);
   });
 
+  it("examples succeeds when already copied", () => {
+    dir = mkdtempSync(join(tmpdir(), "dash-tool-"));
+    executeDashboardAction(dir, "examples");
+    const path = join(dir, "user/dashboards/examples/tablero-inline.md");
+    const before = readFileSync(path, "utf8");
+    const out = executeDashboardAction(dir, "examples");
+    expect(out.ok).toBe(true);
+    expect(out.text).toContain("user/dashboards/examples/tablero-inline.md");
+    expect(readFileSync(path, "utf8")).toBe(before);
+  });
+
   it("update title and summary rewrite only those frontmatter lines", () => {
     dir = mkdtempSync(join(tmpdir(), "dash-tool-"));
     const initial =

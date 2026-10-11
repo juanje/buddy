@@ -2333,9 +2333,14 @@
           "name": "Dashboard docs show query and series examples",
           "bdd": "pass",
           "unit_tests": 1
+        },
+        {
+          "name": "Examples succeeds when already copied",
+          "bdd": "pass",
+          "unit_tests": 1
         }
       ],
-      "note": "reopened: docs had no where or series examples"
+      "note": "reopened: examples failed when already copied; agent read an example file instead"
     },
     {
       "id": "FR-DASH-20",

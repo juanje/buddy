@@ -455,6 +455,14 @@ Feature: Dashboard tool
     And dashboard file "user/dashboards/examples/tablero-inline.md" exists
 
   @FR-DASH-13
+  Scenario: Examples succeeds when already copied
+    Given an initialized buddy git repository
+    When dashboard action "examples" is invoked
+    And dashboard action "examples" is invoked
+    Then dashboard tool succeeded
+    And dashboard tool output mentions "user/dashboards/examples/tablero-inline.md"
+
+  @FR-DASH-13
   Scenario: Dashboard documentation appears in the bundled docs index
     Given the bundled docs index
     Then the bundled docs index links to dashboards.md

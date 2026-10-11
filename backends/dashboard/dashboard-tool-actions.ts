@@ -323,6 +323,7 @@ function examplesAction(rootDir: string): DashboardActionResult {
     return err("No bundled example dashboards found.");
   }
   const written: string[] = [];
+  const already: string[] = [];
   for (const rel of paths) {
     const content = bundledDashboardContent(rel);
     if (!content) continue;
@@ -330,7 +331,8 @@ function examplesAction(rootDir: string): DashboardActionResult {
     const targetRel = `${DASHBOARDS_DIR_PREFIX}examples/${base}.md`;
     const abs = join(rootDir, targetRel);
     if (existsSync(abs)) {
-      return err(`Example already exists: ${targetRel}. Remove it first or copy manually.`);
+      already.push(targetRel);
+      continue;
     }
     const issues = collectDashboardValidationIssues(rootDir, content);
     if (issues.length > 0) {
@@ -339,7 +341,21 @@ function examplesAction(rootDir: string): DashboardActionResult {
     writeAtomic(rootDir, targetRel, content);
     written.push(targetRel);
   }
-  return ok(`Copied ${written.length} example dashboard(s):\n${written.map((p) => `- ${p}`).join("\n")}`);
+  const parts: string[] = [];
+  if (written.length > 0) {
+    parts.push(
+      `Copied ${written.length} example dashboard(s):\n${written.map((p) => `- ${p}`).join("\n")}`,
+    );
+  }
+  if (already.length > 0) {
+    parts.push(
+      `Already present (${already.length}):\n${already.map((p) => `- ${p}`).join("\n")}`,
+    );
+  }
+  if (parts.length === 0) {
+    return err("No bundled example dashboards found.");
+  }
+  return ok(parts.join("\n\n"));
 }
 
 export function classifyDashboardAction(action: string): "allow" | "deny" {
