@@ -29,6 +29,7 @@ import { buildAllSkillTools } from "./skill-tools";
 import { buildFetchTools } from "./fetch-url";
 import { buildConnectorToolset } from "./connectors/index";
 import { buildDashboardTool } from "./dashboard/index";
+import { buildDataTool } from "./data/index";
 import { buildTaskTool } from "./tasks/index";
 import { buildFileTools } from "./file-tools";
 import { buildShowFileTools } from "./show-file-tool";
@@ -95,6 +96,7 @@ export function buildAgentToolset(
   const connectorTools = buildConnectorToolset(rootDir);
   const taskTool = buildTaskTool(rootDir);
   const dashboardTool = buildDashboardTool(rootDir);
+  const dataTool = buildDataTool(rootDir);
 
   const customTools = [
     ...skillTools,
@@ -105,6 +107,7 @@ export function buildAgentToolset(
     ...connectorTools,
     taskTool,
     dashboardTool,
+    dataTool,
   ];
   return {
     names: [...AGENT_TOOLS, ...customTools.map((tool) => tool.name)],

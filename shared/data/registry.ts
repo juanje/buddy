@@ -196,3 +196,85 @@ export function parseDataRegistryDocument(content: string): ParseDataRegistryRes
   }
   return { entries, errors };
 }
+
+/** Validate params for data(define); returns an error string on failure. */
+export function validateEntryForDefine(
+  name: string,
+  raw: Record<string, unknown>,
+): DataRegistryEntry | string {
+  const validated = validateEntry(name, raw);
+  if ("error" in validated) return validated.error;
+  return validated;
+}
+
+export type RegistrySection = { name: string; body: string };
+
+export function splitRegistrySections(content: string): { preamble: string; sections: RegistrySection[] } {
+  const lines = content.split(/\r?\n/);
+  const sections: RegistrySection[] = [];
+  let preambleLines: string[] = [];
+  let i = 0;
+  while (i < lines.length && !/^##\s+/.test(lines[i])) {
+    preambleLines.push(lines[i]);
+    i += 1;
+  }
+  while (i < lines.length) {
+    const heading = /^##\s+(.+?)\s*$/.exec(lines[i]);
+    if (!heading) {
+      i += 1;
+      continue;
+    }
+    const name = heading[1].trim();
+    const bodyLines: string[] = [];
+    i += 1;
+    while (i < lines.length && !/^##\s+/.test(lines[i])) {
+      bodyLines.push(lines[i]);
+      i += 1;
+    }
+    sections.push({ name, body: bodyLines.join("\n").trimEnd() });
+  }
+  const preamble = preambleLines.join("\n").trimEnd();
+  return { preamble, sections };
+}
+
+function yamlQuote(value: string): string {
+  if (/[:#\n]/.test(value) || value.startsWith("'") || value.startsWith('"')) {
+    return JSON.stringify(value);
+  }
+  return value;
+}
+
+export function formatRegistryEntrySection(entry: DataRegistryEntry): string {
+  const yaml: string[] = [`path: ${entry.path}`, `kind: ${entry.kind}`];
+  if (Array.isArray(entry.key)) {
+    yaml.push("key:");
+    for (const k of entry.key) yaml.push(`  - ${k}`);
+  } else {
+    yaml.push(`key: ${entry.key}`);
+  }
+  yaml.push("columns:");
+  for (const [col, typ] of Object.entries(entry.columns).sort(([a], [b]) => a.localeCompare(b))) {
+    yaml.push(`  ${col}: ${typ}`);
+  }
+  yaml.push(`mode: ${entry.mode}`);
+  if (entry.inferred) yaml.push("inferred: true");
+  if (entry.sensitive) yaml.push("sensitive: true");
+  if (entry.instructions) yaml.push(`instructions: ${yamlQuote(entry.instructions)}`);
+  return [`## ${entry.name}`, "", "```data", ...yaml, "```"].join("\n");
+}
+
+/** Replace or append one entry; other sections stay byte-for-byte except ordering. */
+export function upsertRegistryEntry(content: string, entry: DataRegistryEntry): string {
+  const { preamble, sections } = splitRegistrySections(content);
+  const kept = sections.filter((s) => s.name !== entry.name);
+  const blocks = [
+    preamble.length > 0 ? preamble : "# Data registry",
+    ...kept.map((s) => [`## ${s.name}`, s.body].filter(Boolean).join("\n")),
+    formatRegistryEntrySection(entry),
+  ].filter(Boolean);
+  return `${blocks.join("\n\n").trimEnd()}\n`;
+}
+
+export function countRegistrySectionsNamed(content: string, name: string): number {
+  return splitRegistrySections(content).sections.filter((s) => s.name === name).length;
+}

@@ -4405,8 +4405,8 @@ is pre-seeded.
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-DATA-01 | Registry `user/data/index.md`: entry format, protected from delete and move | 3 S4 |
-| FR-DATA-02 | `data()` tool: help, define, list | 3 S4 |
+| FR-DATA-01 | Registry `user/data/index.md`: entry format, protected from delete and move | 3 S4 ✓ |
+| FR-DATA-02 | `data()` tool: help, define, list | 3 S4 ✓ |
 | FR-DATA-03 | `append` / `correct`: schema-validated atomic writes; direct writes to registered paths denied | 3 S4 |
 | FR-DATA-04 | `on_mention` mode: active entries in one session-context line | 3 S6 |
 | FR-DATA-05 | `consolidation` mode: worker block of due entries and pending days, fast tier | 3 S6 |
@@ -4441,8 +4441,20 @@ is pre-seeded.
 
 **FR-DATA-02 — `data()` discovery and definition**
 
-- Same dispatcher pattern as `tasks()`. `help`, `define` (add or change an
-  entry), `list`.
+- Same dispatcher pattern as `tasks()` and `dashboard()`: `action` plus
+  `params`. Actions in sprint 4b: `help`, `define`, `list`. Any other
+  action (including `append` and `correct`) is unknown. The tool
+  description tells the agent to call `action='help'` and that registered
+  CSV schemas are discovered without reading row data.
+- `define` adds or replaces one entry by `params.name`, validates against
+  FR-DATA-01, and rewrites `user/data/index.md` atomically. Entries that
+  did not parse on read are preserved verbatim. Failed validation writes
+  nothing. `kind: sections` or `records` is refused with a message to feed
+  dashboards from the file directly (unregistered). `define` does not create
+  the CSV file.
+- `list` lists entry names, paths, and modes with `(inactive until sprint 6)`
+  after each mode. It never reads CSV rows. When the registry file is
+  missing, `list` reports no entries and does not create the file.
 
 **FR-DATA-03 — Validated writes**
 

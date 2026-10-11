@@ -2499,9 +2499,45 @@
     {
       "id": "FR-DATA-02",
       "title": "data tool help, define, and list",
-      "status": "pending",
-      "cycle_step": "spec_review",
-      "scenarios": []
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Help shows series define and list",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Define a series entry and list it",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Define sections kind is refused",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Define snapshot mode is refused",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Define rejects reserved column origin",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Define replaces an existing entry name",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "List without a registry file does not create one",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
     }
   ]
 }

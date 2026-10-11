@@ -58,6 +58,12 @@ describe("the toolset a user session is given", () => {
     expect(customTools.map((t) => t.name)).toContain("dashboard");
   });
 
+  it("offers data tool to the model", () => {
+    const { names, customTools } = toolset();
+    expect(names).toContain("data");
+    expect(customTools.map((t) => t.name)).toContain("data");
+  });
+
   it("offers wiki_search and wiki_file to the model", () => {
     const { names } = toolset();
     expect(names).toContain("wiki_search");
