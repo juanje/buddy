@@ -325,4 +325,45 @@ type: dashboard
     expect(out.ok).toBe(true);
     expect(out.text).toMatch(/source: series/);
   });
+
+  it("help explains file sources and field discovery", () => {
+    dir = mkdtempSync(join(tmpdir(), "dash-tool-"));
+    const out = executeDashboardAction(dir, "help");
+    expect(out.ok).toBe(true);
+    expect(out.text).toMatch(/series/);
+    expect(out.text).toMatch(/fields\(source/);
+    expect(out.text).toMatch(/do not need to read the file/i);
+  });
+
+  it("unknown source error lists every source", () => {
+    dir = mkdtempSync(join(tmpdir(), "dash-tool-"));
+    const out = executeDashboardAction(dir, "fields", { source: "csv" });
+    expect(out.ok).toBe(false);
+    expect(out.text).toMatch(/series/);
+    expect(out.text).toMatch(/sections/);
+    expect(out.text).toMatch(/inline/);
+  });
+
+  it("missing params error shows the params shape", () => {
+    dir = mkdtempSync(join(tmpdir(), "dash-tool-"));
+    const out = executeDashboardAction(dir, "fields");
+    expect(out.ok).toBe(false);
+    expect(out.text).toMatch(/params=\{/);
+  });
+
+  it("check on a dashboard file points to validate", () => {
+    dir = mkdtempSync(join(tmpdir(), "dash-tool-"));
+    const rel = "user/dashboards/board.md";
+    const abs = join(dir, rel);
+    mkdirSync(join(dir, "user/dashboards"), { recursive: true });
+    writeFileSync(
+      abs,
+      "---\ntype: dashboard\ntitle: Board\n---\n\n```dashboard\n- view: text\n  text: OK\n```\n",
+      "utf8",
+    );
+    const out = executeDashboardAction(dir, "check", { path: rel });
+    expect(out.ok).toBe(true);
+    expect(out.text).toMatch(/validate/i);
+    expect(out.text).not.toMatch(/user\/data\//);
+  });
 });

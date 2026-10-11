@@ -2215,9 +2215,29 @@
           "name": "Update touches only the affected dashboard block",
           "bdd": "pass",
           "unit_tests": 1
+        },
+        {
+          "name": "Help explains file sources and field discovery",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Unknown source error lists every source",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Missing params error shows the params shape",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Check on a dashboard file points to validate",
+          "bdd": "pass",
+          "unit_tests": 1
         }
       ],
-      "note": "reopened: tests reproduce the bug, not the fix"
+      "note": "reopened: help did not explain series; agent read the csv"
     },
     {
       "id": "FR-DASH-19",

@@ -4,7 +4,8 @@ import { basename, dirname, join } from "node:path";
 import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 
 import { toIsoDay } from "../../shared/dates";
-import { DASHBOARDS_DIR_PREFIX } from "../../shared/dashboard/document";
+import { DASHBOARDS_DIR_PREFIX, isDashboardDocument } from "../../shared/dashboard/document";
+import { splitFrontmatter } from "../../shared/frontmatter";
 import { inferInlineSourceDefinition } from "../../shared/dashboard/inline-source";
 import { sectionsFit } from "../../shared/dashboard/sections";
 import { replaceWidgetByTitle, setFrontmatterField } from "../../shared/dashboard/rebuild";
@@ -27,9 +28,9 @@ import {
   formatValidationIssues,
 } from "./validate-content";
 
-const HELP_TEXT = `dashboard() actions:
+const HELP_TEXT = `dashboard() actions (pass arguments in params):
 - help — sources, views, query syntax, and a minimal example
-- fields(source, path?) — field names and types (no rows)
+- fields(source, path?) — field names and types (no rows); you do not need to read the file
 - check(path) — whether a markdown file fits the sections primitive
 - validate(content) — validation errors for dashboard markdown
 - create(name, content | template) — write user/dashboards/<name>.md after validation
@@ -66,15 +67,27 @@ function formatFieldType(field: FieldType): string {
   return field.kind;
 }
 
+function listAllSourceNames(): string[] {
+  return [...listKnownSourceNames(), "sections", "series", "inline"];
+}
+
+function paramsShapeHint(example: string): string {
+  return `Expected params shape, e.g. params={${example}}`;
+}
+
 function fieldsForSource(rootDir: string, source: string, path?: string): SourceDefinition | string {
   if (source === "series") {
-    if (!path) return "series requires path";
+    if (!path) {
+      return `series requires params.path. ${paramsShapeHint('source:"series", path:"user/data/file.csv"')}`;
+    }
     const loaded = loadSeriesSource(rootDir, path);
     if (!loaded.ok) return loaded.message;
     return loaded.def;
   }
   if (source === "sections") {
-    if (!path) return "sections requires path";
+    if (!path) {
+      return `sections requires params.path. ${paramsShapeHint('source:"sections", path:"user/data/board-sections.md"')}`;
+    }
     const loaded = loadSectionsSource(rootDir, path);
     if (!loaded.ok) return loaded.message;
     return loaded.def;
@@ -83,7 +96,9 @@ function fieldsForSource(rootDir: string, source: string, path?: string): Source
     return inferInlineSourceDefinition([]);
   }
   const def = sourceDefinition(source);
-  if (!def) return `Unknown source '${source}'. Known: ${listKnownSourceNames().join(", ")}`;
+  if (!def) {
+    return `Unknown source '${source}'. Known: ${listAllSourceNames().join(", ")}`;
+  }
   return def;
 }
 
@@ -124,7 +139,10 @@ function helpAction(): DashboardActionResult {
   count: true
 \`\`\``;
   return ok(
-    `${HELP_TEXT}\n\nSources: ${listKnownSourceNames().join(", ")}, sections, series, inline.\n` +
+    `${HELP_TEXT}\n\nSources: ${listAllSourceNames().join(", ")}.\n` +
+      `File-backed: source 'sections' or 'series' requires params.path. ` +
+      `Discover columns with fields(source, path) — you do not need to read the file.\n` +
+      `Example: params={source:'series', path:'user/data/sales.csv'}.\n` +
       `Views: kanban, list, table, counter, text, status.\n` +
       `Query keys: where, group, sort, limit, count, sum, range. ` +
       `count/sum reduce rows to numbers and render only in view 'counter'.\n` +
@@ -136,7 +154,11 @@ function helpAction(): DashboardActionResult {
 
 function fieldsAction(rootDir: string, params: DashboardActionParams): DashboardActionResult {
   const source = params.source;
-  if (!source) return err("fields requires params.source");
+  if (!source) {
+    return err(
+      `fields requires params.source. ${paramsShapeHint('source:"tasks"')} or ${paramsShapeHint('source:"series", path:"user/data/x.csv"')}`,
+    );
+  }
   const def = fieldsForSource(rootDir, source, params.path);
   if (typeof def === "string") return err(def);
   const lines = Object.entries(def.fields).map(
@@ -159,6 +181,13 @@ function checkAction(rootDir: string, params: DashboardActionParams): DashboardA
   } catch (e) {
     const message = e instanceof ViewableFileError ? e.message : String(e);
     return err(message);
+  }
+  const normPath = path.replace(/\\/g, "/").replace(/\/+/g, "/");
+  const { fields } = splitFrontmatter(content);
+  if (isDashboardDocument(normPath, fields)) {
+    return ok(
+      "File is already a dashboard (type: dashboard). Use action validate with params.content to check widgets.",
+    );
   }
   if (sectionsFit(content)) {
     return ok(`File fits the sections primitive. Use source: sections with path: ${path}`);

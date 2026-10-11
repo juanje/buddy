@@ -4266,12 +4266,21 @@ and inline content.
 
 - One Pi tool with the action dispatcher pattern of `tasks()` and the
   connectors. Nothing is added to the system prompt; `help` is the discovery.
-- `help`: sources, views, query syntax, and a minimal example.
+  Tool arguments are passed in `params` (for example
+  `params={source:'series', path:'user/data/x.csv'}`).
+- `help`: sources, views, query syntax, and a minimal example. It explains
+  each file-backed source (`sections` and `series`) requires `path` in
+  `params`, and how to discover columns with `fields(source, path)` without
+  reading the file.
 - `fields`: the fields and types of a source. For a file-backed primitive,
-  field names and inferred types only; no rows reach the model.
-- `check`: whether a file fits a primitive. When it does not, the answer says
-  so and offers the derived route: a file the agent maintains in a shape that
-  fits.
+  field names and inferred types only; no rows reach the model. Unknown
+  `source` errors list every source (built-ins plus `sections`, `series`,
+  `inline`). Missing required params show the expected `params` shape.
+- `check`: whether a file fits a primitive. When the file is already a
+  dashboard (`type: dashboard` under `user/dashboards/`), the answer says so
+  and points to `validate` (no derived route). Otherwise, when it does not fit,
+  the answer says so and offers the derived route: a file the agent maintains
+  in a shape that fits.
 - `validate`: the errors FR-DASH-01/04 would produce, each fixable. Messages
   cite `block N, widget M`, where N counts only ` ```dashboard ` fences
   (starting at 1) and M counts widgets inside that block (starting at 1).

@@ -15,7 +15,7 @@ export function buildDashboardTool(rootDir: string): ToolDefinition {
     name: "dashboard",
     label: "Dashboard",
     description:
-      "Create and validate dashboards in user/dashboards/. Call with action='help' to see available actions.",
+      "Create and validate dashboards in user/dashboards/. Arguments go in params. Call with action='help' to see available actions.",
     isDenied: (action) => classifyDashboardAction(action) === "deny",
     run: (action, params) => dashboardResultToText(executeDashboardAction(rootDir, action, params)),
   });

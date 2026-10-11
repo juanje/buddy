@@ -42,6 +42,51 @@ Feature: Dashboard tool
     Then dashboard tool output mentions "user/data/plain-sections.md"
 
   @FR-DASH-12
+  Scenario: Help explains file sources and field discovery
+    Given an initialized buddy git repository
+    When dashboard action "help" is invoked
+    Then dashboard tool output mentions "series"
+    And dashboard tool output mentions "fields(source"
+    And dashboard tool output mentions "do not need to read the file"
+
+  @FR-DASH-12
+  Scenario: Unknown source error lists every source
+    Given an initialized buddy git repository
+    When dashboard action "fields" is invoked with:
+      | source | csv |
+    Then dashboard tool failed
+    And dashboard tool output mentions "series"
+    And dashboard tool output mentions "sections"
+    And dashboard tool output mentions "inline"
+
+  @FR-DASH-12
+  Scenario: Missing params error shows the params shape
+    Given an initialized buddy git repository
+    When dashboard action "fields" is invoked
+    Then dashboard tool failed
+    And dashboard tool output mentions "params={"
+
+  @FR-DASH-12
+  Scenario: Check on a dashboard file points to validate
+    Given an initialized buddy git repository
+    And dashboard file "board.md" with content:
+      """
+      ---
+      type: dashboard
+      title: Board
+      ---
+      ```dashboard
+      - view: text
+        text: OK
+      ```
+      """
+    When dashboard action "check" is invoked with:
+      | path | user/dashboards/board.md |
+    Then dashboard tool succeeded
+    And dashboard tool output mentions "validate"
+    And dashboard tool output does not mention "user/data/"
+
+  @FR-DASH-12
   Scenario: Validate reports block and widget position
     Given an initialized buddy git repository
     When dashboard action "validate" is invoked with content:
