@@ -2280,9 +2280,14 @@
           "name": "Fields with sections on a CSV points to series",
           "bdd": "pass",
           "unit_tests": 1
+        },
+        {
+          "name": "Help shows where syntax",
+          "bdd": "pass",
+          "unit_tests": 1
         }
       ],
-      "note": "reopened: agent mixed columns and fields across views; sections on csv gave no hint"
+      "note": "reopened: help had no where syntax; agent guessed == and query:"
     },
     {
       "id": "FR-DASH-19",

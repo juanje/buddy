@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 import { stringify } from "yaml";
 
+import { EMBEDDED_DOCS } from "../../backends/embedded-assets.generated";
 import { executeDashboardAction } from "../../backends/dashboard/dashboard-tool-actions";
 import { parseDashboardParts } from "../../shared/dashboard/parse";
 
@@ -363,15 +364,7 @@ type: dashboard
   });
 
   it("bundled dashboards doc shows query and series examples", () => {
-    const docPath = join(
-      fileURLToPath(import.meta.url),
-      "..",
-      "..",
-      "bundled",
-      "docs",
-      "dashboards.md",
-    );
-    const text = readFileSync(docPath, "utf8");
+    const text = EMBEDDED_DOCS["dashboards.md"] ?? "";
     expect(text).toContain("where: region = Europe");
     expect(text).toContain("where: date >= -30d");
     expect(text).toContain("sum:");
@@ -384,6 +377,14 @@ type: dashboard
     expect(out.ok).toBe(true);
     expect(out.text).toMatch(/table: columns/);
     expect(out.text).toMatch(/list: fields/);
+  });
+
+  it("help shows where syntax", () => {
+    dir = mkdtempSync(join(tmpdir(), "dash-tool-"));
+    const out = executeDashboardAction(dir, "help");
+    expect(out.ok).toBe(true);
+    expect(out.text).toContain("where: region = Europe");
+    expect(out.text).toMatch(/contains/);
   });
 
   it("fields with sections on a CSV points to series", () => {

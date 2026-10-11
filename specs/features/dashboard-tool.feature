@@ -94,6 +94,13 @@ Feature: Dashboard tool
     And dashboard tool output mentions "list: fields"
 
   @FR-DASH-12
+  Scenario: Help shows where syntax
+    Given an initialized buddy git repository
+    When dashboard action "help" is invoked
+    Then dashboard tool output mentions "where: region = Europe"
+    And dashboard tool output mentions "contains"
+
+  @FR-DASH-12
   Scenario: Validate suggests columns for a table with fields
     Given an initialized buddy git repository
     When dashboard action "validate" is invoked with content:

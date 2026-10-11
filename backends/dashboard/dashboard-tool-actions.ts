@@ -145,10 +145,11 @@ function helpAction(): DashboardActionResult {
 
 \`\`\`dashboard
 - view: table
-  title: Rows
+  title: European rows
   source: series
-  path: user/data/sales.csv
-  columns: [date, amount]
+  path: user/data/paises.csv
+  columns: [name, region]
+  where: region = Europe
 \`\`\`
 
 \`\`\`dashboard
@@ -166,6 +167,9 @@ function helpAction(): DashboardActionResult {
       `Views: kanban, list, table, counter, text, status.\n` +
       `${dashboardViewFieldKeyHelp()}\n` +
       `Query keys: where, group, sort, limit, count, sum, range. ` +
+      `Where syntax: one string per widget (not a YAML map); comparisons joined by ` +
+      `'and'; operators =, !=, <, <=, >, >=, contains; relative dates like -30d; ` +
+      `quote values starting with # or @ (example where: 'project = #buddy').\n` +
       `count/sum reduce rows to numbers and render only in view 'counter'.\n` +
       `WIP: source 'wip' gives one row per area with active fronts (distinct #projects ` +
       `plus loose tasks) against the configured limit; use view 'status' or ` +

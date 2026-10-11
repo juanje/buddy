@@ -4283,8 +4283,12 @@ and inline content.
   file-backed source (`sections` and `series`) requires `path` in `params`,
   how to discover columns with `fields(source, path)` without reading the
   file, which key lists fields per view (`table: columns`; `list` and
-  `kanban: fields`; `counter: count` or `sum`; `text: text`), and includes
-  `table` and `list` examples on `source: series`.
+  `kanban: fields`; `counter: count` or `sum`; `text: text`), documents
+  `where` syntax (a string; operators `=`, `!=`, `<`, `<=`, `>`, `>=`,
+  `contains`; clauses joined by `and`; relative dates such as `-30d`; quote
+  values that start with `#` or `@`), and includes `table` and `list`
+  examples on `source: series` (the table example filters with
+  `where: region = Europe`).
 - Validation errors for a wrong field-list key (`fields` on `table` or
   `columns` on `list`) suggest the correct key for that view.
 - `fields` with `source: sections` on a `.csv` path tells the agent to use
