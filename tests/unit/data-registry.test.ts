@@ -7,7 +7,9 @@ import { join } from "node:path";
 
 import { evaluateToolCall } from "../../backends/permissions";
 import { isFileOpProtected } from "../../backends/file-tools";
+import { executeDataAction } from "../../backends/data/data-tool-actions";
 import { parseDataRegistryDocument } from "../../shared/data/registry";
+import { DATA_REGISTERED_DATA_MESSAGE } from "../../shared/data/registry-path";
 
 describe("parseDataRegistryDocument", () => {
   it("keeps valid entries when another entry is broken", () => {
@@ -84,5 +86,33 @@ describe("data registry protection", () => {
       action: "deny",
       reason: "Use data(action='define') to change the data registry.",
     });
+  });
+
+  it("denies write to registered series CSV path", () => {
+    executeDataAction(AB, "define", {
+      name: "migraines",
+      kind: "series",
+      key: ["date", "time"],
+      columns: { date: "date", time: "string", intensity: "number" },
+    });
+    expect(evaluate("write", { path: `${AB}/user/data/migraines.csv` })).toEqual({
+      action: "deny",
+      reason: DATA_REGISTERED_DATA_MESSAGE,
+    });
+  });
+
+  it("denies edit of registered series CSV path", () => {
+    expect(evaluate("edit", { path: "user/data/migraines.csv" })).toEqual({
+      action: "deny",
+      reason: DATA_REGISTERED_DATA_MESSAGE,
+    });
+  });
+
+  it("rejects delete of registered series CSV path", () => {
+    expect(isFileOpProtected("user/data/migraines.csv", AB)).toBe(true);
+  });
+
+  it("allows write to unregistered CSV path", () => {
+    expect(evaluate("write", { path: "user/data/prueba.csv" })).toEqual({ action: "allow" });
   });
 });

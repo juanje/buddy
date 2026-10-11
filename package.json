@@ -27,6 +27,7 @@
     "@tauri-apps/plugin-notification": "^2.3.3",
     "@tauri-apps/plugin-opener": "^2.5.4",
     "csv-parse": "^6.2.1",
+    "csv-stringify": "^6.6.0",
     "highlight.js": "^11.11.1",
     "kkrpc": "^2.1.0",
     "linkedom": "^0.18.13",

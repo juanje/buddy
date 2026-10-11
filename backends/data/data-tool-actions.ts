@@ -1,8 +1,9 @@
 // backends/data/data-tool-actions.ts — data() actions (FR-DATA-02).
 
-import { basename, dirname, join } from "node:path";
-import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+import { existsSync, readFileSync } from "node:fs";
 
+import { findRegistryEntry } from "../../shared/data/registry-lookup";
 import { DATA_REGISTRY_RELPATH } from "../../shared/data/registry-path";
 import {
   parseDataRegistryDocument,
@@ -10,6 +11,13 @@ import {
   validateEntryForDefine,
   type DataRegistryEntry,
 } from "../../shared/data/registry";
+import {
+  appendSeriesRow,
+  correctSeriesRow,
+  parseKeyMap,
+  parseValuesMap,
+  writeAtomic,
+} from "./series-file";
 
 export type DataActionParams = Record<string, unknown>;
 
@@ -23,24 +31,6 @@ function err(text: string): DataActionResult {
   return { ok: false, text };
 }
 
-function writeAtomic(rootDir: string, relPath: string, content: string): void {
-  const abs = join(rootDir, relPath);
-  const dir = dirname(abs);
-  mkdirSync(dir, { recursive: true });
-  const tmp = join(dir, `.${basename(abs)}.${process.pid}.${Date.now()}.tmp`);
-  try {
-    writeFileSync(tmp, content, "utf8");
-    renameSync(tmp, abs);
-  } catch (error) {
-    try {
-      rmSync(tmp, { force: true });
-    } catch {
-      // ignore
-    }
-    throw error;
-  }
-}
-
 function helpAction(): DataActionResult {
   return ok(
     `data() actions (pass arguments in params):
@@ -50,10 +40,64 @@ function helpAction(): DataActionResult {
   Example: params={name:'migranas', kind:'series', key:['fecha','hora'], columns:{fecha:'date', hora:'string', intensidad:'number'}}
   Column types: string, number, date. The name is a slug (lowercase ascii, hyphens).
 - list — entry names, paths, and modes (inactive until sprint 6)
+- append(name, values:{...}) — add one row to a registered series CSV
+  Example: params={name:'migranas', values:{fecha:'2026-10-11', hora:'09:00', intensidad:7}}
+- correct(name, key:{...}, set:{...}) — update non-key fields on an existing row
+  Example: params={name:'migranas', key:{fecha:'2026-10-11', hora:'09:00'}, set:{intensidad:8}}
+  Use remove:true to delete the row (no set).
 
 Sprint 4b supports kind: series only. kind: sections or records is not supported yet;
-feed dashboards from the file directly (unregistered). Row writes (append, correct) come later.`,
+feed dashboards from the file directly (unregistered).`,
   );
+}
+
+function requireEntry(
+  rootDir: string,
+  params: DataActionParams,
+): DataRegistryEntry | { ok: false; text: string } {
+  const name = params.name;
+  if (typeof name !== "string" || !name.trim()) {
+    return err("name is required.");
+  }
+  const entry = findRegistryEntry(rootDir, name.trim());
+  if (!entry) return err(`No registered entry named '${name.trim()}'.`);
+  return entry;
+}
+
+function appendAction(rootDir: string, params: DataActionParams): DataActionResult {
+  const entryOrErr = requireEntry(rootDir, params);
+  if ("ok" in entryOrErr) return entryOrErr;
+  const entry = entryOrErr;
+  const values = parseValuesMap(params.values);
+  if (typeof values === "string") return err(values);
+  const result = appendSeriesRow(rootDir, entry, values);
+  if (!result.ok) return err(result.message);
+  return ok(`Appended row to ${entry.path}`);
+}
+
+function correctAction(rootDir: string, params: DataActionParams): DataActionResult {
+  const entryOrErr = requireEntry(rootDir, params);
+  if ("ok" in entryOrErr) return entryOrErr;
+  const entry = entryOrErr;
+  const key = parseKeyMap(params.key);
+  if (typeof key === "string") return err(key);
+  const remove = params.remove === true;
+  const setRaw = params.set;
+  const set =
+    setRaw === undefined
+      ? undefined
+      : typeof setRaw === "object" && !Array.isArray(setRaw)
+        ? (setRaw as Record<string, unknown>)
+        : undefined;
+  if (!remove && !set) {
+    return err("correct requires params.set or remove:true");
+  }
+  const result = correctSeriesRow(rootDir, entry, key, { remove, set });
+  if (!result.ok) return err(result.message);
+  if (!result.changed) {
+    return ok(remove ? "No row matched key; nothing removed." : "No row matched key; nothing changed.");
+  }
+  return ok(remove ? `Removed row from ${entry.path}` : `Updated row in ${entry.path}`);
 }
 
 function columnsFromParams(params: DataActionParams): Record<string, string> | string {
@@ -151,6 +195,8 @@ const HANDLERS: Record<string, (rootDir: string, params: DataActionParams) => Da
   help: () => helpAction(),
   define: defineAction,
   list: listAction,
+  append: appendAction,
+  correct: correctAction,
 };
 
 export function classifyDataAction(action: string): "allow" | "deny" {

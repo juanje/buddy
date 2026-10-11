@@ -8,7 +8,7 @@ import type { BuddyWorld } from "../support/world";
 
 interface DataRegistryWorld extends BuddyWorld {
   parsedRegistry?: ParseDataRegistryResult;
-  permOutcome?: { block?: boolean; reason?: string };
+  permOutcome?: { block: true; reason: string } | undefined;
 }
 
 When("the data registry document is parsed:", function (this: DataRegistryWorld, doc: string) {
@@ -34,4 +34,13 @@ Then("the parsed data registry errors mention {string}", function (this: DataReg
 Then("the permission gate blocks with data registry message", function (this: DataRegistryWorld) {
   assert.ok(this.permOutcome?.block, "expected the tool call to be blocked");
   assert.match(this.permOutcome?.reason ?? "", /data\(action='define'\)/);
+});
+
+Then("the permission gate blocks with registered data message", function (this: DataRegistryWorld) {
+  assert.ok(this.permOutcome?.block, "expected the tool call to be blocked");
+  assert.match(this.permOutcome?.reason ?? "", /data\(action='append'\)/);
+});
+
+Then("the permission gate allows the write", function (this: DataRegistryWorld) {
+  assert.equal(this.permOutcome, undefined);
 });

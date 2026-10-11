@@ -73,3 +73,45 @@ Feature: Data registry
     And a permission layer for tasks file access
     When the agent copies "user/notes/a.md" to "user/data/index.md" via permission gate
     Then the permission gate blocks with data registry message
+
+  @FR-DATA-03
+  Scenario: Write to registered series CSV is denied
+    Given an initialized buddy git repository
+    And data action "define" is invoked with json:
+      """
+      {"name":"migraines","kind":"series","key":["date","time"],"columns":{"date":"date","time":"string","intensity":"number"}}
+      """
+    And a permission layer for tasks file access
+    When the agent writes "user/data/migraines.csv" via permission gate
+    Then the permission gate blocks with registered data message
+
+  @FR-DATA-03
+  Scenario: Edit of registered series CSV is denied
+    Given an initialized buddy git repository
+    And data action "define" is invoked with json:
+      """
+      {"name":"migraines","kind":"series","key":["date","time"],"columns":{"date":"date","time":"string","intensity":"number"}}
+      """
+    And a permission layer for tasks file access
+    When the agent edits "user/data/migraines.csv" via permission gate
+    Then the permission gate blocks with registered data message
+
+  @FR-DATA-03
+  Scenario: Delete of registered series CSV is rejected
+    Given an initialized buddy git repository
+    And file tools are available
+    And data action "define" is invoked with json:
+      """
+      {"name":"migraines","kind":"series","key":["date","time"],"columns":{"date":"date","time":"string","intensity":"number"}}
+      """
+    And a file "user/data/migraines.csv" with content "date,time,intensity"
+    When delete_file is called with path "user/data/migraines.csv"
+    Then the file tool returns an error containing "not allowed"
+    And "user/data/migraines.csv" exists
+
+  @FR-DATA-03
+  Scenario: Write to unregistered CSV remains allowed
+    Given an initialized buddy git repository
+    And a permission layer for tasks file access
+    When the agent writes "user/data/prueba.csv" via permission gate
+    Then the permission gate allows the write

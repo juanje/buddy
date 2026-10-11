@@ -24,7 +24,9 @@ import { classifyTaskAction, isTaskTool } from "./tasks/actions";
 import { isContained } from "./containment";
 import { globalConfigDir } from "./global-config";
 import { isDashboardPath } from "../shared/dashboard/document";
+import { isRegisteredDataRelPath } from "../shared/data/registry-lookup";
 import {
+  DATA_REGISTERED_DATA_MESSAGE,
   DATA_REGISTRY_TOOL_MESSAGE,
   isDataRegistryPath,
 } from "../shared/data/registry-path";
@@ -64,6 +66,12 @@ function isDataRegistryFile(absPath: string, rootDir: string): boolean {
   if (!isContained(absPath, rootDir)) return false;
   const rel = relative(rootDir, absPath).replace(/\\/g, "/");
   return isDataRegistryPath(rel);
+}
+
+function isRegisteredDataFile(absPath: string, rootDir: string): boolean {
+  if (!isContained(absPath, rootDir)) return false;
+  const rel = relative(rootDir, absPath).replace(/\\/g, "/");
+  return isRegisteredDataRelPath(rootDir, rel);
 }
 
 function connectorActionFromArgs(args: unknown): string | undefined {
@@ -148,7 +156,15 @@ export function evaluateToolCall(
   // FR-DASH-19: copy_file and move_file are in neither READ_TOOLS nor
   // WRITE_TOOLS, so their destination is checked before the file-tool exit.
   if (toolName === "copy_file" || toolName === "move_file") {
-    const dest = (args as { destination?: unknown } | undefined)?.destination;
+    const pair = args as { source?: unknown; destination?: unknown } | undefined;
+    for (const raw of [pair?.source, pair?.destination]) {
+      if (typeof raw !== "string" || raw.trim() === "") continue;
+      const abs = resolve(rootDir, expandHome(raw, home));
+      if (isRegisteredDataFile(abs, rootDir)) {
+        return { action: "deny", reason: DATA_REGISTERED_DATA_MESSAGE };
+      }
+    }
+    const dest = pair?.destination;
     if (typeof dest === "string" && dest.trim() !== "") {
       const absDest = resolve(rootDir, expandHome(dest, home));
       if (isUserDashboardFile(absDest, rootDir)) {
@@ -184,6 +200,9 @@ export function evaluateToolCall(
       }
       if (isDataRegistryFile(absPath, rootDir)) {
         return { action: "deny", reason: DATA_REGISTRY_TOOL_MESSAGE };
+      }
+      if (isRegisteredDataFile(absPath, rootDir)) {
+        return { action: "deny", reason: DATA_REGISTERED_DATA_MESSAGE };
       }
     }
     const decision = evaluateOnePath(rawPath, op, rootDir, home, configDir);

@@ -139,4 +139,111 @@ describe("executeDataAction", () => {
     if (out.ok) expect(out.text).toMatch(/No entries/);
     expect(existsSync(join(dir, "user/data/index.md"))).toBe(false);
   });
+
+  function defineMigranas(d: string): void {
+    const def = executeDataAction(d, "define", {
+      name: "migranas",
+      kind: "series",
+      key: ["fecha", "hora"],
+      columns: { fecha: "date", hora: "string", intensidad: "number" },
+    });
+    expect(def.ok).toBe(true);
+  }
+
+  it("append creates CSV with header and second append adds a row", () => {
+    dir = mkdtempSync(join(tmpdir(), "data-tool-"));
+    defineMigranas(dir);
+    const a1 = executeDataAction(dir, "append", {
+      name: "migranas",
+      values: { fecha: "2026-10-11", hora: "09:00", intensidad: 7 },
+    });
+    expect(a1.ok).toBe(true);
+    const csv = readFileSync(join(dir, "user/data/migranas.csv"), "utf8");
+    expect(csv).toContain("fecha,hora,intensidad");
+    expect(csv).toContain("2026-10-11,09:00,7");
+    const a2 = executeDataAction(dir, "append", {
+      name: "migranas",
+      values: { fecha: "2026-10-12", hora: "10:00", intensidad: 5 },
+    });
+    expect(a2.ok).toBe(true);
+    expect(readFileSync(join(dir, "user/data/migranas.csv"), "utf8")).toContain("2026-10-12,10:00,5");
+  });
+
+  it("append with duplicate key does not change the file", () => {
+    dir = mkdtempSync(join(tmpdir(), "data-tool-"));
+    defineMigranas(dir);
+    executeDataAction(dir, "append", {
+      name: "migranas",
+      values: { fecha: "2026-10-11", hora: "09:00", intensidad: 7 },
+    });
+    const before = readFileSync(join(dir, "user/data/migranas.csv"), "utf8");
+    const dup = executeDataAction(dir, "append", {
+      name: "migranas",
+      values: { fecha: "2026-10-11", hora: "09:00", intensidad: 9 },
+    });
+    expect(dup.ok).toBe(false);
+    expect(readFileSync(join(dir, "user/data/migranas.csv"), "utf8")).toBe(before);
+  });
+
+  it("append with non-numeric intensity does not create the file", () => {
+    dir = mkdtempSync(join(tmpdir(), "data-tool-"));
+    defineMigranas(dir);
+    const out = executeDataAction(dir, "append", {
+      name: "migranas",
+      values: { fecha: "2026-10-11", hora: "09:00", intensidad: "alta" },
+    });
+    expect(out.ok).toBe(false);
+    expect(existsSync(join(dir, "user/data/migranas.csv"))).toBe(false);
+  });
+
+  it("correct with set updates intensity and remove leaves header only", () => {
+    dir = mkdtempSync(join(tmpdir(), "data-tool-"));
+    defineMigranas(dir);
+    executeDataAction(dir, "append", {
+      name: "migranas",
+      values: { fecha: "2026-10-11", hora: "09:00", intensidad: 7 },
+    });
+    const upd = executeDataAction(dir, "correct", {
+      name: "migranas",
+      key: { fecha: "2026-10-11", hora: "09:00" },
+      set: { intensidad: 8 },
+    });
+    expect(upd.ok).toBe(true);
+    expect(readFileSync(join(dir, "user/data/migranas.csv"), "utf8")).toContain("2026-10-11,09:00,8");
+    const rem = executeDataAction(dir, "correct", {
+      name: "migranas",
+      key: { fecha: "2026-10-11", hora: "09:00" },
+      remove: true,
+    });
+    expect(rem.ok).toBe(true);
+    const after = readFileSync(join(dir, "user/data/migranas.csv"), "utf8");
+    expect(after).toContain("fecha,hora,intensidad");
+    expect(after).not.toContain("2026-10-11");
+  });
+
+  it("correct with unknown key does not write", () => {
+    dir = mkdtempSync(join(tmpdir(), "data-tool-"));
+    defineMigranas(dir);
+    executeDataAction(dir, "append", {
+      name: "migranas",
+      values: { fecha: "2026-10-11", hora: "09:00", intensidad: 7 },
+    });
+    const out = executeDataAction(dir, "correct", {
+      name: "migranas",
+      key: { fecha: "2026-10-99", hora: "09:00" },
+      set: { intensidad: 8 },
+    });
+    expect(out.ok).toBe(true);
+    expect(readFileSync(join(dir, "user/data/migranas.csv"), "utf8")).toContain("2026-10-11,09:00,7");
+  });
+
+  it("help mentions values map and append", () => {
+    dir = mkdtempSync(join(tmpdir(), "data-tool-"));
+    const out = executeDataAction(dir, "help");
+    expect(out.ok).toBe(true);
+    if (out.ok) {
+      expect(out.text).toContain("values:{");
+      expect(out.text).toContain("append");
+    }
+  });
 });

@@ -2549,6 +2549,71 @@
         }
       ],
       "note": "reopened: define ignored params.columns; agent wrote the csv by hand"
+    },
+    {
+      "id": "FR-DATA-03",
+      "title": "Validated append and correct; direct writes to registered CSVs denied",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Write to registered series CSV is denied",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Edit of registered series CSV is denied",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Delete of registered series CSV is rejected",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Write to unregistered CSV remains allowed",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Append creates CSV with header and a second append adds a row",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Append with duplicate key does not change the file",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Append with non-numeric intensity does not create the file",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Correct with set updates intensity and correct remove leaves header only",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Correct with unknown key does not write",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Help mentions values map and append",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
+    },
+    {
+      "id": "FR-DATA-07",
+      "title": "Inferred rows carry origin and basis; the widget shows the notice",
+      "status": "pending",
+      "cycle_step": "spec_review",
+      "scenarios": []
     }
   ]
 }

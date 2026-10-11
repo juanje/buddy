@@ -4407,7 +4407,7 @@ is pre-seeded.
 |----|-------------|-------|
 | FR-DATA-01 | Registry `user/data/index.md`: entry format, protected from delete and move | 3 S4 ✓ |
 | FR-DATA-02 | `data()` tool: help, define, list | 3 S4 ✓ |
-| FR-DATA-03 | `append` / `correct`: schema-validated atomic writes; direct writes to registered paths denied | 3 S4 |
+| FR-DATA-03 | `append` / `correct`: schema-validated atomic writes; direct writes to registered paths denied | 3 S4 ✓ |
 | FR-DATA-04 | `on_mention` mode: active entries in one session-context line | 3 S6 |
 | FR-DATA-05 | `consolidation` mode: worker block of due entries and pending days, fast tier | 3 S6 |
 | FR-DATA-06 | `snapshot` mode: heartbeat aggregate of a Buddy file, zero tokens, gaps not interpolated | 3 S7 |
@@ -4462,10 +4462,24 @@ is pre-seeded.
 
 **FR-DATA-03 — Validated writes**
 
-- `append` and `correct` validate against the entry's schema and write
-  atomically. A correction stays in git history.
-- `write` and `edit` on any registered path are denied, reading the registry
-  at call time; the refusal points at `data()`.
+- `append` and `correct` are `data()` actions. `help` documents
+  `params.values`, `params.key`, and `params.set` as maps (for example
+  `values:{fecha:'2026-10-11', hora:'09:00', intensidad:7}`).
+- Validation uses the entry schema: every declared column is required in
+  `values`; types are enforced (`date` as `YYYY-MM-DD`, `number` numeric,
+  `string` text). Extra columns or invalid types are errors with no write.
+  With `inferred: false`, `origin` and `basis` in `values` are rejected.
+- Rows are identified by the entry `key` (simple or composite). `append`
+  rejects duplicate keys. `correct` requires an existing key; `remove: true`
+  deletes the row without `set`; `set` updates only non-key fields.
+- The first `append` creates the CSV with headers in column definition order.
+  Later appends preserve headers; a mismatched existing header is an error.
+  Writes are atomic (temp file and rename).
+- `write`, `edit`, and `delete_file` on a registered data path are denied,
+  as are `copy_file` and `move_file` with that path as source or destination.
+  The registry is read at call time. Message:
+  `Use data(action='append') or data(action='correct') to change registered data.`
+  Unregistered CSV paths remain writable. Reads stay allowed.
 
 **FR-DATA-04 — `on_mention` mode**
 
