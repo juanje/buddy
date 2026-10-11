@@ -57,9 +57,9 @@ Given("dashboard file {string} with body:", function (this: ConsolidationDataWor
 });
 
 Then("the consolidation prompt mentions {string}", function (this: ConsolidationDataWorld, fragment: string) {
-  assert.ok(this.consolidationPrompt?.includes(fragment), this.consolidationPrompt);
+  assert.ok(this.consolidationPrompt?.includes(fragment), this.consolidationPrompt ?? "");
 });
 
 Then("the consolidation prompt does not mention {string}", function (this: ConsolidationDataWorld, fragment: string) {
-  assert.ok(!this.consolidationPrompt?.includes(fragment), this.consolidationPrompt);
+  assert.ok(!this.consolidationPrompt?.includes(fragment), this.consolidationPrompt ?? "");
 });

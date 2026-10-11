@@ -57,10 +57,10 @@ function requireEntry(
 ): DataRegistryEntry | { ok: false; text: string } {
   const name = params.name;
   if (typeof name !== "string" || !name.trim()) {
-    return err("name is required.");
+    return { ok: false, text: "name is required." };
   }
   const entry = findRegistryEntry(rootDir, name.trim());
-  if (!entry) return err(`No registered entry named '${name.trim()}'.`);
+  if (!entry) return { ok: false, text: `No registered entry named '${name.trim()}'.` };
   return entry;
 }
 

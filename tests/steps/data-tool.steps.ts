@@ -1,6 +1,6 @@
 // tests/steps/data-tool.steps.ts — FR-DATA-02
 
-import { DataTable, Given, Then, When } from "@cucumber/cucumber";
+import { DataTable, Then, When } from "@cucumber/cucumber";
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -47,11 +47,11 @@ Then("data tool failed", function (this: DataToolWorld) {
 });
 
 Then("data tool output mentions {string}", function (this: DataToolWorld, fragment: string) {
-  assert.ok(this.dataToolResult?.text.includes(fragment), this.dataToolResult?.text);
+  assert.ok(this.dataToolResult?.text.includes(fragment), this.dataToolResult?.text ?? "");
 });
 
 Then("data tool output does not mention {string}", function (this: DataToolWorld, fragment: string) {
-  assert.ok(!this.dataToolResult?.text.includes(fragment), this.dataToolResult?.text);
+  assert.ok(!this.dataToolResult?.text.includes(fragment), this.dataToolResult?.text ?? "");
 });
 
 Then("data file {string} exists", function (this: DataToolWorld, rel: string) {

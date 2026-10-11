@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { parse } from "csv-parse/sync";
 
 import { dailyLogRelPath } from "../brain-paths";
-import { addDays, toIsoDay } from "../dates";
+import { addDays } from "../dates";
 import type { DataRegistryEntry } from "./registry";
 
 const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;

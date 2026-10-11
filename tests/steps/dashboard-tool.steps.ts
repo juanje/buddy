@@ -201,7 +201,7 @@ Then("dashboard tool failed", function (this: DashboardToolWorld) {
 });
 
 Then("dashboard tool output mentions {string}", function (this: DashboardToolWorld, fragment: string) {
-  assert.ok(this.dashboardToolResult?.text.includes(fragment), this.dashboardToolResult?.text);
+  assert.ok(this.dashboardToolResult?.text.includes(fragment), this.dashboardToolResult?.text ?? "");
 });
 
 Then(
@@ -214,7 +214,7 @@ Then(
 );
 
 Then("dashboard tool output does not mention {string}", function (this: DashboardToolWorld, fragment: string) {
-  assert.ok(!this.dashboardToolResult?.text.includes(fragment), this.dashboardToolResult?.text);
+  assert.ok(!this.dashboardToolResult?.text.includes(fragment), this.dashboardToolResult?.text ?? "");
 });
 
 Then("dashboard file {string} exists", function (this: DashboardToolWorld, rel: string) {

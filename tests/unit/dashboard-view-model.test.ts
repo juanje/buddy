@@ -208,6 +208,7 @@ describe("list view model", () => {
   it("does not repeat the primary field in list meta", () => {
     const model: ResolvedDashboard = {
       title: "T",
+      today: "2026-10-07",
       segments: [
         {
           kind: "widget",

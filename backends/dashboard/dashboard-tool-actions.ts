@@ -3,7 +3,6 @@
 import { basename, dirname, join } from "node:path";
 import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 
-import { toIsoDay } from "../../shared/dates";
 import { DASHBOARDS_DIR_PREFIX, isDashboardDocument } from "../../shared/dashboard/document";
 import { splitFrontmatter } from "../../shared/frontmatter";
 import { inferInlineSourceDefinition } from "../../shared/dashboard/inline-source";

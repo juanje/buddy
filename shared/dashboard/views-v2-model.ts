@@ -1,6 +1,5 @@
 // shared/dashboard/views-v2-model.ts — Chart view models from filtered rows (FR-DASH-11).
 
-import type { SourceDefinition } from "./source-fields";
 import type { WidgetSpec } from "./types";
 import { ageDaysFromUpdated } from "./inline-source";
 

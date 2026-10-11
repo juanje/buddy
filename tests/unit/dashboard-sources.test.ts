@@ -1,6 +1,6 @@
 // tests/unit/dashboard-sources.test.ts — FR-DASH-05
 
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it, afterEach } from "vitest";
@@ -16,8 +16,6 @@ import {
   loadTasksRows,
   loadWipRows,
 } from "../../backends/dashboard/sources";
-import { mkdirSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
 import { writeTasksFile } from "../../backends/tasks/task-file";
 import { taskState } from "../../backends/tasks/task-file";
 

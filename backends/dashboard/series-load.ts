@@ -41,7 +41,8 @@ function parseSeriesRecords(text: string): SeriesLoadResult {
       return { ok: false, message: err.message };
     }
     if (err instanceof CsvError) {
-      const line = err.lines ?? err.record?.length ?? "?";
+      const recordLen = Array.isArray(err.record) ? err.record.length : undefined;
+      const line = err.lines ?? recordLen ?? "?";
       return { ok: false, message: `CSV parse error at line ${line}: ${err.message}` };
     }
     const message = err instanceof Error ? err.message : String(err);

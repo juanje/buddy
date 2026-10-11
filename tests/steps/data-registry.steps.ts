@@ -1,6 +1,6 @@
 // tests/steps/data-registry.steps.ts — FR-DATA-01
 
-import { Given, Then, When } from "@cucumber/cucumber";
+import { Then, When } from "@cucumber/cucumber";
 import assert from "node:assert/strict";
 
 import { parseDataRegistryDocument, type ParseDataRegistryResult } from "../../shared/data/registry";
