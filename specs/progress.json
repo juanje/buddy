@@ -2536,8 +2536,19 @@
           "name": "List without a registry file does not create one",
           "bdd": "pass",
           "unit_tests": 1
+        },
+        {
+          "name": "Define accepts a columns map and a key list",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Help shows the columns map and that define does not create the csv",
+          "bdd": "pass",
+          "unit_tests": 1
         }
-      ]
+      ],
+      "note": "reopened: define ignored params.columns; agent wrote the csv by hand"
     }
   ]
 }

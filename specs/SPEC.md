@@ -4449,9 +4449,13 @@ is pre-seeded.
 - `define` adds or replaces one entry by `params.name`, validates against
   FR-DATA-01, and rewrites `user/data/index.md` atomically. Entries that
   did not parse on read are preserved verbatim. Failed validation writes
-  nothing. `kind: sections` or `records` is refused with a message to feed
-  dashboards from the file directly (unregistered). `define` does not create
-  the CSV file.
+  nothing. `params.columns` is a mapping of column name to `string`,
+  `number`, or `date` (for example
+  `columns:{fecha:'date', hora:'string', intensidad:'number'}`).
+  `params.key` is a column name or a list of names. `kind: sections` or
+  `records` is refused with a message to feed dashboards from the file
+  directly (unregistered). `define` does not create the CSV file, and
+  `help` says so.
 - `list` lists entry names, paths, and modes with `(inactive until sprint 6)`
   after each mode. It never reads CSV rows. When the registry file is
   missing, `list` reports no entries and does not create the file.

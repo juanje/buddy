@@ -30,6 +30,27 @@ Feature: Data tool
     And data tool output mentions "inactive until sprint 6"
 
   @FR-DATA-02
+  Scenario: Define accepts a columns map and a key list
+    Given an initialized buddy git repository
+    When data action "define" is invoked with json:
+      """
+      {"name":"migranas","kind":"series","key":["fecha","hora"],"columns":{"fecha":"date","hora":"string","intensidad":"number"}}
+      """
+    Then data tool succeeded
+    And data file "user/data/index.md" exists
+    And data file "user/data/migranas.csv" does not exist
+    When data action "list" is invoked
+    Then data tool output mentions "migranas"
+    And data tool output mentions "user/data/migranas.csv"
+
+  @FR-DATA-02
+  Scenario: Help shows the columns map and that define does not create the csv
+    Given an initialized buddy git repository
+    When data action "help" is invoked
+    Then data tool output mentions "columns:"
+    And data tool output mentions "does not create the CSV"
+
+  @FR-DATA-02
   Scenario: Define sections kind is refused
     Given an initialized buddy git repository
     When data action "define" is invoked with:

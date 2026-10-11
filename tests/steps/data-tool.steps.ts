@@ -31,6 +31,13 @@ When(
   },
 );
 
+When(
+  "data action {string} is invoked with json:",
+  function (this: DataToolWorld, action: string, body: string) {
+    this.dataToolResult = executeDataAction(root.call(this), action, JSON.parse(body));
+  },
+);
+
 Then("data tool succeeded", function (this: DataToolWorld) {
   assert.ok(this.dataToolResult?.ok);
 });

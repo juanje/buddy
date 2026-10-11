@@ -48,6 +48,32 @@ describe("executeDataAction", () => {
     }
   });
 
+  it("define accepts a columns map and a key list without creating the csv", () => {
+    dir = mkdtempSync(join(tmpdir(), "data-tool-"));
+    const out = executeDataAction(dir, "define", {
+      name: "migranas",
+      kind: "series",
+      key: ["fecha", "hora"],
+      columns: { fecha: "date", hora: "string", intensidad: "number" },
+    });
+    expect(out.ok).toBe(true);
+    expect(existsSync(join(dir, "user/data/index.md"))).toBe(true);
+    expect(existsSync(join(dir, "user/data/migranas.csv"))).toBe(false);
+    const list = executeDataAction(dir, "list");
+    expect(list.ok).toBe(true);
+    if (list.ok) expect(list.text).toContain("migranas");
+  });
+
+  it("help shows the columns map and that define does not create the csv", () => {
+    dir = mkdtempSync(join(tmpdir(), "data-tool-"));
+    const out = executeDataAction(dir, "help");
+    expect(out.ok).toBe(true);
+    if (out.ok) {
+      expect(out.text).toContain("columns:");
+      expect(out.text).toContain("does not create the CSV");
+    }
+  });
+
   it("define sections kind is refused without creating index", () => {
     dir = mkdtempSync(join(tmpdir(), "data-tool-"));
     const out = executeDataAction(dir, "define", {

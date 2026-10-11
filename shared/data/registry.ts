@@ -116,7 +116,7 @@ function validateEntry(name: string, raw: Record<string, unknown>): DataRegistry
       return { error: `Column '${colName}' is reserved` };
     }
     if (typeof colType !== "string" || !COLUMN_TYPES.has(colType as DataColumnType)) {
-      return { error: `Column '${colName}' has invalid type` };
+      return { error: `Column '${colName}' has invalid type. Use string, number, or date` };
     }
     columns[colName] = colType as DataColumnType;
   }

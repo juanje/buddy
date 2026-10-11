@@ -45,7 +45,10 @@ function helpAction(): DataActionResult {
   return ok(
     `data() actions (pass arguments in params):
 - help — registry format, define, list; no need to read CSV rows for schema
-- define(name, kind, key, columns, ...) — add or replace one entry in user/data/index.md
+- define(name, kind, key, columns, ...) — add or replace one entry in user/data/index.md.
+  define does not create the CSV.
+  Example: params={name:'migranas', kind:'series', key:['fecha','hora'], columns:{fecha:'date', hora:'string', intensidad:'number'}}
+  Column types: string, number, date. The name is a slug (lowercase ascii, hyphens).
 - list — entry names, paths, and modes (inactive until sprint 6)
 
 Sprint 4b supports kind: series only. kind: sections or records is not supported yet;
@@ -53,7 +56,21 @@ feed dashboards from the file directly (unregistered). Row writes (append, corre
   );
 }
 
-function columnsFromParams(params: DataActionParams): Record<string, string> {
+function columnsFromParams(params: DataActionParams): Record<string, string> | string {
+  const given = params.columns;
+  if (given !== undefined) {
+    if (!given || typeof given !== "object" || Array.isArray(given)) {
+      return "columns must be a mapping of name to type, for example columns:{fecha:'date', hora:'string', intensidad:'number'}";
+    }
+    const columns: Record<string, string> = {};
+    for (const [name, type] of Object.entries(given as Record<string, unknown>)) {
+      if (typeof type !== "string") {
+        return `Column '${name}' type must be a string (string, number, or date)`;
+      }
+      columns[name] = type;
+    }
+    return columns;
+  }
   const columns: Record<string, string> = {};
   for (const [key, value] of Object.entries(params)) {
     if (!key.startsWith("column_") || typeof value !== "string") continue;
@@ -80,13 +97,22 @@ function defineAction(rootDir: string, params: DataActionParams): DataActionResu
     key = keyRaw.includes(",")
       ? keyRaw.split(",").map((k) => k.trim()).filter(Boolean)
       : keyRaw.trim();
+  } else if (Array.isArray(keyRaw)) {
+    const parts = keyRaw.filter((k): k is string => typeof k === "string" && k.trim() !== "");
+    if (parts.length !== keyRaw.length || parts.length === 0) {
+      return err("key must be a column name or a list of column names");
+    }
+    key = parts.map((k) => k.trim());
   }
+
+  const columns = columnsFromParams(params);
+  if (typeof columns === "string") return err(columns);
 
   const raw: Record<string, unknown> = {
     kind,
     path: params.path,
     key,
-    columns: columnsFromParams(params),
+    columns,
     mode: params.mode,
     inferred: params.inferred,
     sensitive: params.sensitive,
