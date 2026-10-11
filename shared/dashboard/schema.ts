@@ -84,6 +84,10 @@ export function validateWidgetSpec(rawItem: Record<string, unknown>): ValidateWi
     if (!asString(rawItem.path)) {
       return { error: "sections source requires key 'path'" };
     }
+  } else if (source === "series") {
+    if (!asString(rawItem.path)) {
+      return { error: "series source requires key 'path'" };
+    }
   } else if (!source) {
     return { error: `View '${view}' requires key 'source'` };
   }

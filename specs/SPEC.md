@@ -175,7 +175,8 @@ rootDir (git repo — user/agent content only)
 
 - **Given** the user clicks a local file link that resolves to a viewable file (FR-CHAT-11)
 - **When** the file exists and is readable
-- **Then** a read-only panel/modal opens inside Buddy showing the file content rendered as markdown (for `.md`) or plain text (for `.txt`)
+- **Then** a read-only panel/modal opens inside Buddy showing the file content rendered as markdown (for `.md`), plain text (for `.txt`), or plain text (for `.csv` until FR-CHAT-22)
+- **Changed (Oct 11):** `.csv` follows the same visibility rules as `.md` and `.txt`; until FR-CHAT-22 the viewer shows CSV bytes as plain text
 - **And** the panel includes a "Close" button
 - **And** the panel has **no** "Open externally" affordance (withdrawn, FR-CHAT-11)
 - **And** the file content is read by the worker, not by the frontend (NFR-SEC-09)
@@ -187,9 +188,10 @@ rootDir (git repo — user/agent content only)
 Supersedes the system-opener behavior originally specified in FR-CHAT-09/10.
 
 - **Given** the user clicks a local file link emitted by the agent
-- **When** the target is a `.md` or `.txt` file inside the buddy directory, under
+- **When** the target is a `.md`, `.txt`, or `.csv` file inside the buddy directory, under
   `agent_brain/`, `user/`, `downloads/` or `logs/`
 - **Then** it opens in the inline viewer (FR-CHAT-10)
+- **Changed (Oct 11):** `.csv` is a viewable extension for the same directories; until FR-CHAT-22 it renders as plain text in the viewer
 - **But when** the target is any other file type (`.pdf`, `.png`, `.command`, …)
 - **Then** it is **not** clickable; the path renders as plain text so the user can
   locate it with their own file manager
@@ -4060,7 +4062,7 @@ and inline content.
 | FR-DASH-05 | Built-in sources: `tasks` (derived state) and `deferred` | 3 S1 ✓ |
 | FR-DASH-06 | Generic primitive: sections (any markdown with headings and list items) | 3 S3 ✓ |
 | FR-DASH-07 | Generic primitive: records (folder of `.md` files, frontmatter as row) | 3 S7 |
-| FR-DASH-08 | Generic primitive: series (CSV parsed by code) | 3 S4 |
+| FR-DASH-08 | Generic primitive: series (CSV parsed by code) | 3 S4a ✓ |
 | FR-DASH-09 | Inline content carries date and basis, renders distinct, shows its age | 3 S2 ✓ |
 | FR-DASH-10 | Views v1: kanban, list, table, counter, text, status | 3 S2 ✓ |
 | FR-DASH-11 | Views v2 (own SVG): bar, line, progress, calendar heatmap, timeline | 3 S5 |
@@ -4185,8 +4187,20 @@ and inline content.
 
 **FR-DASH-08 — Generic primitive: series**
 
-- `source: series` with `path` to a `.csv` file: the header names the fields,
-  types are inferred by code. The model never reads the rows.
+- `source: series` with `path` to a `.csv` file the viewer could open: the
+  header row names the fields. Duplicate or empty header names are a widget
+  error. The model never reads the rows.
+- Types are inferred per column from non-empty cell values: `number` when every
+  value is numeric (decimal point allowed), `date` when every value is
+  `YYYY-MM-DD`, otherwise `string`. An all-empty column is `string`. Empty
+  cells omit the field on that row.
+- `dateField` is the column named `date` when it is a date column; otherwise
+  the first date-typed column; otherwise none.
+- Malformed CSV (unclosed quotes, inconsistent column counts) is a widget error
+  citing the line number. Comma is the only separator.
+- `dashboard(action='fields', source='series', path=…)` returns header names
+  and inferred types, never row values. `check` on a `.csv` path says to use
+  `source: series`.
 
 **FR-DASH-09 — Inline content**
 

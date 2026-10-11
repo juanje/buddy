@@ -302,4 +302,27 @@ type: dashboard
     expect(out.ok).toBe(false);
     expect(out.text).toMatch(/Multiple widgets/i);
   });
+
+  it("fields for series returns types without row values", () => {
+    dir = mkdtempSync(join(tmpdir(), "dash-tool-"));
+    const rel = "user/data/series-fields.csv";
+    const abs = join(dir, rel);
+    mkdirSync(join(dir, "user/data"), { recursive: true });
+    writeFileSync(abs, "date,amount\n2026-10-01,5\n", "utf8");
+    const out = executeDashboardAction(dir, "fields", { source: "series", path: rel });
+    expect(out.ok).toBe(true);
+    expect(out.text).toMatch(/date:/);
+    expect(out.text).not.toMatch(/2026-10-01/);
+  });
+
+  it("check on csv points to series source", () => {
+    dir = mkdtempSync(join(tmpdir(), "dash-tool-"));
+    const rel = "user/data/check.csv";
+    const abs = join(dir, rel);
+    mkdirSync(join(dir, "user/data"), { recursive: true });
+    writeFileSync(abs, "x,y\n1,2\n", "utf8");
+    const out = executeDashboardAction(dir, "check", { path: rel });
+    expect(out.ok).toBe(true);
+    expect(out.text).toMatch(/source: series/);
+  });
 });

@@ -311,6 +311,33 @@ Feature: Dashboard tool
     Then "user/dashboards/board.md" exists
     And the delete tool result contains "declined"
 
+  @FR-DASH-08
+  Scenario: Fields for series returns header and types without rows
+    Given an initialized buddy git repository
+    And a csv file at "user/data/fields.csv" with content:
+      """
+      date,amount,note
+      2026-10-01,10,Alpha
+      """
+    When dashboard action "fields" is invoked with:
+      | source | series |
+      | path   | user/data/fields.csv |
+    Then dashboard tool output mentions "date:"
+    And dashboard tool output mentions "amount:"
+    And dashboard tool output does not mention "Alpha"
+
+  @FR-DASH-08
+  Scenario: Check on a CSV points to the series source
+    Given an initialized buddy git repository
+    And a csv file at "user/data/check.csv" with content:
+      """
+      x,y
+      1,2
+      """
+    When dashboard action "check" is invoked with:
+      | path | user/data/check.csv |
+    Then dashboard tool output mentions "source: series"
+
   @FR-DASH-13
   Scenario: Create with template writes a dashboard that resolves
     Given an initialized buddy git repository

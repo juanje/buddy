@@ -16,9 +16,10 @@ function readStore<T>(store: { subscribe: (fn: (value: T) => void) => () => void
 }
 
 describe("isViewableFile", () => {
-  it("accepts markdown and text extensions", () => {
+  it("accepts markdown, text, and csv extensions", () => {
     expect(isViewableFile("agent_brain/foo.md")).toBe(true);
     expect(isViewableFile("user/readme.txt")).toBe(true);
+    expect(isViewableFile("user/data/readings.csv")).toBe(true);
     expect(isViewableFile("agent_brain/foo.MD")).toBe(true);
     expect(isViewableFile("user/readme.TXT")).toBe(true);
   });

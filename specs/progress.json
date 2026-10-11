@@ -2295,6 +2295,54 @@
         }
       ],
       "note": "reopened: wip status unit test and counts"
+    },
+    {
+      "id": "FR-DASH-08",
+      "title": "Generic primitive: series (CSV)",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "Fields for series returns header and types without rows",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Check on a CSV points to the series source",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Series source reads CSV rows with header fields",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Series numeric column supports sum and numeric where",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Series date column supports relative date filter",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Series unknown column is a widget error",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Series malformed CSV is a widget error",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Series path outside buddy root is a widget error",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
     }
   ]
 }

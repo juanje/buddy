@@ -16,6 +16,7 @@ import {
 } from "../../shared/dashboard/source-fields";
 import { ViewableFileError, readViewableFile } from "../viewable-file";
 import { loadSectionsSource } from "./sections-load";
+import { loadSeriesSource } from "./series-load";
 import {
   listExampleDashboardPaths,
   resolveDashboardTemplate,
@@ -66,6 +67,12 @@ function formatFieldType(field: FieldType): string {
 }
 
 function fieldsForSource(rootDir: string, source: string, path?: string): SourceDefinition | string {
+  if (source === "series") {
+    if (!path) return "series requires path";
+    const loaded = loadSeriesSource(rootDir, path);
+    if (!loaded.ok) return loaded.message;
+    return loaded.def;
+  }
   if (source === "sections") {
     if (!path) return "sections requires path";
     const loaded = loadSectionsSource(rootDir, path);
@@ -117,7 +124,7 @@ function helpAction(): DashboardActionResult {
   count: true
 \`\`\``;
   return ok(
-    `${HELP_TEXT}\n\nSources: ${listKnownSourceNames().join(", ")}, sections, inline.\n` +
+    `${HELP_TEXT}\n\nSources: ${listKnownSourceNames().join(", ")}, sections, series, inline.\n` +
       `Views: kanban, list, table, counter, text, status.\n` +
       `Query keys: where, group, sort, limit, count, sum, range. ` +
       `count/sum reduce rows to numbers and render only in view 'counter'.\n` +
@@ -141,6 +148,11 @@ function fieldsAction(rootDir: string, params: DashboardActionParams): Dashboard
 function checkAction(rootDir: string, params: DashboardActionParams): DashboardActionResult {
   const path = params.path;
   if (!path) return err("check requires params.path");
+  if (/\.csv$/i.test(path)) {
+    const loaded = loadSeriesSource(rootDir, path);
+    if (!loaded.ok) return err(loaded.message);
+    return ok(`File is CSV. Use source: series with path: ${path}`);
+  }
   let content: string;
   try {
     content = readViewableFile(rootDir, path);

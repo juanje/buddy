@@ -277,6 +277,15 @@ Given(
   },
 );
 
+Given(
+  "a csv file at {string} with content:",
+  function (this: DashboardWorld, relPath: string, content: string) {
+    const abs = join(root.call(this), relPath);
+    mkdirSync(dirname(abs), { recursive: true });
+    writeFileSync(abs, content.trim() + "\n", "utf8");
+  },
+);
+
 Given("a dashboard file with body:", function (this: DashboardWorld, body: string) {
   this.dashboardBody = [
     "---",
@@ -453,6 +462,14 @@ Then(
   function (this: DashboardWorld, index: number, owner: string) {
     const rows = widgetRows.call(this, index);
     assert.equal(String(rows[0]?.owner), owner);
+  },
+);
+
+Then(
+  "segment {int} first widget row label is {string}",
+  function (this: DashboardWorld, index: number, label: string) {
+    const rows = widgetRows.call(this, index);
+    assert.equal(String(rows[0]?.label), label);
   },
 );
 

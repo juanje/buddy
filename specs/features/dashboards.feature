@@ -1132,6 +1132,128 @@ Feature: Dashboard resolution
     When the dashboard is resolved for today "2026-10-07"
     Then segment 1 widget result is an error mentioning "cannot be opened"
 
+  @FR-DASH-08
+  Scenario: Series source reads CSV rows with header fields
+    Given an initialized buddy git repository
+    And a csv file at "user/data/readings.csv" with content:
+      """
+      amount,label
+      10,Alpha
+      20,Beta
+      """
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: table
+        source: series
+        path: user/data/readings.csv
+        columns: [amount, label]
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-07"
+    Then segment 1 is a table widget with 2 rows and no error
+    And segment 1 first widget row label is "Alpha"
+
+  @FR-DASH-08
+  Scenario: Series numeric column supports sum and numeric where
+    Given an initialized buddy git repository
+    And a csv file at "user/data/amounts.csv" with content:
+      """
+      amount,tag
+      5,low
+      15,high
+      """
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: counter
+        source: series
+        path: user/data/amounts.csv
+        where: amount >= 10
+        sum: amount
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-07"
+    Then segment 1 widget value is 15
+
+  @FR-DASH-08
+  Scenario: Series date column supports relative date filter
+    Given an initialized buddy git repository
+    And a csv file at "user/data/dated.csv" with content:
+      """
+      date,note
+      2026-01-01,old
+      2026-09-20,recent
+      2026-10-07,today
+      """
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: table
+        source: series
+        path: user/data/dated.csv
+        where: date >= -30d
+        columns: [date, note]
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-07"
+    Then segment 1 widget row count is 2
+
+  @FR-DASH-08
+  Scenario: Series unknown column is a widget error
+    Given an initialized buddy git repository
+    And a csv file at "user/data/simple.csv" with content:
+      """
+      a,b
+      1,2
+      """
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: table
+        source: series
+        path: user/data/simple.csv
+        columns: [a, missing]
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-07"
+    Then segment 1 widget result is an error mentioning "missing"
+
+  @FR-DASH-08
+  Scenario: Series malformed CSV is a widget error
+    Given an initialized buddy git repository
+    And a csv file at "user/data/broken.csv" with content:
+      """
+      a,b
+      "unclosed,2
+      """
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: table
+        source: series
+        path: user/data/broken.csv
+        columns: [a, b]
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-07"
+    Then segment 1 widget result is an error mentioning "line"
+
+  @FR-DASH-08
+  Scenario: Series path outside buddy root is a widget error
+    Given an initialized buddy git repository
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: table
+        source: series
+        path: ../../../etc/passwd.csv
+        columns: [a]
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-07"
+    Then segment 1 widget result is an error mentioning "cannot be opened"
+
   @FR-DASH-02
   Scenario: Ordinary markdown still offers export PDF when supported
     Given a filesystem buddy root at "/tmp/buddy-dash-view-6"

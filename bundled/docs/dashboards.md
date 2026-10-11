@@ -3,7 +3,16 @@
 Buddy puede mostrar **dashboards**: ficheros en `user/dashboards/` con bloques
 ` ```dashboard ` que el visor renderiza en modo ancho. Son consultas guardadas
 sobre ficheros que Buddy ya mantiene (`tasks`, `projects`, `logs`, `journal`) o
-sobre markdown con secciones (`source: sections` + `path`).
+sobre markdown con secciones (`source: sections` + `path`) o CSV con
+`source: series` + `path` (por ejemplo `user/data/registro.csv`; la cabecera
+define los campos y el código infiere los tipos).
+
+```dashboard
+- view: table
+  source: series
+  path: user/data/ejemplo.csv
+  columns: [date, amount, note]
+```
 
 ## Crear y editar
 

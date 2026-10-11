@@ -300,4 +300,4 @@ export const VIEWABLE_DIRS = [BRAIN_DIR, USER_DIR, DOWNLOADS_DIR, LOGS_DIR] as c
  * list is not clickable, because Buddy never hands a file to an external
  * program (FR-CHAT-11).
  */
-export const VIEWABLE_EXTENSIONS = [".md", ".txt"] as const;
+export const VIEWABLE_EXTENSIONS = [".md", ".txt", ".csv"] as const;

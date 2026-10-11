@@ -30,7 +30,7 @@ export function buildShowFileTools(options: ShowFileToolOptions): ToolDefinition
       description:
         "Open a file in the user's viewer panel so they can read it, without them having to click anything. " +
         "Use it when the user asks to see a file or the contents of something you keep for them. " +
-        "Works for .md and .txt files under agent_brain/, user/, downloads/ and logs/.",
+        "Works for .md, .txt, and .csv files under agent_brain/, user/, downloads/ and logs/.",
       parameters: Type.Object({
         path: Type.String({
           description: "Path to the file to show, relative to the buddy directory",

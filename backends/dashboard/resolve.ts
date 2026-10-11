@@ -23,6 +23,7 @@ import type { SourceDefinition } from "../../shared/dashboard/source-fields";
 import { sourceDefinition } from "../../shared/dashboard/source-fields";
 import { validateViewParams } from "../../shared/dashboard/view-params";
 import { loadSectionsSource } from "./sections-load";
+import { loadSeriesSource } from "./series-load";
 import { loadSourceRows } from "./sources";
 
 function resolveTextWidget(spec: WidgetSpec): WidgetResult {
@@ -96,6 +97,26 @@ function resolveWidgetData(
       return { result: { kind: "error", message: viewErr } };
     }
     const queried = applyWidgetQuery(loaded.rows, spec, "sections", loaded.def, today);
+    if (!queried.ok) {
+      return { result: { kind: "error", message: queried.message } };
+    }
+    return { result: queried.result };
+  }
+
+  if (spec.source === "series") {
+    const path = spec.raw.path;
+    if (typeof path !== "string" || path.trim() === "") {
+      return { result: { kind: "error", message: "series source requires key 'path'" } };
+    }
+    const loaded = loadSeriesSource(rootDir, path);
+    if (!loaded.ok) {
+      return { result: { kind: "error", message: loaded.message } };
+    }
+    const viewErr = validateViewParams(spec, loaded.def);
+    if (viewErr) {
+      return { result: { kind: "error", message: viewErr } };
+    }
+    const queried = applyWidgetQuery(loaded.rows, spec, "series", loaded.def, today);
     if (!queried.ok) {
       return { result: { kind: "error", message: queried.message } };
     }

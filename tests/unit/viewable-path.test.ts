@@ -14,6 +14,7 @@ describe("resolveViewablePath — allowed", () => {
   it.each([
     ["agent_brain/concepts/foo.md", "agent_brain/concepts/foo.md"],
     ["user/notes/readme.txt", "user/notes/readme.txt"],
+    ["user/data/readings.csv", "user/data/readings.csv"],
     ["downloads/2026-07-26_article.md", "downloads/2026-07-26_article.md"],
     ["logs/2026-07-26.md", "logs/2026-07-26.md"],
     ["./agent_brain/foo.md", "agent_brain/foo.md"],
