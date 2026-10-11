@@ -367,6 +367,24 @@ type: dashboard
     expect(text).toContain("fields(source='series'");
   });
 
+  it("help lists the field key of each view", () => {
+    dir = mkdtempSync(join(tmpdir(), "dash-tool-"));
+    const out = executeDashboardAction(dir, "help");
+    expect(out.ok).toBe(true);
+    expect(out.text).toMatch(/table: columns/);
+    expect(out.text).toMatch(/list: fields/);
+  });
+
+  it("fields with sections on a CSV points to series", () => {
+    dir = mkdtempSync(join(tmpdir(), "dash-tool-"));
+    const rel = "user/data/hint.csv";
+    mkdirSync(join(dir, "user/data"), { recursive: true });
+    writeFileSync(join(dir, rel), "name,region\nA,B\n", "utf8");
+    const out = executeDashboardAction(dir, "fields", { source: "sections", path: rel });
+    expect(out.ok).toBe(false);
+    expect(out.text).toMatch(/source: series/);
+  });
+
   it("check on a dashboard file points to validate", () => {
     dir = mkdtempSync(join(tmpdir(), "dash-tool-"));
     const rel = "user/dashboards/board.md";

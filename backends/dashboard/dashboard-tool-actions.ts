@@ -27,6 +27,7 @@ import {
   collectDashboardValidationIssues,
   formatValidationIssues,
 } from "./validate-content";
+import { dashboardViewFieldKeyHelp } from "../../shared/dashboard/schema";
 
 const HELP_TEXT = `dashboard() actions (pass arguments in params):
 - help — sources, views, query syntax, and a minimal example
@@ -88,6 +89,9 @@ function fieldsForSource(rootDir: string, source: string, path?: string): Source
     if (!path) {
       return `sections requires params.path. ${paramsShapeHint('source:"sections", path:"user/data/board-sections.md"')}`;
     }
+    if (/\.csv$/i.test(path)) {
+      return `CSV files use source: series, not sections. ${paramsShapeHint('source:"series", path:"user/data/file.csv"')}`;
+    }
     const loaded = loadSectionsSource(rootDir, path);
     if (!loaded.ok) return loaded.message;
     return loaded.def;
@@ -131,12 +135,28 @@ function ensureDashboardFile(content: string, name: string): string {
 }
 
 function helpAction(): DashboardActionResult {
-  const example = `Example:
+  const examples = `Examples:
 \`\`\`dashboard
 - view: counter
   title: Open tasks
   source: tasks
   count: true
+\`\`\`
+
+\`\`\`dashboard
+- view: table
+  title: Rows
+  source: series
+  path: user/data/sales.csv
+  columns: [date, amount]
+\`\`\`
+
+\`\`\`dashboard
+- view: list
+  title: Names
+  source: series
+  path: user/data/sales.csv
+  fields: [note]
 \`\`\``;
   return ok(
     `${HELP_TEXT}\n\nSources: ${listAllSourceNames().join(", ")}.\n` +
@@ -144,11 +164,12 @@ function helpAction(): DashboardActionResult {
       `Discover columns with fields(source, path) — you do not need to read the file.\n` +
       `Example: params={source:'series', path:'user/data/sales.csv'}.\n` +
       `Views: kanban, list, table, counter, text, status.\n` +
+      `${dashboardViewFieldKeyHelp()}\n` +
       `Query keys: where, group, sort, limit, count, sum, range. ` +
       `count/sum reduce rows to numbers and render only in view 'counter'.\n` +
       `WIP: source 'wip' gives one row per area with active fronts (distinct #projects ` +
       `plus loose tasks) against the configured limit; use view 'status' or ` +
-      `'table' with where: over_by > 0. Never write the limit as inline text.\n\n${example}`,
+      `'table' with where: over_by > 0. Never write the limit as inline text.\n\n${examples}`,
   );
 }
 

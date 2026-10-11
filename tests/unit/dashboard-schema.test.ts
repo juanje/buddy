@@ -21,4 +21,24 @@ describe("validateWidgetSpec", () => {
     const out = validateWidgetSpec({ view: "text", text: "x", not_a_key: 1 });
     expect(out.error).toMatch(/not_a_key/i);
   });
+
+  it("suggests columns when table uses fields", () => {
+    const out = validateWidgetSpec({
+      view: "table",
+      source: "series",
+      path: "user/data/x.csv",
+      fields: ["name"],
+    });
+    expect(out.error).toMatch(/use 'columns'/);
+  });
+
+  it("suggests fields when list uses columns", () => {
+    const out = validateWidgetSpec({
+      view: "list",
+      source: "series",
+      path: "user/data/x.csv",
+      columns: ["name"],
+    });
+    expect(out.error).toMatch(/use 'fields'/);
+  });
 });

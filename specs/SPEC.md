@@ -4272,10 +4272,16 @@ and inline content.
   connectors. Nothing is added to the system prompt; `help` is the discovery.
   Tool arguments are passed in `params` (for example
   `params={source:'series', path:'user/data/x.csv'}`).
-- `help`: sources, views, query syntax, and a minimal example. It explains
-  each file-backed source (`sections` and `series`) requires `path` in
-  `params`, and how to discover columns with `fields(source, path)` without
-  reading the file.
+- `help`: sources, views, query syntax, and examples. It explains each
+  file-backed source (`sections` and `series`) requires `path` in `params`,
+  how to discover columns with `fields(source, path)` without reading the
+  file, which key lists fields per view (`table: columns`; `list` and
+  `kanban: fields`; `counter: count` or `sum`; `text: text`), and includes
+  `table` and `list` examples on `source: series`.
+- Validation errors for a wrong field-list key (`fields` on `table` or
+  `columns` on `list`) suggest the correct key for that view.
+- `fields` with `source: sections` on a `.csv` path tells the agent to use
+  `source: series` instead.
 - `fields`: the fields and types of a source. For a file-backed primitive,
   field names and inferred types only; no rows reach the model. Unknown
   `source` errors list every source (built-ins plus `sections`, `series`,

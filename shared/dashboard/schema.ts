@@ -20,7 +20,7 @@ const COMMON_KEYS = new Set([
   ...FILE_SOURCE_KEYS,
 ]);
 
-const VIEW_EXTRA_KEYS: Record<string, Set<string>> = {
+export const VIEW_EXTRA_KEYS: Record<string, Set<string>> = {
   kanban: new Set(["fields", "group", "order"]),
   list: new Set(["fields"]),
   table: new Set(["columns"]),
@@ -28,6 +28,24 @@ const VIEW_EXTRA_KEYS: Record<string, Set<string>> = {
   text: new Set(["text"]),
   status: new Set([]),
 };
+
+/** One-line hint for dashboard() help (FR-DASH-12). */
+export function dashboardViewFieldKeyHelp(): string {
+  return (
+    "View field keys: table: columns; list: fields; kanban: fields; counter: count or sum (optional delta); " +
+    "text: text; status: label/state/reason from source rows."
+  );
+}
+
+function unknownKeyMessage(view: string, key: string, allowed: Set<string>): string {
+  let message = `Unknown key '${key}'. Allowed keys for view '${view}': ${[...allowed].sort().join(", ")}`;
+  if (key === "fields" && view === "table") {
+    message += ". use 'columns' for view 'table'";
+  } else if (key === "columns" && (view === "list" || view === "kanban")) {
+    message += `. use 'fields' for view '${view}'`;
+  }
+  return message;
+}
 
 export type ValidateWidgetResult = {
   spec?: WidgetSpec;
@@ -61,9 +79,7 @@ export function validateWidgetSpec(rawItem: Record<string, unknown>): ValidateWi
   const allowed = allowedKeysForView(view);
   const unknown = Object.keys(rawItem).filter((k) => !allowed.has(k));
   if (unknown.length > 0) {
-    return {
-      error: `Unknown key '${unknown[0]}'. Allowed keys for view '${view}': ${[...allowed].sort().join(", ")}`,
-    };
+    return { error: unknownKeyMessage(view, unknown[0], allowed) };
   }
 
   const widthParsed = parseWidth(rawItem.width);

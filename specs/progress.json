@@ -2245,9 +2245,29 @@
           "name": "Check on a dashboard file points to validate",
           "bdd": "pass",
           "unit_tests": 1
+        },
+        {
+          "name": "Help lists the field key of each view",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Validate suggests columns for a table with fields",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Validate suggests fields for a list with columns",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Fields with sections on a CSV points to series",
+          "bdd": "pass",
+          "unit_tests": 1
         }
       ],
-      "note": "reopened: help did not explain series; agent read the csv"
+      "note": "reopened: agent mixed columns and fields across views; sections on csv gave no hint"
     },
     {
       "id": "FR-DASH-19",

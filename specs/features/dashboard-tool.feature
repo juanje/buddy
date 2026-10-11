@@ -87,6 +87,63 @@ Feature: Dashboard tool
     And dashboard tool output does not mention "user/data/"
 
   @FR-DASH-12
+  Scenario: Help lists the field key of each view
+    Given an initialized buddy git repository
+    When dashboard action "help" is invoked
+    Then dashboard tool output mentions "table: columns"
+    And dashboard tool output mentions "list: fields"
+
+  @FR-DASH-12
+  Scenario: Validate suggests columns for a table with fields
+    Given an initialized buddy git repository
+    When dashboard action "validate" is invoked with content:
+      """
+      ---
+      type: dashboard
+      ---
+      ```dashboard
+      - view: table
+        source: series
+        path: user/data/x.csv
+        fields: [name]
+      ```
+      """
+    Then dashboard tool failed
+    And dashboard tool output mentions "use 'columns'"
+
+  @FR-DASH-12
+  Scenario: Validate suggests fields for a list with columns
+    Given an initialized buddy git repository
+    When dashboard action "validate" is invoked with content:
+      """
+      ---
+      type: dashboard
+      ---
+      ```dashboard
+      - view: list
+        source: series
+        path: user/data/x.csv
+        columns: [name]
+      ```
+      """
+    Then dashboard tool failed
+    And dashboard tool output mentions "use 'fields'"
+
+  @FR-DASH-12
+  Scenario: Fields with sections on a CSV points to series
+    Given an initialized buddy git repository
+    And a csv file at "user/data/hint.csv" with content:
+      """
+      name,region
+      A,B
+      """
+    When dashboard action "fields" is invoked with:
+      | source | sections |
+      | path   | user/data/hint.csv |
+    Then dashboard tool failed
+    And dashboard tool output mentions "source: series"
+
+  @FR-DASH-12
   Scenario: Validate reports block and widget position
     Given an initialized buddy git repository
     When dashboard action "validate" is invoked with content:
