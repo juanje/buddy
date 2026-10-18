@@ -2898,6 +2898,11 @@ Frontmatter parse failures skip gracefully with a warning log.
   prompt updates in `agents-base.md` and `consolidation.md`, brain health
   check for incomplete skill frontmatter.
 - **Template:** deployed to `~/.buddy/templates/` on boot refresh.
+- **Given** consolidation or chat prompts instruct the agent to read `~/.buddy/templates/learned-skill.md` (or another file under `~/.buddy/templates/`)
+- **When** a session (including the unattended maintenance session) issues a `read` for that path
+- **Then** the read is allowed silently, same as reads under `~/.buddy/docs/` (FR-DOCS-01)
+- **And** writes under `~/.buddy/templates/` still require outside permission (or are denied in maintenance)
+- **And** `auth.json` and other denylisted basenames remain blocked regardless of directory
 
 **Design principles:**
 

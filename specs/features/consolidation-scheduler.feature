@@ -130,6 +130,12 @@ Feature: Consolidation scheduler (FR-CONSOL-01/02/04/05/06/08/09, FR-COST-05, FR
     Then the maintenance tool call is blocked
     And the refusal is recorded in the run journal
 
+  @FR-SKILL-06
+  Scenario: The maintenance session can read the learned-skill template
+    When the maintenance session tries to read "~/.buddy/templates/learned-skill.md"
+    Then the maintenance tool call is allowed
+    And the path is not recorded as refused
+
   Scenario: The maintenance session works freely inside the workspace
     When the maintenance session tries to read "agent_brain/observations.md"
     Then the maintenance tool call is allowed

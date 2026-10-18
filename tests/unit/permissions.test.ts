@@ -20,6 +20,7 @@ mkdirSync(join(AB, "agent_brain", "identity"), { recursive: true });
 mkdirSync(join(AB, ".pi"), { recursive: true });
 mkdirSync(join(AB, "user"), { recursive: true });
 mkdirSync(join(CONFIG, "docs"), { recursive: true });
+mkdirSync(join(CONFIG, "templates"), { recursive: true });
 mkdirSync(join(HOME, "Documents"), { recursive: true });
 
 afterAll(() => {
@@ -110,6 +111,40 @@ describe("evaluateToolCall", () => {
   it("allows reads under ~/.buddy/docs/ without asking (FR-DOCS-01)", () => {
     expect(evaluate("read", { path: `${CONFIG}/docs/index.md` })).toEqual({ action: "allow" });
     expect(evaluate("read", { path: "~/.buddy/docs/capabilities.md" })).toEqual({ action: "allow" });
+  });
+
+  it("allows reads under ~/.buddy/templates/ without asking (FR-SKILL-06)", () => {
+    expect(evaluate("read", { path: `${CONFIG}/templates/learned-skill.md` })).toEqual({
+      action: "allow",
+    });
+    expect(evaluate("read", { path: "~/.buddy/templates/learned-skill.md" })).toEqual({
+      action: "allow",
+    });
+  });
+
+  it("still asks for writes under ~/.buddy/templates/", () => {
+    const decision = evaluate("write", { path: `${CONFIG}/templates/learned-skill.md` });
+    expect(decision).toMatchObject({ action: "ask", kind: "outside", op: "write" });
+  });
+
+  it("still denies auth.json under ~/.buddy/templates/", () => {
+    expect(evaluate("read", { path: `${CONFIG}/templates/auth.json` })).toMatchObject({
+      action: "deny",
+    });
+  });
+
+  it("still asks for reads under ~/.buddy/ outside docs and templates", () => {
+    expect(evaluate("read", { path: `${CONFIG}/instance.json` })).toMatchObject({
+      action: "ask",
+      kind: "outside",
+      op: "read",
+    });
+  });
+
+  it("still denies reads under ~/.buddy/integrations/", () => {
+    expect(evaluate("read", { path: `${CONFIG}/integrations/jira.json` })).toMatchObject({
+      action: "deny",
+    });
   });
 
   it("still asks for writes under ~/.buddy/docs/", () => {

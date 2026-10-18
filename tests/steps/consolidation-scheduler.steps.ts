@@ -386,10 +386,12 @@ When(
   "the maintenance session tries to read {string}",
   async function (this: ConsolidationWorld, path: string) {
     const policy = createMaintenancePermissionPolicy();
-    const gate = createPermissionGate(this.buddyDir!, policy.askUser, this.consolTmpDir!);
+    const home = this.consolTmpDir!;
+    const configDir = join(home, ".buddy");
+    const gate = createPermissionGate(this.buddyDir!, policy.askUser, home, { configDir });
     this.maintenancePolicy = policy;
     this.maintenanceGateResult = await gate.check("read", {
-      path: path.startsWith("~") ? path.replace("~", this.consolTmpDir!) : path,
+      path: path.startsWith("~") ? path.replace("~", home) : path,
     });
   },
 );
@@ -430,6 +432,14 @@ Then("the refusal is recorded in the run journal", function (this: Consolidation
   assert.ok(
     (this.maintenancePolicy?.refusedPaths() ?? []).length > 0,
     "a refused outside-workspace access must be recorded, not silently dropped",
+  );
+});
+
+Then("the path is not recorded as refused", function (this: ConsolidationWorld) {
+  assert.equal(
+    this.maintenancePolicy?.refusedPaths().length ?? 0,
+    0,
+    `expected no refused paths, got: ${JSON.stringify(this.maintenancePolicy?.refusedPaths())}`,
   );
 });
 

@@ -1604,8 +1604,14 @@
           "name": "Brain health flags skill files missing tool registration fields",
           "bdd": "pass",
           "unit_tests": 1
+        },
+        {
+          "name": "The maintenance session can read the learned-skill template",
+          "bdd": "pass",
+          "unit_tests": 6
         }
-      ]
+      ],
+      "note": "reopened: maintenance cannot read the learned-skill template"
     },
     {
       "id": "FR-TASKM-46",

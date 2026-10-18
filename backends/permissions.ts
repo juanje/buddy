@@ -244,6 +244,9 @@ function evaluateOnePath(
   if (op === "read" && isContained(absPath, join(configDir, "docs"))) {
     return { action: "allow" };
   }
+  if (op === "read" && isContained(absPath, join(configDir, "templates"))) {
+    return { action: "allow" };
+  }
   return { action: "ask", kind: "outside", op, path: absPath };
 }
 
@@ -265,10 +268,12 @@ export function createPermissionGate(
     skipIdentityPrompt?: boolean;
     sessionAllowedPaths?: Set<string>;
     getPersistentAllowedPaths?: () => AllowedEntry[];
+    configDir?: string;
   },
 ): PermissionGate {
   const sessionAllowedPaths = options?.sessionAllowedPaths;
   const getPersistentAllowedPaths = options?.getPersistentAllowedPaths ?? (() => []);
+  const configDir = options?.configDir ?? globalConfigDir();
 
   return {
     async check(toolName, args) {
@@ -288,7 +293,7 @@ export function createPermissionGate(
         if (absPaths.every((absPath) => approved.includes(absPath))) return undefined;
       }
 
-      const decision = evaluateToolCall(toolName, args, rootDir, home);
+      const decision = evaluateToolCall(toolName, args, rootDir, home, configDir);
       if (
         options?.skipIdentityPrompt &&
         decision.action === "ask" &&

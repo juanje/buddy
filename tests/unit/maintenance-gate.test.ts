@@ -7,7 +7,7 @@
 // policy in isolation. A policy-only test would have passed against the bug.
 
 import { describe, expect, it } from "vitest";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -16,6 +16,7 @@ import {
   installMaintenanceGate,
   type GateInstallable,
 } from "../../backends/consolidation-runner";
+import { createPermissionGate } from "../../backends/permissions";
 
 /** A Pi AgentSession cannot be constructed here; the gate only touches `agent`. */
 function fakeSession(hook?: unknown): GateInstallable {
@@ -105,6 +106,19 @@ describe("installMaintenanceGate — policy through the hook", () => {
 });
 
 describe("createMaintenancePermissionPolicy", () => {
+  it("allows reads of the learned-skill template without recording a refusal (FR-SKILL-06)", async () => {
+    const home = mkdtempSync(join(tmpdir(), "maint-template-"));
+    const root = join(home, "buddy");
+    const configDir = join(home, ".buddy");
+    mkdirSync(join(configDir, "templates"), { recursive: true });
+    const policy = createMaintenancePermissionPolicy();
+    const gate = createPermissionGate(root, policy.askUser, home, { configDir });
+    const templatePath = join(configDir, "templates", "learned-skill.md");
+    expect(await gate.check("read", { path: templatePath })).toBeUndefined();
+    expect(policy.refusedPaths()).toEqual([]);
+    rmSync(home, { recursive: true, force: true });
+  });
+
   it("records refusals instead of dropping them silently", async () => {
     const policy = createMaintenancePermissionPolicy();
     await policy.askUser({ kind: "outside", op: "read", path: "/etc/hosts" });
