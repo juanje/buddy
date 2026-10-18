@@ -27,6 +27,7 @@ import {
   EMBEDDED_PROMPTS,
   EMBEDDED_TEMPLATES,
 } from "./embedded-assets.generated";
+import { installPhotonWasmHook } from "./photon-wasm";
 import { sidecarBootTarget } from "./sidecar-dispatch";
 
 (globalThis as any).DOMMatrix = class DOMMatrix {
@@ -59,6 +60,7 @@ import { sidecarBootTarget } from "./sidecar-dispatch";
 
 registerBunOAuthFlows();
 configureHttpDispatcher();
+installPhotonWasmHook();
 
 // Templates and bundled prompts live in the repo tree, which doesn't exist
 // inside the compiled binary — register the build-time snapshot instead.

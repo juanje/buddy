@@ -2788,6 +2788,19 @@
           "unit_tests": 1
         }
       ]
+    },
+    {
+      "id": "FR-INGEST-05",
+      "title": "Image attachments (vision)",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "The compiled sidecar loads photon wasm when the file is not on disk",
+          "bdd": "pass",
+          "unit_tests": 2
+        }
+      ]
     }
   ]
 }

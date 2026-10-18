@@ -1014,6 +1014,7 @@ in passing remain open. When in doubt, leave open.
 - **Then** the image is read as base64 and passed to Pi via `PromptOptions.images` as `ImageContent`
 - **And** the agent can see and discuss the image contents (multimodal vision)
 - **Note:** No file-read tool call is needed — the image is delivered inline in the prompt context. All standard models (Claude, GPT, Gemini) support vision.
+- **Compiled binary:** Pi 1.x resizes inline images via Photon (`photon_rs_bg.wasm`) inside the sidecar. In dev, Node resolves the wasm from `node_modules/`. In the bun-compiled sidecar the file is not on disk, so resize fails and the prompt is rewritten with an omission placeholder. The wasm is embedded at build time via `generate-embedded-assets.ts` → `EMBEDDED_PHOTON_WASM` (base64). `backends/photon-wasm.ts` installs a `fs.readFileSync` hook (from `sidecar-entry.ts` before the worker loads) that returns the embedded bytes for any path ending in `photon_rs_bg.wasm`, so Pi's baked CI path still resolves.
 
 **FR-INGEST-06 — PDF attachments**
 

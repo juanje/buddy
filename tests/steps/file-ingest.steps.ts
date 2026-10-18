@@ -13,6 +13,7 @@ import {
   createPermissionGate,
   type PermissionGate,
 } from "../../backends/permissions";
+import { readPhotonWasmFromPath } from "../../backends/photon-wasm";
 import type { BuddyWorld } from "../support/world";
 
 interface IngestWorld extends BuddyWorld {
@@ -22,6 +23,7 @@ interface IngestWorld extends BuddyWorld {
   gate?: PermissionGate;
   sessionAllowedPaths?: Set<string>;
   readOutcome?: { block: true; reason: string } | undefined;
+  photonWasmBytes?: Buffer;
 }
 
 Given("the chat is connected", function (this: IngestWorld) {
@@ -110,4 +112,21 @@ When("the agent reads the session-attached outside path {string}", async functio
 
 Then("the read is allowed silently", function (this: IngestWorld) {
   assert.equal(this.readOutcome, undefined);
+});
+
+When(
+  'the sidecar resolves {string} from a path that does not exist',
+  function (this: IngestWorld, wasmName: string) {
+    const fakePath = join(tmpdir(), "buddy-missing-photon", wasmName);
+    this.photonWasmBytes = readPhotonWasmFromPath(fakePath);
+  },
+);
+
+Then("the resolved bytes are a wasm module", function (this: IngestWorld) {
+  const bytes = this.photonWasmBytes;
+  assert.ok(bytes && bytes.length > 4, "expected wasm bytes");
+  assert.equal(bytes[0], 0);
+  assert.equal(bytes[1], 0x61);
+  assert.equal(bytes[2], 0x73);
+  assert.equal(bytes[3], 0x6d);
 });

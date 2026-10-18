@@ -56,6 +56,11 @@ Feature: File ingest
     And the agent reads the session-attached outside path "~/Documents/draft.md"
     Then the read is allowed silently
 
+  @FR-INGEST-05
+  Scenario: The compiled sidecar loads photon wasm when the file is not on disk
+    When the sidecar resolves "photon_rs_bg.wasm" from a path that does not exist
+    Then the resolved bytes are a wasm module
+
   Scenario: Removing a chip before send excludes the file
     When I attach the file "/tmp/a.md"
     And I attach the file "/tmp/b.md"
