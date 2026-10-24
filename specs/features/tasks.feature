@@ -673,6 +673,13 @@ Feature: Task management
     Then area "health" has 1 active front
     And area "work" has 3 active fronts
 
+  @FR-TASKM-41
+  Scenario: routes doc defines active fronts per area as the code counts them
+    Given the bundled doc "memory/how-buddy-routes.md"
+    Then the bundled doc contains "Each project with open tasks in an area is one front"
+    And the bundled doc contains "loose tasks"
+    And the bundled doc does not contain "is an area where you have work marked as your current focus"
+
   @FR-TASKM-42
   Scenario: Consolidation prompt references tasks.md for active fronts
     Given the bundled consolidation prompt

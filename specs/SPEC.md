@@ -4020,6 +4020,13 @@ instead of AGENTS.md Right now section.
 - `formatActiveFrontsBlock()` label changes from "(from AGENTS.md)" to
   "(from tasks.md)".
 - `buildConsolidationPrompt` calls `computeActiveFronts(rootDir)`.
+- `bundled/docs/memory/how-buddy-routes.md` defines an active front the way
+  `computeActiveFronts` counts it: per area, one per project with open tasks,
+  plus one for the area's loose tasks. **Amended 2026-10-24.** The page said
+  focused tasks in `@work`, `@health` and `@family` are "three active fronts",
+  counting across areas and only focused tasks, then in the next paragraph
+  applied the limit per area. The agent reads this page from `~/.buddy/docs/`
+  when asked how it works.
 
 **FR-TASKM-42 — Consolidation WIP check references tasks.md fronts**
 

@@ -1491,8 +1491,19 @@
           "name": "Active fronts count projects and loose tasks per area",
           "bdd": "pass",
           "unit_tests": 11
+        },
+        {
+          "name": "Consolidation prompt includes active fronts per area block",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "routes doc defines active fronts per area as the code counts them",
+          "bdd": "pass",
+          "unit_tests": 1
         }
-      ]
+      ],
+      "note": "reopened: how-buddy-routes.md says three areas are three fronts; fronts are counted inside an area"
     },
     {
       "id": "FR-TASKM-42",

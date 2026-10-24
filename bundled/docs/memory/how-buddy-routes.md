@@ -60,9 +60,9 @@ Content flows from workspace to wiki when it matures (a published article's key 
 
 ## Active fronts and the work-in-progress limit
 
-An **active front** is an area where you have work marked as your current focus. If you have focused tasks in `@work`, `@health`, and `@family`, that is three active fronts.
+An **active front** is one thing you are working on inside an area. Each project with open tasks in an area is one front, and the area's loose tasks — the ones not tied to a project — count together as one more. If `@work` has open tasks in a launch project and a hiring project, plus a few loose tasks, that is three active fronts in `@work`. Parked tasks do not count. A due date does not change anything: a project whose only task is due next week is still a front.
 
-Buddy checks this during its daily review — not when you add tasks. Adding is never blocked. If any single area has more active fronts than the limit (3 by default), Buddy lets you know and asks which ones you want to focus on.
+Buddy checks this during its daily review — not when you add tasks. Adding is never blocked. Fronts are counted per area: if any single area has more active fronts than the limit (3 by default), Buddy lets you know and asks which ones you want to focus on.
 
 The limit exists to help you notice when you are spreading attention, not to stop you from capturing. You can change it anytime by telling Buddy ("set the limit to 5", "I don't want a limit") — it is a conversation, not a setting in a menu.
 
