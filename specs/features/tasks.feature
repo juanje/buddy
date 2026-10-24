@@ -681,6 +681,26 @@ Feature: Task management
     And the bundled doc does not contain "is an area where you have work marked as your current focus"
 
   @FR-TASKM-42
+  Scenario: Active fronts block names each front in the area
+    Given a buddy directory prepared for consolidation depth features
+    And tasks.md has 3 projects in @work and 1 loose item in @family
+    When the consolidation prompt is built for depth 1
+    Then the prompt contains "— #buddy, #connectors, #review"
+    And the prompt contains "— loose tasks"
+
+  @FR-TASKM-42
+  Scenario: Over-limit deferred item names the fronts and says what a front is
+    Given the bundled consolidation.md prompt
+    Then the consolidation prompt contains "name the fronts from the block"
+    And the consolidation prompt contains "a project with open tasks, or the area's loose tasks together"
+
+  @FR-TASKM-42
+  Scenario: Chat prompt defines an active front
+    Given the bundled agents-base.md prompt
+    Then the agents-base prompt contains "Active fronts"
+    And the agents-base prompt contains "not a count of `>>` markers"
+
+  @FR-TASKM-42
   Scenario: Consolidation prompt references tasks.md for active fronts
     Given the bundled consolidation prompt
     Then it contains "from tasks.md" in the active fronts check

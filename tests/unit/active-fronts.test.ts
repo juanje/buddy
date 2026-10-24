@@ -33,7 +33,7 @@ describe("computeActiveFronts", () => {
       { id: 3, text: "Deploy staging", done: false, next: false, area: "work", project: "infra" },
     ]);
     const report = computeActiveFronts(rootDir);
-    expect(report.perArea).toEqual([{ area: "work", count: 2 }]);
+    expect(report.perArea).toEqual([{ area: "work", count: 2, fronts: ["#buddy", "#infra"] }]);
     expect(report.total).toBe(2);
   });
 
@@ -43,7 +43,7 @@ describe("computeActiveFronts", () => {
       { id: 2, text: "Buy vitamins", done: false, next: false, area: "health" },
     ]);
     const report = computeActiveFronts(rootDir);
-    expect(report.perArea).toEqual([{ area: "health", count: 1 }]);
+    expect(report.perArea).toEqual([{ area: "health", count: 1, fronts: ["loose tasks"] }]);
     expect(report.total).toBe(1);
   });
 
@@ -54,7 +54,17 @@ describe("computeActiveFronts", () => {
       { id: 3, text: "Check email", done: false, next: false, area: "work" },
     ]);
     const report = computeActiveFronts(rootDir);
-    expect(report.perArea).toEqual([{ area: "work", count: 3 }]);
+    expect(report.perArea).toEqual([{ area: "work", count: 3, fronts: ["#buddy", "#infra", "loose tasks"] }]);
+  });
+
+  it("names each front: projects in order, then the loose tasks (FR-TASKM-42)", () => {
+    seed([
+      { id: 1, text: "Check email", done: false, next: false, area: "work" },
+      { id: 2, text: "Deploy staging", done: false, next: false, area: "work", project: "infra" },
+      { id: 3, text: "Review PR", done: false, next: false, area: "work", project: "buddy" },
+    ]);
+    const report = computeActiveFronts(rootDir);
+    expect(report.perArea[0]?.fronts).toEqual(["#buddy", "#infra", "loose tasks"]);
   });
 
   it("excludes @someday items", () => {
@@ -63,7 +73,7 @@ describe("computeActiveFronts", () => {
       { id: 2, text: "Active thing", done: false, next: false, area: "work" },
     ]);
     const report = computeActiveFronts(rootDir);
-    expect(report.perArea).toEqual([{ area: "work", count: 1 }]);
+    expect(report.perArea).toEqual([{ area: "work", count: 1, fronts: ["loose tasks"] }]);
   });
 
   it("counts a project whose only task has a future deadline (FR-TASKM-08)", () => {
@@ -73,7 +83,7 @@ describe("computeActiveFronts", () => {
       { id: 2, text: "Active thing", done: false, next: false, area: "work" },
     ]);
     const report = computeActiveFronts(rootDir);
-    expect(report.perArea).toEqual([{ area: "work", count: 2 }]);
+    expect(report.perArea).toEqual([{ area: "work", count: 2, fronts: ["#sales", "loose tasks"] }]);
   });
 
   it("excludes done items", () => {
@@ -82,13 +92,13 @@ describe("computeActiveFronts", () => {
       { id: 2, text: "Active thing", done: false, next: false, area: "work" },
     ]);
     const report = computeActiveFronts(rootDir);
-    expect(report.perArea).toEqual([{ area: "work", count: 1 }]);
+    expect(report.perArea).toEqual([{ area: "work", count: 1, fronts: ["loose tasks"] }]);
   });
 
   it("handles items without area as (general)", () => {
     seed([{ id: 1, text: "No area", done: false, next: false }]);
     const report = computeActiveFronts(rootDir);
-    expect(report.perArea).toEqual([{ area: "(general)", count: 1 }]);
+    expect(report.perArea).toEqual([{ area: "(general)", count: 1, fronts: ["loose tasks"] }]);
   });
 
   it("returns zero when tasks.md is empty", () => {
@@ -107,14 +117,22 @@ describe("computeActiveFronts", () => {
 
 describe("formatActiveFrontsBlock", () => {
   it("labels block as from tasks.md with default limit", () => {
-    const block = formatActiveFrontsBlock({ perArea: [{ area: "work", count: 2 }], total: 2 });
+    const block = formatActiveFrontsBlock({ perArea: [{ area: "work", count: 2, fronts: ["#a", "#b"] }], total: 2 });
     expect(block).toContain("Active fronts per area (from tasks.md):");
     expect(block).toContain("@work: 2 (limit: 3)");
   });
 
+  it("names the fronts after the count (FR-TASKM-42)", () => {
+    const block = formatActiveFrontsBlock(
+      { perArea: [{ area: "work", count: 3, fronts: ["#buddy", "#infra", "loose tasks"] }], total: 3 },
+      { wipLimit: 2 },
+    );
+    expect(block).toContain("@work: 3 (limit: 2) — #buddy, #infra, loose tasks");
+  });
+
   it("shows no limit when area override is null", () => {
     const block = formatActiveFrontsBlock(
-      { perArea: [{ area: "work", count: 5 }], total: 5 },
+      { perArea: [{ area: "work", count: 5, fronts: ["#a", "#b", "#c", "#d", "#e"] }], total: 5 },
       { wipLimit: 3, wipLimitOverrides: { work: null } },
     );
     expect(block).toContain("@work: 5 (no limit)");
@@ -122,7 +140,7 @@ describe("formatActiveFrontsBlock", () => {
 
   it("shows numeric override per area", () => {
     const block = formatActiveFrontsBlock(
-      { perArea: [{ area: "personal", count: 2 }], total: 2 },
+      { perArea: [{ area: "personal", count: 2, fronts: ["#a", "loose tasks"] }], total: 2 },
       { wipLimit: 3, wipLimitOverrides: { personal: 5 } },
     );
     expect(block).toContain("@personal: 2 (limit: 5)");
@@ -132,8 +150,8 @@ describe("formatActiveFrontsBlock", () => {
     const block = formatActiveFrontsBlock(
       {
         perArea: [
-          { area: "work", count: 5 },
-          { area: "personal", count: 2 },
+          { area: "work", count: 5, fronts: ["#a", "#b", "#c", "#d", "#e"] },
+          { area: "personal", count: 2, fronts: ["#a", "loose tasks"] },
         ],
         total: 7,
       },

@@ -201,6 +201,15 @@ granularity, don't gatekeep.
 
 Each project, and the loose tasks of its area, has its own next action (`>>`). `add` marks the new task as the next action when its scope has none, and its reply says so — report what the reply says instead of calling `set_next` to repeat it. When the user asks what's next, use `tasks(action='list')` and surface the `>>` markers per project and per area's loose tasks.
 
+### Active fronts
+
+The daily review counts **active fronts** per area: each project with open tasks
+is one front, and the area's loose tasks together are one more. It is
+not a count of `>>` markers — a project with five tasks is one front with one
+next action. When an area has more fronts than its limit, the review leaves a deferred
+item naming them; help the user choose which to focus on, and park or finish the
+rest. Read or change the limit with `tasks(action='config')`.
+
 ### Parking and visibility
 
 When the user says "not now", "maybe later", "someday", or otherwise defers a task

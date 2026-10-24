@@ -4037,6 +4037,19 @@ instruction references the pre-computed block from tasks.md.
   per area (from tasks.md)" (not AGENTS.md).
 - No behavioral change — still writes a deferred item when an area
   exceeds the configured WIP limit.
+- The block names each area's fronts after its count, projects first then
+  the loose group: `@work: 4 (limit: 3) — #alpha, #beta, #gamma, loose tasks`.
+- The deferred item for an over-limit area names those fronts and says in one
+  clause what a front is (a project with open tasks, or the area's loose tasks
+  together), so it reads on its own when it comes back at session start.
+- `agents-base.md` defines an active front for the chat agent: counted per
+  area, one per project with open tasks plus one for the loose tasks; not a
+  count of `>>` markers; limit read and set with `tasks(action='config')`.
+- **Amended 2026-10-24.** The deferred item said only "You have N active
+  fronts in @area (limit: M)". It returns through "Pending items to surface"
+  into a chat prompt that never defined an active front (FR-TASKM-26 removed
+  WIP from chat), next to a `list` result that then carried a global
+  `>>` count. The agent read one as the other and raised a false alarm.
 
 **FR-TASKM-43 — Right now content guidance excludes tasks/projects**
 

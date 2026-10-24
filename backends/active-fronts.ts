@@ -4,7 +4,8 @@ import { isActiveTask, readTasksFile } from "./tasks/task-file";
 import { WIP_DEFAULT, type TaskConfig } from "../shared/task-types";
 
 export interface ActiveFrontsReport {
-  perArea: Array<{ area: string; count: number }>;
+  /** `fronts` names each front: `#project` slugs in order, then "loose tasks" (FR-TASKM-42). */
+  perArea: Array<{ area: string; count: number; fronts: string[] }>;
   total: number;
 }
 
@@ -32,10 +33,11 @@ export function computeActiveFronts(rootDir: string): ActiveFrontsReport {
     areaMap.set(area, entry);
   }
 
-  const perArea = [...areaMap.entries()].map(([area, entry]) => ({
-    area,
-    count: entry.projects.size + (entry.hasLoose ? 1 : 0),
-  }));
+  const perArea = [...areaMap.entries()].map(([area, entry]) => {
+    const fronts = [...entry.projects].sort().map((project) => `#${project}`);
+    if (entry.hasLoose) fronts.push("loose tasks");
+    return { area, count: fronts.length, fronts };
+  });
   const total = perArea.reduce((sum, row) => sum + row.count, 0);
   return { perArea, total };
 }
@@ -54,7 +56,7 @@ export function formatActiveFrontsBlock(
       override === null
         ? "(no limit)"
         : `(limit: ${override ?? config?.wipLimit ?? WIP_DEFAULT})`;
-    return `${areaName}: ${row.count} ${limitLabel}`;
+    return `${areaName}: ${row.count} ${limitLabel} — ${row.fronts.join(", ")}`;
   });
   return `${header}\n${lines.join("\n")}`;
 }

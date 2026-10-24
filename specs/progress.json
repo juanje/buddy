@@ -1515,8 +1515,24 @@
           "name": "Consolidation prompt references tasks.md for active fronts",
           "bdd": "pass",
           "unit_tests": 1
+        },
+        {
+          "name": "Active fronts block names each front in the area",
+          "bdd": "pass",
+          "unit_tests": 2
+        },
+        {
+          "name": "Over-limit deferred item names the fronts and says what a front is",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Chat prompt defines an active front",
+          "bdd": "pass",
+          "unit_tests": 1
         }
-      ]
+      ],
+      "note": "reopened: over-limit deferred item reaches chat with no definition of an active front; name the fronts and define the term"
     },
     {
       "id": "FR-TASKM-43",

@@ -131,11 +131,15 @@ Do not move tasks to deferred. Tasks stay in tasks.md.
 Targeted queries (do not use `list` without filters in consolidation):
 - **Active fronts check:** Read the "Active fronts per area (from tasks.md)"
   block in the prompt header. Each front is a distinct project or loose-task
-  group in an area. For each area, check the limit shown in parentheses. Areas
-  marked "(no limit)" are portfolio areas — skip them. For areas with a numeric
-  WIP limit, if count exceeds that limit, write a deferred item: "You have N active
-  fronts in @area (limit: M) -- which ones do you want to focus on?" Do not use
-  tasks(only_next) for WIP.
+  group in an area, and the block lists them after the count. For each area,
+  check the limit shown in parentheses. Areas marked "(no limit)" are
+  portfolio areas — skip them. For areas with a numeric WIP limit, if count
+  exceeds that limit, write a deferred item. In it, name the fronts from the block
+  and say what a front is, so it reads on its own when it comes back in a later
+  session: "You have N active fronts in @area (limit: M): #project-a,
+  #project-b, loose tasks. A front is
+  a project with open tasks, or the area's loose tasks together.
+  Which ones do you want to focus on?" Do not use tasks(only_next) for WIP.
 - **Project health check (weekly):** `tasks(action='list', params={only_projects: true})`.
   For each project in the result, verify each `#project` tag has a corresponding file
   in `user/projects/`. Flag projects with `openCount > 0` and `hasNext: false`.
