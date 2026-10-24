@@ -243,7 +243,6 @@ Feature: Task management
       | Send the offer | false | work | sales   | true | 7           |
     When tasks list is invoked with only_next true
     Then the task list has 1 items
-    And the task list summary has activeNextCount 1
 
   @FR-TASKM-08
   Scenario: A project whose only task is due next week is an active front
@@ -445,12 +444,12 @@ Feature: Task management
     Then the task result does not contain "WIP"
 
   @FR-TASKM-24
-  Scenario: list result includes activeNextCount
+  Scenario: list result reports next status per area, not a global count
     Given an initialized buddy git repository
     And tasks.md on disk has work items A and B
     When tasks action list is invoked with defaults
-    Then the task result contains "activeNextCount"
-    And the task list summary has activeNextCount 1
+    Then the task list area "work" has a next action
+    And the task result does not contain "activeNextCount"
 
   @FR-TASKM-27
   Scenario: task created date uses local time

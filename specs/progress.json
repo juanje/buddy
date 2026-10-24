@@ -640,7 +640,7 @@
         {
           "name": "A Next marker with a future deadline is still the active next action",
           "bdd": "pass",
-          "unit_tests": 3
+          "unit_tests": 2
         },
         {
           "name": "A project whose only task is due next week is an active front",
@@ -916,8 +916,14 @@
           "name": "list result includes activeNextCount",
           "bdd": "pass",
           "unit_tests": 3
+        },
+        {
+          "name": "list result reports next status per area, not a global count",
+          "bdd": "pass",
+          "unit_tests": 1
         }
-      ]
+      ],
+      "note": "reopened: activeNextCount is a global count the chat agent compared to a WIP limit; remove it"
     },
     {
       "id": "FR-TASKM-25",

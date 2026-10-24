@@ -8,7 +8,6 @@ import {
   buildProjectSummary,
   buildUntaggedClusters,
   clearNextInScope,
-  countActiveNext,
   countActiveInScope,
   findItemById,
   findSoleActiveInScope,
@@ -99,7 +98,6 @@ function listAction(rootDir: string, params: TaskActionParams): TaskActionResult
   if (!params.include_done) {
     items = items.filter((item) => !item.done);
   }
-  const activeNextCount = countActiveNext(items);
   if (params.area) {
     const area = params.area.replace(/^@/, "");
     items = items.filter((item) => (item.area ?? "") === area);
@@ -119,7 +117,6 @@ function listAction(rootDir: string, params: TaskActionParams): TaskActionResult
 
   const list = buildListResult(filtered, today);
   list.parkedCount = parkedCount;
-  list.activeNextCount = activeNextCount;
 
   if (params.only_projects) {
     list.projects = buildProjectSummary(items.filter((item) => !item.done));

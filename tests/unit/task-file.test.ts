@@ -11,7 +11,7 @@ import {
   buildUntaggedClusters,
   clearNextInScope,
   countActiveInScope,
-  countActiveNext,
+  isActiveNextItem,
   findSoleActiveInScope,
   parseTaskFileContent,
   readTasksFile,
@@ -94,16 +94,16 @@ describe("parseTaskFileContent", () => {
   });
 });
 
-describe("countActiveNext", () => {
-  it("counts open next items excluding someday, whatever the due date", () => {
-    const count = countActiveNext([
+describe("isActiveNextItem", () => {
+  it("keeps open next items outside someday, whatever the due date", () => {
+    const items: TaskItem[] = [
       { id: 1, text: "A", done: false, next: true, area: "work" },
       { id: 2, text: "B", done: false, next: false, area: "work" },
       { id: 3, text: "S", done: false, next: true, area: "someday" },
       { id: 4, text: "F", done: false, next: true, area: "personal", dueDate: "2099-01-01" },
       { id: 5, text: "D", done: true, next: true, area: "work" },
-    ]);
-    expect(count).toBe(2);
+    ];
+    expect(items.filter(isActiveNextItem).map((item) => item.id)).toEqual([1, 4]);
   });
 });
 

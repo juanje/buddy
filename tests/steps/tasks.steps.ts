@@ -684,13 +684,12 @@ Then("the task list summary does not report hidden future items", function (this
   );
 });
 
-Then(
-  "the task list summary has activeNextCount {int}",
-  function (this: TasksWorld, count: number) {
-    assert.ok(this.taskResult?.ok && this.taskResult.list, "expected task list result");
-    assert.equal(this.taskResult.list!.activeNextCount, count);
-  },
-);
+Then("the task list area {string} has a next action", function (this: TasksWorld, area: string) {
+  assert.ok(this.taskResult?.ok && this.taskResult.list, "expected task list result");
+  const summary = this.taskResult.list!.areas.find((entry) => entry.area === area);
+  assert.ok(summary, `expected an area summary for "${area}"`);
+  assert.equal(summary.hasNext, true);
+});
 
 Then(
   'the task list contains only items with project {string}',

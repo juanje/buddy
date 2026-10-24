@@ -3717,7 +3717,7 @@ Further context on local-model evaluation methodology and findings:
 | FR-TASKM-21 | Boot migration: workspaces nav in existing AGENTS.md | 2.5 ✓ |
 | FR-TASKM-22 | Bundled docs: workspaces directory in where-things-live | 2.5 ✓ |
 | FR-TASKM-23 | Remove WIP warning from add action | 2.5 ✓ |
-| FR-TASKM-24 | WIP count redefined as next-only in list result | 2.5 ✓ |
+| FR-TASKM-24 | No global next-action count in the list result; next status is per area | 2.5 ✓ |
 | FR-TASKM-25 | Consolidation daily WIP review step | 2.5 ✓ |
 | FR-TASKM-26 | Remove WIP awareness section from agents-base | 2.5 ✓ |
 | FR-TASKM-27 | Task created date uses local time via toIsoDay | 2.5 ✓ |
@@ -3797,7 +3797,7 @@ to every count that is supposed to read it.
 - The default `list` returns future-dated items. `include_future` and
   `TaskListResult.futureCount` are removed; deferring work is what `@someday`
   (FR-TASKM-07) and `deferred.md` are for.
-- `activeNextCount`, `list(only_next)`, auto-promotion (FR-TASKM-45), the
+- `list(only_next)`, auto-promotion (FR-TASKM-45), the
   remaining-in-scope hint (FR-TASKM-34/38) and active fronts (FR-TASKM-41) all
   count future-dated items.
 - Orientation (`selectNextTasks`) includes future-dated items.
@@ -3877,17 +3877,24 @@ to every count that is supposed to read it.
 - `add` no longer counts open items or returns `wipWarning`.
 - Capture is never gated by WIP at add time (GTD: capture freely, process later).
 
-**FR-TASKM-24 — WIP count redefined as next-only in list result**
+**FR-TASKM-24 — No global next-action count in the list result**
 
-- `TaskListResult` includes `activeNextCount`: count of open items marked as next action, excluding `@someday` items. *(Future-dated items count since FR-TASKM-08 was amended 2026-10-24.)*
-- Exposed in `list` JSON result for consolidation and orientation.
+- `TaskListResult` has no `activeNextCount`. Next-action status is reported
+  per area in `areas[].hasNext`, and per project in `only_projects`.
+- **Amended 2026-10-24.** `activeNextCount` was introduced when WIP was
+  briefly defined as "next-only". FR-TASKM-25 and FR-TASKM-41 replaced that
+  with active fronts per area, but the field stayed in every `list` result:
+  a global count of `>>` markers, computed before the area filter, named like
+  a WIP figure, in front of a chat agent with no definition of WIP. An agent
+  compared five markers across areas with a WIP limit and raised a false
+  alarm. Nothing read the field. Removed.
 
 **FR-TASKM-25 — Consolidation daily WIP review step**
 
 - `consolidation.md` daily step 4 (Task cleanup) includes **Active fronts check**:
   read the pre-computed "Active fronts per area" block (from tasks.md — see FR-TASKM-41),
   compare each area count to the configured WIP limit, and write a deferred item
-  for areas over the limit. Do not use `tasks(only_next)` / `activeNextCount` for WIP.
+  for areas over the limit. Do not use `tasks(only_next)` for WIP.
 
 **FR-TASKM-26 — Remove WIP awareness section from agents-base**
 

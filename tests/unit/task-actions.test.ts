@@ -339,24 +339,17 @@ describe("executeTaskAction", () => {
     }
   });
 
-  it("list includes activeNextCount for next-action items only", () => {
+  it("list reports next status per area and no global next count (FR-TASKM-24)", () => {
     writeTasksFile(dir, [
       { id: 1, text: "Active next", done: false, next: true, area: "work" },
-      { id: 2, text: "Open not next", done: false, next: false, area: "work" },
-      { id: 3, text: "Someday next", done: false, next: true, area: "someday" },
+      { id: 2, text: "Open not next", done: false, next: false, area: "home" },
     ]);
     const result = assertSuccess(executeTaskAction(dir, "list", {}));
-    expect(result.list?.activeNextCount).toBe(1);
-  });
-
-  it("activeNextCount counts a next item whose deadline is after today (FR-TASKM-08)", () => {
-    const futureStr = addDays(toIsoDay(new Date()), 14);
-    writeTasksFile(dir, [
-      { id: 1, text: "Now", done: false, next: true, area: "work" },
-      { id: 2, text: "Later", done: false, next: true, area: "personal", dueDate: futureStr },
+    expect(result.list?.areas).toEqual([
+      { area: "work", openCount: 1, hasNext: true },
+      { area: "home", openCount: 1, hasNext: false },
     ]);
-    const result = assertSuccess(executeTaskAction(dir, "list", {}));
-    expect(result.list?.activeNextCount).toBe(2);
+    expect(result.list).not.toHaveProperty("activeNextCount");
   });
 
   it("list excludes someday items by default", () => {
