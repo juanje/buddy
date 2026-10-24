@@ -1,7 +1,6 @@
 // backends/active-fronts.ts — Compute per-area WIP counts (FR-TASKM-41; superseded FR-TASKM-39).
 
-import { readTasksFile } from "./tasks/task-file";
-import { toIsoDay } from "../shared/dates";
+import { isActiveTask, readTasksFile } from "./tasks/task-file";
 import { WIP_DEFAULT, type TaskConfig } from "../shared/task-types";
 
 export interface ActiveFrontsReport {
@@ -13,16 +12,13 @@ export interface ActiveFrontsReport {
  * Computes active fronts from tasks.md (FR-TASKM-41).
  *
  * An active front in an area is each distinct `#project` slug with >=1 open,
- * non-someday, non-future item, plus 1 if any loose (untagged) open,
- * non-someday, non-future items exist in that area.
+ * non-someday item, plus 1 if any loose (untagged) open, non-someday items
+ * exist in that area. A due date is a deadline and does not gate this
+ * (FR-TASKM-08).
  */
 export function computeActiveFronts(rootDir: string): ActiveFrontsReport {
   const { items } = readTasksFile(rootDir);
-  const today = toIsoDay(new Date());
-  const active = items.filter(
-    (item) =>
-      !item.done && item.area !== "someday" && !(item.dueDate && item.dueDate > today),
-  );
+  const active = items.filter(isActiveTask);
 
   const areaMap = new Map<string, { projects: Set<string>; hasLoose: boolean }>();
   for (const item of active) {

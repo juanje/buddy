@@ -228,19 +228,42 @@ Feature: Task management
     Then the task result does not contain "WIP"
 
   @FR-TASKM-08
-  Scenario: list excludes future-dated items by default
+  Scenario: Default list shows tasks whose deadline is after today
     Given an initialized buddy git repository
     And tasks.md on disk has a future-dated item
     When tasks action list is invoked with defaults
-    Then the task list does not contain future-dated items
-    And the task list summary has futureCount 1
+    Then the task list contains future-dated items
+    And the task list summary does not report hidden future items
 
   @FR-TASKM-08
-  Scenario: list includes future items when include_future is true
+  Scenario: A Next marker with a future deadline is still the active next action
     Given an initialized buddy git repository
-    And tasks.md on disk has a future-dated item
-    When tasks list is invoked with include_future true
-    Then the task list contains future-dated items
+    And a tasks file with items:
+      | text           | done  | area | project | next | due_in_days |
+      | Send the offer | false | work | sales   | true | 7           |
+    When tasks list is invoked with only_next true
+    Then the task list has 1 items
+    And the task list summary has activeNextCount 1
+
+  @FR-TASKM-08
+  Scenario: A project whose only task is due next week is an active front
+    Given an initialized buddy git repository
+    And a tasks file with items:
+      | text           | done  | area | project | next | due_in_days |
+      | Send the offer | false | work | sales   | true | 7           |
+      | Call dentist   | false | work |         | true |             |
+    When active fronts are computed
+    Then area "work" has 2 active fronts
+
+  @FR-TASKM-08
+  Scenario: Completing the Next promotes the sole remaining task whatever its deadline
+    Given an initialized buddy git repository
+    And a tasks file with items:
+      | text           | done  | area | project | next  | due_in_days |
+      | Draft the deck | false | work | sales   | true  |             |
+      | Send the offer | false | work | sales   | false | 7           |
+    When the task "Draft the deck" is completed
+    Then the task "Send the offer" is marked as next
 
   @FR-TASKM-10
   Scenario: agents-base prompt includes parking and visibility guidance

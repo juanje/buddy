@@ -10,6 +10,14 @@ Feature: First-open-of-the-day orientation
     Then orientation data includes 1 deferred item
     And orientation data includes next task "Review PR"
 
+  @FR-TASKM-08
+  Scenario: Orientation shows a next action whose deadline is next week
+    Given an initialized buddy git repository for orientation
+    And orientation has not been shown today
+    And tasks.md has next action "Send the offer" in area work due on "2026-09-17"
+    When orientation data is fetched for today "2026-09-10"
+    Then orientation data includes next task "Send the offer"
+
   @FR-ORIENT-02
   Scenario: Orientation data is null when already shown today
     Given an initialized buddy git repository for orientation

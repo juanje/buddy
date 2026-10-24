@@ -166,7 +166,7 @@ describe("executeTaskAction", () => {
     expect(listed.list!.items.some((item) => item.next)).toBe(false);
   });
 
-  it("complete of next returns remainingInArea excluding someday and future", () => {
+  it("complete of next returns remainingInArea excluding someday, counting future-dated", () => {
     const today = toIsoDay(new Date());
     const future = addDays(today, 14);
     writeTasksFile(dir, [
@@ -177,9 +177,9 @@ describe("executeTaskAction", () => {
       { id: 5, text: "Future", done: false, next: false, area: "work", dueDate: future },
     ]);
     const result = assertSuccess(executeTaskAction(dir, "complete", { id: 1 }));
-    expect(result.remainingInArea).toBe(2);
+    expect(result.remainingInArea).toBe(3);
     const text = taskResultToText(result);
-    expect(text).toContain("2 open tasks remain");
+    expect(text).toContain("3 open tasks remain");
     expect(text.toLowerCase()).toContain("suggest");
   });
 
@@ -337,16 +337,14 @@ describe("executeTaskAction", () => {
     expect(result.list?.activeNextCount).toBe(1);
   });
 
-  it("activeNextCount excludes future-dated next items", () => {
-    const future = new Date();
-    future.setDate(future.getDate() + 14);
-    const futureStr = future.toISOString().slice(0, 10);
+  it("activeNextCount counts a next item whose deadline is after today (FR-TASKM-08)", () => {
+    const futureStr = addDays(toIsoDay(new Date()), 14);
     writeTasksFile(dir, [
       { id: 1, text: "Now", done: false, next: true, area: "work" },
       { id: 2, text: "Later", done: false, next: true, area: "personal", dueDate: futureStr },
     ]);
     const result = assertSuccess(executeTaskAction(dir, "list", {}));
-    expect(result.list?.activeNextCount).toBe(1);
+    expect(result.list?.activeNextCount).toBe(2);
   });
 
   it("list excludes someday items by default", () => {
@@ -370,30 +368,15 @@ describe("executeTaskAction", () => {
     expect(result.list?.parkedCount).toBe(0);
   });
 
-  it("list excludes future-dated items by default", () => {
-    const future = new Date();
-    future.setDate(future.getDate() + 14);
-    const futureStr = future.toISOString().slice(0, 10);
+  it("list includes future-dated items by default: a due date is a deadline (FR-TASKM-08)", () => {
+    const futureStr = addDays(toIsoDay(new Date()), 14);
     writeTasksFile(dir, [
       { id: 1, text: "Now", done: false, next: true, area: "work" },
       { id: 2, text: "Later", done: false, next: false, area: "personal", dueDate: futureStr },
     ]);
     const result = assertSuccess(executeTaskAction(dir, "list", {}));
-    expect(result.list?.items).toHaveLength(1);
-    expect(result.list?.futureCount).toBe(1);
-  });
-
-  it("list includes future items when include_future is true", () => {
-    const future = new Date();
-    future.setDate(future.getDate() + 14);
-    const futureStr = future.toISOString().slice(0, 10);
-    writeTasksFile(dir, [
-      { id: 1, text: "Now", done: false, next: true, area: "work" },
-      { id: 2, text: "Later", done: false, next: false, area: "personal", dueDate: futureStr },
-    ]);
-    const result = assertSuccess(executeTaskAction(dir, "list", { include_future: true }));
-    expect(result.list?.items.some((item) => item.dueDate === futureStr)).toBe(true);
-    expect(result.list?.futureCount).toBe(0);
+    expect(result.list?.items.map((item) => item.dueDate)).toEqual([undefined, futureStr]);
+    expect(result.list).not.toHaveProperty("futureCount");
   });
 
   it("list includes item due today (not future)", () => {
@@ -405,7 +388,6 @@ describe("executeTaskAction", () => {
       ]);
       const result = assertSuccess(executeTaskAction(dir, "list", {}));
       expect(result.list?.items).toHaveLength(1);
-      expect(result.list?.futureCount).toBe(0);
     } finally {
       vi.useRealTimers();
     }
@@ -466,10 +448,8 @@ created: 2026-07-01
     expect(taskResultToText(result)).not.toMatch(/WIP/i);
   });
 
-  it("only_next returns only active next-action items", () => {
-    const future = new Date();
-    future.setDate(future.getDate() + 14);
-    const futureStr = future.toISOString().slice(0, 10);
+  it("only_next returns next-action items outside someday, whatever the deadline", () => {
+    const futureStr = addDays(toIsoDay(new Date()), 14);
     writeTasksFile(dir, [
       { id: 1, text: "Active next", done: false, next: true, area: "work" },
       { id: 2, text: "Open not next", done: false, next: false, area: "work" },
@@ -477,8 +457,7 @@ created: 2026-07-01
       { id: 4, text: "Future next", done: false, next: true, area: "personal", dueDate: futureStr },
     ]);
     const result = assertSuccess(executeTaskAction(dir, "list", { only_next: true }));
-    expect(result.list?.items).toHaveLength(1);
-    expect(result.list?.items[0]?.text).toBe("Active next");
+    expect(result.list?.items.map((item) => item.id)).toEqual([1, 4]);
   });
 
   it("only_stale returns only items with staleDays", () => {
@@ -588,7 +567,7 @@ created: 2026-07-01
       { id: 1, text: "Pay rent", done: false, next: true, area: "personal", dueDate: "2026-09-01" },
     ]);
     assertSuccess(executeTaskAction(dir, "edit", { id: 1, due: "2026-10-01" }));
-    const list = assertSuccess(executeTaskAction(dir, "list", { include_future: true }));
+    const list = assertSuccess(executeTaskAction(dir, "list", {}));
     expect(list.list?.items[0]?.dueDate).toBe("2026-10-01");
   });
 

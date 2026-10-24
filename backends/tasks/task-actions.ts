@@ -24,7 +24,7 @@ const HELP_TEXT = `tasks() actions:
 - edit(id, text?, area?, project?, due?) — modify task fields in place
 - complete(id) — mark done
 - set_next(id) — mark as next action (>>) for its area
-- list(area?, project?, include_done?, include_parked?, include_future?,
+- list(area?, project?, include_done?, include_parked?,
        only_next?, only_stale?, only_due?, only_projects?, only_untagged_clusters?) — structured items
 - move(id, area) — change @area
 - annotate(id, annotation) — add **metadata**
@@ -42,7 +42,6 @@ export interface TaskActionParams {
   wipLimitOverrides?: Record<string, number | null>;
   include_done?: boolean;
   include_parked?: boolean;
-  include_future?: boolean;
   only_next?: boolean;
   only_stale?: boolean;
   only_due?: boolean;
@@ -82,9 +81,8 @@ function promoteSoleNext(
   items: TaskItem[],
   area: string | undefined,
   project: string | undefined,
-  today: string,
 ): TaskItem | undefined {
-  const sole = findSoleActiveInScope(items, area, project, today);
+  const sole = findSoleActiveInScope(items, area, project);
   if (sole) sole.next = true;
   return sole;
 }
@@ -101,7 +99,7 @@ function listAction(rootDir: string, params: TaskActionParams): TaskActionResult
   if (!params.include_done) {
     items = items.filter((item) => !item.done);
   }
-  const activeNextCount = countActiveNext(items, today);
+  const activeNextCount = countActiveNext(items);
   if (params.area) {
     const area = params.area.replace(/^@/, "");
     items = items.filter((item) => (item.area ?? "") === area);
@@ -112,21 +110,15 @@ function listAction(rootDir: string, params: TaskActionParams): TaskActionResult
   }
 
   let parkedCount = 0;
-  let futureCount = 0;
   let filtered = items;
 
   if (!params.include_parked) {
     parkedCount = filtered.filter((item) => item.area === "someday").length;
     filtered = filtered.filter((item) => item.area !== "someday");
   }
-  if (!params.include_future && !params.only_due) {
-    futureCount = filtered.filter((item) => item.dueDate && item.dueDate > today).length;
-    filtered = filtered.filter((item) => !(item.dueDate && item.dueDate > today));
-  }
 
   const list = buildListResult(filtered, today);
   list.parkedCount = parkedCount;
-  list.futureCount = futureCount;
   list.activeNextCount = activeNextCount;
 
   if (params.only_projects) {
@@ -146,7 +138,7 @@ function listAction(rootDir: string, params: TaskActionParams): TaskActionResult
   }
 
   if (params.only_next) {
-    list.items = list.items.filter((item) => isActiveNextItem(item, today));
+    list.items = list.items.filter(isActiveNextItem);
   }
   if (params.only_stale) {
     list.items = list.items.filter((item) => item.staleDays !== undefined);
@@ -239,8 +231,7 @@ function completeAction(rootDir: string, params: TaskActionParams): TaskActionRe
   item.next = false;
   writeTasksFile(rootDir, reindexItems(items));
   if (!hadNext) return ok("Task completed.");
-  const today = toIsoDay(new Date());
-  const sole = promoteSoleNext(items, area, project, today);
+  const sole = promoteSoleNext(items, area, project);
   if (sole) {
     writeTasksFile(rootDir, reindexItems(items));
     return ok(`Task completed. Auto-marked "${sole.text}" as next for ${scopeLabel(area, project)}.`);
@@ -248,7 +239,7 @@ function completeAction(rootDir: string, params: TaskActionParams): TaskActionRe
   return ok("Task completed.", {
     nextClearedForArea: area || "general",
     nextClearedForProject: project,
-    remainingInArea: countActiveInScope(items, area, project, today),
+    remainingInArea: countActiveInScope(items, area, project),
   });
 }
 
@@ -325,8 +316,7 @@ function removeAction(rootDir: string, params: TaskActionParams): TaskActionResu
   items.splice(index, 1);
   writeTasksFile(rootDir, reindexItems(items));
   if (!hadNext) return ok("Task removed.");
-  const today = toIsoDay(new Date());
-  const sole = promoteSoleNext(items, area, project, today);
+  const sole = promoteSoleNext(items, area, project);
   if (sole) {
     writeTasksFile(rootDir, reindexItems(items));
     return ok(`Task removed. Auto-marked "${sole.text}" as next for ${scopeLabel(area, project)}.`);
@@ -334,7 +324,7 @@ function removeAction(rootDir: string, params: TaskActionParams): TaskActionResu
   return ok("Task removed.", {
     nextClearedForArea: area || "general",
     nextClearedForProject: project,
-    remainingInArea: countActiveInScope(items, area, project, today),
+    remainingInArea: countActiveInScope(items, area, project),
   });
 }
 

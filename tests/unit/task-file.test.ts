@@ -95,18 +95,15 @@ describe("parseTaskFileContent", () => {
 });
 
 describe("countActiveNext", () => {
-  it("counts open next items excluding someday and future", () => {
-    const count = countActiveNext(
-      [
-        { id: 1, text: "A", done: false, next: true, area: "work" },
-        { id: 2, text: "B", done: false, next: false, area: "work" },
-        { id: 3, text: "S", done: false, next: true, area: "someday" },
-        { id: 4, text: "F", done: false, next: true, area: "personal", dueDate: "2099-01-01" },
-        { id: 5, text: "D", done: true, next: true, area: "work" },
-      ],
-      "2026-09-10",
-    );
-    expect(count).toBe(1);
+  it("counts open next items excluding someday, whatever the due date", () => {
+    const count = countActiveNext([
+      { id: 1, text: "A", done: false, next: true, area: "work" },
+      { id: 2, text: "B", done: false, next: false, area: "work" },
+      { id: 3, text: "S", done: false, next: true, area: "someday" },
+      { id: 4, text: "F", done: false, next: true, area: "personal", dueDate: "2099-01-01" },
+      { id: 5, text: "D", done: true, next: true, area: "work" },
+    ]);
+    expect(count).toBe(2);
   });
 });
 
@@ -214,9 +211,8 @@ created: 2026-01-15
 });
 
 describe("countActiveInScope (area)", () => {
-  it("excludes someday and future-dated items in the area", () => {
-    const today = toIsoDay(new Date());
-    const future = addDays(today, 10);
+  it("excludes someday and done items, and counts future-dated ones, in the area", () => {
+    const future = addDays(toIsoDay(new Date()), 10);
     const items: TaskItem[] = [
       { id: 1, text: "Open one", done: false, next: false, area: "work" },
       { id: 2, text: "Open two", done: false, next: false, area: "work" },
@@ -224,7 +220,7 @@ describe("countActiveInScope (area)", () => {
       { id: 4, text: "Future", done: false, next: false, area: "work", dueDate: future },
       { id: 5, text: "Done", done: true, next: false, area: "work" },
     ];
-    expect(countActiveInScope(items, "work", undefined, today)).toBe(2);
+    expect(countActiveInScope(items, "work", undefined)).toBe(3);
   });
 });
 
@@ -264,49 +260,50 @@ describe("scopeHasNext", () => {
 
 describe("countActiveInScope", () => {
   it("counts only items in the project scope", () => {
-    const today = toIsoDay(new Date());
     const items: TaskItem[] = [
       { id: 1, text: "A1", done: false, next: true, area: "work", project: "alpha" },
       { id: 2, text: "A2", done: false, next: false, area: "work", project: "alpha" },
       { id: 3, text: "B1", done: false, next: false, area: "work", project: "beta" },
     ];
-    expect(countActiveInScope(items, "work", "alpha", today)).toBe(2);
+    expect(countActiveInScope(items, "work", "alpha")).toBe(2);
   });
 });
 
 describe("findSoleActiveInScope", () => {
   it("returns the sole active item in scope", () => {
-    const today = toIsoDay(new Date());
     const items: TaskItem[] = [
       { id: 1, text: "A1", done: false, next: false, area: "work", project: "alpha" },
     ];
-    expect(findSoleActiveInScope(items, "work", "alpha", today)?.text).toBe("A1");
+    expect(findSoleActiveInScope(items, "work", "alpha")?.text).toBe("A1");
   });
 
   it("returns undefined when zero items remain in scope", () => {
-    const today = toIsoDay(new Date());
-    expect(findSoleActiveInScope([], "work", "alpha", today)).toBeUndefined();
+    expect(findSoleActiveInScope([], "work", "alpha")).toBeUndefined();
   });
 
   it("returns undefined when 2+ items remain in scope", () => {
-    const today = toIsoDay(new Date());
     const items: TaskItem[] = [
       { id: 1, text: "A1", done: false, next: false, area: "work", project: "alpha" },
       { id: 2, text: "A2", done: false, next: false, area: "work", project: "alpha" },
     ];
-    expect(findSoleActiveInScope(items, "work", "alpha", today)).toBeUndefined();
+    expect(findSoleActiveInScope(items, "work", "alpha")).toBeUndefined();
   });
 
-  it("excludes someday, done, and future-dated items from the count", () => {
-    const today = toIsoDay(new Date());
-    const future = addDays(today, 14);
+  it("excludes someday and done items from the count", () => {
     const items: TaskItem[] = [
       { id: 1, text: "Sole", done: false, next: false, area: "work" },
       { id: 2, text: "Done", done: true, next: false, area: "work" },
       { id: 3, text: "Parked", done: false, next: false, area: "someday" },
-      { id: 4, text: "Future", done: false, next: false, area: "work", dueDate: future },
     ];
-    expect(findSoleActiveInScope(items, "work", undefined, today)?.text).toBe("Sole");
+    expect(findSoleActiveInScope(items, "work", undefined)?.text).toBe("Sole");
+  });
+
+  it("returns the sole item even when its deadline is after today (FR-TASKM-08)", () => {
+    const today = toIsoDay(new Date());
+    const items: TaskItem[] = [
+      { id: 1, text: "Send offer", done: false, next: false, area: "work", project: "sales", dueDate: addDays(today, 7) },
+    ];
+    expect(findSoleActiveInScope(items, "work", "sales")?.text).toBe("Send offer");
   });
 });
 

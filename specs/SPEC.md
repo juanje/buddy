@@ -3702,7 +3702,7 @@ Further context on local-model evaluation methodology and findings:
 | FR-TASKM-05 | Consolidation prompt: project health check | 2.5 ✓ |
 | FR-TASKM-06 | `created` field on TaskItem, set on add, serialized as HTML comment | 2.5 ✓ |
 | FR-TASKM-07 | `@someday` parking: excluded from default list and WIP count | 2.5 ✓ |
-| FR-TASKM-08 | Date-gated visibility: future items hidden from default list | 2.5 ✓ |
+| FR-TASKM-08 | Due date is a deadline, not a start: future-dated tasks stay visible, Next and fronts ignore it | 2.5 ✓ |
 | FR-TASKM-09 | Staleness metadata: `staleDays` in list result for aged items | 2.5 ✓ |
 | FR-TASKM-10 | Prompt guidance for parking, visibility, and staleness review | 2.5 ✓ |
 | FR-TASKM-11 | Direct file-tool access to `user/tasks.md` denied (read, write, edit) | 2.5 ✓ |
@@ -3781,11 +3781,28 @@ Further context on local-model evaluation methodology and findings:
 - `TaskListResult.parkedCount` reports hidden @someday items.
 - Orientation (`selectNextTasks`) excludes @someday.
 
-**FR-TASKM-08 — Date-gated visibility**
+**FR-TASKM-08 — Due date is a deadline, not a start**
 
-- Items with `dueDate > today` are excluded from default `list` results.
-- `include_future` includes them; `TaskListResult.futureCount` reports hidden future items.
-- Orientation excludes future-dated items.
+**Amended 2026-10-24.** The original requirement hid every item with
+`dueDate > today` from the default `list` and from orientation, and the same
+"not yet" filter spread to the Next count, active fronts, auto-promotion and
+the dashboard state. A due date is the latest a task should be done, not the
+day it becomes actionable. If a project's only open task is due next week, it
+is still that project's next action, and the project is still a front while the
+user works on it. Treating the date as a start made a real Next marker invisible
+to every count that is supposed to read it.
+
+- A due date never gates visibility or activity. An open, non-`@someday` item
+  is active whatever its `dueDate`.
+- The default `list` returns future-dated items. `include_future` and
+  `TaskListResult.futureCount` are removed; deferring work is what `@someday`
+  (FR-TASKM-07) and `deferred.md` are for.
+- `activeNextCount`, `list(only_next)`, auto-promotion (FR-TASKM-45), the
+  remaining-in-scope hint (FR-TASKM-34/38) and active fronts (FR-TASKM-41) all
+  count future-dated items.
+- Orientation (`selectNextTasks`) includes future-dated items.
+- A deadline still means lateness once it has passed: `only_due` and
+  `overdue_days` (FR-DASH-05) are unchanged.
 
 **FR-TASKM-09 — Staleness metadata**
 
@@ -3860,7 +3877,7 @@ Further context on local-model evaluation methodology and findings:
 
 **FR-TASKM-24 — WIP count redefined as next-only in list result**
 
-- `TaskListResult` includes `activeNextCount`: count of open items marked as next action, excluding `@someday` and future-dated items.
+- `TaskListResult` includes `activeNextCount`: count of open items marked as next action, excluding `@someday` items. *(Future-dated items count since FR-TASKM-08 was amended 2026-10-24.)*
 - Exposed in `list` JSON result for consolidation and orientation.
 
 **FR-TASKM-25 — Consolidation daily WIP review step**
@@ -3895,7 +3912,7 @@ Further context on local-model evaluation methodology and findings:
 
 **FR-TASKM-31 — Deterministic list filters**
 
-- `list(only_next: true)` returns only open next-action items, excluding `@someday` and future-dated items.
+- `list(only_next: true)` returns only open next-action items, excluding `@someday` items (future-dated items included — FR-TASKM-08).
 - `list(only_stale: true)` returns only items with computed `staleDays` (open > 30 days, not `>>`, not `@someday`).
 - `list(only_due: true)` returns only items with `dueDate` today or tomorrow.
 - `list(only_projects: true)` returns `projects: ProjectSummary[]` with `{ project, openCount, hasNext }` per `#project` tag.
@@ -3915,8 +3932,8 @@ Further context on local-model evaluation methodology and findings:
 
 **FR-TASKM-34 — Next-action hint on area clear**
 
-- When `complete` or `remove` clears the `>>` item and other open (non-someday,
-  non-future) tasks remain in the area, the tool response includes the remaining
+- When `complete` or `remove` clears the `>>` item and other open (non-someday)
+  tasks remain in the area, the tool response includes the remaining
   count and a suggestion hint for the agent to propose a new next action.
 - When `remove` clears the `>>` item, it emits `nextClearedForArea` (same as `complete`).
 - When the area has no remaining open tasks after clearing, the response confirms
@@ -3974,11 +3991,11 @@ instead of AGENTS.md Right now section.
 
 - `computeActiveFronts(rootDir)` returns `ActiveFrontsReport` using
   `loadItems()` from `task-file.ts`.
-- Each distinct `#project` slug with ≥1 open, non-someday, non-future
-  item in an area counts as 1 front.
+- Each distinct `#project` slug with ≥1 open, non-someday
+  item in an area counts as 1 front, whatever the item's due date (FR-TASKM-08).
 - Loose items (no `#project`) in an area count as 1 front collectively
   (not per-item), if any exist.
-- `@someday` items and future-dated items are excluded from the count.
+- `@someday` items are excluded from the count. Future-dated items are not.
 - `formatActiveFrontsBlock()` label changes from "(from AGENTS.md)" to
   "(from tasks.md)".
 - `buildConsolidationPrompt` calls `computeActiveFronts(rootDir)`.
@@ -4027,8 +4044,9 @@ verification.
 **FR-TASKM-45 — Auto-mark sole remaining task as next**
 
 When `complete` or `remove` clears the next action (`>>`) from a scope
-(area + project), and exactly one active (non-done, non-someday,
-non-future) item remains in that scope, the tool auto-marks it as next.
+(area + project), and exactly one active (non-done, non-someday) item
+remains in that scope, the tool auto-marks it as next, whatever its due date
+(FR-TASKM-08).
 
 - `complete(id)` and `remove(id)`: after clearing `>>`, if
   `countActiveInScope === 1`, find the sole item and set `next = true`.
@@ -4415,7 +4433,7 @@ and inline content.
 **FR-DASH-20 — Built-in source: wip**
 
 - `wip` gives one row per area with active fronts, counted as FR-TASKM-41
-  does (distinct `#project` slugs with open, non-someday, non-future items,
+  does (distinct `#project` slugs with open, non-someday items,
   plus one for loose items). Fields: `area`, `fronts`, `limit`, `over_by`
   (`fronts − limit`), and `label` / `state` (`ok` | `bad`) / `reason` so the
   `status` view renders it directly.

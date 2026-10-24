@@ -626,8 +626,34 @@
           "name": "list includes future items when include_future is true",
           "bdd": "pass",
           "unit_tests": 1
+        },
+        {
+          "name": "Orientation shows a next action whose deadline is next week",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Default list shows tasks whose deadline is after today",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "A Next marker with a future deadline is still the active next action",
+          "bdd": "pass",
+          "unit_tests": 3
+        },
+        {
+          "name": "A project whose only task is due next week is an active front",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Completing the Next promotes the sole remaining task whatever its deadline",
+          "bdd": "pass",
+          "unit_tests": 3
         }
-      ]
+      ],
+      "note": "reopened: due date is a deadline, not a start: future-dated tasks stay visible, Next and fronts ignore the deadline"
     },
     {
       "id": "FR-TASKM-09",

@@ -4,23 +4,13 @@ import type { OrientationData } from "../shared/api";
 import type { TaskItem } from "../shared/task-types";
 import { getDueDeferred, toDeferredItemViews } from "./deferred";
 import { readLastOrientationDate, writeLastOrientationDate } from "./orientation-config";
-import { readTasksFile } from "./tasks/task-file";
+import { isActiveTask, readTasksFile } from "./tasks/task-file";
 
 const NEXT_TASK_LIMIT = 3;
 
 /** One next task per area, then fill with other open items up to the limit. */
-export function selectNextTasks(
-  items: TaskItem[],
-  limit = NEXT_TASK_LIMIT,
-  today?: string,
-): TaskItem[] {
-  const todayStr = today ?? new Date().toISOString().slice(0, 10);
-  const open = items.filter(
-    (item) =>
-      !item.done &&
-      item.area !== "someday" &&
-      !(item.dueDate && item.dueDate > todayStr),
-  );
+export function selectNextTasks(items: TaskItem[], limit = NEXT_TASK_LIMIT): TaskItem[] {
+  const open = items.filter(isActiveTask);
   const chosen: TaskItem[] = [];
   const seenAreas = new Set<string>();
 
@@ -55,7 +45,7 @@ export function buildOrientationData(
     today,
   );
   const { items } = readTasksFile(rootDir);
-  const nextTasks = selectNextTasks(items, NEXT_TASK_LIMIT, today);
+  const nextTasks = selectNextTasks(items, NEXT_TASK_LIMIT);
   return { deferred, nextTasks };
 }
 

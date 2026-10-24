@@ -36,14 +36,14 @@ describe("orientation (FR-ORIENT-02)", () => {
     expect(chosen.map((t) => t.text)).toEqual(["A", "C", "D"]);
   });
 
-  it("selectNextTasks excludes someday and future-dated items", () => {
+  it("selectNextTasks excludes someday but keeps items with a future deadline (FR-TASKM-08)", () => {
     const items = [
       { id: 1, text: "Active", done: false, next: true, area: "work" },
       { id: 2, text: "Parked", done: false, next: true, area: "someday" },
       { id: 3, text: "Later", done: false, next: true, area: "personal", dueDate: "2099-01-01" },
     ];
-    const chosen = selectNextTasks(items, 3, "2026-09-10");
-    expect(chosen.map((t) => t.text)).toEqual(["Active"]);
+    const chosen = selectNextTasks(items, 3);
+    expect(chosen.map((t) => t.text)).toEqual(["Active", "Later"]);
   });
 
   it("buildOrientationData returns null when already shown today", () => {

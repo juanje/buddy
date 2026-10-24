@@ -328,10 +328,6 @@ When("tasks list is invoked with include_parked true", function (this: TasksWorl
   invoke.call(this, "list", { include_parked: true, include_done: true });
 });
 
-When("tasks list is invoked with include_future true", function (this: TasksWorld) {
-  invoke.call(this, "list", { include_future: true, include_done: true });
-});
-
 When("tasks list is invoked with only_next true", function (this: TasksWorld) {
   invoke.call(this, "list", { only_next: true });
 });
@@ -662,15 +658,6 @@ Then("the task list contains someday items", function (this: TasksWorld) {
   );
 });
 
-Then("the task list does not contain future-dated items", function (this: TasksWorld) {
-  assert.ok(this.taskResult?.ok && this.taskResult.list, "expected task list result");
-  const today = toIsoDay(new Date());
-  assert.ok(
-    !this.taskResult.list!.items.some((item) => item.dueDate && item.dueDate > today),
-    "expected no future-dated items",
-  );
-});
-
 Then("the task list contains future-dated items", function (this: TasksWorld) {
   assert.ok(this.taskResult?.ok && this.taskResult.list, "expected task list result");
   const today = toIsoDay(new Date());
@@ -688,13 +675,13 @@ Then(
   },
 );
 
-Then(
-  "the task list summary has futureCount {int}",
-  function (this: TasksWorld, count: number) {
-    assert.ok(this.taskResult?.ok && this.taskResult.list, "expected task list result");
-    assert.equal(this.taskResult.list!.futureCount, count);
-  },
-);
+Then("the task list summary does not report hidden future items", function (this: TasksWorld) {
+  assert.ok(this.taskResult?.ok && this.taskResult.list, "expected task list result");
+  assert.ok(
+    !("futureCount" in this.taskResult.list!),
+    "a due date is a deadline, so nothing is hidden for being future-dated",
+  );
+});
 
 Then(
   "the task list summary has activeNextCount {int}",
@@ -1226,6 +1213,9 @@ Given("a tasks file with items:", function (this: TasksWorld, table: DataTable) 
     next: row.next?.trim().toLowerCase() === "true",
     area: row.area?.trim() || undefined,
     project: row.project?.trim() || undefined,
+    dueDate: row.due_in_days?.trim()
+      ? addDays(toIsoDay(new Date()), Number(row.due_in_days))
+      : undefined,
     created: toIsoDay(new Date()),
   }));
   writeTasksFile(root.call(this), items, toIsoDay(new Date()));
@@ -1246,26 +1236,29 @@ Then("the tasks file contains {string}", function (this: TasksWorld, snippet: st
   assert.ok(content.includes(snippet), `expected tasks file to contain "${snippet}"`);
 });
 
-When("the task {string} is completed", function (this: TasksWorld, text: string) {
+/** The parser keeps the due date token inside `text`; match without it. */
+function findTaskByText(this: TasksWorld, text: string) {
   const listed = executeTaskAction(root.call(this), "list", { include_done: true });
   assert.ok(listed.ok && listed.list);
-  const task = listed.list.items.find((item) => item.text === text);
+  return listed.list.items.find(
+    (item) => item.text.replace(/\s*\d{4}-\d{2}-\d{2}\b/, "").trim() === text,
+  );
+}
+
+When("the task {string} is completed", function (this: TasksWorld, text: string) {
+  const task = findTaskByText.call(this, text);
   assert.ok(task, `expected a task with text "${text}"`);
   invoke.call(this, "complete", { id: task.id });
 });
 
 Then("the task {string} is marked as next", function (this: TasksWorld, text: string) {
-  const listed = executeTaskAction(root.call(this), "list", { include_done: true });
-  assert.ok(listed.ok && listed.list);
-  const task = listed.list.items.find((item) => item.text === text);
+  const task = findTaskByText.call(this, text);
   assert.ok(task, `expected a task with text "${text}"`);
   assert.equal(task.next, true);
 });
 
 Then("the task {string} is not marked as next", function (this: TasksWorld, text: string) {
-  const listed = executeTaskAction(root.call(this), "list", { include_done: true });
-  assert.ok(listed.ok && listed.list);
-  const task = listed.list.items.find((item) => item.text === text);
+  const task = findTaskByText.call(this, text);
   assert.ok(task, `expected a task with text "${text}"`);
   assert.equal(task.next, false);
 });

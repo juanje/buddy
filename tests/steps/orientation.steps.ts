@@ -95,6 +95,14 @@ Given(
   },
 );
 
+Given(
+  "tasks.md has next action {string} in area {word} due on {string}",
+  function (this: OrientationWorld, text: string, area: string, dueDate: string) {
+    assert.ok(this.buddyDir, "buddyDir should be set");
+    writeTasksFile(this.buddyDir, [{ id: 1, text, done: false, next: true, area, dueDate }]);
+  },
+);
+
 When(
   "orientation data is fetched for today {string}",
   function (this: OrientationWorld, today: string) {
@@ -122,7 +130,13 @@ Then(
   "orientation data includes next task {string}",
   function (this: OrientationWorld, text: string) {
     assert.ok(this.orientationData, "orientation data should exist");
-    assert.ok(this.orientationData.nextTasks.some((task) => task.text === text));
+    // The parser keeps the due date token inside the stored text.
+    assert.ok(
+      this.orientationData.nextTasks.some(
+        (task) => task.text.replace(/\s*\d{4}-\d{2}-\d{2}\b/, "").trim() === text,
+      ),
+      `expected next task "${text}"`,
+    );
   },
 );
 

@@ -34,7 +34,6 @@ export interface TaskListResult {
   areas: TaskAreaSummary[];
   openCount: number;
   parkedCount: number;
-  futureCount: number;
   /** Open next-action items excluding @someday and future-dated */
   activeNextCount: number;
   /** Populated when list(only_projects: true) */

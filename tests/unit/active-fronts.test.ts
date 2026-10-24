@@ -66,14 +66,14 @@ describe("computeActiveFronts", () => {
     expect(report.perArea).toEqual([{ area: "work", count: 1 }]);
   });
 
-  it("excludes future-dated items", () => {
+  it("counts a project whose only task has a future deadline (FR-TASKM-08)", () => {
     const future = addDays(toIsoDay(new Date()), 10);
     seed([
-      { id: 1, text: "Future thing", done: false, next: false, area: "work", dueDate: future },
+      { id: 1, text: "Send offer", done: false, next: true, area: "work", project: "sales", dueDate: future },
       { id: 2, text: "Active thing", done: false, next: false, area: "work" },
     ]);
     const report = computeActiveFronts(rootDir);
-    expect(report.perArea).toEqual([{ area: "work", count: 1 }]);
+    expect(report.perArea).toEqual([{ area: "work", count: 2 }]);
   });
 
   it("excludes done items", () => {

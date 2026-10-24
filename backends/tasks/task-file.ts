@@ -184,15 +184,8 @@ export function writeTasksFile(rootDir: string, items: TaskItem[], created?: str
   }
 }
 
-export function countActiveNext(items: TaskItem[], today?: string): number {
-  const todayStr = today ?? toIsoDay(new Date());
-  return items.filter(
-    (item) =>
-      !item.done &&
-      item.next &&
-      item.area !== "someday" &&
-      !(item.dueDate && item.dueDate > todayStr),
-  ).length;
+export function countActiveNext(items: TaskItem[]): number {
+  return items.filter(isActiveNextItem).length;
 }
 
 export function buildListResult(items: TaskItem[], today?: string): TaskListResult {
@@ -222,7 +215,7 @@ export function buildListResult(items: TaskItem[], today?: string): TaskListResu
     openCount: stats.open,
     hasNext: stats.hasNext,
   }));
-  return { items: enriched, areas, openCount, parkedCount: 0, futureCount: 0, activeNextCount: 0 };
+  return { items: enriched, areas, openCount, parkedCount: 0, activeNextCount: 0 };
 }
 
 export function findItemById(items: TaskItem[], id: number): TaskItem | undefined {
@@ -244,31 +237,21 @@ export function clearNextInScope(items: TaskItem[], area?: string, project?: str
 }
 
 /** Open, not parked in "someday", and not deferred to a future due date. */
-function isActive(item: TaskItem, today: string): boolean {
-  return !item.done && item.area !== "someday" && !(item.dueDate && item.dueDate > today);
+/** Open and outside @someday. A due date is a deadline, not a start, so it never gates this (FR-TASKM-08). */
+export function isActiveTask(item: TaskItem): boolean {
+  return !item.done && item.area !== "someday";
 }
 
-export function countActiveInScope(
-  items: TaskItem[],
-  area?: string,
-  project?: string,
-  today?: string,
-): number {
-  const todayStr = today ?? toIsoDay(new Date());
-  return items.filter((item) => inSameScope(item, area, project) && isActive(item, todayStr))
-    .length;
+export function countActiveInScope(items: TaskItem[], area?: string, project?: string): number {
+  return items.filter((item) => inSameScope(item, area, project) && isActiveTask(item)).length;
 }
 
 export function findSoleActiveInScope(
   items: TaskItem[],
   area?: string,
   project?: string,
-  today?: string,
 ): TaskItem | undefined {
-  const todayStr = today ?? toIsoDay(new Date());
-  const active = items.filter(
-    (item) => inSameScope(item, area, project) && isActive(item, todayStr),
-  );
+  const active = items.filter((item) => inSameScope(item, area, project) && isActiveTask(item));
   return active.length === 1 ? active[0] : undefined;
 }
 
@@ -309,13 +292,8 @@ export function buildUntaggedClusters(items: TaskItem[]): Array<{ area: string; 
     .sort((a, b) => b.count - a.count || a.area.localeCompare(b.area));
 }
 
-export function isActiveNextItem(item: TaskItem, today: string): boolean {
-  return (
-    !item.done &&
-    item.next &&
-    item.area !== "someday" &&
-    !(item.dueDate && item.dueDate > today)
-  );
+export function isActiveNextItem(item: TaskItem): boolean {
+  return isActiveTask(item) && item.next;
 }
 
 export type TaskDashboardState = "next" | "open" | "scheduled" | "parked";
