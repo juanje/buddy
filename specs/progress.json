@@ -2930,6 +2930,44 @@
           "unit_tests": 1
         }
       ]
+    },
+    {
+      "id": "FR-SLACK-06",
+      "title": "Read the DM with a person by user id; last-N messages window",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "channel_history with a user id reads the DM with that person",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "A DM opened by user id is remembered with the person's name",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "A DM already in the directory is read without opening it again",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "last fetches the newest messages whatever their date",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "A restricted DM open asks for a link",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "help explains how to read a conversation with a person",
+          "bdd": "pass",
+          "unit_tests": 2
+        }
+      ]
     }
   ]
 }

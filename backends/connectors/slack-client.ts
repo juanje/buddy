@@ -63,6 +63,8 @@ export interface SlackClient {
     cursor?: string;
   }): Promise<{ channels: SlackChannel[]; nextCursor?: string }>;
   usersInfo(user: string): Promise<{ id: string; displayName: string }>;
+  /** The DM channel id with a user; Slack returns the existing DM when there is one. */
+  conversationsOpen(user: string): Promise<string>;
   usersList(options?: { limit?: number; cursor?: string }): Promise<{
     members: Array<{ id: string; displayName: string; realName?: string; handle?: string }>;
     nextCursor?: string;
@@ -354,6 +356,22 @@ export function createSlackClient(config: ConnectorConfig, options?: SlackClient
         u?.real_name ||
         user;
       return { id: u?.id ?? user, displayName };
+    },
+    async conversationsOpen(user) {
+      const data = await apiCall<{ ok: boolean; channel?: { id?: string }; error?: string }>(
+        "conversations.open",
+        { users: user },
+      );
+      const id = data.channel?.id;
+      if (!id) {
+        throw new SlackClientError("Slack did not return a DM channel", {
+          error: "Slack did not return a DM channel",
+          code: 404,
+          recoverable: false,
+          suggestion: "slackError404",
+        });
+      }
+      return id;
     },
     async usersList(opts) {
       const data = await apiCall<{

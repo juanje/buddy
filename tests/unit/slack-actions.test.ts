@@ -231,7 +231,7 @@ describe("find_user (FR-SLACK-05)", () => {
       return new Response(JSON.stringify({ ok: false, error: "not_expected" }), { status: 200 });
     };
     const result = await executeSlackAction(rootDir, "find_user", { name: "ozan" }, { fetchImpl });
-    expect(result.data).toBe("Ozan Yilmaz (U07OZAN)");
+    expect(result.data).toMatch(/^Ozan Yilmaz \(U07OZAN\)\n\n/);
     expect(calls).toEqual([]);
   });
 
@@ -245,7 +245,7 @@ describe("find_user (FR-SLACK-05)", () => {
       }),
     });
     const result = await executeSlackAction(rootDir, "find_user", { name: "agarcia" }, { fetchImpl });
-    expect(result.data).toBe("Ana García (U09ANA)");
+    expect(result.data).toMatch(/^Ana García \(U09ANA\)\n\n/);
     expect(readSlackUserCache(rootDir).U09ANA?.displayName).toBe("Ana García");
   });
 
@@ -291,5 +291,104 @@ describe("channels refresh (FR-SLACK-05)", () => {
     expect(store.C001?.name).toBe("general");
     expect(store.D123?.dm_peer_name).toBe("Ozan Yilmaz");
     expect(store.D999?.dm_peer_name).toBe("Ana García");
+  });
+});
+
+describe("channel_history by person and last N (FR-SLACK-06)", () => {
+  function recordingFetch(handlers: Record<string, (body: string) => object>, calls: string[]) {
+    return async (url: string, init?: RequestInit) => {
+      const body = init?.body ? String(init.body) : "";
+      for (const [key, handler] of Object.entries(handlers)) {
+        if (url.includes(key)) {
+          calls.push(`${key}?${body}`);
+          return new Response(JSON.stringify({ ok: true, ...handler(body) }), { status: 200 });
+        }
+      }
+      return new Response(JSON.stringify({ ok: false, error: "not_found" }), { status: 200 });
+    };
+  }
+
+  it("last N asks for the newest messages with no oldest bound", async () => {
+    const calls: string[] = [];
+    const fetchImpl = recordingFetch(
+      {
+        "conversations.history": () => ({ messages: [{ ts: "1700000000.000100", user: "U1", text: "hi" }] }),
+        "conversations.info": () => ({ channel: { id: "C456", name: "general" } }),
+        "users.info": () => ({ user: { id: "U1", profile: { display_name: "Ann" } } }),
+      },
+      calls,
+    );
+    await executeSlackAction(rootDir, "channel_history", { channel: "C456", last: 20 }, { fetchImpl });
+    const history = calls.filter((c) => c.startsWith("conversations.history"));
+    expect(history).toHaveLength(1);
+    expect(history[0]).not.toMatch(/(^|[?&])oldest=/);
+    expect(history[0]).toMatch(/(^|[?&])limit=20(&|$)/);
+  });
+
+  it("a user id reads the DM already in the directory without opening it", async () => {
+    writeEntityStore(rootDir, "slack", {
+      D123: { synced_at: new Date().toISOString(), stale_after: "1h", id: "D123", is_im: true, user: "U0LEO0001", dm_peer_name: "Leo Martin" },
+    });
+    const calls: string[] = [];
+    const fetchImpl = recordingFetch(
+      {
+        "conversations.history": () => ({ messages: [] }),
+        "conversations.open": () => ({ channel: { id: "D999" } }),
+      },
+      calls,
+    );
+    await executeSlackAction(rootDir, "channel_history", { channel: "U0LEO0001", last: 5 }, { fetchImpl });
+    expect(calls.filter((c) => c.startsWith("conversations.open"))).toEqual([]);
+    expect(calls.find((c) => c.startsWith("conversations.history"))).toMatch(/channel=D123/);
+  });
+
+  it("a user id with no known DM opens it with conversations.open", async () => {
+    const calls: string[] = [];
+    const fetchImpl = recordingFetch(
+      {
+        "conversations.open": () => ({ channel: { id: "D777" } }),
+        "conversations.history": () => ({ messages: [] }),
+        "conversations.info": () => ({ channel: { id: "D777", is_im: true, user: "U0MARIA01" } }),
+        "users.info": () => ({ user: { id: "U0MARIA01", profile: { display_name: "Maria Lopez" } } }),
+      },
+      calls,
+    );
+    await executeSlackAction(rootDir, "channel_history", { channel: "U0MARIA01", last: 5 }, { fetchImpl });
+    expect(calls.find((c) => c.startsWith("conversations.open"))).toMatch(/users=U0MARIA01/);
+    expect(calls.find((c) => c.startsWith("conversations.history"))).toMatch(/channel=D777/);
+  });
+
+  it("a restricted DM open asks the user for a link to the DM", async () => {
+    const fetchImpl = mockFetch({
+      "conversations.open": () => ({ ok: false, error: "enterprise_is_restricted" }),
+    });
+    const result = await executeSlackAction(
+      rootDir,
+      "channel_history",
+      { channel: "U0MARIA01", last: 5 },
+      { fetchImpl },
+    );
+    expect(connectorResultToText(result)).toContain("ask the user for a link to the DM");
+  });
+
+  it("help explains reading a conversation with a person", () => {
+    expect(slackHelpText()).toContain("| channel_history | channel (required), last?, date?, days?, limit?, force? |");
+    expect(slackHelpText()).toContain(
+      "To read a conversation with a person, find_user, then channel_history with their user id and last",
+    );
+  });
+
+  it("find_user's reply says how to read the DM with the person it found", async () => {
+    const dir = join(rootDir, ".buddy/connections/slack");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(
+      join(dir, "users.json"),
+      JSON.stringify({ U0MARIA01: { displayName: "Maria Lopez", synced_at: new Date().toISOString() } }),
+    );
+    const result = await executeSlackAction(rootDir, "find_user", { name: "maria" });
+    expect(result.data).toBe(
+      "Maria Lopez (U0MARIA01)\n\n" +
+        "To read the DM with one of them: channel_history with channel set to the user id and last (e.g. 30).",
+    );
   });
 });

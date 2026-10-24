@@ -46,6 +46,8 @@ This directory builds up naturally from use. You don't need to configure anythin
 
 **Finding a person.** When you mention someone by name, Buddy looks them up in this directory first — everyone it has seen in threads and DMs — without calling Slack. Only when nobody matches does it search your workspace's user list, and it remembers what it finds. If your workspace blocks listing users, Buddy asks you for a link to a message or DM from that person instead.
 
+**Reading a conversation with someone.** Ask *"summarize my last conversation with Maria"* and Buddy finds Maria, opens your DM with her by her Slack id, and reads the most recent messages, however old they are. It does not need the channel list for this, so it works in workspaces that restrict it, and it remembers the DM for next time.
+
 ## How caching works
 
 Buddy saves fetched conversations as local markdown files:

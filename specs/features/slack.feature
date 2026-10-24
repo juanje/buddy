@@ -158,3 +158,49 @@ Feature: Slack read-only connector
     When the slack connector runs action "channels"
     Then the slack channel directory contains "general"
     And the slack entity "D123" has dm_peer_name "Ozan Yilmaz"
+
+  @FR-SLACK-06
+  Scenario: channel_history with a user id reads the DM with that person
+    Given a configured slack integration
+    And slack opens the DM with user "U0MARIA01" as "D777"
+    And slack channel "D777" history returns message "Las notas de la release están listas"
+    When the slack connector reads the last 20 messages of channel "U0MARIA01"
+    Then the saved slack file contains "Las notas de la release están listas"
+
+  @FR-SLACK-06
+  Scenario: A DM opened by user id is remembered with the person's name
+    Given a configured slack integration
+    And slack opens the DM with user "U0MARIA01" as "D777"
+    And slack user "U0MARIA01" resolves to "Maria Lopez"
+    And slack channel "D777" history returns message "Hola"
+    When the slack connector reads the last 20 messages of channel "U0MARIA01"
+    Then the slack entity "D777" has dm_peer_name "Maria Lopez"
+
+  @FR-SLACK-06
+  Scenario: A DM already in the directory is read without opening it again
+    Given a configured slack integration
+    And the slack channel directory has DM "D123" with "Leo Martin" as user "U0LEO0001"
+    And slack channel "D123" history returns message "PR revisado"
+    When the slack connector reads the last 20 messages of channel "U0LEO0001"
+    Then the saved slack file contains "PR revisado"
+    And slack was not asked to open a DM
+
+  @FR-SLACK-06
+  Scenario: last fetches the newest messages whatever their date
+    Given a configured slack integration
+    And slack channel "C456" history returns message "Old but latest"
+    When the slack connector reads the last 20 messages of channel "C456"
+    Then the slack history request had no date bound
+
+  @FR-SLACK-06
+  Scenario: A restricted DM open asks for a link
+    Given a configured slack integration
+    And slack refuses to open DMs with enterprise_is_restricted
+    When the slack connector reads the last 20 messages of channel "U0MARIA01"
+    Then the slack result includes "link to the DM"
+
+  @FR-SLACK-06
+  Scenario: help explains how to read a conversation with a person
+    Given a configured slack integration
+    When the slack connector runs action "help"
+    Then the slack result includes "channel_history with their user id"

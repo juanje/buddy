@@ -2,7 +2,7 @@
 
 import { Given, When, Then } from "@cucumber/cucumber";
 import assert from "node:assert/strict";
-import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -43,6 +43,11 @@ interface SlackWorld extends BuddyWorld {
   usersList?: Array<{ id: string; name: string }>;
   usersListError?: string;
   userApiCalled?: boolean;
+  dmOpens?: Record<string, string>;
+  dmOpenError?: string;
+  dmOpenCalled?: boolean;
+  historyRequestBodies?: string[];
+  channelMessagesFor?: string;
   channelInfoOverrides?: Record<string, { id: string; name?: string; is_im?: boolean; user?: string }>;
 }
 
@@ -90,9 +95,31 @@ function defaultFetch(this: SlackWorld) {
         headers: { "content-type": "application/json" },
       });
     }
+    if (url.includes("conversations.open")) {
+      this.dmOpenCalled = true;
+      if (this.dmOpenError) {
+        return new Response(JSON.stringify({ ok: false, error: this.dmOpenError }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        });
+      }
+      const usersMatch = /users=([^&]+)/.exec(body);
+      const userId = usersMatch ? decodeURIComponent(usersMatch[1]) : "";
+      const channelId = this.dmOpens?.[userId];
+      return new Response(
+        JSON.stringify(
+          channelId ? { ok: true, channel: { id: channelId } } : { ok: false, error: "user_not_found" },
+        ),
+        { status: 200, headers: { "content-type": "application/json" } },
+      );
+    }
     if (url.includes("conversations.history")) {
-      const messages =
-        this.channelMessages?.map((m, i) => ({
+      this.historyRequestBodies = [...(this.historyRequestBodies ?? []), body];
+      const historyChannel = decodeURIComponent(/channel=([^&]+)/.exec(body)?.[1] ?? "");
+      const forThisChannel = !this.channelMessagesFor || this.channelMessagesFor === historyChannel;
+      const messages = !forThisChannel
+        ? []
+        : this.channelMessages?.map((m, i) => ({
           ts: `1712345600.${String(i).padStart(6, "0")}`,
           user: m.user,
           text: m.text,
@@ -124,7 +151,10 @@ function defaultFetch(this: SlackWorld) {
       const channelMatch = /channel=([^&]+)/.exec(body) ?? /channel=([^&]+)/.exec(url);
       const channelId = channelMatch ? decodeURIComponent(channelMatch[1]) : "C123";
       const override = this.channelInfoOverrides?.[channelId];
-      const channelData = override ?? { id: channelId, name: "general" };
+      const openedFor = Object.entries(this.dmOpens ?? {}).find(([, dm]) => dm === channelId)?.[0];
+      const channelData =
+        override ??
+        (openedFor ? { id: channelId, is_im: true, user: openedFor } : { id: channelId, name: "general" });
       return new Response(
         JSON.stringify({ ok: true, channel: channelData }),
         { status: 200, headers: { "content-type": "application/json" } },
@@ -288,8 +318,9 @@ Given(
 
 Given(
   'slack channel {string} history returns message {string}',
-  function (this: SlackWorld, _channel: string, text: string) {
+  function (this: SlackWorld, channel: string, text: string) {
     this.channelMessages = [{ user: "U555", text }];
+    this.channelMessagesFor = channel;
   },
 );
 
@@ -449,4 +480,49 @@ When("the slack connector looks up the user {string}", async function (this: Sla
 
 Then("no slack user API was called", function (this: SlackWorld) {
   assert.equal(this.userApiCalled ?? false, false, "expected the local directory to answer");
+});
+
+Given(
+  "slack opens the DM with user {string} as {string}",
+  function (this: SlackWorld, userId: string, channelId: string) {
+    this.dmOpens = { ...(this.dmOpens ?? {}), [userId]: channelId };
+  },
+);
+
+Given("slack refuses to open DMs with enterprise_is_restricted", function (this: SlackWorld) {
+  this.dmOpenError = "enterprise_is_restricted";
+});
+
+When(
+  "the slack connector reads the last {int} messages of channel {string}",
+  async function (this: SlackWorld, last: number, channel: string) {
+    const root = ensureRoot.call(this);
+    this.slackResult = await executeSlackAction(
+      root,
+      "channel_history",
+      { channel, last },
+      { fetchImpl: this.fetchImpl },
+    );
+    this.slackResultText = connectorResultToText(this.slackResult);
+  },
+);
+
+Then("the saved slack file contains {string}", function (this: SlackWorld, text: string) {
+  const match = /saved to (\S+)/.exec(this.slackResultText ?? "");
+  assert.ok(match, `expected a saved file path in: ${this.slackResultText}`);
+  const content = readFileSync(join(ensureRoot.call(this), match[1]!), "utf8");
+  assert.ok(content.includes(text), `expected "${text}" in ${match[1]}`);
+});
+
+Then("slack was not asked to open a DM", function (this: SlackWorld) {
+  assert.equal(this.dmOpenCalled ?? false, false, "expected the directory to know the DM");
+});
+
+Then("the slack history request had no date bound", function (this: SlackWorld) {
+  const bodies = this.historyRequestBodies ?? [];
+  assert.ok(bodies.length > 0, "expected a conversations.history request");
+  assert.ok(
+    bodies.every((b) => !/(^|&)oldest=/.test(b)),
+    `expected no oldest bound in: ${bodies.join(" | ")}`,
+  );
 });

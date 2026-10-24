@@ -3557,6 +3557,7 @@ Further context on local-model evaluation methodology and findings:
 | FR-SLACK-03 | User ID resolution and channel directory | 4 ✓ |
 | FR-SLACK-04 | Enterprise error handling and channel auto-register from use | 4 ✓ |
 | FR-SLACK-05 | Find a user by name, local directory first; `channels` refresh keeps learned DM peers | 4 ✓ |
+| FR-SLACK-06 | Read the DM with a person by user id; `last` window of the newest messages | 4 ✓ |
 
 **FR-SLACK-01 — Dispatcher, auth, and Settings**
 
@@ -3623,6 +3624,28 @@ entity store, dropping the DM entries that only existed as `dm_peer_name`.
 - **Then** it merges into the entity store: API entries replace their own ids
   but keep a `dm_peer_name` already learned, and entries the API did not
   return are kept
+
+**FR-SLACK-06 — Read the DM with a person; the newest messages whatever their date**
+
+Found in use (2026-10-24, Enterprise Grid workspace): asked for "the last
+conversation with" a colleague, the agent got their user id from `find_user`, then
+stopped. `channel_history` took only a channel id, the DM was not in the entity
+store, and the only route from a person to their DM was `channels`, which the
+workspace blocks. Separately, without `date` or `days` the window was today
+only, so "the last conversation" came back empty whenever it was older.
+
+- **Given** a configured Slack integration
+- **When** `channel_history` receives a user id (`U…`/`W…`) as `channel`
+- **Then** the DM with that person is used: from the entity store when an
+  entry has that `user`, otherwise opened with `conversations.open`
+- **And** a DM opened this way is registered with `dm_peer_name`, so the next
+  request finds it locally
+- **And** when opening the DM is restricted, the error tells the agent to ask
+  the user for a link to the DM
+- **When** `channel_history` receives `last: N`
+- **Then** it returns the newest N messages, with no date bound
+- **And** `help` says how to read a conversation with a person:
+  `find_user`, then `channel_history` with the user id and `last`
 
 ### 3.27 Topic Transition (FR-TOPIC)
 

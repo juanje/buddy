@@ -53,6 +53,8 @@ export interface SlackActionParams {
   days?: number;
   limit?: number;
   name?: string;
+  /** Newest N messages with no date bound (FR-SLACK-06). */
+  last?: number;
 }
 
 export interface ExecuteSlackActionOptions {
@@ -210,7 +212,7 @@ async function fetchAllReplies(
 async function fetchChannelHistory(
   client: SlackClient,
   channelId: string,
-  oldest: string,
+  oldest: string | undefined,
   latest: string,
   limit: number,
 ): Promise<SlackMessage[]> {
@@ -242,12 +244,15 @@ export function slackHelpText(): string {
 |--------|--------|-------------|
 | help | — | List actions |
 | thread | url (required), force? | Fetch one thread to a cache markdown file |
-| channel_history | channel (required), date?, days?, limit?, force? | Fetch channel/DM window to cache file |
+| channel_history | channel (required), last?, date?, days?, limit?, force? | Fetch channel/DM window to cache file. channel: name, ID, URL, or a user id for the DM with that person. last: the newest N messages, whatever their date (default window: today only) |
 | channels | force? | List channels the user belongs to |
 | find_user | name (required) | Find a person's Slack id by name: local directory first, then the user list |
 
 To find a person, use find_user before channels: it answers from people already seen in
 threads and DMs without calling Slack.
+
+To read a conversation with a person, find_user, then channel_history with their user id and last
+(for example last: 30). Do not use channels to look for the DM.
 
 Set \`params.force: true\` to bypass cache freshness and re-fetch from Slack.`;
 }
@@ -288,6 +293,15 @@ async function registerChannelFromUse(
   } catch {
     // Best-effort: don't fail the main action if directory update fails.
   }
+}
+
+const SLACK_USER_ID_RE = /^[UW][A-Z0-9]+$/;
+
+/** The DM channel id for a user, from the entity store (FR-SLACK-06). */
+function findKnownDm(rootDir: string, userId: string): string | undefined {
+  const store = readEntityStore(rootDir, SLACK_DOMAIN);
+  const dm = Object.values(store).find((entity) => entity.is_im === true && entity.user === userId);
+  return typeof dm?.id === "string" ? dm.id : undefined;
 }
 
 /** Everything a Slack action handler needs once the connector is configured. */
@@ -394,13 +408,39 @@ async function channelHistoryAction(ctx: SlackActionContext): Promise<ConnectorR
   } catch {
     channelId = channelInput.startsWith("#") ? channelInput.slice(1) : channelInput;
   }
+  if (SLACK_USER_ID_RE.test(channelId)) {
+    const userId = channelId;
+    const known = findKnownDm(rootDir, userId);
+    if (known) {
+      channelId = known;
+    } else {
+      try {
+        channelId = await client.conversationsOpen(userId);
+      } catch (err) {
+        if (!(err instanceof SlackClientError)) throw err;
+        if (err.connectorError.suggestion !== "slackErrorEnterprise") {
+          return connectorResultFromError(err.connectorError);
+        }
+        return connectorResultFromError({
+          ...err.connectorError,
+          suggestion:
+            "This workspace does not let me open the DM with that person. Do not look for it " +
+            "through channels or other tools: ask the user for a link to the DM, or to any " +
+            "message in it, and pass that link as channel — the DM is remembered for next time.",
+        });
+      }
+    }
+  }
 
   const now = options?.now?.() ?? new Date();
-  let oldest: string;
+  let oldest: string | undefined;
   let latest: string;
   let dateLabel: string;
 
-  if (params.date) {
+  if (params.last) {
+    latest = String(now.getTime() / 1000);
+    dateLabel = `last-${params.last}`;
+  } else if (params.date) {
     const start = new Date(`${params.date}T00:00:00.000Z`);
     const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
     oldest = String(start.getTime() / 1000);
@@ -430,7 +470,7 @@ async function channelHistoryAction(ctx: SlackActionContext): Promise<ConnectorR
     );
   }
 
-  const limit = params.limit ?? 500;
+  const limit = params.last ?? params.limit ?? 500;
   try {
     const messages = await fetchChannelHistory(client, channelId, oldest, latest, limit);
     const body = await renderChannelMarkdown(client, rootDir, channelId, dateLabel, messages);
@@ -531,7 +571,12 @@ async function channelsAction(ctx: SlackActionContext): Promise<ConnectorResult>
 }
 
 function formatUserMatches(matches: SlackUserMatch[]): string {
-  return matches.map((match) => `${match.displayName} (${match.id})`).join("\n");
+  const lines = matches.map((match) => `${match.displayName} (${match.id})`).join("\n");
+  // The next step lives where the agent decides it, not only in help (FR-SLACK-06).
+  return (
+    `${lines}\n\n` +
+    "To read the DM with one of them: channel_history with channel set to the user id and last (e.g. 30)."
+  );
 }
 
 async function searchSlackUserList(client: SlackClient, name: string): Promise<SlackUserMatch[]> {
