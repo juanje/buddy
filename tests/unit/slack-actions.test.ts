@@ -1,13 +1,14 @@
 // tests/unit/slack-actions.test.ts — FR-SLACK-01..03 Slack read actions.
 
-import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { executeSlackAction, slackHelpText } from "../../backends/connectors/slack-actions";
-import { readEntityStore } from "../../backends/connectors/cache";
+import { readEntityStore, writeEntityStore } from "../../backends/connectors/cache";
 import { readSlackUserCache } from "../../backends/connectors/slack-users";
+import { connectorResultToText } from "../../backends/connectors/slack-result";
 import { writeConnectorConfig } from "../../backends/connectors/credentials";
 
 let rootDir: string;
@@ -206,5 +207,89 @@ describe("slack actions (FR-SLACK-01..03)", () => {
     );
     const cache = readSlackUserCache(rootDir);
     expect(cache.U2?.displayName).toBe("Bob Builder");
+  });
+});
+
+describe("find_user (FR-SLACK-05)", () => {
+  function seedUsers(users: Record<string, string>) {
+    const dir = join(rootDir, ".buddy/connections/slack");
+    mkdirSync(dir, { recursive: true });
+    const cache = Object.fromEntries(
+      Object.entries(users).map(([id, displayName]) => [
+        id,
+        { displayName, synced_at: new Date().toISOString() },
+      ]),
+    );
+    writeFileSync(join(dir, "users.json"), JSON.stringify(cache), "utf8");
+  }
+
+  it("answers from the local directory without calling Slack", async () => {
+    seedUsers({ U07OZAN: "Ozan Yilmaz" });
+    const calls: string[] = [];
+    const fetchImpl = async (url: string) => {
+      calls.push(url);
+      return new Response(JSON.stringify({ ok: false, error: "not_expected" }), { status: 200 });
+    };
+    const result = await executeSlackAction(rootDir, "find_user", { name: "ozan" }, { fetchImpl });
+    expect(result.data).toBe("Ozan Yilmaz (U07OZAN)");
+    expect(calls).toEqual([]);
+  });
+
+  it("falls back to users.list, matching handle too, and remembers the match", async () => {
+    const fetchImpl = mockFetch({
+      "users.list": () => ({
+        members: [
+          { id: "U09ANA", name: "agarcia", real_name: "Ana García", profile: { display_name: "" } },
+          { id: "U01BOB", name: "bob", profile: { display_name: "Bob" } },
+        ],
+      }),
+    });
+    const result = await executeSlackAction(rootDir, "find_user", { name: "agarcia" }, { fetchImpl });
+    expect(result.data).toBe("Ana García (U09ANA)");
+    expect(readSlackUserCache(rootDir).U09ANA?.displayName).toBe("Ana García");
+  });
+
+  it("says when no user matches", async () => {
+    const fetchImpl = mockFetch({ "users.list": () => ({ members: [] }) });
+    const result = await executeSlackAction(rootDir, "find_user", { name: "nobody" }, { fetchImpl });
+    expect(result.data).toBe('No Slack user matches "nobody".');
+  });
+
+  it("on a restricted workspace, asks for a message link from that person", async () => {
+    const fetchImpl = mockFetch({
+      "users.list": () => ({ ok: false, error: "enterprise_is_restricted" }),
+    });
+    const result = await executeSlackAction(rootDir, "find_user", { name: "ana" }, { fetchImpl });
+    expect(connectorResultToText(result)).toContain(
+      "ask the user for a link to a message or DM from that person",
+    );
+  });
+
+  it("help points to find_user before channels for finding a person", () => {
+    expect(slackHelpText()).toContain("| find_user | name (required) |");
+    expect(slackHelpText()).toContain("To find a person, use find_user before channels");
+  });
+});
+
+describe("channels refresh (FR-SLACK-05)", () => {
+  it("merges into the entity store, keeping learned DM peers and unlisted entries", async () => {
+    const at = new Date().toISOString();
+    writeEntityStore(rootDir, "slack", {
+      D123: { synced_at: at, stale_after: "1h", id: "D123", is_im: true, user: "U07OZAN", dm_peer_name: "Ozan Yilmaz" },
+      D999: { synced_at: at, stale_after: "1h", id: "D999", is_im: true, user: "U09ANA", dm_peer_name: "Ana García" },
+    });
+    const fetchImpl = mockFetch({
+      "conversations.list": () => ({
+        channels: [
+          { id: "C001", name: "general", num_members: 5 },
+          { id: "D123", is_im: true, user: "U07OZAN" },
+        ],
+      }),
+    });
+    await executeSlackAction(rootDir, "channels", { force: true }, { fetchImpl });
+    const store = readEntityStore(rootDir, "slack");
+    expect(store.C001?.name).toBe("general");
+    expect(store.D123?.dm_peer_name).toBe("Ozan Yilmaz");
+    expect(store.D999?.dm_peer_name).toBe("Ana García");
   });
 });

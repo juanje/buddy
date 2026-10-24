@@ -112,3 +112,49 @@ Feature: Slack read-only connector
     When the slack connector runs action "thread" for url "https://team.slack.com/archives/D123/p1712345678901234"
     Then the slack channel directory contains "D123"
     And the slack entity "D123" has dm_peer_name "Avihai Efrat"
+
+  @FR-SLACK-05
+  Scenario: find_user resolves a name from the local directory without calling Slack
+    Given a configured slack integration
+    And the slack user directory already knows "U07OZAN" as "Ozan Yilmaz"
+    When the slack connector looks up the user "ozan"
+    Then the slack result includes "Ozan Yilmaz (U07OZAN)"
+    And no slack user API was called
+
+  @FR-SLACK-05
+  Scenario: find_user finds a DM peer learned in the channel directory
+    Given a configured slack integration
+    And the slack channel directory has DM "D123" with "Ozan Yilmaz" as user "U07OZAN"
+    When the slack connector looks up the user "Ozan Yilmaz"
+    Then the slack result includes "Ozan Yilmaz (U07OZAN)"
+    And no slack user API was called
+
+  @FR-SLACK-05
+  Scenario: find_user falls back to the Slack user list and remembers the match
+    Given a configured slack integration
+    And the slack user list includes "U09ANA" named "Ana García"
+    When the slack connector looks up the user "ana"
+    Then the slack result includes "Ana García (U09ANA)"
+    And the slack user directory contains "Ana García"
+
+  @FR-SLACK-05
+  Scenario: find_user on a restricted workspace asks for a link from that person
+    Given a configured slack integration
+    And the slack user list returns enterprise_is_restricted error
+    When the slack connector looks up the user "ana"
+    Then the slack result includes "link"
+
+  @FR-SLACK-05
+  Scenario: help points to find_user for finding a person
+    Given a configured slack integration
+    When the slack connector runs action "help"
+    Then the slack result includes "find_user"
+
+  @FR-SLACK-05
+  Scenario: Refreshing channels keeps DM peers learned from use
+    Given a configured slack integration
+    And the slack channel directory has DM "D123" with "Ozan Yilmaz" as user "U07OZAN"
+    And slack conversations list returns channel "general" with id "C001"
+    When the slack connector runs action "channels"
+    Then the slack channel directory contains "general"
+    And the slack entity "D123" has dm_peer_name "Ozan Yilmaz"

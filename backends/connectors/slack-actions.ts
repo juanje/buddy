@@ -19,6 +19,7 @@ import {
   isNetworkError,
   SlackClientError,
   type SlackClient,
+  type SlackChannel,
   type SlackFetch,
   type SlackMessage,
 } from "./slack-client";
@@ -28,7 +29,14 @@ import {
   parseSlackUrl,
   threadFileId,
 } from "./slack-url-parser";
-import { SLACK_DOMAIN, SlackUserResolver } from "./slack-users";
+import {
+  findLocalSlackUsers,
+  readSlackUserCache,
+  writeSlackUserCache,
+  SLACK_DOMAIN,
+  SlackUserResolver,
+  type SlackUserMatch,
+} from "./slack-users";
 
 
 const FRESHNESS = {
@@ -44,6 +52,7 @@ export interface SlackActionParams {
   date?: string;
   days?: number;
   limit?: number;
+  name?: string;
 }
 
 export interface ExecuteSlackActionOptions {
@@ -235,6 +244,10 @@ export function slackHelpText(): string {
 | thread | url (required), force? | Fetch one thread to a cache markdown file |
 | channel_history | channel (required), date?, days?, limit?, force? | Fetch channel/DM window to cache file |
 | channels | force? | List channels the user belongs to |
+| find_user | name (required) | Find a person's Slack id by name: local directory first, then the user list |
+
+To find a person, use find_user before channels: it answers from people already seen in
+threads and DMs without calling Slack.
 
 Set \`params.force: true\` to bypass cache freshness and re-fetch from Slack.`;
 }
@@ -464,12 +477,7 @@ async function channelsAction(ctx: SlackActionContext): Promise<ConnectorResult>
   }
 
   try {
-    const allChannels: Array<{
-      id: string;
-      name?: string;
-      is_private?: boolean;
-      num_members?: number;
-    }> = [];
+    const allChannels: SlackChannel[] = [];
     let cursor: string | undefined;
     while (true) {
       const page = await client.conversationsList({ limit: 200, cursor });
@@ -479,7 +487,10 @@ async function channelsAction(ctx: SlackActionContext): Promise<ConnectorResult>
     }
 
     const syncedAt = new Date().toISOString();
+    // Merge, never replace: DM peers learned from use (FR-SLACK-04) and channels
+    // the list did not return stay in the directory (FR-SLACK-05).
     const nextStore: EntityStore = {
+      ...entityStore,
       __channels_list__: {
         synced_at: syncedAt,
         stale_after: FRESHNESS.channels,
@@ -489,7 +500,11 @@ async function channelsAction(ctx: SlackActionContext): Promise<ConnectorResult>
       },
     };
     for (const ch of allChannels) {
-      nextStore[ch.id] = channelEntityKey(ch);
+      const learnedPeer = entityStore[ch.id]?.dm_peer_name;
+      nextStore[ch.id] = channelEntityKey({
+        ...ch,
+        dm_peer_name: typeof learnedPeer === "string" ? learnedPeer : undefined,
+      });
     }
     writeEntityStore(rootDir, SLACK_DOMAIN, nextStore);
 
@@ -515,12 +530,81 @@ async function channelsAction(ctx: SlackActionContext): Promise<ConnectorResult>
   }
 }
 
-const SLACK_ACTION_HANDLERS: Record<"thread" | "channel_history" | "channels", SlackActionHandler> =
-  {
-    thread: threadAction,
-    channel_history: channelHistoryAction,
-    channels: channelsAction,
-  };
+function formatUserMatches(matches: SlackUserMatch[]): string {
+  return matches.map((match) => `${match.displayName} (${match.id})`).join("\n");
+}
+
+async function searchSlackUserList(client: SlackClient, name: string): Promise<SlackUserMatch[]> {
+  const needle = name.toLowerCase();
+  const found: SlackUserMatch[] = [];
+  let cursor: string | undefined;
+  do {
+    const page = await client.usersList({ limit: 200, cursor });
+    for (const member of page.members) {
+      const names = [member.displayName, member.realName, member.handle];
+      if (names.some((n) => n?.toLowerCase().includes(needle))) {
+        found.push({ id: member.id, displayName: member.displayName });
+      }
+    }
+    cursor = page.nextCursor;
+  } while (cursor);
+  return found;
+}
+
+/** Find a user by name, local directory first (FR-SLACK-05). */
+async function findUserAction(ctx: SlackActionContext): Promise<ConnectorResult> {
+  const { rootDir, params } = ctx;
+  const name = params.name?.trim();
+  if (!name) {
+    return connectorResultFromError({
+      error: "find_user requires params.name",
+      code: 0,
+      recoverable: false,
+      suggestion: "Pass the person's name or part of it.",
+    });
+  }
+  const users = readSlackUserCache(rootDir);
+  const local = findLocalSlackUsers(users, readEntityStore(rootDir, SLACK_DOMAIN), name);
+  if (local.length > 0) return { data: formatUserMatches(local), stale: false };
+
+  let found: SlackUserMatch[];
+  try {
+    found = await searchSlackUserList(ctx.client, name);
+  } catch (err) {
+    if (err instanceof SlackClientError && err.connectorError.suggestion === "slackErrorEnterprise") {
+      return connectorResultFromError({
+        ...err.connectorError,
+        suggestion:
+          `No one named "${name}" is in the local directory, and this workspace does not allow ` +
+          "listing users. Do not look for them through channels or other tools: ask the user " +
+          "for a link to a message or DM from that person, and fetch it with thread or " +
+          "channel_history — that records their name and id for next time.",
+      });
+    }
+    if (err instanceof SlackClientError) return connectorResultFromError(err.connectorError);
+    throw err;
+  }
+
+  const syncedAt = new Date().toISOString();
+  for (const match of found) {
+    users[match.id] = { displayName: match.displayName, synced_at: syncedAt };
+  }
+  if (found.length === 0) {
+    return { data: `No Slack user matches "${name}".`, stale: false, synced_at: syncedAt };
+  }
+  writeSlackUserCache(rootDir, users);
+  return { data: formatUserMatches(found), stale: false, synced_at: syncedAt };
+}
+
+const SLACK_ACTION_HANDLERS: Record<
+  "thread" | "channel_history" | "channels" | "find_user",
+  SlackActionHandler
+> = {
+  thread: threadAction,
+  channel_history: channelHistoryAction,
+  channels: channelsAction,
+  find_user: findUserAction,
+};
 
 export async function executeSlackAction(
   rootDir: string,

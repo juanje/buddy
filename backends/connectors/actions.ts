@@ -22,6 +22,7 @@ const CONNECTOR_ACTIONS: Record<string, ActionTable> = {
   slack: {
     help: "read",
     channels: "read",
+    find_user: "read",
     channel_history: "read",
     thread: "read",
     post_message: "write",

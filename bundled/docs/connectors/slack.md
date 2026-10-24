@@ -42,7 +42,9 @@ The first time you ask about a conversation with someone, Buddy may not know whi
 
 Once a channel is used successfully, Buddy remembers it. For DMs, it also records the other person's name. So the second time you ask *"What did I discuss with Avi?"*, Buddy already knows which DM to fetch.
 
-This directory builds up naturally from use. You don't need to configure anything — just use it, and the most frequent channels and contacts accumulate automatically.
+This directory builds up naturally from use. You don't need to configure anything — just use it, and the most frequent channels and contacts accumulate automatically. Refreshing the channel list adds to it; it never forgets the people it already learned.
+
+**Finding a person.** When you mention someone by name, Buddy looks them up in this directory first — everyone it has seen in threads and DMs — without calling Slack. Only when nobody matches does it search your workspace's user list, and it remembers what it finds. If your workspace blocks listing users, Buddy asks you for a link to a message or DM from that person instead.
 
 ## How caching works
 

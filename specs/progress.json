@@ -2892,6 +2892,44 @@
           "unit_tests": 2
         }
       ]
+    },
+    {
+      "id": "FR-SLACK-05",
+      "title": "Find a Slack user by name, local directory first; channels refresh keeps learned DM peers",
+      "status": "done",
+      "cycle_step": "done",
+      "scenarios": [
+        {
+          "name": "find_user resolves a name from the local directory without calling Slack",
+          "bdd": "pass",
+          "unit_tests": 2
+        },
+        {
+          "name": "find_user finds a DM peer learned in the channel directory",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "find_user falls back to the Slack user list and remembers the match",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "find_user on a restricted workspace asks for a link from that person",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "help points to find_user for finding a person",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "Refreshing channels keeps DM peers learned from use",
+          "bdd": "pass",
+          "unit_tests": 1
+        }
+      ]
     }
   ]
 }

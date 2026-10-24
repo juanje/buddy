@@ -3,7 +3,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { assertCacheContainment, connectionsDir } from "./cache";
+import { assertCacheContainment, connectionsDir, type EntityStore } from "./cache";
 import type { SlackClient } from "./slack-client";
 
 export const SLACK_DOMAIN = "slack";
@@ -29,11 +29,12 @@ export function readSlackUserCache(rootDir: string): SlackUserCache {
   }
 }
 
-function writeSlackUserCache(rootDir: string, cache: SlackUserCache): void {
+/** Writes the cache, keeping only the most recent SLACK_USER_CACHE_MAX entries. */
+export function writeSlackUserCache(rootDir: string, cache: SlackUserCache): void {
   const path = userCachePath(rootDir);
   assertCacheContainment(path, rootDir);
   mkdirSync(join(path, ".."), { recursive: true });
-  writeFileSync(path, JSON.stringify(cache, null, 2), "utf8");
+  writeFileSync(path, JSON.stringify(pruneSlackUserCache(cache), null, 2), "utf8");
 }
 
 function pruneSlackUserCache(cache: SlackUserCache): SlackUserCache {
@@ -42,6 +43,38 @@ function pruneSlackUserCache(cache: SlackUserCache): SlackUserCache {
   entries.sort((a, b) => Date.parse(a[1].synced_at) - Date.parse(b[1].synced_at));
   const kept = entries.slice(entries.length - SLACK_USER_CACHE_MAX);
   return Object.fromEntries(kept);
+}
+
+export interface SlackUserMatch {
+  id: string;
+  displayName: string;
+}
+
+/**
+ * Find users by name in what the connector has already learned (FR-SLACK-05):
+ * `users.json` names, then DM peers in the entity store. Case-insensitive; an
+ * exact name wins over partial matches.
+ */
+export function findLocalSlackUsers(
+  users: SlackUserCache,
+  entities: EntityStore,
+  name: string,
+): SlackUserMatch[] {
+  const needle = name.trim().toLowerCase();
+  const found = new Map<string, string>();
+  for (const [id, entry] of Object.entries(users)) {
+    if (entry.displayName.toLowerCase().includes(needle)) found.set(id, entry.displayName);
+  }
+  for (const entity of Object.values(entities)) {
+    const peer = entity.dm_peer_name;
+    const id = entity.user;
+    if (typeof peer === "string" && typeof id === "string" && peer.toLowerCase().includes(needle)) {
+      if (!found.has(id)) found.set(id, peer);
+    }
+  }
+  const matches = [...found].map(([id, displayName]) => ({ id, displayName }));
+  const exact = matches.filter((match) => match.displayName.toLowerCase() === needle);
+  return exact.length > 0 ? exact : matches;
 }
 
 const USER_MENTION_RE = /<@(U[A-Z0-9]+)>/g;

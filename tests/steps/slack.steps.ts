@@ -2,13 +2,19 @@
 
 import { Given, When, Then } from "@cucumber/cucumber";
 import assert from "node:assert/strict";
-import { existsSync, mkdirSync, mkdtempSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { executeSlackAction } from "../../backends/connectors/slack-actions";
 import { connectorResultToText } from "../../backends/connectors/slack-result";
-import { readEntityStore, readThreadFile, writeThreadFile } from "../../backends/connectors/cache";
+import {
+  connectionsDir,
+  readEntityStore,
+  readThreadFile,
+  writeEntityStore,
+  writeThreadFile,
+} from "../../backends/connectors/cache";
 import {
   connectorConfigPath,
   writeConnectorConfig,
@@ -34,6 +40,9 @@ interface SlackWorld extends BuddyWorld {
   userDirectory?: Record<string, string>;
   userInfoCalled?: boolean;
   conversationsListError?: string;
+  usersList?: Array<{ id: string; name: string }>;
+  usersListError?: string;
+  userApiCalled?: boolean;
   channelInfoOverrides?: Record<string, { id: string; name?: string; is_im?: boolean; user?: string }>;
 }
 
@@ -121,8 +130,28 @@ function defaultFetch(this: SlackWorld) {
         { status: 200, headers: { "content-type": "application/json" } },
       );
     }
+    if (url.includes("users.list")) {
+      this.userApiCalled = true;
+      if (this.usersListError) {
+        return new Response(JSON.stringify({ ok: false, error: this.usersListError }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        });
+      }
+      const members = (this.usersList ?? []).map((u) => ({
+        id: u.id,
+        name: u.name.toLowerCase().replace(/\s+/g, "."),
+        real_name: u.name,
+        profile: { display_name: u.name, real_name: u.name },
+      }));
+      return new Response(JSON.stringify({ ok: true, members }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    }
     if (url.includes("users.info")) {
       this.userInfoCalled = true;
+      this.userApiCalled = true;
       const userMatch = /user=([^&]+)/.exec(body);
       const userId = userMatch ? decodeURIComponent(userMatch[1]) : "U111";
       const name = this.userDirectory?.[userId] ?? userId;
@@ -362,4 +391,62 @@ Then(
 Then("saving slack config persists to credential file", function (this: SlackWorld) {
   const { configDir } = setupHome.call(this);
   assert.ok(existsSync(connectorConfigPath("slack", configDir)));
+});
+
+Given(
+  "the slack user directory already knows {string} as {string}",
+  function (this: SlackWorld, userId: string, name: string) {
+    const dir = connectionsDir(ensureRoot.call(this), "slack");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(
+      join(dir, "users.json"),
+      JSON.stringify({ [userId]: { displayName: name, synced_at: new Date().toISOString() } }),
+      "utf8",
+    );
+  },
+);
+
+Given(
+  "the slack channel directory has DM {string} with {string} as user {string}",
+  function (this: SlackWorld, channelId: string, name: string, userId: string) {
+    const root = ensureRoot.call(this);
+    writeEntityStore(root, "slack", {
+      [channelId]: {
+        synced_at: new Date().toISOString(),
+        stale_after: "1h",
+        source: "slack",
+        id: channelId,
+        name: channelId,
+        is_im: true,
+        user: userId,
+        dm_peer_name: name,
+      },
+    });
+  },
+);
+
+Given(
+  "the slack user list includes {string} named {string}",
+  function (this: SlackWorld, userId: string, name: string) {
+    this.usersList = [...(this.usersList ?? []), { id: userId, name }];
+  },
+);
+
+Given("the slack user list returns enterprise_is_restricted error", function (this: SlackWorld) {
+  this.usersListError = "enterprise_is_restricted";
+});
+
+When("the slack connector looks up the user {string}", async function (this: SlackWorld, name: string) {
+  const root = ensureRoot.call(this);
+  this.slackResult = await executeSlackAction(
+    root,
+    "find_user",
+    { name },
+    { fetchImpl: this.fetchImpl },
+  );
+  this.slackResultText = connectorResultToText(this.slackResult);
+});
+
+Then("no slack user API was called", function (this: SlackWorld) {
+  assert.equal(this.userApiCalled ?? false, false, "expected the local directory to answer");
 });

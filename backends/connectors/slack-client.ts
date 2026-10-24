@@ -63,6 +63,10 @@ export interface SlackClient {
     cursor?: string;
   }): Promise<{ channels: SlackChannel[]; nextCursor?: string }>;
   usersInfo(user: string): Promise<{ id: string; displayName: string }>;
+  usersList(options?: { limit?: number; cursor?: string }): Promise<{
+    members: Array<{ id: string; displayName: string; realName?: string; handle?: string }>;
+    nextCursor?: string;
+  }>;
 }
 
 const SLACK_API_BASE = "https://slack.com/api";
@@ -350,6 +354,35 @@ export function createSlackClient(config: ConnectorConfig, options?: SlackClient
         u?.real_name ||
         user;
       return { id: u?.id ?? user, displayName };
+    },
+    async usersList(opts) {
+      const data = await apiCall<{
+        ok: boolean;
+        members?: Array<{
+          id: string;
+          name?: string;
+          real_name?: string;
+          deleted?: boolean;
+          profile?: { display_name?: string; real_name?: string };
+        }>;
+        response_metadata?: { next_cursor?: string };
+        error?: string;
+      }>("users.list", { limit: opts?.limit ?? 200, cursor: opts?.cursor });
+      if (pageDelayMs > 0 && data.response_metadata?.next_cursor) {
+        await sleep(pageDelayMs);
+      }
+      const members = (data.members ?? [])
+        .filter((m) => !m.deleted)
+        .map((m) => {
+          const realName = m.profile?.real_name || m.real_name || undefined;
+          return {
+            id: m.id,
+            displayName: m.profile?.display_name || realName || m.name || m.id,
+            realName,
+            handle: m.name,
+          };
+        });
+      return { members, nextCursor: data.response_metadata?.next_cursor || undefined };
     },
   };
 }

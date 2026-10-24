@@ -3556,6 +3556,7 @@ Further context on local-model evaluation methodology and findings:
 | FR-SLACK-02 | Read actions (thread, channel_history, channels) with fetch-to-file | 4 ✓ |
 | FR-SLACK-03 | User ID resolution and channel directory | 4 ✓ |
 | FR-SLACK-04 | Enterprise error handling and channel auto-register from use | 4 ✓ |
+| FR-SLACK-05 | Find a user by name, local directory first; `channels` refresh keeps learned DM peers | 4 ✓ |
 
 **FR-SLACK-01 — Dispatcher, auth, and Settings**
 
@@ -3593,6 +3594,35 @@ Further context on local-model evaluation methodology and findings:
 - **When** the channel is not yet in the entity store
 - **Then** the channel is auto-registered (best-effort, no failure propagation)
 - **And** for DM channels, the peer user's display name is resolved and stored as `dm_peer_name`
+
+**FR-SLACK-05 — Find a user by name; keep what the directory learned**
+
+FR-SLACK-03 and FR-SLACK-04 learn names as a side effect (id → name while
+rendering, `dm_peer_name` after a DM fetch), but nothing looked a person up
+**by name**. To find someone's Slack id the agent enumerated Slack through
+`channels`, several times, and one instance grew its own `AGENTS.md` rule to
+read `users.json` and `entities.json` first. That is a per-instance patch for
+a connector gap. Separately, a stale `channels` refresh **replaced** the
+entity store, dropping the DM entries that only existed as `dm_peer_name`.
+
+- **Given** a configured Slack integration
+- **When** the agent calls `slack({ action: "find_user", params: { name } })`
+- **Then** the local directory is searched first, case-insensitively: names in
+  `users.json` and `dm_peer_name` (with its `user` id) in the entity store; an
+  exact name match wins over partial ones
+- **And** when the local directory has a match, no Slack API is called
+- **And** with no local match, `users.list` is paged and matched on display
+  name, real name and handle; matches are written to `users.json`
+- **And** the result lists each match as `Name (Uxxxx)`, or says no user matched
+- **And** when `users.list` is restricted (Enterprise Grid), the error tells the
+  agent to ask the user for a message or DM link from that person, which
+  `thread` / `channel_history` will learn from
+- **And** `help` lists `find_user` and says to use it before `channels` to find
+  a person
+- **Given** a `channels` refresh from the API
+- **Then** it merges into the entity store: API entries replace their own ids
+  but keep a `dm_peer_name` already learned, and entries the API did not
+  return are kept
 
 ### 3.27 Topic Transition (FR-TOPIC)
 
