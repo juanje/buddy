@@ -4205,10 +4205,16 @@ and inline content.
   `area`, `project`, `due`, `created`, `state`, `stale_days`. The `text` field
   omits the due date ISO token (the parser keeps it inside the stored line for
   round-trip writes). `tasks.md` has no state field; `state` is derived, first
-  match wins: `parked` (area `someday`), `scheduled` (due date after today),
-  `next` (`>>` marker), `open`. This is the precedence `isActiveNextItem`
-  already applies. Lateness is never a `state` value: when `due` is before
-  today, the row includes numeric `overdue_days` (today minus `due`, in days).
+  match wins: `parked` (area `someday`), `next` (`>>` marker), `open`. This is
+  the precedence `isActiveNextItem` applies. Lateness is never a `state` value:
+  when `due` is before today, the row includes numeric `overdue_days` (today
+  minus `due`, in days).
+- **Amended 2026-10-24.** `state` had a `scheduled` value (due date after
+  today) that won over `next`, so a Next task with a future deadline was not
+  `next`, and `state = next` could not list every `>>` marker. A due date is a
+  deadline, not a start (FR-TASKM-08): `scheduled` is removed, and dates are
+  filtered with `due` and `overdue_days`. A saved filter on `state = scheduled`
+  matches no rows.
 - Done items are excluded: daily cleanup removes them from the file
   (FR-TASKM-44), so a live read cannot report them consistently. History of
   completed tasks is FR-DASH-17.

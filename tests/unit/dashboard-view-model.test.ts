@@ -58,7 +58,6 @@ describe("buildDashboardViewModel kanban", () => {
             groups: [
               { key: "open", rows: [{ text: "One" }] },
               { key: "next", rows: [{ text: "Two" }] },
-              { key: "scheduled", rows: [] },
               { key: "parked", rows: [] },
             ],
           },
@@ -75,7 +74,6 @@ describe("buildDashboardViewModel kanban", () => {
         expect(kanban.columns.map((c) => c.label)).toEqual([
           "Siguiente",
           "Abierta",
-          "Programada",
           "Aparcada",
         ]);
       }

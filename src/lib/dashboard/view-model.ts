@@ -173,19 +173,17 @@ export type DashboardViewModel = {
   rows: DashboardRow[];
 };
 
-const TASK_STATE_ORDER = ["next", "open", "scheduled", "parked"] as const;
+const TASK_STATE_ORDER = ["next", "open", "parked"] as const;
 
 const TASK_STATE_LABELS: Record<AppLocale, Record<string, string>> = {
   en: {
     next: "Next",
     open: "Open",
-    scheduled: "Scheduled",
     parked: "Parked",
   },
   es: {
     next: "Siguiente",
     open: "Abierta",
-    scheduled: "Programada",
     parked: "Aparcada",
   },
 };

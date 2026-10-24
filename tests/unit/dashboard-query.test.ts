@@ -124,8 +124,7 @@ describe("applyWidgetQuery", () => {
     const many = [
       { text: "1", state: "open" },
       { text: "2", state: "next" },
-      { text: "3", state: "scheduled" },
-      { text: "4", state: "parked" },
+      { text: "3", state: "parked" },
     ];
     const out = applyWidgetQuery(
       many,
@@ -136,7 +135,7 @@ describe("applyWidgetQuery", () => {
     );
     expect(out.ok).toBe(true);
     if (out.ok && out.result.kind === "group_values") {
-      expect(out.result.groups.map((g) => g.key)).toEqual(["next", "open", "scheduled", "parked"]);
+      expect(out.result.groups.map((g) => g.key)).toEqual(["next", "open", "parked"]);
     }
   });
 });

@@ -143,7 +143,24 @@ Feature: Dashboard resolution
       ```
       """
     When the dashboard is resolved for today "2026-10-07"
-    Then segment 1 widget rows include states "next", "open", "scheduled", "parked"
+    Then segment 1 widget rows have exactly the states "next", "open", "parked"
+    And segment 1 widget row "Later" has state "open"
+
+  @FR-DASH-05
+  Scenario: A Next task with a future deadline has state next
+    Given an initialized buddy git repository
+    And tasks.md with a next action due after today for dashboard resolution
+    And a dashboard file with body:
+      """
+      ```dashboard
+      - view: table
+        source: tasks
+        where: state = next
+        columns: [text, state]
+      ```
+      """
+    When the dashboard is resolved for today "2026-10-07"
+    Then segment 1 widget row "Send the offer" has state "next"
 
   @FR-DASH-05
   Scenario: Tasks source includes stale_days for aged open items
@@ -463,7 +480,7 @@ Feature: Dashboard resolution
       ```
       """
     When the dashboard is resolved for today "2026-10-07"
-    Then segment 1 widget group value keys are "next", "open", "scheduled", "parked"
+    Then segment 1 widget group value keys are "next", "open", "parked"
 
   @FR-DASH-04
   Scenario: Sort and limit apply before grouping

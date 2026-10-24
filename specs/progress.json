@@ -1801,7 +1801,7 @@
         {
           "name": "Tasks source exposes derived state",
           "bdd": "pass",
-          "unit_tests": 1
+          "unit_tests": 3
         },
         {
           "name": "Tasks source includes stale_days for aged open items",
@@ -1837,9 +1837,14 @@
           "name": "Tasks source omits overdue_days when not overdue",
           "bdd": "pass",
           "unit_tests": 1
+        },
+        {
+          "name": "A Next task with a future deadline has state next",
+          "bdd": "pass",
+          "unit_tests": 1
         }
       ],
-      "note": "reopened: overdue_days derived field"
+      "note": "reopened: due date is a deadline (FR-TASKM-08): drop the scheduled state so state = next shows every >> marker"
     },
     {
       "id": "FR-DASH-04",

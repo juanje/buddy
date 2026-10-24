@@ -76,6 +76,24 @@ Given("tasks.md with mixed states for dashboard resolution", function (this: Das
   writeTasksFile(root.call(this), items, "2026-01-01");
 });
 
+Given(
+  "tasks.md with a next action due after today for dashboard resolution",
+  function (this: DashboardWorld) {
+    const items: TaskItem[] = [
+      {
+        id: 1,
+        text: "Send the offer",
+        done: false,
+        next: true,
+        area: "work",
+        project: "sales",
+        dueDate: "2026-10-14",
+      },
+    ];
+    writeTasksFile(root.call(this), items, "2026-01-01");
+  },
+);
+
 Given("tasks.md with one overdue and other open tasks", function (this: DashboardWorld) {
   const items: TaskItem[] = [
     {
@@ -502,19 +520,19 @@ function widgetRows(this: DashboardWorld, index: number): Record<string, unknown
 }
 
 Then(
-  "segment {int} widget rows include states {string}, {string}, {string}, {string}",
-  function (
-    this: DashboardWorld,
-    index: number,
-    a: string,
-    b: string,
-    c: string,
-    d: string,
-  ) {
+  "segment {int} widget rows have exactly the states {string}, {string}, {string}",
+  function (this: DashboardWorld, index: number, a: string, b: string, c: string) {
     const states = new Set(widgetRows.call(this, index).map((r) => String(r.state)));
-    for (const expected of [a, b, c, d]) {
-      assert.ok(states.has(expected), `missing state ${expected}, got ${[...states].join(",")}`);
-    }
+    assert.deepEqual([...states].sort(), [a, b, c].sort());
+  },
+);
+
+Then(
+  "segment {int} widget row {string} has state {string}",
+  function (this: DashboardWorld, index: number, text: string, state: string) {
+    const row = widgetRows.call(this, index).find((r) => r.text === text);
+    assert.ok(row, `expected a row with text "${text}"`);
+    assert.equal(row.state, state);
   },
 );
 
@@ -539,15 +557,15 @@ Then("segment {int} widget row count is {int}", function (this: DashboardWorld, 
 });
 
 Then(
-  "segment {int} widget group value keys are {string}, {string}, {string}, {string}",
-  function (this: DashboardWorld, index: number, a: string, b: string, c: string, d: string) {
+  "segment {int} widget group value keys are {string}, {string}, {string}",
+  function (this: DashboardWorld, index: number, a: string, b: string, c: string) {
     const seg = segments.call(this)[index - 1];
     assert.equal(seg.kind, "widget");
     if (seg.kind === "widget") {
       assert.equal(seg.result.kind, "group_values");
       if (seg.result.kind === "group_values") {
         const keys = seg.result.groups.map((g) => g.key ?? "null");
-        assert.deepEqual(keys, [a, b, c, d]);
+        assert.deepEqual(keys, [a, b, c]);
       }
     }
   },

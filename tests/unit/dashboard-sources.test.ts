@@ -20,22 +20,16 @@ import { writeTasksFile } from "../../backends/tasks/task-file";
 import { taskState } from "../../backends/tasks/task-file";
 
 describe("taskState", () => {
-  it("derives parked scheduled next and open", () => {
-    expect(taskState({ id: 1, text: "a", done: false, next: false, area: "someday" }, "2026-10-07")).toBe(
-      "parked",
-    );
+  it("derives parked, next and open, ignoring a future deadline (FR-DASH-05, FR-TASKM-08)", () => {
+    expect(taskState({ id: 1, text: "a", done: false, next: false, area: "someday" })).toBe("parked");
     expect(
-      taskState(
-        { id: 2, text: "b", done: false, next: true, area: "work", dueDate: "2026-12-01" },
-        "2026-10-07",
-      ),
-    ).toBe("scheduled");
-    expect(taskState({ id: 3, text: "c", done: false, next: true, area: "work" }, "2026-10-07")).toBe(
-      "next",
-    );
-    expect(taskState({ id: 4, text: "d", done: false, next: false, area: "work" }, "2026-10-07")).toBe(
-      "open",
-    );
+      taskState({ id: 2, text: "b", done: false, next: true, area: "work", dueDate: "2099-12-01" }),
+    ).toBe("next");
+    expect(
+      taskState({ id: 3, text: "c", done: false, next: false, area: "work", dueDate: "2099-12-01" }),
+    ).toBe("open");
+    expect(taskState({ id: 4, text: "d", done: false, next: true, area: "work" })).toBe("next");
+    expect(taskState({ id: 5, text: "e", done: false, next: false, area: "work" })).toBe("open");
   });
 });
 

@@ -24,7 +24,7 @@ export const TASKS_SOURCE: SourceDefinition = {
     created: { kind: "date" },
     state: {
       kind: "enum",
-      values: ["next", "open", "scheduled", "parked"],
+      values: ["next", "open", "parked"],
     },
     stale_days: { kind: "number" },
     overdue_days: { kind: "number" },

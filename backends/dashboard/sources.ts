@@ -79,7 +79,7 @@ export function loadTasksRows(rootDir: string, today: string): Record<string, un
       project: item.project ?? "",
       due: item.dueDate ?? "",
       created: item.created ?? "",
-      state: taskState(item, today),
+      state: taskState(item),
     };
     if (item.staleDays !== undefined) {
       row.stale_days = item.staleDays;
