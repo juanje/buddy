@@ -20,17 +20,6 @@ export function taskResultToText(result: TaskActionResult): string {
       parts.push(`Next action cleared for ${scopeLabel}. No open tasks remain in ${scopeLabel}.`);
     }
   }
-  if (result.noNextForScope) {
-    if (result.noNextForScope.startsWith("project:")) {
-      const slug = result.noNextForScope.slice("project:".length);
-      parts.push(`No next action set for #${slug} — consider set_next.`);
-    } else {
-      const area = result.noNextForScope.replace(/^area:/, "") || "general";
-      parts.push(`No next action set for @${area} (loose tasks) — consider set_next.`);
-    }
-  } else if (result.noNextForArea) {
-    parts.push(`No next action set for @${result.noNextForArea || "general"} — consider set_next.`);
-  }
   if (result.list) {
     if (result.list.untaggedClusters && result.list.untaggedClusters.length > 0) {
       const summary = result.list.untaggedClusters

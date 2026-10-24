@@ -1268,8 +1268,24 @@
           "name": "add does not auto-mark when project scope already has next",
           "bdd": "pass",
           "unit_tests": 1
+        },
+        {
+          "name": "add says when it made the new task the next action",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "add names the loose-task scope when it auto-marks in an area",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "agents-base prompt describes the auto-mark by scope",
+          "bdd": "pass",
+          "unit_tests": 1
         }
-      ]
+      ],
+      "note": "reopened: add reply hides the auto-Next; noNextForScope is unreachable; prompt says area instead of scope"
     },
     {
       "id": "FR-TASKM-38",

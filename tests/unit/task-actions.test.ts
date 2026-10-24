@@ -65,6 +65,18 @@ describe("executeTaskAction", () => {
     expect(listed.list!.items.find((item) => item.text === "New step")?.next).toBe(true);
   });
 
+  it("add reply names the project scope it made the new task next for", () => {
+    const result = assertSuccess(
+      executeTaskAction(dir, "add", { text: "New step", area: "work", project: "alpha" }),
+    );
+    expect(taskResultToText(result)).toBe("Task added as the next action for #alpha.");
+  });
+
+  it("add reply names the loose tasks of the area when there is no project", () => {
+    const result = assertSuccess(executeTaskAction(dir, "add", { text: "Book checkup", area: "health" }));
+    expect(taskResultToText(result)).toBe("Task added as the next action for @health (loose tasks).");
+  });
+
   it("add does not auto-mark when project scope already has next", () => {
     writeTasksFile(dir, [
       { id: 1, text: "Existing", done: false, next: true, area: "work", project: "alpha" },

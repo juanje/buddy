@@ -3966,8 +3966,20 @@ to every count that is supposed to read it.
 - `add` auto-marks `>>` when the new item's scope has no existing `>>`.
   Scope = same project if project-tagged, or loose-in-area if untagged.
 - Multiple `>>` items per area is valid when they belong to different scopes.
-- `noNextForArea` hint on `add` becomes `noNextForScope` -- fires when
-  the item's scope has no `>>` and was not auto-marked.
+- When `add` auto-marks, its reply says so and names the scope: "Task added
+  as the next action for #project." or "... for @area (loose tasks)."
+- `add` returns no "no next action" hint: after `add` the scope always has a
+  `>>`, either one that was already there or the auto-marked new item.
+- `agents-base.md` describes the auto-mark in terms of scope (the project, or
+  the loose tasks of an area), not area, and does not tell the agent to
+  propose `set_next` after `add`.
+- **Amended 2026-10-24.** The reply was only "Task added.", so the agent
+  could not tell the new task had become Next and reported it as not Next.
+  The prompt told it to propose `set_next` "if the area has no `>>`", which
+  is both the wrong scope and a step the tool had already taken. The
+  `noNextForScope` hint this FR specified could never fire: its condition
+  (scope without `>>`, item not auto-marked) is the condition that triggers
+  the auto-mark. Removed.
 
 **FR-TASKM-38 — Scope-aware remaining count in complete/remove hint**
 

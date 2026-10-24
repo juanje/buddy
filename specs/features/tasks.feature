@@ -605,6 +605,26 @@ Feature: Task management
     Then the new item is auto-marked as next
 
   @FR-TASKM-37
+  Scenario: add says when it made the new task the next action
+    Given an initialized buddy git repository
+    And tasks.md with one project that has no next
+    When tasks add is invoked with text "New step" area "work" and project "alpha"
+    Then the task result contains "next action for #alpha"
+
+  @FR-TASKM-37
+  Scenario: add names the loose-task scope when it auto-marks in an area
+    Given an initialized buddy git repository
+    And tasks.md on disk has no health items
+    When tasks add is invoked with text "Book checkup" area "health" and project ""
+    Then the task result contains "next action for @health (loose tasks)"
+
+  @FR-TASKM-37
+  Scenario: agents-base prompt describes the auto-mark by scope
+    Given the bundled agents-base.md prompt
+    Then the agents-base prompt contains "loose tasks of its area"
+    And the agents-base prompt does not contain "if the area has no `>>`"
+
+  @FR-TASKM-37
   Scenario: add does not auto-mark when project scope already has next
     Given an initialized buddy git repository
     And tasks.md with project alpha having a next item

@@ -70,7 +70,7 @@ function loadItems(rootDir: string): TaskItem[] {
 
 function scopeLabel(area?: string, project?: string): string {
   if (project) return `#${project}`;
-  return area ? `@${area}` : "@(general)";
+  return `${area ? `@${area}` : "@(general)"} (loose tasks)`;
 }
 
 /**
@@ -208,14 +208,9 @@ function addAction(rootDir: string, params: TaskActionParams): TaskActionResult 
   items.push(newItem);
   writeTasksFile(rootDir, reindexItems(items));
 
-  let noNextForArea: string | undefined;
-  let noNextForScope: string | undefined;
-  if (!autoNext && !scopeHasNext(items, area, project)) {
-    noNextForArea = area || "general";
-    noNextForScope = project ? `project:${project}` : `area:${area || "general"}`;
-  }
-
-  return ok("Task added.", { noNextForArea, noNextForScope });
+  // After add the scope always has a >>: the one already there, or this item.
+  if (autoNext) return ok(`Task added as the next action for ${scopeLabel(area, project)}.`);
+  return ok("Task added.");
 }
 
 function completeAction(rootDir: string, params: TaskActionParams): TaskActionResult {
