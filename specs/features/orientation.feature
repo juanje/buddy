@@ -41,11 +41,28 @@ Feature: First-open-of-the-day orientation
     Then the deferred queue still has due items
 
   @FR-DEFERRED-05
-  Scenario: Orientation suppresses duplicate banner but not system notification
-    Given orientation was shown this session
-    When due deferred items arrive after orientation
-    Then the deferred system notification is allowed
-    And the deferred banner remains suppressed
+  Scenario: A heartbeat after orientation notifies and re-opens the banner
+    Given the app is running
+    And orientation was shown this session
+    And the orientation card has been closed
+    When the heartbeat delivers 1 due deferred item "Llamar al dentista"
+    Then a system notification is sent with body "Llamar al dentista"
+    And the deferred banner is open with 1 item
+
+  @FR-DEFERRED-05
+  Scenario: A heartbeat re-opens a deferred banner the user closed
+    Given the app is running
+    And the heartbeat delivered 1 due deferred item "Llamar al dentista"
+    And I close the deferred banner
+    When the heartbeat delivers 1 due deferred item "Llamar al dentista"
+    Then the deferred banner is open with 1 item
+
+  @FR-DEFERRED-05
+  Scenario: The deferred banner stays hidden while the orientation card is visible
+    Given the app is running
+    And the orientation card is visible
+    When the heartbeat delivers 1 due deferred item "Llamar al dentista"
+    Then the deferred banner is not shown
 
   @FR-ORIENT-03
   Scenario: Agent generates where-we-left-off recap after session ready

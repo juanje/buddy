@@ -23,7 +23,6 @@
     scroll,
     deferredItems = [],
     orientationData = null,
-    orientationShownThisSession = false,
     onDismissOrientation,
     oneLiner = null,
     rootDir = "",
@@ -34,7 +33,6 @@
     scroll: ScrollController;
     deferredItems?: DeferredItemView[];
     orientationData?: OrientationData | null;
-    orientationShownThisSession?: boolean;
     onDismissOrientation?: () => void;
     oneLiner?: string | null;
     rootDir?: string;
@@ -50,16 +48,11 @@
   const permissions = $derived(controller.permissions);
   const authErrors = $derived(controller.authErrors);
   const welcomeVisible = $derived(controller.welcomeVisible);
+  const deferredBannerOpen = $derived(controller.deferredBannerOpen);
   const showClosureDone = $derived(controller.showClosureDone);
   const showScrollButton = $derived(scroll.showScrollButton);
 
   let container: HTMLDivElement | undefined = $state();
-  let deferredDismissed = $state(false);
-
-  // Reset dismissed state when new items arrive (e.g. mid-session heartbeat).
-  $effect(() => {
-    if (deferredItems.length > 0) deferredDismissed = false;
-  });
 
   export function scrollToLatest() {
     if (container) container.scrollTop = container.scrollHeight - container.clientHeight;
@@ -104,13 +97,12 @@
     <OrientationCard data={orientationData} onDismiss={onDismissOrientation} />
   {:else if shouldShowDeferredBanner({
     hasOrientationCard: false,
-    deferredDismissed,
-    orientationShownThisSession,
+    bannerOpen: $deferredBannerOpen,
   })}
     <DeferredBanner
       items={deferredItems}
-      onClose={() => { deferredDismissed = true; controller.closeWelcome(); }}
-      onDismiss={() => { controller.dismissWelcome(); deferredDismissed = true; }}
+      onClose={() => controller.closeWelcome()}
+      onDismiss={() => controller.dismissWelcome()}
     />
   {/if}
   <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->

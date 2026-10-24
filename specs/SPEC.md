@@ -1034,7 +1034,7 @@ in passing remain open. When in doubt, leave open.
 | FR-DEFERRED-02 | Heartbeat periodic check | 2 ✓ |
 | FR-DEFERRED-03 | OS notification for due items | 2 ✓ |
 | FR-DEFERRED-04 | Deferred banner Close vs Dismiss | 2.5 ✓ |
-| FR-DEFERRED-05 | Orientation suppresses duplicate banner without suppressing notifications | 2.5 ✓ |
+| FR-DEFERRED-05 | Every heartbeat delivery of due items re-opens the in-app banner, after orientation or Close | 2.5 ✓ |
 | FR-DEFERRED-06 | Reflect removes resolved deferred items via ### Resolved deferred section | 2.5 ✓ |
 
 **FR-DEFERRED-01 — Surface on start**
@@ -1066,9 +1066,24 @@ in passing remain open. When in doubt, leave open.
 - **And** the user can dismiss the banner, which removes the items from `deferred.md`
 - **Resilience:** A concurrency guard (`notifyInFlight`) prevents multiple simultaneous notification attempts when heartbeat ticks arrive faster than the async notification call resolves. Permission is requested proactively at app start.
 
-**FR-DEFERRED-05 — Orientation does not suppress deferred notifications**
+**FR-DEFERRED-05 — A heartbeat delivery re-opens the deferred banner**
 
-Orientation may suppress the duplicate in-app deferred banner for the rest of the session, but due deferred items must continue to trigger OS notifications and remain in the deferred queue.
+- Due deferred items keep triggering OS notifications and stay in the queue
+  after orientation.
+- Each heartbeat delivery with due items re-opens the in-app banner with those
+  items, whether the orientation card was shown earlier in the session or the
+  banner was closed. The app always shows what a notification is about.
+- The banner stays hidden while the orientation card is visible, and it does not
+  replace the card the moment the card closes: items only reach the banner again
+  with the next heartbeat.
+- **Amended 2026-10-24.** The original text let orientation suppress the banner
+  "for the rest of the session", and the banner's Close set a flag that also
+  lasted the session. Together they meant a heartbeat could fire an OS
+  notification while the app showed nothing: clicking the notification, or
+  having the app in focus, revealed no text. That contradicted FR-DEFERRED-03
+  (the banner re-shows when the heartbeat delivers) and FR-DEFERRED-04 (closed
+  items resurface on the next heartbeat). A scenario pinned the suppression as a
+  requirement ("the deferred banner remains suppressed"); it is replaced.
 
 **FR-DEFERRED-04 — Deferred banner Close vs Dismiss**
 
@@ -3741,7 +3756,7 @@ only, so "the last conversation" came back empty whenever it was older.
 
 - Closing the orientation card only hides it and records that orientation ran today.
 - Due deferred items stay in the queue. They are not treated as acknowledged.
-- The standalone deferred banner does not appear in the same session after the card closes (avoids a second card immediately replacing the first).
+- The standalone deferred banner does not appear the moment the card closes (avoids a second card immediately replacing the first); it returns with the next heartbeat delivery (FR-DEFERRED-05).
 - Unacknowledged items resurface on a later session or heartbeat when orientation is not showing.
 
 ### 3.29 Task maturity (FR-TASKM)

@@ -1478,8 +1478,24 @@
           "name": "Orientation suppresses duplicate banner but not system notification",
           "bdd": "pass",
           "unit_tests": 2
+        },
+        {
+          "name": "A heartbeat after orientation notifies and re-opens the banner",
+          "bdd": "pass",
+          "unit_tests": 2
+        },
+        {
+          "name": "A heartbeat re-opens a deferred banner the user closed",
+          "bdd": "pass",
+          "unit_tests": 1
+        },
+        {
+          "name": "The deferred banner stays hidden while the orientation card is visible",
+          "bdd": "pass",
+          "unit_tests": 1
         }
-      ]
+      ],
+      "note": "reopened: the banner stays hidden for the whole session after orientation or Close, so a heartbeat notification has no visible content in the app"
     },
     {
       "id": "FR-TASKM-41",

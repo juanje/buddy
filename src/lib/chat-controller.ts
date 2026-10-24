@@ -83,6 +83,8 @@ export interface ChatController {
   authErrors: Readable<AuthErrorCard[]>;
   /** Welcome banner visible until the first user message (FR-DEFERRED-01 visual). */
   welcomeVisible: Readable<boolean>;
+  /** Whether the deferred banner is open; Close hides it until the next heartbeat delivery (FR-DEFERRED-05). */
+  deferredBannerOpen: Readable<boolean>;
   /** True while a topic transition is in flight (FR-TOPIC-02). */
   topicTransitioning: Readable<boolean>;
   /** New topic button disabled while streaming or transitioning (FR-TOPIC-05). */
@@ -148,6 +150,7 @@ export function createChatController(worker: ChatWorkerAPI): ChatController {
   const topicTransitioning = writable(false);
   const wrappingUp = writable(false);
   const welcomeVisible = writable(true);
+  const deferredBannerOpen = writable(true);
 
   const inputDisabled = derived(streaming, ($s) => $s);
   const newTopicDisabled = derived([streaming, topicTransitioning], ([$s, $t]) =>
@@ -260,14 +263,16 @@ export function createChatController(worker: ChatWorkerAPI): ChatController {
   function dismissWelcome(): void {
     void worker.dismissDeferredItems();
     welcomeVisible.set(false);
+    deferredBannerOpen.set(false);
   }
 
   function closeWelcome(): void {
     welcomeVisible.set(false);
+    deferredBannerOpen.set(false);
   }
 
   function showDeferredBanner(): void {
-    welcomeVisible.set(true);
+    deferredBannerOpen.set(true);
   }
 
   async function send(): Promise<void> {
@@ -446,6 +451,7 @@ export function createChatController(worker: ChatWorkerAPI): ChatController {
     permissions,
     authErrors,
     welcomeVisible,
+    deferredBannerOpen,
     topicTransitioning,
     newTopicDisabled,
     wrappingUp,

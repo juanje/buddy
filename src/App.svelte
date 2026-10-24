@@ -26,7 +26,7 @@
   import { ensureNotificationPermission, notifyDeferredDue } from "./utils/deferred-notify";
   import { formatBudgetNotificationBody, notifyBudgetAlert } from "./utils/budget-notify";
   import { notifyMaintenancePaused } from "./utils/maintenance-notify";
-  import { shouldNotifyDeferredDue } from "./lib/deferred-event";
+  import { handleDeferredDue } from "./lib/deferred-event";
   import {
     clearOneLinerOnTopicTransition,
     createOneLinerSessionState,
@@ -180,21 +180,16 @@
           },
           onDeferredDue(items) {
             devLog(`deferred due: ${items.length} item(s)`);
-            deferredItems = items;
-            if (!oneLinerSession.orientationShownThisSession && items.length > 0) {
-              controller?.showDeferredBanner();
-            }
-            const strings = get(t);
-            const first = items[0]?.text ?? "";
-            const body = items.length <= 1
-              ? first
-              : `${first} (+${items.length - 1})`;
-            if (shouldNotifyDeferredDue({ count: items.length })) {
-              void notifyDeferredDue(items.length, {
-                title: strings.notificationTitle,
-                body,
-              });
-            }
+            // FR-DEFERRED-05: every delivery re-opens the banner, so the
+            // notification always has its text in the app.
+            handleDeferredDue(items, {
+              title: get(t).notificationTitle,
+              setItems: (next) => {
+                deferredItems = next;
+              },
+              showBanner: () => controller?.showDeferredBanner(),
+              notify: (count, labels) => void notifyDeferredDue(count, labels),
+            });
           },
           onOneLiner(text: string) {
             devLog(`one-liner: ${text}`);
@@ -404,7 +399,6 @@
         {controller}
         {scroll}
         {orientationData}
-        orientationShownThisSession={oneLinerSession.orientationShownThisSession}
         onDismissOrientation={() => void dismissOrientationCard()}
         deferredItems={orientationData ? [] : deferredItems}
         oneLiner={oneLinerSession.lastOneLiner}

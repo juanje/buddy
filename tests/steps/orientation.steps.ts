@@ -12,11 +12,11 @@ import { parseDeferredItems } from "../../backends/deferred";
 import { fetchOneLinerFromSession } from "../../backends/orientation-one-liner";
 import { buildOneLinerPrompt } from "../../backends/orientation-prompt";
 import { buildOrientationData, markOrientationDismissed } from "../../backends/orientation";
-import { shouldNotifyDeferredDue } from "../../src/lib/deferred-event";
+import * as deferredEvent from "../../src/lib/deferred-event";
 import { shouldShowDeferredBanner } from "../../src/lib/deferred-banner-visibility";
 import { readLastOrientationDate, writeLastOrientationDate } from "../../backends/orientation-config";
 import { writeTasksFile } from "../../backends/tasks/task-file";
-import type { OrientationData, SetupConfig } from "../../shared/api";
+import type { DeferredItemView, OrientationData, SetupConfig } from "../../shared/api";
 import {
   clearOneLinerOnTopicTransition,
   createOneLinerSessionState,
@@ -35,8 +35,9 @@ interface OrientationWorld extends BuddyWorld {
   orientationToday?: string;
   orientationShownThisSession?: boolean;
   oneLinerReceived?: string | null;
-  deferredNotificationAllowed?: boolean;
-  deferredBannerShown?: boolean;
+  orientationCardVisible?: boolean;
+  deferredItemsInApp?: DeferredItemView[];
+  sentNotifications?: Array<{ title: string; body: string }>;
   chatOneLiner?: string | null;
   oneLinerSession?: OneLinerSessionState;
 }
@@ -176,21 +177,64 @@ Given("orientation was shown this session", function (this: OrientationWorld) {
   };
 });
 
-When("due deferred items arrive after orientation", function (this: OrientationWorld) {
-  this.deferredNotificationAllowed = shouldNotifyDeferredDue({ count: 1 });
-  this.deferredBannerShown = shouldShowDeferredBanner({
-    hasOrientationCard: false,
-    deferredDismissed: false,
-    orientationShownThisSession: this.orientationShownThisSession === true,
+Given("the orientation card has been closed", function (this: OrientationWorld) {
+  this.orientationCardVisible = false;
+});
+
+Given("the orientation card is visible", function (this: OrientationWorld) {
+  this.orientationCardVisible = true;
+});
+
+/** Drives the same handler App.svelte wires to the worker's onDeferredDue. */
+function deliverDeferred(this: OrientationWorld, text: string): void {
+  if (!this.controller) this.connect();
+  const items: DeferredItemView[] = [
+    { type: "reminder", dueDate: "2026-10-24", source: "user", text, overdue: false },
+  ];
+  deferredEvent.handleDeferredDue(items, {
+    title: "buddy",
+    setItems: (next) => {
+      this.deferredItemsInApp = next;
+    },
+    showBanner: () => this.controller.showDeferredBanner(),
+    notify: (_count, labels) => {
+      this.sentNotifications = [...(this.sentNotifications ?? []), labels];
+    },
   });
+}
+
+Given(
+  "the heartbeat delivered {int} due deferred item {string}",
+  function (this: OrientationWorld, _count: number, text: string) {
+    deliverDeferred.call(this, text);
+  },
+);
+
+When(
+  "the heartbeat delivers {int} due deferred item {string}",
+  function (this: OrientationWorld, _count: number, text: string) {
+    deliverDeferred.call(this, text);
+  },
+);
+
+Then("a system notification is sent with body {string}", function (this: OrientationWorld, body: string) {
+  assert.deepEqual(this.sentNotifications?.at(-1), { title: "buddy", body });
 });
 
-Then("the deferred system notification is allowed", function (this: OrientationWorld) {
-  assert.equal(this.deferredNotificationAllowed, true);
+function bannerShown(this: OrientationWorld): boolean {
+  return shouldShowDeferredBanner({
+    hasOrientationCard: this.orientationCardVisible === true,
+    bannerOpen: get(this.controller.deferredBannerOpen),
+  });
+}
+
+Then("the deferred banner is open with {int} item", function (this: OrientationWorld, count: number) {
+  assert.equal(bannerShown.call(this), true, "expected the deferred banner to be shown");
+  assert.equal(this.deferredItemsInApp?.length, count);
 });
 
-Then("the deferred banner remains suppressed", function (this: OrientationWorld) {
-  assert.equal(this.deferredBannerShown, false);
+Then("the deferred banner is not shown", function (this: OrientationWorld) {
+  assert.equal(bannerShown.call(this), false);
 });
 
 When("the session becomes ready", function (this: OrientationWorld) {
