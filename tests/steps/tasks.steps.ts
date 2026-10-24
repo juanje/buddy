@@ -42,6 +42,7 @@ interface TasksWorld extends BuddyWorld {
   processConversationPrompt?: string;
   templateAgentsMd?: string;
   whereThingsLiveDoc?: string;
+  bundledDoc?: string;
   permGate?: PermissionGate;
   permOutcome?: { block: true; reason: string } | undefined;
   activeFrontsReport?: ReturnType<typeof computeActiveFronts>;
@@ -757,6 +758,19 @@ Then("the task remove permission gate asks for confirmation", function (this: Ta
   const decision = JSON.parse(this.taskResultText ?? "{}");
   assert.equal(decision.action, "ask");
   assert.equal(decision.kind, "task-remove");
+});
+
+Given("the bundled doc {string}", function (this: TasksWorld, name: string) {
+  this.bundledDoc = readFileSync(join(process.cwd(), "bundled", "docs", name), "utf8");
+});
+
+Then("the bundled doc contains {string}", function (this: TasksWorld, text: string) {
+  assert.ok(this.bundledDoc?.includes(text), `expected bundled doc to contain "${text}"`);
+});
+
+Then("the bundled doc does not contain {string}", function (this: TasksWorld, text: string) {
+  assert.ok(this.bundledDoc !== undefined, "bundled doc required");
+  assert.ok(!this.bundledDoc.includes(text), `expected bundled doc NOT to contain "${text}"`);
 });
 
 Given("the bundled agents-base.md prompt", function (this: TasksWorld) {

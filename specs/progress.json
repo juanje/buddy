@@ -718,9 +718,20 @@
         {
           "name": "consolidation prompt includes weekly staleness review",
           "bdd": "pass",
+          "unit_tests": 2
+        },
+        {
+          "name": "agents-base prompt includes parking guidance and treats a due date as a deadline",
+          "bdd": "pass",
+          "unit_tests": 2
+        },
+        {
+          "name": "capabilities doc describes a due date as a deadline",
+          "bdd": "pass",
           "unit_tests": 1
         }
-      ]
+      ],
+      "note": "reopened: due date is a deadline (FR-TASKM-08): prompts and docs stop describing future-dated tasks as hidden"
     },
     {
       "id": "FR-TASKM-13",

@@ -266,14 +266,15 @@ Feature: Task management
     Then the task "Send the offer" is marked as next
 
   @FR-TASKM-10
-  Scenario: agents-base prompt includes parking and visibility guidance
+  Scenario: agents-base prompt includes parking guidance and treats a due date as a deadline
     Given the bundled agents-base.md prompt
     Then the agents-base prompt contains "Parking and visibility"
     And the agents-base prompt contains "@someday"
     And the agents-base prompt contains "include_parked"
     And the agents-base prompt contains "parkedCount"
-    And the agents-base prompt contains "futureCount"
-    And the agents-base prompt contains "due > today"
+    And the agents-base prompt contains "A due date is a deadline, not a start"
+    And the agents-base prompt does not contain "futureCount"
+    And the agents-base prompt does not contain "include_future"
 
   @FR-TASKM-10
   Scenario: consolidation prompt includes weekly staleness review
@@ -282,6 +283,13 @@ Feature: Task management
     And the consolidation prompt contains "staleDays"
     And the consolidation prompt contains "@someday"
     And the consolidation prompt contains "parkedCount"
+    And the consolidation prompt does not contain "futureCount"
+
+  @FR-TASKM-10
+  Scenario: capabilities doc describes a due date as a deadline
+    Given the bundled doc "capabilities.md"
+    Then the bundled doc contains "A due date is a deadline"
+    And the bundled doc does not contain "future date stay hidden"
 
   @FR-TASKM-14
   Scenario: agents-base prompt enforces first-person voice

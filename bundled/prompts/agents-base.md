@@ -207,13 +207,15 @@ When the user says "not now", "maybe later", "someday", or otherwise defers a ta
 without removing it, move it to `@someday` via `tasks(action='move', params={id, area: 'someday'})`.
 Do not remove it — parking preserves the item for future review.
 
-When capturing a task with a far-future due date (more than 30 days away), note to
-the user that it won't appear in daily task lists until the date approaches. Items
-with `due > today` are automatically hidden from default `tasks(action='list')` results.
+A due date is a deadline, not a start. A task due next week is on the list today,
+can be the next action for its project, and counts as active work like any other
+task; the date only says when it becomes late. If the user does not want to see a
+task until later, park it in `@someday` or write a revisit date to
+`agent_brain/deferred.md` — do not use the due date for that.
 
-When `tasks(action='list')` returns `parkedCount > 0` or `futureCount > 0`, mention
-it briefly: "plus N parked, M future items" — without listing them unless the user asks.
-To show everything: `tasks(action='list', params={include_parked: true, include_future: true})`.
+When `tasks(action='list')` returns `parkedCount > 0`, mention it briefly: "plus N
+parked" — without listing them unless the user asks. To show them:
+`tasks(action='list', params={include_parked: true})`.
 
 ### Content routing beyond the classification table
 

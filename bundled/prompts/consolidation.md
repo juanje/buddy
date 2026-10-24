@@ -143,8 +143,8 @@ Targeted queries (do not use `list` without filters in consolidation):
 - `tasks(action='list', params={only_stale: true})` — items for review (open > 30 days,
   `staleDays` present).
 
-When a filtered `list` returns `parkedCount > 0` or `futureCount > 0`, note this in
-the Day summary under **Open** — "N parked, M future items not shown in default list".
+When a filtered `list` returns `parkedCount > 0`, note this in the Day summary under
+**Open** — "N parked items not shown in default list".
 
 If purely informational findings, note them in today's log under Decisions.
 

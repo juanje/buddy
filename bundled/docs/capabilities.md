@@ -37,7 +37,7 @@ Buddy is a personal assistant that remembers. It captures what you tell it, orga
 - When you complete or remove a focused task, Buddy tells you how many remain in that scope and suggests picking a new one.
 - Ask "what should I work on?" and Buddy surfaces the next action for the context you're in.
 - Tasks you are not ready for can be **parked** — they stay on your list but out of your daily view until you bring them back. Say "not now" or "maybe later" and Buddy parks it.
-- Tasks with a future date stay hidden until they become relevant.
+- A due date is a deadline, not a start date. A task due next week is on your list today and can be the next action for its project; once the date passes, it is overdue. To set something aside until later, park it.
 - If you send a list of things at once, each item gets classified on its own — some may become tasks, others context, others projects.
 - **Active work limit.** Buddy periodically reviews how many fronts you have active in each area. If you are spreading attention beyond the limit (3 per area by default), Buddy surfaces it during its daily review — not when you add a task. Adding is never blocked. You can change the limit anytime by telling Buddy ("set the limit to 5", "remove the limit"). If an area holds many projects by nature — like `@work` where several projects coexist as a backlog — tell Buddy it's a portfolio area and the limit stops applying to it. For more on what "active front" means, see [How Buddy routes what you share](memory/how-buddy-routes.md).
 - Completed tasks are cleaned up automatically — no housekeeping needed on your part.

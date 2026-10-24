@@ -3811,9 +3811,11 @@ to every count that is supposed to read it.
 
 **FR-TASKM-10 — Parking, visibility, and staleness prompts**
 
-- `agents-base.md` includes a "Parking and visibility" subsection with `@someday` guidance, date-gating note, and hidden-count surfacing.
+- `agents-base.md` includes a "Parking and visibility" subsection with `@someday` guidance, a note that a due date is a deadline (not a start), and parked-count surfacing.
 - `consolidation.md` weekly depth includes a staleness review step (`staleDays` > 30, propose keep/complete/park/remove).
-- `consolidation.md` daily step 4 mentions `parkedCount`/`futureCount` in Day summary.
+- `consolidation.md` daily step 4 mentions `parkedCount` in Day summary.
+- `docs/capabilities.md` describes a due date as a deadline.
+- **Amended 2026-10-24.** The prompt said a task due more than 30 days out stays off the daily list, the code hid every task due after today, and the user doc said future-dated tasks "stay hidden until they become relevant". All three treated the date as a start. FR-TASKM-08 makes it a deadline, so the prompt, the consolidation Day summary and the doc stop mentioning hidden future items, `futureCount` and `include_future`.
 
 **FR-TASKM-11 — Direct access to tasks.md denied**
 
