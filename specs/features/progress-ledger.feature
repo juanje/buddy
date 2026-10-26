@@ -45,6 +45,19 @@ Feature: The progress record holds only verified work
       | the scenario passed before the first code     | the scenario passed before its code      | the commit before the code  |
       | a test commit also changes production code    | the test commit changes production code  | the test commit             |
       | no test was committed                         | there is no test commit                  | the contract commit         |
+      | a step was undefined before the first code    | the scenario never ran before its code   | the commit before the code  |
+
+  @NFR-TEST-03
+  Scenario Outline: A test that fails because its code does not exist yet counts as failing first
+    Given FR-DEMO-01's work where the unit test failed at its commit because <missing>
+    And the code committed after it, making the scenario and the gate pass
+    When I check FR-DEMO-01
+    Then the check succeeds
+
+    Examples:
+      | missing                                  |
+      | the function it calls did not exist yet  |
+      | the module it imports did not exist yet  |
 
   @NFR-TEST-03
   Scenario: A test proved by a mutant counts as failing first
