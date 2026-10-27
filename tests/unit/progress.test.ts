@@ -66,6 +66,7 @@ describe("namesMutant", () => {
   it("finds a mutant named in the subject or the body", () => {
     expect(namesMutant("test(x): FR-X-01 guard\n\nMutant: drop the check")).toBe(true);
     expect(namesMutant("test(x): FR-X-01 guard proved by a mutant")).toBe(true);
+    expect(namesMutant("test(x): FR-X-01 guards\n\nProved by mutants, each failing one test")).toBe(true);
     expect(namesMutant("test(x): FR-X-01 guard\n\nmutated the parser")).toBe(false);
   });
 });
