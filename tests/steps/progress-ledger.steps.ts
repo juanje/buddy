@@ -349,13 +349,68 @@ Given("a scenario of another FR fails now", function (this: ProgressWorld) {
   });
 });
 
+/** Do the work Outside-In on top of the contract, check it, and commit the record. */
+async function verifyOutsideIn(world: ProgressWorld): Promise<void> {
+  applyPlan(world, [STEPS_COMMIT, UNIT_TEST_COMMIT, CODE_COMMIT]);
+  const result = await progress(world, ["check", "FR-DEMO-01"]);
+  assert.equal(result.code, 0, `the check failed:\n${result.err}`);
+  demo(world).commit({ message: "chore(progress): FR-DEMO-01 verified", files: {} });
+}
+
+/** The greeting feature with an outline of the given rows after its scenario. */
+function greetingWithOutline(rows: string[]): string {
+  return [
+    GREETING_FEATURE,
+    "  @FR-DEMO-01",
+    "  Scenario Outline: Greet <name>",
+    '    When I greet "<name>"',
+    '    Then I see "Hello, <name>"',
+    "",
+    "    Examples:",
+    "      | name |",
+    ...rows.map((row) => `      | ${row} |`),
+    "",
+  ].join("\n");
+}
+
 Given("FR-DEMO-01 was verified as built", { timeout: CHECK_TIMEOUT_MS }, async function (
   this: ProgressWorld,
 ) {
-  applyPlan(this, [STEPS_COMMIT, UNIT_TEST_COMMIT, CODE_COMMIT]);
-  const result = await progress(this, ["check", "FR-DEMO-01"]);
-  assert.equal(result.code, 0, `the check failed:\n${result.err}`);
-  demo(this).commit({ message: "chore(progress): FR-DEMO-01 verified", files: {} });
+  await verifyOutsideIn(this);
+});
+
+Given(
+  "FR-DEMO-01 was verified as built with an outline of one row",
+  { timeout: CHECK_TIMEOUT_MS },
+  async function (this: ProgressWorld) {
+    // The outline is part of the contract the work is built on.
+    demo(this).commit({
+      message: "spec(demo): FR-DEMO-01 greet by any name",
+      files: { "specs/features/greeting.feature": greetingWithOutline(["Ana"]) },
+      role: "contract",
+    });
+    await verifyOutsideIn(this);
+  },
+);
+
+Given("a later contract commit adds a second row to that outline", function (this: ProgressWorld) {
+  demo(this).commit({
+    message: "spec(demo): FR-DEMO-01 greet Bo too",
+    files: { "specs/features/greeting.feature": greetingWithOutline(["Ana", "Bo"]) },
+  });
+});
+
+Given("the second row passed before any code for it", function (this: ProgressWorld) {
+  // No code follows the row's contract commit, and the code it was verified
+  // with already greets any name: the row passes wherever it runs.
+  assert.ok(this.plan?.some((p) => p.files["src/greeting.js"]?.includes("Hello, ${name}")));
+});
+
+Given("a later contract commit removes one of its scenarios", function (this: ProgressWorld) {
+  demo(this).commit({
+    message: "spec(demo): FR-DEMO-01 drop the greeting scenario",
+    files: { "specs/features/greeting.feature": "Feature: Greeting\n" },
+  });
 });
 
 Given("a later contract commit for FR-DEMO-01", function (this: ProgressWorld) {
@@ -452,6 +507,25 @@ Then(
   function (this: ProgressWorld) {
     assert.ok(this.status);
     assert.match(statusLine(this.status, "FR-OLD-01"), /\bbuilt, recorded before the checks\b/);
+  },
+);
+
+Then(
+  "the check fails with an error that names the added row and says it passed before its code",
+  function (this: ProgressWorld) {
+    assert.ok(this.check);
+    assert.notEqual(this.check.code, 0, "the check succeeded");
+    assert.ok(this.check.err.includes('"Greet <name> | Bo"'), `the error does not name the row:\n${this.check.err}`);
+    assert.match(this.check.err, /the scenario passed before its code/);
+  },
+);
+
+Then(
+  "the status still shows FR-DEMO-01 as changed since its verification",
+  async function (this: ProgressWorld) {
+    assert.equal(recordText(this), this.recordBefore, "the failed check changed the record");
+    const line = statusLine(await freshStatus(this), "FR-DEMO-01");
+    assert.match(line, /\bchanged since its verification\b/);
   },
 );
 
