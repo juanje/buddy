@@ -51,8 +51,10 @@ refuses, and records nothing, unless the FR's commits show:
 - no `test` commit that changes `backends/`, `src/` or `shared/`;
 - each scenario a contract commit added fails first at the commit before the
   first `feat`/`fix` commit that follows it;
-- each `test` commit's unit tests fail first at that commit and pass now, and
-  its step definitions make at least one of the FR's scenarios fail first;
+- each `test` commit's unit tests fail first at that commit, and its step
+  definitions make at least one of the FR's scenarios fail first;
+- each of those tests and scenarios passes at the last commit where it still
+  exists: HEAD, or the commit just before the one that replaced or removed it;
 - the full quality gate passes now: `npx tsc --noEmit`, `npx vite build`,
   `npm test`.
 
@@ -67,6 +69,11 @@ scenario it proves. The check still runs every test of the commit; a trailer
 exempts only the test or scenario it names. For a unit test, the name is
 vitest's full name: the `describe` titles and the test title, joined by
 spaces.
+
+Each example row of a Scenario Outline is a scenario of its own, named by its
+outline and its cells joined by ` | `, such as
+`Refused <case> | ../specs | a path`. A `Mutant:` trailer may name one row
+that way, or the outline, which covers all its rows.
 
 The check runs past commits in temporary git worktrees that share the
 project's `node_modules`. It stops at the first stage that fails (commit
