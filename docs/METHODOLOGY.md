@@ -35,7 +35,7 @@ npm run progress -- check FR-xxx    # verify FR-xxx and record it as built
 
 | State | Meaning |
 |-------|---------|
-| in progress | a `spec(…): FR-xxx` commit exists and no check has verified the FR |
+| in progress | a `spec(…): FR-xxx` commit exists since the record started, and no check has verified the FR |
 | built at `<commit>` on `<date>` | a check verified the FR at that commit |
 | changed since its verification | a `spec(…): FR-xxx` commit came after the verified commit |
 | built, recorded before the checks | the FR was marked done before the check existed (`recordedBeforeChecks`) |
@@ -80,7 +80,12 @@ project's `node_modules`. It stops at the first stage that fails (commit
 order, then the runs at past commits, then the gate) and lists each problem
 with the commit it is in and how to make it hold.
 
-After a check succeeds, commit `specs/progress.json`.
+After a check succeeds, it commits `specs/progress.json` itself, as
+`chore(progress): FR-xxx verified`.
+
+The record started at the first commit whose `specs/progress.json` has
+`recordedBeforeChecks`. Contract commits from before it are history, not
+open work: they make no FR in progress.
 
 ---
 
