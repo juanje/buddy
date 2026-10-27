@@ -50,7 +50,7 @@ Read a file when its trigger matches, not before.
 3. **Unit test, Red.** Write the test for the next piece of logic and run it. Go on only when it fails because the behaviour is missing. Commit the tests alone: `test(<scope>): FR-xxx …`. That commit is the only proof the test came from the requirement and not from the code.
 4. **Code, Green.** Write the code that makes the test pass. Run the test, the FR's scenarios and the full unit suite. Commit: `feat(<scope>): FR-xxx …` or `fix(<scope>): FR-xxx …`.
 5. **Repeat 3–4** until the scenario passes, then step 2 for the next scenario.
-6. **Check.** Commit your work, then run `npm run progress -- check FR-xxx`. It verifies the work from its commits, runs the quality gate, records the FR as built and commits the record as `chore(progress): FR-xxx verified`; when it reports a failure, follow the route it gives and run it again. Report to the person: what was built, the check's output, and what is open.
+6. **Check.** Commit your work, then run `npm run progress -- check FR-xxx`. It verifies the work from its commits, runs the quality gate, records the FR as built and commits the record as `chore(progress): FR-xxx verified`. Its output is short: a line per run, then the result. Read it whole. When it reports a failure, follow the route it gives and run it again. Report to the person: what was built, the check's output, and what is open.
 
 **A bug is a missing test.** Before the fix, write the unit test or step that reproduces it and show it failing. That failure is its Red. If no scenario covers the behaviour, propose one.
 
