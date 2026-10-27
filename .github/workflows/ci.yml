@@ -1,6 +1,6 @@
 name: CI
 
-# The quality gate CLAUDE.md mandates before every commit, run where it cannot
+# The quality gate AGENTS.md mandates before every commit, run where it cannot
 # be skipped. Until now it lived only in a document, and release.yml published
 # tags without running any of it.
 
