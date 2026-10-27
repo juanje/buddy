@@ -60,8 +60,13 @@ A test **fails first** when, at that commit, it ran and failed on an assertion
 or on an error thrown while it ran, or its file failed to load because a
 project module or export it imports did not exist yet. An undefined, pending
 or ambiguous step, a skipped test, and a file that fails to load for its own
-syntax or a missing package do not fail first. A `test` commit whose message
-names a mutant counts as failing first.
+syntax or a missing package do not fail first. A test or scenario that
+passes at its commit counts as failing first only when that commit's message
+has a trailer line `Mutant: <its name> — <what was broken>`, one per test or
+scenario it proves. The check still runs every test of the commit; a trailer
+exempts only the test or scenario it names. For a unit test, the name is
+vitest's full name: the `describe` titles and the test title, joined by
+spaces.
 
 The check runs past commits in temporary git worktrees that share the
 project's `node_modules`. It stops at the first stage that fails (commit

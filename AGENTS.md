@@ -58,7 +58,7 @@ Read a file when its trigger matches, not before.
 1. break the lines the test covers;
 2. run the test and show it fails;
 3. restore the lines;
-4. name the mutant in the test commit message.
+4. add a trailer line to the test commit message, one per test or scenario it proves: `Mutant: <test or scenario name> — <the lines you broke>`.
 
 **When you delegate to a subagent,** give it the FR, its approved feature file, this procedure and the gate: it does not read this file.
 
