@@ -164,7 +164,7 @@ docs/           — Design principles, technical architecture, decisions
 | [docs/app-design-principles.md](docs/app-design-principles.md) | Design principles and rationale (the WHY)             |
 | [docs/app-spec-tauri.md](docs/app-spec-tauri.md)               | Technical architecture and Pi SDK usage (the HOW)     |
 | [docs/context-and-tokens.md](docs/context-and-tokens.md)       | Token usage, context-window pressure, and determinism |
-| [CLAUDE.md](CLAUDE.md)                                         | Agent workflow: BDD+TDD process, phase order, rules   |
+| [AGENTS.md](AGENTS.md)                                         | Agent instructions: character, Outside-In procedure, quality gate, traps |
 | [docs/METHODOLOGY.md](docs/METHODOLOGY.md)                     | The progress record: what is built, and its check     |
 
 ### License
