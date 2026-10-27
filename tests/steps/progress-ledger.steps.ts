@@ -58,6 +58,8 @@ interface ProgressWorld extends BuddyWorld {
   check?: CliResult;
   status?: CliResult;
   recordBefore?: string | null;
+  /** HEAD when the last check started: the commit it verifies. */
+  checkedHead?: string;
   helpOutput?: string;
 }
 
@@ -354,7 +356,9 @@ async function verifyOutsideIn(world: ProgressWorld): Promise<void> {
   applyPlan(world, [STEPS_COMMIT, UNIT_TEST_COMMIT, CODE_COMMIT]);
   const result = await progress(world, ["check", "FR-DEMO-01"]);
   assert.equal(result.code, 0, `the check failed:\n${result.err}`);
-  demo(world).commit({ message: "chore(progress): FR-DEMO-01 verified", files: {} });
+  // The check commits its own record; nobody handles the file.
+  assert.equal(demo(world).git("status", "--porcelain"), "", "the check left its record uncommitted");
+  assert.equal(demo(world).git("log", "-1", "--format=%s"), "chore(progress): FR-DEMO-01 verified");
 }
 
 /** The greeting feature with an outline of the given rows after its scenario. */
@@ -437,6 +441,21 @@ Given(
   },
 );
 
+Given("a contract commit for FR-OLD-02 made before the record started", function (this: ProgressWorld) {
+  assert.equal(recordText(this), null, "the record has already started");
+  demo(this).commit({
+    message: "spec(demo): FR-OLD-02 an old contract",
+    files: { "specs/features/old.feature": "Feature: Old\n  @FR-OLD-02\n  Scenario: Something old\n" },
+  });
+});
+
+Given("a contract commit for FR-NEW-01 after that", function (this: ProgressWorld) {
+  demo(this).commit({
+    message: "spec(demo): FR-NEW-01 a new contract",
+    files: { "specs/features/new.feature": "Feature: New\n  @FR-NEW-01\n  Scenario: Something new\n" },
+  });
+});
+
 // ── Commands ────────────────────────────────────────────────────────
 
 When(/^I check (FR-DEMO-0\d)$/, { timeout: CHECK_TIMEOUT_MS }, async function (
@@ -444,6 +463,7 @@ When(/^I check (FR-DEMO-0\d)$/, { timeout: CHECK_TIMEOUT_MS }, async function (
   frId: string,
 ) {
   this.recordBefore = recordText(this);
+  this.checkedHead = demo(this).head();
   this.ran = [];
   this.check = await progress(this, ["check", frId]);
 });
@@ -483,8 +503,9 @@ Then("the check succeeds", function (this: ProgressWorld) {
 Then(
   "the status shows FR-DEMO-01 as built at the current commit",
   async function (this: ProgressWorld) {
+    assert.ok(this.checkedHead);
     const line = statusLine(await freshStatus(this), "FR-DEMO-01");
-    assert.match(line, new RegExp(`\\bbuilt at ${short(demo(this).head())}\\b`));
+    assert.match(line, new RegExp(`\\bbuilt at ${short(this.checkedHead)}\\b`));
     assert.match(line, /\d{4}-\d{2}-\d{2}/, "the built line carries the date");
   },
 );
@@ -528,6 +549,18 @@ Then(
     assert.match(line, /\bchanged since its verification\b/);
   },
 );
+
+Then("the status does not show FR-OLD-02", function (this: ProgressWorld) {
+  assert.ok(this.status);
+  assert.equal(this.status.code, 0, this.status.err);
+  const listed = this.status.out.split("\n").filter((l) => l.trim().split(/\s+/)[0] === "FR-OLD-02");
+  assert.deepEqual(listed, [], `the status lists FR-OLD-02:\n${this.status.out}`);
+});
+
+Then("the status shows FR-NEW-01 as in progress", function (this: ProgressWorld) {
+  assert.ok(this.status);
+  assert.match(statusLine(this.status, "FR-NEW-01"), /\bin progress\b/);
+});
 
 Then("the status still shows FR-DEMO-01 as in progress", async function (this: ProgressWorld) {
   assert.equal(recordText(this), this.recordBefore, "the failed check changed the record");
