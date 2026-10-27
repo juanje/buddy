@@ -46,6 +46,7 @@ Feature: The progress record holds only verified work
       | a test commit also changes production code    | the test commit changes production code  | the test commit             |
       | no test was committed                         | there is no test commit                  | the contract commit         |
       | a step was undefined before the first code    | the scenario never ran before its code   | the commit before the code  |
+      | a test passed at its commit and its message mentions mutants without a Mutant trailer naming it | the test passed before its code | the test commit |
 
   @NFR-TEST-03
   Scenario Outline: A test that fails because its code does not exist yet counts as failing first
@@ -62,7 +63,7 @@ Feature: The progress record holds only verified work
   @NFR-TEST-03
   Scenario: A test proved by a mutant counts as failing first
     Given FR-DEMO-01's work where the scenario passed before the first code
-    And its test commit names a mutant
+    And its test commit has a Mutant trailer naming the scenario
     And the scenario and the gate pass now
     When I check FR-DEMO-01
     Then the check succeeds
