@@ -1,5 +1,10 @@
 {
-  "built": {},
+  "built": {
+    "NFR-TEST-03": {
+      "commit": "b054a058b2fe0f7c39ea0f964cda9a449c1908cc",
+      "date": "2026-10-27"
+    }
+  },
   "recordedBeforeChecks": [
     "FR-AUTH-01",
     "FR-AUTH-02",
