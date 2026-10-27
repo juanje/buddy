@@ -116,7 +116,7 @@ export function commitRole(subject: string, frId: string): CommitRole | undefine
 }
 
 export function namesMutant(message: string): boolean {
-  return /\bmutant\b/i.test(message);
+  return /\bmutants?\b/i.test(message);
 }
 
 function touchesSteps(commit: Commit): boolean {
