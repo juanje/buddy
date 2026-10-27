@@ -119,6 +119,15 @@ Feature: The progress record holds only verified work
       | --upload-pack=x   |
 
   @NFR-TEST-03
+  Scenario: A contract commit older than the record is history, not open work
+    Given a contract commit for FR-OLD-02 made before the record started
+    And FR-OLD-01 recorded as built before the checks existed
+    And a contract commit for FR-NEW-01 after that
+    When I ask for the status
+    Then the status does not show FR-OLD-02
+    And the status shows FR-NEW-01 as in progress
+
+  @NFR-TEST-03
   Scenario: FRs built before the check are shown as recorded before the checks
     Given FR-OLD-01 recorded as built before the checks existed
     When I ask for the status
