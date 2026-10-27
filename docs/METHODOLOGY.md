@@ -1,113 +1,74 @@
 # Development Methodology: Outside-In (Spec → BDD → TDD)
 
-Buddy ships feature by feature. Each in-flight FR is tracked in
-`specs/progress.json` and advanced only through `scripts/progress.ts`.
-Shipped features stay in `progress.json` with `status: done`; git history
-retains the work either way.
+Buddy ships feature by feature. The procedure for building one FR is in
+`AGENTS.md`; this file explains the progress record that says what is built.
 
 ## The cycle
 
 For each feature:
 
-1. **Spec review** — FR defined or verified in `specs/SPEC.md` (WHAT and WHY;
-   no acceptance criteria in SPEC.md).
-2. **BDD red** — Write `.feature` scenarios tagged `@FR-xxx` in
-   `specs/features/`, step definitions in `tests/steps/`, run
-   `npm run test:bdd` and confirm RED (steps execute and fail — "undefined
-   step" is not red).
-3. **Implementing** — TDD inner loop: one failing unit test → minimum code →
-   green → refactor → repeat until the BDD scenario passes.
-4. **BDD green** — Full quality gate passes:
-   `npx tsc --noEmit && npx vite build && npm test`.
-5. **Done** — `npx tsx scripts/progress.ts done FR-xxx` (CLI-enforced).
-
-Outer loop steps in `progress.json`:
-
-```
-spec_review → bdd_red → implementing → bdd_green → done
-```
-
-The TDD red/green/refactor loop lives inside **implementing** — enforced by
-`CLAUDE.md`, not by separate JSON states.
+1. **Contract** — the FR in `specs/SPEC.md` (outcome, errors and why) and its
+   scenarios in `specs/features/`, tagged `@FR-xxx`, committed by the person
+   as `spec(…): FR-xxx`.
+2. **BDD red** — step definitions in `tests/steps/`, committed alone as
+   `test(…): FR-xxx`, with the scenarios running and failing.
+3. **TDD** — one failing unit test, committed alone as `test(…): FR-xxx`, then
+   the code that makes it pass as `feat(…)` or `fix(…): FR-xxx`; repeat until
+   the scenarios pass.
+4. **Check** — `npm run progress -- check FR-xxx` verifies the commits and the
+   quality gate and records the FR as built.
 
 ---
 
-## Progress CLI
+## The progress record
 
-Machine-readable state lives in `specs/progress.json`. **Always use the CLI**
-to read and write it — never edit the JSON directly.
+`specs/progress.json` says what is built. Nothing writes to it but the check,
+and nobody edits it by hand.
 
 ```bash
-npx tsx scripts/progress.ts current              # What to work on now
-npx tsx scripts/progress.ts status               # All tracked features
-npx tsx scripts/progress.ts show FR-xxx          # Detail for one feature
-npx tsx scripts/progress.ts advance FR-xxx       # Next cycle_step
-npx tsx scripts/progress.ts scenario pass FR-xxx "Scenario name"
-npx tsx scripts/progress.ts scenario fail FR-xxx "Scenario name"
-npx tsx scripts/progress.ts units FR-xxx "Scenario name" 3
-npx tsx scripts/progress.ts focus FR-xxx         # Switch focus
-npx tsx scripts/progress.ts add FR-xxx "Title"   # Add feature
-npx tsx scripts/progress.ts sync FR-xxx          # Register @FR-xxx scenarios from .feature files
-npx tsx scripts/progress.ts done FR-xxx          # Mark done (guarded)
-npx tsx scripts/progress.ts reopen FR-xxx "reason"  # Amend a done FR (back to spec_review)
+npm run progress -- status          # every FR with a contract or a record, and its state
+npm run progress -- show FR-xxx     # one FR: its state and its contract, test and code commits
+npm run progress -- check FR-xxx    # verify FR-xxx and record it as built
 ```
 
-### State transitions
+`status` and `show` only read. Their states:
 
-| Field | Values | Notes |
-|-------|--------|-------|
-| `status` | `pending`, `in_progress`, `blocked`, `deferred`, `done` | `advance` sets `pending` → `in_progress` |
-| `cycle_step` | `spec_review` → `bdd_red` → `implementing` → `bdd_green` → `done` | Forward only; no skipping. `reopen` resets a done feature to `spec_review`. |
-| `scenarios[].bdd` | `pending` → `fail` → `pass` | Updated via `scenario` command |
-| `scenarios[].unit_tests` | non-negative integer | Updated via `units` command |
+| State | Meaning |
+|-------|---------|
+| in progress | a `spec(…): FR-xxx` commit exists and no check has verified the FR |
+| built at `<commit>` on `<date>` | a check verified the FR at that commit |
+| changed since its verification | a `spec(…): FR-xxx` commit came after the verified commit |
+| built, recorded before the checks | the FR was marked done before the check existed (`recordedBeforeChecks`) |
 
-### Validations
+### What the check verifies
 
-**`advance`:**
+`check` needs a clean working tree, so what it verifies is a commit. It
+refuses, and records nothing, unless the FR's commits show:
 
-- One-way along `CYCLE_STEPS`; cannot skip.
-- `spec_review → bdd_red`: FR-ID must appear in `specs/SPEC.md`.
-- `bdd_red → implementing`: runs `sync` first (new scenarios are registered as
-  `pending`), then requires at least one scenario.
+- a `spec(…): FR-xxx` contract commit;
+- at least one `test(…): FR-xxx` commit, and no `feat`/`fix` commit for the FR
+  before the first one;
+- no `test` commit that changes `backends/`, `src/` or `shared/`;
+- each scenario a contract commit added fails first at the commit before the
+  first `feat`/`fix` commit that follows it;
+- each `test` commit's unit tests fail first at that commit and pass now, and
+  its step definitions make at least one of the FR's scenarios fail first;
+- the full quality gate passes now: `npx tsc --noEmit`, `npx vite build`,
+  `npm test`.
 
-**`done`:**
+A test **fails first** when, at that commit, it ran and failed on an assertion
+or on an error thrown while it ran, or its file failed to load because a
+project module or export it imports did not exist yet. An undefined, pending
+or ambiguous step, a skipped test, and a file that fails to load for its own
+syntax or a missing package do not fail first. A `test` commit whose message
+names a mutant counts as failing first.
 
-- At least one scenario.
-- Every scenario: `bdd === "pass"` and `unit_tests >= 1`.
-- Clears `current_focus` if this feature was focused.
+The check runs past commits in temporary git worktrees that share the
+project's `node_modules`. It stops at the first stage that fails (commit
+order, then the runs at past commits, then the gate) and lists each problem
+with the commit it is in and how to make it hold.
 
-**`reopen`:**
-
-- Feature must exist and be `status: done` with `cycle_step: done`.
-- Non-empty reason required; stored as `note: reopened: <reason>` (one line).
-- Sets `status: in_progress`, `cycle_step: spec_review`, `current_focus` to this FR.
-- Existing scenarios and their `bdd` / `unit_tests` are kept (regression).
-- Fails if another in-progress feature currently has focus.
-- Does not remove the ✓ from `SPEC.md`; amend the FR text before advancing.
-
-### Amending a done FR
-
-When shipped behavior must change (bugfix or spec amendment):
-
-1. `reopen FR-xxx "short reason"`
-2. Update the FR prose in `specs/SPEC.md` (keep ✓ until the cycle completes).
-3. Add or extend `.feature` scenarios; run BDD red → TDD → green.
-4. `done FR-xxx` when every scenario (old and new) passes with unit tests.
-
----
-
-## Consistency gate
-
-`tests/unit/progress-consistency.test.ts` runs as part of `npm test`. It
-asserts:
-
-1. `current_focus` points to a feature with `status: "in_progress"` (or is null)
-2. `status: "done"` requires all scenarios `bdd: "pass"` with `unit_tests >= 1`
-3. No `in_progress` feature has `cycle_step: "done"` simultaneously
-4. Features past `spec_review` have `@FR-xxx` in some `.feature` file
-
-Complementary: `tests/unit/fr-status.test.ts` verifies SPEC.md ✓ marks against
-feature files and tests.
+After a check succeeds, commit `specs/progress.json`.
 
 ---
 
@@ -115,44 +76,8 @@ feature files and tests.
 
 | Artefact | Purpose |
 |----------|---------|
-| `specs/SPEC.md` | Catalog of all FRs; ✓ marks for shipped work |
+| `specs/SPEC.md` | The person's contract: every FR, what and why |
 | `specs/features/*.feature` | Acceptance criteria (Given/When/Then), tagged `@FR-xxx` |
-| `specs/progress.json` | In-flight work only — WHERE you are in the cycle |
+| `specs/progress.json` | What is built, written only by the check |
 | `tests/steps/` | Executable step definitions |
 | `tests/unit/` | Inner-loop TDD for deterministic logic |
-
-### Example
-
-**SPEC.md:**
-
-```markdown
-### FR-PERM-06b: Allow always only for outside reads
-Hide persistent permission options on write prompts; reads may use Allow always.
-```
-
-**specs/features/permission.feature:**
-
-```gherkin
-@FR-PERM-06b
-Feature: Persistent permission options
-
-  Scenario: Write prompt does not offer Allow always
-    Given a write permission request for a path outside the workspace
-    When the permission card is shown
-    Then the Allow always option is not visible
-```
-
----
-
-## Rules
-
-1. **Start every session** with `npx tsx scripts/progress.ts current` (or
-   `status` / `focus` per `CLAUDE.md` session-start tree).
-2. **Follow the cycle strictly.** No implementation before a failing test.
-3. **One feature at a time.** Finish current before starting next.
-4. **BDD scenarios are the definition of done** for a feature cycle.
-5. **Update progress only through the CLI** after every step transition.
-6. **Don't put acceptance criteria in SPEC.md.** They belong in `.feature` files.
-7. **Don't put prose in progress.json.** Pure state only (`note` is optional,
-   one line max).
-8. **The quality gate is part of bdd_green**, not a separate JSON step.

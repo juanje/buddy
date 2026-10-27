@@ -1,10 +1,11 @@
 # Progress
 
-Machine-tracked in `specs/progress.json`. Use the CLI:
+What is built is in `specs/progress.json`, written only by the check:
 
 ```bash
-npx tsx scripts/progress.ts current
-npx tsx scripts/progress.ts status
+npm run progress -- status
+npm run progress -- show FR-xxx
+npm run progress -- check FR-xxx
 ```
 
-For the full development methodology, see `docs/METHODOLOGY.md`.
+For what the check verifies, see `docs/METHODOLOGY.md`.
