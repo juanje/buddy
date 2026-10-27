@@ -125,6 +125,11 @@ export function mutantTrailers(message: string): Set<string> {
   return names;
 }
 
+/** Whether a commit's trailers prove a scenario key: by its own key or, for a row, by its outline. */
+function proves(trailers: Set<string>, key: string): boolean {
+  return trailers.has(key) || trailers.has(scenarioName(key));
+}
+
 const mutantClause = (name: string) =>
   `when no Red is possible, prove it by a mutant and add the trailer line \`Mutant: ${name} — <what you broke>\` to the test(…) commit message.`;
 
@@ -138,12 +143,28 @@ function touchesSteps(commit: Commit): boolean {
 
 // ── Scenarios and tests, and how they ran ───────────────────────────
 
-/** Names of the scenarios and outlines tagged with the FR, or under a feature tagged with it. */
+/** An example row's key: its outline's name and its cells, so each row is a scenario of its own. */
+function rowKey(outline: string, cells: string[]): string {
+  return [outline, ...cells].join(" | ");
+}
+
+/** The scenario or outline a key from scenariosTagged or scenarioOutcomes belongs to. */
+export function scenarioName(key: string): string {
+  return key.split(" | ")[0];
+}
+
+/**
+ * Keys of the scenarios tagged with the FR, or under a feature tagged with it:
+ * a scenario's name, or for an outline one key per example row.
+ */
 export function scenariosTagged(feature: string, frId: string): string[] {
   const tag = `@${frId}`;
-  const names: string[] = [];
+  const keys: string[] = [];
   let pending: string[] = [];
   let featureTags: string[] = [];
+  /** The tagged outline whose Examples rows are being read. */
+  let outline: string | undefined;
+  let headerNext = false;
   for (const raw of feature.split("\n")) {
     const line = raw.trim();
     if (line === "" || line.startsWith("#")) continue;
@@ -153,13 +174,26 @@ export function scenariosTagged(feature: string, frId: string): string[] {
     }
     if (line.startsWith("Feature:")) {
       featureTags = pending;
+    } else if (/^(?:Examples|Scenarios):/.test(line)) {
+      headerNext = outline !== undefined;
+    } else if (line.startsWith("|")) {
+      if (headerNext) {
+        headerNext = false;
+      } else if (outline !== undefined) {
+        keys.push(rowKey(outline, line.slice(1, -1).split("|").map((cell) => cell.trim())));
+      }
     } else {
-      const scenario = /^(?:Scenario Outline|Scenario Template|Scenario|Example):\s*(.*)$/.exec(line);
-      if (scenario && [...featureTags, ...pending].includes(tag)) names.push(scenario[1].trim());
+      const scenario = /^(Scenario Outline|Scenario Template|Scenario|Example):\s*(.*)$/.exec(line);
+      if (scenario) {
+        const tagged = [...featureTags, ...pending].includes(tag);
+        const isOutline = scenario[1] === "Scenario Outline" || scenario[1] === "Scenario Template";
+        outline = tagged && isOutline ? scenario[2].trim() : undefined;
+        if (tagged && !isOutline) keys.push(scenario[2].trim());
+      }
     }
     pending = [];
   }
-  return names;
+  return keys;
 }
 
 export type RunOutcome = "fails first" | "passed" | "never ran" | "did not fail first";
@@ -169,7 +203,7 @@ export interface Outcome {
   detail: string;
 }
 
-/** Worst first: one example that never ran or passed decides for the whole outline. */
+/** Worst first: of two pickles with the same key, the worse one decides. */
 const OUTCOME_RANK: Record<RunOutcome, number> = {
   "never ran": 0,
   "did not fail first": 0,
@@ -187,9 +221,10 @@ function stepOutcome(status: string | undefined, message: string | undefined): O
   return { outcome: "never ran", detail: `a step was ${status.toLowerCase()}` };
 }
 
-/** Each scenario's outcome, by its name in the feature file, from a cucumber message stream. */
+/** Each scenario's outcome, by its key (see scenariosTagged), from a cucumber message stream. */
 export function scenarioOutcomes(ndjson: string): Map<string, Outcome> {
   const scenarioNames = new Map<string, string>();
+  const rowCells = new Map<string, string[]>();
   const pickleScenario = new Map<string, string>();
   const caseScenario = new Map<string, string>();
   const startedScenario = new Map<string, string>();
@@ -203,12 +238,20 @@ export function scenarioOutcomes(ndjson: string): Map<string, Outcome> {
       for (const child of children) {
         const scenarios = child.rule ? child.rule.children.map((c: { scenario?: unknown }) => c.scenario) : [child.scenario];
         for (const scenario of scenarios) {
-          if (scenario) scenarioNames.set(scenario.id, scenario.name);
+          if (!scenario) continue;
+          scenarioNames.set(scenario.id, scenario.name);
+          for (const examples of scenario.examples ?? []) {
+            for (const row of examples.tableBody ?? []) {
+              rowCells.set(row.id, row.cells.map((cell: { value: string }) => cell.value));
+            }
+          }
         }
       }
     } else if (envelope.pickle) {
       const { id, name, astNodeIds } = envelope.pickle;
-      pickleScenario.set(id, scenarioNames.get(astNodeIds?.[0]) ?? name);
+      const scenario = scenarioNames.get(astNodeIds?.[0]) ?? name;
+      const cells = rowCells.get(astNodeIds?.[1]);
+      pickleScenario.set(id, cells ? rowKey(scenario, cells) : scenario);
     } else if (envelope.testCase) {
       caseScenario.set(envelope.testCase.id, pickleScenario.get(envelope.testCase.pickleId) ?? "");
     } else if (envelope.testCaseStarted) {
@@ -254,10 +297,16 @@ export function loadFailure(output: string): Outcome {
   return { outcome: "did not fail first", detail: `it failed to load: ${reason || "no output"}` };
 }
 
+export interface UnitTestOutcome extends Outcome {
+  /** The test's own title, without its describe titles, as written in its file. */
+  title: string;
+}
+
 export interface UnitFileOutcome {
   /** Set when the file failed to load and none of its tests ran. */
   load?: Outcome;
-  tests: Map<string, Outcome>;
+  /** By full name: the describe titles and the test title. */
+  tests: Map<string, UnitTestOutcome>;
 }
 
 /** Each test's outcome, by file relative to `root`, from a vitest JSON report. */
@@ -267,7 +316,7 @@ export function unitOutcomes(json: string, root: string): Map<string, UnitFileOu
       name: string;
       status: string;
       message?: string;
-      assertionResults: Array<{ fullName: string; status: string; failureMessages: string[] }>;
+      assertionResults: Array<{ fullName: string; title?: string; status: string; failureMessages: string[] }>;
     }>;
   };
   const files = new Map<string, UnitFileOutcome>();
@@ -277,19 +326,40 @@ export function unitOutcomes(json: string, root: string): Map<string, UnitFileOu
       files.set(path, { load: loadFailure(file.message ?? ""), tests: new Map() });
       continue;
     }
-    const tests = new Map<string, Outcome>();
+    const tests = new Map<string, UnitTestOutcome>();
     for (const test of file.assertionResults) {
+      const title = test.title ?? test.fullName;
       if (test.status === "passed") {
-        tests.set(test.fullName, { outcome: "passed", detail: "it passed" });
+        tests.set(test.fullName, { outcome: "passed", detail: "it passed", title });
       } else if (test.status === "failed") {
-        tests.set(test.fullName, { outcome: "fails first", detail: firstLine(test.failureMessages[0] ?? "") });
+        tests.set(test.fullName, { outcome: "fails first", detail: firstLine(test.failureMessages[0] ?? ""), title });
       } else {
-        tests.set(test.fullName, { outcome: "never ran", detail: `it was ${test.status}` });
+        tests.set(test.fullName, { outcome: "never ran", detail: `it was ${test.status}`, title });
       }
     }
     files.set(path, { tests });
   }
   return files;
+}
+
+/**
+ * The commit that removed a test after it last existed, given a file's
+ * content at the commit that added the test and at each later commit that
+ * changed the file (null where it was deleted). Undefined while it still
+ * exists in the last state. Without a title it follows the file itself.
+ */
+export function removedBy(
+  states: Array<{ sha: string; content: string | null }>,
+  title: string | undefined,
+): string | undefined {
+  const exists = (content: string | null) =>
+    content !== null &&
+    (title === undefined || ['"', "'", "`"].some((quote) => content.includes(`${quote}${title}${quote}`)));
+  let last = -1;
+  states.forEach((state, i) => {
+    if (exists(state.content)) last = i;
+  });
+  return last >= 0 && last < states.length - 1 ? states[last + 1].sha : undefined;
 }
 
 // ── Problems ────────────────────────────────────────────────────────
@@ -477,7 +547,8 @@ async function fileAt(ctx: Context, sha: string, path: string): Promise<string> 
 
 async function readCommits(ctx: Context, withFiles: boolean): Promise<Commit[]> {
   const args = ["log", "--reverse", "--topo-order", "--format=%x1e%H%x1f%B%x1f"];
-  if (withFiles) args.push("--name-only");
+  // Without renames, a moved file shows as deleted at its old path, so a test there is followed to its move.
+  if (withFiles) args.push("--name-only", "--no-renames");
   const raw = await git(ctx, [...args, "HEAD"]);
   return raw
     .split("\x1e")
@@ -617,7 +688,7 @@ async function contractProblems(
     const run = await runScenarios(ctx, checkouts, commit.sha, frId);
     for (const name of names) {
       const outcome = run.load ?? run.outcomes.get(name) ?? { outcome: "never ran", detail: "it was not found" };
-      if (outcome.outcome === "passed" && !provedByMutant.has(name)) {
+      if (outcome.outcome === "passed" && !proves(provedByMutant, name)) {
         problems.push({
           commit,
           what: "the scenario passed before its code",
@@ -650,6 +721,13 @@ interface Counted {
   file: string;
   /** Undefined when the whole file failed to load at the commit. */
   name?: string;
+  title?: string;
+}
+
+/** A scenario a test commit's steps made fail first, to be seen passing later. */
+interface CountedScenario {
+  commit: Commit;
+  key: string;
 }
 
 /** Each test commit's tests and steps must fail first at it and pass now. */
@@ -662,6 +740,7 @@ async function testCommitProblems(
 ): Promise<Problem[]> {
   const problems: Problem[] = [];
   const counted: Counted[] = [];
+  const countedScenarios: CountedScenario[] = [];
 
   for (const commit of commits.filter((c) => commitRole(c.subject, frId) === "test")) {
     const unitFiles = commit.files.filter((f) => UNIT_TEST_FILE.test(f));
@@ -694,7 +773,7 @@ async function testCommitProblems(
       for (const file of present) {
         const result = atCommit.get(file) ?? {
           load: { outcome: "never ran" as const, detail: "vitest did not run it" },
-          tests: new Map<string, Outcome>(),
+          tests: new Map<string, UnitTestOutcome>(),
         };
         if (result.load) {
           if (result.load.outcome === "fails first") {
@@ -714,7 +793,7 @@ async function testCommitProblems(
         for (const [name, outcome] of result.tests) {
           if (outcome.outcome === "fails first" || (outcome.outcome === "passed" && provedByMutant.has(name))) {
             failedFirst = true;
-            counted.push({ commit, file, name });
+            counted.push({ commit, file, name, title: outcome.title });
           } else if (!known.has(name) && outcome.outcome === "passed") {
             problems.push({
               commit,
@@ -753,11 +832,14 @@ async function testCommitProblems(
             remedy: "make the suite load at this commit, so its scenarios run and fail on the missing code.",
           });
         }
-      } else if (
-        ![...run.outcomes].some(
-          ([name, o]) => o.outcome === "fails first" || (o.outcome === "passed" && provedByMutant.has(name)),
-        )
-      ) {
+      } else {
+        for (const [key, o] of run.outcomes) {
+          if (o.outcome === "fails first" || (o.outcome === "passed" && proves(provedByMutant, key))) {
+            countedScenarios.push({ commit, key });
+          }
+        }
+      }
+      if (!run.load && !countedScenarios.some((c) => c.commit === commit)) {
         const passed = [...run.outcomes.values()].some((o) => o.outcome === "passed");
         const results = [...run.outcomes].map(([name, o]) => `"${name}": ${o.detail}`).join("; ");
         problems.push({
@@ -770,21 +852,120 @@ async function testCommitProblems(
     }
   }
 
-  const nowFiles = [...new Set(counted.map((c) => c.file))].filter((f) => existsSync(join(ctx.root, f)));
-  const now = nowFiles.length > 0 ? await runUnitTests(ctx, checkouts, head, nowFiles) : new Map();
-  for (const { commit, file, name } of counted) {
-    const result: UnitFileOutcome | undefined = now.get(file);
-    const tests = result ? [...result.tests] : [];
-    const passing = name
-      ? result?.tests.get(name)?.outcome === "passed"
-      : tests.length > 0 && tests.every(([, o]) => o.outcome === "passed");
-    if (!passing) {
-      problems.push({
-        commit,
-        what: "the test does not pass now",
-        detail: name ? `"${name}" in ${file}` : file,
-        remedy: "make it pass, or, if it was removed on purpose, say so to the person.",
-      });
+  problems.push(...(await unitTestsPassLater(ctx, checkouts, commits, counted, head)));
+  problems.push(...(await scenariosPassLater(ctx, checkouts, commits, countedScenarios, frId)));
+  return problems;
+}
+
+/** File content at a commit, or null where the file does not exist. */
+async function fileOrNull(ctx: Context, sha: string, path: string): Promise<string | null> {
+  const result = await ctx.run("git", ["show", `${sha}:${path}`], { cwd: ctx.root });
+  return result.code === 0 ? result.output : null;
+}
+
+/** The last commit where a test (or, without a title, its file) still exists: HEAD, or just before what removed it. */
+async function lastCommitWithTest(
+  ctx: Context,
+  commits: Commit[],
+  { commit, file, title }: Counted,
+  head: string,
+): Promise<string> {
+  const later = commits.slice(commits.indexOf(commit) + 1).filter((c) => c.files.includes(file));
+  const states = [{ sha: commit.sha, content: await fileOrNull(ctx, commit.sha, file) }];
+  for (const c of later) states.push({ sha: c.sha, content: await fileOrNull(ctx, c.sha, file) });
+  const removing = removedBy(states, title);
+  return removing ? revParse(ctx, `${removing}^`) : head;
+}
+
+const PASS_LATER_REMEDY =
+  "make it pass once its code exists: a test that fails first counts only when its code then makes it pass.";
+
+/** Each unit test counted as failing first must pass at the last commit where it still exists. */
+async function unitTestsPassLater(
+  ctx: Context,
+  checkouts: Checkouts,
+  commits: Commit[],
+  counted: Counted[],
+  head: string,
+): Promise<Problem[]> {
+  const byLast = new Map<string, Counted[]>();
+  for (const test of counted) {
+    const last = await lastCommitWithTest(ctx, commits, test, head);
+    byLast.set(last, [...(byLast.get(last) ?? []), test]);
+  }
+  const problems: Problem[] = [];
+  for (const [last, tests] of byLast) {
+    const files = [...new Set(tests.map((t) => t.file))];
+    const results = await runUnitTests(ctx, checkouts, last, files);
+    for (const { commit, file, name } of tests) {
+      const result = results.get(file);
+      const all = result ? [...result.tests.values()] : [];
+      const passing = name
+        ? result?.tests.get(name)?.outcome === "passed"
+        : all.length > 0 && all.every((o) => o.outcome === "passed");
+      if (!passing) {
+        problems.push({
+          commit,
+          what: "the test does not pass where it last exists",
+          detail: `${name ? `"${name}" in ${file}` : file} at ${last.slice(0, 7)}${last === head ? " (HEAD)" : ""}`,
+          remedy: PASS_LATER_REMEDY,
+        });
+      }
+    }
+  }
+  return problems;
+}
+
+/** Keys of the FR's scenarios at a commit, across every feature file. */
+async function scenarioKeysAt(ctx: Context, sha: string, frId: string): Promise<string[]> {
+  const listing = await git(ctx, ["ls-tree", "-r", "--name-only", sha, "--", FEATURES_DIR]);
+  const keys: string[] = [];
+  for (const path of listing.split("\n").filter((f) => f.endsWith(".feature"))) {
+    keys.push(...scenariosTagged(await fileAt(ctx, sha, path), frId));
+  }
+  return keys;
+}
+
+/**
+ * Each scenario a test commit's steps made fail first must pass at the last
+ * commit where it still exists. One still there at HEAD is the gate's to run.
+ */
+async function scenariosPassLater(
+  ctx: Context,
+  checkouts: Checkouts,
+  commits: Commit[],
+  counted: CountedScenario[],
+  frId: string,
+): Promise<Problem[]> {
+  const keysAt = new Map<string, string>();
+  const quotedKeys = async (sha: string) => {
+    if (!keysAt.has(sha)) keysAt.set(sha, (await scenarioKeysAt(ctx, sha, frId)).map((k) => `"${k}"`).join("\n"));
+    return keysAt.get(sha) ?? "";
+  };
+  const byLast = new Map<string, CountedScenario[]>();
+  for (const scenario of counted) {
+    const later = commits
+      .slice(commits.indexOf(scenario.commit) + 1)
+      .filter((c) => c.files.some((f) => f.startsWith(FEATURES_DIR)));
+    const states = [{ sha: scenario.commit.sha, content: await quotedKeys(scenario.commit.sha) }];
+    for (const c of later) states.push({ sha: c.sha, content: await quotedKeys(c.sha) });
+    const removing = removedBy(states, scenario.key);
+    if (!removing) continue;
+    const last = await revParse(ctx, `${removing}^`);
+    byLast.set(last, [...(byLast.get(last) ?? []), scenario]);
+  }
+  const problems: Problem[] = [];
+  for (const [last, scenarios] of byLast) {
+    const run = await runScenarios(ctx, checkouts, last, frId);
+    for (const { commit, key } of scenarios) {
+      if (run.outcomes.get(key)?.outcome !== "passed") {
+        problems.push({
+          commit,
+          what: "the scenario does not pass where it last exists",
+          detail: `"${key}" at ${last.slice(0, 7)}`,
+          remedy: PASS_LATER_REMEDY,
+        });
+      }
     }
   }
   return problems;
