@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "deny": [
+      "Edit(/specs/progress.json)",
+      "Bash(sed -i *)",
+      "Bash(perl -pi *)"
+    ],
+    "ask": [
+      "Edit(/scripts/progress.ts)"
+    ]
+  }
+}
