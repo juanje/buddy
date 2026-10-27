@@ -69,6 +69,22 @@ Feature: The progress record holds only verified work
     Then the check succeeds
 
   @NFR-TEST-03
+  Scenario: A row added to an outline must fail before its code
+    Given FR-DEMO-01 was verified as built with an outline of one row
+    And a later contract commit adds a second row to that outline
+    And the second row passed before any code for it
+    When I check FR-DEMO-01
+    Then the check fails with an error that names the added row and says it passed before its code
+    And the status still shows FR-DEMO-01 as changed since its verification
+
+  @NFR-TEST-03
+  Scenario: A scenario that a later contract commit removes still verifies
+    Given FR-DEMO-01's work done Outside-In
+    And a later contract commit removes one of its scenarios
+    When I check FR-DEMO-01
+    Then the check succeeds
+
+  @NFR-TEST-03
   Scenario: A test proved by a mutant counts as failing first
     Given FR-DEMO-01's work where the scenario passed before the first code
     And its test commit has a Mutant trailer naming the scenario
