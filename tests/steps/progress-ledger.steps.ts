@@ -211,6 +211,22 @@ const SITUATIONS: Record<string, () => PlannedCommit[]> = {
     CODE_COMMIT,
     { ...STEPS_COMMIT, role: "offending" },
   ],
+  "a test passed at its commit and its message mentions mutants without a Mutant trailer naming it": () => [
+    STEPS_COMMIT,
+    {
+      // Mentions mutants, and its one trailer names a test this commit does not have.
+      message: [
+        "test(demo): FR-DEMO-01 greet returns text",
+        "",
+        "Checked against mutants by hand.",
+        "",
+        'Mutant: greets in capitals — greet() returning "" in src/greeting.js',
+      ].join("\n"),
+      files: { "tests/unit/greeting.test.js": WEAK_UNIT_TEST },
+      role: "offending",
+    },
+    CODE_COMMIT,
+  ],
   "the unit test failed at its commit because the function it calls did not exist yet": () => [
     STEPS_COMMIT,
     {
@@ -278,12 +294,12 @@ Given(/^FR-DEMO-01's work where (.+)$/, function (this: ProgressWorld, situation
   applyPlan(this, plan());
 });
 
-Given("its test commit names a mutant", function (this: ProgressWorld) {
+Given("its test commit has a Mutant trailer naming the scenario", function (this: ProgressWorld) {
   const plan = (this.plan ?? []).map((planned) =>
     planned.message.startsWith("test(")
       ? {
           ...planned,
-          message: `${planned.message}\n\nMutant: greet() returning "" makes the scenario fail.`,
+          message: `${planned.message}\n\nMutant: A greeting is shown — greet() returning "" in src/greeting.js`,
         }
       : planned,
   );
