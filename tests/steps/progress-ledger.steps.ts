@@ -294,6 +294,35 @@ Given(/^FR-DEMO-01's work where (.+)$/, function (this: ProgressWorld, situation
   applyPlan(this, plan());
 });
 
+Given(
+  "a later test commit that replaces its unit test with one for new code",
+  function (this: ProgressWorld) {
+    // "greets by name" leaves the suite here, so it cannot pass at HEAD; it
+    // passed at the code commit, the last one where it still existed.
+    addToPlan(this, {
+      message: "test(demo): FR-DEMO-01 wave instead of greeting by name",
+      files: {
+        "tests/unit/greeting.test.js": [
+          'import { expect, it } from "vitest";',
+          'import * as greeting from "../../src/greeting.js";',
+          'it("waves", () => { expect(greeting.wave("Ana")).toBe("Ana waves"); });',
+          "",
+        ].join("\n"),
+      },
+      role: "replacing",
+    });
+  },
+);
+
+Given("the code for the new test committed after it", function (this: ProgressWorld) {
+  addToPlan(this, {
+    message: "feat(demo): FR-DEMO-01 wave",
+    files: {
+      "src/greeting.js": `${GREETING_CODE}export function wave(name) {\n  return \`\${name} waves\`;\n}\n`,
+    },
+  });
+});
+
 Given("its test commit has a Mutant trailer naming the scenario", function (this: ProgressWorld) {
   const plan = (this.plan ?? []).map((planned) =>
     planned.message.startsWith("test(")
