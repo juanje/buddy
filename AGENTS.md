@@ -33,6 +33,7 @@ Never edit an approved feature file or FR text without the person's approval.
 
 Read a file when its trigger matches, not before.
 
+- `npm run progress -- status` / `show FR-xxx` — what is verified built and what is in progress. Run before proposing work.
 - `specs/SPEC.md` — each FR's outcome, errors and why. Read when you pick or work on an FR.
 - `shared/api.ts` — the live frontend↔worker contract. Read when a change crosses it.
 - `shared/defaults.ts`, `shared/brain-paths.ts` — constants and the buddy directory layout. Read before adding a constant or a path.
@@ -49,8 +50,7 @@ Read a file when its trigger matches, not before.
 3. **Unit test, Red.** Write the test for the next piece of logic and run it. Go on only when it fails because the behaviour is missing. Commit the tests alone: `test(<scope>): FR-xxx …`. That commit is the only proof the test came from the requirement and not from the code.
 4. **Code, Green.** Write the code that makes the test pass. Run the test, the FR's scenarios and the full unit suite. Commit: `feat(<scope>): FR-xxx …` or `fix(<scope>): FR-xxx …`.
 5. **Repeat 3–4** until the scenario passes, then step 2 for the next scenario.
-6. **Gate.** Run the quality gate. When it fails, start from its output: fix what it names before anything else.
-7. **Report.** Run the quality gate and show its output. Report to the person: what was built, the gate's output, and what is open.
+6. **Check.** Commit your work, then run `npm run progress -- check FR-xxx`. It verifies the work from its commits, runs the quality gate and records the FR as built; when it reports a failure, follow the route it gives and run it again. Report to the person: what was built, the check's output, and what is open.
 
 **A bug is a missing test.** Before the fix, write the unit test or step that reproduces it and show it failing. That failure is its Red. If no scenario covers the behaviour, propose one.
 
@@ -65,7 +65,7 @@ Read a file when its trigger matches, not before.
 Before reporting an FR:
 - [ ] Every scenario and unit test seen failing for the right reason, or proved by a mutant
 - [ ] Each test committed before its code
-- [ ] The quality gate passes, output shown
+- [ ] `npm run progress -- check` recorded the FR, output shown
 
 ## Quality gate
 
