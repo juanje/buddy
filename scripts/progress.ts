@@ -115,8 +115,21 @@ export function commitRole(subject: string, frId: string): CommitRole | undefine
   return role && mentions(subject, frId) ? role : undefined;
 }
 
-export function namesMutant(message: string): boolean {
-  return /\bmutants?\b/i.test(message);
+/** What a commit proves by mutant: one `Mutant: <name> — <what was broken>` trailer per test or scenario. */
+export function mutantTrailers(message: string): Set<string> {
+  const names = new Set<string>();
+  for (const line of message.split("\n")) {
+    const trailer = /^Mutant:\s*(\S.*?)\s+—\s+\S/.exec(line);
+    if (trailer) names.add(trailer[1]);
+  }
+  return names;
+}
+
+const mutantClause = (name: string) =>
+  `when no Red is possible, prove it by a mutant and add the trailer line \`Mutant: ${name} — <what you broke>\` to the test(…) commit message.`;
+
+export function passedBeforeCodeRemedy(name: string): string {
+  return `write the test before the code it tests, so it fails first at its commit; ${mutantClause(name)}`;
 }
 
 function touchesSteps(commit: Commit): boolean {
@@ -594,10 +607,9 @@ async function contractProblems(
 
   const problems: Problem[] = [];
   for (const [target, { names, noCode }] of byTarget) {
-    const provedByMutant = commits.some(
-      (c, j) => j <= target && roleAt(j) === "test" && touchesSteps(c) && namesMutant(c.message),
+    const provedByMutant = new Set(
+      commits.flatMap((c, j) => (j <= target && roleAt(j) === "test" ? [...mutantTrailers(c.message)] : [])),
     );
-    if (provedByMutant) continue;
     const commit = commits[target];
     const where = noCode
       ? `no feat(…) or fix(…): ${frId} commit follows its contract, and at HEAD`
@@ -605,13 +617,12 @@ async function contractProblems(
     const run = await runScenarios(ctx, checkouts, commit.sha, frId);
     for (const name of names) {
       const outcome = run.load ?? run.outcomes.get(name) ?? { outcome: "never ran", detail: "it was not found" };
-      if (outcome.outcome === "passed") {
+      if (outcome.outcome === "passed" && !provedByMutant.has(name)) {
         problems.push({
           commit,
           what: "the scenario passed before its code",
           detail: `"${name}" passed ${where}`,
-          remedy:
-            "commit its step definitions before the code they test, so it fails first; when no Red is possible, prove it by a mutant and name the mutant in its test(…) commit message.",
+          remedy: `commit its step definitions before the code they test, so it fails first; ${mutantClause(name)}`,
         });
       } else if (outcome.outcome === "never ran") {
         problems.push({
@@ -632,9 +643,6 @@ async function contractProblems(
   }
   return problems;
 }
-
-const PASSED_BEFORE_CODE_REMEDY =
-  "write the test before the code it tests, so it fails first at its commit; when no Red is possible, prove it by a mutant and name the mutant in the test(…) commit message.";
 
 /** A unit test a test commit counted as failing first, to be seen passing now. */
 interface Counted {
@@ -666,7 +674,7 @@ async function testCommitProblems(
       });
       continue;
     }
-    if (namesMutant(commit.message)) continue;
+    const provedByMutant = mutantTrailers(commit.message);
     const cwd = await checkouts.at(commit.sha);
 
     const present = unitFiles.filter((f) => existsSync(join(cwd, f)));
@@ -704,7 +712,7 @@ async function testCommitProblems(
         }
         const known = before.get(file)?.tests ?? new Map<string, Outcome>();
         for (const [name, outcome] of result.tests) {
-          if (outcome.outcome === "fails first") {
+          if (outcome.outcome === "fails first" || (outcome.outcome === "passed" && provedByMutant.has(name))) {
             failedFirst = true;
             counted.push({ commit, file, name });
           } else if (!known.has(name) && outcome.outcome === "passed") {
@@ -712,7 +720,7 @@ async function testCommitProblems(
               commit,
               what: "the test passed before its code",
               detail: `"${name}" in ${file} passed at this commit`,
-              remedy: PASSED_BEFORE_CODE_REMEDY,
+              remedy: passedBeforeCodeRemedy(name),
             });
           } else if (!known.has(name)) {
             problems.push({
@@ -729,7 +737,7 @@ async function testCommitProblems(
           commit,
           what: "the test passed before its code",
           detail: `no test in ${present.join(", ")} failed at this commit`,
-          remedy: PASSED_BEFORE_CODE_REMEDY,
+          remedy: passedBeforeCodeRemedy("<test name>"),
         });
       }
     }
@@ -745,14 +753,18 @@ async function testCommitProblems(
             remedy: "make the suite load at this commit, so its scenarios run and fail on the missing code.",
           });
         }
-      } else if (![...run.outcomes.values()].some((o) => o.outcome === "fails first")) {
+      } else if (
+        ![...run.outcomes].some(
+          ([name, o]) => o.outcome === "fails first" || (o.outcome === "passed" && provedByMutant.has(name)),
+        )
+      ) {
         const passed = [...run.outcomes.values()].some((o) => o.outcome === "passed");
         const results = [...run.outcomes].map(([name, o]) => `"${name}": ${o.detail}`).join("; ");
         problems.push({
           commit,
           what: passed ? "the test passed before its code" : "the test did not fail first",
           detail: `no ${frId} scenario failed first at this commit (${results || "none ran"})`,
-          remedy: PASSED_BEFORE_CODE_REMEDY,
+          remedy: passedBeforeCodeRemedy("<scenario name>"),
         });
       }
     }
