@@ -13,8 +13,9 @@ import {
   formatState,
   isFrId,
   loadFailure,
+  mutantTrailers,
+  passedBeforeCodeRemedy,
   runCli,
-  namesMutant,
   scenarioOutcomes,
   scenariosTagged,
   structuralProblems,
@@ -62,12 +63,36 @@ describe("commitRole", () => {
   });
 });
 
-describe("namesMutant", () => {
-  it("finds a mutant named in the subject or the body", () => {
-    expect(namesMutant("test(x): FR-X-01 guard\n\nMutant: drop the check")).toBe(true);
-    expect(namesMutant("test(x): FR-X-01 guard proved by a mutant")).toBe(true);
-    expect(namesMutant("test(x): FR-X-01 guards\n\nProved by mutants, each failing one test")).toBe(true);
-    expect(namesMutant("test(x): FR-X-01 guard\n\nmutated the parser")).toBe(false);
+describe("mutantTrailers", () => {
+  it("reads the name in each Mutant trailer line", () => {
+    const message = [
+      "test(x): FR-X-01 guards",
+      "",
+      "Proved by mutants.",
+      "",
+      "Mutant: refuses a path outside the root — dropped the containment check",
+      "Mutant: A greeting is shown — greet() returning \"\"",
+    ].join("\n");
+    expect([...mutantTrailers(message)]).toEqual(["refuses a path outside the root", "A greeting is shown"]);
+  });
+
+  it("names nothing for a message that only mentions mutants", () => {
+    expect(mutantTrailers("test(x): FR-X-01 mutant checks\n\nProved by mutants, each failing one test.").size).toBe(0);
+  });
+
+  it("needs a name and what was broken, on a line of its own", () => {
+    for (const line of ["Mutant: no dash here", "Mutant:  — only what was broken", "  Mutant: indented — x", "See Mutant: a — b"]) {
+      expect(mutantTrailers(`test(x): y\n\n${line}`).size, line).toBe(0);
+    }
+  });
+});
+
+describe("passedBeforeCodeRemedy", () => {
+  it("says to add the trailer that names the test, not to name the mutant in the message", () => {
+    const remedy = passedBeforeCodeRemedy("greets by name");
+    expect(remedy).toContain("Mutant: greets by name — <what you broke>");
+    expect(remedy).toContain("trailer");
+    expect(remedy).not.toContain("name the mutant in");
   });
 });
 
