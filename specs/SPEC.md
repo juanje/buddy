@@ -82,28 +82,28 @@ rootDir (git repo — user/agent content only)
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-CHAT-01 | Streaming message display | 0 ✓ |
-| FR-CHAT-02 | User input with send | 0 ✓ |
-| FR-CHAT-03 | Abort generation | 0 ✓ |
-| FR-CHAT-04 | Markdown rendering in assistant messages | 3 ✓ |
-| FR-CHAT-05 | Thinking block display (transient indicator) | 3 ✓ |
-| FR-CHAT-06 | Tool call display (expandable cards) | 3 ✓ |
-| FR-CHAT-07 | Auto-scroll with manual override | 0 ✓ |
-| FR-CHAT-08 | Input textarea resets height after send | 2 ✓ |
-| FR-CHAT-09 | Local file links are marked and routed internally | 2 ✓ |
-| FR-CHAT-10 | Inline file viewer for markdown/text links | 2 ✓ |
-| FR-CHAT-11 | Local links are view-only, internal, and scoped | 2 ✓ |
-| FR-CHAT-12 | Navigation inside the inline viewer | 2 ✓ |
-| FR-CHAT-13 | Prompts sent during session boot are queued, not dropped | 2 ✓ |
-| FR-CHAT-14 | An assistant turn with no visible text renders nothing | 2 ✓ |
-| FR-CHAT-15 | The inline viewer does not render frontmatter as content | 3 ✓ |
-| FR-CHAT-16 | Buddy paths in assistant text become labelled links | 3 ✓ |
-| FR-CHAT-17 | `show_file` — the agent opens a file in the viewer | 3 ✓ |
-| FR-CHAT-18 | Export the viewed file as PDF | 3 ✓ |
-| FR-CHAT-19 | Tokenizer artifact stripping in assistant output | 2 ✓ |
-| FR-CHAT-20 | Reveal file in native file manager from inline viewer | 3 ✓ |
-| FR-CHAT-21 | Export viewed markdown as PDF on Linux | 3 ✓ |
-| FR-CHAT-22 | CSV files open in the inline viewer as a table | 3 S4a ✓ |
+| FR-CHAT-01 | Streaming message display | 0 |
+| FR-CHAT-02 | User input with send | 0 |
+| FR-CHAT-03 | Abort generation | 0 |
+| FR-CHAT-04 | Markdown rendering in assistant messages | 3 |
+| FR-CHAT-05 | Thinking block display (transient indicator) | 3 |
+| FR-CHAT-06 | Tool call display (expandable cards) | 3 |
+| FR-CHAT-07 | Auto-scroll with manual override | 0 |
+| FR-CHAT-08 | Input textarea resets height after send | 2 |
+| FR-CHAT-09 | Local file links are marked and routed internally | 2 |
+| FR-CHAT-10 | Inline file viewer for markdown/text links | 2 |
+| FR-CHAT-11 | Local links are view-only, internal, and scoped | 2 |
+| FR-CHAT-12 | Navigation inside the inline viewer | 2 |
+| FR-CHAT-13 | Prompts sent during session boot are queued, not dropped | 2 |
+| FR-CHAT-14 | An assistant turn with no visible text renders nothing | 2 |
+| FR-CHAT-15 | The inline viewer does not render frontmatter as content | 3 |
+| FR-CHAT-16 | Buddy paths in assistant text become labelled links | 3 |
+| FR-CHAT-17 | `show_file` — the agent opens a file in the viewer | 3 |
+| FR-CHAT-18 | Export the viewed file as PDF | 3 |
+| FR-CHAT-19 | Tokenizer artifact stripping in assistant output | 2 |
+| FR-CHAT-20 | Reveal file in native file manager from inline viewer | 3 |
+| FR-CHAT-21 | Export viewed markdown as PDF on Linux | 3 |
+| FR-CHAT-22 | CSV files open in the inline viewer as a table | 3 S4a |
 
 **FR-CHAT-01 — Streaming message display**
 
@@ -524,18 +524,18 @@ file in its directory — it does not execute it. The agent cannot invoke it.
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-SETUP-01 | First-run detection | 1 ✓ |
-| FR-SETUP-02 | Language selection | 1 ✓ |
-| FR-SETUP-03 | Welcome screen | 1 ✓ |
-| FR-SETUP-04 | Location picker | 1 ✓ |
-| FR-SETUP-05 | Provider authentication | 1 ✓ |
-| FR-SETUP-06 | Model selection | 1 ✓ |
-| FR-SETUP-07 | Personalization form (name + about) | 1 ✓ |
-| FR-SETUP-08 | Deterministic buddy directory setup | 1 ✓ |
-| FR-SETUP-09 | First conversation with warm handoff | 1 ✓ |
-| FR-SETUP-10 | Import existing instance | 1 ✓ |
-| FR-SETUP-11 | Worker validates the location before creating or adopting | 2 ✓ |
-| FR-SETUP-12 | Incomplete instances are detected, not adopted | 2 ✓ |
+| FR-SETUP-01 | First-run detection | 1 |
+| FR-SETUP-02 | Language selection | 1 |
+| FR-SETUP-03 | Welcome screen | 1 |
+| FR-SETUP-04 | Location picker | 1 |
+| FR-SETUP-05 | Provider authentication | 1 |
+| FR-SETUP-06 | Model selection | 1 |
+| FR-SETUP-07 | Personalization form (name + about) | 1 |
+| FR-SETUP-08 | Deterministic buddy directory setup | 1 |
+| FR-SETUP-09 | First conversation with warm handoff | 1 |
+| FR-SETUP-10 | Import existing instance | 1 |
+| FR-SETUP-11 | Worker validates the location before creating or adopting | 2 |
+| FR-SETUP-12 | Incomplete instances are detected, not adopted | 2 |
 
 **FR-SETUP-01 — First-run detection**
 
@@ -672,10 +672,10 @@ platform-specific install instructions is shown and setup cannot continue.
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-SESSION-01 | Fresh session on every launch | 1 ✓ |
+| FR-SESSION-01 | Fresh session on every launch | 1 |
 | FR-SESSION-02 | (removed — every launch is inherently fresh) | — |
-| FR-SESSION-03 | Session end on app close | 1 ✓ |
-| FR-SESSION-06 | Mid-session date correction | 2 ✓ |
+| FR-SESSION-03 | Session end on app close | 1 |
+| FR-SESSION-06 | Mid-session date correction | 2 |
 
 **FR-SESSION-01 — Fresh session on every launch**
 
@@ -704,18 +704,18 @@ the current date on each user turn, not the session start date. Fixes #4.
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-REFLECT-01 | Session-end reflect finalization (daily log append) | 1 ✓ |
-| FR-REFLECT-02 | Forked reflect on session end (primary) | 1 ✓ |
-| FR-REFLECT-03 | Compaction-triggered checkpoint reflect (fork before Pi compacts) | 2 ✓ |
-| FR-REFLECT-04 | Log output sanitizer (strip tool-call artifacts) | 2 ✓ |
-| FR-REFLECT-05 | Session path persistence and crash recovery | 2 ✓ |
-| FR-REFLECT-06 | Reflect child does not race the worker for the git index | 2 ✓ |
+| FR-REFLECT-01 | Session-end reflect finalization (daily log append) | 1 |
+| FR-REFLECT-02 | Forked reflect on session end (primary) | 1 |
+| FR-REFLECT-03 | Compaction-triggered checkpoint reflect (fork before Pi compacts) | 2 |
+| FR-REFLECT-04 | Log output sanitizer (strip tool-call artifacts) | 2 |
+| FR-REFLECT-05 | Session path persistence and crash recovery | 2 |
+| FR-REFLECT-06 | Reflect child does not race the worker for the git index | 2 |
 | FR-REFLECT-07 | Reflect child is bounded by a timeout | 2 |
-| FR-REFLECT-08 | Empty sessions do not spawn a reflect | 2 ✓ |
-| FR-REFLECT-09 | Reflect requires user interaction, not just system turns | 2.5 ✓ |
-| FR-REFLECT-10 | Enriched reflect observations, reasoning, and concrete facts | 2.5 ✓ |
-| FR-REFLECT-11 | Active context patches via session-end reflect | 2.5 ✓ |
-| FR-REFLECT-12 | Task completion guard: reflect must not mark tasks done unless explicitly confirmed | 2.5 ✓ |
+| FR-REFLECT-08 | Empty sessions do not spawn a reflect | 2 |
+| FR-REFLECT-09 | Reflect requires user interaction, not just system turns | 2.5 |
+| FR-REFLECT-10 | Enriched reflect observations, reasoning, and concrete facts | 2.5 |
+| FR-REFLECT-11 | Active context patches via session-end reflect | 2.5 |
+| FR-REFLECT-12 | Task completion guard: reflect must not mark tasks done unless explicitly confirmed | 2.5 |
 
 **FR-REFLECT-01 — Session-end reflect finalization**
 
@@ -888,14 +888,14 @@ in passing remain open. When in doubt, leave open.
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-PERM-01 | Zone 1: buddy home full access | 1 ✓ |
-| FR-PERM-02 | Identity file write confirmation | 1 ✓ |
-| FR-PERM-03 | Zone 3: confirm all outside access | 1 ✓ |
-| FR-PERM-04 | Hardcoded denylist | 1 ✓ |
+| FR-PERM-01 | Zone 1: buddy home full access | 1 |
+| FR-PERM-02 | Identity file write confirmation | 1 |
+| FR-PERM-03 | Zone 3: confirm all outside access | 1 |
+| FR-PERM-04 | Hardcoded denylist | 1 |
 | FR-PERM-05 | Implicit permission from user messages | rejected |
-| FR-PERM-06 | Zone 2: user-designated paths | 1 ✓ |
+| FR-PERM-06 | Zone 2: user-designated paths | 1 |
 | FR-PERM-06b | "Allow always" only for outside reads | 1 |
-| FR-PERM-07 | Permission prompt in chat | 1 ✓ |
+| FR-PERM-07 | Permission prompt in chat | 1 |
 
 **FR-PERM-01 — Zone 1: buddy home**
 
@@ -958,12 +958,12 @@ in passing remain open. When in doubt, leave open.
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-INGEST-01 | Drag and drop files onto chat | 1 ✓ |
-| FR-INGEST-02 | Attach button | 1 ✓ |
-| FR-INGEST-03 | Dropped file implicit permission | 1 ✓ |
-| FR-INGEST-04 | Supported formats (csv/json/yaml/log, rejection reasons, no extensionless) | 1 ✓ |
-| FR-INGEST-05 | Image attachments (vision) | 1 ✓ |
-| FR-INGEST-06 | PDF attachments (local text extraction) | 1 ✓ |
+| FR-INGEST-01 | Drag and drop files onto chat | 1 |
+| FR-INGEST-02 | Attach button | 1 |
+| FR-INGEST-03 | Dropped file implicit permission | 1 |
+| FR-INGEST-04 | Supported formats (csv/json/yaml/log, rejection reasons, no extensionless) | 1 |
+| FR-INGEST-05 | Image attachments (vision) | 1 |
+| FR-INGEST-06 | PDF attachments (local text extraction) | 1 |
 
 **FR-INGEST-01 — Drag and drop**
 
@@ -1030,12 +1030,12 @@ in passing remain open. When in doubt, leave open.
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-DEFERRED-01 | Surface due items on app start | 1 ✓ |
-| FR-DEFERRED-02 | Heartbeat periodic check | 2 ✓ |
-| FR-DEFERRED-03 | OS notification for due items | 2 ✓ |
-| FR-DEFERRED-04 | Deferred banner Close vs Dismiss | 2.5 ✓ |
-| FR-DEFERRED-05 | Every heartbeat delivery of due items re-opens the in-app banner, after orientation or Close | 2.5 ✓ |
-| FR-DEFERRED-06 | Reflect removes resolved deferred items via ### Resolved deferred section | 2.5 ✓ |
+| FR-DEFERRED-01 | Surface due items on app start | 1 |
+| FR-DEFERRED-02 | Heartbeat periodic check | 2 |
+| FR-DEFERRED-03 | OS notification for due items | 2 |
+| FR-DEFERRED-04 | Deferred banner Close vs Dismiss | 2.5 |
+| FR-DEFERRED-05 | Every heartbeat delivery of due items re-opens the in-app banner, after orientation or Close | 2.5 |
+| FR-DEFERRED-06 | Reflect removes resolved deferred items via ### Resolved deferred section | 2.5 |
 
 **FR-DEFERRED-01 — Surface on start**
 
@@ -1110,37 +1110,37 @@ from `deferred.md` and removes them.
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-CONSOL-01 | Usage-based trigger evaluation | 2 ✓ |
-| FR-CONSOL-02 | Cascade ordering | 2 ✓ |
-| FR-CONSOL-03 | Separate maintenance session | 2 ✓ |
-| FR-CONSOL-04 | Lock management | 2 ✓ |
-| FR-CONSOL-05 | Idle-aware scheduling | 2 ✓ |
-| FR-CONSOL-06 | Run journal | 2 ✓ |
-| FR-CONSOL-07 | Consolidation relocate tool for brain file grouping | 2 ✓ |
-| FR-CONSOL-08 | Consolidation state persisted per completed depth | 2 ✓ |
-| FR-CONSOL-09 | Failure backoff and retry ceiling | 2 ✓ |
-| FR-CONSOL-10 | Maintenance session enforces the zone model | 2 ✓ |
-| FR-CONSOL-11 | Identity changes made by consolidation are surfaced | 2 ✓ |
-| FR-CONSOL-12 | A consolidation that produced no output is a failure | 2 ✓ |
-| FR-CONSOL-13 | A consolidation that corrupts the brain is a failure | 2 ✓ |
-| FR-CONSOL-14 | The daily log records maintenance only when notable | 2 ✓ |
-| FR-CONSOL-15 | The maintenance session's model is chosen per depth | 2 ✓ |
-| FR-CONSOL-16 | Each cascade depth runs in its own session | 2 ✓ |
-| FR-CONSOL-17 | Observation hygiene pre-computation | 2 ✓ |
-| FR-CONSOL-18 | Skill invocation tracking (improvement detection) | 2 ✓ |
-| FR-CONSOL-19 | Weekly diff + snapshot | 2 ✓ |
-| FR-CONSOL-20 | Daily coherence detection | 2 ✓ |
-| FR-CONSOL-22 | Grouping candidates detection | 2 ✓ |
-| FR-CONSOL-23 | Monthly metrics computation | 2 ✓ |
-| FR-CONSOL-24 | Consolidation prompt rewrite (depth rebalance) | 2 ✓ |
-| FR-CONSOL-25 | Scheduler threshold update | 2 ✓ |
-| FR-CONSOL-26 | Log rotation preserves relative links | 2 ✓ |
-| FR-CONSOL-27 | Pending logs detection for late reflects | 2 ✓ |
-| FR-CONSOL-28 | tasks() tool registered in consolidation session toolset | 2.5 ✓ |
-| FR-CONSOL-29 | findDatedTaskItems excludes created-date HTML comments from date matching | 2 ✓ |
-| FR-CONSOL-30 | detectTaskCoherence: strip metadata tokens, proximity-scoped completion check | 2 ✓ |
-| FR-CONSOL-31 | buildConsolidationPrompt includes pending inbox migration signal when file exists | 2.5 ✓ |
-| FR-CONSOL-32 | Maintenance permission policy allows task-remove during consolidation | 2.5 ✓ |
+| FR-CONSOL-01 | Usage-based trigger evaluation | 2 |
+| FR-CONSOL-02 | Cascade ordering | 2 |
+| FR-CONSOL-03 | Separate maintenance session | 2 |
+| FR-CONSOL-04 | Lock management | 2 |
+| FR-CONSOL-05 | Idle-aware scheduling | 2 |
+| FR-CONSOL-06 | Run journal | 2 |
+| FR-CONSOL-07 | Consolidation relocate tool for brain file grouping | 2 |
+| FR-CONSOL-08 | Consolidation state persisted per completed depth | 2 |
+| FR-CONSOL-09 | Failure backoff and retry ceiling | 2 |
+| FR-CONSOL-10 | Maintenance session enforces the zone model | 2 |
+| FR-CONSOL-11 | Identity changes made by consolidation are surfaced | 2 |
+| FR-CONSOL-12 | A consolidation that produced no output is a failure | 2 |
+| FR-CONSOL-13 | A consolidation that corrupts the brain is a failure | 2 |
+| FR-CONSOL-14 | The daily log records maintenance only when notable | 2 |
+| FR-CONSOL-15 | The maintenance session's model is chosen per depth | 2 |
+| FR-CONSOL-16 | Each cascade depth runs in its own session | 2 |
+| FR-CONSOL-17 | Observation hygiene pre-computation | 2 |
+| FR-CONSOL-18 | Skill invocation tracking (improvement detection) | 2 |
+| FR-CONSOL-19 | Weekly diff + snapshot | 2 |
+| FR-CONSOL-20 | Daily coherence detection | 2 |
+| FR-CONSOL-22 | Grouping candidates detection | 2 |
+| FR-CONSOL-23 | Monthly metrics computation | 2 |
+| FR-CONSOL-24 | Consolidation prompt rewrite (depth rebalance) | 2 |
+| FR-CONSOL-25 | Scheduler threshold update | 2 |
+| FR-CONSOL-26 | Log rotation preserves relative links | 2 |
+| FR-CONSOL-27 | Pending logs detection for late reflects | 2 |
+| FR-CONSOL-28 | tasks() tool registered in consolidation session toolset | 2.5 |
+| FR-CONSOL-29 | findDatedTaskItems excludes created-date HTML comments from date matching | 2 |
+| FR-CONSOL-30 | detectTaskCoherence: strip metadata tokens, proximity-scoped completion check | 2 |
+| FR-CONSOL-31 | buildConsolidationPrompt includes pending inbox migration signal when file exists | 2.5 |
+| FR-CONSOL-32 | Maintenance permission policy allows task-remove during consolidation | 2.5 |
 
 **Consolidation depths:**
 
@@ -1506,14 +1506,14 @@ fresh session per depth gives each depth the full window.
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-HEBB-01 | Intercept read tool calls | 2 ✓ |
-| FR-HEBB-02 | Frontmatter update | 2 ✓ |
-| FR-HEBB-03 | Exclusions | 2 ✓ |
-| FR-HEBB-04 | Lazy commit | 2 ✓ |
-| FR-HEBB-05 | Counters are created on first read | 2 ✓ |
-| FR-HEBB-06 | Counters survive a whole-file rewrite | 2 ✓ |
-| FR-HEBB-07 | Access is recorded from the paired tool events | 2 ✓ |
-| FR-HEBB-08 | Counters are guarded in the maintenance session too | 2 ✓ |
+| FR-HEBB-01 | Intercept read tool calls | 2 |
+| FR-HEBB-02 | Frontmatter update | 2 |
+| FR-HEBB-03 | Exclusions | 2 |
+| FR-HEBB-04 | Lazy commit | 2 |
+| FR-HEBB-05 | Counters are created on first read | 2 |
+| FR-HEBB-06 | Counters survive a whole-file rewrite | 2 |
+| FR-HEBB-07 | Access is recorded from the paired tool events | 2 |
+| FR-HEBB-08 | Counters are guarded in the maintenance session too | 2 |
 
 **FR-HEBB-01 — Intercept reads**
 
@@ -1646,11 +1646,11 @@ drown the signal it is meant to measure.
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-GUARD-01 | Heading-snapshot guard prevents structural destruction | 2 ✓ |
-| FR-GUARD-01b | Denylist scope — only protected files, not all brain/logs | 2 ✓ |
-| FR-GUARD-01c | Tool result enrichment on revert (model sees feedback) | 2 ✓ |
-| FR-GUARD-02 | Edit-failure recovery hints and prompt rule | 2 ✓ |
-| FR-GUARD-03 | Post-consolidation filename validation and broken-link repair | 2 ✓ |
+| FR-GUARD-01 | Heading-snapshot guard prevents structural destruction | 2 |
+| FR-GUARD-01b | Denylist scope — only protected files, not all brain/logs | 2 |
+| FR-GUARD-01c | Tool result enrichment on revert (model sees feedback) | 2 |
+| FR-GUARD-02 | Edit-failure recovery hints and prompt rule | 2 |
+| FR-GUARD-03 | Post-consolidation filename validation and broken-link repair | 2 |
 
 **FR-GUARD-01 — Heading-snapshot guard**
 
@@ -1792,10 +1792,10 @@ repair → `commitAll`.
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-SDK-01 | Streaming works with delta-only `message_update` events | Maint ✓ |
-| FR-SDK-02 | Session management APIs remain compatible after SDK upgrade | Maint ✓ |
-| FR-SDK-03 | Sidecar deep imports resolve in the target Pi SDK version | Maint ✓ |
-| FR-SDK-04 | Buddy runs on Pi SDK 1.x with every integration point intact | Maint ✓ |
+| FR-SDK-01 | Streaming works with delta-only `message_update` events | Maint |
+| FR-SDK-02 | Session management APIs remain compatible after SDK upgrade | Maint |
+| FR-SDK-03 | Sidecar deep imports resolve in the target Pi SDK version | Maint |
+| FR-SDK-04 | Buddy runs on Pi SDK 1.x with every integration point intact | Maint |
 
 **FR-SDK-01 — Delta-only streaming**
 
@@ -1845,14 +1845,14 @@ Out of scope: adopting new models (GPT-6, Opus 5.5) and new Pi features
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-PROMPT-01 | System prompt assembly (identity and rules) | 1 ✓ |
-| FR-PROMPT-02 | Session-start context message | 1 ✓ |
-| FR-PROMPT-03 | Global base prompt (agents-base.md) | 2 ✓ |
-| FR-PROMPT-04 | Hidden context injection at session boot | 2 ✓ |
-| FR-PROMPT-06 | Edit batching guidance for append-heavy files | 2 ✓ |
-| FR-PROMPT-07 | Queue file edit anchoring guidance | 2 ✓ |
-| FR-PROMPT-08 | AGENTS.md structural migration (strip core instructions) | 2 ✓ |
-| FR-PROMPT-09 | Session-time log writing guidance | 2.5 ✓ |
+| FR-PROMPT-01 | System prompt assembly (identity and rules) | 1 |
+| FR-PROMPT-02 | Session-start context message | 1 |
+| FR-PROMPT-03 | Global base prompt (agents-base.md) | 2 |
+| FR-PROMPT-04 | Hidden context injection at session boot | 2 |
+| FR-PROMPT-06 | Edit batching guidance for append-heavy files | 2 |
+| FR-PROMPT-07 | Queue file edit anchoring guidance | 2 |
+| FR-PROMPT-08 | AGENTS.md structural migration (strip core instructions) | 2 |
+| FR-PROMPT-09 | Session-time log writing guidance | 2.5 |
 
 **FR-PROMPT-01 — System prompt assembly**
 
@@ -1981,9 +1981,9 @@ already written.
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-GIT-01 | Auto-commit after agent writes | 1 ✓ |
-| FR-GIT-02 | Git invisible to user | 1 ✓ |
-| FR-GIT-03 | Index rebuild on reflect complete | 1 ✓ |
+| FR-GIT-01 | Auto-commit after agent writes | 1 |
+| FR-GIT-02 | Git invisible to user | 1 |
+| FR-GIT-03 | Index rebuild on reflect complete | 1 |
 
 **FR-GIT-01 — Auto-commit**
 
@@ -2012,9 +2012,9 @@ already written.
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-AUTH-01 | Detect expired OAuth + show re-login in UI | 3 ✓ |
-| FR-AUTH-02 | Surface auth failure to user in active session | 3 ✓ |
-| FR-AUTH-02b | Boot auth card gated on health check | 3 ✓ |
+| FR-AUTH-01 | Detect expired OAuth + show re-login in UI | 3 |
+| FR-AUTH-02 | Surface auth failure to user in active session | 3 |
+| FR-AUTH-02b | Boot auth card gated on health check | 3 |
 
 **FR-AUTH-01 — Detect expired OAuth and offer re-login**
 
@@ -2050,14 +2050,14 @@ already written.
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-SETTINGS-01 | Provider and model stored in Pi settings | 1 ✓ |
-| FR-SETTINGS-02 | Settings UI | 3 ✓ |
-| FR-SETTINGS-03 | Model switching from UI | 3 ✓ |
-| FR-SETTINGS-04 | Language switching from settings | 3 ✓ |
-| FR-SETTINGS-05 | Settings access from UI (gear icon + menu) | 3 ✓ |
-| FR-SETTINGS-08 | Settings tab system (General + Integrations) | 4 ✓ |
-| FR-SETTINGS-09 | Remove Version from Settings modal | 4 ✓ |
-| FR-SETTINGS-10 | Collapsible integration panels (collapsed by default, status visible) | 4 ✓ |
+| FR-SETTINGS-01 | Provider and model stored in Pi settings | 1 |
+| FR-SETTINGS-02 | Settings UI | 3 |
+| FR-SETTINGS-03 | Model switching from UI | 3 |
+| FR-SETTINGS-04 | Language switching from settings | 3 |
+| FR-SETTINGS-05 | Settings access from UI (gear icon + menu) | 3 |
+| FR-SETTINGS-08 | Settings tab system (General + Integrations) | 4 |
+| FR-SETTINGS-09 | Remove Version from Settings modal | 4 |
+| FR-SETTINGS-10 | Collapsible integration panels (collapsed by default, status visible) | 4 |
 | FR-SETTINGS-03b | Fix: API-key provider switch silently reverts (catalog fallback) | — |
 | FR-SETTINGS-03c | Fix: OpenAI API-key maps to wrong Pi provider | — |
 
@@ -2141,10 +2141,10 @@ already written.
 | ID | Description | Phase |
 |----|-------------|-------|
 | ~~FR-COST-01~~ | ~~Per-message cost~~ | — removed |
-| FR-COST-02 | Usage panel in Settings (session + monthly) | 2 ✓ |
-| FR-COST-03 | Budget alert and hard limit | 2 ✓ |
+| FR-COST-02 | Usage panel in Settings (session + monthly) | 2 |
+| FR-COST-03 | Budget alert and hard limit | 2 |
 | FR-COST-04 | Memory depth presets (maintenance frequency) | 3+ |
-| FR-COST-05 | Budget gate aborts an in-flight cascade | 2 ✓ |
+| FR-COST-05 | Budget gate aborts an in-flight cascade | 2 |
 | ~~FR-COST-06~~ | ~~Usage shown in tokens and messages~~ | — rejected |
 
 **Spend is tracked globally, never per provider (decision, 2026-07-28)**
@@ -2243,18 +2243,18 @@ detailed specification: [specs/BRAIN-SPEC.md](BRAIN-SPEC.md).
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-BRAIN-01 | AGENTS.md provides instance state; core rules in agents-base.md | 1 ✓ |
-| FR-BRAIN-02 | SOUL.md defines character and first-session personalization flow | 1 ✓ |
-| FR-BRAIN-03 | USER.md placeholder is correctly populated by agent in first conversation | 1 ✓ |
-| FR-BRAIN-04 | Consolidation skill produces meaningful summaries when invoked | 2 ✓ |
-| FR-BRAIN-05 | Observation pipeline captures and promotes patterns | 2 ✓ |
-| FR-BRAIN-06 | AGENTS.md does not declare skills — procedural prompts are skill tools (FR-SKILL) | 2 ✓ |
-| FR-BRAIN-07 | Brain health linter (structural checks, worker code) | 2 ✓ |
-| FR-BRAIN-07b | index.md under agent_brain exempt from frontmatter checks | 2 ✓ |
-| FR-BRAIN-08 | Preference tracking in USER.md (current state, no history) | 3 ✓ |
-| FR-BRAIN-09 | "What did we learn about the user?" consolidation step | 3 ✓ |
-| FR-BRAIN-10 | Cross-domain principle abstraction (weekly depth 2) | 3 ✓ |
-| FR-BRAIN-11 | Working memory precision eval (manual dev tool) | 3 ✓ |
+| FR-BRAIN-01 | AGENTS.md provides instance state; core rules in agents-base.md | 1 |
+| FR-BRAIN-02 | SOUL.md defines character and first-session personalization flow | 1 |
+| FR-BRAIN-03 | USER.md placeholder is correctly populated by agent in first conversation | 1 |
+| FR-BRAIN-04 | Consolidation skill produces meaningful summaries when invoked | 2 |
+| FR-BRAIN-05 | Observation pipeline captures and promotes patterns | 2 |
+| FR-BRAIN-06 | AGENTS.md does not declare skills — procedural prompts are skill tools (FR-SKILL) | 2 |
+| FR-BRAIN-07 | Brain health linter (structural checks, worker code) | 2 |
+| FR-BRAIN-07b | index.md under agent_brain exempt from frontmatter checks | 2 |
+| FR-BRAIN-08 | Preference tracking in USER.md (current state, no history) | 3 |
+| FR-BRAIN-09 | "What did we learn about the user?" consolidation step | 3 |
+| FR-BRAIN-10 | Cross-domain principle abstraction (weekly depth 2) | 3 |
+| FR-BRAIN-11 | Working memory precision eval (manual dev tool) | 3 |
 | FR-BRAIN-12 | Forget mechanism | — deferred |
 | FR-BRAIN-13 | Extended memory retrieval eval | — deferred |
 
@@ -2427,13 +2427,13 @@ Full specification in [specs/BRAIN-SPEC.md](BRAIN-SPEC.md).
 |----|-------------|-------|
 | FR-SHELL-01 | App header bar with session controls | — removed |
 | FR-SHELL-02 | Explicit end-session button | — removed |
-| FR-SHELL-03 | About / app info panel (native macOS menu) | 1 ✓ |
-| FR-SHELL-04 | Attach button in input bar | 1 ✓ |
-| FR-SHELL-05 | Input bar layout (stacked: attachments / text / buttons) | 1 ✓ |
-| FR-SHELL-06 | Wizard back navigation | 1 ✓ |
-| FR-SHELL-07 | About dialog icon on Linux/Windows | 2 ✓ |
-| FR-SHELL-08 | Hide empty Window menu on Linux | 2 ✓ |
-| FR-SHELL-09 | Native menu label i18n (es/en) | 2 ✓ |
+| FR-SHELL-03 | About / app info panel (native macOS menu) | 1 |
+| FR-SHELL-04 | Attach button in input bar | 1 |
+| FR-SHELL-05 | Input bar layout (stacked: attachments / text / buttons) | 1 |
+| FR-SHELL-06 | Wizard back navigation | 1 |
+| FR-SHELL-07 | About dialog icon on Linux/Windows | 2 |
+| FR-SHELL-08 | Hide empty Window menu on Linux | 2 |
+| FR-SHELL-09 | Native menu label i18n (es/en) | 2 |
 
 **FR-SHELL-01 — App header bar** *(removed)*
 
@@ -2548,9 +2548,9 @@ GTK/muda from the system locale — out of scope.
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-DOCS-00 | Agent identity (name + self-awareness) in SOUL.md template | 1 ✓ |
-| FR-DOCS-01 | Self-documentation KB available for agent consultation | 2 ✓ |
-| FR-DOCS-02 | "Help me" / "How do you work?" triggers agent self-explanation | 2 ✓ |
+| FR-DOCS-00 | Agent identity (name + self-awareness) in SOUL.md template | 1 |
+| FR-DOCS-01 | Self-documentation KB available for agent consultation | 2 |
+| FR-DOCS-02 | "Help me" / "How do you work?" triggers agent self-explanation | 2 |
 
 **FR-DOCS-00 — Agent identity in SOUL.md**
 
@@ -2577,7 +2577,7 @@ Design decisions:
 - `index.md` follows the same progressive discovery pattern as `agent_brain/` directories.
 - No dedicated tool — the agent reads files naturally via its existing `read` tool; the prompt tells it where to look.
 
-**FR-DOCS-02 — Self-explanation trigger** ✓
+**FR-DOCS-02 — Self-explanation trigger**
 
 - **Given** the user asks "what can you do?", "how do you work?", "help", or similar
 - **When** the agent processes the request
@@ -2593,8 +2593,8 @@ Design decisions:
 | FR-WIKI-02 | Ingest documents into wiki | post-MVP |
 | FR-WIKI-03 | Cross-reference and backlinks | post-MVP |
 | FR-WIKI-04 | Search and retrieve from wiki | post-MVP |
-| FR-WIKI-05 | Wiki health: post-write consistency + heartbeat audit | post-MVP ✓ |
-| FR-WIKI-06 | Emergent concepts synthesized as heartbeat task | post-MVP ✓ |
+| FR-WIKI-05 | Wiki health: post-write consistency + heartbeat audit | post-MVP |
+| FR-WIKI-06 | Emergent concepts synthesized as heartbeat task | post-MVP |
 | FR-WIKI-07 | The wiki is always on | post-MVP |
 | FR-WIKI-08 | Filing shows progress in plain language | post-MVP |
 | FR-WIKI-09 | Lightweight capture from conversation (code-only, no child session) | post-MVP |
@@ -2852,12 +2852,12 @@ result — the LLM then follows the procedure.
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-SKILL-01 | Skill tools registered at session creation | 2 ✓ |
-| FR-SKILL-02 | process_conversation tool for manual reflect | 2 ✓ |
-| FR-SKILL-03 | triage_inbox tool for inbox processing | 2 ✓ |
-| FR-SKILL-04 | Reflect child uses bundled process-conversation prompt | 2 ✓ |
-| FR-SKILL-05 | Consolidation invokes triage via tool call | 2 ✓ |
-| FR-SKILL-06 | Learned skills auto-registered as tools from agent_brain/skills/ frontmatter | 2.5 ✓ |
+| FR-SKILL-01 | Skill tools registered at session creation | 2 |
+| FR-SKILL-02 | process_conversation tool for manual reflect | 2 |
+| FR-SKILL-03 | triage_inbox tool for inbox processing | 2 |
+| FR-SKILL-04 | Reflect child uses bundled process-conversation prompt | 2 |
+| FR-SKILL-05 | Consolidation invokes triage via tool call | 2 |
+| FR-SKILL-06 | Learned skills auto-registered as tools from agent_brain/skills/ frontmatter | 2.5 |
 
 **FR-SKILL-01 — Skill tools registered at session creation**
 
@@ -2932,9 +2932,9 @@ Frontmatter parse failures skip gracefully with a warning log.
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-NET-01 | Fetch URL content (web→markdown, PDF, image) | 2 ✓ |
+| FR-NET-01 | Fetch URL content (web→markdown, PDF, image) | 2 |
 | FR-NET-02 | Web search (opt-in toggle) | 3+ |
-| FR-NET-03 | Untrusted content framing | 2 ✓ |
+| FR-NET-03 | Untrusted content framing | 2 |
 
 **FR-NET-01 — Fetch URL content**
 
@@ -3019,8 +3019,8 @@ Frontmatter parse failures skip gracefully with a warning log.
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-DELETE-01 | File deletion with protected-file denylist | 2 ✓ |
-| FR-DELETE-02 | Brain file deletion for non-protected paths | 2 ✓ |
+| FR-DELETE-01 | File deletion with protected-file denylist | 2 |
+| FR-DELETE-02 | Brain file deletion for non-protected paths | 2 |
 
 **FR-DELETE-01 — File deletion with protected-file denylist**
 
@@ -3071,9 +3071,9 @@ Frontmatter parse failures skip gracefully with a warning log.
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-FILE-01 | Copy file from external path into user workspace | 2 ✓ |
-| FR-FILE-02 | Move/rename file within rootDir | 2 ✓ |
-| FR-FILE-03 | Brain moves with inline link rewriting | 2 ✓ |
+| FR-FILE-01 | Copy file from external path into user workspace | 2 |
+| FR-FILE-02 | Move/rename file within rootDir | 2 |
+| FR-FILE-03 | Brain moves with inline link rewriting | 2 |
 
 **FR-FILE-01 — Copy file into workspace**
 
@@ -3396,10 +3396,10 @@ Further context on local-model evaluation methodology and findings:
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-CONN-01 | Credential storage and integrations denylist | 4 ✓ |
-| FR-CONN-02 | Cache engine (entity/query/thread stores, staleness, force, pruning) | 4 ✓ |
-| FR-CONN-03 | Containment, action classification, permission gate extension | 4 ✓ |
-| FR-CONN-04 | Conditional connector tool registration | 4 ✓ |
+| FR-CONN-01 | Credential storage and integrations denylist | 4 |
+| FR-CONN-02 | Cache engine (entity/query/thread stores, staleness, force, pruning) | 4 |
+| FR-CONN-03 | Containment, action classification, permission gate extension | 4 |
+| FR-CONN-04 | Conditional connector tool registration | 4 |
 
 **FR-CONN-01 — Credential storage and denylist**
 
@@ -3435,15 +3435,15 @@ Further context on local-model evaluation methodology and findings:
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-TASK-01 | `tasks()` dispatcher, `user/tasks.md` format, PROTECTED_FILES | 1 ✓ |
-| FR-TASK-02 | Core actions: add, complete, list, move, annotate, remove | 1 ✓ |
-| FR-TASK-03 | Next action (`>>`), set_next, auto-mark first per area | 1 ✓ |
-| FR-TASK-04 | WIP limit via config action; warn on add when over limit | 1 ✓ |
-| FR-TASK-05 | Capture classification prompts in agents-base.md | 1 ✓ |
-| FR-TASK-06 | Daily cleanup + coherence renames (tasks.md) | 1 ✓ |
-| FR-TASK-07 | Migrate inbox.md → tasks.md + AGENTS.md inbox reference on session boot | 1 ✓ |
-| FR-TASK-08 | Consolidation/process prompts; retire triage_inbox skill | 1 ✓ |
-| FR-TASK-09 | Templates, BRAIN-SPEC, bundled assets | 1 ✓ |
+| FR-TASK-01 | `tasks()` dispatcher, `user/tasks.md` format, PROTECTED_FILES | 1 |
+| FR-TASK-02 | Core actions: add, complete, list, move, annotate, remove | 1 |
+| FR-TASK-03 | Next action (`>>`), set_next, auto-mark first per area | 1 |
+| FR-TASK-04 | WIP limit via config action; warn on add when over limit | 1 |
+| FR-TASK-05 | Capture classification prompts in agents-base.md | 1 |
+| FR-TASK-06 | Daily cleanup + coherence renames (tasks.md) | 1 |
+| FR-TASK-07 | Migrate inbox.md → tasks.md + AGENTS.md inbox reference on session boot | 1 |
+| FR-TASK-08 | Consolidation/process prompts; retire triage_inbox skill | 1 |
+| FR-TASK-09 | Templates, BRAIN-SPEC, bundled assets | 1 |
 
 **FR-TASK-01 — Dispatcher and file format**
 
@@ -3492,14 +3492,14 @@ Further context on local-model evaluation methodology and findings:
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-JIRA-01 | REST client, dispatcher skeleton, help action | 4 ✓ |
-| FR-JIRA-02 | Read actions with entity/query cache | 4 ✓ |
-| FR-JIRA-03 | ADF renderer, issue_detail, epic_children | 4 ✓ |
-| FR-JIRA-04 | Settings Integrations Jira panel | 4 ✓ |
-| FR-JIRA-05 | Error handling and offline stale serve | 4 ✓ |
-| FR-JIRA-06 | Resolve display names to accountId for cross-user queries | 4 ✓ |
-| FR-JIRA-07 | Local user directory with passive learning | 4 ✓ |
-| FR-JIRA-08 | Team board action via Agile API with board ID from Settings | 4 ✓ |
+| FR-JIRA-01 | REST client, dispatcher skeleton, help action | 4 |
+| FR-JIRA-02 | Read actions with entity/query cache | 4 |
+| FR-JIRA-03 | ADF renderer, issue_detail, epic_children | 4 |
+| FR-JIRA-04 | Settings Integrations Jira panel | 4 |
+| FR-JIRA-05 | Error handling and offline stale serve | 4 |
+| FR-JIRA-06 | Resolve display names to accountId for cross-user queries | 4 |
+| FR-JIRA-07 | Local user directory with passive learning | 4 |
+| FR-JIRA-08 | Team board action via Agile API with board ID from Settings | 4 |
 
 **FR-JIRA-01 — REST client and dispatcher**
 
@@ -3567,12 +3567,12 @@ Further context on local-model evaluation methodology and findings:
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-SLACK-01 | Slack dispatcher, help action, session auth, Settings panel | 4 ✓ |
-| FR-SLACK-02 | Read actions (thread, channel_history, channels) with fetch-to-file | 4 ✓ |
-| FR-SLACK-03 | User ID resolution and channel directory | 4 ✓ |
-| FR-SLACK-04 | Enterprise error handling and channel auto-register from use | 4 ✓ |
-| FR-SLACK-05 | Find a user by name, local directory first; `channels` refresh keeps learned DM peers | 4 ✓ |
-| FR-SLACK-06 | Read the DM with a person by user id; `last` window of the newest messages | 4 ✓ |
+| FR-SLACK-01 | Slack dispatcher, help action, session auth, Settings panel | 4 |
+| FR-SLACK-02 | Read actions (thread, channel_history, channels) with fetch-to-file | 4 |
+| FR-SLACK-03 | User ID resolution and channel directory | 4 |
+| FR-SLACK-04 | Enterprise error handling and channel auto-register from use | 4 |
+| FR-SLACK-05 | Find a user by name, local directory first; `channels` refresh keeps learned DM peers | 4 |
+| FR-SLACK-06 | Read the DM with a person by user id; `last` window of the newest messages | 4 |
 
 **FR-SLACK-01 — Dispatcher, auth, and Settings**
 
@@ -3666,12 +3666,12 @@ only, so "the last conversation" came back empty whenever it was older.
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-TOPIC-01 | "New topic" ghost button + popover in InputBar | 2 Sprint A ✓ |
-| FR-TOPIC-02 | "Start now" — shutdown + reflect in background + fresh session | 2 Sprint A ✓ |
-| FR-TOPIC-03 | "Wrap up first" — interactive closure before transition | 2 Sprint B ✓ |
-| FR-TOPIC-04 | i18n labels (EN/ES) | 2 Sprint A ✓ |
-| FR-TOPIC-05 | Button disabled during streaming and topic transition | 2 Sprint A ✓ |
-| FR-TOPIC-06 | Wrap-up offers to capture pending items as tasks | 2.5 ✓ |
+| FR-TOPIC-01 | "New topic" ghost button + popover in InputBar | 2 Sprint A |
+| FR-TOPIC-02 | "Start now" — shutdown + reflect in background + fresh session | 2 Sprint A |
+| FR-TOPIC-03 | "Wrap up first" — interactive closure before transition | 2 Sprint B |
+| FR-TOPIC-04 | i18n labels (EN/ES) | 2 Sprint A |
+| FR-TOPIC-05 | Button disabled during streaming and topic transition | 2 Sprint A |
+| FR-TOPIC-06 | Wrap-up offers to capture pending items as tasks | 2.5 |
 
 **FR-TOPIC-01 — New topic button and popover**
 
@@ -3725,10 +3725,10 @@ only, so "the last conversation" came back empty whenever it was older.
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-ORIENT-02 | Orientation card at first open (deferred + next tasks) | 2 ✓ |
-| FR-ORIENT-03 | Agent-generated "where we left off" one-liner | 2 ✓ |
-| FR-ORIENT-04 | One-liner cleared on topic transition, not re-requested | 2.5 ✓ |
-| FR-ORIENT-05 | Orientation dismiss does not acknowledge deferred items | 2.5 ✓ |
+| FR-ORIENT-02 | Orientation card at first open (deferred + next tasks) | 2 |
+| FR-ORIENT-03 | Agent-generated "where we left off" one-liner | 2 |
+| FR-ORIENT-04 | One-liner cleared on topic transition, not re-requested | 2.5 |
+| FR-ORIENT-05 | Orientation dismiss does not acknowledge deferred items | 2.5 |
 
 **FR-ORIENT-02 — Orientation card at first open**
 
@@ -3763,51 +3763,51 @@ only, so "the last conversation" came back empty whenever it was older.
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-TASKM-01 | Project tag in task format (`#project-slug`) | 2.5 ✓ |
-| FR-TASKM-02 | `add` action accepts `project` param | 2.5 ✓ |
-| FR-TASKM-03 | `list` action filters by project | 2.5 ✓ |
-| FR-TASKM-04 | Capture classification prompts: GTD anchoring for task vs project | 2.5 ✓ |
-| FR-TASKM-05 | Consolidation prompt: project health check | 2.5 ✓ |
-| FR-TASKM-06 | `created` field on TaskItem, set on add, serialized as HTML comment | 2.5 ✓ |
-| FR-TASKM-07 | `@someday` parking: excluded from default list and WIP count | 2.5 ✓ |
-| FR-TASKM-08 | Due date is a deadline, not a start: future-dated tasks stay visible, Next and fronts ignore it | 2.5 ✓ |
-| FR-TASKM-09 | Staleness metadata: `staleDays` in list result for aged items | 2.5 ✓ |
-| FR-TASKM-10 | Prompt guidance for parking, visibility, and staleness review | 2.5 ✓ |
-| FR-TASKM-11 | Direct file-tool access to `user/tasks.md` denied (read, write, edit) | 2.5 ✓ |
-| FR-TASKM-13 | Batch brain dump classification guidance and project file parity | 2.5 ✓ |
-| FR-TASKM-14 | Identity voice: first-person consistency in agent responses | 2.5 ✓ |
-| FR-TASKM-15 | Default-context classification with explicit-commitment test for tasks | 2.5 ✓ |
-| FR-TASKM-16 | Area of Focus as sixth capture category with routing criteria | 2.5 ✓ |
-| FR-TASKM-17 | Dual-lookup for areas and process-conversation verify update | 2.5 ✓ |
-| FR-TASKM-18 | Wiki vs workspace routing distinction in capture guidance | 2.5 ✓ |
-| FR-TASKM-19 | Consolidation workspace-to-wiki maturity flagging | 2.5 ✓ |
-| FR-TASKM-20 | user/workspaces/ directory constant, template, and AGENTS.md nav | 2.5 ✓ |
-| FR-TASKM-21 | Boot migration: workspaces nav in existing AGENTS.md | 2.5 ✓ |
-| FR-TASKM-22 | Bundled docs: workspaces directory in where-things-live | 2.5 ✓ |
-| FR-TASKM-23 | Remove WIP warning from add action | 2.5 ✓ |
-| FR-TASKM-24 | No global next-action count in the list result; next status is per area | 2.5 ✓ |
-| FR-TASKM-25 | Consolidation daily WIP review step | 2.5 ✓ |
-| FR-TASKM-26 | Remove WIP awareness section from agents-base | 2.5 ✓ |
-| FR-TASKM-27 | Task created date uses local time via toIsoDay | 2.5 ✓ |
-| FR-TASKM-28 | Boot migration creates workspaces directory in existing instances | 2.5 ✓ |
-| FR-TASKM-29 | Content escape hatch: ask when shared content contains structured actions | 2.5 ✓ |
-| FR-TASKM-30 | Safe inbox migration: preserve unrecognized content for LLM fallback | 2.5 ✓ |
-| FR-TASKM-31 | Deterministic list filters: only_next, only_stale, only_due, only_projects | 2.5 ✓ |
-| FR-TASKM-32 | edit action: modify task text, area, project, due in place | 2.5 ✓ |
-| FR-TASKM-33 | Consolidation uses deterministic task filters instead of broad list | 2.5 ✓ |
-| FR-TASKM-34 | Next-action hint on area clear: remaining count + suggest prompt in tool response | 2.5 ✓ |
-| FR-TASKM-35 | Outcome-vs-task reinforcement: outcome-shaped language patterns in capture prompt | 2.5 ✓ |
-| FR-TASKM-36 | Untagged cluster review: consolidation weekly step with anti-misc-project guardrail | 2.5 ✓ |
-| FR-TASKM-37 | Next-per-project: >> scoped to project or loose-in-area, not whole area | 2.5 ✓ |
-| FR-TASKM-38 | complete/remove hint counts remaining in scope, not whole area | 2.5 ✓ |
-| FR-TASKM-39 | Active fronts pre-computation: parse AGENTS.md Right now for per-area WIP check | 2.5 ✓ |
-| FR-TASKM-40 | Default WIP limit changed from 5 to 3 (per-area threshold) | 2.5 ✓ |
-| FR-TASKM-41 | Active fronts computed from tasks.md (supersedes FR-TASKM-39) | 2.5 ✓ |
-| FR-TASKM-42 | Consolidation WIP check references tasks.md fronts (updates FR-TASKM-25) | 2.5 ✓ |
-| FR-TASKM-43 | Right now content guidance: exclude tasks and projects | 2.5 ✓ |
-| FR-TASKM-44 | Simplify task cleanup: remove all [x] items, drop verify mechanism | 2.5 ✓ |
-| FR-TASKM-45 | Auto-mark sole remaining task as next on complete/remove | 2.5 ✓ |
-| FR-TASKM-46 | Per-area WIP overrides in config; null disables, number replaces global | 2.5 ✓ |
+| FR-TASKM-01 | Project tag in task format (`#project-slug`) | 2.5 |
+| FR-TASKM-02 | `add` action accepts `project` param | 2.5 |
+| FR-TASKM-03 | `list` action filters by project | 2.5 |
+| FR-TASKM-04 | Capture classification prompts: GTD anchoring for task vs project | 2.5 |
+| FR-TASKM-05 | Consolidation prompt: project health check | 2.5 |
+| FR-TASKM-06 | `created` field on TaskItem, set on add, serialized as HTML comment | 2.5 |
+| FR-TASKM-07 | `@someday` parking: excluded from default list and WIP count | 2.5 |
+| FR-TASKM-08 | Due date is a deadline, not a start: future-dated tasks stay visible, Next and fronts ignore it | 2.5 |
+| FR-TASKM-09 | Staleness metadata: `staleDays` in list result for aged items | 2.5 |
+| FR-TASKM-10 | Prompt guidance for parking, visibility, and staleness review | 2.5 |
+| FR-TASKM-11 | Direct file-tool access to `user/tasks.md` denied (read, write, edit) | 2.5 |
+| FR-TASKM-13 | Batch brain dump classification guidance and project file parity | 2.5 |
+| FR-TASKM-14 | Identity voice: first-person consistency in agent responses | 2.5 |
+| FR-TASKM-15 | Default-context classification with explicit-commitment test for tasks | 2.5 |
+| FR-TASKM-16 | Area of Focus as sixth capture category with routing criteria | 2.5 |
+| FR-TASKM-17 | Dual-lookup for areas and process-conversation verify update | 2.5 |
+| FR-TASKM-18 | Wiki vs workspace routing distinction in capture guidance | 2.5 |
+| FR-TASKM-19 | Consolidation workspace-to-wiki maturity flagging | 2.5 |
+| FR-TASKM-20 | user/workspaces/ directory constant, template, and AGENTS.md nav | 2.5 |
+| FR-TASKM-21 | Boot migration: workspaces nav in existing AGENTS.md | 2.5 |
+| FR-TASKM-22 | Bundled docs: workspaces directory in where-things-live | 2.5 |
+| FR-TASKM-23 | Remove WIP warning from add action | 2.5 |
+| FR-TASKM-24 | No global next-action count in the list result; next status is per area | 2.5 |
+| FR-TASKM-25 | Consolidation daily WIP review step | 2.5 |
+| FR-TASKM-26 | Remove WIP awareness section from agents-base | 2.5 |
+| FR-TASKM-27 | Task created date uses local time via toIsoDay | 2.5 |
+| FR-TASKM-28 | Boot migration creates workspaces directory in existing instances | 2.5 |
+| FR-TASKM-29 | Content escape hatch: ask when shared content contains structured actions | 2.5 |
+| FR-TASKM-30 | Safe inbox migration: preserve unrecognized content for LLM fallback | 2.5 |
+| FR-TASKM-31 | Deterministic list filters: only_next, only_stale, only_due, only_projects | 2.5 |
+| FR-TASKM-32 | edit action: modify task text, area, project, due in place | 2.5 |
+| FR-TASKM-33 | Consolidation uses deterministic task filters instead of broad list | 2.5 |
+| FR-TASKM-34 | Next-action hint on area clear: remaining count + suggest prompt in tool response | 2.5 |
+| FR-TASKM-35 | Outcome-vs-task reinforcement: outcome-shaped language patterns in capture prompt | 2.5 |
+| FR-TASKM-36 | Untagged cluster review: consolidation weekly step with anti-misc-project guardrail | 2.5 |
+| FR-TASKM-37 | Next-per-project: >> scoped to project or loose-in-area, not whole area | 2.5 |
+| FR-TASKM-38 | complete/remove hint counts remaining in scope, not whole area | 2.5 |
+| FR-TASKM-39 | Active fronts pre-computation: parse AGENTS.md Right now for per-area WIP check | 2.5 |
+| FR-TASKM-40 | Default WIP limit changed from 5 to 3 (per-area threshold) | 2.5 |
+| FR-TASKM-41 | Active fronts computed from tasks.md (supersedes FR-TASKM-39) | 2.5 |
+| FR-TASKM-42 | Consolidation WIP check references tasks.md fronts (updates FR-TASKM-25) | 2.5 |
+| FR-TASKM-43 | Right now content guidance: exclude tasks and projects | 2.5 |
+| FR-TASKM-44 | Simplify task cleanup: remove all [x] items, drop verify mechanism | 2.5 |
+| FR-TASKM-45 | Auto-mark sole remaining task as next on complete/remove | 2.5 |
+| FR-TASKM-46 | Per-area WIP overrides in config; null disables, number replaces global | 2.5 |
 
 **FR-TASKM-01 — Project tag in task format**
 
@@ -4202,26 +4202,26 @@ and inline content.
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-DASH-01 | Dashboard file format: `type: dashboard`, free text + fenced `dashboard` blocks, `width` layout | 3 S1 ✓ |
-| FR-DASH-02 | Viewer renders dashboards read-only in wide mode, resolved by the worker | 3 S2 ✓ |
-| FR-DASH-03 | A failing widget shows its own error; the rest of the dashboard renders | 3 S2 ✓ |
-| FR-DASH-04 | Query: `where`, `group`, `sort`, `limit`, `count`/`sum`, `range`; strict filter grammar with relative dates | 3 S1 ✓ |
-| FR-DASH-05 | Built-in sources: `tasks` (derived state) and `deferred` | 3 S1 ✓ |
-| FR-DASH-06 | Generic primitive: sections (any markdown with headings and list items) | 3 S3 ✓ |
+| FR-DASH-01 | Dashboard file format: `type: dashboard`, free text + fenced `dashboard` blocks, `width` layout | 3 S1 |
+| FR-DASH-02 | Viewer renders dashboards read-only in wide mode, resolved by the worker | 3 S2 |
+| FR-DASH-03 | A failing widget shows its own error; the rest of the dashboard renders | 3 S2 |
+| FR-DASH-04 | Query: `where`, `group`, `sort`, `limit`, `count`/`sum`, `range`; strict filter grammar with relative dates | 3 S1 |
+| FR-DASH-05 | Built-in sources: `tasks` (derived state) and `deferred` | 3 S1 |
+| FR-DASH-06 | Generic primitive: sections (any markdown with headings and list items) | 3 S3 |
 | FR-DASH-07 | Generic primitive: records (folder of `.md` files, frontmatter as row) | 3 S7 |
-| FR-DASH-08 | Generic primitive: series (CSV parsed by code) | 3 S4a ✓ |
-| FR-DASH-09 | Inline content carries date and basis, renders distinct, shows its age | 3 S2 ✓ |
-| FR-DASH-10 | Views v1: kanban, list, table, counter, text, status | 3 S2 ✓ |
-| FR-DASH-11 | Views v2 (own SVG): bar, line, progress, calendar heatmap, timeline | 3 S5 ✓ |
-| FR-DASH-12 | `dashboard()` tool: help, fields, check, validate, create, update | 3 S3 ✓ |
-| FR-DASH-13 | Shipped templates and self-docs examples | 3 S3 ✓ |
+| FR-DASH-08 | Generic primitive: series (CSV parsed by code) | 3 S4a |
+| FR-DASH-09 | Inline content carries date and basis, renders distinct, shows its age | 3 S2 |
+| FR-DASH-10 | Views v1: kanban, list, table, counter, text, status | 3 S2 |
+| FR-DASH-11 | Views v2 (own SVG): bar, line, progress, calendar heatmap, timeline | 3 S5 |
+| FR-DASH-12 | `dashboard()` tool: help, fields, check, validate, create, update | 3 S3 |
+| FR-DASH-13 | Shipped templates and self-docs examples | 3 S3 |
 | FR-DASH-14 | Freeze: dated snapshot with resolved rows inline | 3 S7 |
 | FR-DASH-15 | Export: static HTML from the rendered dashboard + PDF, date range, sensitive warning | 3 S7 |
-| FR-DASH-16 | Consolidation refreshes only `refresh`-tagged inline blocks | 3 S6 ✓ |
+| FR-DASH-16 | Consolidation refreshes only `refresh`-tagged inline blocks | 3 S6 |
 | FR-DASH-17 | Git-history source (e.g. tasks completed per week) | 4 |
-| FR-DASH-18 | Built-in sources: `projects`, `logs`, `journal` | 3 S3 ✓ |
-| FR-DASH-19 | Direct file-tool writes into `user/dashboards/` denied; reads allowed | 3 S3 ✓ |
-| FR-DASH-20 | Built-in source: `wip` (active fronts per area vs WIP limit) | 3 S3 ✓ |
+| FR-DASH-18 | Built-in sources: `projects`, `logs`, `journal` | 3 S3 |
+| FR-DASH-19 | Direct file-tool writes into `user/dashboards/` denied; reads allowed | 3 S3 |
+| FR-DASH-20 | Built-in source: `wip` (active fronts per area vs WIP limit) | 3 S3 |
 
 **FR-DASH-01 — Dashboard file format**
 
@@ -4570,13 +4570,13 @@ is pre-seeded.
 
 | ID | Description | Phase |
 |----|-------------|-------|
-| FR-DATA-01 | Registry `user/data/index.md`: entry format, protected from delete and move | 3 S4 ✓ |
-| FR-DATA-02 | `data()` tool: help, define, list | 3 S4 ✓ |
-| FR-DATA-03 | `append` / `correct`: schema-validated atomic writes; direct writes to registered paths denied | 3 S4 ✓ |
-| FR-DATA-04 | `on_mention` mode: active entries in one session-context line | 3 S6 ✓ |
-| FR-DATA-05 | `consolidation` mode: worker block of due entries and pending days, fast tier | 3 S6 ✓ |
+| FR-DATA-01 | Registry `user/data/index.md`: entry format, protected from delete and move | 3 S4 |
+| FR-DATA-02 | `data()` tool: help, define, list | 3 S4 |
+| FR-DATA-03 | `append` / `correct`: schema-validated atomic writes; direct writes to registered paths denied | 3 S4 |
+| FR-DATA-04 | `on_mention` mode: active entries in one session-context line | 3 S6 |
+| FR-DATA-05 | `consolidation` mode: worker block of due entries and pending days, fast tier | 3 S6 |
 | FR-DATA-06 | `snapshot` mode: heartbeat aggregate of a Buddy file, zero tokens, gaps not interpolated | 3 S7 |
-| FR-DATA-07 | Inferred rows carry `origin` and `basis`; the widget adds the indicative notice | 3 S4 ✓ |
+| FR-DATA-07 | Inferred rows carry `origin` and `basis`; the widget adds the indicative notice | 3 S4 |
 | FR-DATA-08 | `sensitive` flag feeds the export warning | 3 S7 |
 
 **FR-DATA-01 — Registry**
@@ -4743,7 +4743,7 @@ is pre-seeded.
 | NFR-SEC-18 | A custom provider's `baseUrl` is validated before an API key is sent to it. The URL must parse, must be `http://` or `https://`, and must not be — nor resolve to — a cloud metadata endpoint (`169.254.0.0/16`, `metadata.google.internal` and friends), the unspecified address, multicast or reserved space. **Amended during H8.** The original text said "the same destination rules as `fetch_url` (NFR-SEC-12)", which refuses loopback and private addresses. That is right for `fetch_url`, whose URL is chosen by the agent under the influence of pages it has already fetched, and wrong here: this URL is typed by the user into a field that exists so they can point Buddy at Ollama, LM Studio or llama.cpp, and `http://localhost:11434/v1` is the most common correct value. Applying the SSRF rules verbatim refused the only reason the custom provider exists — the BDD scenario for it failed on exactly that string. Loopback and LAN addresses are therefore allowed; what stays refused is what no local model server is ever behind and where an `Authorization` header does real damage. |
 | NFR-SEC-19 | Buddy sessions use Buddy's own agent directory (`~/.buddy/agent/`), never the Pi CLI's `~/.pi/agent/`. No production code calls the SDK's `getAgentDir()`, **and no production code lets the SDK call it on Buddy's behalf** — every SDK entry point that defaults a path to `getAgentDir()` must be passed an explicit Buddy path. **Amended and closed 2026-07-28.** H6b satisfied the first clause and left two routes open, each found by probing rather than by reading: `ModelRuntime.create` defaulted `modelsPath` to `join(getAgentDir(), "models.json")` — so Buddy loaded the user's Pi CLI provider definitions, and cached its own catalogue into `~/.pi/agent/models-store.json` — and `createAgentSession` was called without `agentDir`, so its `SettingsManager` read the user's `~/.pi/agent/settings.json` (provider, model, thinking level, theme). The requirement had been written as *which directory do we pass*; it needed to be *which directories can the SDK still reach on its own*. Now: `modelsPath`/`modelsStorePath` resolve under `~/.buddy/`, all three `createAgentSession` call sites pass `agentDir`, and two guards hold the line — a behavioural test that points `PI_CODING_AGENT_DIR` at a decoy `models.json` and asserts Buddy never loads it, and a source check that fails when a `createAgentSession` call omits `agentDir` (with a companion assertion that it is inspecting all three sites, so deleting them cannot make it vacuously pass). **Amended 2026-08-08.** `SessionManager.create(cwd)` derives its session directory from `getAgentDir()` when the second argument is omitted, placing every Buddy conversation JSONL in `~/.pi/agent/sessions/`. The same unnamed-default pattern applied here and was not covered by the existing guard. Now: all `SessionManager.create` calls pass an explicit `sessionDir` resolving to `<rootDir>/.buddy/sessions/`, and the source guard fails when a call omits it. |
 | NFR-SEC-20 | Adding an SDK call that accepts a path is a security decision. Any option whose default resolves through `getAgentDir()` must be passed explicitly, and the omission must fail a test rather than be caught in review. **Why this is its own requirement:** NFR-SEC-19 names a directory, and a reader satisfies it by checking the calls they know about. The two leaks above were in calls nobody thought of as agent-directory calls — one creates a model runtime, the other a session. The property is not "we pass the right agentDir" but "no SDK default reaches the user's Pi CLI configuration". **Extends NFR-SEC-07 from credentials to configuration.** `agentDir` governs far more than auth: skills, `settings.json`, `tools/`, `extensions/`, `prompts/`, the project trust store and `models.json`. Passing the global directory meant only credentials were isolated and the user's entire Pi CLI setup leaked into every Buddy session. |
-| NFR-SEC-21 ✓ | A Buddy session's system prompt contains only what Buddy assembles. The Pi SDK's `DefaultResourceLoader` discovers and injects resources unless explicitly disabled: `AGENTS.md` / `CLAUDE.md` / `AGENTS.override.md` from the session `cwd` and every parent directory (`project_context`), skills from `~/.agents/skills` and project `.agents/skills` / `.pi/skills`, project extensions, prompt templates, themes, and `.pi/APPEND_SYSTEM.md`. `systemPromptOverride` replaces only the preamble; the SDK still appends discovered content. **Why this is not NFR-SEC-19/20:** those requirements govern which `agentDir` and SDK defaults reach the Pi CLI tree. This leak is independent — it walks `cwd`, parent directories, and the user's home for skills. Every Buddy instance has `rootDir/AGENTS.md`, so the leak is active today (duplicate in chat, unwanted in maintenance and reflect). All session creators must build loaders through `createBuddyResourceLoader()` with discovery flags off; inline `extensionFactories` (e.g. date guard) remain allowed because `noExtensions` does not suppress factories passed explicitly. |
+| NFR-SEC-21 | A Buddy session's system prompt contains only what Buddy assembles. The Pi SDK's `DefaultResourceLoader` discovers and injects resources unless explicitly disabled: `AGENTS.md` / `CLAUDE.md` / `AGENTS.override.md` from the session `cwd` and every parent directory (`project_context`), skills from `~/.agents/skills` and project `.agents/skills` / `.pi/skills`, project extensions, prompt templates, themes, and `.pi/APPEND_SYSTEM.md`. `systemPromptOverride` replaces only the preamble; the SDK still appends discovered content. **Why this is not NFR-SEC-19/20:** those requirements govern which `agentDir` and SDK defaults reach the Pi CLI tree. This leak is independent — it walks `cwd`, parent directories, and the user's home for skills. Every Buddy instance has `rootDir/AGENTS.md`, so the leak is active today (duplicate in chat, unwanted in maintenance and reflect). All session creators must build loaders through `createBuddyResourceLoader()` with discovery flags off; inline `extensionFactories` (e.g. date guard) remain allowed because `noExtensions` does not suppress factories passed explicitly. |
 
 ### 4.3 Reliability
 
