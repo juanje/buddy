@@ -15,6 +15,8 @@ import {
   loadFailure,
   mutantTrailers,
   passedBeforeCodeRemedy,
+  removedBy,
+  scenarioName,
   runCli,
   scenarioOutcomes,
   scenariosTagged,
@@ -115,8 +117,29 @@ describe("scenariosTagged", () => {
     "      | Bo  |",
   ].join("\n");
 
-  it("lists the scenarios and outlines tagged with the FR", () => {
-    expect(scenariosTagged(feature, "FR-DEMO-01")).toEqual(["A greeting is shown", "Greet <who>"]);
+  it("lists the scenarios tagged with the FR, and each example row of an outline as its own", () => {
+    expect(scenariosTagged(feature, "FR-DEMO-01")).toEqual(["A greeting is shown", "Greet <who> | Bo"]);
+  });
+
+  it("keys a row by its cells, across every Examples block of the outline", () => {
+    const outline = [
+      "  @FR-DEMO-04",
+      "  Scenario Outline: Refused <case>",
+      "    When I try <case>",
+      "    Examples:",
+      "      | case       | reason  |",
+      "      | ../specs   | a path  |",
+      "      | --x        | option  |",
+      "",
+      "    Examples:",
+      "      | case | reason |",
+      "      | ;ls  | shell  |",
+    ].join("\n");
+    expect(scenariosTagged(outline, "FR-DEMO-04")).toEqual([
+      "Refused <case> | ../specs | a path",
+      "Refused <case> | --x | option",
+      "Refused <case> | ;ls | shell",
+    ]);
   });
 
   it("applies a feature-level tag to every scenario", () => {
@@ -129,15 +152,32 @@ describe("scenariosTagged", () => {
   });
 });
 
+describe("scenarioName", () => {
+  it("is the scenario or outline a key belongs to", () => {
+    expect(scenarioName("A greeting is shown")).toBe("A greeting is shown");
+    expect(scenarioName("Greet <who> | Bo")).toBe("Greet <who>");
+  });
+});
+
 /** A cucumber message stream with one scenario whose pickles end in the given step statuses. */
 function messages(scenarios: Record<string, string[][]>): string {
   const lines: object[] = [];
-  const children = Object.keys(scenarios).map((name, i) => ({ scenario: { id: `s${i}`, name } }));
+  // An outline (a name with a <placeholder>) gets one example row per pickle, cells "row0", "row1"...
+  const children = Object.entries(scenarios).map(([name, pickles], i) => ({
+    scenario: {
+      id: `s${i}`,
+      name,
+      examples: name.includes("<")
+        ? [{ tableBody: pickles.map((_, j) => ({ id: `row${i}-${j}`, cells: [{ value: `row${j}` }] })) }]
+        : [],
+    },
+  }));
   lines.push({ gherkinDocument: { feature: { children } } });
   Object.entries(scenarios).forEach(([name, pickles], i) => {
     pickles.forEach((statuses, j) => {
       const id = `${i}-${j}`;
-      lines.push({ pickle: { id: `p${id}`, name, astNodeIds: [`s${i}`, `row${j}`] } });
+      const astNodeIds = name.includes("<") ? [`s${i}`, `row${i}-${j}`] : [`s${i}`];
+      lines.push({ pickle: { id: `p${id}`, name, astNodeIds } });
       lines.push({ testCase: { id: `tc${id}`, pickleId: `p${id}` } });
       lines.push({ testCaseStarted: { id: `tcs${id}`, testCaseId: `tc${id}` } });
       for (const status of statuses) {
@@ -172,13 +212,12 @@ describe("scenarioOutcomes", () => {
     }
   });
 
-  it("joins the examples of an outline under its own name, the worst one deciding", () => {
-    const failing = scenarioOutcomes(messages({ "Greet <who>": [["FAILED"], ["FAILED"]] }));
-    expect(failing.get("Greet <who>")?.outcome).toBe("fails first");
-    const mixed = scenarioOutcomes(messages({ "Greet <who>": [["FAILED"], ["PASSED"]] }));
-    expect(mixed.get("Greet <who>")?.outcome).toBe("passed");
-    const undefinedRow = scenarioOutcomes(messages({ "Greet <who>": [["PASSED"], ["UNDEFINED"]] }));
-    expect(undefinedRow.get("Greet <who>")?.outcome).toBe("never ran");
+  it("gives each example row of an outline its own outcome, keyed by its cells", () => {
+    const outcomes = scenarioOutcomes(messages({ "Greet <who>": [["FAILED"], ["PASSED"], ["UNDEFINED"]] }));
+    expect(outcomes.get("Greet <who> | row0")?.outcome).toBe("fails first");
+    expect(outcomes.get("Greet <who> | row1")?.outcome).toBe("passed");
+    expect(outcomes.get("Greet <who> | row2")?.outcome).toBe("never ran");
+    expect(outcomes.has("Greet <who>")).toBe(false);
   });
 });
 
@@ -218,7 +257,12 @@ describe("unitOutcomes", () => {
         status: "failed",
         message: "",
         assertionResults: [
-          { fullName: "greets", status: "failed", failureMessages: ["AssertionError: expected '' to be 'Hello'"] },
+          {
+            fullName: "greeting greets",
+            title: "greets",
+            status: "failed",
+            failureMessages: ["AssertionError: expected '' to be 'Hello'"],
+          },
           { fullName: "calls missing", status: "failed", failureMessages: ["TypeError: g.shout is not a function"] },
           { fullName: "returns text", status: "passed", failureMessages: [] },
           { fullName: "later", status: "skipped", failureMessages: [] },
@@ -236,7 +280,8 @@ describe("unitOutcomes", () => {
   it("reads each test's outcome, by file relative to the root", () => {
     const files = unitOutcomes(report, "/repo");
     const tests = files.get("tests/unit/a.test.js")?.tests;
-    expect(tests?.get("greets")?.outcome).toBe("fails first");
+    expect(tests?.get("greeting greets")?.outcome).toBe("fails first");
+    expect(tests?.get("greeting greets")?.title).toBe("greets");
     expect(tests?.get("calls missing")?.outcome).toBe("fails first");
     expect(tests?.get("returns text")?.outcome).toBe("passed");
     expect(tests?.get("later")?.outcome).toBe("never ran");
@@ -432,5 +477,26 @@ describe("check on a working tree with uncommitted changes", () => {
     expect(err).toContain("To make it hold: commit them first, so the check verifies a commit.");
     expect(err).not.toMatch(/stash/i);
     expect(ran).toEqual([["git", "status", "--porcelain"]]);
+  });
+});
+
+describe("removedBy", () => {
+  const states = (...contents: Array<string | null>) => contents.map((content, i) => ({ sha: `c${i}`, content }));
+
+  it("is undefined while the test still exists in the last state", () => {
+    expect(removedBy(states('it("greets")', 'it("greets"); it("waves")'), "greets")).toBeUndefined();
+  });
+
+  it("is the commit that removed the test after it last existed", () => {
+    expect(removedBy(states('it("greets")', 'it("greets") // tidy', 'it("waves")', 'it("waves", 2)'), "greets")).toBe("c2");
+  });
+
+  it("follows a test that was removed and added back", () => {
+    expect(removedBy(states('it("greets")', 'it("waves")', 'it("greets")'), "greets")).toBeUndefined();
+  });
+
+  it("is the commit that deleted the file, for a whole file", () => {
+    expect(removedBy(states("x", "y", null), undefined)).toBe("c2");
+    expect(removedBy(states("x", null, "z"), undefined)).toBeUndefined();
   });
 });
