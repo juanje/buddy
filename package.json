@@ -15,7 +15,8 @@
     "test": "npm run test:unit && npm run test:bdd",
     "test:unit": "vitest run",
     "test:bdd": "NODE_OPTIONS=\"--import tsx\" cucumber-js",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "progress": "tsx scripts/progress.ts"
   },
   "dependencies": {
     "@earendil-works/pi-ai": "^1.0.1",

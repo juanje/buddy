@@ -42,7 +42,8 @@ const SKELETON: Record<string, string> = {
   )}\n`,
   "cucumber.mjs":
     'export default { paths: ["specs/features/**/*.feature"], import: ["tests/steps/**/*.js"] };\n',
-  "vitest.config.js": 'export default { test: { include: ["tests/unit/**/*.test.js"] } };\n',
+  "vitest.config.js":
+    'export default { test: { include: ["tests/unit/**/*.test.js"], passWithNoTests: true } };\n',
   "tsconfig.json": `${JSON.stringify({
     compilerOptions: {
       strict: true,

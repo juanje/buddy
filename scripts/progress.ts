@@ -1,454 +1,925 @@
 #!/usr/bin/env node
 /**
- * Progress tracking CLI for the Outside-In (Spec → BDD → TDD) development cycle.
+ * The progress record: what is built, written only by a check that verified it
+ * (NFR-TEST-03).
  *
- * Usage:
- *   npx tsx scripts/progress.ts current
- *   npx tsx scripts/progress.ts status
- *   npx tsx scripts/progress.ts show FR-xxx
- *   npx tsx scripts/progress.ts advance FR-xxx
- *   npx tsx scripts/progress.ts scenario pass FR-xxx "Scenario name"
- *   npx tsx scripts/progress.ts units FR-xxx "Scenario name" 3
- *   npx tsx scripts/progress.ts focus FR-xxx
- *   npx tsx scripts/progress.ts add FR-xxx "Title"
- *   npx tsx scripts/progress.ts sync FR-xxx
- *   npx tsx scripts/progress.ts done FR-xxx
- *   npx tsx scripts/progress.ts reopen FR-xxx "reason"
+ *   npm run progress -- status
+ *   npm run progress -- show FR-xxx
+ *   npm run progress -- check FR-xxx
+ *
+ * `check` reads the FR's commits and runs its tests at them: the contract's
+ * scenarios must fail first before the code, each test commit's tests must
+ * fail first at that commit and pass now, and the quality gate must pass now.
+ * Only then is the FR written to the record, as built at HEAD.
  */
 
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { spawn } from "node:child_process";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, isAbsolute, join, relative } from "node:path";
+import { pathToFileURL } from "node:url";
 
-const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
-export const DEFAULT_PROGRESS_FILE = join(ROOT, "specs", "progress.json");
-export const DEFAULT_SPEC_FILE = join(ROOT, "specs", "SPEC.md");
+export const PROGRESS_RECORD_PATH = "specs/progress.json";
 
-export const CYCLE_STEPS = [
-  "spec_review",
-  "bdd_red",
-  "implementing",
-  "bdd_green",
-  "done",
-] as const;
+const FEATURES_DIR = "specs/features/";
+const STEPS_DIR = "tests/steps/";
+const PRODUCTION_DIRS = ["backends/", "src/", "shared/"];
+const UNIT_TEST_FILE = /\.test\.[cm]?[jt]sx?$/;
 
-export type CycleStep = (typeof CYCLE_STEPS)[number];
+/** The quality gate, as AGENTS.md lists it. */
+const QUALITY_GATE: Array<[string, string[]]> = [
+  ["npx", ["tsc", "--noEmit"]],
+  ["npx", ["vite", "build"]],
+  ["npm", ["test"]],
+];
 
-export const BDD_STATES = ["pending", "fail", "pass"] as const;
-export type BddState = (typeof BDD_STATES)[number];
+const MAX_FAILING_LINES = 40;
 
-export type FeatureStatus =
-  | "pending"
-  | "in_progress"
-  | "blocked"
-  | "deferred"
-  | "done";
+const HELP = `The progress record: what is built, written only by a check that verified it (NFR-TEST-03).
 
-export interface Scenario {
-  name: string;
-  bdd: BddState;
-  unit_tests: number;
+  npm run progress -- status          every FR with a contract or a record, and its state
+  npm run progress -- show FR-xxx     one FR: its state and its contract, test and code commits
+  npm run progress -- check FR-xxx    verify FR-xxx's commits and the quality gate; record it as built
+`;
+
+// ── The record ──────────────────────────────────────────────────────
+
+export interface ProgressRecord {
+  /** FRs a check verified: the commit it verified and the day it did. */
+  built: Record<string, { commit: string; date: string }>;
+  /** FRs marked built before the check existed, shown as such until checked. */
+  recordedBeforeChecks: string[];
 }
 
-export interface Feature {
-  id: string;
-  title: string;
-  status: FeatureStatus;
-  cycle_step: CycleStep;
-  scenarios: Scenario[];
-  note?: string;
+export function readProgressRecord(root: string): ProgressRecord {
+  const path = join(root, PROGRESS_RECORD_PATH);
+  if (!existsSync(path)) return { built: {}, recordedBeforeChecks: [] };
+  const parsed = JSON.parse(readFileSync(path, "utf8")) as Partial<ProgressRecord>;
+  return { built: parsed.built ?? {}, recordedBeforeChecks: parsed.recordedBeforeChecks ?? [] };
 }
 
-export interface ProgressData {
-  current_focus: string | null;
-  features: Feature[];
+export function writeProgressRecord(root: string, record: ProgressRecord): void {
+  const path = join(root, PROGRESS_RECORD_PATH);
+  const sorted: ProgressRecord = {
+    built: Object.fromEntries(Object.entries(record.built).sort(([a], [b]) => a.localeCompare(b))),
+    recordedBeforeChecks: [...record.recordedBeforeChecks].sort(),
+  };
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, `${JSON.stringify(sorted, null, 2)}\n`, "utf8");
 }
 
-export class ProgressError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "ProgressError";
-  }
+// ── Commits ─────────────────────────────────────────────────────────
+
+export interface Commit {
+  sha: string;
+  subject: string;
+  message: string;
+  files: string[];
 }
 
-export function load(progressFile = DEFAULT_PROGRESS_FILE): ProgressData {
-  if (!existsSync(progressFile)) {
-    return { current_focus: null, features: [] };
-  }
-  return JSON.parse(readFileSync(progressFile, "utf8")) as ProgressData;
+export type CommitRole = "contract" | "test" | "code";
+
+const ROLE_BY_TYPE: Record<string, CommitRole> = {
+  spec: "contract",
+  test: "test",
+  feat: "code",
+  fix: "code",
+};
+
+const COMMIT_TYPE = /^(\w+)(?:\([^)]*\))?!?:/;
+const FR_ID = /^N?FR-[A-Z]+(?:-[A-Z]+)*-\d+[a-z]?$/;
+const FR_IDS_IN_TEXT = /(?<![A-Za-z0-9-])N?FR-[A-Z]+(?:-[A-Z]+)*-\d+[a-z]?(?![A-Za-z0-9])/g;
+
+export function isFrId(value: string): boolean {
+  return FR_ID.test(value);
 }
 
-export function save(data: ProgressData, progressFile = DEFAULT_PROGRESS_FILE): void {
-  mkdirSync(dirname(progressFile), { recursive: true });
-  writeFileSync(progressFile, `${JSON.stringify(data, null, 2)}\n`, "utf8");
+function mentions(text: string, frId: string): boolean {
+  const escaped = frId.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(?<![A-Za-z0-9-])${escaped}(?![A-Za-z0-9])`).test(text);
 }
 
-export function findFeature(
-  data: ProgressData,
-  featureId: string,
-): Feature | undefined {
-  return data.features.find((f) => f.id === featureId);
+/** The role a commit plays for an FR: its type, when its subject names the FR. */
+export function commitRole(subject: string, frId: string): CommitRole | undefined {
+  const type = COMMIT_TYPE.exec(subject)?.[1];
+  const role = type ? ROLE_BY_TYPE[type] : undefined;
+  return role && mentions(subject, frId) ? role : undefined;
 }
 
-export function frExistsInSpec(specContent: string, featureId: string): boolean {
-  const pattern = new RegExp(`\\b${featureId.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`);
-  return pattern.test(specContent);
+export function namesMutant(message: string): boolean {
+  return /\bmutant\b/i.test(message);
 }
 
-function requireFeature(data: ProgressData, featureId: string): Feature {
-  const feature = findFeature(data, featureId);
-  if (!feature) {
-    throw new ProgressError(`Feature '${featureId}' not found.`);
-  }
-  return feature;
+function touchesSteps(commit: Commit): boolean {
+  return commit.files.some((f) => f.startsWith(STEPS_DIR));
 }
 
-export function cmdCurrent(data: ProgressData): string {
-  const focus = data.current_focus;
-  if (!focus) {
-    return "No current focus set.";
-  }
-  const feature = findFeature(data, focus);
-  if (!feature) {
-    return `Focus '${focus}' not found in features.`;
-  }
-  const lines = [
-    `Focus:  ${feature.id} — ${feature.title}`,
-    `Status: ${feature.status}`,
-    `Step:   ${feature.cycle_step}`,
-  ];
-  if (feature.scenarios.length > 0) {
-    lines.push(`Scenarios: ${feature.scenarios.length}`);
-    for (const s of feature.scenarios) {
-      const mark = { pass: "✓", fail: "✗", pending: "○" }[s.bdd];
-      lines.push(`  ${mark} ${s.name} (bdd=${s.bdd}, units=${s.unit_tests})`);
-    }
-  }
-  if (feature.note) {
-    lines.push(`Note:   ${feature.note}`);
-  }
-  return lines.join("\n");
-}
+// ── Scenarios and tests, and how they ran ───────────────────────────
 
-export function cmdStatus(data: ProgressData): string {
-  const lines = [`Focus: ${data.current_focus ?? "none"}`, ""];
-  for (const f of data.features) {
-    const pass = f.scenarios.filter((s) => s.bdd === "pass").length;
-    const total = f.scenarios.length;
-    lines.push(
-      `  [${f.status.padEnd(11)}] ${f.id} — ${f.title} (${f.cycle_step}, ${pass}/${total} scenarios)`,
-    );
-  }
-  return lines.join("\n");
-}
-
-export function cmdShow(data: ProgressData, featureId: string): string {
-  const feature = requireFeature(data, featureId);
-  const lines = [
-    `ID:     ${feature.id}`,
-    `Title:  ${feature.title}`,
-    `Status: ${feature.status}`,
-    `Step:   ${feature.cycle_step}`,
-  ];
-  if (feature.note) {
-    lines.push(`Note:   ${feature.note}`);
-  }
-  if (feature.scenarios.length > 0) {
-    lines.push(`\nScenarios (${feature.scenarios.length}):`);
-    for (const s of feature.scenarios) {
-      const mark = { pass: "✓", fail: "✗", pending: "○" }[s.bdd];
-      lines.push(`  ${mark} ${s.name}`);
-      lines.push(`    bdd=${s.bdd}, unit_tests=${s.unit_tests}`);
-    }
-  }
-  return lines.join("\n");
-}
-
-export function cmdAdvance(
-  data: ProgressData,
-  featureId: string,
-  specFile = DEFAULT_SPEC_FILE,
-): void {
-  const feature = requireFeature(data, featureId);
-  const idx = CYCLE_STEPS.indexOf(feature.cycle_step);
-  if (idx < 0 || idx >= CYCLE_STEPS.length - 1) {
-    throw new ProgressError(
-      `Already at final step '${feature.cycle_step}'. Use 'done' to mark complete.`,
-    );
-  }
-  const nextStep = CYCLE_STEPS[idx + 1];
-  if (feature.cycle_step === "spec_review" && nextStep === "bdd_red") {
-    const specContent = existsSync(specFile)
-      ? readFileSync(specFile, "utf8")
-      : "";
-    if (!frExistsInSpec(specContent, featureId)) {
-      throw new ProgressError(
-        `Cannot advance: ${featureId} not found in SPEC.md. Add the FR before leaving spec_review.`,
-      );
-    }
-  }
-  if (feature.cycle_step === "bdd_red" && nextStep === "implementing") {
-    const synced = cmdSync(data, featureId);
-    if (feature.scenarios.length === 0) {
-      throw new ProgressError(
-        `Cannot advance: ${featureId} has no scenarios. Write the .feature file and tag scenarios with @${featureId}, or register them with 'scenario'.`,
-      );
-    }
-    if (synced.length > 0) {
-      process.stderr.write(
-        `Auto-synced ${synced.length} scenario(s) from feature files: ${synced.join(", ")}\n`,
-      );
-    }
-  }
-  feature.cycle_step = nextStep;
-  if (feature.status === "pending") {
-    feature.status = "in_progress";
-  }
-}
-
-export function cmdScenario(
-  data: ProgressData,
-  state: string,
-  featureId: string,
-  name: string,
-): void {
-  if (!BDD_STATES.includes(state as BddState)) {
-    throw new ProgressError(`Invalid state '${state}'. Must be one of: ${BDD_STATES.join(", ")}`);
-  }
-  const feature = requireFeature(data, featureId);
-  const existing = feature.scenarios.find((s) => s.name === name);
-  if (existing) {
-    existing.bdd = state as BddState;
-    return;
-  }
-  feature.scenarios.push({
-    name,
-    bdd: state as BddState,
-    unit_tests: 0,
-  });
-}
-
-export function cmdUnits(
-  data: ProgressData,
-  featureId: string,
-  name: string,
-  count: number,
-): void {
-  const feature = requireFeature(data, featureId);
-  const scenario = feature.scenarios.find((s) => s.name === name);
-  if (!scenario) {
-    throw new ProgressError(`Scenario '${name}' not found in ${featureId}.`);
-  }
-  scenario.unit_tests = count;
-}
-
-export function scanFeatureFiles(featureId: string, featuresDir?: string): string[] {
-  const dir = featuresDir ?? join(ROOT, "specs", "features");
-  if (!existsSync(dir)) return [];
-  const tag = `@${featureId}`;
+/** Names of the scenarios and outlines tagged with the FR, or under a feature tagged with it. */
+export function scenariosTagged(feature: string, frId: string): string[] {
+  const tag = `@${frId}`;
   const names: string[] = [];
-  for (const file of readdirSync(dir).filter((f) => f.endsWith(".feature"))) {
-    const lines = readFileSync(join(dir, file), "utf8").split("\n");
-    for (let i = 0; i < lines.length; i++) {
-      if (lines[i].trim() === tag || lines[i].trim().split(/\s+/).includes(tag)) {
-        for (let j = i + 1; j < lines.length; j++) {
-          const m = lines[j].match(/^\s*Scenario(?:\s+Outline)?:\s*(.+)/);
-          if (m) {
-            names.push(m[1].trim());
-            break;
-          }
-          if (lines[j].trim() && !lines[j].trim().startsWith("@")) break;
-        }
-      }
+  let pending: string[] = [];
+  let featureTags: string[] = [];
+  for (const raw of feature.split("\n")) {
+    const line = raw.trim();
+    if (line === "" || line.startsWith("#")) continue;
+    if (line.startsWith("@")) {
+      pending.push(...line.split(/\s+/));
+      continue;
     }
+    if (line.startsWith("Feature:")) {
+      featureTags = pending;
+    } else {
+      const scenario = /^(?:Scenario Outline|Scenario Template|Scenario|Example):\s*(.*)$/.exec(line);
+      if (scenario && [...featureTags, ...pending].includes(tag)) names.push(scenario[1].trim());
+    }
+    pending = [];
   }
   return names;
 }
 
-export function cmdSync(data: ProgressData, featureId: string, featuresDir?: string): string[] {
-  const feature = requireFeature(data, featureId);
-  const discovered = scanFeatureFiles(featureId, featuresDir);
-  const added: string[] = [];
-  for (const name of discovered) {
-    if (!feature.scenarios.find((s) => s.name === name)) {
-      feature.scenarios.push({ name, bdd: "pending", unit_tests: 0 });
-      added.push(name);
-    }
-  }
-  return added;
+export type RunOutcome = "fails first" | "passed" | "never ran" | "did not fail first";
+
+export interface Outcome {
+  outcome: RunOutcome;
+  detail: string;
 }
 
-export function cmdFocus(data: ProgressData, featureId: string): void {
-  requireFeature(data, featureId);
-  data.current_focus = featureId;
+/** Worst first: one example that never ran or passed decides for the whole outline. */
+const OUTCOME_RANK: Record<RunOutcome, number> = {
+  "never ran": 0,
+  "did not fail first": 0,
+  passed: 1,
+  "fails first": 2,
+};
+
+function firstLine(text: string): string {
+  return text.split("\n").map((l) => l.trim()).find((l) => l !== "") ?? "";
 }
 
-export function cmdAdd(data: ProgressData, featureId: string, title: string): void {
-  if (findFeature(data, featureId)) {
-    throw new ProgressError(`Feature '${featureId}' already exists.`);
-  }
-  data.features.push({
-    id: featureId,
-    title,
-    status: "pending",
-    cycle_step: "spec_review",
-    scenarios: [],
-  });
+function stepOutcome(status: string | undefined, message: string | undefined): Outcome {
+  if (status === undefined) return { outcome: "passed", detail: "every step passed" };
+  if (status === "FAILED") return { outcome: "fails first", detail: firstLine(message ?? "") };
+  return { outcome: "never ran", detail: `a step was ${status.toLowerCase()}` };
 }
 
-export function cmdReopen(data: ProgressData, featureId: string, reason: string): void {
-  const feature = requireFeature(data, featureId);
-  const trimmed = reason.trim();
-  if (!trimmed) {
-    throw new ProgressError("Reopen requires a non-empty reason.");
-  }
-  if (feature.status !== "done" || feature.cycle_step !== "done") {
-    throw new ProgressError(`Cannot reopen: ${featureId} is not done.`);
-  }
-  if (data.current_focus && data.current_focus !== featureId) {
-    const focused = findFeature(data, data.current_focus);
-    if (focused?.status === "in_progress") {
-      throw new ProgressError(
-        `Cannot reopen: focus is on in-progress feature '${data.current_focus}'. Finish or defer it first.`,
-      );
-    }
-  }
-  feature.status = "in_progress";
-  feature.cycle_step = "spec_review";
-  feature.note = `reopened: ${trimmed}`;
-  data.current_focus = featureId;
-}
+/** Each scenario's outcome, by its name in the feature file, from a cucumber message stream. */
+export function scenarioOutcomes(ndjson: string): Map<string, Outcome> {
+  const scenarioNames = new Map<string, string>();
+  const pickleScenario = new Map<string, string>();
+  const caseScenario = new Map<string, string>();
+  const startedScenario = new Map<string, string>();
+  const firstNotPassed = new Map<string, { status: string; message?: string }>();
 
-export function cmdDone(data: ProgressData, featureId: string): void {
-  const feature = requireFeature(data, featureId);
-  if (feature.scenarios.length === 0) {
-    throw new ProgressError(`Cannot mark done: ${featureId} has no scenarios.`);
-  }
-  for (const s of feature.scenarios) {
-    if (s.bdd !== "pass") {
-      throw new ProgressError(
-        `Cannot mark done: scenario '${s.name}' is not passing (bdd=${s.bdd}).`,
-      );
-    }
-    if (s.unit_tests < 1) {
-      throw new ProgressError(
-        `Cannot mark done: scenario '${s.name}' has no unit tests.`,
-      );
-    }
-  }
-  feature.status = "done";
-  feature.cycle_step = "done";
-  if (data.current_focus === featureId) {
-    data.current_focus = null;
-  }
-}
-
-function print(message: string): void {
-  process.stdout.write(`${message}\n`);
-}
-
-function die(message: string): never {
-  process.stderr.write(`${message}\n`);
-  process.exit(1);
-}
-
-export function runCli(argv: string[], progressFile = DEFAULT_PROGRESS_FILE): void {
-  if (argv.length === 0) {
-    print(__doc__);
-    return;
-  }
-
-  const data = load(progressFile);
-  const cmd = argv[0];
-
-  try {
-    if (cmd === "current") {
-      print(cmdCurrent(data));
-    } else if (cmd === "status") {
-      print(cmdStatus(data));
-    } else if (cmd === "show" && argv.length >= 2) {
-      print(cmdShow(data, argv[1]));
-    } else if (cmd === "advance" && argv.length >= 2) {
-      cmdAdvance(data, argv[1]);
-      save(data, progressFile);
-      const feature = findFeature(data, argv[1])!;
-      const prev = CYCLE_STEPS[CYCLE_STEPS.indexOf(feature.cycle_step) - 1];
-      print(`${argv[1]}: ${prev} → ${feature.cycle_step}`);
-    } else if (cmd === "scenario" && argv.length >= 4) {
-      const state = argv[1];
-      const featureId = argv[2];
-      const name = argv.slice(3).join(" ");
-      cmdScenario(data, state, featureId, name);
-      save(data, progressFile);
-      print(`${featureId} scenario '${name}': bdd → ${state}`);
-    } else if (cmd === "units" && argv.length >= 4) {
-      const featureId = argv[1];
-      const count = Number(argv[argv.length - 1]);
-      const name = argv.slice(2, -1).join(" ");
-      if (!Number.isInteger(count) || count < 0) {
-        die(`Invalid unit test count: ${argv[argv.length - 1]}`);
+  for (const line of ndjson.split("\n")) {
+    if (line.trim() === "") continue;
+    const envelope = JSON.parse(line);
+    if (envelope.gherkinDocument) {
+      const children = envelope.gherkinDocument.feature?.children ?? [];
+      for (const child of children) {
+        const scenarios = child.rule ? child.rule.children.map((c: { scenario?: unknown }) => c.scenario) : [child.scenario];
+        for (const scenario of scenarios) {
+          if (scenario) scenarioNames.set(scenario.id, scenario.name);
+        }
       }
-      cmdUnits(data, featureId, name, count);
-      save(data, progressFile);
-      print(`${featureId} scenario '${name}': unit_tests → ${count}`);
-    } else if (cmd === "focus" && argv.length >= 2) {
-      cmdFocus(data, argv[1]);
-      save(data, progressFile);
-      print(`Focus → ${argv[1]}`);
-    } else if (cmd === "add" && argv.length >= 3) {
-      const featureId = argv[1];
-      const title = argv.slice(2).join(" ");
-      cmdAdd(data, featureId, title);
-      save(data, progressFile);
-      print(`Added: ${featureId} — ${title}`);
-    } else if (cmd === "sync" && argv.length >= 2) {
-      const added = cmdSync(data, argv[1]);
-      save(data, progressFile);
-      if (added.length === 0) {
-        print(`${argv[1]}: all scenarios already registered.`);
+    } else if (envelope.pickle) {
+      const { id, name, astNodeIds } = envelope.pickle;
+      pickleScenario.set(id, scenarioNames.get(astNodeIds?.[0]) ?? name);
+    } else if (envelope.testCase) {
+      caseScenario.set(envelope.testCase.id, pickleScenario.get(envelope.testCase.pickleId) ?? "");
+    } else if (envelope.testCaseStarted) {
+      const { id, testCaseId } = envelope.testCaseStarted;
+      startedScenario.set(id, caseScenario.get(testCaseId) ?? "");
+    } else if (envelope.testStepFinished) {
+      const { testCaseStartedId, testStepResult } = envelope.testStepFinished;
+      if (testStepResult.status !== "PASSED" && !firstNotPassed.has(testCaseStartedId)) {
+        firstNotPassed.set(testCaseStartedId, testStepResult);
+      }
+    }
+  }
+
+  const outcomes = new Map<string, Outcome>();
+  for (const [started, name] of startedScenario) {
+    const result = firstNotPassed.get(started);
+    const outcome = stepOutcome(result?.status, result?.message);
+    const known = outcomes.get(name);
+    if (!known || OUTCOME_RANK[outcome.outcome] < OUTCOME_RANK[known.outcome]) outcomes.set(name, outcome);
+  }
+  return outcomes;
+}
+
+function isProjectModule(specifier: string): boolean {
+  return (specifier.startsWith(".") || specifier.startsWith("/")) && !specifier.includes("/node_modules/");
+}
+
+/**
+ * Why a test file, or the whole BDD suite, failed to load. A project module or
+ * export that does not exist yet is the missing code; anything else is not.
+ */
+export function loadFailure(output: string): Outcome {
+  const missingModule = /Cannot find module '([^']+)'/.exec(output);
+  if (missingModule && isProjectModule(missingModule[1])) {
+    return { outcome: "fails first", detail: `the module ${missingModule[1]} does not exist yet` };
+  }
+  const missingExport = /The requested module '([^']+)' does not provide an export named '([^']+)'/.exec(output);
+  if (missingExport && isProjectModule(missingExport[1])) {
+    return { outcome: "fails first", detail: `${missingExport[1]} does not export ${missingExport[2]} yet` };
+  }
+  const reason =
+    output.split("\n").map((l) => l.trim()).find((l) => /Error|Cannot find/.test(l)) ?? firstLine(output);
+  return { outcome: "did not fail first", detail: `it failed to load: ${reason || "no output"}` };
+}
+
+export interface UnitFileOutcome {
+  /** Set when the file failed to load and none of its tests ran. */
+  load?: Outcome;
+  tests: Map<string, Outcome>;
+}
+
+/** Each test's outcome, by file relative to `root`, from a vitest JSON report. */
+export function unitOutcomes(json: string, root: string): Map<string, UnitFileOutcome> {
+  const report = JSON.parse(json) as {
+    testResults: Array<{
+      name: string;
+      status: string;
+      message?: string;
+      assertionResults: Array<{ fullName: string; status: string; failureMessages: string[] }>;
+    }>;
+  };
+  const files = new Map<string, UnitFileOutcome>();
+  for (const file of report.testResults) {
+    const path = isAbsolute(file.name) ? relative(root, file.name) : file.name;
+    if (file.assertionResults.length === 0 && file.status === "failed") {
+      files.set(path, { load: loadFailure(file.message ?? ""), tests: new Map() });
+      continue;
+    }
+    const tests = new Map<string, Outcome>();
+    for (const test of file.assertionResults) {
+      if (test.status === "passed") {
+        tests.set(test.fullName, { outcome: "passed", detail: "it passed" });
+      } else if (test.status === "failed") {
+        tests.set(test.fullName, { outcome: "fails first", detail: firstLine(test.failureMessages[0] ?? "") });
       } else {
-        print(`${argv[1]}: synced ${added.length} scenario(s): ${added.join(", ")}`);
+        tests.set(test.fullName, { outcome: "never ran", detail: `it was ${test.status}` });
       }
-    } else if (cmd === "done" && argv.length >= 2) {
-      cmdDone(data, argv[1]);
-      save(data, progressFile);
-      print(`${argv[1]}: marked done ✓`);
-    } else if (cmd === "reopen" && argv.length >= 3) {
-      const featureId = argv[1];
-      const reason = argv.slice(2).join(" ");
-      cmdReopen(data, featureId, reason);
-      save(data, progressFile);
-      print(`${featureId}: done → spec_review (reopened: ${reason.trim()})`);
-    } else {
-      die(`Unknown command or missing arguments: ${argv.join(" ")}`);
     }
+    files.set(path, { tests });
+  }
+  return files;
+}
+
+// ── Problems ────────────────────────────────────────────────────────
+
+export interface Problem {
+  /** The commit the problem is in, when there is one. */
+  commit?: Commit;
+  what: string;
+  detail?: string;
+  remedy: string;
+}
+
+/** What the FR's commits show without running anything: contract, tests, order. */
+export function structuralProblems(commits: Commit[], frId: string): Problem[] {
+  const roles = commits.map((c) => commitRole(c.subject, frId));
+  const contracts = commits.filter((_, i) => roles[i] === "contract");
+  if (contracts.length === 0) {
+    return [
+      {
+        what: `${frId} has no contract commit`,
+        remedy: `ask the person for its approved contract, committed as spec(…): ${frId}.`,
+      },
+    ];
+  }
+  const firstTest = roles.indexOf("test");
+  if (firstTest < 0) {
+    return [
+      {
+        commit: contracts.at(-1),
+        what: "there is no test commit",
+        detail: `no test(…): ${frId} commit follows the contract`,
+        remedy: `commit the step definitions and unit tests alone as test(…): ${frId}, failing first, before the code.`,
+      },
+    ];
+  }
+  const problems: Problem[] = [];
+  commits.forEach((commit, i) => {
+    if (roles[i] === "code" && i < firstTest) {
+      problems.push({
+        commit,
+        what: "the code came before its test",
+        detail: `it comes before the first test(…): ${frId} commit`,
+        remedy: `while the commits are not shared, reorder them so a failing test(…): ${frId} commit comes before this one; once they are, ask the person how to record ${frId}.`,
+      });
+    }
+    if (roles[i] === "test") {
+      const production = commit.files.filter((f) => PRODUCTION_DIRS.some((dir) => f.startsWith(dir)));
+      if (production.length > 0) {
+        problems.push({
+          commit,
+          what: "the test commit changes production code",
+          detail: production.join(", "),
+          remedy: "move the production change into the feat(…) or fix(…) commit that makes the test pass.",
+        });
+      }
+    }
+  });
+  return problems;
+}
+
+export function formatProblems(frId: string, problems: Problem[]): string {
+  const lines = [`The check of ${frId} failed; nothing was recorded.`, ""];
+  for (const problem of problems) {
+    const [first, ...rest] = (problem.detail ?? "").split("\n");
+    if (problem.commit) lines.push(`- ${problem.commit.sha.slice(0, 7)} ${problem.commit.subject}`);
+    lines.push(`${problem.commit ? "  " : "- "}${problem.what}${first ? `: ${first}` : ""}`);
+    for (const line of rest) lines.push(`      ${line}`);
+    lines.push(`  To make it hold: ${problem.remedy}`, "");
+  }
+  return `${lines.join("\n")}\n`;
+}
+
+/** The lines of a failed gate command that say what failed, without stack frames. */
+export function failingLines(output: string): string[] {
+  const lines = output.replace(/\x1b\[[0-9;]*m/g, "").split("\n").filter((l) => !/^\s+at /.test(l));
+  const cap = (block: string[]) => block.slice(0, MAX_FAILING_LINES);
+
+  const cucumber = lines.findIndex((l) => l.trim() === "Failures:");
+  if (cucumber >= 0) {
+    const summary = lines.findIndex((l, i) => i > cucumber && /^\d+ scenarios? \(/.test(l.trim()));
+    return cap(lines.slice(cucumber + 1, summary >= 0 ? summary + 2 : undefined));
+  }
+  const vitest = lines.findIndex((l) => /Failed Tests \d+/.test(l));
+  if (vitest >= 0) {
+    const summary = lines.findIndex((l, i) => i > vitest && /Test Files /.test(l));
+    return cap(lines.slice(vitest, summary >= 0 ? summary + 1 : undefined));
+  }
+  const tsc = lines.filter((l) => /error TS\d+/.test(l));
+  if (tsc.length > 0) return cap(tsc);
+  return lines.filter((l) => l.trim() !== "").slice(-MAX_FAILING_LINES);
+}
+
+// ── States ──────────────────────────────────────────────────────────
+
+export type FrState =
+  | { state: "in progress" }
+  | { state: "built" | "changed"; commit: string; date: string }
+  | { state: "recorded before the checks" };
+
+/** Every FR with a contract commit or a record, and its state. */
+export function frStates(record: ProgressRecord, commits: Commit[]): Map<string, FrState> {
+  const ids = new Set<string>([...Object.keys(record.built), ...record.recordedBeforeChecks]);
+  for (const commit of commits) {
+    if (COMMIT_TYPE.exec(commit.subject)?.[1] !== "spec") continue;
+    for (const id of commit.subject.match(FR_IDS_IN_TEXT) ?? []) ids.add(id);
+  }
+  const states = new Map<string, FrState>();
+  for (const id of [...ids].sort()) {
+    const built = record.built[id];
+    if (built) {
+      const verified = commits.findIndex((c) => c.sha === built.commit);
+      const changed = commits.some((c, i) => i > verified && commitRole(c.subject, id) === "contract");
+      states.set(id, { state: changed ? "changed" : "built", commit: built.commit, date: built.date });
+    } else if (record.recordedBeforeChecks.includes(id)) {
+      states.set(id, { state: "recorded before the checks" });
+    } else {
+      states.set(id, { state: "in progress" });
+    }
+  }
+  return states;
+}
+
+export function formatState(id: string, state: FrState): string {
+  switch (state.state) {
+    case "in progress":
+      return `${id}  in progress`;
+    case "built":
+      return `${id}  built at ${state.commit.slice(0, 7)} on ${state.date}`;
+    case "changed":
+      return `${id}  changed since its verification at ${state.commit.slice(0, 7)} on ${state.date}`;
+    case "recorded before the checks":
+      return `${id}  built, recorded before the checks`;
+  }
+}
+
+// ── Running things ──────────────────────────────────────────────────
+
+export interface CommandResult {
+  code: number;
+  /** stdout and stderr, interleaved. */
+  output: string;
+}
+
+export type CommandRunner = (
+  command: string,
+  args: string[],
+  options: { cwd: string },
+) => Promise<CommandResult>;
+
+export const runCommand: CommandRunner = (command, args, { cwd }) =>
+  new Promise((resolve) => {
+    const child = spawn(command, args, { cwd, stdio: ["ignore", "pipe", "pipe"] });
+    let output = "";
+    child.stdout.on("data", (chunk) => {
+      output += chunk;
+    });
+    child.stderr.on("data", (chunk) => {
+      output += chunk;
+    });
+    child.on("error", (error) => resolve({ code: 127, output: `${output}${error.message}` }));
+    child.on("close", (code) => resolve({ code: code ?? 1, output }));
+  });
+
+class ProgressError extends Error {}
+
+interface Context {
+  root: string;
+  run: CommandRunner;
+  out: (text: string) => void;
+  err: (text: string) => void;
+  now: () => Date;
+}
+
+async function git(ctx: Context, args: string[]): Promise<string> {
+  const result = await ctx.run("git", args, { cwd: ctx.root });
+  if (result.code !== 0) throw new ProgressError(`git ${args[0]} failed:\n${result.output}`);
+  return result.output;
+}
+
+/** File content at a commit, or "" when the file or the commit does not exist. */
+async function fileAt(ctx: Context, sha: string, path: string): Promise<string> {
+  const result = await ctx.run("git", ["show", `${sha}:${path}`], { cwd: ctx.root });
+  return result.code === 0 ? result.output : "";
+}
+
+async function readCommits(ctx: Context, withFiles: boolean): Promise<Commit[]> {
+  const args = ["log", "--reverse", "--topo-order", "--format=%x1e%H%x1f%B%x1f"];
+  if (withFiles) args.push("--name-only");
+  const raw = await git(ctx, [...args, "HEAD"]);
+  return raw
+    .split("\x1e")
+    .slice(1)
+    .map((entry) => {
+      const [sha, body, names] = entry.split("\x1f");
+      const message = body.trim();
+      return {
+        sha,
+        subject: message.split("\n")[0],
+        message,
+        files: (names ?? "").split("\n").map((f) => f.trim()).filter((f) => f !== ""),
+      };
+    });
+}
+
+/** Detached worktrees at past commits, sharing the project's node_modules. */
+class Checkouts {
+  private readonly base: string;
+  private readonly dirs = new Map<string, string>();
+  private files = 0;
+
+  constructor(
+    private readonly ctx: Context,
+    private readonly head: string,
+  ) {
+    this.base = realpathSync(mkdtempSync(join(tmpdir(), "buddy-progress-")));
+  }
+
+  /** A scratch file path for a runner's report. */
+  reportPath(extension: string): string {
+    this.files += 1;
+    return join(this.base, `report-${this.files}.${extension}`);
+  }
+
+  async at(sha: string): Promise<string> {
+    if (sha === this.head) return this.ctx.root;
+    const known = this.dirs.get(sha);
+    if (known) return known;
+    const dir = join(this.base, sha.slice(0, 12));
+    await git(this.ctx, ["worktree", "add", "--detach", dir, sha]);
+    const modules = join(this.ctx.root, "node_modules");
+    if (existsSync(modules)) symlinkSync(realpathSync(modules), join(dir, "node_modules"));
+    this.dirs.set(sha, dir);
+    return dir;
+  }
+
+  async removeAll(): Promise<void> {
+    for (const dir of this.dirs.values()) {
+      await this.ctx.run("git", ["worktree", "remove", "--force", dir], { cwd: this.ctx.root });
+    }
+    await this.ctx.run("git", ["worktree", "prune"], { cwd: this.ctx.root });
+    rmSync(this.base, { recursive: true, force: true });
+  }
+}
+
+interface ScenarioRun {
+  /** Set when the BDD suite failed to load and no scenario ran. */
+  load?: Outcome;
+  outcomes: Map<string, Outcome>;
+}
+
+async function runScenarios(ctx: Context, checkouts: Checkouts, sha: string, frId: string): Promise<ScenarioRun> {
+  const cwd = await checkouts.at(sha);
+  const report = checkouts.reportPath("ndjson");
+  ctx.err(`Running the ${frId} scenarios at ${sha.slice(0, 7)}…\n`);
+  const result = await ctx.run(
+    "npm",
+    ["run", "test:bdd", "--", "--tags", `@${frId}`, "--format", `message:${report}`],
+    { cwd },
+  );
+  const messages = existsSync(report) ? readFileSync(report, "utf8") : "";
+  const outcomes = messages.trim() === "" ? new Map<string, Outcome>() : scenarioOutcomes(messages);
+  if (outcomes.size === 0 && result.code !== 0) return { load: loadFailure(result.output), outcomes };
+  return { outcomes };
+}
+
+async function runUnitTests(
+  ctx: Context,
+  checkouts: Checkouts,
+  sha: string,
+  files: string[],
+): Promise<Map<string, UnitFileOutcome>> {
+  const cwd = await checkouts.at(sha);
+  const report = checkouts.reportPath("json");
+  ctx.err(`Running ${files.join(", ")} at ${sha.slice(0, 7)}…\n`);
+  const result = await ctx.run(
+    "npm",
+    ["run", "test:unit", "--", ...files, "--reporter=json", `--outputFile=${report}`],
+    { cwd },
+  );
+  if (!existsSync(report)) {
+    const load = loadFailure(result.output);
+    return new Map(files.map((file) => [file, { load, tests: new Map() }]));
+  }
+  // vitest reports real paths; a root under a symlink (macOS /var) would match none.
+  return unitOutcomes(readFileSync(report, "utf8"), realpathSync(cwd));
+}
+
+/** Each scenario a contract commit added must fail first before the code that follows it. */
+async function contractProblems(
+  ctx: Context,
+  checkouts: Checkouts,
+  commits: Commit[],
+  frId: string,
+): Promise<Problem[]> {
+  const roleAt = (i: number) => commitRole(commits[i].subject, frId);
+  const byTarget = new Map<number, { names: string[]; noCode: boolean }>();
+
+  for (let i = 0; i < commits.length; i++) {
+    if (roleAt(i) !== "contract") continue;
+    const contract = commits[i];
+    const added: string[] = [];
+    for (const path of contract.files.filter((f) => f.startsWith(FEATURES_DIR) && f.endsWith(".feature"))) {
+      const before = new Set(scenariosTagged(await fileAt(ctx, `${contract.sha}^`, path), frId));
+      for (const name of scenariosTagged(await fileAt(ctx, contract.sha, path), frId)) {
+        if (!before.has(name)) added.push(name);
+      }
+    }
+    if (added.length === 0) continue;
+    const code = commits.findIndex((_, j) => j > i && roleAt(j) === "code");
+    const target = code >= 0 ? code - 1 : commits.length - 1;
+    const group = byTarget.get(target) ?? { names: [], noCode: code < 0 };
+    group.names.push(...added);
+    byTarget.set(target, group);
+  }
+
+  const problems: Problem[] = [];
+  for (const [target, { names, noCode }] of byTarget) {
+    const provedByMutant = commits.some(
+      (c, j) => j <= target && roleAt(j) === "test" && touchesSteps(c) && namesMutant(c.message),
+    );
+    if (provedByMutant) continue;
+    const commit = commits[target];
+    const where = noCode
+      ? `no feat(…) or fix(…): ${frId} commit follows its contract, and at HEAD`
+      : `at the commit before the first feat(…) or fix(…): ${frId} commit`;
+    const run = await runScenarios(ctx, checkouts, commit.sha, frId);
+    for (const name of names) {
+      const outcome = run.load ?? run.outcomes.get(name) ?? { outcome: "never ran", detail: "it was not found" };
+      if (outcome.outcome === "passed") {
+        problems.push({
+          commit,
+          what: "the scenario passed before its code",
+          detail: `"${name}" passed ${where}`,
+          remedy:
+            "commit its step definitions before the code they test, so it fails first; when no Red is possible, prove it by a mutant and name the mutant in its test(…) commit message.",
+        });
+      } else if (outcome.outcome === "never ran") {
+        problems.push({
+          commit,
+          what: "the scenario never ran before its code",
+          detail: `"${name}" ${where}: ${outcome.detail}`,
+          remedy: `commit its step definitions as test(…): ${frId} before the code, so it runs and fails first.`,
+        });
+      } else if (outcome.outcome === "did not fail first") {
+        problems.push({
+          commit,
+          what: "the scenario did not fail first",
+          detail: `"${name}" ${where}: the BDD suite ${outcome.detail}`,
+          remedy: "make the suite load at that commit, so the scenario runs and fails on the missing code.",
+        });
+      }
+    }
+  }
+  return problems;
+}
+
+const PASSED_BEFORE_CODE_REMEDY =
+  "write the test before the code it tests, so it fails first at its commit; when no Red is possible, prove it by a mutant and name the mutant in the test(…) commit message.";
+
+/** A unit test a test commit counted as failing first, to be seen passing now. */
+interface Counted {
+  commit: Commit;
+  file: string;
+  /** Undefined when the whole file failed to load at the commit. */
+  name?: string;
+}
+
+/** Each test commit's tests and steps must fail first at it and pass now. */
+async function testCommitProblems(
+  ctx: Context,
+  checkouts: Checkouts,
+  commits: Commit[],
+  frId: string,
+  head: string,
+): Promise<Problem[]> {
+  const problems: Problem[] = [];
+  const counted: Counted[] = [];
+
+  for (const commit of commits.filter((c) => commitRole(c.subject, frId) === "test")) {
+    const unitFiles = commit.files.filter((f) => UNIT_TEST_FILE.test(f));
+    if (unitFiles.length === 0 && !touchesSteps(commit)) {
+      problems.push({
+        commit,
+        what: "the test commit adds no test or step",
+        detail: `it changes ${commit.files.join(", ") || "no file"}`,
+        remedy: `commit tests and step definitions as test(…): ${frId}; their helpers go with them.`,
+      });
+      continue;
+    }
+    if (namesMutant(commit.message)) continue;
+    const cwd = await checkouts.at(commit.sha);
+
+    const present = unitFiles.filter((f) => existsSync(join(cwd, f)));
+    if (present.length > 0) {
+      const atCommit = await runUnitTests(ctx, checkouts, commit.sha, present);
+      const existedBefore: string[] = [];
+      for (const file of present) {
+        const exists = await ctx.run("git", ["cat-file", "-e", `${commit.sha}^:${file}`], { cwd: ctx.root });
+        if (exists.code === 0) existedBefore.push(file);
+      }
+      const before =
+        existedBefore.length > 0
+          ? await runUnitTests(ctx, checkouts, await revParse(ctx, `${commit.sha}^`), existedBefore)
+          : new Map<string, UnitFileOutcome>();
+
+      let failedFirst = false;
+      for (const file of present) {
+        const result = atCommit.get(file) ?? {
+          load: { outcome: "never ran" as const, detail: "vitest did not run it" },
+          tests: new Map<string, Outcome>(),
+        };
+        if (result.load) {
+          if (result.load.outcome === "fails first") {
+            failedFirst = true;
+            counted.push({ commit, file });
+          } else {
+            problems.push({
+              commit,
+              what: "the test did not fail first",
+              detail: `${file} ${result.load.detail}`,
+              remedy: "make it load and fail on an assertion or on the missing code.",
+            });
+          }
+          continue;
+        }
+        const known = before.get(file)?.tests ?? new Map<string, Outcome>();
+        for (const [name, outcome] of result.tests) {
+          if (outcome.outcome === "fails first") {
+            failedFirst = true;
+            counted.push({ commit, file, name });
+          } else if (!known.has(name) && outcome.outcome === "passed") {
+            problems.push({
+              commit,
+              what: "the test passed before its code",
+              detail: `"${name}" in ${file} passed at this commit`,
+              remedy: PASSED_BEFORE_CODE_REMEDY,
+            });
+          } else if (!known.has(name)) {
+            problems.push({
+              commit,
+              what: "the test did not fail first",
+              detail: `"${name}" in ${file}: ${outcome.detail}`,
+              remedy: "make it run and fail on an assertion or on the missing code.",
+            });
+          }
+        }
+      }
+      if (!failedFirst && !problems.some((p) => p.commit === commit)) {
+        problems.push({
+          commit,
+          what: "the test passed before its code",
+          detail: `no test in ${present.join(", ")} failed at this commit`,
+          remedy: PASSED_BEFORE_CODE_REMEDY,
+        });
+      }
+    }
+
+    if (touchesSteps(commit)) {
+      const run = await runScenarios(ctx, checkouts, commit.sha, frId);
+      if (run.load) {
+        if (run.load.outcome !== "fails first") {
+          problems.push({
+            commit,
+            what: "the test did not fail first",
+            detail: `the BDD suite ${run.load.detail}`,
+            remedy: "make the suite load at this commit, so its scenarios run and fail on the missing code.",
+          });
+        }
+      } else if (![...run.outcomes.values()].some((o) => o.outcome === "fails first")) {
+        const passed = [...run.outcomes.values()].some((o) => o.outcome === "passed");
+        const results = [...run.outcomes].map(([name, o]) => `"${name}": ${o.detail}`).join("; ");
+        problems.push({
+          commit,
+          what: passed ? "the test passed before its code" : "the test did not fail first",
+          detail: `no ${frId} scenario failed first at this commit (${results || "none ran"})`,
+          remedy: PASSED_BEFORE_CODE_REMEDY,
+        });
+      }
+    }
+  }
+
+  const nowFiles = [...new Set(counted.map((c) => c.file))].filter((f) => existsSync(join(ctx.root, f)));
+  const now = nowFiles.length > 0 ? await runUnitTests(ctx, checkouts, head, nowFiles) : new Map();
+  for (const { commit, file, name } of counted) {
+    const result: UnitFileOutcome | undefined = now.get(file);
+    const tests = result ? [...result.tests] : [];
+    const passing = name
+      ? result?.tests.get(name)?.outcome === "passed"
+      : tests.length > 0 && tests.every(([, o]) => o.outcome === "passed");
+    if (!passing) {
+      problems.push({
+        commit,
+        what: "the test does not pass now",
+        detail: name ? `"${name}" in ${file}` : file,
+        remedy: "make it pass, or, if it was removed on purpose, say so to the person.",
+      });
+    }
+  }
+  return problems;
+}
+
+async function revParse(ctx: Context, ref: string): Promise<string> {
+  return (await git(ctx, ["rev-parse", ref])).trim();
+}
+
+async function gateProblems(ctx: Context): Promise<Problem[]> {
+  for (const [command, args] of QUALITY_GATE) {
+    const typed = `${command} ${args.join(" ")}`;
+    ctx.err(`Running the quality gate: ${typed}…\n`);
+    const result = await ctx.run(command, args, { cwd: ctx.root });
+    if (result.code !== 0) {
+      return [
+        {
+          what: "the quality gate fails now",
+          detail: `${typed} failed:\n${failingLines(result.output).join("\n")}`,
+          remedy: "fix what it names, commit, and run the check again.",
+        },
+      ];
+    }
+  }
+  return [];
+}
+
+// ── Commands ────────────────────────────────────────────────────────
+
+async function status(ctx: Context): Promise<number> {
+  const states = frStates(readProgressRecord(ctx.root), await readCommits(ctx, false));
+  if (states.size === 0) {
+    ctx.out("No FR has a contract commit or a record yet.\n");
+    return 0;
+  }
+  ctx.out(`${[...states].map(([id, state]) => formatState(id, state)).join("\n")}\n`);
+  return 0;
+}
+
+async function show(ctx: Context, frId: string): Promise<number> {
+  const commits = await readCommits(ctx, false);
+  const state = frStates(readProgressRecord(ctx.root), commits).get(frId);
+  if (!state) {
+    ctx.err(`${frId} has no contract commit and no record.\n`);
+    return 1;
+  }
+  const lines = [formatState(frId, state)];
+  for (const [role, label] of [
+    ["contract", "Contract"],
+    ["test", "Tests"],
+    ["code", "Code"],
+  ] as const) {
+    const own = commits.filter((c) => commitRole(c.subject, frId) === role);
+    lines.push("", `${label}:`, ...(own.length ? own.map((c) => `  ${c.sha.slice(0, 7)} ${c.subject}`) : ["  none"]));
+  }
+  ctx.out(`${lines.join("\n")}\n`);
+  return 0;
+}
+
+async function check(ctx: Context, frId: string): Promise<number> {
+  const fail = (problems: Problem[]) => {
+    ctx.err(formatProblems(frId, problems));
+    return 1;
+  };
+  const dirty = (await git(ctx, ["status", "--porcelain"])).trim();
+  if (dirty !== "") {
+    return fail([
+      {
+        what: "the working tree has uncommitted changes",
+        detail: dirty.split("\n").join(", "),
+        remedy: "commit or stash them, so the check verifies a commit.",
+      },
+    ]);
+  }
+  const commits = await readCommits(ctx, true);
+  const structural = structuralProblems(commits, frId);
+  if (structural.length > 0) return fail(structural);
+
+  const head = commits[commits.length - 1].sha;
+  const checkouts = new Checkouts(ctx, head);
+  let ran: Problem[];
+  try {
+    ran = [
+      ...(await contractProblems(ctx, checkouts, commits, frId)),
+      ...(await testCommitProblems(ctx, checkouts, commits, frId, head)),
+    ];
+  } finally {
+    await checkouts.removeAll();
+  }
+  if (ran.length > 0) return fail(ran);
+
+  const gate = await gateProblems(ctx);
+  if (gate.length > 0) return fail(gate);
+
+  const record = readProgressRecord(ctx.root);
+  record.built[frId] = { commit: head, date: ctx.now().toISOString().slice(0, 10) };
+  writeProgressRecord(ctx.root, record);
+  ctx.out(`${frId} verified at ${head.slice(0, 7)}: recorded as built in ${PROGRESS_RECORD_PATH}. Commit it.\n`);
+  return 0;
+}
+
+export interface CliOptions {
+  root?: string;
+  run?: CommandRunner;
+  out?: (text: string) => void;
+  err?: (text: string) => void;
+  now?: () => Date;
+}
+
+/** Runs one command and returns its exit code; it never exits the process. */
+export async function runCli(argv: string[], options: CliOptions = {}): Promise<number> {
+  const ctx: Context = {
+    root: options.root ?? process.cwd(),
+    run: options.run ?? runCommand,
+    out: options.out ?? ((text) => process.stdout.write(text)),
+    err: options.err ?? ((text) => process.stderr.write(text)),
+    now: options.now ?? (() => new Date()),
+  };
+  const [command, ...args] = argv;
+  if (command === undefined) {
+    ctx.out(HELP);
+    return 0;
+  }
+  const needsFrId = command === "show" || command === "check";
+  if (needsFrId && (args.length !== 1 || !isFrId(args[0]))) {
+    const given = args.length === 1 ? `"${args[0]}"` : `"${args.join(" ")}"`;
+    ctx.err(`${given} is not an FR id (such as FR-CHAT-01 or NFR-TEST-03); nothing was run.\n`);
+    return 1;
+  }
+  try {
+    if (command === "status" && args.length === 0) return await status(ctx);
+    if (command === "show") return await show(ctx, args[0]);
+    if (command === "check") return await check(ctx, args[0]);
   } catch (error) {
     if (error instanceof ProgressError) {
-      die(error.message);
+      ctx.err(`${error.message}\n`);
+      return 1;
     }
     throw error;
   }
+  ctx.err(`Unknown command: ${argv.join(" ")}\n\n${HELP}`);
+  return 1;
 }
 
-const __doc__ = `Progress tracking CLI for the Spec → BDD → TDD development cycle.
-
-Usage:
-  npx tsx scripts/progress.ts current
-  npx tsx scripts/progress.ts status
-  npx tsx scripts/progress.ts show FR-xxx
-  npx tsx scripts/progress.ts advance FR-xxx
-  npx tsx scripts/progress.ts scenario pass FR-xxx "Scenario name"
-  npx tsx scripts/progress.ts units FR-xxx "Scenario name" 3
-  npx tsx scripts/progress.ts focus FR-xxx
-  npx tsx scripts/progress.ts add FR-xxx "Title"
-  npx tsx scripts/progress.ts sync FR-xxx
-  npx tsx scripts/progress.ts done FR-xxx
-  npx tsx scripts/progress.ts reopen FR-xxx "reason"
-`;
-
-const isMain =
-  process.argv[1] !== undefined &&
-  import.meta.url === pathToFileURL(process.argv[1]).href;
+const isMain = process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href;
 if (isMain) {
-  runCli(process.argv.slice(2));
+  runCli(process.argv.slice(2)).then((code) => {
+    process.exitCode = code;
+  });
 }
