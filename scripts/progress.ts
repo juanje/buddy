@@ -843,7 +843,7 @@ async function check(ctx: Context, frId: string): Promise<number> {
       {
         what: "the working tree has uncommitted changes",
         detail: dirty.split("\n").join(", "),
-        remedy: "commit or stash them, so the check verifies a commit.",
+        remedy: "commit them first, so the check verifies a commit.",
       },
     ]);
   }
