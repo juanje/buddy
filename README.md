@@ -165,7 +165,7 @@ docs/           — Design principles, technical architecture, decisions
 | [docs/app-spec-tauri.md](docs/app-spec-tauri.md)               | Technical architecture and Pi SDK usage (the HOW)     |
 | [docs/context-and-tokens.md](docs/context-and-tokens.md)       | Token usage, context-window pressure, and determinism |
 | [CLAUDE.md](CLAUDE.md)                                         | Agent workflow: BDD+TDD process, phase order, rules   |
-| [PROGRESS.md](specs/PROGRESS.md)                               | Implementation status and next focus                  |
+| [docs/METHODOLOGY.md](docs/METHODOLOGY.md)                     | The progress record: what is built, and its check     |
 
 ### License
 
