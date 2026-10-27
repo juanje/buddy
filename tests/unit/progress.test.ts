@@ -13,6 +13,7 @@ import {
   formatState,
   isFrId,
   loadFailure,
+  runCli,
   namesMutant,
   scenarioOutcomes,
   scenariosTagged,
@@ -382,5 +383,28 @@ describe("failingLines", () => {
     const lines = failingLines(output);
     expect(lines.at(-1)).toBe("line 99");
     expect(lines.length).toBeLessThanOrEqual(40);
+  });
+});
+
+describe("check on a working tree with uncommitted changes", () => {
+  it("refuses, saying to commit them first, and runs nothing else", async () => {
+    const ran: string[][] = [];
+    let err = "";
+    const code = await runCli(["check", "FR-DEMO-01"], {
+      root: "/repo",
+      run: async (command, args) => {
+        ran.push([command, ...args]);
+        return { code: 0, output: " M src/greeting.js\n" };
+      },
+      out: () => {},
+      err: (text) => {
+        err += text;
+      },
+    });
+    expect(code).toBe(1);
+    expect(err).toContain("the working tree has uncommitted changes: M src/greeting.js");
+    expect(err).toContain("To make it hold: commit them first, so the check verifies a commit.");
+    expect(err).not.toMatch(/stash/i);
+    expect(ran).toEqual([["git", "status", "--porcelain"]]);
   });
 });
