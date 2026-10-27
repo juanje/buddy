@@ -459,10 +459,15 @@ export type FrState =
   | { state: "built" | "changed"; commit: string; date: string }
   | { state: "recorded before the checks" };
 
-/** Every FR with a contract commit or a record, and its state. */
-export function frStates(record: ProgressRecord, commits: Commit[]): Map<string, FrState> {
+/**
+ * Every FR with a record or a contract commit, and its state. Contract
+ * commits count from `start`, the commit that started the record; earlier
+ * ones are history. Before the record starts, every contract commit counts.
+ */
+export function frStates(record: ProgressRecord, commits: Commit[], start?: string): Map<string, FrState> {
   const ids = new Set<string>([...Object.keys(record.built), ...record.recordedBeforeChecks]);
-  for (const commit of commits) {
+  const from = Math.max(0, commits.findIndex((c) => c.sha === start));
+  for (const commit of commits.slice(from)) {
     if (COMMIT_TYPE.exec(commit.subject)?.[1] !== "spec") continue;
     for (const id of commit.subject.match(FR_IDS_IN_TEXT) ?? []) ids.add(id);
   }
@@ -995,8 +1000,22 @@ async function gateProblems(ctx: Context): Promise<Problem[]> {
 
 // ── Commands ────────────────────────────────────────────────────────
 
+/** The commit that started the record: the first whose record has `recordedBeforeChecks`. */
+async function recordStart(ctx: Context): Promise<string | undefined> {
+  const shas = await git(ctx, [
+    "log",
+    "--reverse",
+    "--format=%H",
+    "-S",
+    "recordedBeforeChecks",
+    "--",
+    PROGRESS_RECORD_PATH,
+  ]);
+  return shas.split("\n")[0]?.trim() || undefined;
+}
+
 async function status(ctx: Context): Promise<number> {
-  const states = frStates(readProgressRecord(ctx.root), await readCommits(ctx, false));
+  const states = frStates(readProgressRecord(ctx.root), await readCommits(ctx, false), await recordStart(ctx));
   if (states.size === 0) {
     ctx.out("No FR has a contract commit or a record yet.\n");
     return 0;
@@ -1007,7 +1026,7 @@ async function status(ctx: Context): Promise<number> {
 
 async function show(ctx: Context, frId: string): Promise<number> {
   const commits = await readCommits(ctx, false);
-  const state = frStates(readProgressRecord(ctx.root), commits).get(frId);
+  const state = frStates(readProgressRecord(ctx.root), commits, await recordStart(ctx)).get(frId);
   if (!state) {
     ctx.err(`${frId} has no contract commit and no record.\n`);
     return 1;
@@ -1063,7 +1082,10 @@ async function check(ctx: Context, frId: string): Promise<number> {
   const record = readProgressRecord(ctx.root);
   record.built[frId] = { commit: head, date: ctx.now().toISOString().slice(0, 10) };
   writeProgressRecord(ctx.root, record);
-  ctx.out(`${frId} verified at ${head.slice(0, 7)}: recorded as built in ${PROGRESS_RECORD_PATH}. Commit it.\n`);
+  // The check commits its own record, so nobody handles the file.
+  await git(ctx, ["add", "--", PROGRESS_RECORD_PATH]);
+  await git(ctx, ["commit", "-q", "-m", `chore(progress): ${frId} verified`, "--", PROGRESS_RECORD_PATH]);
+  ctx.out(`${frId} verified at ${head.slice(0, 7)}: recorded as built and committed as chore(progress): ${frId} verified.\n`);
   return 0;
 }
 
