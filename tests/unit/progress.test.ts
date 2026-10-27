@@ -380,6 +380,19 @@ describe("frStates", () => {
     expect(frStates(record, [contract, code, later]).get("FR-DEMO-01")?.state).toBe("changed");
   });
 
+  it("counts contract commits from the commit that started the record", () => {
+    const start = commit("eeeeeee5", "chore(progress): start the record");
+    const record = { built: {}, recordedBeforeChecks: [] };
+    const states = frStates(record, [other, start, contract], "eeeeeee5");
+    expect(states.has("FR-DEMO-02")).toBe(false);
+    expect(states.get("FR-DEMO-01")).toEqual({ state: "in progress" });
+  });
+
+  it("counts every contract commit while the record has not started", () => {
+    const states = frStates({ built: {}, recordedBeforeChecks: [] }, [other, contract], undefined);
+    expect([...states.keys()]).toEqual(["FR-DEMO-01", "FR-DEMO-02"]);
+  });
+
   it("shows an FR recorded before the checks as such, until a check verifies it", () => {
     const legacy = { built: {}, recordedBeforeChecks: ["FR-OLD-01", "FR-DEMO-01"] };
     expect(frStates(legacy, [contract]).get("FR-OLD-01")).toEqual({ state: "recorded before the checks" });
