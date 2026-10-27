@@ -61,6 +61,14 @@ Feature: The progress record holds only verified work
       | the module it imports did not exist yet  |
 
   @NFR-TEST-03
+  Scenario: A test that a later commit replaces still counts once it passed with its code
+    Given FR-DEMO-01's work done Outside-In
+    And a later test commit that replaces its unit test with one for new code
+    And the code for the new test committed after it
+    When I check FR-DEMO-01
+    Then the check succeeds
+
+  @NFR-TEST-03
   Scenario: A test proved by a mutant counts as failing first
     Given FR-DEMO-01's work where the scenario passed before the first code
     And its test commit has a Mutant trailer naming the scenario
